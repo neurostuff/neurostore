@@ -1,5 +1,5 @@
 import { Box, Button, Dialog, DialogContent, DialogTitle, TextField, Typography, IconButton } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Close } from '@mui/icons-material';
 import { ChangeEvent, useEffect, useState } from 'react';
 import LoadingButton from 'components/Buttons/LoadingButton';
 
@@ -13,7 +13,7 @@ export interface ICreateDetailsDialog {
     descriptionLabel?: string;
 }
 
-const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
+const CreateDetailsDialog = (props: ICreateDetailsDialog) => {
     const [hasEnteredText, setHasEnteredText] = useState(false);
 
     const [newDetails, setDetails] = useState({
@@ -53,7 +53,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                 </Box>
                 <Box sx={{ display: 'flex' }}>
                     <IconButton onClick={handleOnClose}>
-                        <CloseIcon sx={{ fontSize: '2rem' }} />
+                        <Close sx={{ fontSize: '2rem' }} />
                     </IconButton>
                 </Box>
             </DialogTitle>

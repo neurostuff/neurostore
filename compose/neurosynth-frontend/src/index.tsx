@@ -4,16 +4,26 @@ import { createTheme, responsiveFontSizes, ThemeProvider } from '@mui/material/s
 import { SystemStyleObject } from '@mui/system';
 import * as Sentry from '@sentry/react';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
-import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
+import 'handsontable/styles/ht-theme-classic.min.css';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { HelmetProvider } from 'react-helmet-async';
+import { enqueueSnackbar } from 'notistack';
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions = 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+
+declare module '@tanstack/react-query' {
+    interface Register {
+        queryMeta: {
+            errorMessage?: string;
+        };
+    }
+}
 
 declare module '@mui/material/styles/createPalette' {
     interface Palette {
@@ -100,26 +110,36 @@ const queryClient = new QueryClient({
         },
     },
     queryCache: new QueryCache({
-        onError: (error) => {
+        onError: (error, query) => {
             console.log({ error });
             const responseStatus = (error as AxiosError)?.response?.status;
             if (responseStatus && responseStatus === 404) {
                 console.error('could not find resource');
             }
+            if (query.meta?.errorMessage) {
+                enqueueSnackbar(query.meta.errorMessage, { variant: 'error' });
+            }
         },
     }),
 });
 
-ReactDOM.render(
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+    throw new Error('Root element not found');
+}
+
+createRoot(rootElement).render(
     <React.StrictMode>
         <Auth0Provider
             domain={domain}
-            useRefreshTokens={true}
             clientId={clientId}
-            redirectUri={window.location.origin}
-            scope="openid profile email offline_access"
-            audience={audience}
+            useRefreshTokens={true}
             cacheLocation="localstorage"
+            authorizationParams={{
+                redirect_uri: window.location.origin,
+                audience,
+                scope: 'openid profile email offline_access',
+            }}
         >
             <BrowserRouter>
                 <ThemeProvider theme={theme}>
@@ -131,6 +151,5 @@ ReactDOM.render(
                 </ThemeProvider>
             </BrowserRouter>
         </Auth0Provider>
-    </React.StrictMode>,
-    document.getElementById('root')
+    </React.StrictMode>
 );

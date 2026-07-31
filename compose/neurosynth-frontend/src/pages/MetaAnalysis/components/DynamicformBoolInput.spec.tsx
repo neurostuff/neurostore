@@ -6,7 +6,7 @@ import DynamicFormBoolInput from './DynamicFormBoolInput';
 describe('DynamicFormBoolInput', () => {
     const mockOnUpdate = vi.fn();
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <DynamicFormBoolInput
                 parameterName="null_iter"
@@ -21,7 +21,7 @@ describe('DynamicFormBoolInput', () => {
         );
     });
 
-    it('should display the value when true', () => {
+    it('should display the value when true', async () => {
         render(
             <DynamicFormBoolInput
                 parameterName="null_iter"
@@ -38,7 +38,7 @@ describe('DynamicFormBoolInput', () => {
         expect(screen.getByText('true').className).toContain('Mui-selected');
     });
 
-    it('should display the value when false', () => {
+    it('should display the value when false', async () => {
         render(
             <DynamicFormBoolInput
                 parameterName="null_iter"
@@ -55,7 +55,7 @@ describe('DynamicFormBoolInput', () => {
         expect(screen.getByText('false').className).toContain('Mui-selected');
     });
 
-    it('should send an update', () => {
+    it('should send an update', async () => {
         render(
             <DynamicFormBoolInput
                 parameterName="null_iter"
@@ -69,7 +69,7 @@ describe('DynamicFormBoolInput', () => {
             />
         );
 
-        userEvent.click(screen.getByText('true'));
+        await userEvent.click(screen.getByText('true'));
         expect(mockOnUpdate).toHaveBeenCalledWith({
             null_iter: true,
         });

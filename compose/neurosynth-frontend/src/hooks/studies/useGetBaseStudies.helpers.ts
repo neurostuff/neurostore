@@ -1,5 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
 import { EMapType, SearchCriteria, SearchDataType, SortBy } from 'pages/Study/Study.types';
+import studyQueries from './studyQueries';
 
 export type BaseStudiesSearchShape = 'nested' | 'nonNested' | 'flat' | 'info';
 
@@ -69,3 +71,18 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
         searchCriteria.info
     );
 };
+
+const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
+    return useQuery({
+        queryKey: [...studyQueries.baseStudies.all(), { ...searchCriteria }],
+        queryFn: () => baseStudiesSearchHelper(searchCriteria),
+        enabled,
+
+        select: (res) => {
+            const studyList = res.data;
+            return studyList;
+        },
+    });
+};
+
+export default useGetBaseStudies;

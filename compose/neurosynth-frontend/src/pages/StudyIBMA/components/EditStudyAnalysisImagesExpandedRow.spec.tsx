@@ -8,7 +8,7 @@ import EditStudyAnalysisImagesExpandedRow from 'pages/StudyIBMA/components/EditS
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import { vi } from 'vitest';
 
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 
 const img = (id: string): ImageReturn => ({
     id,
@@ -71,11 +71,7 @@ const renderExpandedRow = (options?: Parameters<typeof buildTable>[0]) => {
     render(
         <Table>
             <TableBody>
-                <EditStudyAnalysisImagesExpandedRow
-                    row={built.row}
-                    table={built.table}
-                    selectedImageId={null}
-                />
+                <EditStudyAnalysisImagesExpandedRow row={built.row} table={built.table} selectedImageId={null} />
             </TableBody>
         </Table>
     );

@@ -2,7 +2,7 @@ import { Psychology } from '@mui/icons-material';
 import { Box, BoxProps, Typography } from '@mui/material';
 import React from 'react';
 
-const AIICon: React.FC<BoxProps> = (props) => {
+const AIICon = (props: BoxProps) => {
     return (
         <Box {...props} sx={{ display: 'flex', alignItems: 'center', color: '#50b9db', ...props.sx }}>
             <Psychology sx={{ height: '20px' }} />

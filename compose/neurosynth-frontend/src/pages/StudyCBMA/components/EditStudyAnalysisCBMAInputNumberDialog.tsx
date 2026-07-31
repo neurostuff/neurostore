@@ -3,13 +3,13 @@ import NavigationButtons, { ENavigationButton } from 'components/Buttons/Navigat
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { useState } from 'react';
 
-const InputNumberDialog: React.FC<
+const InputNumberDialog = (props: 
     IDialog & {
         onSubmit: (value: number) => void;
         dialogTitle: string;
         dialogDescription: string;
     }
-> = (props) => {
+) => {
     const [val, setVal] = useState<number | undefined>(4);
 
     const handleButtonClick = (button: ENavigationButton) => {

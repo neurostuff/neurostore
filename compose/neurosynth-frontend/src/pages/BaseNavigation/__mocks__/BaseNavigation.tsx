@@ -1,4 +1,4 @@
-const MockBaseNavigation: React.FC = (_props) => {
+const MockBaseNavigation = (_props: Record<string, never>) => {
     return <div>mock base navigation</div>;
 };
 

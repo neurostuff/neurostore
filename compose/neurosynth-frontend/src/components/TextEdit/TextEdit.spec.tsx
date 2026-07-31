@@ -17,7 +17,7 @@ describe('TextEdit', () => {
         vi.clearAllMocks();
     });
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
                 <span>test-text</span>
@@ -27,7 +27,7 @@ describe('TextEdit', () => {
         expect(text).toBeInTheDocument();
     });
 
-    it('should change to edit mode when icon is clicked', () => {
+    it('should change to edit mode when icon is clicked', async () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
                 <span>test-text</span>
@@ -35,7 +35,7 @@ describe('TextEdit', () => {
         );
 
         const editIconButton = screen.getByRole('button');
-        userEvent.click(editIconButton);
+        await userEvent.click(editIconButton);
 
         const textField = screen.getByRole('textbox');
         expect(textField).toBeInTheDocument();
@@ -47,7 +47,7 @@ describe('TextEdit', () => {
         expect(cancelButton).toBeInTheDocument();
     });
 
-    it('should go back to display mode when cancel is clicked', () => {
+    it('should go back to display mode when cancel is clicked', async () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
                 <span>test-text</span>
@@ -56,17 +56,17 @@ describe('TextEdit', () => {
 
         // set to edit mode
         const editIconButton = screen.getByRole('button');
-        userEvent.click(editIconButton);
+        await userEvent.click(editIconButton);
 
         // set back to display mode
         const cancelButton = screen.getByText('Cancel');
-        userEvent.click(cancelButton);
+        await userEvent.click(cancelButton);
 
         const textField = screen.queryByRole('textbox');
         expect(textField).not.toBeInTheDocument();
     });
 
-    it('should update the value when modified', () => {
+    it('should update the value when modified', async () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
                 <span>test-text</span>
@@ -75,17 +75,17 @@ describe('TextEdit', () => {
 
         // set to edit mode
         const editIconButton = screen.getByRole('button');
-        userEvent.click(editIconButton);
+        await userEvent.click(editIconButton);
 
         // type the letter A
         const textField = screen.getByRole('textbox');
-        userEvent.type(textField, 'A');
+        await userEvent.type(textField, 'A');
 
         const newVal = screen.getByDisplayValue('test-textA');
         expect(newVal).toBeInTheDocument();
     });
 
-    it('should not show the edit button when not authenticated', () => {
+    it('should not show the edit button when not authenticated', async () => {
         useAuth0().isAuthenticated = false;
 
         render(
@@ -98,7 +98,7 @@ describe('TextEdit', () => {
         expect(button).toBeFalsy();
     });
 
-    it('should not show the edit button if editIconIsVisible flag is set to false', () => {
+    it('should not show the edit button if editIconIsVisible flag is set to false', async () => {
         useAuth0().isAuthenticated = true;
 
         render(
@@ -111,7 +111,7 @@ describe('TextEdit', () => {
         expect(button).toBeFalsy();
     });
 
-    it('should show the edit button when authenticated', () => {
+    it('should show the edit button when authenticated', async () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
                 <span>test-text</span>
@@ -131,19 +131,19 @@ describe('TextEdit', () => {
 
         // set to edit mode
         const editIconButton = screen.getByRole('button');
-        userEvent.click(editIconButton);
+        await userEvent.click(editIconButton);
 
         // type the letter A
         const textField = screen.getByRole('textbox');
-        userEvent.type(textField, 'A');
+        await userEvent.type(textField, 'A');
 
         const saveButton = screen.getByText('Save');
-        userEvent.click(saveButton);
+        await userEvent.click(saveButton);
 
         expect(mockOnSave).toBeCalledWith('test-textA', 'some-label');
     });
 
-    it('should not show the loading icon', () => {
+    it('should not show the loading icon', async () => {
         render(
             <TextEdit isLoading={false} onSave={mockOnSave} label="some-label" textToEdit="test-text">
                 <span>test-text</span>
@@ -154,7 +154,7 @@ describe('TextEdit', () => {
         expect(progressLoader).not.toBeInTheDocument();
     });
 
-    it('should show the loading icon', () => {
+    it('should show the loading icon', async () => {
         render(
             <TextEdit isLoading={true} onSave={mockOnSave} label="some-label" textToEdit="test-text">
                 <span>test-text</span>

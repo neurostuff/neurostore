@@ -10,7 +10,7 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import React from 'react';
 import { useStudyId } from 'stores/study/StudyStore';
 
-const DisplayExtractionTableState: React.FC = () => {
+const DisplayExtractionTableState = () => {
     const projectId = useProjectId();
     const studyId = useStudyId();
     const studysetId = useProjectExtractionStudysetId();

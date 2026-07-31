@@ -1,15 +1,11 @@
-import { ArrowDownward, Delete } from '@mui/icons-material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import { ArrowDownward, Delete, ArrowUpward } from '@mui/icons-material';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { HeaderContext } from '@tanstack/react-table';
 import AIICon from 'components/AIIcon';
 import { ICurationTableColumnType, ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationBoardAIInterfaceCuratorTableHeaderFilter from './CurationBoardAIInterfaceCuratorTableHeaderFilter';
 
-export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, ICurationTableColumnType>> = ({
-    table,
-    column,
-}) => {
+export const CuratorTableHeader = ({ table, column }: HeaderContext<ICurationTableStudy, ICurationTableColumnType>) => {
     const removeColumn = table.options.meta?.curatorTableOnRemoveColumn;
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const canSort = column.getCanSort();
@@ -52,7 +48,7 @@ export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, ICu
                         </IconButton>
                     ) : isSorted === 'asc' ? (
                         <IconButton size="small" onClick={() => table.resetSorting()}>
-                            <ArrowUpwardIcon sx={{ height: '0.8em', width: '0.8em', color: 'secondary.main' }} />
+                            <ArrowUpward sx={{ height: '0.8em', width: '0.8em', color: 'secondary.main' }} />
                         </IconButton>
                     ) : (
                         <IconButton size="small" onClick={() => table.setSorting([{ id: column.id, desc: false }])}>

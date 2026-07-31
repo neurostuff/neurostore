@@ -1,6 +1,6 @@
 import { ISearchBar } from '../SearchBar';
 
-const mockSearchBar: React.FC<ISearchBar> = (props) => {
+const mockSearchBar = (props: ISearchBar) => {
     return (
         <button
             style={{ backgroundColor: props.searchButtonColor }}

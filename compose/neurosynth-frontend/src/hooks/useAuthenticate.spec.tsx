@@ -1,6 +1,6 @@
 import { OAuthError, useAuth0 } from '@auth0/auth0-react';
 import { initAPISetAccessTokenFunc, initAPISetLogoutFunc } from 'api';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
@@ -50,13 +50,17 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenCalledWith({
-                audience: expectedAudience,
-                scope: 'openid profile email offline_access',
-                prompt: 'login',
+                authorizationParams: {
+                    audience: expectedAudience,
+                    scope: 'openid profile email offline_access',
+                    prompt: 'login',
+                },
             });
             expect(initAPISetAccessTokenFunc).toHaveBeenCalledWith(useAuth0().getAccessTokenSilently as Mock);
             expect(initAPISetLogoutFunc).toHaveBeenCalledWith(useAuth0().logout as Mock);
@@ -71,11 +75,15 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenCalledWith({
-                audience: expectedAudience,
-                scope: 'openid profile email offline_access',
+                authorizationParams: {
+                    audience: expectedAudience,
+                    scope: 'openid profile email offline_access',
+                },
             });
         });
 
@@ -86,7 +94,9 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             await waitFor(() => {
                 expect(gtag).toHaveBeenCalledWith('event', 'login');
@@ -100,7 +110,9 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
             expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Sign in/Sign up cancelled', { variant: 'warning' });
@@ -113,7 +125,9 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
             expect(enqueueSnackbarMock()).not.toHaveBeenCalled();
@@ -125,7 +139,9 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Sign in/Sign up Error', { variant: 'error' });
@@ -138,7 +154,9 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Sign in/Sign up Error', { variant: 'error' });
@@ -149,7 +167,9 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Sign in/Sign up Error', { variant: 'error' });
@@ -162,15 +182,21 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
 
-            await userEvent.click(screen.getByTestId('login'));
+            await act(async () => {
+                await userEvent.click(screen.getByTestId('login'));
+            });
 
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenNthCalledWith(2, {
-                audience: expectedAudience,
-                scope: 'openid profile email offline_access',
-                prompt: 'login',
+                authorizationParams: {
+                    audience: expectedAudience,
+                    scope: 'openid profile email offline_access',
+                    prompt: 'login',
+                },
             });
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             await waitFor(() => {
@@ -185,12 +211,16 @@ describe('useAuthenticate', () => {
 
             await userEvent.click(screen.getByTestId('logout'));
 
-            expect(useAuth0().logout as Mock).toHaveBeenCalledWith({ returnTo: window.location.origin });
+            expect(useAuth0().logout as Mock).toHaveBeenCalledWith({
+                logoutParams: {
+                    returnTo: window.location.origin,
+                },
+            });
         });
     });
 
     describe('useAuth0 wiring', () => {
-        it('reads auth helpers from useAuth0', () => {
+        it('reads auth helpers from useAuth0', async () => {
             render(<LoginHarness />);
             expect(useAuth0).toHaveBeenCalled();
             expect(useSnackbar).toHaveBeenCalled();

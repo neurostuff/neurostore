@@ -7,10 +7,10 @@ import { IExtractionTableStudy } from './ExtractionTable';
 import ExtractionTableJournalAutocomplete from './ExtractionTableJournalAutocomplete';
 import ExtractionTableStatusFilter from './ExtractionTableStatusFilter';
 
-const ExtractionTableFilterInput: React.FC<{
+const ExtractionTableFilterInput = ({  table, column  }: {
     table: Table<IExtractionTableStudy>;
     column: Column<IExtractionTableStudy, unknown>;
-}> = ({ table, column }) => {
+}) => {
     const columnFilterValue = column.getFilterValue();
     const { filterVariant } = column.columnDef.meta ?? {};
 

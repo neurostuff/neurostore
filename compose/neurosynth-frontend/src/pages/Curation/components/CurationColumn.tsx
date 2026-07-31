@@ -2,10 +2,10 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import { Autocomplete, Box, Button, Divider, ListItem, ListItemText, Paper, TextField } from '@mui/material';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
+import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { ICurationStubStudy, ITag } from 'pages/Curation/Curation.types';
 import CurationColumnStyles from 'pages/Curation/components/CurationColumn.styles';
 import CurationDialog from 'pages/Curation/components/CurationDialog';
 import CurationStubStudyDraggableContainer from 'pages/Curation/components/CurationStubStudyDraggableContainer';
@@ -18,7 +18,9 @@ import {
 } from 'stores/projects/ProjectStore';
 import { ENeurosynthTagIds } from 'stores/projects/ProjectStore.consts';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import { ICurationStubStudy, ITag } from 'pages/Curation/Curation.types';
+
+const ROW_HEIGHT_PX = 140;
 
 const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;
@@ -36,42 +38,50 @@ const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined):
     return isVisible;
 };
 
-const FixedSizeListRow: React.FC<
-    ListChildComponentProps<{
-        stubs: ICurationStubStudy[];
+const VirtualizedColumnRow = React.memo(
+    ({
+        stub,
+        index,
+        style,
+        columnIndex,
+        onSelectStub,
+        selectedTag,
+    }: {
+        stub: ICurationStubStudy;
+        index: number;
+        style: React.CSSProperties;
         columnIndex: number;
         onSelectStub: (stubId: string) => void;
         selectedTag: ITag | undefined;
-    }>
-> = (props) => {
-    const projectUser = useProjectUser();
-    const canEdit = useUserCanEdit(projectUser || undefined);
-    const stub = props.data.stubs[props.index];
+    }) => {
+        const projectUser = useProjectUser();
+        const canEdit = useUserCanEdit(projectUser || undefined);
 
-    return (
-        <Draggable
-            draggableId={stub.id}
-            index={props.index}
-            isDragDisabled={!!stub?.exclusionTag || !canEdit}
-            key={stub.id}
-        >
-            {(provided, snapshot) => (
-                <CurationStubStudyDraggableContainer
-                    {...stub}
-                    provided={provided}
-                    snapshot={snapshot}
-                    index={props.index}
-                    style={props.style}
-                    isVisible={getVisibility(stub, props.data.selectedTag)}
-                    onSelectStubStudy={props.data.onSelectStub}
-                    columnIndex={props.data.columnIndex}
-                />
-            )}
-        </Draggable>
-    );
-};
+        return (
+            <Draggable
+                draggableId={stub.id}
+                index={index}
+                isDragDisabled={!!stub?.exclusionTag || !canEdit}
+                key={stub.id}
+            >
+                {(provided, snapshot) => (
+                    <CurationStubStudyDraggableContainer
+                        {...stub}
+                        provided={provided}
+                        snapshot={snapshot}
+                        index={index}
+                        style={style}
+                        isVisible={getVisibility(stub, selectedTag)}
+                        onSelectStubStudy={onSelectStub}
+                        columnIndex={columnIndex}
+                    />
+                )}
+            </Draggable>
+        );
+    }
+);
 
-const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => {
+const CurationColumn = React.memo((props: { columnIndex: number }) => {
     const { isAuthenticated } = useAuth0();
     const column = useProjectCurationColumn(props.columnIndex);
     const prismaConfig = useProjectCurationPrismaConfig();
@@ -130,6 +140,9 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
     const filteredStudies = useMemo(() => {
         return column.stubStudies.filter((stub) => getVisibility(stub, selectedTag));
     }, [column.stubStudies, selectedTag]);
+
+    // 212 roughly represents the space taken up by other components above the column like buttons and headers
+    const listHeightPx = windowHeight - 212 < 0 ? 0 : windowHeight - 212;
 
     const hasUncategorizedStudies = column.stubStudies.some((x) => x.exclusionTag === null);
 
@@ -234,25 +247,24 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                 )}
             >
                 {(provided) => (
-                    <FixedSizeList
-                        // 212 roughly represents the space taken up by other components above the column like buttons and headers
-                        height={windowHeight - 212 < 0 ? 0 : windowHeight - 212}
-                        outerRef={provided.innerRef}
-                        itemCount={filteredStudies.length}
-                        width="100%"
-                        itemSize={140}
-                        itemKey={(index, data) => data.stubs[index]?.id}
-                        layout="vertical"
-                        itemData={{
-                            stubs: filteredStudies,
-                            columnIndex: props.columnIndex,
-                            onSelectStub: handleSelectStub,
-                            selectedTag: selectedTag,
-                        }}
-                        overscanCount={3}
-                    >
-                        {FixedSizeListRow}
-                    </FixedSizeList>
+                    <VirtualizedList
+                        rows={filteredStudies}
+                        rowHeightInPx={ROW_HEIGHT_PX}
+                        listHeightInPx={listHeightPx}
+                        overscan={3}
+                        getItemKey={(stub) => stub.id}
+                        scrollContainerRef={provided.innerRef}
+                        renderRow={(stub, style, index) => (
+                            <VirtualizedColumnRow
+                                stub={stub}
+                                index={index}
+                                columnIndex={props.columnIndex}
+                                onSelectStub={handleSelectStub}
+                                selectedTag={selectedTag}
+                                style={style}
+                            />
+                        )}
+                    />
                 )}
             </Droppable>
         </Box>

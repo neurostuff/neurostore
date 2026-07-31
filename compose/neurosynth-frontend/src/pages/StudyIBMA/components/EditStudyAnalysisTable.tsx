@@ -1,18 +1,16 @@
-import { Add } from '@mui/icons-material';
+import { Compress, Add, Expand } from '@mui/icons-material';
 import { Button, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { useIsMutating } from '@tanstack/react-query';
 import { flexRender, type Table as TanstackTable } from '@tanstack/react-table';
+import LoadingButton from 'components/Buttons/LoadingButton';
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
+import analysisQueries from 'hooks/analyses/analysisQueries';
+import annotationQueries from 'hooks/annotations/annotationQueries';
 import { EditStudyAnalysisTableRow } from 'pages/StudyIBMA/components/EditStudyAnalysisTableRow';
 import NewAnnotationColumnDialog from 'pages/StudyIBMA/components/NewAnnotationColumnDialog';
-import analysisQueries from 'hooks/analyses/analysisQueries';
-import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.tableMeta';
-import React, { useState } from 'react';
-import { useIsMutating } from 'react-query';
-import LoadingButton from 'components/Buttons/LoadingButton';
-import Compress from '@mui/icons-material/Compress';
-import ExpandIcon from '@mui/icons-material/Expand';
-import annotationQueries from 'hooks/annotations/annotationQueries';
+import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
+import { useState } from 'react';
 
 export type EditStudyAnalysisTableProps = {
     table: TanstackTable<AnalysisBoardRow>;
@@ -22,15 +20,15 @@ export type EditStudyAnalysisTableProps = {
 
 const toolbarButtonSx = { fontSize: '12px' } as const;
 
-const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, tableMinWidth, noteKeys = [] }) => {
+const EditStudyAnalysisTable = ({ table, tableMinWidth, noteKeys = [] }: EditStudyAnalysisTableProps) => {
     const [newAnnotationColumnDialogOpen, setNewAnnotationColumnDialogOpen] = useState(false);
     const tableMeta = table.options.meta;
 
     const addAnnotationColumn = tableMeta?.addAnnotationColumn;
     const createAnalysis = tableMeta?.createAnalysis;
 
-    const addAnnotationColumnIsMutating = useIsMutating(annotationQueries.mutations.update()) > 0;
-    const isCreateAnalysisLoading = useIsMutating(analysisQueries.mutations.create()) > 0;
+    const addAnnotationColumnIsMutating = useIsMutating({ mutationKey: annotationQueries.mutations.update() }) > 0;
+    const isCreateAnalysisLoading = useIsMutating({ mutationKey: analysisQueries.mutations.create() }) > 0;
 
     return (
         <>
@@ -69,7 +67,7 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                         size="medium"
                         disableElevation
                         sx={{ ...toolbarButtonSx, minWidth: '112px', maxHeight: '33px', marginLeft: '1rem' }}
-                        startIcon={table.getIsAllRowsExpanded() ? <Compress /> : <ExpandIcon />}
+                        startIcon={table.getIsAllRowsExpanded() ? <Compress /> : <Expand />}
                         onClick={() => table.toggleAllRowsExpanded()}
                     >
                         {table.getIsAllRowsExpanded() ? 'Collapse All' : 'Expand All'}

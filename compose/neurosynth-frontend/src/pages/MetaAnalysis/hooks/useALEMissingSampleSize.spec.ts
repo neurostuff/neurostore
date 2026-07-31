@@ -1,11 +1,13 @@
 import { vi, Mock } from 'vitest';
-import { renderHook } from '@testing-library/react-hooks';
-import { useGetAnnotationById, useGetStudysetNestedById } from 'hooks';
+import { useQuery } from '@tanstack/react-query';
+import { useGetAnnotationById } from 'hooks';
 import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
+import { renderHook } from '@testing-library/react';
 import useStudiesWithMissingSampleSizeALE from './useALEMissingSampleSize';
 
+vi.mock('@tanstack/react-query');
+
 vi.mock('hooks', () => ({
-    useGetStudysetNestedById: vi.fn(),
     useGetAnnotationById: vi.fn(),
 }));
 
@@ -19,12 +21,12 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
         vi.clearAllMocks();
         (useProjectExtractionStudysetId as Mock).mockReturnValue('studyset-1');
         (useProjectExtractionAnnotationId as Mock).mockReturnValue('annotation-1');
-        (useGetStudysetNestedById as Mock).mockReturnValue({ data: undefined });
+        (useQuery as Mock).mockReturnValue({ data: undefined });
         (useGetAnnotationById as Mock).mockReturnValue({ data: undefined });
     });
 
     it('returns empty array when algorithm is not ALE', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
                 studies: [{ id: 'study-1', name: 'Study 1', metadata: null }],
             },
@@ -43,7 +45,7 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('returns empty array when studyset has no studies', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: { studies: [] },
         });
         (useGetAnnotationById as Mock).mockReturnValue({
@@ -55,7 +57,7 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('returns empty array when annotation has no notes', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
                 studies: [{ id: 'study-1', name: 'Study 1', metadata: null }],
             },
@@ -69,7 +71,7 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('returns studies missing sample size when ALE and no notes or metadata have sample_size', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
                 studies: [
                     { id: 'study-1', name: 'Study One', metadata: null },
@@ -93,7 +95,7 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('excludes study when annotation notes for that study have sample_size', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
                 studies: [
                     { id: 'study-1', name: 'Study One', metadata: null },
@@ -116,11 +118,9 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('excludes study when study metadata has sample_size', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
-                studies: [
-                    { id: 'study-1', name: 'Study One', metadata: { sample_size: 15 } },
-                ],
+                studies: [{ id: 'study-1', name: 'Study One', metadata: { sample_size: 15 } }],
             },
         });
         (useGetAnnotationById as Mock).mockReturnValue({
@@ -132,7 +132,7 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('includes study when only some notes for that study have sample_size', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
                 studies: [{ id: 'study-1', name: 'Study One', metadata: null }],
             },
@@ -152,7 +152,7 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('handles studies as string ids', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
                 studies: ['study-1', 'study-2'],
             },
@@ -168,7 +168,7 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('skips study when studyId is falsy', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
                 studies: [
                     { id: '', name: 'Empty', metadata: null },
@@ -186,7 +186,7 @@ describe('useStudiesWithMissingSampleSizeALE', () => {
     });
 
     it('does not treat sample_size 0 as missing (valid number)', () => {
-        (useGetStudysetNestedById as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: {
                 studies: [{ id: 'study-1', name: 'Study One', metadata: null }],
             },

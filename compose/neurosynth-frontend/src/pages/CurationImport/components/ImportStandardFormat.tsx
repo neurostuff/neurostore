@@ -1,4 +1,4 @@
-import FileUploadIcon from '@mui/icons-material/FileUpload';
+import { FileUpload } from '@mui/icons-material';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
@@ -68,11 +68,15 @@ interface CSLJSON {
     volume?: string;
 }
 
-const ImportStandardFormat: React.FC<{
+const ImportStandardFormat = ({
+    onNavigate,
+    onImportStubs,
+    onFileUpload,
+}: {
     onNavigate: (button: ENavigationButton) => void;
     onImportStubs: (stubs: ICurationStubStudy[]) => void;
     onFileUpload: (fileName: string) => void;
-}> = ({ onNavigate, onImportStubs, onFileUpload }) => {
+}) => {
     const [source, setSource] = useState<ISource>();
     const [uploadState, setUploadState] = useState<{
         stubs: ICurationStubStudy[];
@@ -222,7 +226,7 @@ const ImportStandardFormat: React.FC<{
             {source && (
                 <>
                     <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-                        <Button component="label" endIcon={<FileUploadIcon />}>
+                        <Button component="label" endIcon={<FileUpload />}>
                             {uploadState.file?.name || 'Upload a valid .enw, .bib, or .ris file'}
                             <input onChange={handleFileUpload} type="file" hidden />
                         </Button>

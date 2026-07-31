@@ -7,6 +7,7 @@ import CurationSearchPage from 'pages/CurationImport/CurationSearchPage';
 import ExtractionPage from 'pages/Extraction/ExtractionPage';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import HelpPage from 'pages/HelpPage/HelpPage';
+import MetaAnalysisRedirect from 'pages/MetaAnalysis/MetaAnalysisRedirect';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
 import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
@@ -34,7 +35,7 @@ const MetaAnalysisPage = React.lazy(() => import('pages/MetaAnalysis/MetaAnalysi
 
 const CurationPage = React.lazy(() => import('pages/Curation/CurationPage'));
 
-const BaseNavigation: React.FC = () => {
+const BaseNavigation = () => {
     return (
         <ErrorBoundary
             fallback={
@@ -229,6 +230,7 @@ const BaseNavigation: React.FC = () => {
                             </Box>
                         }
                     />
+                    <Route path="/meta-analyses/:metaAnalysisId" element={<MetaAnalysisRedirect />} />
                     <Route
                         path="*"
                         element={

@@ -3,7 +3,7 @@ import { IconButton, IconButtonOwnProps } from '@mui/material';
 
 const DOCS_PREFIX = 'https://neurostuff.github.io/compose-docs/';
 
-const ToDocsIcon: React.FC<IconButtonOwnProps & { url: string }> = ({ url, ...props }) => {
+const ToDocsIcon = ({  url, ...props  }: IconButtonOwnProps & { url: string }) => {
     return (
         <IconButton
             {...props}

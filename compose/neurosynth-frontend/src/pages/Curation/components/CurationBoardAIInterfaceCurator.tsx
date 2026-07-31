@@ -1,13 +1,10 @@
-import { ChevronLeft } from '@mui/icons-material';
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { ChangeHistory, ChevronLeft, TableRows } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
-import { GridTableRowsIcon } from '@mui/x-data-grid';
 import { Row, Table } from '@tanstack/react-table';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import { useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
-import { getCurationSearchPath } from 'pages/CurationImport/CurationSearchPage.helpers';
 import {
     useProjectAnalysisType,
     useProjectCurationColumns,
@@ -15,7 +12,7 @@ import {
     useProjectCurationIsPrisma,
     useProjectUser,
 } from 'stores/projects/ProjectStore';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import useCuratorTableState from '../hooks/useCuratorTableState';
@@ -25,6 +22,7 @@ import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
+import { getCurationSearchPath } from 'pages/CurationImport/CurationSearchPage.helpers';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
@@ -33,7 +31,7 @@ export interface ICurationBoardAIInterfaceCurator {
     onSetSelectedStub: (stubId: string | undefined) => void;
 }
 
-const CurationBoardAIInterfaceCurator: React.FC = () => {
+const CurationBoardAIInterfaceCurator = () => {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const { handleSelectNextGroup, selectedGroup } = useCurationBoardGroups();
@@ -158,7 +156,7 @@ const CurationBoardAIInterfaceCurator: React.FC = () => {
                         )}
                         {UIMode === 'FOCUSMODE' && (
                             <Button
-                                startIcon={<GridTableRowsIcon />}
+                                startIcon={<TableRows />}
                                 sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                                 size="small"
                                 color="secondary"
@@ -197,7 +195,7 @@ const CurationBoardAIInterfaceCurator: React.FC = () => {
                                     variant="outlined"
                                     size="small"
                                     style={{ marginRight: '0.5rem', fontSize: '12px' }}
-                                    startIcon={<ChangeHistoryIcon />}
+                                    startIcon={<ChangeHistory />}
                                 >
                                     PRISMA diagram
                                 </Button>

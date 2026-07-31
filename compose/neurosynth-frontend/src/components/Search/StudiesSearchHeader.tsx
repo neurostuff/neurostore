@@ -1,4 +1,3 @@
-import SearchIcon from '@mui/icons-material/Search';
 import { Alert, Box, Button, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar.styles';
 import {
@@ -19,6 +18,7 @@ import SearchFilterChip from './SearchFilterChip';
 import SearchSelectSortChip from './SearchSelectSortChip';
 import { SearchBy, SearchByMapping } from 'components/Search/search.types';
 import { EAnalysisType } from 'hooks/projects/Project.types';
+import { Search } from '@mui/icons-material';
 
 const searchPlaceholderExamples = [
     'Try: smoking -marijuana',
@@ -134,7 +134,7 @@ const StudiesSearchHeader: React.FC<IStudiesSearchHeader> = ({ onSearch, searchB
                                 width: '150px',
                             }}
                             variant="contained"
-                            startIcon={<SearchIcon />}
+                            startIcon={<Search />}
                         >
                             Search
                         </Button>

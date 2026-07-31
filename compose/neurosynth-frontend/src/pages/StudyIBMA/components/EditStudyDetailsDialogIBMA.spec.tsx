@@ -35,6 +35,7 @@ const mockEnsureWritableStudy = vi.fn().mockResolvedValue({
     didClone: false,
     idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
 });
+const mockNavigateToStudyEdit = vi.fn();
 
 const enqueueSnackbarMock = () => (useSnackbar() as unknown as { enqueueSnackbar: Mock }).enqueueSnackbar;
 
@@ -59,6 +60,7 @@ describe('EditStudyDetailsDialogIBMA', () => {
         });
         (useEnsureWritableStudy as Mock).mockReturnValue({
             ensureWritableStudy: mockEnsureWritableStudy,
+            navigateToStudyEdit: mockNavigateToStudyEdit,
             isLoading: false,
             userOwnsStudy: true,
         });
@@ -162,6 +164,7 @@ describe('EditStudyDetailsDialogIBMA', () => {
             studyRequest: expect.objectContaining({ name: 'Cloned title' }),
         });
         expect(mockMutateAsync).not.toHaveBeenCalled();
+        expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
         expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Study cloned and saved', { variant: 'success' });
     });
 });

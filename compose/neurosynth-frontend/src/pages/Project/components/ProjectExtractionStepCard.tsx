@@ -1,6 +1,4 @@
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import CheckIcon from '@mui/icons-material/Check';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import { Bookmark, Check, QuestionMark } from '@mui/icons-material';
 import { Box, Card, CardContent, Typography, CircularProgress, CardActions, Button } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
@@ -21,7 +19,7 @@ const getPercentageComplete = (extractionSummary: IExtractionSummary): number =>
     return Math.round(percentageComplete);
 };
 
-const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }) => {
+const ProjectExtractionStepCard = ({ disabled }: { disabled: boolean }) => {
     const [markAllAsCompleteConfirmationDialogIsOpen, setMarkAllAsCompleteConfirmationDialogIsOpen] = useState(false);
     const studysetId = useProjectExtractionStudysetId();
     const { projectId } = useParams<{ projectId: string }>();
@@ -76,19 +74,19 @@ const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }
 
                         <Box sx={ProjectComponentsStyles.statusContainer}>
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                                <QuestionMarkIcon sx={ProjectExtractionStep.uncategorizedIcon} />
+                                <QuestionMark sx={ProjectExtractionStep.uncategorizedIcon} />
                                 <Typography sx={{ color: 'warning.dark' }}>
                                     {extractionSummary.unreviewed} unreviewed
                                 </Typography>
                             </Box>
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                                <BookmarkIcon sx={ProjectExtractionStep.saveForLater} />
+                                <Bookmark sx={ProjectExtractionStep.saveForLater} />
                                 <Typography sx={{ color: 'info.main' }}>
                                     {extractionSummary.savedForLater} saved for later
                                 </Typography>
                             </Box>
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                                <CheckIcon sx={ProjectExtractionStep.checkIcon} />
+                                <Check sx={ProjectExtractionStep.checkIcon} />
                                 <Typography sx={{ color: 'success.main' }}>
                                     {extractionSummary.completed} completed
                                 </Typography>

@@ -7,7 +7,7 @@ import UncategorizedImagesColumn, {
 } from 'pages/StudyIBMA/components/UncategorizedImagesColumn';
 import { vi } from 'vitest';
 
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 
 const img = (id: string, analysis?: string): ImageReturn => ({
     id,

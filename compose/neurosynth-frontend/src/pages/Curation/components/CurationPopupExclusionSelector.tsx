@@ -1,5 +1,4 @@
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import { ArrowDropDown, HighlightOff } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
@@ -37,7 +36,7 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
     trim: true,
 });
 
-const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props) => {
+const CurationPopupExclusionSelector = (props: IExclusionSelectorPopup) => {
     const excludeButtonRef = useRef<HTMLDivElement>(null);
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [exclusions, setExclusions] = useState<AutoSelectOption[]>([]);
@@ -206,7 +205,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
             <div ref={excludeButtonRef}>
                 <ButtonGroup size="small" disabled={!!props.disabled} color="error">
                     <LoadingButton
-                        startIcon={<HighlightOffIcon />}
+                        startIcon={<HighlightOff />}
                         text={defaultExclusion.label + (props.exclusionButtonEndText || '')}
                         sx={{
                             fontSize: '12px',
@@ -217,11 +216,11 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                     />
                     {!props.onlyShowDefaultExclusion && (
                         <Button
-                            startIcon={defaultExclusion ? undefined : <HighlightOffIcon />}
+                            startIcon={defaultExclusion ? undefined : <HighlightOff />}
                             sx={{ width: '32px' }}
                             onClick={() => props.onOpenPopup()}
                         >
-                            <ArrowDropDownIcon sx={{ fontSize: '22px' }} />
+                            <ArrowDropDown sx={{ fontSize: '22px' }} />
                         </Button>
                     )}
                 </ButtonGroup>

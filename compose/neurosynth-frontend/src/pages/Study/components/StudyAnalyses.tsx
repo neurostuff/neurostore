@@ -4,10 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import StudyAnalysis from 'pages/Study/components/StudyAnalysis';
 import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
-const StudyAnalyses: React.FC<{
-    id: string | undefined;
-    analyses: IStoreAnalysis[];
-}> = (props) => {
+const StudyAnalyses = (props: { id: string | undefined; analyses: IStoreAnalysis[] }) => {
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | undefined>('');
 
     useEffect(() => {
@@ -29,17 +26,19 @@ const StudyAnalyses: React.FC<{
     }, [props.analyses, selectedAnalysisId]);
 
     return (
-        <Box sx={{ display: 'flex' }}>
-            <StudyAnalysesList
-                selectedId={selectedAnalysisId}
-                onSelectAnalysisIndex={handleSelectAnalysis}
-                analyses={props.analyses}
-            />
-            {selectedAnalysis && (
-                <Box sx={{ padding: '1rem', width: 'calc(100% - 250px - 2rem)', height: '100%' }}>
-                    <StudyAnalysis {...selectedAnalysis} />
-                </Box>
-            )}
+        <Box>
+            <Box sx={{ display: 'flex' }}>
+                <StudyAnalysesList
+                    selectedId={selectedAnalysisId}
+                    onSelectAnalysisIndex={handleSelectAnalysis}
+                    analyses={props.analyses}
+                />
+                {selectedAnalysis && (
+                    <Box sx={{ padding: '1rem', width: 'calc(100% - 250px - 2rem)', height: '100%' }}>
+                        <StudyAnalysis {...selectedAnalysis} />
+                    </Box>
+                )}
+            </Box>
         </Box>
     );
 };

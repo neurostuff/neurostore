@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { StudysetRequest, StudysetReturn } from 'neurostore-typescript-sdk';
 import API from 'api/api.config';
 import { useSnackbar } from 'notistack';
@@ -11,17 +11,15 @@ const useUpdateStudyset = () => {
     return useMutation<
         AxiosResponse<StudysetReturn>,
         AxiosError,
-        {
-            studysetId: string;
-            studyset: StudysetRequest;
-        },
+        { studysetId: string; studyset: StudysetRequest },
         unknown
     >({
         mutationFn: (args) => API.NeurostoreServices.StudySetsService.studysetsIdPut(args.studysetId, args.studyset),
+
         onSuccess: () => {
-            queryClient.invalidateQueries(studysetQueries.lists());
-            queryClient.invalidateQueries(studysetQueries.details());
+            queryClient.invalidateQueries({ queryKey: studysetQueries.details() });
         },
+
         onError: () => {
             enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });
         },

@@ -1,4 +1,4 @@
-import SearchIcon from '@mui/icons-material/Search';
+import { Search } from '@mui/icons-material';
 import { Box, Divider, InputAdornment, ListItemText, Menu, MenuItem, TextField, Typography } from '@mui/material';
 import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -70,7 +70,7 @@ const SearchableAnalysisMenu: React.FC<SearchableAnalysisMenuProps> = ({
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                                <SearchIcon fontSize="small" color="action" />
+                                <Search fontSize="small" color="action" />
                             </InputAdornment>
                         ),
                     }}

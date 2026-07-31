@@ -1,8 +1,9 @@
 import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
-import { flexRender } from '@tanstack/react-table';
+import { flexRender, RowData } from '@tanstack/react-table';
+import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
+import { useState } from 'react';
 import { useProjectCurationPrismaConfig } from 'stores/projects/ProjectStore';
-import React, { useState } from 'react';
 import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
@@ -10,12 +11,27 @@ import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfac
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
 
-const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCurator> = ({
+//allows us to define custom properties for our columns
+declare module '@tanstack/react-table' {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface ColumnMeta<TData extends RowData, TValue> {
+        columnLabel?: string;
+        AIExtractor?: EAIExtractors;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface TableMeta<TData extends RowData> {
+        curatorTableOnRemoveColumn?: (column: string) => void;
+        curatorTableOnAddColumn?: (column: string) => void;
+    }
+}
+
+const CurationBoardAIInterfaceCuratorTable = ({
     table,
     onSetSelectedStub,
     selectedStub,
     columnIndex,
-}) => {
+}: ICurationBoardAIInterfaceCurator) => {
     const prismaConfig = useProjectCurationPrismaConfig();
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
 

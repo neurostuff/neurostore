@@ -480,10 +480,13 @@ class AnalysisSchema(BaseDataSchema):
         data.pop("weights", None)
 
         if not partial and data.get("order") is None:
-            if data.get("study_id") is not None:
+            study_id = data.get("study_id") or (
+                data.get("study") if isinstance(data.get("study"), str) else None
+            )
+            if study_id:
                 max_order = (
                     db.session.query(func.max(Analysis.order))
-                    .filter_by(study_id=data["study_id"])
+                    .filter_by(study_id=study_id)
                     .scalar()
                 )
                 data["order"] = 1 if max_order is None else max_order + 1

@@ -1,10 +1,8 @@
 import { Box, Button, Card, CardContent, Container, Link, Typography } from '@mui/material';
-import ForumIcon from '@mui/icons-material/Forum';
-import EmailIcon from '@mui/icons-material/Email';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Forum, Email, OpenInNew } from '@mui/icons-material';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 
-const HelpPage: React.FC = () => {
+const HelpPage = () => {
     usePrerenderReady(true);
     usePageMetadata({
         title: 'Help & Support | Neurosynth Compose',
@@ -62,7 +60,7 @@ const HelpPage: React.FC = () => {
                                     neuroscience community.
                                 </Typography>
                             ),
-                            icon: <ForumIcon sx={{ fontSize: '2rem', color: 'white' }} />,
+                            icon: <Forum sx={{ fontSize: '2rem', color: 'white' }} />,
                             button: {
                                 label: 'Visit NeuroStars',
                                 href: 'https://neurostars.org/tag/neurosynth-compose',
@@ -86,7 +84,7 @@ const HelpPage: React.FC = () => {
                                     issues.
                                 </Typography>
                             ),
-                            icon: <EmailIcon sx={{ fontSize: '2rem', color: 'white' }} />,
+                            icon: <Email sx={{ fontSize: '2rem', color: 'white' }} />,
                             button: {
                                 label: 'Send Email',
                                 href: 'mailto:neurosynthorg@gmail.com',
@@ -142,7 +140,7 @@ const HelpPage: React.FC = () => {
                                     rel="noopener noreferrer"
                                     size="large"
                                     disableElevation
-                                    endIcon={<OpenInNewIcon />}
+                                    endIcon={<OpenInNew />}
                                     href={button.href}
                                     component="a"
                                     sx={{

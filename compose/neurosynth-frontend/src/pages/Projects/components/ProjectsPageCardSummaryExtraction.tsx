@@ -1,11 +1,9 @@
 import { Box, Button, Typography } from '@mui/material';
 import { IExtractionSummary } from 'hooks/useGetExtractionSummary';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import CheckIcon from '@mui/icons-material/Check';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import { Bookmark, Check, QuestionMark } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
-const ProjectsPageCardExtractionSummary: React.FC<IExtractionSummary & { projectId: string }> = (props) => {
+const ProjectsPageCardExtractionSummary = (props: IExtractionSummary & { projectId: string }) => {
     const { savedForLater, completed, unreviewed: uncategorized, projectId } = props;
 
     return (
@@ -13,19 +11,19 @@ const ProjectsPageCardExtractionSummary: React.FC<IExtractionSummary & { project
             <Typography fontWeight="bold">Extraction Summary:</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0 0.7rem 0' }}>
                 <Box sx={{ display: 'flex' }}>
-                    <QuestionMarkIcon color="warning" fontSize="small" />
+                    <QuestionMark color="warning" fontSize="small" />
                     <Typography color="warning.dark" mr="2rem">
                         {uncategorized} unreviewed
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex' }}>
-                    <BookmarkIcon color="info" fontSize="small" />
+                    <Bookmark color="info" fontSize="small" />
                     <Typography color="info.dark" mr="2rem">
                         {savedForLater} saved for later
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex' }}>
-                    <CheckIcon color="success" />
+                    <Check color="success" />
                     <Typography color="success.main">{completed} completed</Typography>
                 </Box>
             </Box>

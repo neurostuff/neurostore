@@ -1,18 +1,23 @@
 import { TableBody } from '@mui/material';
 import { Table } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationBoardAIInterfaceCuratorTableRow from './CurationBoardAIInterfaceCuratorTableRow';
 
 const isNotBrowserOrIsFirefox = typeof window === 'undefined' || navigator.userAgent.includes('Firefox');
 
-const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
+const CurationBoardAIInterfaceCuratorTableBody = ({
+    table,
+    onSelect,
+    tableContainerElement,
+    selectedStub,
+}: {
     table: Table<ICurationTableStudy>;
     onSelect: (id: string | undefined) => void;
     tableContainerElement: HTMLDivElement | null;
     selectedStub: ICurationTableStudy | undefined;
-}> = ({ table, onSelect, tableContainerElement, selectedStub }) => {
+}) => {
     const rows = table.getRowModel().rows;
     const virtualizer = useVirtualizer<HTMLDivElement, HTMLTableRowElement>({
         count: rows.length,

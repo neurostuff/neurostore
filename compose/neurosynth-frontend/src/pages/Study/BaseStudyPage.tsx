@@ -1,15 +1,16 @@
 import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import Study from 'pages/Study/components/Study';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetStudyNestedById } from 'hooks';
 import useGetBaseStudyNestedById from 'hooks/studies/useGetBaseStudyNestedById';
+import studyQueries from 'hooks/studies/studyQueries';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { studyAnalysesToStoreAnalyses } from 'stores/study/StudyStore.helpers';
 import { useInitStudyStore } from 'stores/study/StudyStore';
 
-const BaseStudyPage: React.FC = (props) => {
+const BaseStudyPage = () => {
     const navigate = useNavigate();
     const initStudyStore = useInitStudyStore();
 
@@ -29,7 +30,7 @@ const BaseStudyPage: React.FC = (props) => {
         data: study,
         isLoading: studyIsLoading,
         isError: studyIsError,
-    } = useGetStudyNestedById(studyVersionId || '');
+    } = useQuery(studyQueries.studies.byIdNested(studyVersionId));
 
     // init the study store with the given version when a new one is set
     useEffect(() => {

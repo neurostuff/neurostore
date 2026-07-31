@@ -1,4 +1,4 @@
-const MockDynamicForm: React.FC<any> = (props) => {
+const MockDynamicForm = (props: any) => {
     const specificationKeys = Object.keys(props.specification);
 
     return (

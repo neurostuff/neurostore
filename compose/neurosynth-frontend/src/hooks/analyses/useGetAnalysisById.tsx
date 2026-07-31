@@ -1,9 +1,8 @@
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import analysisQueries from 'hooks/analyses/analysisQueries';
 
 const useGetAnalysisById = (analysisId: string | undefined) => {
-    const query = analysisQueries.analyses.byId(analysisId);
-    return useQuery(query.queryKey, query.queryFn, { enabled: query.enabled });
+    return useQuery(analysisQueries.analyses.byId(analysisId));
 };
 
 export default useGetAnalysisById;

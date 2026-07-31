@@ -10,7 +10,7 @@ import EditSpecificationDialog from './EditSpecificationDialog';
 import MetaAnalysisDangerZone from './MetaAnalysisDangerZone';
 import MetaAnalysisExecution from './MetaAnalysisExecution';
 import MetaAnalysisStatusAlert from './MetaAnalysisStatusAlert';
-import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
+import DisplayMetaAnalysisSpecification from './DisplayMetaAnalysisSpecification';
 import MetaAnalysisInstructions from './MetaAnalysisInstructions';
 import CiteMe from './CiteMe';
 

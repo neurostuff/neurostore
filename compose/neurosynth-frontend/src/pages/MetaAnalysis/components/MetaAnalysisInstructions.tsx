@@ -8,11 +8,11 @@ import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { localStorageStatusAlertKey } from './MetaAnalysisStatusAlert';
 
-const MetaAnalysisInstructions: React.FC<{
+const MetaAnalysisInstructions = ({  metaAnalysisId, onSubmitMetaAnalysisJob = () => {}  }: {
     metaAnalysisId: string;
     onSubmitMetaAnalysisJob?: () => void;
-}> = ({ metaAnalysisId, onSubmitMetaAnalysisJob = () => {} }) => {
-    const { mutate: submitMetaAnalysisJob, isLoading: submitMetaAnalysisJobIsLoading } = useSubmitMetaAnalysisJob();
+}) => {
+    const { mutate: submitMetaAnalysisJob, isPending: submitMetaAnalysisJobIsLoading } = useSubmitMetaAnalysisJob();
     const { enqueueSnackbar } = useSnackbar();
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
     const handleCloseConfirmationDialog = (confirm: boolean | undefined) => {

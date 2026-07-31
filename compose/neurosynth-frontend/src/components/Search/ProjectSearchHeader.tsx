@@ -1,4 +1,4 @@
-import SearchIcon from '@mui/icons-material/Search';
+import { Search } from '@mui/icons-material';
 import { Box, Button, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar.styles';
 import { PROJECT_SORT_OPTIONS, SortBy, SortByEnumToString } from 'pages/Study/Study.types';
@@ -95,7 +95,7 @@ const ProjectSearchHeader: React.FC<IProjectSearchHeader> = (props) => {
                                 width: '150px',
                             }}
                             variant="contained"
-                            startIcon={<SearchIcon />}
+                            startIcon={<Search />}
                         >
                             Search
                         </Button>

@@ -7,16 +7,15 @@ import re
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from flask import current_app, request  # jsonify
-from flask.views import MethodView
+from connexion import request
 from marshmallow import ValidationError
 from psycopg2 import errors
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import raiseload, selectinload
 from webargs import fields
-from webargs.flaskparser import parser
 
+from neurostore.asgi_requests import parse_query_parameters
 from neurostore.cache_versioning import bump_cache_versions, get_cache_version_for_path
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import (
@@ -56,8 +55,9 @@ from neurostore.services.has_media_flags import (
 )
 
 
-@parser.error_handler
 def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
+    """Translate legacy parser validation failures to the API error contract."""
+    del req, schema, error_status_code, error_headers
     abort_schema_validation(err.messages)
 
 
@@ -98,7 +98,7 @@ class DefaultObjectViewPolicy:
         return record
 
 
-class BaseView(MethodView):
+class BaseView:
     _model = None
     _o2m = {}
     _m2o = {}
@@ -195,13 +195,14 @@ class BaseView(MethodView):
         if not base_studies:
             return
 
-        if current_app.config.get("BASE_STUDY_FLAGS_ASYNC", True):
+        config = request.state.settings
+        if config.get("BASE_STUDY_FLAGS_ASYNC", True):
             reason = f"{self.__class__.__name__}.update_base_studies"
             enqueue_base_study_flag_updates(base_studies, reason=reason)
         else:
             recompute_media_flags(base_studies)
 
-        if current_app.config.get("BASE_STUDY_METADATA_ASYNC", True):
+        if config.get("BASE_STUDY_METADATA_ASYNC", True):
             reason = f"{self.__class__.__name__}.update_base_studies"
             enqueue_base_study_metadata_updates(base_studies, reason=reason)
 
@@ -258,7 +259,9 @@ class BaseView(MethodView):
         return self.object_view_policy_cls(self)
 
     @classmethod
-    def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
+    def update_or_create(
+        cls, data, id=None, user=None, record=None, flush=True, settings=None
+    ):
         mutation_context = MutationContext(
             resource_cls=cls,
             data=data,
@@ -266,6 +269,7 @@ class BaseView(MethodView):
             user=user,
             record=record,
             flush=flush,
+            settings=settings or {},
         )
         mutation_policy = cls.build_mutation_policy(mutation_context)
         return MutationExecutor(mutation_context, mutation_policy).execute()
@@ -285,11 +289,11 @@ def cache_key_creator(*args, **kwargs):
     # 1. the query arguments (including extra_args if present)
     # 2. the path
     # 3. the user
-    path = request.path
+    path = request.url.path
     user = get_current_user().id if get_current_user() else ""
 
     # Get query args from request
-    query_items = list(request.args.items(multi=True))
+    query_items = list(request.query_params.multi_items())
 
     # If extra_args is present, merge into query_items
     extra_args = kwargs.get("extra_args")
@@ -316,11 +320,11 @@ class ObjectView(BaseView):
     )
     def get(self, id):
         object_view_policy = self.build_object_view_policy()
-        args = parser.parse(self._view_fields, request, location="query")
+        args = parse_query_parameters(self._view_fields, request)
         if args.get("nested") is None:
-            args["nested"] = request.args.get("nested", False) == "true"
+            args["nested"] = request.query_params.get("nested", "false") == "true"
         if args.get("summary") is None:
-            args["summary"] = request.args.get("summary", False) == "true"
+            args["summary"] = request.query_params.get("summary", "false") == "true"
 
         payload = object_view_policy.get_payload(id, args)
         if payload is not None:
@@ -340,9 +344,9 @@ class ObjectView(BaseView):
             {"Content-Type": "application/json"},
         )
 
-    def put(self, id):
+    def put(self, id, body):
         object_view_policy = self.build_object_view_policy()
-        request_data = self.insert_data(id, request.json)
+        request_data = self.insert_data(id, body)
         schema = self.__class__._schema()
         data = load_schema_or_abort(schema, request_data, partial=True)
 
@@ -354,7 +358,12 @@ class ObjectView(BaseView):
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, id, record=input_record)
+            record = self.__class__.update_or_create(
+                data,
+                id,
+                record=input_record,
+                settings=request.state.settings,
+            )
 
         # clear relevant caches
         # clear the cache for this endpoint
@@ -486,7 +495,7 @@ class ListView(BaseView):
 
     @cache.cached(60 * 60, query_string=True, make_cache_key=cache_key_creator)
     def search(self, extra_args=None):
-        args = parser.parse(self._user_args, request, location="query")
+        args = parse_query_parameters(self._user_args, request)
         if extra_args:
             args.update(extra_args)
 
@@ -590,7 +599,7 @@ class ListView(BaseView):
         # record with most/all of the same details (e.g., DOI for studies)
 
         # Parse arguments using webargs
-        args = parser.parse(self._user_args, request, location="query")
+        args = parse_query_parameters(self._user_args, request)
         source_id = args.get("source_id")
         source = args.get("source") or "neurostore"
 
@@ -601,10 +610,15 @@ class ListView(BaseView):
         if source_id:
             data = self._load_from_source(source, source_id, data)
 
-        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
+        args["nested"] = bool(
+            args.get("nested") or request.query_params.get("source_id")
+        )
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data)
+            record = self.__class__.update_or_create(
+                data,
+                settings=request.state.settings,
+            )
 
         # clear the cache for this endpoint
         with db.session.no_autoflush:

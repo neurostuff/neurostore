@@ -6,7 +6,7 @@ import { useGetStudyNonNestedById } from 'hooks';
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EditStudyDetailsDialogIBMA from './EditStudyDetailsDialogIBMA';
-import EditIcon from '@mui/icons-material/Edit';
+import { Edit } from '@mui/icons-material';
 
 const EditStudyPageHeaderNext: React.FC = () => {
     const { studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -50,7 +50,7 @@ const EditStudyPageHeaderNext: React.FC = () => {
                             disableElevation
                             onClick={() => setStudyDetailsDialogOpen(true)}
                         >
-                            <EditIcon sx={{ fontSize: '1.2rem', mr: 1 }} />
+                            <Edit sx={{ fontSize: '1.2rem', mr: 1 }} />
                             Study Details
                         </Button>
                         <EditStudyDetailsDialogIBMA
@@ -85,13 +85,11 @@ const EditStudyPageHeaderNext: React.FC = () => {
                 )}
                 {pmcid && (
                     <Tooltip placement="top" title="View the full article in HTML form via PubMed Central">
-                        <>
-                            <DisplayLink
-                                sx={{ marginRight: '1rem' }}
-                                label="Full Text (web)"
-                                href={`${PUBMED_CENTRAL_ARTICLE_URL_PREFIX}${pmcid}`}
-                            />
-                        </>
+                        <DisplayLink
+                            sx={{ marginRight: '1rem' }}
+                            label="Full Text (web)"
+                            href={`${PUBMED_CENTRAL_ARTICLE_URL_PREFIX}${pmcid}`}
+                        />
                     </Tooltip>
                 )}
                 {studyName && <DisplayStudyLinkFullText sx={{ marginRight: '1rem' }} studyName={studyName} />}

@@ -1,9 +1,7 @@
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
-import LockIcon from '@mui/icons-material/Lock';
-import PublicIcon from '@mui/icons-material/Public';
+import { ChangeHistory, Lock, Public } from '@mui/icons-material';
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
 import { useGetMetaAnalysesByIds, useGetStudysetNonNestedById } from 'hooks';
-import { EAnalysisType, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
+import { INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
 import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
@@ -23,7 +21,7 @@ const isToday = (date: Date) => {
     );
 };
 
-const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
+const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
     const {
         name,
         description,
@@ -146,12 +144,19 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                     /> */}
                     <Chip
                         label={isPublic ? 'Public' : 'Private'}
-                        icon={isPublic ? <PublicIcon /> : <LockIcon />}
+                        icon={isPublic ? <Public /> : <Lock />}
+                        variant="outlined"
                         size="small"
                         sx={{ mr: '6px' }}
                     />
                     {provenance?.curationMetadata?.prismaConfig?.isPrisma && (
-                        <Chip label="PRISMA" icon={<ChangeHistoryIcon />} size="small" sx={{ mr: '6px', pl: '2px' }} />
+                        <Chip
+                            label="PRISMA"
+                            icon={<ChangeHistory />}
+                            variant="outlined"
+                            size="small"
+                            sx={{ mr: '6px', pl: '2px' }}
+                        />
                     )}
                     {studyset && (
                         <Chip size="small" label={`${(studyset.studies || []).length} studies`} sx={{ mr: '6px' }} />

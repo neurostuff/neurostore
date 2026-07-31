@@ -1,6 +1,6 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MetaAnalysis, MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import API from 'api/api.config';
 
@@ -27,28 +27,27 @@ const useUpdateMetaAnalysis = () => {
     const updateMetaAnalysisMutation = useMutation<
         AxiosResponse<MetaAnalysisReturn>,
         AxiosError,
-        {
-            metaAnalysisId: string;
-            metaAnalysis: Partial<MetaAnalysis>;
-        },
+        { metaAnalysisId: string; metaAnalysis: Partial<MetaAnalysis> },
         unknown
-    >(
-        (update) =>
+    >({
+        mutationFn: (update) =>
             API.NeurosynthServices.MetaAnalysisService.metaAnalysesIdPut(
                 update.metaAnalysisId,
                 sanitizeMetaAnalysisPayload(update.metaAnalysis)
             ),
-        {
-            onSuccess: () => {
-                queryClient.invalidateQueries('meta-analyses');
-            },
-            onError: () => {
-                enqueueSnackbar('there was an error updating the meta-analysis', {
-                    variant: 'error',
-                });
-            },
+
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['meta-analyses']
+            });
+        },
+
+        onError: () => {
+            enqueueSnackbar('there was an error updating the meta-analysis', {
+                variant: 'error',
+            });
         }
-    );
+    });
 
     return updateMetaAnalysisMutation;
 };

@@ -4,7 +4,7 @@ import SearchableAnalysisMenu from 'pages/StudyIBMA/components/SearchableAnalysi
 import ImagesList from 'pages/StudyIBMA/components/ImagesList';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import React, { useCallback, useState } from 'react';
-import { useIsMutating } from 'react-query';
+import { useIsMutating } from '@tanstack/react-query';
 import analysisQueries from 'hooks/analyses/analysisQueries';
 
 type MoveMenuAnchor = { el: HTMLElement; imageId: string } | null;

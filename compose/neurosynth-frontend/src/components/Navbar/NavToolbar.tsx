@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { KeyboardArrowDown, OpenInNew } from '@mui/icons-material';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
 import CreateProjectButton from 'components/Buttons/CreateProjectButton';
 import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar';
@@ -10,7 +9,7 @@ import { INav } from './Navbar';
 import NavbarStyles from './Navbar.styles';
 import NavToolbarStyles from './NavToolbar.styles';
 
-const NavToolbar: React.FC<INav> = (props) => {
+const NavToolbar = (props: INav) => {
     const { isAuthenticated } = useAuth0();
     const navigate = useNavigate();
 
@@ -53,7 +52,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                                 NavToolbarStyles.menuItemPadding,
                                 NavToolbarStyles.menuItem,
                             ],
-                            endIcon: <KeyboardArrowDownIcon />,
+                            endIcon: <KeyboardArrowDown />,
                         }}
                         options={[
                             {
@@ -75,13 +74,13 @@ const NavToolbar: React.FC<INav> = (props) => {
                                 NavToolbarStyles.menuItemPadding,
                                 NavToolbarStyles.menuItem,
                             ],
-                            endIcon: <KeyboardArrowDownIcon />,
+                            endIcon: <KeyboardArrowDown />,
                         }}
                         options={[
                             {
                                 label: (
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                        Documentation <OpenInNewIcon fontSize="small" sx={{ ml: 1 }} />
+                                        Documentation <OpenInNew fontSize="small" sx={{ ml: 1 }} />
                                     </Box>
                                 ),
                                 onClick: () => window.open('https://neurostuff.github.io/compose-docs/', '_blank'),

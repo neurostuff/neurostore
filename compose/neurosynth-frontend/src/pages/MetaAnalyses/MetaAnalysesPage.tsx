@@ -6,7 +6,7 @@ import { useGetMetaAnalysesPublic } from 'hooks';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import { useNavigate } from 'react-router-dom';
 
-const MetaAnalysesPage: React.FC = () => {
+const MetaAnalysesPage = () => {
     const navigate = useNavigate();
     const { data, isLoading, isError } = useGetMetaAnalysesPublic();
     const isPrerenderReady = !isLoading && (typeof data !== 'undefined' || isError);

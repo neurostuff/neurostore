@@ -66,9 +66,7 @@ const StudyIBMAPage: React.FC = () => {
         return (
             <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <Typography sx={{ color: 'error.main' }} variant="h4">
-                    {annotationError.status === 404
-                        ? 'Annotation not found'
-                        : 'There was an error loading the annotation'}
+                    There was an error loading the annotation
                 </Typography>
             </Box>
         );

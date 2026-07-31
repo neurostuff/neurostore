@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import DebouncedTextField from 'components/DebouncedTextField';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import { useGetWindowHeight, useUserCanEdit } from 'hooks';
 import ImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/ImportFinalizeReviewVirtualizedListItem';
 import {
@@ -23,16 +24,16 @@ import {
     useUpdateCurationImportName,
 } from 'stores/projects/ProjectStore';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FixedSizeList } from 'react-window';
-import { EImportMode, ICurationStubStudy } from '../Curation.types';
+import { EImportMode, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 
-const LIST_HEIGHT = 95;
-
-const CurationBoardAIInterfaceImportSummary: React.FC<{
+const CurationBoardAIInterfaceImportSummary = ({
+    group,
+    onDeleteCurationImport,
+}: {
     group: IGroupListItem;
     onDeleteCurationImport: (curationImportId: string) => void;
-}> = ({ group, onDeleteCurationImport }) => {
+}) => {
     const projectUser = useProjectUser();
     const curationImport = useProjectCurationImport(group.id);
     const updateCurationImportName = useUpdateCurationImportName();
@@ -267,23 +268,13 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                         }}
                     />
                 </Box>
-                <FixedSizeList
-                    height={listHeight < 0 ? 0 : listHeight}
-                    itemCount={filteredStudies.length}
-                    width="100%"
-                    itemSize={LIST_HEIGHT}
-                    itemKey={(index, data) => data.stubs[index]?.id}
-                    layout="vertical"
-                    itemData={{
-                        stubs: filteredStudies,
-                    }}
-                    overscanCount={3}
-                >
-                    {({ index, data, style }) => {
-                        const stub = data.stubs[index];
-                        return <ImportFinalizeReviewVirtualizedListItem {...stub} style={style} />;
-                    }}
-                </FixedSizeList>
+                <VirtualizedList
+                    rows={filteredStudies}
+                    listHeightInPx={listHeight < 0 ? 0 : listHeight}
+                    overscan={3}
+                    getItemKey={(stub) => stub.id}
+                    renderRow={(stub, style) => <ImportFinalizeReviewVirtualizedListItem {...stub} style={style} />}
+                />
             </Box>
         </Box>
     );

@@ -1,25 +1,11 @@
 import { Box, Pagination, TablePagination, Typography } from '@mui/material';
-import { SystemStyleObject } from '@mui/system';
 import ProjectSearchHeader from 'components/Search/ProjectSearchHeader';
 import { getNumTotalPages } from 'components/Search/search.helpers';
+import { IProjectsSearchContainer } from 'components/Search/search.types';
 import SearchContainerStyles from './SearchContainer.styles';
 import { ChangeEvent } from 'react';
-import { ProjectSearchCriteria } from 'hooks/projects/useGetProjects';
 
-export interface IProjectsSearchContainer {
-    onPageChange: (newPage: number) => void;
-    onRowsPerPageChange: (newRowsPerPage: number) => void;
-    onSearch: (searchArgs: Partial<ProjectSearchCriteria>) => void;
-    totalCount: number | undefined;
-    pageSize: number;
-    pageOfResults: number;
-    searchButtonColor?: string;
-    paginationSelectorStyles?: SystemStyleObject;
-    tablePaginationSelectorStyles?: SystemStyleObject;
-    children?: React.ReactNode;
-}
-
-const ProjectsSearchContainer: React.FC<IProjectsSearchContainer> = (props) => {
+const ProjectsSearchContainer = (props: IProjectsSearchContainer) => {
     const {
         onPageChange,
         onRowsPerPageChange,

@@ -1,6 +1,6 @@
 import { INav } from 'components/Navbar/Navbar';
 
-const mockNavToolbar: React.FC<INav> = (props) => {
+const mockNavToolbar = (props: INav) => {
     return (
         <div data-testid="mock-nav-toolbar">
             <button data-testid="toolbar-trigger-login" onClick={() => props.onLogin()}></button>

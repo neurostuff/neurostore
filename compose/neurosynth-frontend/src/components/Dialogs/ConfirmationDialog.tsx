@@ -1,18 +1,18 @@
 import {
     Box,
     Button,
+    ButtonProps,
     Dialog,
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Typography,
     IconButton,
-    ButtonProps,
+    Typography,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import React, { ReactNode, useMemo } from 'react';
+import { Close } from '@mui/icons-material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { ColorOptions } from 'index';
+import { ReactNode, useMemo } from 'react';
 
 export interface IConfirmationDialog {
     isOpen: boolean;
@@ -25,7 +25,7 @@ export interface IConfirmationDialog {
     rejectText?: string;
 }
 
-const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
+const ConfirmationDialog = (props: IConfirmationDialog) => {
     const dialogContent = useMemo(() => {
         if (!props.dialogMessage) return undefined;
 
@@ -44,7 +44,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                 </Box>
                 <Box>
                     <IconButton onClick={() => props.onCloseDialog(undefined)}>
-                        <CloseIcon sx={{ fontSize: '2rem' }} />
+                        <Close sx={{ fontSize: '2rem' }} />
                     </IconButton>
                 </Box>
             </DialogTitle>

@@ -1,4 +1,4 @@
-const mockDynamicFormKwargInput: React.FC = (props) => {
+const mockDynamicFormKwargInput = (props: unknown) => {
     return <div data-testid="dynamic-form-input">kwarg</div>;
 };
 

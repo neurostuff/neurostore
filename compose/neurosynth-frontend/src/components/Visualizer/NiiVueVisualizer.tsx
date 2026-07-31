@@ -1,14 +1,17 @@
-import { Download, HelpOutline, OpenInNew } from '@mui/icons-material';
-import ImageIcon from '@mui/icons-material/Image';
+import { Download, HelpOutline, OpenInNew, Image } from '@mui/icons-material';
 import { Box, Button, Checkbox, Icon, Link, Tooltip, Typography } from '@mui/material';
 import { Niivue, SHOW_RENDER } from '@niivue/niivue';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import ThresholdSlider from './ThresholdSlider';
 
-const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultCollectionLink?: string }> = ({
+const NiiVueVisualizer = ({
     file,
     filename,
     neurovaultCollectionLink: neurovaultCollectionLink,
+}: {
+    file: string;
+    filename: string;
+    neurovaultCollectionLink?: string;
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const niivueRef = useRef<Niivue | null>(null);
@@ -308,7 +311,7 @@ const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultCol
                         size="small"
                         variant="contained"
                         onClick={handleDownloadImage}
-                        endIcon={<ImageIcon />}
+                        endIcon={<Image />}
                         sx={{ marginTop: '0.5rem' }}
                     >
                         Download image

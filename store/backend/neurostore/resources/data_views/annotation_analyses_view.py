@@ -1,7 +1,7 @@
-from flask import request
+from connexion import request
 from sqlalchemy.orm import joinedload, raiseload
-from webargs.flaskparser import parser
 
+from neurostore.asgi_requests import parse_query_parameters
 from neurostore.database import db
 from neurostore.models import Analysis, AnnotationAnalysis, Study
 from neurostore.models.data import StudysetStudy
@@ -33,9 +33,9 @@ class AnnotationAnalysesView(ObjectView, ListView):
         "studyset_study": "StudysetStudiesResource",
     }
 
-    def post(self, arg=None):
-        data = parser.parse(self.__class__._schema(many=True), request)
-        args = parser.parse(self._user_args, request, location="query")
+    def post(self, body):
+        data = self.__class__._schema(many=True).load(body)
+        args = parse_query_parameters(self._user_args, request)
         schema = self._schema(many=True, context=args)
         ids = {d.get("id"): d for d in data if d.get("id")}
         q = AnnotationAnalysis.query.filter(AnnotationAnalysis.id.in_(ids))
@@ -50,6 +50,7 @@ class AnnotationAnalysesView(ObjectView, ListView):
                         payload,
                         id=input_record.id,
                         record=input_record,
+                        settings=request.state.settings,
                     )
                 )
 

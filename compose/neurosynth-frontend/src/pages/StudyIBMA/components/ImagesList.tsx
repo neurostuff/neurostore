@@ -1,5 +1,4 @@
-import DriveFileMoveOutlinedIcon from '@mui/icons-material/DriveFileMoveOutlined';
-import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import { DriveFileMoveOutlined, RemoveCircleOutline } from '@mui/icons-material';
 import {
     CircularProgress,
     IconButton,
@@ -113,7 +112,7 @@ const ImagesList: React.FC<ImagesListProps> = ({
                                                 }
                                                 aria-label="Move image to analysis"
                                             >
-                                                <DriveFileMoveOutlinedIcon fontSize="medium" />
+                                                <DriveFileMoveOutlined fontSize="medium" />
                                             </IconButton>
                                         )}
                                     </Tooltip>
@@ -134,7 +133,7 @@ const ImagesList: React.FC<ImagesListProps> = ({
                                                     }
                                                     aria-label="Remove from analysis"
                                                 >
-                                                    <RemoveCircleOutlineIcon fontSize="medium" />
+                                                    <RemoveCircleOutline fontSize="medium" />
                                                 </IconButton>
                                             )}
                                         </Tooltip>

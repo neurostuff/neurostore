@@ -9,6 +9,7 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     DateTime,
+    Enum,
     Float,
     ForeignKey,
     Index,
@@ -353,6 +354,12 @@ class Project(BaseMixin, db.Model):
 
     name = Column(Text)
     description = Column(Text)
+    type = Column(
+        Enum("CBMA", "IBMA", name="project_type"),
+        nullable=False,
+        default="CBMA",
+        server_default="CBMA",
+    )
     provenance = Column(JSON)
     user_id = Column(Text, ForeignKey("users.external_id"), index=True)
     public = Column(Boolean, default=True, index=True)

@@ -1,4 +1,4 @@
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import { ReportProblem } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import useDeleteMetaAnalysis from 'hooks/metaAnalyses/useDeleteMetaAnalysis';
@@ -8,7 +8,7 @@ import { useProjectUser } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const MetaAnalysisDangerZone: React.FC<{ metaAnalysisId: string | undefined }> = ({ metaAnalysisId }) => {
+const MetaAnalysisDangerZone = ({ metaAnalysisId }: { metaAnalysisId: string | undefined }) => {
     const { projectId } = useParams<{ projectId: string }>();
     const projectUser = useProjectUser();
     const { mutate: deleteMetaAnalysis } = useDeleteMetaAnalysis();
@@ -64,7 +64,7 @@ const MetaAnalysisDangerZone: React.FC<{ metaAnalysisId: string | undefined }> =
                 confirmText="Confirm"
             />
             <Button
-                startIcon={<ReportProblemIcon />}
+                startIcon={<ReportProblem />}
                 onClick={() => setConfirmationDialogIsOpen(true)}
                 variant="contained"
                 disableElevation

@@ -37,7 +37,7 @@ const hints = [
     },
 ];
 
-const ImportSleuthHint: React.FC = () => {
+const ImportSleuthHint = () => {
     return (
         <HelpDialog dialogTitle="Compatible sleuth files">
             <Typography gutterBottom>Neurosynth Compose expects files in a specific format.</Typography>

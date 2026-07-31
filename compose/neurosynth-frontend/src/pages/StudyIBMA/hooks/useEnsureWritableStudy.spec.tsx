@@ -1,17 +1,12 @@
-import { act, renderHook } from '@testing-library/react-hooks';
-import {
-    useGetAnalysesByStudyId,
-    useGetStudyNonNestedById,
-    useGetUncategorizedImagesByStudyId,
-    useUserCanEdit,
-} from 'hooks';
-import { useQueryClient } from 'react-query';
+import { act, renderHook } from '@testing-library/react';
+import { useGetAnalysesByStudyId, useGetStudyNonNestedById, useUserCanEdit } from 'hooks';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Mock, vi } from 'vitest';
 import useCloneStudy from './useCloneStudy';
 import useEnsureWritableStudy from './useEnsureWritableStudy';
 
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 vi.mock('react-router-dom');
 vi.mock('hooks');
 vi.mock('pages/StudyIBMA/hooks/useCloneStudy');
@@ -58,6 +53,10 @@ describe('useEnsureWritableStudy', () => {
             invalidateQueries: vi.fn(),
             fetchQuery: mockFetchQuery.mockResolvedValue(clonedUncategorizedImages),
         });
+        (useQuery as Mock).mockReturnValue({
+            data: uncategorizedImages,
+            isLoading: false,
+        });
 
         (useGetStudyNonNestedById as Mock).mockReturnValue({
             data: { id: studyId, user: 'owner-user' },
@@ -65,10 +64,6 @@ describe('useEnsureWritableStudy', () => {
         });
         (useGetAnalysesByStudyId as Mock).mockReturnValue({
             data: analyses,
-            isLoading: false,
-        });
-        (useGetUncategorizedImagesByStudyId as Mock).mockReturnValue({
-            data: uncategorizedImages,
             isLoading: false,
         });
         (useUserCanEdit as Mock).mockReturnValue(true);
@@ -111,7 +106,7 @@ describe('useEnsureWritableStudy', () => {
         expect(mockNavigate).not.toHaveBeenCalled();
     });
 
-    it('clones, navigates, and returns remapped ids when the user does not own the study', async () => {
+    it('clones and returns remapped ids without navigating when the user does not own the study', async () => {
         (useUserCanEdit as Mock).mockReturnValue(false);
         mockCloneStudy.mockResolvedValue(clonedStudy);
 
@@ -125,7 +120,7 @@ describe('useEnsureWritableStudy', () => {
 
         expect(mockCloneStudy).toHaveBeenCalledWith(studyRequest);
         expect(mockFetchQuery).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith(`/projects/${projectId}/extraction/studies/study-new/edit`);
+        expect(mockNavigate).not.toHaveBeenCalled();
         expect(writableStudy).toEqual({
             studyId: 'study-new',
             didClone: true,

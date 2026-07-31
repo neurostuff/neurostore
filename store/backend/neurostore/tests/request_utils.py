@@ -1,45 +1,33 @@
 import json
 from functools import partialmethod
 
-from starlette.testclient import TestClient as StarletteTestClient
+import httpx
 
 
-class Client(object):
-    def __init__(self, token, test_client=None, prepend="", username=None):
-        self.client_mode = "requests"
+class AsyncClient:
+    """Native ASGI test client that keeps the established request helper API."""
 
-        if test_client is None:
-            from flask import current_app as app
-
-            asgi_app = app.extensions.get("connexion_asgi")
-            connexion_app = app.extensions.get("connexion_app")
-
-            if asgi_app is not None:
-                test_client = StarletteTestClient(asgi_app)
-            elif connexion_app is not None and hasattr(connexion_app, "test_client"):
-                test_client = connexion_app.test_client()
-            else:
-                test_client = app.test_client()
-
-        self.client_flask = hasattr(test_client, "open")
-        self.client_mode = "flask" if self.client_flask else "requests"
+    def __init__(self, token, asgi_app, prepend="", username=None):
+        test_client = httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=asgi_app),
+            base_url="http://testserver",
+            follow_redirects=True,
+        )
 
         self.client = test_client
         self.prepend = prepend
         self.token = token
         self.username = username
 
-    def close(self):
-        if hasattr(self.client, "close"):
-            self.client.close()
+    async def aclose(self):
+        await self.client.aclose()
 
     def _get_headers(self):
         if self.token is not None:
             return {"Authorization": "Bearer %s" % self.token}
-        else:
-            return None
+        return None
 
-    def _make_request(
+    async def _make_request(
         self,
         request,
         route,
@@ -61,31 +49,21 @@ class Client(object):
         headers.setdefault("Accept", content_type)
         route = self.prepend + route
 
-        if self.client_mode == "flask":
-            if data is not None and json_dump is True:
-                data = json.dumps(data)
-
-            return request_function(
-                route,
-                data=data,
-                headers=headers,
-                content_type=content_type,
-                query_string=params,
-            )
-        else:
-            kwargs = {"headers": headers}
-            if params is not None:
-                kwargs["params"] = params
-            if data is not None:
-                if json_dump and content_type == "application/json":
-                    kwargs["json"] = data
-                elif content_type.startswith("multipart/form-data"):
-                    kwargs["files"] = data
-                    kwargs["headers"].pop("Content-Type", None)
-                else:
-                    kwargs["data"] = data
-            response = request_function(route, **kwargs)
-            return ResponseWrapper(response)
+        kwargs = {"headers": headers}
+        if params is not None:
+            kwargs["params"] = params
+        if data is not None:
+            if json_dump and content_type == "application/json":
+                kwargs["json"] = data
+            elif content_type.startswith("multipart/form-data"):
+                kwargs["files"] = data
+                kwargs["headers"].pop("Content-Type", None)
+            elif isinstance(data, (bytes, bytearray, memoryview, str)):
+                kwargs["content"] = data
+            else:
+                kwargs["data"] = data
+        response = await request_function(route, **kwargs)
+        return ResponseWrapper(response)
 
     get = partialmethod(_make_request, "get")
     post = partialmethod(_make_request, "post")

@@ -5,13 +5,13 @@ import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { SortBy, SortByEnumToString } from 'pages/Study/Study.types';
 import { useRef, useState } from 'react';
 
-const SearchSelectSortChip: React.FC<{
+const SearchSelectSortChip = (props: {
     onSelectSort: (searchBy: SortBy) => void;
     onSelectDescOrder: (descOrder: boolean) => void;
     chipLabel: string;
     descOrderChipLabel: string;
     options: SortBy[];
-}> = (props) => {
+}) => {
     const sortByRef = useRef(null);
     const descOrderRef = useRef(null);
     const [sortByPopperIsOpen, setSortByPopperIsOpen] = useState(false);

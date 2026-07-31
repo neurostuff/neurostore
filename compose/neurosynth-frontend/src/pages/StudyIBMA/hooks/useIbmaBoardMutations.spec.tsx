@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react-hooks';
+import { act, renderHook } from '@testing-library/react';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import analysisQueries from 'hooks/analyses/analysisQueries';
 import annotationQueries from 'hooks/annotations/annotationQueries';
@@ -10,12 +10,12 @@ import {
     useUpdateAnnotationById,
     useUpdateImage,
 } from 'hooks';
-import { useQueryClient } from 'react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { vi, Mock } from 'vitest';
 import useIbmaBoardMutations from './useIbmaBoardMutations';
 import useEnsureWritableStudy from './useEnsureWritableStudy';
 
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 vi.mock('hooks');
 vi.mock('pages/StudyIBMA/hooks/useEnsureWritableStudy');
 
@@ -61,11 +61,22 @@ const clonedWritableStudy = {
 };
 
 describe('useIbmaBoardMutations', () => {
+    const mockNavigateToStudyEdit = vi.fn();
+
     beforeEach(() => {
         vi.clearAllMocks();
         mockEnsureWritableStudy.mockClear();
+        mockEnsureWritableStudy.mockResolvedValue({
+            studyId,
+            didClone: false,
+            idMap: {
+                oldAnalysisIdsToNewIdsMap: { 'analysis-1': 'analysis-1' },
+                oldImageIdToNewIdMap: { 'img-1': 'img-1', 'img-2': 'img-2' },
+            },
+        });
         (useEnsureWritableStudy as Mock).mockReturnValue({
             ensureWritableStudy: mockEnsureWritableStudy,
+            navigateToStudyEdit: mockNavigateToStudyEdit,
             isLoading: false,
             userOwnsStudy: true,
         });
@@ -89,8 +100,13 @@ describe('useIbmaBoardMutations', () => {
             description: '',
         });
         expect(mutateAsync(useUpdateAnnotationById as Mock)).not.toHaveBeenCalled();
-        expect(invalidateQueries()).toHaveBeenCalledWith(analysisQueries.analyses.byStudyId(studyId).queryKey);
-        expect(invalidateQueries()).toHaveBeenCalledWith(annotationQueries.byId(annotationId).queryKey);
+        expect(invalidateQueries()).toHaveBeenCalledWith({
+            queryKey: analysisQueries.analyses.byStudyId(studyId).queryKey,
+        });
+        expect(invalidateQueries()).toHaveBeenCalledWith({
+            queryKey: annotationQueries.byId(annotationId).queryKey,
+        });
+        expect(mockNavigateToStudyEdit).not.toHaveBeenCalled();
     });
 
     it('updateAnalysis puts analysis fields', async () => {
@@ -265,9 +281,10 @@ describe('useIbmaBoardMutations', () => {
                 name: '',
                 description: '',
             });
-            expect(invalidateQueries()).toHaveBeenCalledWith(
-                analysisQueries.analyses.byStudyId('cloned-study-1').queryKey
-            );
+            expect(invalidateQueries()).toHaveBeenCalledWith({
+                queryKey: analysisQueries.analyses.byStudyId('cloned-study-1').queryKey,
+            });
+            expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
         });
 
         it('updateAnalysis remaps analysis id through idMap', async () => {
@@ -285,6 +302,7 @@ describe('useIbmaBoardMutations', () => {
                 analysisId: 'analysis-1-cloned',
                 analysis: { name: 'Updated', description: 'Desc' },
             });
+            expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
         });
 
         it('deleteAnalysis remaps analysis id through idMap', async () => {
@@ -295,6 +313,7 @@ describe('useIbmaBoardMutations', () => {
             });
 
             expect(mutateAsync(useDeleteAnalysis as Mock)).toHaveBeenCalledWith('analysis-1-cloned');
+            expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
         });
 
         it('updateImage remaps image and analysis ids through idMap', async () => {
@@ -308,9 +327,10 @@ describe('useIbmaBoardMutations', () => {
                 imageId: 'img-2-cloned',
                 image: { id: 'img-2-cloned', analysis: 'analysis-1-cloned' },
             });
-            expect(invalidateQueries()).toHaveBeenCalledWith(
-                analysisQueries.analyses.byStudyId('cloned-study-1').queryKey
-            );
+            expect(invalidateQueries()).toHaveBeenCalledWith({
+                queryKey: analysisQueries.analyses.byStudyId('cloned-study-1').queryKey,
+            });
+            expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
         });
     });
 });

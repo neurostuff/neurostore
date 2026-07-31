@@ -13,7 +13,7 @@ import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'ho
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import { IStoreStudy } from 'stores/study/StudyStore.helpers';
 
-const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
+const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
     const { id, name, description, doi, pmid, authors, publication: journal, metadata, pmcid, analyses = [] } = props;
     return (
         <Box>

@@ -300,7 +300,7 @@ class PipelineStudyResultsView(ObjectView, ListView):
             # Call cached search (enables cache for study_ids POST)
             return self.search(extra_args=extra_args)
         else:
-            # Standard POST: require authorization (enforced by OpenAPI and Flask)
+            # Standard POST: require authorization enforced by OpenAPI.
             return super().post(body)
 
 

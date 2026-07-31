@@ -1,4 +1,4 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { ErrorOutline } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
@@ -13,21 +13,22 @@ import {
     useProjectNumCurationColumns,
 } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
-import { useIsFetching, useQueryClient } from 'react-query';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
 import studysetQueries from 'hooks/studysets/studysetQueries';
+import annotationQueries from 'hooks/annotations/annotationQueries';
 
-const ExtractionOutOfSync: React.FC = () => {
+const ExtractionOutOfSync = () => {
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: studyset } = useGetStudysetNonNestedById(studysetId);
-    const getStudysetIsRefetching = useIsFetching(studysetQueries.all());
     const numColumns = useProjectNumCurationColumns();
     const setAllowEditMetaAnalyses = useAllowEditMetaAnalyses();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const { mutateAsync: ingest } = useIngest();
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
+    const getStudysetIsRefetching = useIsFetching({ queryKey: studysetQueries.all() });
     const { enqueueSnackbar } = useSnackbar();
     const queryClient = useQueryClient();
 
@@ -99,9 +100,9 @@ const ExtractionOutOfSync: React.FC = () => {
 
             // Invalidate cached studyset data to ensure subsequent queries reflect the newly updated stub mappings,
             // keeping curation and extraction aligned.
-            await queryClient.invalidateQueries(studysetQueries.all());
+            await queryClient.invalidateQueries({ queryKey: studysetQueries.all() });
 
-            queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries({ queryKey: annotationQueries.all() });
 
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });
 
@@ -118,7 +119,7 @@ const ExtractionOutOfSync: React.FC = () => {
     return (
         <Box sx={ExtractionOutOfSyncStyles.banner}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ErrorOutlineIcon sx={{ marginRight: '10px', fontSize: '2.5rem' }} />
+                <ErrorOutline sx={{ marginRight: '10px', fontSize: '2.5rem' }} />
                 <Box>
                     <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
                         <b>This studyset is out of sync</b>

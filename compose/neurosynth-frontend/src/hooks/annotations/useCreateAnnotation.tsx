@@ -3,7 +3,7 @@ import { AxiosError } from 'axios';
 import annotationQueries from 'hooks/annotations/annotationQueries';
 import { AnnotationRequestOneOf } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AnnotationReturnOneOfWithNoteCollection } from './annotationQueries.types';
 
 const useCreateAnnotation = () => {
@@ -18,8 +18,8 @@ const useCreateAnnotation = () => {
             annotation: Partial<AnnotationRequestOneOf>;
         },
         unknown
-    >(
-        async (args) => {
+    >({
+        mutationFn: async (args) => {
             const response = await API.NeurostoreServices.AnnotationsService.annotationsPost(
                 args.source,
                 args.sourceId,
@@ -27,15 +27,13 @@ const useCreateAnnotation = () => {
             );
             return response.data as AnnotationReturnOneOfWithNoteCollection;
         },
-        {
-            onSuccess: () => {
-                queryClient.invalidateQueries(annotationQueries.all());
-            },
-            onError: () => {
-                enqueueSnackbar('there was an error creating the annotation', { variant: 'error' });
-            },
-        }
-    );
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: annotationQueries.all() });
+        },
+        onError: () => {
+            enqueueSnackbar('there was an error creating the annotation', { variant: 'error' });
+        },
+    });
 };
 
 export default useCreateAnnotation;

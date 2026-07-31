@@ -17,22 +17,22 @@ import {
 
 const useCloneStudy = () => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
-    const { mutateAsync: createStudy, isLoading: cloneStudyIsLoading } = useCreateStudy();
-    const { mutateAsync: updateStudyset, isLoading: updateStudysetIsLoading } = useUpdateStudyset();
+    const { mutateAsync: createStudy, isPending: cloneStudyIsPending } = useCreateStudy();
+    const { mutateAsync: updateStudyset, isPending: updateStudysetIsPending } = useUpdateStudyset();
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
-    const { mutateAsync: updateAnnotationAnalyses, isLoading: updateAnnotationAnalysesIsLoading } =
+    const { mutateAsync: updateAnnotationAnalyses, isPending: updateAnnotationAnalysesIsPending } =
         useUpdateAnnotationByAnnotationAndAnalysisIds(annotationId);
     const replaceStudyWithNewClonedStudy = useProjectExtractionReplaceStudyListStatusId();
     const { data: annotation, isLoading: annotationIsLoading } = useGetAnnotationById(annotationId);
     const { data: studyset, isLoading: studysetIsLoading } = useGetStudysetNonNestedById(studysetId);
 
     const isLoading =
-        cloneStudyIsLoading ||
-        updateStudysetIsLoading ||
+        cloneStudyIsPending ||
+        updateStudysetIsPending ||
         annotationIsLoading ||
         studysetIsLoading ||
-        updateAnnotationAnalysesIsLoading;
+        updateAnnotationAnalysesIsPending;
 
     const handleUpdateStudyset = async (clonedStudyId: string) => {
         if (!studyset?.studies || !studyId || !studysetId) return;
@@ -65,9 +65,7 @@ const useCloneStudy = () => {
          */
         const notesUpdate = (clone.analyses ?? [])
             .map(({ id, name }) => {
-                const foundNote = annotationNotes.find(
-                    (note) => note.study === studyId && note.analysis_name === name
-                );
+                const foundNote = annotationNotes.find((note) => note.study === studyId && note.analysis_name === name);
                 if (!foundNote) return;
                 return {
                     ...foundNote,

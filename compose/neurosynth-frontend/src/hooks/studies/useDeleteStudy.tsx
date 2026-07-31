@@ -1,19 +1,23 @@
+import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API from 'api/api.config';
 import studyQueries from 'hooks/studies/studyQueries';
 
 const useDeleteStudy = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation({
+    return useMutation<AxiosResponse<void>, AxiosError, string, unknown>({
         mutationFn: (id: string) => API.NeurostoreServices.StudiesService.studiesIdDelete(id),
+
         onSuccess: () => {
             // we need to send a request to retrieve studies again with its associated analyses and points
-            queryClient.invalidateQueries(studyQueries.studies.all());
-            queryClient.invalidateQueries(studyQueries.baseStudies.all());
+            queryClient.invalidateQueries({
+                queryKey: studyQueries.studies.all(),
+            });
             enqueueSnackbar('study deleted successfully', { variant: 'success' });
         },
+
         onError: () => {
             enqueueSnackbar('there was an error deleting the study', { variant: 'error' });
         },

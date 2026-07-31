@@ -15,7 +15,8 @@ import type { ImageRequest, NoteCollectionRequest } from 'neurostore-typescript-
 import type { NewAnnotationColumnPayload } from 'pages/StudyIBMA/components/NewAnnotationColumnDialog';
 import useEnsureWritableStudy from 'pages/StudyIBMA/hooks/useEnsureWritableStudy';
 import { useCallback } from 'react';
-import { useQueryClient } from 'react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export type UseIbmaBoardMutationsArgs = {
     studyId: string | undefined;
@@ -33,16 +34,34 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
     const updateAnnotationCellMutation = useUpdateAnnotationByAnnotationAndAnalysisIds(annotationId);
     const updateImageMutation = useUpdateImage();
 
+    const navigate = useNavigate();
+    const { projectId } = useParams<{ projectId: string }>();
+
     const invalidateBoard = useCallback(
         async (writableStudyId: string | undefined) => {
             if (!writableStudyId) return;
             await Promise.all([
-                queryClient.invalidateQueries(analysisQueries.analyses.byStudyId(writableStudyId).queryKey),
-                queryClient.invalidateQueries(analysisQueries.images.uncategorizedByStudyId(writableStudyId).queryKey),
-                queryClient.invalidateQueries(annotationQueries.byId(annotationId).queryKey),
+                queryClient.invalidateQueries({
+                    queryKey: analysisQueries.analyses.byStudyId(writableStudyId).queryKey,
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: analysisQueries.images.uncategorizedByStudyId(writableStudyId).queryKey,
+                }),
+                queryClient.invalidateQueries({ queryKey: annotationQueries.byId(annotationId).queryKey }),
             ]);
         },
         [annotationId, queryClient]
+    );
+
+    const invalidateAndNavigateIfCloned = useCallback(
+        async (writableStudy: { studyId: string; didClone: boolean }) => {
+            await invalidateBoard(writableStudy.studyId);
+            if (writableStudy.didClone) {
+                if (!projectId) return;
+                navigate(`/projects/${projectId}/extraction/studies/${writableStudy.studyId}/edit`);
+            }
+        },
+        [invalidateBoard]
     );
 
     const createAnalysis = useCallback(async () => {
@@ -59,8 +78,8 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
         if (!createRes.data?.id) return;
 
         // Neurostore creates annotation notes in the same request as analysesPost (update_annotations).
-        await invalidateBoard(writableStudy.studyId);
-    }, [annotationId, createAnalysisMutation, ensureWritableStudy, invalidateBoard, studyId]);
+        await invalidateAndNavigateIfCloned(writableStudy);
+    }, [annotationId, createAnalysisMutation, ensureWritableStudy, invalidateAndNavigateIfCloned, studyId]);
 
     const updateAnalysis = useCallback(
         async (args: { analysisId: string; name: string; description: string }) => {
@@ -73,9 +92,9 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
                 analysisId: targetAnalysisId,
                 analysis: { name: args.name, description: args.description },
             });
-            await invalidateBoard(writableStudy.studyId);
+            await invalidateAndNavigateIfCloned(writableStudy);
         },
-        [ensureWritableStudy, invalidateBoard, updateAnalysisMutation]
+        [ensureWritableStudy, invalidateAndNavigateIfCloned, updateAnalysisMutation]
     );
 
     const deleteAnalysis = useCallback(
@@ -86,9 +105,9 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
             const targetAnalysisId = writableStudy.idMap.oldAnalysisIdsToNewIdsMap[analysisId];
 
             await deleteAnalysisMutation.mutateAsync(targetAnalysisId);
-            await invalidateBoard(writableStudy.studyId);
+            await invalidateAndNavigateIfCloned(writableStudy);
         },
-        [deleteAnalysisMutation, ensureWritableStudy, invalidateBoard]
+        [deleteAnalysisMutation, ensureWritableStudy, invalidateAndNavigateIfCloned]
     );
 
     const addAnnotationColumn = useCallback(
@@ -206,19 +225,19 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
                 imageId: targetImageId,
                 image: targetImage,
             });
-            await invalidateBoard(writableStudy.studyId);
+            await invalidateAndNavigateIfCloned(writableStudy);
         },
-        [ensureWritableStudy, invalidateBoard, updateImageMutation]
+        [ensureWritableStudy, invalidateAndNavigateIfCloned, updateImageMutation]
     );
 
     const isPending =
         ensureWritableStudyIsLoading ||
-        createAnalysisMutation.isLoading ||
-        updateAnalysisMutation.isLoading ||
-        deleteAnalysisMutation.isLoading ||
-        updateAnnotationMutation.isLoading ||
-        updateAnnotationCellMutation.isLoading ||
-        updateImageMutation.isLoading;
+        createAnalysisMutation.isPending ||
+        updateAnalysisMutation.isPending ||
+        deleteAnalysisMutation.isPending ||
+        updateAnnotationMutation.isPending ||
+        updateAnnotationCellMutation.isPending ||
+        updateImageMutation.isPending;
 
     return {
         createAnalysis,

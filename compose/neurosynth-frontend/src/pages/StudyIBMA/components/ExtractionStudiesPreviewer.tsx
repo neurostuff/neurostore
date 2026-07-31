@@ -1,7 +1,4 @@
-import { ArrowDownward } from '@mui/icons-material';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import FilterListIcon from '@mui/icons-material/FilterList';
+import { ExpandLess, ExpandMore, FilterList, ArrowDownward } from '@mui/icons-material';
 import { alpha, Box, Button, Chip, Paper, Typography, useTheme } from '@mui/material';
 import { useGetStudysetSummaryById, useUserCanEdit } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
@@ -178,7 +175,7 @@ const ExtractionStudiesPreviewer: React.FC = () => {
                                     <Chip
                                         key={filter.id}
                                         size="small"
-                                        icon={<FilterListIcon sx={{ fontSize: '1rem' }} />}
+                                        icon={<FilterList sx={{ fontSize: '1rem' }} />}
                                         label={`${columnTitle}: ${filter.value}`}
                                         sx={{ p: 0.5 }}
                                         color="info"

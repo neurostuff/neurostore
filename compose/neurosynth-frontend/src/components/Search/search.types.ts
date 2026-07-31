@@ -1,5 +1,5 @@
 import { SystemStyleObject } from '@mui/system';
-import { EAnalysisType } from 'hooks/projects/Project.types';
+import { ProjectSearchCriteria } from 'hooks/projects/useGetProjects';
 import { SearchCriteria } from 'pages/Study/Study.types';
 
 export enum SearchBy {
@@ -29,5 +29,18 @@ export interface IStudiesSearchContainer {
     paginationSelectorStyles?: SystemStyleObject;
     tablePaginationSelectorStyles?: SystemStyleObject;
     error?: string;
+    children?: React.ReactNode;
+}
+
+export interface IProjectsSearchContainer {
+    onPageChange: (newPage: number) => void;
+    onRowsPerPageChange: (newRowsPerPage: number) => void;
+    onSearch: (searchArgs: Partial<ProjectSearchCriteria>) => void;
+    totalCount: number | undefined;
+    pageSize: number;
+    pageOfResults: number;
+    searchButtonColor?: string;
+    paginationSelectorStyles?: SystemStyleObject;
+    tablePaginationSelectorStyles?: SystemStyleObject;
     children?: React.ReactNode;
 }

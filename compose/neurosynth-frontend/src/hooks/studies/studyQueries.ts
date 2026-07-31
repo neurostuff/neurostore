@@ -1,3 +1,4 @@
+import { UseQueryOptions } from '@tanstack/react-query';
 import API from 'api/api.config';
 import type {
     BaseStudyListFlat,
@@ -23,7 +24,7 @@ const studyQueries = {
         details: () => [...studyQueries.studies.all(), 'detail'] as const,
 
         /** GET /studies/:id with `nested=true` (nested analysis payloads). */
-        byIdNested: (studyId: string | undefined | null) => ({
+        byIdNested: (studyId: string | undefined | null): UseQueryOptions<StudyReturnNested> => ({
             queryKey: [...studyQueries.studies.details(), studyId, true] as const,
             queryFn: async (): Promise<StudyReturnNested> => {
                 const res = await API.NeurostoreServices.StudiesService.studiesIdGet(studyId || '', true);
@@ -33,7 +34,7 @@ const studyQueries = {
         }),
 
         /** GET /studies/:id with `nested=false` (analysis ids / non-nested shape). */
-        byIdNonNested: (studyId: string | undefined | null) => ({
+        byIdNonNested: (studyId: string | undefined | null): UseQueryOptions<StudyReturnNonNested> => ({
             queryKey: [...studyQueries.studies.details(), studyId, false] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.StudiesService.studiesIdGet(studyId || '', false);
@@ -51,7 +52,7 @@ const studyQueries = {
         details: () => [...studyQueries.baseStudies.all(), 'detail'] as const,
 
         /** GET /base-studies/:id — `nested=true`, full version payloads. */
-        byIdNested: (baseStudyId: string | undefined | null) => ({
+        byIdNested: (baseStudyId: string | undefined | null): UseQueryOptions<BaseStudyReturnNested> => ({
             queryKey: [...studyQueries.baseStudies.details(), baseStudyId, 'nested'] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(
@@ -66,7 +67,7 @@ const studyQueries = {
         }),
 
         /** GET /base-studies/:id — `nested=false`, version ids only. */
-        byIdNonNested: (baseStudyId: string | undefined | null) => ({
+        byIdNonNested: (baseStudyId: string | undefined | null): UseQueryOptions<BaseStudyReturnNonNested> => ({
             queryKey: [...studyQueries.baseStudies.details(), baseStudyId, 'non-nested'] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(
@@ -81,7 +82,7 @@ const studyQueries = {
         }),
 
         /** GET /base-studies/:id — `flat=true`, versions omitted from payload. */
-        byIdFlat: (baseStudyId: string | undefined | null) => ({
+        byIdFlat: (baseStudyId: string | undefined | null): UseQueryOptions<BaseStudyReturnFlat> => ({
             queryKey: [...studyQueries.baseStudies.details(), baseStudyId, 'flat'] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(
@@ -96,7 +97,7 @@ const studyQueries = {
         }),
 
         /** GET /base-studies/:id — `info=true`, slim version rows. */
-        byIdInfo: (baseStudyId: string | undefined | null) => ({
+        byIdInfo: (baseStudyId: string | undefined | null): UseQueryOptions<BaseStudyReturnInfo> => ({
             queryKey: [...studyQueries.baseStudies.details(), baseStudyId, 'info'] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(
@@ -110,7 +111,7 @@ const studyQueries = {
             enabled: !!baseStudyId,
         }),
 
-        debouncedSearchNested: (searchCriteria: Partial<SearchCriteria>) => ({
+        debouncedSearchNested: (searchCriteria: Partial<SearchCriteria>): UseQueryOptions<BaseStudyListNested> => ({
             queryKey: [...studyQueries.baseStudies.lists(), 'debounced', 'nested', { ...searchCriteria }] as const,
             queryFn: async () => {
                 const res = await baseStudiesSearchHelper(mergeBaseStudiesSearchShape(searchCriteria, 'nested'));
@@ -118,7 +119,9 @@ const studyQueries = {
             },
         }),
 
-        debouncedSearchNonNested: (searchCriteria: Partial<SearchCriteria>) => ({
+        debouncedSearchNonNested: (
+            searchCriteria: Partial<SearchCriteria>
+        ): UseQueryOptions<BaseStudyListNonNested> => ({
             queryKey: [...studyQueries.baseStudies.lists(), 'debounced', 'non-nested', { ...searchCriteria }] as const,
             queryFn: async () => {
                 const res = await baseStudiesSearchHelper(mergeBaseStudiesSearchShape(searchCriteria, 'nonNested'));
@@ -126,7 +129,7 @@ const studyQueries = {
             },
         }),
 
-        debouncedSearchFlat: (searchCriteria: Partial<SearchCriteria>) => ({
+        debouncedSearchFlat: (searchCriteria: Partial<SearchCriteria>): UseQueryOptions<BaseStudyListFlat> => ({
             queryKey: [...studyQueries.baseStudies.lists(), 'debounced', 'flat', { ...searchCriteria }] as const,
             queryFn: async () => {
                 const res = await baseStudiesSearchHelper(mergeBaseStudiesSearchShape(searchCriteria, 'flat'));
@@ -134,7 +137,7 @@ const studyQueries = {
             },
         }),
 
-        debouncedSearchInfo: (searchCriteria: Partial<SearchCriteria>) => ({
+        debouncedSearchInfo: (searchCriteria: Partial<SearchCriteria>): UseQueryOptions<BaseStudyListInfo> => ({
             queryKey: [...studyQueries.baseStudies.lists(), 'debounced', 'info', { ...searchCriteria }] as const,
             queryFn: async () => {
                 const res = await baseStudiesSearchHelper(mergeBaseStudiesSearchShape(searchCriteria, 'info'));

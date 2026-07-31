@@ -1,18 +1,14 @@
-import { ArrowDownward } from '@mui/icons-material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import { ArrowDownward, ArrowUpward } from '@mui/icons-material';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
 
-export const ExtractionTableJournalCell: React.FC<CellContext<IExtractionTableStudy, string>> = (props) => {
+export const ExtractionTableJournalCell = (props: CellContext<IExtractionTableStudy, string>) => {
     const value = props.getValue();
     return <Typography variant="body2">{value}</Typography>;
 };
 
-export const ExtractionTableJournalHeader: React.FC<HeaderContext<IExtractionTableStudy, string>> = ({
-    table,
-    column,
-}) => {
+export const ExtractionTableJournalHeader = ({ table, column }: HeaderContext<IExtractionTableStudy, string>) => {
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
     return (
@@ -37,7 +33,7 @@ export const ExtractionTableJournalHeader: React.FC<HeaderContext<IExtractionTab
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
+                    <ArrowUpward sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             ) : (
                 <IconButton size="small" onClick={() => table.setSorting([{ id: 'journal', desc: false }])}>

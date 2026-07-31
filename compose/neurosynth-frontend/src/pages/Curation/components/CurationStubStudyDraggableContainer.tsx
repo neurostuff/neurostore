@@ -1,5 +1,5 @@
 import { DraggableProvided, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { DragIndicator } from '@mui/icons-material';
 import { Box, Paper } from '@mui/material';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
@@ -19,8 +19,8 @@ const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableS
     };
 };
 
-const CurationStubStudyDraggableContainer: React.FC<
-    ICurationStubStudy & {
+const CurationStubStudyDraggableContainer = (
+    props: ICurationStubStudy & {
         index: number;
         isVisible: boolean;
         columnIndex: number;
@@ -29,7 +29,7 @@ const CurationStubStudyDraggableContainer: React.FC<
         style: React.CSSProperties;
         onSelectStubStudy: (stubId: string) => void;
     }
-> = (props) => {
+) => {
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
@@ -57,7 +57,7 @@ const CurationStubStudyDraggableContainer: React.FC<
                 <Box {...props.provided.dragHandleProps} sx={{ display: 'flex', alignItems: 'center', width: '30px' }}>
                     <Box>
                         {/* // eslint-disable-next-line react/jsx-no-undef */}
-                        <DragIndicatorIcon sx={{ color: 'gray' }} />
+                        <DragIndicator sx={{ color: 'gray' }} />
                     </Box>
                 </Box>
             ) : (

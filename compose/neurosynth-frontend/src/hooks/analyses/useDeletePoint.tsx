@@ -1,14 +1,18 @@
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API from 'api/api.config';
-import analysisQueries from 'hooks/analyses/analysisQueries';
+import { AxiosError, AxiosResponse } from 'axios';
+import studyQueries from 'hooks/studies/studyQueries';
 
 const useDeletePoint = () => {
     const queryClient = useQueryClient();
-    return useMutation((id: string) => API.NeurostoreServices.PointsService.pointsIdDelete(id), {
+    return useMutation<AxiosResponse<void>, AxiosError, string, unknown>({
+        mutationFn: (id: string) => API.NeurostoreServices.PointsService.pointsIdDelete(id),
+
         onSuccess: () => {
-            queryClient.invalidateQueries(analysisQueries.points.all().queryKey);
-            // TODO: when we convert CBMA to a save on action based workflow, we should remove this and invalidate the parent analysis instead
-            queryClient.invalidateQueries('studies');
+            // we need to send a request to retrieve studies again with its associated analyses and points
+            queryClient.invalidateQueries({
+                queryKey: studyQueries.studies.all(),
+            });
         },
     });
 };

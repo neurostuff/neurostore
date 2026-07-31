@@ -1,16 +1,13 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import { OpenInNew, SwapHoriz } from '@mui/icons-material';
 import {
     Box,
     Button,
     ButtonGroup,
-    ButtonProps,
     ListItem,
     ListItemButton,
     Menu,
     Tooltip,
     Typography,
-    TypographyProps,
     useMediaQuery,
     useTheme,
 } from '@mui/material';
@@ -21,21 +18,17 @@ import { lastUpdatedAtSortFn } from 'helpers/utils';
 import { useGetBaseStudyInfoById, useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
 import { useSnackbar } from 'notistack';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
+import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAnnotationId } from 'stores/annotation/AnnotationStore.getters';
 import {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
     useProjectId,
 } from 'stores/projects/ProjectStore';
 import { useStudyBaseStudyId, useStudyId, useUpdateStudyDetails } from 'stores/study/StudyStore';
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAnnotationId } from 'stores/annotation/AnnotationStore.getters';
 
-const EditStudySwapVersionButton: React.FC<{
-    buttonProps?: ButtonProps;
-    buttonLabelProps?: TypographyProps;
-    buttonLabel?: string;
-}> = ({ buttonProps = {}, buttonLabelProps = {}, buttonLabel }) => {
+const EditStudySwapVersionButton = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
     const baseStudyId = useStudyBaseStudyId();
@@ -203,14 +196,8 @@ const EditStudySwapVersionButton: React.FC<{
                             height: '40px',
                             padding: 0,
                         }}
-                        {...buttonProps}
                     >
-                        {isSwapping ? (
-                            <ProgressLoader color="secondary" size={20} />
-                        ) : (
-                            <SwapHorizIcon sx={{ fontSize: '1.2rem' }} />
-                        )}
-                        {buttonLabel && <Typography {...buttonLabelProps}>{buttonLabel}</Typography>}
+                        {isSwapping ? <ProgressLoader color="secondary" size={20} /> : <SwapHoriz />}
                     </Button>
                 </Tooltip>
             </Box>
@@ -276,7 +263,7 @@ const EditStudySwapVersionButton: React.FC<{
                                         target="_blank"
                                         rel="noreferrer"
                                         sx={{ fontSize: '0.8rem' }}
-                                        endIcon={<OpenInNewIcon />}
+                                        endIcon={<OpenInNew />}
                                     >
                                         View version
                                     </Button>

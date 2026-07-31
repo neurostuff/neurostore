@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import { InsertDriveFile } from '@mui/icons-material';
 import { Box, Button, CircularProgress, LinearProgress, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useFetchPubMedIds, useGetPubMedIdFromDOI } from 'hooks';
@@ -28,10 +28,13 @@ const updateUploadSummary = (sleuthUpload: ISleuthFileUploadStubs) => {
     };
 };
 
-const ImportSleuthIngest: React.FC<{
+const ImportSleuthIngest = ({
+    sleuthUploads,
+    onStubsUploaded,
+}: {
     sleuthUploads: ISleuthFileUploadStubs[];
     onStubsUploaded: (stubs: ICurationStubStudy[]) => void;
-}> = ({ sleuthUploads, onStubsUploaded }) => {
+}) => {
     const { user } = useAuth0();
     const { mutateAsync: fetchPubmedIds } = useFetchPubMedIds();
     const { mutateAsync: getPubMedIdFromDOI } = useGetPubMedIdFromDOI();
@@ -193,7 +196,7 @@ const ImportSleuthIngest: React.FC<{
                                             alignItems="center"
                                             color="primary"
                                         >
-                                            <InsertDriveFileIcon color="primary" sx={{ marginRight: '10px' }} />
+                                            <InsertDriveFile color="primary" sx={{ marginRight: '10px' }} />
                                             {upload.fileName}
                                         </Typography>
                                         <Typography>

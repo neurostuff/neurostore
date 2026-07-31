@@ -3,7 +3,7 @@ import { useAddOrUpdateAnalysis, useStudyAnalysisDescription, useStudyAnalysisNa
 import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import EditStudyAnalysisCBMADeleteButton from './EditStudyAnalysisCBMADeleteButton';
 
-const EditStudyAnalysisCBMADetails: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
+const EditStudyAnalysisCBMADetails = (props: { analysisId?: string; onDeleteAnalysis: () => void }) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const name = useStudyAnalysisName(props.analysisId);
     const description = useStudyAnalysisDescription(props.analysisId);

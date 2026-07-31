@@ -17,7 +17,7 @@ interface ICurationStep {
     disabled: boolean;
 }
 
-const ProjectCurationStep: React.FC<ICurationStep & StepProps> = (props) => {
+const ProjectCurationStep = (props: ICurationStep & StepProps) => {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const { curationStepHasBeenInitialized, disabled, ...stepProps } = props;

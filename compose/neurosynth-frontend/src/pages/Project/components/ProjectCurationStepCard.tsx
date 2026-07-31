@@ -1,6 +1,4 @@
-import CloseIcon from '@mui/icons-material/Close';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import { Close, PlaylistAddCheck, QuestionMark } from '@mui/icons-material';
 import { Button, Card, CardActions, CardContent, CircularProgress, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
@@ -14,10 +12,7 @@ const getPercentageComplete = (curationSummary: ICurationSummary): number => {
     const percentageComplete = ((curationSummary.included + curationSummary.excluded) / curationSummary.total) * 100;
     return Math.round(percentageComplete);
 };
-const ProjectCurationStepCard: React.FC<{ projectId: string | undefined; disabled: boolean }> = ({
-    projectId,
-    disabled,
-}) => {
+const ProjectCurationStepCard = ({ projectId, disabled }: { projectId: string | undefined; disabled: boolean }) => {
     const navigate = useNavigate();
     const curationSummary = useGetCurationSummary();
 
@@ -50,17 +45,17 @@ const ProjectCurationStepCard: React.FC<{ projectId: string | undefined; disable
                     </Typography>
                     <Box sx={ProjectComponentsStyles.statusContainer}>
                         <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                            <QuestionMarkIcon sx={CurationStepStyles.questionMarkIcon} />
+                            <QuestionMark sx={CurationStepStyles.questionMarkIcon} />
                             <Typography sx={{ color: 'warning.dark' }}>
                                 {curationSummary.uncategorized} uncategorized
                             </Typography>
                         </Box>
                         <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                            <CloseIcon sx={CurationStepStyles.closeIcon} />
+                            <Close sx={CurationStepStyles.closeIcon} />
                             <Typography sx={{ color: 'error.dark' }}>{curationSummary.excluded} excluded</Typography>
                         </Box>
                         <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                            <PlaylistAddCheckIcon sx={CurationStepStyles.checkIcon} />
+                            <PlaylistAddCheck sx={CurationStepStyles.checkIcon} />
                             <Typography sx={{ color: 'success.main' }}>{curationSummary.included} included</Typography>
                         </Box>
                     </Box>

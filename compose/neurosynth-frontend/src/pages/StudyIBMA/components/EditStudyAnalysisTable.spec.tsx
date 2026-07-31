@@ -5,14 +5,14 @@ import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import type { NewAnnotationColumnPayload } from 'pages/StudyIBMA/components/NewAnnotationColumnDialog';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { vi } from 'vitest';
 import EditStudyAnalysisTable from 'pages/StudyIBMA/components/EditStudyAnalysisTable';
 
 vi.mock('pages/StudyIBMA/components/NewAnnotationColumnDialog');
 vi.mock('pages/StudyIBMA/components/EditStudyAnalysisTableRow');
 vi.mock('pages/StudyIBMA/components/EditStudyAnalysisImagesExpandedRow');
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 
 const columnHelper = createColumnHelper<AnalysisBoardRow>();
 
@@ -41,9 +41,8 @@ const TableHarness = ({
 }: TableHarnessProps) => {
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
-    const table = useReactTable({
-        data,
-        columns: [
+    const columns = useMemo(
+        () => [
             columnHelper.display({
                 id: 'analysis',
                 header: () => 'Analyses',
@@ -68,6 +67,12 @@ const TableHarness = ({
                 })
             ),
         ],
+        [noteKeys]
+    );
+
+    const table = useReactTable({
+        data,
+        columns,
         state: { expanded },
         onExpandedChange: setExpanded,
         getCoreRowModel: getCoreRowModel(),

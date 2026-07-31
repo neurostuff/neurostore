@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import connexion
 import orjson
+from connexion import request
 from connexion.lifecycle import ConnexionResponse
-from flask import current_app, g, request
 from sqlalchemy.orm import selectinload
 from webargs import fields
 
@@ -52,7 +52,7 @@ def create_user():
 
     try:
         profile_info = Users(
-            current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
+            request.state.settings["AUTH0_BASE_URL"].removeprefix("https://")
         ).userinfo(access_token=token)
     except Auth0Error:
         profile_info = {}
@@ -61,47 +61,13 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    # Prefer Flask `g` if present (set by security handlers), then
-    # request-specific Connexion context, then module-level Connexion context.
-    try:
-        user_id = getattr(g, "user", None)
-    except Exception:
-        user_id = None
-
-    if user_id is None:
-        try:
-            user_id = connexion.context.request.context.get("user")
-        except Exception:
-            user_id = None
-
-    if user_id is None:
-        try:
-            user_id = connexion.context.context.get("user")
-        except Exception:
-            user_id = None
+    user_id = connexion.context.request.context.get("user")
 
     return User(external_id=user_id, name=name)
 
 
 def get_current_user():
-    # Prefer Flask `g` first, then request-scoped Connexion context,
-    # then module-level Connexion context.
-    try:
-        user_id = getattr(g, "user", None)
-    except Exception:
-        user_id = None
-
-    if user_id is None:
-        try:
-            user_id = connexion.context.request.context.get("user")
-        except Exception:
-            user_id = None
-
-    if user_id is None:
-        try:
-            user_id = connexion.context.context.get("user")
-        except Exception:
-            user_id = None
+    user_id = connexion.context.request.context.get("user")
 
     if user_id:
         return User.query.filter_by(external_id=user_id).first()

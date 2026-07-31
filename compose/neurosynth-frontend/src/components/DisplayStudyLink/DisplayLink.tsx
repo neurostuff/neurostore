@@ -1,8 +1,8 @@
 import { Link, LinkProps } from '@mui/material';
 import DisplayLinkStyles from './DisplayLink.styles';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { OpenInNew } from '@mui/icons-material';
 
-const DisplayLink: React.FC<{ label: string } & LinkProps> = ({ label, ...linkProps }) => {
+const DisplayLink = ({ label, ...linkProps }: { label: string } & LinkProps) => {
     return (
         <Link
             color="primary"
@@ -13,7 +13,7 @@ const DisplayLink: React.FC<{ label: string } & LinkProps> = ({ label, ...linkPr
             sx={{ ...DisplayLinkStyles.link, ...(linkProps?.sx || {}) }}
         >
             {label}
-            <OpenInNewIcon sx={DisplayLinkStyles.linkIcon} fontSize="small" />
+            <OpenInNew sx={DisplayLinkStyles.linkIcon} fontSize="small" />
         </Link>
     );
 };

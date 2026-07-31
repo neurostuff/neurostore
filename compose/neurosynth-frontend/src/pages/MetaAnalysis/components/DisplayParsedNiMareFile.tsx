@@ -3,7 +3,7 @@ import { Box, Icon, Paper, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { parseNimareFileName } from '../Nimare.helpers';
 
-const DisplayParsedNiMareFile: React.FC<{ nimareFileName: string | undefined | null }> = (props) => {
+const DisplayParsedNiMareFile = (props: { nimareFileName: string | undefined | null }) => {
     const fileNameSegments = useMemo(() => {
         return parseNimareFileName(props.nimareFileName);
     }, [props.nimareFileName]);

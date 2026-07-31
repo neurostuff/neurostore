@@ -1,6 +1,6 @@
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
-import { CellValue } from 'handsontable/common';
+import { CellValue } from 'handsontable';
 
 export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
     if (!noteKeys) return [];

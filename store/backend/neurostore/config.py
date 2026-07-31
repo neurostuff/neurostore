@@ -66,9 +66,11 @@ class Config(object):
     WTF_CSRF_ENABLED = False
 
     FILE_DIR = Path("/file-data")
+    NEUROSTORE_STUDYSET_RELEASE_DIR = os.environ.get("NEUROSTORE_STUDYSET_RELEASE_DIR")
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_URL = require_env_var("CACHE_REDIS_URL")
     CACHE_KEY_PREFIX = None
+    ASGI_THREAD_TOKENS = int(os.environ.get("ASGI_THREAD_TOKENS", "16"))
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("neurostore", "production")
@@ -101,8 +103,8 @@ class Config(object):
     SEMANTIC_SCHOLAR_API_KEY = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
     PUBMED_TOOL_API_KEY = os.environ.get("PUBMED_TOOL_API_KEY")
     PUBMED_TOOL = "neurostore"
-    FLASK_ADMIN_USERNAME = os.environ.get("FLASK_ADMIN_USERNAME")
-    FLASK_ADMIN_PASSWORD = os.environ.get("FLASK_ADMIN_PASSWORD")
+    ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
     BEARERINFO_FUNC = os.environ.get(
         "BEARERINFO_FUNC", "neurostore.resources.auth.decode_token"
     )

@@ -1,10 +1,8 @@
 import { Box, Tooltip, Typography } from '@mui/material';
 import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
-import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
-import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
-import { useProjectId, useProjectName } from 'stores/projects/ProjectStore';
+import { useMemo } from 'react';
 import {
     useStudyAuthors,
     useStudyCreatedAt,
@@ -16,9 +14,8 @@ import {
     useStudyUsername,
     useStudyYear,
 } from 'stores/study/StudyStore';
-import { useMemo } from 'react';
 
-const EditStudyPageHeader: React.FC = () => {
+const EditStudyPageHeader = () => {
     const studyName = useStudyName();
     const studyYear = useStudyYear();
     const studyAuthors = useStudyAuthors();

@@ -1,11 +1,10 @@
-import { HotTable } from '@handsontable/react';
+import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
 import { Box } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import { EPropertyType, getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 import { getDefaultForNoteKey, sanitizePaste } from 'components/HotTables/HotTables.utils';
-import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
-import { CellChange } from 'handsontable/common';
+import { CellCoords, CellChange } from 'handsontable';
 import { useUserCanEdit } from 'hooks';
 import { useProjectUser } from 'stores/projects/ProjectStore';
 import { HotSettings } from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.helpers';
@@ -18,8 +17,8 @@ import {
     useUpdateAnnotationNotes,
 } from 'stores/annotation/AnnotationStore.actions';
 
-const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readonly = false }) => {
-    const hotTableRef = useRef<HotTable>(null);
+const EditStudyAnnotationsHotTable = ({  readonly = false  }: { readonly?: boolean }) => {
+    const hotTableRef = useRef<HotTableRef>(null);
     const noteKeys = useAnnotationNoteKeys();
     const updateNotes = useUpdateAnnotationNotes();
     const createAnnotationColumn = useCreateAnnotationColumn();
@@ -91,7 +90,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
 
     const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement) => {
         const target = event.target as HTMLButtonElement;
-        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
+        if (coords.row != null && coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
             setConfirmationDialogState({
                 isOpen: true,
                 colKey: TD.innerText,

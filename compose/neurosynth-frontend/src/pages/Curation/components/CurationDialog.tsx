@@ -1,11 +1,14 @@
 import { Box, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
+import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import CurationEditableStubSummary from 'pages/Curation/components/CurationEditableStubSummary';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import React, { useEffect, useRef, useState } from 'react';
-import { FixedSizeList } from 'react-window';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
+
+const ROW_HEIGHT_PX = 90;
+const LIST_WIDTH_PX = 280;
 
 interface ICurationDialog {
     columnIndex: number;
@@ -15,7 +18,7 @@ interface ICurationDialog {
     onSetSelectedStub: (stub: string) => void;
 }
 
-const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
+const CurationDialog = (props: ICurationDialog & IDialog) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const selectedStub: ICurationStubStudy | undefined = props.stubs.find((stub) => stub.id === props.selectedStubId);
@@ -43,21 +46,13 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
         }
     }, [selectedStub?.id]);
 
-    // cant use useRef as the listRef does not exist due to it being rendered
-    // later as a dialog. useEffect also does not keep track of useRef value changes
-    // https://stackoverflow.com/questions/60476155/is-it-safe-to-use-ref-current-as-useeffects-dependency-when-ref-points-to-a-dom
-    const handleScrollTo = React.useCallback(
-        (listRef: FixedSizeList) => {
-            if (listRef) {
-                const selectedItemIndex = props.stubs.findIndex((x) => x.id === props.selectedStubId);
-                listRef.scrollToItem(selectedItemIndex, 'smart');
-            }
-        },
-        [props.selectedStubId, props.stubs]
-    );
-
     // 60vh
     const pxInVh = Math.round((windowHeight * 60) / 100);
+
+    const selectedItemIndex = useMemo(
+        () => stubs.findIndex((stub) => stub.id === props.selectedStubId),
+        [stubs, props.selectedStubId]
+    );
 
     if (stubs.length === 0) {
         return (
@@ -82,25 +77,25 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
             dialogTitle={`Curation View ${props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''}`}
         >
             <Box sx={{ display: 'flex', height: '60vh' }}>
-                <Box>
-                    <FixedSizeList
-                        height={pxInVh}
-                        itemCount={stubs.length}
-                        width={280}
-                        itemSize={90}
-                        itemKey={(index, data) => data.stubs[index]?.id}
-                        itemData={{
-                            stubs: stubs,
-                            selectedStubId: props.selectedStubId,
-                            onSetSelectedStub: props.onSetSelectedStub,
-                        }}
-                        layout="vertical"
-                        overscanCount={3}
-                        ref={handleScrollTo}
-                    >
-                        {CurationStubListItemVirtualizedContainer}
-                    </FixedSizeList>
-                </Box>
+                <VirtualizedList
+                    rows={stubs}
+                    rowHeightInPx={ROW_HEIGHT_PX}
+                    listHeightInPx={pxInVh}
+                    width={LIST_WIDTH_PX}
+                    overscan={3}
+                    enabled={props.isOpen}
+                    scrollToIndex={selectedItemIndex >= 0 ? selectedItemIndex : undefined}
+                    scrollToAlign="center"
+                    getItemKey={(stub) => stub.id}
+                    renderRow={(stub, style) => (
+                        <CurationStubListItemVirtualizedContainer
+                            stub={stub}
+                            selectedStubId={props.selectedStubId}
+                            onSetSelectedStub={props.onSetSelectedStub}
+                            style={style}
+                        />
+                    )}
+                />
                 <Box ref={scrollableBoxRef} sx={{ flexGrow: 1, overflowY: 'auto' }}>
                     <CurationEditableStubSummary
                         onMoveToNextStub={handleMoveToNextStub}

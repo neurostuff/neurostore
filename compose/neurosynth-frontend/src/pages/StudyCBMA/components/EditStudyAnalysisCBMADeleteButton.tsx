@@ -4,12 +4,14 @@ import { useDeleteAnalysis } from 'stores/study/StudyStore';
 import { useState } from 'react';
 import { useDeleteAnnotationNote } from 'stores/annotation/AnnotationStore.actions';
 
-const EditStudyAnalysisCBMADeleteButton: React.FC<
-    ButtonOwnProps & {
-        analysisId?: string;
-        onDeleteAnalysis: () => void;
-    }
-> = ({ analysisId, onDeleteAnalysis, ...buttonProps }) => {
+const EditStudyAnalysisCBMADeleteButton = ({
+    analysisId,
+    onDeleteAnalysis,
+    ...buttonProps
+}: ButtonOwnProps & {
+    analysisId?: string;
+    onDeleteAnalysis: () => void;
+}) => {
     const deleteAnalysis = useDeleteAnalysis();
     const deleteAnnotationNote = useDeleteAnnotationNote();
 

@@ -11,15 +11,14 @@ import {
     Typography,
 } from '@mui/material';
 import PrismaComponent from 'pages/Curation/components/Prisma';
-import CloseIcon from '@mui/icons-material/Close';
+import { Close, ArrowDropDown } from '@mui/icons-material';
 import { IDialog } from '../../../components/Dialogs/BaseDialog';
 import { toSvg, toPng, toJpeg } from 'html-to-image';
 import { useRef, useState } from 'react';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Options } from 'html-to-image/lib/types';
 
-const PrismaDialog: React.FC<IDialog> = (props) => {
+const PrismaDialog = (props: IDialog) => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState<'SVG' | 'PNG' | 'JPEG'>('SVG');
     const handleCloseDialog = () => {
@@ -118,11 +117,11 @@ const PrismaDialog: React.FC<IDialog> = (props) => {
                             Download PRISMA Diagram as {selectedOption}
                         </Button>
                         <Button size="small" onClick={() => setOptionsIsOpen(true)}>
-                            <ArrowDropDownIcon />
+                            <ArrowDropDown />
                         </Button>
                     </ButtonGroup>
                     <IconButton onClick={handleCloseDialog}>
-                        <CloseIcon sx={{ fontSize: '2rem' }} />
+                        <Close sx={{ fontSize: '2rem' }} />
                     </IconButton>
                 </Box>
             </DialogTitle>

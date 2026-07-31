@@ -1,10 +1,9 @@
-import { Cancel } from '@mui/icons-material';
-import EmojiPeopleIcon from '@mui/icons-material/EmojiPeople';
+import { Cancel, EmojiPeople } from '@mui/icons-material';
 import { Box, IconButton, Link, Typography } from '@mui/material';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
 import { useMemo, useState } from 'react';
-import { useQuery } from 'react-query';
 
 // banner.config.json should adhere to this interface
 interface IBanner {
@@ -34,16 +33,14 @@ const isBannerDismissed = (bannerId: string): boolean => {
 };
 
 const useGetBannerConfig = () => {
-    return useQuery<AxiosResponse<IBanner[]>, AxiosError, IBanner[], string>(
-        'bannerConfig',
-        () => axios.get<IBanner[]>('/config/banner.config.json'),
-        {
-            select: (res) => res?.data ?? [],
-        }
-    );
+    return useQuery({
+        queryKey: ['bannerConfig'],
+        queryFn: () => axios.get<IBanner[]>('/config/banner.config.json'),
+        select: (res) => res?.data ?? [],
+    });
 };
 
-const Banner: React.FC = () => {
+const Banner = () => {
     const { data } = useGetBannerConfig();
 
     const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(() => {
@@ -104,7 +101,7 @@ const Banner: React.FC = () => {
                                     alignItems: 'center',
                                 }}
                             >
-                                <EmojiPeopleIcon sx={{ marginRight: '0.5rem' }} />
+                                <EmojiPeople sx={{ marginRight: '0.5rem' }} />
                                 {banner.description}
                             </Typography>
                             <Link

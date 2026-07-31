@@ -2,8 +2,9 @@ import { Box, Typography } from '@mui/material';
 import { createColumnHelper, getCoreRowModel, useReactTable, type ExpandedState } from '@tanstack/react-table';
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
+import analysisQueries from 'hooks/analyses/analysisQueries';
 import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
-import { useGetAnalysesByStudyId, useGetAnnotationById, useGetUncategorizedImagesByStudyId } from 'hooks';
+import { useGetAnalysesByStudyId, useGetAnnotationById } from 'hooks';
 import type { ImageReturn, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import AnalysisNameCell from 'pages/StudyIBMA/components/AnalysisNameCell';
 import AnnotationBaseInputCell from 'pages/StudyIBMA/components/AnnotationInputCells';
@@ -14,6 +15,7 @@ import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysi
 import useIbmaBoardMutations from 'pages/StudyIBMA/hooks/useIbmaBoardMutations';
 import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
 import { sortAnalysesByOrder, sortImages } from './useEditStudyAnalysisBoardState.helpers';
 
@@ -27,8 +29,9 @@ const useEditStudyAnalysisBoardState = () => {
     const annotationId = useProjectExtractionAnnotationId();
     const { studyId } = useParams<{ projectId: string; studyId: string }>();
     const { data: analysesRes, isLoading: getAnalysesIsLoading } = useGetAnalysesByStudyId(studyId);
-    const { data: uncategorizedRes, isLoading: getUncategorizedImagesIsLoading } =
-        useGetUncategorizedImagesByStudyId(studyId);
+    const { data: uncategorizedRes, isLoading: getUncategorizedImagesIsLoading } = useQuery(
+        analysisQueries.images.uncategorizedByStudyId(studyId)
+    );
     const { data: annotation, isLoading: getAnnotationIsLoading } = useGetAnnotationById(annotationId);
 
     const analyses = analysesRes ?? EMPTY_ANALYSES;

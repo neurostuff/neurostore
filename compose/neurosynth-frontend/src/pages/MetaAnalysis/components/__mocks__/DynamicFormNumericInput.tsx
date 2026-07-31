@@ -1,4 +1,4 @@
-const mockDynamicFormNumericInput: React.FC = (props) => {
+const mockDynamicFormNumericInput = (props: unknown) => {
     return <div data-testid="dynamic-form-input">numeric</div>;
 };
 

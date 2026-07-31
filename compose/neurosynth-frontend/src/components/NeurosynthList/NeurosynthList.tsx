@@ -4,7 +4,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import { useNavigate } from 'react-router-dom';
 
 interface INeurosynthList {
-    listIcon?: JSX.Element;
+    listIcon?: React.ReactNode;
     titleText?: string;
     listItems: {
         primaryText: string;
@@ -16,11 +16,11 @@ interface INeurosynthList {
     isLoading?: boolean;
     isError?: boolean;
     loaderColor?: string;
-    NoDataElement?: JSX.Element;
-    TitleElement?: JSX.Element;
+    NoDataElement?: React.ReactNode;
+    TitleElement?: React.ReactNode;
 }
 
-const NeurosynthList: React.FC<INeurosynthList> = (props) => {
+const NeurosynthList = (props: INeurosynthList) => {
     const navigate = useNavigate();
 
     const {

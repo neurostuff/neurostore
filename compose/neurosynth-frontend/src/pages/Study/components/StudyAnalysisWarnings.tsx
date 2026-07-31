@@ -1,10 +1,10 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { ErrorOutline } from '@mui/icons-material';
 import { Chip } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 import { useGetStudyIsLoading } from 'stores/study/StudyStore';
 
-const StudyAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
+const StudyAnalysisWarnings = (props: { analysisId: string }) => {
     const getStudyIsLoading = useGetStudyIsLoading();
 
     const { hasNoPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates } = useDisplayWarnings(props.analysisId);
@@ -14,7 +14,7 @@ const StudyAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
             {hasNoPoints && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
-                    icon={<ErrorOutlineIcon />}
+                    icon={<ErrorOutline />}
                     label="This analysis has no coordinates"
                     color="warning"
                 />
@@ -22,7 +22,7 @@ const StudyAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
             {hasNoName && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
-                    icon={<ErrorOutlineIcon />}
+                    icon={<ErrorOutline />}
                     label="No analysis name"
                     color="warning"
                 />
@@ -30,7 +30,7 @@ const StudyAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
             {hasDuplicateName && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
-                    icon={<ErrorOutlineIcon />}
+                    icon={<ErrorOutline />}
                     label="Duplicate analysis name"
                     color="warning"
                 />
@@ -38,7 +38,7 @@ const StudyAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
             {hasNonMNICoordinates && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
-                    icon={<ErrorOutlineIcon />}
+                    icon={<ErrorOutline />}
                     label="This analysis may contain non MNI coordinates"
                     color="warning"
                 />

@@ -1,4 +1,5 @@
 import { Box, Button, Tooltip, Typography } from '@mui/material';
+import CopyableId from 'components/CopyableId/CopyableId';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -12,6 +13,7 @@ import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
     useProjectCurationColumns,
+    useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectName,
     useProjectUser,
@@ -20,12 +22,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ExtractionTable from './components/ExtractionTable';
 
-const ExtractionPage: React.FC = () => {
+const ExtractionPage = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const navigate = useNavigate();
 
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
+    const annotationId = useProjectExtractionAnnotationId();
     const columns = useProjectCurationColumns();
     const loading = useGetProjectIsLoading();
     const extractionSummary = useGetExtractionSummary(projectId || '');
@@ -147,6 +150,10 @@ const ExtractionPage: React.FC = () => {
                             </span>
                         </Tooltip>
                     </Box>
+                </Box>
+                <Box sx={{ display: 'flex', gap: '1.5rem', marginBottom: '0.5rem' }}>
+                    <CopyableId label="Studyset ID" id={studysetId} />
+                    <CopyableId label="Annotation ID" id={annotationId} />
                 </Box>
                 {showReconcilePrompt && (
                     <Box sx={{ my: 1 }}>

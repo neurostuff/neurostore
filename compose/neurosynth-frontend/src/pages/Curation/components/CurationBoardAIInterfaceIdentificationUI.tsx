@@ -8,11 +8,11 @@ import { ChevronRight } from '@mui/icons-material';
 import StartExtractionButton from './StartExtractionButton';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 
-const CurationBoardAIInterfaceIdentificationUI: React.FC<{
+const CurationBoardAIInterfaceIdentificationUI = ({  hasUncategorizedStudies, onManuallyReview, hasIdentificationStudies  }: {
     hasUncategorizedStudies: boolean;
     hasIdentificationStudies: boolean;
     onManuallyReview: () => void;
-}> = ({ hasUncategorizedStudies, onManuallyReview, hasIdentificationStudies }) => {
+}) => {
     const curationDuplicates = useProjectCurationDuplicates();
     const imports = useProjectCurationImports();
     const { user } = useAuth0();

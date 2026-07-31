@@ -1,15 +1,14 @@
 import EditStudyAnalysisCBMAPointsHotTable from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAPointsHotTable';
 import { Box, Link, Tooltip, Typography } from '@mui/material';
-import HelpIcon from '@mui/icons-material/Help';
-import EditStudyAnalysisCBMAPointSpaceAndStatistic from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAPointSpaceAndStatistic';
 import RelegateExtractionStudyDialog from './RelegateExtractionStudyDialog';
 import { useNavigate } from 'react-router-dom';
 import { useProjectId } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { Warning } from '@mui/icons-material';
-import { IStorePoint } from 'stores/study/StudyStore.helpers';
+import { Warning, Help } from '@mui/icons-material';
 import { useStudyAnalysisPoints } from 'stores/study/StudyStore';
+import { IStorePoint } from 'stores/study/StudyStore.helpers';
+import EditStudyAnalysisCBMAPointSpaceAndStatistic from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAPointSpaceAndStatistic';
 
 /** True if this row is a coordinate triple the user (or API) has actually set. */
 const pointHasCompleteCoordinates = (p: IStorePoint) =>
@@ -27,7 +26,7 @@ const pointHasCompleteCoordinates = (p: IStorePoint) =>
 const analysisHasUsableCoordinates = (points: IStorePoint[] | null) =>
     !!points?.some((p) => p.isNew === false || pointHasCompleteCoordinates(p));
 
-const EditStudyAnalysisCBMAPoints: React.FC<{ analysisId?: string }> = (props) => {
+const EditStudyAnalysisCBMAPoints = (props: { analysisId?: string }) => {
     const navigate = useNavigate();
     const projectId = useProjectId();
     const { enqueueSnackbar } = useSnackbar();
@@ -60,7 +59,7 @@ const EditStudyAnalysisCBMAPoints: React.FC<{ analysisId?: string }> = (props) =
                         title="To add or remove rows, right click on a cell to open the context menu. You must enter all coordinates in order to save the overall study. Please note that the ordering of points is not guaranteed."
                         placement="right"
                     >
-                        <HelpIcon color="primary" />
+                        <Help color="primary" />
                     </Tooltip>
                 </Box>
                 {showRelegateCoordinatesLink && (

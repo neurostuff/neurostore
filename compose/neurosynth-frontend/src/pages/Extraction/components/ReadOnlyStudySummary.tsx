@@ -1,20 +1,19 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItemStyles from './ReadOnlyStudySummary.styles';
-import CheckIcon from '@mui/icons-material/Check';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
+import { Check, Bookmark } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'stores/projects/ProjectStore';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 
-const ReadOnlyStudySummaryVirtualizedItem: React.FC<
-    StudyReturn & {
+const ReadOnlyStudySummaryVirtualizedItem = (
+    props: StudyReturn & {
         currentStatus: EExtractionStatus;
         canEdit: boolean;
         style: React.CSSProperties;
     }
-> = (props) => {
+) => {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const addOrUpdateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
@@ -78,7 +77,7 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                                             handleUpdateStatus(props.id || '', EExtractionStatus.COMPLETED);
                                         }}
                                     >
-                                        <CheckIcon color="success" />
+                                        <Check color="success" />
                                     </IconButton>
                                 </Tooltip>
                             </Box>
@@ -94,7 +93,7 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                                             handleUpdateStatus(props.id || '', EExtractionStatus.SAVEDFORLATER);
                                         }}
                                     >
-                                        <BookmarkIcon color="info" />
+                                        <Bookmark color="info" />
                                     </IconButton>
                                 </Tooltip>
                             </Box>

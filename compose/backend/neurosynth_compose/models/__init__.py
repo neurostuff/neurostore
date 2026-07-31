@@ -1,16 +1,16 @@
 from neurosynth_compose.models.analysis import (
-    SnapshotAnnotation,
-    NeurostoreAnnotation,
     MetaAnalysis,
     MetaAnalysisResult,
     NeurostoreAnalysis,
+    NeurostoreAnnotation,
     NeurostoreStudy,
+    NeurostoreStudyset,
     NeurovaultCollection,
     NeurovaultFile,
     Project,
-    Specification,
+    SnapshotAnnotation,
     SnapshotStudyset,
-    NeurostoreStudyset,
+    Specification,
     Tag,
 )
 from neurosynth_compose.models.auth import Role, User

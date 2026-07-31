@@ -15,7 +15,7 @@ import { useParams } from 'react-router-dom';
 import ProjectViewMetaAnalysis from 'pages/Project/components/ProjectViewMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 
-const ProjectViewMetaAnalyses: React.FC = () => {
+const ProjectViewMetaAnalyses = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);

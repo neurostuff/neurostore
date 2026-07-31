@@ -1,7 +1,7 @@
 import useDebounced from 'hooks/useDebounce';
 import studyQueries from 'hooks/studies/studyQueries';
 import { SearchCriteria } from 'pages/Study/Study.types';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 const useGetDebouncedBaseStudiesNonNested = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {

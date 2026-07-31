@@ -1,9 +1,11 @@
-import { useGetAnnotationById, useGetStudysetNestedById } from 'hooks';
+import { useGetAnnotationById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useMemo } from 'react';
 import { AnnotationNoteType } from 'stores/annotation/AnnotationStore.types';
 import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { isALE } from '../components/MetaAnalysisDynamicForm';
+import { useQuery } from '@tanstack/react-query';
+import studysetQueries from 'hooks/studysets/studysetQueries';
 
 const hasSampleSizeInObj = (note: object | null | undefined): boolean => {
     if (!note) return false;
@@ -20,7 +22,7 @@ const getStudyIdAndName = (study: string | StudyReturn): { studyId: string; stud
 
 const useStudiesWithMissingSampleSizeALE = (algorithm: string | undefined) => {
     const studysetId = useProjectExtractionStudysetId();
-    const { data: studyset } = useGetStudysetNestedById(studysetId);
+    const { data: studyset } = useQuery(studysetQueries.nestedById(studysetId));
     const annotationIdFromProject = useProjectExtractionAnnotationId();
     const { data: annotation } = useGetAnnotationById(annotationIdFromProject);
 

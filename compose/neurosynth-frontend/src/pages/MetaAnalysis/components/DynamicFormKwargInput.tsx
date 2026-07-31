@@ -5,10 +5,10 @@ import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import { IDynamicFormInput } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import MetaAnalysisDynamicFormTitle from './MetaAnalysisDynamicFormTitle';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
-import RemoveCircle from '@mui/icons-material/RemoveCircle';
+import { RemoveCircle } from '@mui/icons-material';
 import DynamicFormStyles from 'pages/MetaAnalysis/components//DynamicFormStyles';
 
-const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
+const DynamicFormKwargInput = (props: IDynamicFormInput) => {
     const kwargList: { key: string; value: string }[] = Object.keys(props.value || {}).map((key) => ({
         key: key,
         value: props.value[key],

@@ -3,11 +3,11 @@ import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import { useCallback } from 'react';
 import StudyAnalysesListItem from 'pages/Study/components/StudyAnalysesListItem';
 
-const EditStudyAnalysesCBMAList: React.FC<{
+const EditStudyAnalysesCBMAList = (props: {
     onSelectAnalysis: (analysisId: string) => void;
     selectedAnalysisId?: string;
     analyses: IStoreAnalysis[];
-}> = (props) => {
+}) => {
     const { onSelectAnalysis, selectedAnalysisId, analyses } = props;
 
     const handleSelectAnalysis = useCallback(

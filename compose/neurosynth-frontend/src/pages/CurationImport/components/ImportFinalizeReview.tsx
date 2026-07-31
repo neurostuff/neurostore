@@ -1,28 +1,14 @@
 import { Box, Divider, Paper, Typography } from '@mui/material';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
-import { useMemo } from 'react';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import ImportFinalizeReviewVirtualizedListItem from './ImportFinalizeReviewVirtualizedListItem';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import React from 'react';
-
-const ImportFinalizeReviewFixedSizeListRow: React.FC<
-    ListChildComponentProps<{
-        stubs: ICurationStubStudy[];
-    }>
-> = (props) => {
-    const stub = props.data.stubs[props.index];
-
-    return <ImportFinalizeReviewVirtualizedListItem {...stub} style={props.style} />;
-};
+import React, { useMemo } from 'react';
+import ImportFinalizeReviewVirtualizedListItem from './ImportFinalizeReviewVirtualizedListItem';
 
 const LIST_HEIGHT = 95;
 
-const ImportFinalizeReview: React.FC<{
-    stubs: ICurationStubStudy[];
-    unimportedStubs: string[];
-}> = React.memo((props) => {
+const ImportFinalizeReview = React.memo((props: { stubs: ICurationStubStudy[]; unimportedStubs: string[] }) => {
     const { stubs, unimportedStubs } = props;
     const nonExcludedStubs = useMemo(() => {
         return stubs.filter((x) => !x.exclusionTag);
@@ -90,20 +76,15 @@ const ImportFinalizeReview: React.FC<{
                         }
                         elevation={0}
                     >
-                        <FixedSizeList
-                            height={includedStudiesListHeight}
-                            itemCount={nonExcludedStubs.length}
-                            width="100%"
-                            itemSize={LIST_HEIGHT}
-                            itemKey={(index, data) => data.stubs[index]?.id}
-                            layout="vertical"
-                            itemData={{
-                                stubs: nonExcludedStubs,
-                            }}
-                            overscanCount={3}
-                        >
-                            {ImportFinalizeReviewFixedSizeListRow}
-                        </FixedSizeList>
+                        <VirtualizedList
+                            rows={nonExcludedStubs}
+                            listHeightInPx={includedStudiesListHeight}
+                            overscan={3}
+                            getItemKey={(stub) => stub.id}
+                            renderRow={(stub, style) => (
+                                <ImportFinalizeReviewVirtualizedListItem {...stub} style={style} />
+                            )}
+                        />
                     </NeurosynthAccordion>
                 </Box>
             )}
@@ -127,20 +108,15 @@ const ImportFinalizeReview: React.FC<{
                         }
                         elevation={0}
                     >
-                        <FixedSizeList
-                            height={excludedStudiesListHeight}
-                            itemCount={excludedStubs.length}
-                            width="100%"
-                            itemSize={LIST_HEIGHT}
-                            itemKey={(index, data) => data.stubs[index]?.id}
-                            layout="vertical"
-                            itemData={{
-                                stubs: excludedStubs,
-                            }}
-                            overscanCount={3}
-                        >
-                            {ImportFinalizeReviewFixedSizeListRow}
-                        </FixedSizeList>
+                        <VirtualizedList
+                            rows={excludedStubs}
+                            listHeightInPx={excludedStudiesListHeight}
+                            overscan={3}
+                            getItemKey={(stub) => stub.id}
+                            renderRow={(stub, style) => (
+                                <ImportFinalizeReviewVirtualizedListItem {...stub} style={style} />
+                            )}
+                        />
                     </NeurosynthAccordion>
                 </Box>
             )}

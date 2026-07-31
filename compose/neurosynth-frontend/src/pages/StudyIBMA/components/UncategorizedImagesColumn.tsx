@@ -1,5 +1,5 @@
 import { Add } from '@mui/icons-material';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import { ChevronLeft } from '@mui/icons-material';
 import { Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
@@ -11,7 +11,7 @@ import {
 import SearchableAnalysisMenu from 'pages/StudyIBMA/components/SearchableAnalysisMenu';
 import ImagesList from 'pages/StudyIBMA/components/ImagesList';
 import useIbmaBoardMutations from '../hooks/useIbmaBoardMutations';
-import { useIsMutating } from 'react-query';
+import { useIsMutating } from '@tanstack/react-query';
 import analysisQueries from 'hooks/analyses/analysisQueries';
 
 export type UncategorizedImagesColumnProps = {
@@ -56,8 +56,6 @@ const UncategorizedImagesColumn: React.FC<UncategorizedImagesColumnProps> = ({
         },
         [updateImage]
     );
-
-    const updateImageIsLoading = useIsMutating();
 
     if (collapsed) {
         const collapsedLabel = `Uncategorized images (${uncategorized.length})`;
@@ -129,7 +127,7 @@ const UncategorizedImagesColumn: React.FC<UncategorizedImagesColumnProps> = ({
                         aria-label="Hide uncategorized images"
                         sx={{ flexShrink: 0, p: 0.25 }}
                     >
-                        <ChevronLeftIcon fontSize="small" />
+                        <ChevronLeft fontSize="small" />
                     </IconButton>
                 </Tooltip>
             </Box>

@@ -3,7 +3,9 @@ import StudyAnalysisWarnings from 'pages/Study/components/StudyAnalysisWarnings'
 import StudyPoints from 'pages/Study/components/StudyPoints';
 import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
-const StudyAnalysis: React.FC<IStoreAnalysis | undefined> = (props) => {
+const StudyAnalysis = (props: IStoreAnalysis) => {
+    const heightInPx = props.points?.length ? (props.points.length * 50 > 500 ? 500 : props.points.length * 50) : 0;
+
     return (
         <Box>
             <StudyAnalysisWarnings analysisId={props.id || ''} />
@@ -20,6 +22,7 @@ const StudyAnalysis: React.FC<IStoreAnalysis | undefined> = (props) => {
                 space={props.pointSpace}
                 title="Coordinates"
                 points={props.points || []}
+                height={`${heightInPx}px`}
             />
 
             {/* <DisplayConditions

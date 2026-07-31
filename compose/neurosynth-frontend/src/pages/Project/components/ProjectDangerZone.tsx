@@ -1,4 +1,4 @@
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import { ReportProblem } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useDeleteStudyset } from 'hooks';
@@ -12,17 +12,17 @@ import {
     useProjectUser,
 } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
-import { useQueryClient } from 'react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const DangerZone: React.FC = () => {
+const DangerZone = () => {
     const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
     const isLocalhost = window.location.hostname === 'localhost';
     const queryClient = useQueryClient();
 
     const { projectId } = useParams<{ projectId: string }>();
     const projectUser = useProjectUser();
-    const { mutate: deleteProject, isLoading } = useDeleteProject();
+    const { mutate: deleteProject, isPending: isLoading } = useDeleteProject();
     const clearProvenance = useClearProvenance();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
@@ -80,7 +80,7 @@ const DangerZone: React.FC = () => {
                 confirmText="Confirm"
             />
             <Button
-                startIcon={<ReportProblemIcon />}
+                startIcon={<ReportProblem />}
                 onClick={() => setConfirmationDialogIsOpen(true)}
                 variant="contained"
                 disableElevation

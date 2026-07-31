@@ -1,7 +1,7 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { BaseStudiesPost200Response, BaseStudiesPostRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API from 'api/api.config';
 import studyQueries from 'hooks/studies/studyQueries';
 
@@ -12,13 +12,16 @@ const useIngest = () => {
     const { enqueueSnackbar } = useSnackbar();
     return useMutation<AxiosResponse<BaseStudiesPost200Response>, AxiosError, BaseStudiesPostRequest, unknown>({
         mutationFn: (stubs) => API.NeurostoreServices.BaseStudiesService.baseStudiesPost(stubs),
+
         onSuccess: () => {
-            queryClient.invalidateQueries(studyQueries.studies.all());
-            queryClient.invalidateQueries(studyQueries.baseStudies.all());
+            queryClient.invalidateQueries({
+                queryKey: studyQueries.studies.all(),
+            });
         },
+
         onError: () => {
             enqueueSnackbar('There was an error during ingestion', { variant: 'error' });
-        }
+        },
     });
 };
 

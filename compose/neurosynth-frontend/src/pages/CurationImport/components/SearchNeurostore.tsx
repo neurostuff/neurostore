@@ -18,9 +18,7 @@ import { IImportArgs } from './ImportDoImport';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
 
-const SearchNeurostore: React.FC<IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }> = (
-    props
-) => {
+const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }) => {
     const [importIsLoading, setImportIsLoading] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
 

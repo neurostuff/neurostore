@@ -1,4 +1,4 @@
-import CloseIcon from '@mui/icons-material/Close';
+import { Close } from '@mui/icons-material';
 import {
     IconButton,
     Paper,
@@ -13,7 +13,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import useGetNeurovaultImages, { type INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
+import useGetNeurovaultImages from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
 import { useMemo, useState } from 'react';
 import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT } from '../hooks/useEditStudyAnalysisBoardState.consts';
@@ -168,12 +168,17 @@ const BrainMapDetailPanel: React.FC<{
         >
             <Stack spacing={2}>
                 <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1} minWidth={0}>
-                    <Typography variant="subtitle1" fontWeight="bold" title={displayName}>
+                    <Typography
+                        sx={{ wordBreak: 'break-word' }}
+                        variant="subtitle1"
+                        fontWeight="bold"
+                        title={displayName}
+                    >
                         {displayName}
                     </Typography>
                     <Tooltip title="Close panel">
                         <IconButton size="small" onClick={onClose} aria-label="Close map details panel">
-                            <CloseIcon fontSize="small" />
+                            <Close fontSize="small" />
                         </IconButton>
                     </Tooltip>
                 </Stack>

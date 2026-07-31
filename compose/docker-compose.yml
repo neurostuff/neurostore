@@ -16,7 +16,9 @@ services:
       - ./backend/migrations:/migrations
       - ./:/compose
       - ${FILE_DIR}:/file-data
-    command: /usr/local/bin/gunicorn -k uvicorn.workers.UvicornWorker -w 2 -b :8000 neurosynth_compose.core:asgi_app --log-level debug --timeout 120
+    command: /usr/local/bin/gunicorn -k uvicorn_worker.UvicornWorker -w ${WEB_CONCURRENCY:-1} -b :8000 neurosynth_compose.asgi:asgi_app --log-level debug --timeout 120 --graceful-timeout ${GUNICORN_GRACEFUL_TIMEOUT:-30} --access-logfile - --error-logfile -
+    environment:
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-*}
     env_file:
       - .env
     networks:
@@ -41,7 +43,7 @@ services:
     depends_on:
       compose_redis:
         condition: service_healthy
-    entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug --autoscale=4,1 --max-tasks-per-child=5
+    entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug --autoscale=${CELERY_WORKER_AUTOSCALE:-4,1} --max-tasks-per-child=5
     volumes:
       - ${CELERY_LOG_DIR}:/logs:rw
       - ${FILE_DIR}:/file-data

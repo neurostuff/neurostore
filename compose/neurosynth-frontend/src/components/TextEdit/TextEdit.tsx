@@ -1,7 +1,7 @@
 import { Box, IconButton, TextField, Button } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import React, { useEffect, useState } from 'react';
-import EditIcon from '@mui/icons-material/Edit';
+import { Edit } from '@mui/icons-material';
 import { useAuth0 } from '@auth0/auth0-react';
 import ProgressLoader from 'components/ProgressLoader';
 
@@ -17,9 +17,10 @@ export interface ITextEdit {
     isLoading?: boolean;
     editIconIsVisible?: boolean;
     onSave: (updatedText: string, label: string) => void;
+    children?: React.ReactNode;
 }
 
-const TextEdit: React.FC<ITextEdit> = (props) => {
+const TextEdit = (props: ITextEdit) => {
     const { isAuthenticated } = useAuth0();
 
     const {
@@ -104,7 +105,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                         }}
                         onClick={() => setEditMode(true)}
                     >
-                        <EditIcon sx={{ fontSize: '20px' }} color="secondary" />
+                        <Edit sx={{ fontSize: '20px' }} color="secondary" />
                     </IconButton>
                 )}
             </Box>

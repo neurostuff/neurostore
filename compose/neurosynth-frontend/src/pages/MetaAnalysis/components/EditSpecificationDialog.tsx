@@ -33,7 +33,7 @@ import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/Select
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
-const EditSpecificationDialog: React.FC<IDialog> = (props) => {
+const EditSpecificationDialog = (props: IDialog) => {
     const { metaAnalysisId } = useParams<{ metaAnalysisId: string }>();
     const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
     const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
@@ -54,7 +54,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         isLoading: studysetIsLoading,
         isError: studysetIsError,
     } = useGetSnapshotStudysetById(studysetId);
-    const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
+    const { mutate, isPending: updateSpecificationIsLoading } = useUpdateSpecification();
     const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>({
         selectionKey: specification?.filter || undefined,
         type: getType(specification?.conditions?.[0]),

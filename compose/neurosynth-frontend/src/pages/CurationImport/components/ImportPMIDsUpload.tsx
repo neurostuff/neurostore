@@ -1,4 +1,4 @@
-import FileUploadIcon from '@mui/icons-material/FileUpload';
+import { FileUpload } from '@mui/icons-material';
 import { Box, Button, TextField } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ChangeEvent, useEffect, useState } from 'react';
@@ -19,11 +19,11 @@ const isValidNumberList = (rawIdText: string | undefined) => {
         .every((pmid) => /^\d+$/.test(pmid));
 };
 
-const ImportPMIDsUpload: React.FC<{
+const ImportPMIDsUpload = (props: {
     onPubmedIdsUploaded: (parsedIds: string[]) => void;
     onNavigate: (button: ENavigationButton) => void;
     onFileUpload: (fileName: string) => void;
-}> = (props) => {
+}) => {
     const [uploadState, setUploadState] = useState<{
         parsedIdList: string[];
         rawIdText: string;
@@ -121,7 +121,7 @@ const ImportPMIDsUpload: React.FC<{
     return (
         <Box sx={CurationImportStyles.importContainer}>
             <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-                <Button component="label" endIcon={<FileUploadIcon />}>
+                <Button component="label" endIcon={<FileUpload />}>
                     {uploadState.file?.name || 'Upload File'}
                     <input onChange={handleFileUpload} type="file" hidden />
                 </Button>

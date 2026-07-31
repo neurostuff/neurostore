@@ -2,7 +2,7 @@ import { Box, Skeleton, Typography } from '@mui/material';
 import useGetPoints from 'hooks/analyses/useGetPoints';
 import useGetDebouncedBaseStudiesFlat from 'hooks/studies/useGetDebouncedBaseStudiesFlat';
 
-const NeurosynthActivitySummary: React.FC = () => {
+const NeurosynthActivitySummary = () => {
     const { data: studies, isLoading: getStudiesIsLoading } = useGetDebouncedBaseStudiesFlat({});
     const { data: points, isLoading: getPointsIsLoading } = useGetPoints();
 

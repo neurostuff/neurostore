@@ -1,18 +1,8 @@
-import { AxiosError } from 'axios';
+import { useQuery } from '@tanstack/react-query';
 import annotationQueries from 'hooks/annotations/annotationQueries';
-import { useQuery } from 'react-query';
-import { AnnotationReturnOneOfWithNoteCollection } from './annotationQueries.types';
 
 const useGetAnnotationById = (annotationId: string | undefined | null) => {
-    const query = annotationQueries.byId(annotationId);
-    return useQuery<
-        Promise<AnnotationReturnOneOfWithNoteCollection>,
-        AxiosError,
-        AnnotationReturnOneOfWithNoteCollection,
-        typeof query.queryKey
-    >(query.queryKey, query.queryFn, {
-        enabled: query.enabled,
-    });
+    return useQuery(annotationQueries.byId(annotationId));
 };
 
 export default useGetAnnotationById;

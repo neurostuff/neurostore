@@ -1,10 +1,9 @@
 import studyQueries from 'hooks/studies/studyQueries';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 
 const useGetBaseStudyInfoById = (baseStudyId: string | undefined) => {
-    const query = studyQueries.baseStudies.byIdInfo(baseStudyId);
     return useQuery({
-        ...query,
+        ...studyQueries.baseStudies.byIdInfo(baseStudyId),
     });
 };
 

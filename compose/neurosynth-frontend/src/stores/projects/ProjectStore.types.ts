@@ -14,7 +14,7 @@ import { IExtractionMetadata } from 'pages/Extraction/Extraction.types';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { SnackbarMessage, OptionsObject, SnackbarKey } from 'notistack';
 import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
-import { QueryClient, UseMutateFunction } from 'react-query';
+import { QueryClient, UseMutateFunction } from '@tanstack/react-query';
 
 export type ProjectStoreMetadata = {
     enqueueSnackbar: undefined | ((message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey);

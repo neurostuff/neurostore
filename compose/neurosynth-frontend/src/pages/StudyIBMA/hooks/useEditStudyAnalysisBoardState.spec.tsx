@@ -1,13 +1,15 @@
-import { act, renderHook } from '@testing-library/react-hooks';
-import { useGetAnalysesByStudyId, useGetAnnotationById, useGetUncategorizedImagesByStudyId } from 'hooks';
+import { act, renderHook } from '@testing-library/react';
+import { useGetAnalysesByStudyId, useGetAnnotationById } from 'hooks';
 import useIbmaBoardMutations from 'pages/StudyIBMA/hooks/useIbmaBoardMutations';
 import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
 import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Mock, vi } from 'vitest';
 import useEditStudyAnalysisBoardState from './useEditStudyAnalysisBoardState';
 
 vi.mock('hooks');
 vi.mock('react-router-dom');
+vi.mock('@tanstack/react-query');
 vi.mock('stores/projects/ProjectStore');
 vi.mock('pages/StudyIBMA/hooks/useIbmaBoardMutations', () => ({
     default: vi.fn(),
@@ -60,7 +62,7 @@ describe('useEditStudyAnalysisBoardState', () => {
             data: analyses,
             isLoading: false,
         });
-        (useGetUncategorizedImagesByStudyId as Mock).mockReturnValue({
+        (useQuery as Mock).mockReturnValue({
             data: uncategorizedImages,
             isLoading: false,
         });

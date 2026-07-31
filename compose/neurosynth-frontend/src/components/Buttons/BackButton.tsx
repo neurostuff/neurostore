@@ -1,13 +1,13 @@
 import { Button, ButtonProps } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { ArrowBack } from '@mui/icons-material';
 
 interface IBackButton {
     path: string;
     text: string;
 }
 
-const BackButton: React.FC<IBackButton & ButtonProps> = (props) => {
+const BackButton = (props: IBackButton & ButtonProps) => {
     const navigate = useNavigate();
 
     const handleOnClick = (_event: React.MouseEvent) => {
@@ -15,7 +15,7 @@ const BackButton: React.FC<IBackButton & ButtonProps> = (props) => {
     };
 
     return (
-        <Button {...props} startIcon={<ArrowBackIcon />} onClick={handleOnClick}>
+        <Button {...props} startIcon={<ArrowBack />} onClick={handleOnClick}>
             {props.text}
         </Button>
     );

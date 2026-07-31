@@ -1,7 +1,7 @@
 import API from 'api/api.config';
 import { IPRISMAConfig } from 'pages/Curation/Curation.types';
 import { SortBy } from 'pages/Study/Study.types';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { INeurosynthProjectReturn } from './Project.types';
 
 export const indexToPRISMAMapping = (index: number): keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined => {
@@ -48,14 +48,12 @@ export const projectsSearchHelper = (
 };
 
 const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria, userSub?: string) => {
-    return useQuery(
-        ['projects', { ...projectSearchCriteria }, userSub],
-        () => projectsSearchHelper(projectSearchCriteria, userSub),
-        {
-            select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
-            refetchOnWindowFocus: false,
-        }
-    );
+    return useQuery({
+        queryKey: ['projects', { ...projectSearchCriteria }, userSub],
+        queryFn: () => projectsSearchHelper(projectSearchCriteria, userSub),
+        select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
+        refetchOnWindowFocus: false,
+    });
 };
 
 export default useGetProjects;

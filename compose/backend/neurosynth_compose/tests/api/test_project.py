@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import select
 
 from neurosynth_compose.models import (
@@ -9,6 +10,36 @@ from neurosynth_compose.models import (
 )
 from neurosynth_compose.schemas import MetaAnalysisSchema
 from neurosynth_compose.tests.conftest import MockNeurostoreSession
+
+
+def test_project_type_is_an_enum():
+    assert Project.__table__.c.type.type.enums == ["CBMA", "IBMA"]
+
+
+@pytest.mark.parametrize("project_type", ["CBMA", "IBMA"])
+def test_create_project_with_type(project_type, auth_client):
+    response = auth_client.post(
+        "/api/projects",
+        data={"name": f"{project_type} project", "type": project_type},
+    )
+
+    assert response.status_code == 200
+    assert response.json["type"] == project_type
+
+
+def test_create_project_defaults_to_cbma(auth_client):
+    response = auth_client.post("/api/projects", data={"name": "default project"})
+
+    assert response.status_code == 200
+    assert response.json["type"] == "CBMA"
+
+
+def test_create_project_rejects_invalid_type(auth_client):
+    response = auth_client.post(
+        "/api/projects", data={"name": "invalid project", "type": "invalid"}
+    )
+
+    assert response.status_code == 422
 
 
 def test_get_all_projects(session, app, auth_client, user_data):
@@ -145,17 +176,17 @@ def test_delete_project(session, app, auth_client, user_data):
     project.meta_analyses[0].results.append(MetaAnalysisResult())
 
     session.add(project)
-    # persist into the test's transaction/savepoint only; avoid committing
-    session.flush()
+    # ASGI handlers use independent request-scoped sessions, so commit setup
+    # rows that the endpoint must see.
+    session.commit()
 
     bad_delete = auth_client.delete(f"/api/projects/{project.id}")
 
     assert bad_delete.status_code == 409
 
-    project.meta_analyses[0].results = []
-    session.add(project)
-    # persist change to current savepoint without committing the outer transaction
-    session.flush()
+    for result in list(project.meta_analyses[0].results):
+        session.delete(result)
+    session.commit()
 
     good_delete = auth_client.delete(f"/api/projects/{project.id}")
 
@@ -181,13 +212,14 @@ def test_projects_list_allows_missing_neurostore_study(
         draft=False,
     )
     session.add(project)
-    session.flush()
+    session.commit()
+    project_id = project.id
 
     response = auth_client.get("/api/projects")
     assert response.status_code == 200
 
     returned_project = next(
-        p for p in response.json["results"] if p["id"] == project.id
+        p for p in response.json["results"] if p["id"] == project_id
     )
     assert returned_project["neurostore_study"] is None
     assert returned_project["neurostore_url"] is None
@@ -388,7 +420,7 @@ def test_update_project_public_without_meta_cascade(
     for meta in project.meta_analyses:
         meta.public = False
     session.add(project)
-    session.flush()
+    session.commit()
 
     response = auth_client.put(f"/api/projects/{project.id}", data={"public": True})
     assert response.status_code == 200
@@ -421,7 +453,7 @@ def test_update_project_public_with_meta_cascade(
     for meta in project.meta_analyses:
         meta.public = False
     session.add(project)
-    session.flush()
+    session.commit()
 
     update_public = auth_client.put(
         f"/api/projects/{project.id}?sync_meta_analyses_public=true",
@@ -436,6 +468,7 @@ def test_update_project_public_with_meta_cascade(
     )
     assert updated_project.public is True
     assert all(meta.public is True for meta in updated_project.meta_analyses)
+    session.rollback()
 
     update_private = auth_client.put(
         f"/api/projects/{project.id}?sync_meta_analyses_public=true",

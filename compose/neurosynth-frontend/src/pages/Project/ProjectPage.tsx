@@ -25,7 +25,7 @@ export interface IProjectPageLocationState {
     };
 }
 
-const ProjectPage: React.FC = () => {
+const ProjectPage = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const { isAuthenticated } = useAuth0();
     const location = useLocation();

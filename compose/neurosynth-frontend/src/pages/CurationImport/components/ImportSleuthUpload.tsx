@@ -1,7 +1,4 @@
-import { Warning } from '@mui/icons-material';
-import CloseIcon from '@mui/icons-material/Close';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import { Warning, Close, FileUpload, InsertDriveFile } from '@mui/icons-material';
 import { Box, Button, IconButton, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import CurationImportStyles from 'pages/CurationImport/CurationImport.styles';
 import React, { useMemo, useState } from 'react';
@@ -13,10 +10,10 @@ import {
 } from '../../CurationImport/helpers';
 import ImportSleuthHint from './ImportSleuthHint';
 
-const ImportSleuthUpload: React.FC<{
+const ImportSleuthUpload = (props: {
     onNext: (sleuthUploads: ISleuthFileUploadStubs[]) => void;
     onPrevious: () => void;
-}> = (props) => {
+}) => {
     const { onNext, onPrevious } = props;
 
     const [sleuthFileUploads, setSleuthFileUploads] = useState<
@@ -142,7 +139,7 @@ const ImportSleuthUpload: React.FC<{
                         component="label"
                     >
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <FileUploadIcon
+                            <FileUpload
                                 sx={{
                                     width: '50px',
                                     height: '50px',
@@ -168,7 +165,7 @@ const ImportSleuthUpload: React.FC<{
                             <ListItem key={index}>
                                 <ListItemIcon>
                                     {sleuthFile.isValidFile ? (
-                                        <InsertDriveFileIcon color="primary" />
+                                        <InsertDriveFile color="primary" />
                                     ) : (
                                         <Warning color="error" />
                                     )}
@@ -190,7 +187,7 @@ const ImportSleuthUpload: React.FC<{
                                     {sleuthFile.file.name}
                                 </ListItemText>
                                 <IconButton sx={{ color: 'error.main' }} onClick={() => handleRemoveFile(index)}>
-                                    <CloseIcon />
+                                    <Close />
                                 </IconButton>
                             </ListItem>
                         ))}

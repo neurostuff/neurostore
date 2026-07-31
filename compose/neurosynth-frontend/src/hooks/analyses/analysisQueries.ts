@@ -1,6 +1,7 @@
 import API from 'api/api.config';
-import { ConditionReturn, ImageReturn, PointList } from 'neurostore-typescript-sdk';
+import { ImageReturn, PointList } from 'neurostore-typescript-sdk';
 import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
+import { UseQueryOptions } from '@tanstack/react-query';
 
 const analysisQueries = {
     analyses: {
@@ -10,7 +11,7 @@ const analysisQueries = {
 
         details: () => [...analysisQueries.analyses.all(), 'detail'] as const,
 
-        byStudyId: (studyId: string | undefined | null) => ({
+        byStudyId: (studyId: string | undefined | null): UseQueryOptions<AnalysisReturnNested[]> => ({
             queryKey: [...analysisQueries.analyses.lists(), 'study', studyId] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.AnalysesService.analysesGet(
@@ -29,7 +30,7 @@ const analysisQueries = {
             enabled: !!studyId,
         }),
 
-        byId: (analysisId: string | undefined | null) => ({
+        byId: (analysisId: string | undefined | null): UseQueryOptions<AnalysisReturnNested> => ({
             queryKey: [...analysisQueries.analyses.details(), analysisId] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.AnalysesService.analysesIdGet(analysisId as string, true);
@@ -43,7 +44,7 @@ const analysisQueries = {
         all: () => ['points'] as const,
         list: () => [...analysisQueries.points.all(), 'list'] as const,
         details: () => [...analysisQueries.points.all(), 'detail'] as const,
-        every: () => ({
+        every: (): UseQueryOptions<PointList> => ({
             queryKey: ['points'] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.PointsService.pointsGet();
@@ -57,7 +58,7 @@ const analysisQueries = {
         all: () => ['images'] as const,
         list: () => [...analysisQueries.images.all(), 'list'] as const,
         details: () => [...analysisQueries.images.all(), 'detail'] as const,
-        uncategorizedByStudyId: (studyId: string | undefined | null) => ({
+        uncategorizedByStudyId: (studyId: string | undefined | null): UseQueryOptions<ImageReturn[]> => ({
             queryKey: [...analysisQueries.images.list(), 'uncategorized', 'study', studyId] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.ImagesService.imagesGet(
@@ -77,17 +78,6 @@ const analysisQueries = {
                 return studyImages.filter((image) => !image.analysis);
             },
             enabled: !!studyId,
-        }),
-    },
-
-    conditions: {
-        all: () => ({
-            queryKey: ['conditions'] as const,
-            queryFn: async () => {
-                const res = await API.NeurostoreServices.ConditionsService.conditionsGet();
-                return (res.data.results ?? []) as ConditionReturn[];
-            },
-            enabled: true,
         }),
     },
 

@@ -1,6 +1,5 @@
 import { Check } from '@mui/icons-material';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import QuestionMark from '@mui/icons-material/QuestionMark';
+import { Bookmark, QuestionMark } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
@@ -219,7 +218,7 @@ const EditStudyToolbarNext: React.FC = () => {
                         disableElevation
                         variant={isSavedForLater ? 'contained' : 'outlined'}
                     >
-                        <BookmarkIcon style={{ marginBottom: '4px' }} />
+                        <Bookmark style={{ marginBottom: '4px' }} />
                         <Typography
                             sx={[
                                 toolbarLabelSx,

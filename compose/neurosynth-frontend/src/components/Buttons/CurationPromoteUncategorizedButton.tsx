@@ -3,9 +3,12 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { usePromoteAllUncategorized } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 
-const CurationPromoteUncategorizedButton: React.FC<
-    ButtonProps & { dialogTitle: string; dialogMessage: string; onComplete?: () => void }
-> = ({ dialogTitle, dialogMessage, onComplete, ...props }) => {
+const CurationPromoteUncategorizedButton = ({
+    dialogTitle,
+    dialogMessage,
+    onComplete,
+    ...props
+}: ButtonProps & { dialogTitle: string; dialogMessage: string; onComplete?: () => void }) => {
     const [skipCurationDialogIsOpen, setSkipCurationDialogIsOpen] = useState(false);
     const promoteAllUncategorized = usePromoteAllUncategorized();
 

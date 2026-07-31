@@ -1,10 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
-import IosShareIcon from '@mui/icons-material/IosShare';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import OpenInNew from '@mui/icons-material/OpenInNew';
-import SearchIcon from '@mui/icons-material/Search';
-import SettingsIcon from '@mui/icons-material/Settings';
+import { KeyboardArrowDown, AutoAwesomeMotion, IosShare, OpenInNew, Search, Settings } from '@mui/icons-material';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
@@ -185,7 +180,7 @@ const LandingPage = () => {
                                 buttonProps={{
                                     variant: 'outlined',
                                     size: 'large',
-                                    endIcon: <KeyboardArrowDownIcon />,
+                                    endIcon: <KeyboardArrowDown />,
                                     sx: {
                                         color: 'primary.contrastText',
                                         borderColor: 'primary.contrastText',
@@ -218,7 +213,7 @@ const LandingPage = () => {
                     <Box sx={LandingPageStyles.cardsContainer}>
                         <Card elevation={0} sx={LandingPageStyles.card}>
                             <CardContent>
-                                <SearchIcon sx={LandingPageStyles.cardIcon} />
+                                <Search sx={LandingPageStyles.cardIcon} />
                                 <Typography variant="h5" sx={LandingPageStyles.cardTitle}>
                                     Find Studies
                                 </Typography>
@@ -230,7 +225,7 @@ const LandingPage = () => {
                         </Card>
                         <Card elevation={0} sx={LandingPageStyles.card}>
                             <CardContent>
-                                <AutoAwesomeMotionIcon sx={LandingPageStyles.cardIcon} />
+                                <AutoAwesomeMotion sx={LandingPageStyles.cardIcon} />
                                 <Typography variant="h5" sx={LandingPageStyles.cardTitle}>
                                     Curate collections
                                 </Typography>
@@ -242,7 +237,7 @@ const LandingPage = () => {
                         </Card>
                         <Card elevation={0} sx={LandingPageStyles.card}>
                             <CardContent>
-                                <SettingsIcon sx={LandingPageStyles.cardIcon} />
+                                <Settings sx={LandingPageStyles.cardIcon} />
                                 <Typography variant="h5" sx={LandingPageStyles.cardTitle}>
                                     Specify & Execute Meta-analysis
                                 </Typography>
@@ -254,7 +249,7 @@ const LandingPage = () => {
                         </Card>
                         <Card elevation={0} sx={LandingPageStyles.card}>
                             <CardContent>
-                                <IosShareIcon sx={LandingPageStyles.cardIcon} />
+                                <IosShare sx={LandingPageStyles.cardIcon} />
                                 <Typography variant="h5" sx={LandingPageStyles.cardTitle}>
                                     Share your results!
                                 </Typography>

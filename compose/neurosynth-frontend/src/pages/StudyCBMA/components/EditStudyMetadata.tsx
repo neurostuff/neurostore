@@ -42,7 +42,7 @@ export const sortMetadataArrayFn = (a: string, b: string) => {
     return lowerCaseA < lowerCaseB ? -1 : lowerCaseA > lowerCaseB ? 1 : 0;
 };
 
-const EditStudyMetadata: React.FC<{ disabled?: boolean }> = ({ disabled = false }) => {
+const EditStudyMetadata = ({  disabled = false  }: { disabled?: boolean }) => {
     const metadata = useStudyMetadata();
     const addOrUpdateMetadata = useAddOrUpdateMetadata();
     const deleteMetadataRow = useDeleteMetadataRow();

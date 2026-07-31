@@ -23,7 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
 import MoveToExtractionDialogIntroductionPart2 from './MoveToExtractionDialogIntroPart2';
 
-const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
+const MoveToExtractionDialog = (props: IDialog) => {
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const projectId = useProjectId();

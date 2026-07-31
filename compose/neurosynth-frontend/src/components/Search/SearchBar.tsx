@@ -1,4 +1,4 @@
-import SearchIcon from '@mui/icons-material/Search';
+import { Search } from '@mui/icons-material';
 import { Alert, Box, Button, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar.styles';
 import {
@@ -35,7 +35,7 @@ const searchPlaceholderExamples = [
     'Try: "working memory" OR "spatial memory"',
 ];
 
-const SearchBar: React.FC<ISearchBar> = (props) => {
+const SearchBar = (props: ISearchBar) => {
     const { onSearch, searchButtonColor = 'primary', searchMode = 'study-search' } = props;
     const [placeholder, setPlaceholder] = useState(searchPlaceholderExamples[0]);
     const location = useLocation();
@@ -171,7 +171,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                                 width: '150px',
                             }}
                             variant="contained"
-                            startIcon={<SearchIcon />}
+                            startIcon={<Search />}
                         >
                             Search
                         </Button>

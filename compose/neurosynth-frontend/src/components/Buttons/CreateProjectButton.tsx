@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { ButtonProps } from '@mui/material';
 import CreateProjectDialog from 'components/Buttons/CreateProjectDialog';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
@@ -11,11 +11,12 @@ import { ProjectSearchCriteria, projectsSearchHelper } from 'hooks/projects/useG
 import { generateNewProjectData, getNextUntitledProjectName } from 'stores/projects/ProjectStore.helpers';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AddCircleOutline } from '@mui/icons-material';
 
 const projectSearchCriteria = new ProjectSearchCriteria(1, 1000);
 
-const CreateProjectButton: React.FC = () => {
-    const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
+const CreateProjectButton = (props?: { buttonProps?: ButtonProps }) => {
+    const { mutate, isPending: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
     const [createProjectDialogIsOpen, setCreateProjectDialogIsOpen] = useState(false);
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
@@ -68,6 +69,12 @@ const CreateProjectButton: React.FC = () => {
         }
     };
 
+    const sx = {
+        ...NavToolbarStyles.menuItem,
+        ...NavToolbarStyles.createProjectButton,
+        ...props?.buttonProps?.sx,
+    };
+
     return (
         <>
             <CreateProjectDialog isOpen={createProjectDialogIsOpen} onCloseDialog={handleCreateProjectDialogClose} />
@@ -86,8 +93,8 @@ const CreateProjectButton: React.FC = () => {
                 loaderColor="primary"
                 onClick={handleButtonClick}
                 isLoading={createProjectIsLoading || getProjectsIsLoading}
-                sx={[NavToolbarStyles.menuItem, NavToolbarStyles.createProjectButton]}
-                startIcon={<AddCircleOutlineIcon />}
+                sx={sx}
+                startIcon={<AddCircleOutline />}
                 text="NEW PROJECT"
             />
         </>

@@ -1,5 +1,5 @@
 import studyQueries from 'hooks/studies/studyQueries';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { StudyReturnNonNested } from './studyQueries.types';
 import { AxiosError } from 'axios';
 

@@ -8,7 +8,7 @@ import {
     NoteCollectionRequest,
     NoteCollectionReturn,
 } from 'neurostore-typescript-sdk';
-import { UseMutateFunction } from 'react-query';
+import { UseMutateFunction } from '@tanstack/react-query';
 
 /** Matches `useUpdateAnnotationById` mutateAsync (annotationsIdPut). */
 export type UpdateAnnotationsMutateAsync = (variables: {

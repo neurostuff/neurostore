@@ -11,18 +11,14 @@ import useGetMetaAnalysesByIds from './metaAnalyses/useGetMetaAnalysesByIds';
 import useGetMetaAnalysisById from './metaAnalyses/useGetMetaAnalysisById';
 import useGetMetaAnalysesPublic from './metaAnalyses/useGetMetaAnalysesPublic';
 import useGetMetaAnalysisResultById from './metaAnalyses/useGetMetaAnalysisResultById';
-import useGetAnnotationsByStudysetId from './annotations/useGetAnnotationsByStudysetId';
 import useCreatePoint from './analyses/useCreatePoint';
 import useUpdateStudy from './studies/useUpdateStudy';
 import useDeletePoint from './analyses/useDeletePoint';
 import useCreateAnalysis from './analyses/useCreateAnalysis';
 import useUpdateAnalysis from './analyses/useUpdateAnalysis';
-import useGetConditions from './analyses/useGetConditions';
-import useCreateCondition from './analyses/useCreateCondition';
 import useUpdatePoint from './analyses/useUpdatePoint';
 import useDeleteAnalysis from './analyses/useDeleteAnalysis';
 import useGetAnalysesByStudyId from './analyses/useGetAnalysesByStudyId';
-import useGetUncategorizedImagesByStudyId from './analyses/useGetUncategorizedImagesByStudyId';
 import useUpdateImage from './images/useUpdateImage';
 import useCreateStudyset from './studysets/useCreateStudyset';
 import useUpdateStudyset from './studysets/useUpdateStudyset';
@@ -33,9 +29,7 @@ import useCreateStudy from './studies/useCreateStudy';
 import useCreateProject from './projects/useCreateProject';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
 import useGetStudysetNonNestedById from './studysets/useGetStudysetNonNestedById';
-import useGetStudysetNestedById from './studysets/useGetStudysetNestedById';
 import useGetStudysetSummaryById from './studysets/useGetStudysetSummaryById';
-import useGetStudyNestedById from './studies/useGetStudyNestedById';
 import useGetStudyNonNestedById from './studies/useGetStudyNonNestedById';
 import useUpdateAnnotationByAnnotationAndAnalysisIds from './annotations/useUpdateAnnotationByAnnotationAndAnalysisIds';
 import useUpdateAnnotationById from './annotations/useUpdateAnnotationById';
@@ -78,7 +72,6 @@ export {
     useGetDebouncedBaseStudiesNonNested,
     useGetNeurovaultImages,
     // STUDIES
-    useGetStudyNestedById,
     useGetStudyNonNestedById,
     useUpdateStudy,
     useCreateStudy,
@@ -91,7 +84,6 @@ export {
     useGetMetaAnalysisResultById,
     // STUDYSETS
     useGetStudysetNonNestedById,
-    useGetStudysetNestedById,
     useGetStudysetSummaryById,
     useCreateStudyset,
     useDeleteStudyset,
@@ -100,7 +92,6 @@ export {
     useGetAnnotationById,
     useUpdateAnnotationByAnnotationAndAnalysisIds,
     useUpdateAnnotationById,
-    useGetAnnotationsByStudysetId,
     useDeleteAnnotation,
     useCreateAnnotation,
     // POINTS
@@ -112,12 +103,8 @@ export {
     useCreateAnalysis,
     useUpdateAnalysis,
     useGetAnalysesByStudyId,
-    useGetUncategorizedImagesByStudyId,
     // IMAGES
     useUpdateImage,
-    // CONDITIONS
-    useGetConditions,
-    useCreateCondition,
     // project
     useCreateProject,
     useGetProjectById,

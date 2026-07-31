@@ -23,9 +23,12 @@ import { useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
 const defaultInsufficientDetailsExclusion =
     PRISMAEligibilityExclusionTags[ENeurosynthTagIds.INSUFFICIENT_DETAIL_EXCLUSION_ID];
 
-const RelegateExtractionStudyDialog: React.FC<{ isOpen: boolean; onCloseDialog: (confirm: boolean) => void }> = ({
+const RelegateExtractionStudyDialog = ({
     isOpen,
     onCloseDialog,
+}: {
+    isOpen: boolean;
+    onCloseDialog: (confirm: boolean) => void;
 }) => {
     const isPrisma = useProjectCurationIsPrisma();
     const projectId = useProjectId();
@@ -33,7 +36,7 @@ const RelegateExtractionStudyDialog: React.FC<{ isOpen: boolean; onCloseDialog: 
     const studyId = useStudyId();
     const studysetId = useProjectExtractionStudysetId();
     const { data: studyset } = useGetStudysetNonNestedById(studysetId);
-    const { mutateAsync: updateStudyset, isLoading } = useUpdateStudyset();
+    const { mutateAsync: updateStudyset, isPending: isLoading } = useUpdateStudyset();
     const demoteStub = useDemoteStub();
     const setExclusionForStub = useSetExclusionForStub();
     const createExclusion = useCreateNewExclusion();

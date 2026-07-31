@@ -1,11 +1,11 @@
 import sqlalchemy as sa
-from flask import request
+from connexion import request
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import load_only, raiseload, selectinload
 from webargs import fields
-from webargs.flaskparser import parser
 
+from neurostore.asgi_requests import parse_query_parameters
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import (
@@ -424,7 +424,7 @@ class StudysetsView(ObjectView, ListView):
         return serialize_studyset_summary(record)
 
     def post(self, body):
-        args = parser.parse(self._user_args, request, location="query")
+        args = parse_query_parameters(self._user_args, request)
         copy_annotations = args.pop("copy_annotations", True)
         source_id = args.get("source_id")
 
@@ -443,10 +443,15 @@ class StudysetsView(ObjectView, ListView):
         data = load_schema_or_abort(schema, body, unknown=unknown)
 
         clone_payload, source_record = self._build_clone_payload(source_id, data)
-        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
+        args["nested"] = bool(
+            args.get("nested") or request.query_params.get("source_id")
+        )
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(clone_payload)
+            record = self.__class__.update_or_create(
+                clone_payload,
+                settings=request.state.settings,
+            )
 
         unique_ids = self.get_affected_ids([record.id])
         clear_cache(unique_ids)

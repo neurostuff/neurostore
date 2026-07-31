@@ -5,7 +5,7 @@ import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 import { arrayToMetadata, metadataToArray } from 'pages/StudyCBMA/components/EditStudyMetadata';
 import { useSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { StudyDetails } from 'stores/study/StudyStore.helpers';
 import { useGetStudyNonNestedById, useUpdateStudy } from 'hooks';
 import useEnsureWritableStudy from 'pages/StudyIBMA/hooks/useEnsureWritableStudy';
@@ -26,10 +26,21 @@ const EditStudyDetailsDialogIBMA: React.FC<{
 }> = ({ isOpen, onClose }) => {
     const { studyId } = useParams<{ projectId: string; studyId: string }>();
     const { data: study } = useGetStudyNonNestedById(studyId);
-    const { mutateAsync: updateStudy, isLoading: updateStudyIsLoading } = useUpdateStudy();
+    const { mutateAsync: updateStudy, isPending: updateStudyIsLoading } = useUpdateStudy();
     const { enqueueSnackbar } = useSnackbar();
     const [touched, setTouched] = useState(false);
     const { ensureWritableStudy, isLoading: ensureWritableStudyIsLoading } = useEnsureWritableStudy();
+
+    const { projectId } = useParams<{ projectId: string }>();
+    const navigate = useNavigate();
+
+    const navigateToStudyEdit = useCallback(
+        (targetStudyId: string) => {
+            if (!projectId) return;
+            navigate(`/projects/${projectId}/extraction/studies/${targetStudyId}/edit`);
+        },
+        [navigate, projectId]
+    );
 
     const isLoading = updateStudyIsLoading || ensureWritableStudyIsLoading;
 
@@ -98,6 +109,8 @@ const EditStudyDetailsDialogIBMA: React.FC<{
             if (!writableStudy) return;
 
             if (writableStudy.didClone) {
+                // Clone already applied studyRequest; navigate only after that write finished.
+                navigateToStudyEdit(writableStudy.studyId);
                 enqueueSnackbar('Study cloned and saved', { variant: 'success' });
                 return;
             } else {

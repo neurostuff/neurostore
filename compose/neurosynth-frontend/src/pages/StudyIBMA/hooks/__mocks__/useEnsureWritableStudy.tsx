@@ -6,8 +6,11 @@ const ensureWritableStudy = vi.fn().mockResolvedValue({
     idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
 });
 
+const navigateToStudyEdit = vi.fn();
+
 const useEnsureWritableStudy = vi.fn().mockReturnValue({
     ensureWritableStudy,
+    navigateToStudyEdit,
     isLoading: false,
     userOwnsStudy: true,
 });

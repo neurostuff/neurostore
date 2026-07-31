@@ -1,9 +1,4 @@
-import {
-    useGetAnalysesByStudyId,
-    useGetStudyNonNestedById,
-    useGetUncategorizedImagesByStudyId,
-    useUserCanEdit,
-} from 'hooks';
+import { useGetAnalysesByStudyId, useGetStudyNonNestedById, useUserCanEdit } from 'hooks';
 import analysisQueries from 'hooks/analyses/analysisQueries';
 import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import { StudyReturnNested } from 'hooks/studies/studyQueries.types';
@@ -15,7 +10,7 @@ import {
 } from 'pages/StudyIBMA/hooks/buildWritableStudyIdMapping.helpers';
 import useCloneStudy from 'pages/StudyIBMA/hooks/useCloneStudy';
 import { useCallback } from 'react';
-import { useQueryClient } from 'react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const EMPTY_ANALYSES: AnalysisReturnNested[] = [];
@@ -39,7 +34,9 @@ const useEnsureWritableStudy = () => {
     const queryClient = useQueryClient();
     const { data: study } = useGetStudyNonNestedById(studyId);
     const { data: analyses = EMPTY_ANALYSES } = useGetAnalysesByStudyId(studyId);
-    const { data: uncategorizedImages = EMPTY_UNCATEGORIZED_IMAGES } = useGetUncategorizedImagesByStudyId(studyId);
+    const { data: uncategorizedImages = EMPTY_UNCATEGORIZED_IMAGES } = useQuery(
+        analysisQueries.images.uncategorizedByStudyId(studyId)
+    );
     const userOwnsStudy = useUserCanEdit(study?.user ?? undefined);
     const { cloneStudy, isLoading: cloneStudyIsLoading } = useCloneStudy();
 
@@ -48,11 +45,9 @@ const useEnsureWritableStudy = () => {
             const clonedStudyId = clonedStudy.id;
             if (!clonedStudyId) throw new Error('cloned study is missing an id');
 
-            const uncategorizedQuery = analysisQueries.images.uncategorizedByStudyId(clonedStudyId);
-            const clonedUncategorized = uncategorizedQuery.enabled
-                ? await queryClient.fetchQuery(uncategorizedQuery.queryKey, uncategorizedQuery.queryFn)
-                : EMPTY_UNCATEGORIZED_IMAGES;
-
+            const clonedUncategorized = await queryClient.fetchQuery(
+                analysisQueries.images.uncategorizedByStudyId(clonedStudyId)
+            );
             return buildStudySnapshot(clonedStudyId, clonedStudy.analyses ?? [], clonedUncategorized);
         },
         [queryClient]
@@ -75,25 +70,13 @@ const useEnsureWritableStudy = () => {
 
             const newSnapshot = await buildCloneSnapshot(clonedStudy);
 
-            navigate(`/projects/${projectId}/extraction/studies/${clonedStudy.id}/edit`);
-
             return {
                 studyId: clonedStudy.id,
                 didClone: true,
                 idMap: buildClonedStudyIdMap(oldSnapshot, newSnapshot),
             };
         },
-        [
-            analyses,
-            buildCloneSnapshot,
-            cloneStudy,
-            navigate,
-            projectId,
-            study?.id,
-            studyId,
-            uncategorizedImages,
-            userOwnsStudy,
-        ]
+        [analyses, buildCloneSnapshot, cloneStudy, study?.id, studyId, uncategorizedImages, userOwnsStudy]
     );
 
     return { ensureWritableStudy, isLoading: cloneStudyIsLoading, userOwnsStudy };

@@ -4,7 +4,7 @@ import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { SearchBy } from 'components/Search/search.types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-const SearchBarFilters: React.FC<{
+const SearchBarFilters = (props: {
     searchMode: 'study-search' | 'project-search';
     nameSearch?: string | undefined;
     nameSearchAllowed?: boolean;
@@ -16,7 +16,7 @@ const SearchBarFilters: React.FC<{
     authorSearchAllowed?: boolean;
     onAddFilter: (newFilter: { filter: SearchBy; value: string }) => void;
     onRemoveFilter: (filter: { filter: SearchBy; value: string }) => void;
-}> = (props) => {
+}) => {
     const {
         searchMode,
         nameSearch,

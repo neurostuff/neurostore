@@ -11,7 +11,7 @@ export interface INav {
 
 export const NAVBAR_HEIGHT = 64;
 
-const Navbar: React.FC = () => {
+const Navbar = () => {
     const { handleLogin, handleLogout } = useAuthenticate();
 
     return (

@@ -1,7 +1,7 @@
-import useDebounced from 'hooks/useDebounce';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { ProjectSearchCriteria, projectsSearchHelper } from './useGetProjects';
 import { useMemo } from 'react';
+import useDebounced from 'hooks/useDebounce';
 
 const useGetDebouncedProjects = (
     projectsearchCriteria: Partial<ProjectSearchCriteria>,
@@ -11,18 +11,17 @@ const useGetDebouncedProjects = (
     const stableArgs = useMemo(() => ({ projectsearchCriteria, userId }), [projectsearchCriteria, userId]);
     const debouncedSearchCriteria = useDebounced(stableArgs, 300);
 
-    return useQuery(
-        ['projects', debouncedSearchCriteria.projectsearchCriteria, debouncedSearchCriteria.userId],
-        () => projectsSearchHelper(debouncedSearchCriteria.projectsearchCriteria, debouncedSearchCriteria.userId),
-        {
-            enabled,
-            select: (res) => {
-                const projectsList = res.data;
-                return projectsList;
-            },
-            refetchOnWindowFocus: false,
-        }
-    );
+    return useQuery({
+        queryKey: ['projects', debouncedSearchCriteria.projectsearchCriteria, debouncedSearchCriteria.userId],
+        queryFn: () =>
+            projectsSearchHelper(debouncedSearchCriteria.projectsearchCriteria, debouncedSearchCriteria.userId),
+        enabled,
+        select: (res) => {
+            const projectsList = res.data;
+            return projectsList;
+        },
+        refetchOnWindowFocus: false,
+    });
 };
 
 export default useGetDebouncedProjects;

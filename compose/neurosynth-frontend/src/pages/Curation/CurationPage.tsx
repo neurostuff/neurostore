@@ -1,4 +1,4 @@
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { ChangeHistory } from '@mui/icons-material';
 import { Box, Button, FormControlLabel, Switch, Tooltip, Typography } from '@mui/material';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
@@ -26,7 +26,7 @@ import StartExtractionButton from './components/StartExtractionButton';
 
 const localStorageNewUIKey = 'show-new-ui-may-30-2025';
 
-const CurationPage: React.FC = () => {
+const CurationPage = () => {
     const navigate = useNavigate();
     const studysetId = useProjectExtractionStudysetId();
     const { included, uncategorized } = useGetCurationSummary();
@@ -147,7 +147,7 @@ const CurationPage: React.FC = () => {
                                     variant="outlined"
                                     size="small"
                                     sx={{ marginLeft: '0.5rem', fontSize: '12px' }}
-                                    startIcon={<ChangeHistoryIcon />}
+                                    startIcon={<ChangeHistory />}
                                 >
                                     PRISMA diagram
                                 </Button>

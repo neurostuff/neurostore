@@ -1,5 +1,4 @@
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { ChevronRight, MoreVert } from '@mui/icons-material';
 import { IconButton, Link, Menu, MenuItem, Stack, Tooltip, Typography } from '@mui/material';
 import type { CellContext } from '@tanstack/react-table';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
@@ -8,7 +7,7 @@ import EditStudyAnalysisDialogIBMA from 'pages/StudyIBMA/components/EditStudyAna
 import { STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import React, { useState } from 'react';
-import { useIsMutating } from 'react-query';
+import { useIsMutating } from '@tanstack/react-query';
 
 const analysisCellIconButtonSx = { p: 0.5, m: 1 } as const;
 
@@ -76,7 +75,7 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                         }}
                         aria-label={isExpanded ? 'Hide images' : 'See images'}
                     >
-                        <ChevronRightIcon
+                        <ChevronRight
                             fontSize="small"
                             sx={{
                                 transform: isExpanded ? 'rotate(90deg)' : undefined,
@@ -123,7 +122,7 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                     }}
                     aria-label="Analysis options"
                 >
-                    <MoreVertIcon fontSize="small" />
+                    <MoreVert fontSize="small" />
                 </IconButton>
                 <Menu
                     open={Boolean(menuAnchor)}

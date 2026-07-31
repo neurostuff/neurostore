@@ -1,6 +1,4 @@
-import { ArrowDownward, CheckCircle, QuestionMark } from '@mui/icons-material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
+import { ArrowDownward, CheckCircle, QuestionMark, ArrowUpward, Bookmark } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'stores/projects/ProjectStore';
@@ -8,9 +6,7 @@ import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { IExtractionTableStudy } from './ExtractionTable';
 import { useUserCanEdit } from 'hooks';
 
-export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStudy, EExtractionStatus | undefined>> = (
-    props
-) => {
+export const ExtractionTableStatusCell = (props: CellContext<IExtractionTableStudy, EExtractionStatus | undefined>) => {
     const projectUser = useProjectUser();
     const userCanEdit = useUserCanEdit(projectUser ?? undefined);
     const status = props.getValue();
@@ -48,7 +44,7 @@ export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStu
                     size="small"
                     variant={status === EExtractionStatus.SAVEDFORLATER ? 'contained' : 'outlined'}
                 >
-                    <BookmarkIcon />
+                    <Bookmark />
                 </Button>
                 <Button
                     onClick={(event) => {
@@ -69,10 +65,8 @@ export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStu
     );
 };
 
-export const ExtractionTableStatusHeader: React.FC<HeaderContext<IExtractionTableStudy, unknown>> = ({
-    table,
-    column,
-}) => {
+export const ExtractionTableStatusHeader = (props: HeaderContext<IExtractionTableStudy, unknown>) => {
+    const { column, table } = props;
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
     return (
@@ -97,7 +91,7 @@ export const ExtractionTableStatusHeader: React.FC<HeaderContext<IExtractionTabl
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
+                    <ArrowUpward sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             ) : (
                 <IconButton size="small" onClick={() => table.setSorting([{ id: 'status', desc: false }])}>

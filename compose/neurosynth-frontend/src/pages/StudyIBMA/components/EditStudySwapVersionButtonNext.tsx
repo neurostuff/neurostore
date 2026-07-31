@@ -1,5 +1,4 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import { OpenInNew, SwapHoriz } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -179,7 +178,7 @@ const EditStudySwapVersionButtonNext: React.FC<{
                         {isSwapping ? (
                             <ProgressLoader color="secondary" size={20} />
                         ) : (
-                            <SwapHorizIcon sx={{ fontSize: '1.2rem' }} />
+                            <SwapHoriz sx={{ fontSize: '1.2rem' }} />
                         )}
                         {buttonLabel && <Typography {...buttonLabelProps}>{buttonLabel}</Typography>}
                     </Button>
@@ -240,7 +239,7 @@ const EditStudySwapVersionButtonNext: React.FC<{
                                         target="_blank"
                                         rel="noreferrer"
                                         sx={{ fontSize: '0.8rem' }}
-                                        endIcon={<OpenInNewIcon />}
+                                        endIcon={<OpenInNew />}
                                     >
                                         View version
                                     </Button>

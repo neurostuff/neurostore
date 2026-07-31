@@ -23,18 +23,19 @@ from sqlalchemy import event, func, inspect, select, text
 
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import (
-    SnapshotAnnotation,
-    NeurostoreAnnotation,
     MetaAnalysis,
     MetaAnalysisResult,
+    NeurostoreAnnotation,
+)
+from neurosynth_compose.models.analysis import NeurostoreStudyset as NeurostoreStudyset
+from neurosynth_compose.models.analysis import (
     NeurovaultCollection,
     Project,
-    Specification,
+    SnapshotAnnotation,
     SnapshotStudyset,
-    NeurostoreStudyset as NeurostoreStudyset,
+    Specification,
 )
 from neurosynth_compose.models.auth import User
-from flask import current_app
 from neurosynth_compose.resources.data_views import meta_analysis_jobs_view
 from neurosynth_compose.tests.request_utils import Client
 
@@ -53,7 +54,8 @@ def _load_app():
     os.environ.setdefault("APP_ENV", "testing")
     os.environ["CONNEXION_DISABLE_RESPONSE_VALIDATION"] = "1"
     from neurosynth_compose import config as config_module
-    from neurosynth_compose import create_app
+    from neurosynth_compose import create_asgi_app
+    from neurosynth_compose.settings import load_settings
 
     config_module.Config.BEARERINFO_FUNC = (
         "neurosynth_compose.tests.conftest.mock_decode_token"
@@ -61,7 +63,9 @@ def _load_app():
     config_module.Config.APIKEYINFO_FUNC = (
         "neurosynth_compose.resources.auth.verify_key"
     )
-    return create_app()
+    settings = load_settings()
+    asgi_app = create_asgi_app(settings)
+    return SimpleNamespace(config=settings, asgi_app=asgi_app)
 
 
 def _response_json(response):
@@ -109,7 +113,9 @@ def _ensure_user():
 def _ensure_schema_ready():
     if "users" in inspect(db.engine).get_table_names():
         return
-    db.create_all()
+    from neurosynth_compose import service_migrations
+
+    service_migrations.upgrade("heads")
 
 
 def _discover_project_provenance_target_bytes():
@@ -164,7 +170,8 @@ def _install_local_neurostore_stub():
     from neurosynth_compose.resources import resource_services
     from neurosynth_compose.resources.data_views import projects_view
 
-    def _stub_create_or_update_neurostore_study(ns_study):
+    def _stub_create_or_update_neurostore_study(ns_study, **kwargs):
+        del kwargs
         if not ns_study.neurostore_id:
             project_id = getattr(ns_study, "project_id", None) or "unknown"
             ns_study.neurostore_id = f"local-neurostore-study-{project_id}"
@@ -323,6 +330,23 @@ def _fit_line(xs: list[int], ys: list[float]) -> dict[str, float]:
     slope = numerator / denominator
     intercept = y_mean - slope * x_mean
     return {"slope": slope, "intercept": intercept}
+
+
+def _percentile(values: list[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    if len(values) == 1:
+        return values[0]
+
+    sorted_values = sorted(values)
+    rank = (len(sorted_values) - 1) * percentile
+    lower_index = int(rank)
+    upper_index = min(lower_index + 1, len(sorted_values) - 1)
+    fraction = rank - lower_index
+    return (
+        sorted_values[lower_index]
+        + (sorted_values[upper_index] - sorted_values[lower_index]) * fraction
+    )
 
 
 def _project_line(fit: dict[str, float], x_value: int) -> float:
@@ -755,11 +779,13 @@ def _benchmark_case(
     profiling = None
     peak_memory_bytes = None
 
-    use_isolated_clients = client_ref is not None and not getattr(
-        client_ref.current, "client_flask", False
-    )
+    use_isolated_clients = client_ref is not None
     original_client = client_ref.current if client_ref is not None else None
-    warmup_client = Client(token=TOKEN) if use_isolated_clients else None
+    warmup_client = (
+        Client(token=TOKEN, asgi_app=client_ref.asgi_app)
+        if use_isolated_clients
+        else None
+    )
     try:
         with _benchmark_case_rollback(enabled=rollback_after):
             if client_ref is not None and warmup_client is not None:
@@ -792,16 +818,7 @@ def _benchmark_case(
                         return fn(index) or {}
                     if not use_isolated_clients:
                         return fn(index) or {}
-                    connexion_app = current_app.extensions.get("connexion_app")
-                    if connexion_app is not None and hasattr(
-                        connexion_app, "test_client"
-                    ):
-                        profile_test_client = connexion_app.test_client()
-                    else:
-                        profile_test_client = current_app.test_client()
-                    profile_client = Client(
-                        token=TOKEN, test_client=profile_test_client
-                    )
+                    profile_client = Client(token=TOKEN, asgi_app=client_ref.asgi_app)
                     previous_client = client_ref.current
                     client_ref.current = profile_client
                     try:
@@ -826,7 +843,11 @@ def _benchmark_case(
             )
 
     original_client = client_ref.current if client_ref is not None else None
-    memory_client = Client(token=TOKEN) if use_isolated_clients else None
+    memory_client = (
+        Client(token=TOKEN, asgi_app=client_ref.asgi_app)
+        if use_isolated_clients
+        else None
+    )
     try:
         with _benchmark_case_rollback(enabled=rollback_after):
             if client_ref is not None and memory_client is not None:
@@ -847,6 +868,7 @@ def _benchmark_case(
         "name": name,
         "iterations": durations,
         "median_seconds": statistics.median(durations),
+        "p95_seconds": _percentile(durations, 0.95),
         "metadata": last_metadata,
         "peak_memory_bytes": peak_memory_bytes,
     }
@@ -923,6 +945,7 @@ def _build_scaling_case_analysis(case_runs: list[dict], *, service: str) -> dict
                 "case_name": run["case_name"],
                 "workload_size": run["workload_size"],
                 "median_seconds": run["median_seconds"],
+                "p95_seconds": run.get("p95_seconds", run["median_seconds"]),
                 "peak_memory_bytes": run.get("peak_memory_bytes"),
                 "profiling": run.get("profiling"),
                 "metadata": run.get("metadata") or {},
@@ -988,6 +1011,7 @@ def _create_meta_analysis(
     neurostore_studyset_id=None,
     neurostore_annotation_id=None,
 ):
+    del neurostore_studyset_id, neurostore_annotation_id
     payload = {
         "name": f"production-benchmark-meta-{suffix}",
         "description": "local compose benchmark meta-analysis",
@@ -995,10 +1019,6 @@ def _create_meta_analysis(
         "specification": specification_id,
         "public": False,
     }
-    if neurostore_studyset_id is not None:
-        payload["neurostore_studyset_id"] = neurostore_studyset_id
-    if neurostore_annotation_id is not None:
-        payload["neurostore_annotation_id"] = neurostore_annotation_id
     return _response_json(_request(client, "post", "/api/meta-analyses", data=payload))
 
 
@@ -1184,11 +1204,11 @@ def run(
     production_project_provenance_bytes: int | None = None,
 ):
     app = _load_app()
-    ctx = app.app_context()
-    ctx.push()
-    client = Client(token=TOKEN)
-    client_ref = SimpleNamespace(current=client)
-    rollback_writes = _env_flag("PRODUCTION_BENCHMARK_ROLLBACK_WRITES", True)
+    client = Client(token=TOKEN, asgi_app=app.asgi_app)
+    client_ref = SimpleNamespace(current=client, asgi_app=app.asgi_app)
+    # ASGI requests run in independent request-scoped sessions. Wrapping the
+    # benchmark driver in an outer transaction can lock rows those requests need.
+    rollback_writes = _env_flag("PRODUCTION_BENCHMARK_ROLLBACK_WRITES", False)
     job_store = _InMemoryJobStore()
 
     try:
@@ -1699,7 +1719,6 @@ def run(
                 }
     finally:
         client.close()
-        ctx.pop()
 
 
 def run_scaling_profile(
@@ -1744,6 +1763,7 @@ def run_scaling_profile(
                     "target_workload_size": target_workload_size,
                     "workload_metric": workload_metric,
                     "median_seconds": case["median_seconds"],
+                    "p95_seconds": case.get("p95_seconds", case["median_seconds"]),
                     "peak_memory_bytes": case.get("peak_memory_bytes"),
                     "profiling": case.get("profiling"),
                     "metadata": metadata,

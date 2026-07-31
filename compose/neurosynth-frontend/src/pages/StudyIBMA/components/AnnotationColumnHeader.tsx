@@ -1,13 +1,12 @@
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { MoreVert } from '@mui/icons-material';
 import { Box, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import ToggleTypeStyles from 'components/EditMetadata/ToggleType.styles';
 import annotationQueries from 'hooks/annotations/annotationQueries';
 import { memo, useState } from 'react';
-import { useIsMutating } from 'react-query';
+import { useIsMutating } from '@tanstack/react-query';
 import useIbmaBoardMutations from '../hooks/useIbmaBoardMutations';
-import { Style } from 'index';
 
 const AnnotationColumnHeader = ({
     headerName,
@@ -23,7 +22,7 @@ const AnnotationColumnHeader = ({
     const open = Boolean(anchorEl);
     const handleClose = () => setAnchorEl(null);
 
-    const removeColumnIsLoading = useIsMutating(annotationQueries.mutations.update()) > 0;
+    const removeColumnIsLoading = useIsMutating({ mutationKey: annotationQueries.mutations.update() }) > 0;
 
     const isDefaultColumn = headerName === 'included';
     const headerColor = (ToggleTypeStyles[`type_${columnType}`] as { color: string })?.color;
@@ -75,7 +74,7 @@ const AnnotationColumnHeader = ({
                             }}
                             sx={{ flexShrink: 0, p: 0.25 }}
                         >
-                            <MoreVertIcon sx={{ fontSize: '1.125rem' }} />
+                            <MoreVert sx={{ fontSize: '1.125rem' }} />
                         </IconButton>
                     </Tooltip>
                     <Menu

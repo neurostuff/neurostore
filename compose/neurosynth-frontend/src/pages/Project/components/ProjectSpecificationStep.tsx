@@ -1,4 +1,4 @@
-import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
+import { KeyboardDoubleArrowRight } from '@mui/icons-material';
 import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useAllowEditMetaAnalyses, useProjectMetaAnalysisCanEdit } from 'stores/projects/ProjectStore';
@@ -10,7 +10,7 @@ interface ISpecificationStep {
     disabled: boolean;
 }
 
-const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
+const ProjectSpecificationStep = (props: ISpecificationStep & StepProps) => {
     const { disabled, ...stepProps } = props;
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();
@@ -61,9 +61,7 @@ const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (prop
                     >
                         <Button
                             endIcon={
-                                disabled ? undefined : canEditMetaAnalyses ? undefined : (
-                                    <KeyboardDoubleArrowRightIcon />
-                                )
+                                disabled ? undefined : canEditMetaAnalyses ? undefined : <KeyboardDoubleArrowRight />
                             }
                             color="primary"
                             onClick={handleClickProceed}

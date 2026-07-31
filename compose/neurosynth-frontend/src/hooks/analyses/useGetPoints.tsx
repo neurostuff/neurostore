@@ -1,13 +1,8 @@
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import analysisQueries from './analysisQueries';
 
 const useGetPoints = () => {
-    const query = analysisQueries.points.every();
-    return useQuery(query.queryKey, query.queryFn, {
-        enabled: query.enabled,
-        refetchOnWindowFocus: false,
-        staleTime: 10000,
-    });
+    return useQuery({ ...analysisQueries.points.every(), refetchOnWindowFocus: false, staleTime: 10000 });
 };
 
 export default useGetPoints;
