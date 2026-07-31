@@ -665,12 +665,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         updateExtractionMetadata: (metadata) => {
             set((state) => ({
                 ...state,
-                ...("studysetId" in metadata
-                    ? { neurostore_studyset_id: metadata.studysetId }
-                    : {}),
-                ...("annotationId" in metadata
-                    ? { neurostore_annotation_id: metadata.annotationId }
-                    : {}),
+                ...('studysetId' in metadata ? { neurostore_studyset_id: metadata.studysetId } : {}),
+                ...('annotationId' in metadata ? { neurostore_annotation_id: metadata.annotationId } : {}),
                 provenance: {
                     ...state.provenance,
                     extractionMetadata: {
@@ -763,6 +759,7 @@ export const useProjectCreatedAt = () =>
 export const useProjectUpdatedAt = () =>
     useProjectStore((state) => (state.updated_at ? new Date(state.updated_at || '') : undefined));
 export const useProjectName = () => useProjectStore((state) => state.name);
+export const useProjectType = () => useProjectStore((state) => state.type);
 export const useProjectDescription = () => useProjectStore((state) => state.description);
 export const useProjectProvenance = () => useProjectStore((state) => state.provenance);
 export const useGetProjectIsLoading = () => useProjectStore((state) => state.metadata.getProjectIsLoading);

@@ -4,17 +4,11 @@ import {
     ITaskExtractor,
 } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { StoreApi } from '../neurostore-typescript-sdk';
-import {
-    MetaAnalysesApi,
-    AnnotationsApi as NeurosynthAnnotationApi,
-    DefaultApi as NeurosynthDefaultApi,
-    StudysetsApi as NeurosynthStudysetApi,
-    ProjectsApi,
-    SpecificationsApi,
-} from '../neurosynth-compose-typescript-sdk';
+import { ComposeApi } from '../neurosynth-compose-typescript-sdk';
 import { axiosInstance, neurostoreConfig, neurosynthConfig } from './api.state';
 
 const storeApi = new StoreApi(neurostoreConfig, undefined, axiosInstance);
+const composeApi = new ComposeApi(neurosynthConfig, undefined, axiosInstance);
 
 const NeurostoreServices = {
     StudiesService: storeApi,
@@ -66,12 +60,12 @@ const NeurostoreServices = {
 };
 
 const NeurosynthServices = {
-    MetaAnalysisService: new MetaAnalysesApi(neurosynthConfig, undefined, axiosInstance),
-    SpecificationsService: new SpecificationsApi(neurosynthConfig, undefined, axiosInstance),
-    StudysetsService: new NeurosynthStudysetApi(neurosynthConfig, undefined, axiosInstance),
-    AnnotationsService: new NeurosynthAnnotationApi(neurosynthConfig, undefined, axiosInstance),
-    ProjectsService: new ProjectsApi(neurosynthConfig, undefined, axiosInstance),
-    NeurosynthDefaultApi: new NeurosynthDefaultApi(neurosynthConfig, undefined, axiosInstance),
+    MetaAnalysisService: composeApi,
+    SpecificationsService: composeApi,
+    StudysetsService: composeApi,
+    AnnotationsService: composeApi,
+    ProjectsService: composeApi,
+    NeurosynthDefaultApi: composeApi,
 };
 
 const API = {

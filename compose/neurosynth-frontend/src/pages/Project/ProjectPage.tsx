@@ -10,6 +10,7 @@ import {
     useProjectDescription,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
+    useProjectType,
     useProjectUser,
     useProjectUsername,
     useUpdateProjectDescription,
@@ -17,6 +18,7 @@ import {
 } from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ProjectReturnTypeEnum } from 'neurosynth-compose-typescript-sdk';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -37,6 +39,7 @@ const ProjectPage = () => {
     const projectName = useProjectName();
     const createdAt = useProjectCreatedAt();
     const projectUser = useProjectUser();
+    const projectType = useProjectType();
     const projectUserName = useProjectUsername();
     const projectDescription = useProjectDescription();
     const userCanEdit = useUserCanEdit(projectUser || undefined);
@@ -116,6 +119,13 @@ const ProjectPage = () => {
                     }}
                 >
                     <Box>
+                        <Chip
+                            size="small"
+                            label={projectType === ProjectReturnTypeEnum.Ibma ? 'IBMA' : 'CBMA'}
+                            variant="outlined"
+                            color="info"
+                            sx={{ marginRight: '0.5rem' }}
+                        />
                         {projectUserName && (
                             <Chip
                                 size="small"

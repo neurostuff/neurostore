@@ -11,6 +11,7 @@ import {
 } from 'stores/projects/ProjectStore.consts';
 import { ICurationColumn, ICurationMetadata, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { EAnalysisType } from 'hooks/projects/Project.types';
+import { ProjectReturnTypeEnum } from 'neurosynth-compose-typescript-sdk';
 
 export const handleDragEndHelper = (
     state: ICurationColumn[],
@@ -439,6 +440,7 @@ export const generateNewProjectData = (
 ): INeurosynthProjectReturn => {
     return {
         name: name || '',
+        type: analysisType === EAnalysisType.IBMA ? ProjectReturnTypeEnum.Ibma : ProjectReturnTypeEnum.Cbma,
         description: description || '',
         provenance: {
             type: analysisType,

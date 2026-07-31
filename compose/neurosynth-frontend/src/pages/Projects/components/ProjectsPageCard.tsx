@@ -1,10 +1,10 @@
 import { ChangeHistory, Lock, Public } from '@mui/icons-material';
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
 import { useGetMetaAnalysesByIds, useGetStudysetNonNestedById } from 'hooks';
-import { INeurosynthProjectReturn } from 'hooks/projects/Project.types';
+import { EAnalysisType, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
-import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysis, ProjectReturnTypeEnum } from 'neurosynth-compose-typescript-sdk';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ProjectsPageCardStep from './ProjectsPageCardStep';
@@ -28,12 +28,11 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
         provenance,
         updated_at,
         created_at,
+        type,
         id,
         public: isPublic, // public is a reserved keyword
         meta_analyses = [],
     } = props;
-
-    if (id === '8SnAZa663NmZ') console.log('provenance', provenance);
 
     const { data: studyset } = useGetStudysetNonNestedById(provenance?.extractionMetadata?.studysetId);
     const { data: metaAnalyses = [] } = useGetMetaAnalysesByIds(meta_analyses as string[]);
@@ -136,12 +135,13 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 <Box mb="0.5rem" sx={{ width: '100%', display: 'flex' }}>
-                    {/* <Chip
-                        label={provenance.type === EAnalysisType.IBMA ? 'IBMA' : 'CBMA'}
+                    <Chip
+                        label={type === ProjectReturnTypeEnum.Ibma ? 'IBMA' : 'CBMA'}
                         size="small"
                         variant="outlined"
-                        sx={{ mr: '6px', fontWeight: 'bold' }}
-                    /> */}
+                        color="info"
+                        sx={{ mr: '6px' }}
+                    />
                     <Chip
                         label={isPublic ? 'Public' : 'Private'}
                         icon={isPublic ? <Public /> : <Lock />}

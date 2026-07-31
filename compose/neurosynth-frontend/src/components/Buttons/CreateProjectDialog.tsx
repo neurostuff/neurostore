@@ -1,4 +1,4 @@
-import { Box, Button, Link, Typography } from '@mui/material';
+import { Box, Button, Chip, Link, Typography } from '@mui/material';
 import BaseDialog from 'components/Dialogs/BaseDialog';
 import { EAnalysisType } from 'hooks/projects/Project.types';
 import { useState } from 'react';
@@ -8,21 +8,23 @@ const analysisTypes = [
         name: 'CBMA',
         description: (
             <>
-                Coordinate-based meta-analysis. <br /> Meta-analyze brain coordinates from multiple studies.
+                <b>Coordinate-based meta-analysis.</b> <br /> Meta-analyze brain coordinates from multiple studies.
             </>
         ),
         value: EAnalysisType.CBMA,
         href: 'https://nimare.readthedocs.io/en/latest/auto_examples/02_meta-analyses/10_plot_cbma_workflow.html',
+        isBeta: false,
     },
     {
         name: 'IBMA',
         description: (
             <>
-                Image-based meta-analysis. <br /> Meta-analyze full brain images or statistical maps.
+                <b>Image-based meta-analysis.</b> <br /> Meta-analyze full brain images or statistical maps.
             </>
         ),
         value: EAnalysisType.IBMA,
         href: 'https://nimare.readthedocs.io/en/0.2.1/auto_examples/02_meta-analyses/12_plot_ibma_workflow.html',
+        isBeta: true,
     },
 ];
 
@@ -67,9 +69,19 @@ const CreateProjectDialog: React.FC<ICreateProjectDialog> = ({ isOpen, onCloseDi
                                     gap: 0.5,
                                 }}
                             >
-                                <Typography variant="h6" component="span">
-                                    {analysisType.name}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="h5" component="span">
+                                        {analysisType.name}
+                                    </Typography>
+                                    {analysisType.isBeta && (
+                                        <Chip
+                                            label="BETA"
+                                            size="small"
+                                            color="secondary"
+                                            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }}
+                                        />
+                                    )}
+                                </Box>
                                 <Typography variant="body2" component="span" sx={{ textTransform: 'none' }}>
                                     {analysisType.description}
                                 </Typography>
@@ -91,7 +103,7 @@ const CreateProjectDialog: React.FC<ICreateProjectDialog> = ({ isOpen, onCloseDi
                         Cancel
                     </Button>
                     <Button variant="contained" color="primary" disableElevation onClick={handleCreate}>
-                        Create
+                        Create new {selectedOption === EAnalysisType.IBMA ? 'IBMA' : 'CBMA'} project
                     </Button>
                 </Box>
             </Box>
