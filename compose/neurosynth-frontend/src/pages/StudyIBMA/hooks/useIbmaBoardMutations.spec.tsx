@@ -11,14 +11,19 @@ import {
     useUpdateImage,
 } from 'hooks';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSnackbar } from 'notistack';
+import { useNavigate, useParams } from 'react-router-dom';
 import { vi, Mock } from 'vitest';
 import useIbmaBoardMutations from './useIbmaBoardMutations';
 import useEnsureWritableStudy from './useEnsureWritableStudy';
 
 vi.mock('@tanstack/react-query');
 vi.mock('hooks');
+vi.mock('notistack');
+vi.mock('react-router-dom');
 vi.mock('pages/StudyIBMA/hooks/useEnsureWritableStudy');
 
+const projectId = 'project-1';
 const studyId = 'study-1';
 const annotationId = 'annotation-1';
 
@@ -61,7 +66,7 @@ const clonedWritableStudy = {
 };
 
 describe('useIbmaBoardMutations', () => {
-    const mockNavigateToStudyEdit = vi.fn();
+    const mockNavigate = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -76,10 +81,12 @@ describe('useIbmaBoardMutations', () => {
         });
         (useEnsureWritableStudy as Mock).mockReturnValue({
             ensureWritableStudy: mockEnsureWritableStudy,
-            navigateToStudyEdit: mockNavigateToStudyEdit,
             isLoading: false,
             userOwnsStudy: true,
         });
+        (useParams as Mock).mockReturnValue({ projectId, studyId });
+        (useNavigate as Mock).mockReturnValue(mockNavigate);
+        (useSnackbar as Mock).mockReturnValue({ enqueueSnackbar: vi.fn() });
     });
 
     const invalidateQueries = () => (useQueryClient as Mock)().invalidateQueries as Mock;
@@ -106,7 +113,7 @@ describe('useIbmaBoardMutations', () => {
         expect(invalidateQueries()).toHaveBeenCalledWith({
             queryKey: annotationQueries.byId(annotationId).queryKey,
         });
-        expect(mockNavigateToStudyEdit).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
     });
 
     it('updateAnalysis puts analysis fields', async () => {
@@ -284,7 +291,9 @@ describe('useIbmaBoardMutations', () => {
             expect(invalidateQueries()).toHaveBeenCalledWith({
                 queryKey: analysisQueries.analyses.byStudyId('cloned-study-1').queryKey,
             });
-            expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
+            expect(mockNavigate).toHaveBeenCalledWith(
+                `/projects/${projectId}/extraction/studies/cloned-study-1/edit`
+            );
         });
 
         it('updateAnalysis remaps analysis id through idMap', async () => {
@@ -302,7 +311,9 @@ describe('useIbmaBoardMutations', () => {
                 analysisId: 'analysis-1-cloned',
                 analysis: { name: 'Updated', description: 'Desc' },
             });
-            expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
+            expect(mockNavigate).toHaveBeenCalledWith(
+                `/projects/${projectId}/extraction/studies/cloned-study-1/edit`
+            );
         });
 
         it('deleteAnalysis remaps analysis id through idMap', async () => {
@@ -313,7 +324,9 @@ describe('useIbmaBoardMutations', () => {
             });
 
             expect(mutateAsync(useDeleteAnalysis as Mock)).toHaveBeenCalledWith('analysis-1-cloned');
-            expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
+            expect(mockNavigate).toHaveBeenCalledWith(
+                `/projects/${projectId}/extraction/studies/cloned-study-1/edit`
+            );
         });
 
         it('updateImage remaps image and analysis ids through idMap', async () => {
@@ -330,7 +343,9 @@ describe('useIbmaBoardMutations', () => {
             expect(invalidateQueries()).toHaveBeenCalledWith({
                 queryKey: analysisQueries.analyses.byStudyId('cloned-study-1').queryKey,
             });
-            expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
+            expect(mockNavigate).toHaveBeenCalledWith(
+                `/projects/${projectId}/extraction/studies/cloned-study-1/edit`
+            );
         });
     });
 });

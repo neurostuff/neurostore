@@ -10,6 +10,7 @@ const useUpdateStudy = () => {
     const queryClient = useQueryClient();
     return useMutation<AxiosResponse<StudyReturn>, AxiosError, { studyId: string; study: StudyRequest }, unknown>({
         mutationFn: (args) => API.NeurostoreServices.StudiesService.studiesIdPut(args.studyId, args.study),
+        mutationKey: studyQueries.mutations.update(),
 
         onSuccess: () => {
             queryClient.invalidateQueries({

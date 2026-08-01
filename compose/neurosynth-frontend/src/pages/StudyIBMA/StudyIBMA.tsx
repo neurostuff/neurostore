@@ -27,12 +27,7 @@ const StudyIBMAPage: React.FC = () => {
         isError: studyIsError,
         error: studyError,
     } = useGetStudyNonNestedById(studyId);
-    const {
-        data,
-        isLoading: getAnnotationIsLoading,
-        isError: annotationIsError,
-        error: annotationError,
-    } = useGetAnnotationById(annotationId);
+    const { isLoading: getAnnotationIsLoading, isError: annotationIsError } = useGetAnnotationById(annotationId);
 
     const projectName = useProjectName();
     const extractionSummary = useGetExtractionSummary(projectId || '');

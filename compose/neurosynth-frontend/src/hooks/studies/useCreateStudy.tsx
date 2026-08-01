@@ -21,6 +21,7 @@ const useCreateStudy = () => {
                 API.NeurostoreServices.StudiesService.studiesPost(undefined, sourceId, data) as Promise<
                     AxiosResponse<StudyReturnNested>
                 >,
+            mutationKey: studyQueries.mutations.create(),
 
             onSuccess: () => {
                 queryClient.invalidateQueries({

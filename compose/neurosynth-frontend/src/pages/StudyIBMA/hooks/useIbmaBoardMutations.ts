@@ -17,6 +17,7 @@ import useEnsureWritableStudy from 'pages/StudyIBMA/hooks/useEnsureWritableStudy
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 
 export type UseIbmaBoardMutationsArgs = {
     studyId: string | undefined;
@@ -31,8 +32,11 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
     const updateAnalysisMutation = useUpdateAnalysis();
     const deleteAnalysisMutation = useDeleteAnalysis();
     const updateAnnotationMutation = useUpdateAnnotationById(annotationId);
-    const updateAnnotationCellMutation = useUpdateAnnotationByAnnotationAndAnalysisIds(annotationId);
+    const updateAnnotationCellMutation = useUpdateAnnotationByAnnotationAndAnalysisIds(annotationId, {
+        invalidateOnSuccess: false,
+    });
     const updateImageMutation = useUpdateImage();
+    const { enqueueSnackbar } = useSnackbar();
 
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();
@@ -200,9 +204,8 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
                 },
             };
             await updateAnnotationCellMutation.mutateAsync([payload]);
-            await invalidateBoard(studyId);
         },
-        [annotation?.notes, annotationId, invalidateBoard, studyId, updateAnnotationCellMutation]
+        [annotation?.notes, annotationId, updateAnnotationCellMutation]
     );
 
     const updateImage = useCallback(
@@ -221,11 +224,16 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
                 targetImage.analysis = null;
             }
 
-            await updateImageMutation.mutateAsync({
-                imageId: targetImageId,
-                image: targetImage,
-            });
-            await invalidateAndNavigateIfCloned(writableStudy);
+            try {
+                await updateImageMutation.mutateAsync({
+                    imageId: targetImageId,
+                    image: targetImage,
+                });
+            } catch (error) {
+                console.error(error);
+            } finally {
+                await invalidateAndNavigateIfCloned(writableStudy);
+            }
         },
         [ensureWritableStudy, invalidateAndNavigateIfCloned, updateImageMutation]
     );

@@ -4,7 +4,7 @@ import { useGetStudyNonNestedById, useUpdateStudy } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import useEnsureWritableStudy from 'pages/StudyIBMA/hooks/useEnsureWritableStudy';
 import { useSnackbar } from 'notistack';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Mock, vi } from 'vitest';
 import EditStudyDetailsDialogIBMA from './EditStudyDetailsDialogIBMA';
 
@@ -35,7 +35,7 @@ const mockEnsureWritableStudy = vi.fn().mockResolvedValue({
     didClone: false,
     idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
 });
-const mockNavigateToStudyEdit = vi.fn();
+const mockNavigate = vi.fn();
 
 const enqueueSnackbarMock = () => (useSnackbar() as unknown as { enqueueSnackbar: Mock }).enqueueSnackbar;
 
@@ -49,6 +49,7 @@ describe('EditStudyDetailsDialogIBMA', () => {
             idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
         });
         (useParams as Mock).mockReturnValue({ studyId: 'study-1', projectId: 'p1' });
+        (useNavigate as Mock).mockReturnValue(mockNavigate);
         (useGetStudyNonNestedById as Mock).mockReturnValue({
             data: mockStudyData,
             isLoading: false,
@@ -60,7 +61,6 @@ describe('EditStudyDetailsDialogIBMA', () => {
         });
         (useEnsureWritableStudy as Mock).mockReturnValue({
             ensureWritableStudy: mockEnsureWritableStudy,
-            navigateToStudyEdit: mockNavigateToStudyEdit,
             isLoading: false,
             userOwnsStudy: true,
         });
@@ -164,7 +164,7 @@ describe('EditStudyDetailsDialogIBMA', () => {
             studyRequest: expect.objectContaining({ name: 'Cloned title' }),
         });
         expect(mockMutateAsync).not.toHaveBeenCalled();
-        expect(mockNavigateToStudyEdit).toHaveBeenCalledWith('cloned-study-1');
+        expect(mockNavigate).toHaveBeenCalledWith('/projects/p1/extraction/studies/cloned-study-1/edit');
         expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Study cloned and saved', { variant: 'success' });
     });
 });

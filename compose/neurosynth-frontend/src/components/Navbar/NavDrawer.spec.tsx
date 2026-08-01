@@ -22,7 +22,6 @@ vi.mock('hooks/projects/useGetProjects', async (importOriginal) => {
         projectsSearchHelper: mockProjectsSearchHelper,
     };
 });
-vi.mock('components/Dialogs/CreateDetailsDialog');
 vi.mock('components/Dialogs/ConfirmationDialog');
 
 describe('NavDrawer component', () => {
@@ -89,7 +88,7 @@ describe('NavDrawer component', () => {
         expect(createProjectButton?.tagName).toBe('BUTTON');
         await userEvent.click(createProjectButton!);
 
-        await userEvent.click(screen.getByRole('button', { name: 'Create' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Create new CBMA project' }));
 
         await waitFor(() => {
             expect(mockProjectsSearchHelper).toHaveBeenCalled();
@@ -110,8 +109,8 @@ describe('NavDrawer component', () => {
         expect(createProjectButton?.tagName).toBe('BUTTON');
         await userEvent.click(createProjectButton!);
 
-        await userEvent.click(screen.getByRole('button', { name: /IBMA/i }));
-        await userEvent.click(screen.getByRole('button', { name: 'Create' }));
+        await userEvent.click(screen.getByRole('button', { name: /IBMA BETA/i }));
+        await userEvent.click(screen.getByRole('button', { name: 'Create new IBMA project' }));
 
         await waitFor(() => {
             expect(mockProjectsSearchHelper).toHaveBeenCalled();

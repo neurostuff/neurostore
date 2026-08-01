@@ -13,6 +13,7 @@ import {
     useMediaQuery,
     useTheme,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
@@ -22,6 +23,7 @@ import {
     useGetStudysetNonNestedById,
     useUpdateStudyset,
 } from 'hooks';
+import annotationQueries from 'hooks/annotations/annotationQueries';
 import { useSnackbar } from 'notistack';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import React, { useMemo, useState } from 'react';
@@ -30,6 +32,7 @@ import {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
     useProjectId,
+    useProjectExtractionAnnotationId,
 } from 'stores/projects/ProjectStore';
 
 const EditStudySwapVersionButtonNext: React.FC<{
@@ -51,6 +54,8 @@ const EditStudySwapVersionButtonNext: React.FC<{
     const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
+    const queryClient = useQueryClient();
+    const annotationId = useProjectExtractionAnnotationId();
 
     const [isSwapping, setIsSwapping] = useState(false);
     const [confirmationDialogState, setConfirmationDialogState] = useState<{
@@ -118,8 +123,9 @@ const EditStudySwapVersionButtonNext: React.FC<{
         try {
             handleCloseNavMenu();
 
-            // 1. Update the studyset
+            // 1. Update the studyset. The studyset update updates the annotation too, so we need to invalidate the cache
             await handleUpdateStudyset(versionToSwapTo);
+            await queryClient.invalidateQueries({ queryKey: annotationQueries.byId(annotationId).queryKey });
 
             // 2. Update the studylist status
             replaceStudyWithNewClonedStudy(studyId, versionToSwapTo);

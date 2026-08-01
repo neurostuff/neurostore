@@ -9,6 +9,7 @@ const useDeleteStudy = () => {
     const { enqueueSnackbar } = useSnackbar();
     return useMutation<AxiosResponse<void>, AxiosError, string, unknown>({
         mutationFn: (id: string) => API.NeurostoreServices.StudiesService.studiesIdDelete(id),
+        mutationKey: studyQueries.mutations.delete(),
 
         onSuccess: () => {
             // we need to send a request to retrieve studies again with its associated analyses and points

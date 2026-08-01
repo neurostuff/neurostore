@@ -145,6 +145,12 @@ const studyQueries = {
             },
         }),
     },
+
+    mutations: {
+        create: () => [...studyQueries.studies.all(), 'create'] as const,
+        update: () => [...studyQueries.studies.all(), 'update'] as const,
+        delete: () => [...studyQueries.studies.all(), 'delete'] as const,
+    },
 };
 
 export default studyQueries;

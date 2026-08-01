@@ -6,6 +6,7 @@ import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysi
 import React, { useCallback, useState } from 'react';
 import { useIsMutating } from '@tanstack/react-query';
 import analysisQueries from 'hooks/analyses/analysisQueries';
+import studyQueries from 'hooks/studies/studyQueries';
 
 type MoveMenuAnchor = { el: HTMLElement; imageId: string } | null;
 
@@ -24,9 +25,11 @@ const EditStudyAnalysisImagesExpandedRow: React.FC<{
     const [moveAnchorEl, setMoveAnchorEl] = useState<MoveMenuAnchor>(null);
     const [imageEditType, setImageEditType] = useState<{ action: 'move' | 'remove'; imageId: string }>();
 
+    const studyIsCloning = useIsMutating({ mutationKey: studyQueries.mutations.create() }) > 0;
     const updateImageIsMutating = useIsMutating({ mutationKey: analysisQueries.mutations.images.update() }) > 0;
-    const removeLoading = updateImageIsMutating && imageEditType?.action === 'remove';
-    const updateLoading = updateImageIsMutating && imageEditType?.action === 'move';
+    const isUpdating = studyIsCloning || updateImageIsMutating;
+    const removeLoading = isUpdating && imageEditType?.action === 'remove';
+    const updateLoading = isUpdating && imageEditType?.action === 'move';
 
     const handleMoveClick = useCallback((event: React.MouseEvent<HTMLElement>, imageId: string) => {
         event.stopPropagation();

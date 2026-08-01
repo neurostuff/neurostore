@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useGetAnalysesByStudyId, useGetStudyNonNestedById, useUserCanEdit } from 'hooks';
 import analysisQueries from 'hooks/analyses/analysisQueries';
 import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
@@ -10,8 +11,7 @@ import {
 } from 'pages/StudyIBMA/hooks/buildWritableStudyIdMapping.helpers';
 import useCloneStudy from 'pages/StudyIBMA/hooks/useCloneStudy';
 import { useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 const EMPTY_ANALYSES: AnalysisReturnNested[] = [];
 const EMPTY_UNCATEGORIZED_IMAGES: ImageReturn[] = [];
@@ -29,8 +29,7 @@ type EnsureWritableStudyResult = {
 };
 
 const useEnsureWritableStudy = () => {
-    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
-    const navigate = useNavigate();
+    const { studyId } = useParams<{ studyId: string }>();
     const queryClient = useQueryClient();
     const { data: study } = useGetStudyNonNestedById(studyId);
     const { data: analyses = EMPTY_ANALYSES } = useGetAnalysesByStudyId(studyId);

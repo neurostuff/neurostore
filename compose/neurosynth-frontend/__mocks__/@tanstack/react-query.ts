@@ -17,4 +17,7 @@ const useQuery = vi.fn().mockReturnValue({
 
 const useIsMutating = vi.fn().mockReturnValue(0);
 
-export { useQueryClient, useQuery, useIsMutating };
+/** Pass-through so query factories using `queryOptions(...)` still expose `.queryKey`. */
+const queryOptions = <T>(options: T): T => options;
+
+export { useQueryClient, useQuery, useIsMutating, queryOptions };
