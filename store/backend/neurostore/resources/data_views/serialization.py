@@ -140,6 +140,7 @@ def serialize_analysis_record(analysis):
         "weights": weights,
         "name": analysis.name,
         "description": analysis.description,
+        "source_id": analysis.source_id,
     }
 
 

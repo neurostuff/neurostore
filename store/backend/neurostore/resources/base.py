@@ -4,6 +4,7 @@ Base Classes/functions for constructing views
 
 import json
 import re
+from copy import deepcopy
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
@@ -127,7 +128,7 @@ class BaseView:
     def merge_unique_ids(*unique_ids_dicts):
         return merge_unique_ids(*unique_ids_dicts)
 
-    def update_annotations(self, annotations):
+    def update_annotations(self, annotations, origin_notes=None):
         if not annotations:
             return
 
@@ -141,6 +142,7 @@ class BaseView:
                 StudysetStudy.studyset_id,
                 StudysetStudy.study_id,
                 Analysis.id.label("analysis_id"),
+                Analysis.source_id.label("analysis_source_id"),
             )
             .select_from(Annotation)
             .join(StudysetStudy, StudysetStudy.studyset_id == Annotation.studyset_id)
@@ -161,20 +163,29 @@ class BaseView:
         if not results:
             return
 
+        # Snapshot notes win: swapping a study out of a studyset cascade-deletes
+        # its annotation_analyses before this runs.
+        origin_notes = {**self._load_origin_notes(results), **(origin_notes or {})}
+
         default_notes = {}
         create_annotation_analyses = []
         for result in results:
             annotation_id = result.annotation_id
-            if annotation_id not in default_notes:
-                note_payload = self._build_default_note(result.note_keys)
-                default_notes[annotation_id] = (
-                    note_payload if note_payload is not None else {}
-                )
+            note = origin_notes.get((annotation_id, result.analysis_source_id))
+            if note is not None:
+                note = deepcopy(note)
+            else:
+                if annotation_id not in default_notes:
+                    note_payload = self._build_default_note(result.note_keys)
+                    default_notes[annotation_id] = (
+                        note_payload if note_payload is not None else {}
+                    )
+                note = default_notes[annotation_id]
 
             params = {
                 "analysis_id": result.analysis_id,
                 "annotation_id": annotation_id,
-                "note": default_notes[annotation_id],
+                "note": note,
                 "user_id": result.user_id,
                 "study_id": result.study_id,
                 "studyset_id": result.studyset_id,
@@ -186,6 +197,55 @@ class BaseView:
                 sa.insert(AnnotationAnalysis),
                 create_annotation_analyses,
             )
+
+    @staticmethod
+    def _fetch_notes(annotation_ids, analysis_criterion):
+        if not annotation_ids:
+            return {}
+
+        rows = db.session.execute(
+            sa.select(
+                AnnotationAnalysis.annotation_id,
+                AnnotationAnalysis.analysis_id,
+                AnnotationAnalysis.note,
+            )
+            .where(AnnotationAnalysis.annotation_id.in_(annotation_ids))
+            .where(analysis_criterion)
+        ).all()
+
+        return {
+            (row.annotation_id, row.analysis_id): row.note
+            for row in rows
+            if row.note is not None
+        }
+
+    @classmethod
+    def snapshot_clone_origin_notes(cls, annotation_ids):
+        """Capture notes on analyses that clones point at, before a mutation.
+
+        Limited to analyses some clone actually originates from, so this stays
+        cheap on large studysets.
+        """
+        origin = sa.orm.aliased(Analysis)
+        return cls._fetch_notes(
+            annotation_ids,
+            sa.exists().where(origin.source_id == AnnotationAnalysis.analysis_id),
+        )
+
+    @classmethod
+    def _load_origin_notes(cls, results):
+        """Notes from the analyses that cloned analyses originated from."""
+        annotation_ids = set()
+        origin_analysis_ids = set()
+        for result in results:
+            if result.analysis_source_id is not None:
+                annotation_ids.add(result.annotation_id)
+                origin_analysis_ids.add(result.analysis_source_id)
+
+        return cls._fetch_notes(
+            annotation_ids,
+            AnnotationAnalysis.analysis_id.in_(origin_analysis_ids),
+        )
 
     def update_base_studies(self, base_studies):
         if not base_studies:
@@ -355,6 +415,9 @@ class ObjectView(BaseView):
         q = self.eager_load(q, args)
         input_record = q.one()
         pre_unique_ids = self.get_affected_ids([id])
+        origin_notes = self.snapshot_clone_origin_notes(
+            pre_unique_ids.get("annotations")
+        )
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
@@ -375,7 +438,9 @@ class ObjectView(BaseView):
         try:
             self.update_base_studies(unique_ids.get("base-studies"))
             if object_view_policy.should_refresh_annotations():
-                self.update_annotations(unique_ids.get("annotations"))
+                self.update_annotations(
+                    unique_ids.get("annotations"), origin_notes=origin_notes
+                )
         except SQLAlchemyError as e:
             db.session.rollback()
             abort_validation(str(e))
