@@ -1343,8 +1343,8 @@ def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
         session.commit()
 
         # process_base_study_metadata_outbox_batch now calls
-        # _gather_base_study_enrichment (network calls, no lock) and
-        # _apply_base_study_enrichment (FOR NO KEY UPDATE, fast write)
+        # _gather_base_study_enrichment (network calls, no row locks) and
+        # _apply_base_study_enrichment (DB write phase; locks the base_study row)
         # directly rather than through enrich_base_study_metadata -- patch
         # the gather step so this fails before any real network call.
         monkeypatch.setattr(
