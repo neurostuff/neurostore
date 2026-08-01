@@ -475,11 +475,13 @@ class BaseStudy(BaseMixin, db.Model):
 class BaseStudyFlagOutbox(db.Model):
     __tablename__ = "base_study_flag_outbox"
 
-    base_study_id = db.Column(
-        db.Text,
-        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
+    # No FK to base_studies.id: an FK here would make every insert/update take
+    # an incidental lock on the referenced base_studies row, which is exactly
+    # what causes this table to deadlock against the metadata-enrichment
+    # worker's own base_studies lock. The worker already tolerates a
+    # base_study_id with no matching base_studies row (it's a no-op that just
+    # gets cleaned up), so the cascade isn't load-bearing for correctness.
+    base_study_id = db.Column(db.Text, primary_key=True)
     reason = db.Column(db.String, nullable=True)
     enqueued_at = db.Column(
         db.DateTime(timezone=True),
@@ -493,21 +495,14 @@ class BaseStudyFlagOutbox(db.Model):
         server_default=func.now(),
         onupdate=func.now(),
         index=True,
-    )
-
-    base_study = relationship(
-        "BaseStudy", backref=backref("flag_outbox_entry", passive_deletes=True)
     )
 
 
 class BaseStudyMetadataOutbox(db.Model):
     __tablename__ = "base_study_metadata_outbox"
 
-    base_study_id = db.Column(
-        db.Text,
-        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
+    # See BaseStudyFlagOutbox for why there's deliberately no FK here.
+    base_study_id = db.Column(db.Text, primary_key=True)
     reason = db.Column(db.String, nullable=True)
     enqueued_at = db.Column(
         db.DateTime(timezone=True),
@@ -521,10 +516,6 @@ class BaseStudyMetadataOutbox(db.Model):
         server_default=func.now(),
         onupdate=func.now(),
         index=True,
-    )
-
-    base_study = relationship(
-        "BaseStudy", backref=backref("metadata_outbox_entry", passive_deletes=True)
     )
 
 

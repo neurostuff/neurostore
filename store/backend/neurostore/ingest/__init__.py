@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import requests
+import sqlalchemy as sa
 from dateutil.parser import parse as parse_date
 from scipy import sparse
 from sqlalchemy import or_
@@ -20,6 +21,8 @@ from neurostore.models import (
     Annotation,
     AnnotationAnalysis,
     BaseStudy,
+    BaseStudyFlagOutbox,
+    BaseStudyMetadataOutbox,
     Condition,
     Entity,
     Image,
@@ -303,6 +306,16 @@ def ingest_neurosynth(max_rows=None):
                             setattr(source_base_study, col, source_attr or new_attr)
                         source_base_study.versions.extend(ab.versions)
                         # delete the extraneous record
+                        db.session.execute(
+                            sa.delete(BaseStudyFlagOutbox).where(
+                                BaseStudyFlagOutbox.base_study_id == ab.id
+                            )
+                        )
+                        db.session.execute(
+                            sa.delete(BaseStudyMetadataOutbox).where(
+                                BaseStudyMetadataOutbox.base_study_id == ab.id
+                            )
+                        )
                         db.session.delete(ab)
 
             if doi is None:
@@ -607,6 +620,16 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                 new_attr = getattr(ab, col)
                 setattr(source_base_study, col, source_attr or new_attr)
             source_base_study.versions.extend(ab.versions)
+            db.session.execute(
+                sa.delete(BaseStudyFlagOutbox).where(
+                    BaseStudyFlagOutbox.base_study_id == ab.id
+                )
+            )
+            db.session.execute(
+                sa.delete(BaseStudyMetadataOutbox).where(
+                    BaseStudyMetadataOutbox.base_study_id == ab.id
+                )
+            )
             db.session.delete(ab)
         return source_base_study
 
