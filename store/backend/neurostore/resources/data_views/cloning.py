@@ -45,7 +45,7 @@ def _clone_image_payload(image):
         "space": image.space,
         "value_type": image.value_type,
         "add_date": image.add_date,
-        "data": deepcopy(image.data) if image.data else None,
+        "data": deepcopy(image.data) if image.data is not None else None,
     }
 
 
