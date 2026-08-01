@@ -653,7 +653,7 @@ def _find_active_duplicates(primary, identifiers):
             sa.or_(*filters),
         )
         .order_by(BaseStudy.created_at.asc(), BaseStudy.id.asc())
-        .with_for_update(of=BaseStudy, skip_locked=True, key_share=True)
+        .with_for_update(of=BaseStudy, skip_locked=True)
     )
     return list(db.session.scalars(query).all())
 
@@ -1011,7 +1011,7 @@ def _apply_base_study_enrichment(gathered, *, logger):
     base_study = db.session.scalar(
         sa.select(BaseStudy)
         .where(BaseStudy.id == gathered.base_study_id)
-        .with_for_update(of=BaseStudy, key_share=True)
+        .with_for_update(of=BaseStudy)
     )
     if base_study is None or base_study.is_active is False:
         return {"base-studies": set(), "studies": set()}
@@ -1176,6 +1176,7 @@ def process_base_study_metadata_outbox_batch(batch_size=50, *, settings, logger)
                 base_study_id, settings=settings, logger=logger
             )
         except Exception as exc:  # noqa: BLE001
+            db.session.rollback()
             logger.warning(
                 "base-study metadata gather failed for %s: %s",
                 base_study_id,

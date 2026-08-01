@@ -1366,6 +1366,62 @@ def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
         app.config["BASE_STUDY_METADATA_RETRY_DELAY_SECONDS"] = delay_original
 
 
+def test_metadata_worker_rolls_back_failed_gather_before_continuing(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    failed_base_study = BaseStudy(
+        name="Failed Gather Row",
+        pmid="960002",
+        level="group",
+    )
+    successful_base_study = BaseStudy(
+        name="Successful Gather Row",
+        pmid="960003",
+        level="group",
+    )
+    session.add_all([failed_base_study, successful_base_study])
+    session.commit()
+
+    session.add_all(
+        [
+            BaseStudyMetadataOutbox(
+                base_study_id=failed_base_study.id,
+                reason="test-gather-rollback-failed",
+            ),
+            BaseStudyMetadataOutbox(
+                base_study_id=successful_base_study.id,
+                reason="test-gather-rollback-successful",
+            ),
+        ]
+    )
+    session.commit()
+
+    def _patched_gather(target_id, **_kwargs):
+        if target_id == failed_base_study.id:
+            metadata_service.db.session.execute(sa.text("SELECT * FROM missing_table"))
+        return metadata_service._NO_OP_ENRICHMENT
+
+    monkeypatch.setattr(metadata_service, "_gather_base_study_enrichment", _patched_gather)
+
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
+
+    assert processed == 1
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=successful_base_study.id
+        ).one_or_none()
+        is None
+    )
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=failed_base_study.id).one()
+        is not None
+    )
+
+
 def test_metadata_worker_stops_after_first_satisfied_provider(
     session, app, monkeypatch
 ):
@@ -1785,8 +1841,9 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
     # process_base_study_metadata_outbox_batch now calls
     # _gather_base_study_enrichment (network calls, no lock -- bypassed here
     # entirely, same as the old test bypassed enrich_base_study_metadata
-    # wholesale) and _apply_base_study_enrichment (where the FOR UPDATE now
-    # lives) directly, so the synchronization point moves to the latter.
+    # wholesale) and _apply_base_study_enrichment (where the base_studies row
+    # lock now lives) directly, so the synchronization point moves to the
+    # latter.
     def _patched_gather(target_id, **_kwargs):
         return metadata_service._GatheredEnrichment(target_id, {}, [])
 
