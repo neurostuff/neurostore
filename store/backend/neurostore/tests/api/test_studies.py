@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from neurostore.models import Analysis, Study, Studyset, User
+from neurostore.models import Analysis, Image, Study, Studyset, User
 from neurostore.schemas import StudySchema
 
 pytestmark = pytest.mark.anyio
@@ -148,6 +148,44 @@ async def test_clone_studies(auth_client, ingest_neurovault, session):
     assert set([an["name"] for an in data2["analyses"]]) == set(
         [an.name for an in study_entry.analyses]
     )
+
+
+async def test_clone_study_copies_study_owned_images(auth_client, session):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    study = Study(name="study with images", user=user)
+    analysis = Analysis(name="an analysis", study=study, user=user, order=0)
+    attached = Image(
+        filename="attached.nii.gz",
+        analysis=analysis,
+        study=study,
+        value_type="Z",
+        user=user,
+    )
+    # study-owned image with no analysis
+    uncategorized = Image(
+        filename="uncategorized.nii.gz",
+        study=study,
+        value_type="T",
+        data={"kept": True},
+        user=user,
+    )
+    session.add_all([study, analysis, attached, uncategorized])
+    session.commit()
+
+    resp = await auth_client.post(f"/api/studies/?source_id={study.id}", data={})
+    assert resp.status_code == 200
+    clone_id = resp.json()["id"]
+
+    cloned = Image.query.filter_by(study_id=clone_id).all()
+    by_filename = {image.filename: image for image in cloned}
+
+    assert set(by_filename) == {"attached.nii.gz", "uncategorized.nii.gz"}
+    # the clone owns fresh image rows, not the originals
+    assert {image.id for image in cloned}.isdisjoint({attached.id, uncategorized.id})
+
+    assert by_filename["attached.nii.gz"].analysis_id is not None
+    assert by_filename["uncategorized.nii.gz"].analysis_id is None
+    assert by_filename["uncategorized.nii.gz"].data == {"kept": True}
 
 
 async def test_clone_study_with_missing_source_id_sets_null(

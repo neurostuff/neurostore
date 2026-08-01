@@ -45,6 +45,7 @@ def _clone_image_payload(image):
         "space": image.space,
         "value_type": image.value_type,
         "add_date": image.add_date,
+        "data": deepcopy(image.data) if image.data else None,
     }
 
 
@@ -235,6 +236,9 @@ def _clone_analysis_payload(analysis):
     return {
         "metadata_": deepcopy(analysis.metadata_) if analysis.metadata_ else None,
         "order": analysis.order,
+        # Immediate parent, not the root: annotation notes are carried over from
+        # whichever analysis most recently held them.
+        "source_id": analysis.id,
         "analysis_conditions": [
             _clone_analysis_condition_payload(analysis_condition)
             for analysis_condition in analysis.analysis_conditions
@@ -315,6 +319,13 @@ def build_study_clone_payload(study, override_data=None):
             _clone_analysis_payload(analysis)
             for analysis in _sorted_analyses(study.analyses)
         ],
+        # Study-owned ("uncategorized") images have no analysis to be cloned
+        # under, so they would otherwise be dropped from the clone.
+        "images": [
+            _clone_image_payload(image)
+            for image in sorted(study.images, key=lambda image: image.id or "")
+            if image.analysis_id is None
+        ],
         "source": "neurostore",
         "source_id": resolve_neurostore_origin(study),
         "source_updated_at": study.updated_at or study.created_at,
@@ -357,6 +368,7 @@ def load_study_clone_source(study_id, eager_load=None):
         Study.query.filter_by(id=study_id)
         .options(
             raiseload("*", sql_only=True),
+            selectinload(Study.images).options(raiseload("*", sql_only=True)),
             selectinload(Study.analyses).options(
                 raiseload("*", sql_only=True),
                 selectinload(Analysis.analysis_conditions).options(

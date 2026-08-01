@@ -6,7 +6,15 @@ import string
 
 from sqlalchemy import event
 
-from neurostore.models import Analysis, Point, Study, Studyset, StudysetStudy, User
+from neurostore.models import (
+    Analysis,
+    AnnotationAnalysis,
+    Point,
+    Study,
+    Studyset,
+    StudysetStudy,
+    User,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -250,6 +258,128 @@ async def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth, sessio
         == set(s for s in clone_ss.json()["studies"])
         == set(s for s in clone_ss_non_nested.json()["studies"])
         == set(s["id"] for s in clone_ss_nested.json()["studies"])
+    )
+
+
+async def _annotate_and_clone_study(auth_client, note_value):
+    """Annotate a study, clone it, and swap the clone into the studyset."""
+    study = Study.query.join(Analysis).first()
+    other_study = Study.query.filter(Study.id != study.id).first()
+
+    studyset_resp = await auth_client.post(
+        "/api/studysets/",
+        data={"name": "carryover", "studies": [study.id, other_study.id]},
+    )
+    assert studyset_resp.status_code == 200
+    studyset_id = studyset_resp.json()["id"]
+
+    target_analysis = study.analyses[0]
+    notes = [
+        {
+            "study": s.id,
+            "analysis": a.id,
+            "note": {"foo": note_value if a.id == target_analysis.id else "untouched"},
+        }
+        for s in (study, other_study)
+        for a in s.analyses
+    ]
+    annot_resp = await auth_client.post(
+        "/api/annotations/",
+        data={
+            "studyset": studyset_id,
+            "notes": notes,
+            "note_keys": {"foo": {"type": "string", "order": 0}},
+            "name": "carryover notes",
+        },
+    )
+    assert annot_resp.status_code == 200
+    annotation_id = annot_resp.json()["id"]
+
+    clone_resp = await auth_client.post(f"/api/studies/?source_id={study.id}", data={})
+    assert clone_resp.status_code == 200
+    clone_id = clone_resp.json()["id"]
+
+    swap_resp = await auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={"studies": [clone_id, other_study.id]},
+    )
+    assert swap_resp.status_code == 200
+
+    return {
+        "annotation_id": annotation_id,
+        "origin_analysis_id": target_analysis.id,
+        "clone_id": clone_id,
+        "other_study_id": other_study.id,
+        "studyset_id": studyset_id,
+    }
+
+
+async def test_cloned_study_carries_over_annotation_notes(
+    auth_client, ingest_neurosynth, session
+):
+    ctx = await _annotate_and_clone_study(auth_client, "carry me over")
+
+    cloned_analysis = Analysis.query.filter_by(
+        study_id=ctx["clone_id"], source_id=ctx["origin_analysis_id"]
+    ).one()
+
+    get_resp = await auth_client.get(f"/api/annotations/{ctx['annotation_id']}")
+    assert get_resp.status_code == 200
+    notes_by_analysis = {note["analysis"]: note for note in get_resp.json()["notes"]}
+
+    assert notes_by_analysis[cloned_analysis.id]["note"]["foo"] == "carry me over"
+
+
+async def test_clone_of_clone_carries_over_annotation_notes(
+    auth_client, ingest_neurosynth, session
+):
+    ctx = await _annotate_and_clone_study(auth_client, "root value")
+
+    first_analysis = Analysis.query.filter_by(
+        study_id=ctx["clone_id"], source_id=ctx["origin_analysis_id"]
+    ).one()
+
+    second_clone = await auth_client.post(
+        f"/api/studies/?source_id={ctx['clone_id']}", data={}
+    )
+    assert second_clone.status_code == 200
+    second_clone_id = second_clone.json()["id"]
+
+    second_analysis = Analysis.query.filter_by(
+        study_id=second_clone_id, source_id=first_analysis.id
+    ).one()
+
+    swap_resp = await auth_client.put(
+        f"/api/studysets/{ctx['studyset_id']}",
+        data={"studies": [second_clone_id, ctx["other_study_id"]]},
+    )
+    assert swap_resp.status_code == 200
+
+    get_resp = await auth_client.get(f"/api/annotations/{ctx['annotation_id']}")
+    notes_by_analysis = {note["analysis"]: note for note in get_resp.json()["notes"]}
+
+    assert notes_by_analysis[second_analysis.id]["note"]["foo"] == "root value"
+
+
+async def test_clone_without_studyset_creates_no_annotation_rows(
+    auth_client, ingest_neurosynth, session
+):
+    study = Study.query.join(Analysis).first()
+
+    clone_resp = await auth_client.post(f"/api/studies/?source_id={study.id}", data={})
+    assert clone_resp.status_code == 200
+    clone_id = clone_resp.json()["id"]
+
+    cloned_analysis_ids = [
+        a.id for a in Analysis.query.filter_by(study_id=clone_id).all()
+    ]
+    assert cloned_analysis_ids
+
+    assert (
+        AnnotationAnalysis.query.filter(
+            AnnotationAnalysis.analysis_id.in_(cloned_analysis_ids)
+        ).count()
+        == 0
     )
 
 
