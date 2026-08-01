@@ -285,25 +285,37 @@ def recompute_media_flags(base_study_ids):
 def process_base_study_flag_outbox_batch(batch_size=200):
     batch_size = max(1, int(batch_size))
 
-    claimed_ids = []
-    cache_ids = {"base-studies": set(), "studies": set(), "analyses": set()}
-    try:
-        claim_query = (
-            sa.select(BaseStudyFlagOutbox.base_study_id)
-            .order_by(
-                BaseStudyFlagOutbox.updated_at.asc(),
-                BaseStudyFlagOutbox.base_study_id.asc(),
-            )
-            .limit(batch_size)
-            .with_for_update(skip_locked=True)
+    claim_query = (
+        sa.select(BaseStudyFlagOutbox.base_study_id)
+        .order_by(
+            BaseStudyFlagOutbox.updated_at.asc(),
+            BaseStudyFlagOutbox.base_study_id.asc(),
         )
+        .limit(batch_size)
+        .with_for_update(skip_locked=True)
+    )
+    try:
         claimed_ids = list(db.session.scalars(claim_query).all())
         if not claimed_ids:
             db.session.rollback()
             return 0
 
-        cache_ids = recompute_media_flags(claimed_ids)
+        # Release the claim lock immediately -- recompute_media_flags below
+        # doesn't need it held, and touching updated_at pushes these rows to
+        # the back of the ORDER BY so a concurrent worker replica doesn't
+        # immediately re-claim them.
+        db.session.execute(
+            sa.update(BaseStudyFlagOutbox)
+            .where(BaseStudyFlagOutbox.base_study_id.in_(claimed_ids))
+            .values(updated_at=sa.func.now())
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
 
+    try:
+        cache_ids = recompute_media_flags(claimed_ids)
         db.session.execute(
             sa.delete(BaseStudyFlagOutbox).where(
                 BaseStudyFlagOutbox.base_study_id.in_(claimed_ids)

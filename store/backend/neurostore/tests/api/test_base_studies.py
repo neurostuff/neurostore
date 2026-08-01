@@ -28,7 +28,10 @@ from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
     process_base_study_metadata_outbox_batch,
 )
-from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
+from neurostore.services.has_media_flags import (
+    enqueue_base_study_flag_updates,
+    process_base_study_flag_outbox_batch,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -1339,9 +1342,14 @@ def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
         )
         session.commit()
 
+        # process_base_study_metadata_outbox_batch now calls
+        # _gather_base_study_enrichment (network calls, no lock) and
+        # _apply_base_study_enrichment (FOR NO KEY UPDATE, fast write)
+        # directly rather than through enrich_base_study_metadata -- patch
+        # the gather step so this fails before any real network call.
         monkeypatch.setattr(
             metadata_service,
-            "enrich_base_study_metadata",
+            "_gather_base_study_enrichment",
             lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
         )
 
@@ -1774,11 +1782,19 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
     flag_has_outbox_lock = threading.Event()
     results = {}
 
-    def _patched_enrich(target_id, **_kwargs):
+    # process_base_study_metadata_outbox_batch now calls
+    # _gather_base_study_enrichment (network calls, no lock -- bypassed here
+    # entirely, same as the old test bypassed enrich_base_study_metadata
+    # wholesale) and _apply_base_study_enrichment (where the FOR UPDATE now
+    # lives) directly, so the synchronization point moves to the latter.
+    def _patched_gather(target_id, **_kwargs):
+        return metadata_service._GatheredEnrichment(target_id, {}, [])
+
+    def _patched_apply(gathered, **_kwargs):
         metadata_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
         locked_base_study = metadata_service.db.session.scalar(
             sa.select(BaseStudy)
-            .where(BaseStudy.id == target_id)
+            .where(BaseStudy.id == gathered.base_study_id)
             .with_for_update(of=BaseStudy)
         )
         metadata_has_base_lock.set()
@@ -1805,7 +1821,12 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
             "analyses": set(),
         }
 
-    monkeypatch.setattr(metadata_service, "enrich_base_study_metadata", _patched_enrich)
+    monkeypatch.setattr(
+        metadata_service, "_gather_base_study_enrichment", _patched_gather
+    )
+    monkeypatch.setattr(
+        metadata_service, "_apply_base_study_enrichment", _patched_apply
+    )
     monkeypatch.setattr(flag_service, "recompute_media_flags", _patched_recompute)
 
     def _run(name, fn):
@@ -1983,6 +2004,104 @@ def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_writ
     assert base_study.name == "Metadata Title"
     assert version.name == "Metadata Title"
     assert version.publication == "Metadata Journal"
+
+
+def test_request_write_does_not_deadlock_with_metadata_worker_claim(
+    session, app, monkeypatch
+):
+    """Regression test for the reported deadlock: an HTTP request's
+    update_base_studies (enqueue_base_study_flag_updates then
+    enqueue_base_study_metadata_updates, both in one transaction) racing the
+    metadata worker's claim + gather + apply for the same base study.
+
+    Before the fix, the worker held its outbox-row claim lock open across
+    the entire batch (including the gather phase), so a concurrent request
+    landing in that window would lock base_studies first (via the flag
+    insert's FK check) then block on the outbox row the worker already
+    claimed -- while the worker, still holding that outbox row, would then
+    block on base_studies via its own FOR UPDATE. This forces exactly that
+    window (request writes land while the worker is between claiming and
+    applying) and asserts neither side raises a DeadlockDetected error.
+    """
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name="request-vs-worker",
+        pmid="999004",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-request-vs-worker",
+        )
+    )
+    session.commit()
+
+    worker_claimed = threading.Event()
+    request_done = threading.Event()
+    results = {}
+
+    def _patched_gather(target_id, **_kwargs):
+        # By the time gather runs, the real claim step has already
+        # committed and released its lock -- signal that boundary, then
+        # give the request thread the window it needs to land its writes.
+        worker_claimed.set()
+        assert request_done.wait(timeout=5), "request thread never finished"
+        return metadata_service._GatheredEnrichment(target_id, {}, [])
+
+    monkeypatch.setattr(
+        metadata_service, "_gather_base_study_enrichment", _patched_gather
+    )
+
+    def _run_worker():
+        scoped_session = app.database.session
+        scoped_session.remove()
+        try:
+            results["worker"] = (
+                metadata_service.process_base_study_metadata_outbox_batch(
+                    batch_size=10, settings=app.config, logger=app.logger
+                )
+            )
+        except Exception as exc:  # noqa: BLE001
+            results["worker_exc"] = exc
+        finally:
+            scoped_session.remove()
+
+    def _run_request_like_writer():
+        scoped_session = app.database.session
+        scoped_session.remove()
+        try:
+            assert worker_claimed.wait(timeout=5), "worker never claimed outbox row"
+            reason = "BaseView.update_base_studies"
+            enqueue_base_study_flag_updates([base_study.id], reason=reason)
+            enqueue_base_study_metadata_updates([base_study.id], reason=reason)
+            scoped_session.commit()
+            results["request"] = "committed"
+        except Exception as exc:  # noqa: BLE001
+            scoped_session.rollback()
+            results["request_exc"] = exc
+        finally:
+            request_done.set()
+            scoped_session.remove()
+
+    worker_thread = threading.Thread(target=_run_worker)
+    request_thread = threading.Thread(target=_run_request_like_writer)
+
+    worker_thread.start()
+    request_thread.start()
+    worker_thread.join(timeout=10)
+    request_thread.join(timeout=10)
+
+    assert not worker_thread.is_alive()
+    assert not request_thread.is_alive()
+    assert "worker_exc" not in results
+    assert "request_exc" not in results
+    assert results["worker"] == 1
+    assert results["request"] == "committed"
 
 
 def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):

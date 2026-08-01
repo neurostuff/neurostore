@@ -653,7 +653,7 @@ def _find_active_duplicates(primary, identifiers):
             sa.or_(*filters),
         )
         .order_by(BaseStudy.created_at.asc(), BaseStudy.id.asc())
-        .with_for_update(of=BaseStudy, skip_locked=True)
+        .with_for_update(of=BaseStudy, skip_locked=True, key_share=True)
     )
     return list(db.session.scalars(query).all())
 
@@ -908,14 +908,29 @@ def _merge_duplicates(primary):
     return primary, cache_ids
 
 
-def enrich_base_study_metadata(base_study_id, *, settings, logger):
+_NO_OP_ENRICHMENT = object()
+
+
+class _GatheredEnrichment:
+    """Result of the network-calling, lock-free gather phase for one base study."""
+
+    __slots__ = ("base_study_id", "external_identifiers", "metadata_candidates")
+
+    def __init__(self, base_study_id, external_identifiers, metadata_candidates):
+        self.base_study_id = base_study_id
+        self.external_identifiers = external_identifiers
+        self.metadata_candidates = metadata_candidates
+
+
+def _gather_base_study_enrichment(base_study_id, *, settings, logger):
+    """Read-only phase: fetch external identifiers/metadata. Acquires no locks."""
     base_study_snapshot = db.session.scalar(
         sa.select(BaseStudy).where(BaseStudy.id == base_study_id)
     )
     if base_study_snapshot is None or base_study_snapshot.is_active is False:
-        return {"base-studies": set(), "studies": set()}
+        return None
     if not _needs_enrichment(base_study_snapshot):
-        return {"base-studies": {base_study_snapshot.id}, "studies": set()}
+        return _NO_OP_ENRICHMENT
 
     semantic_scholar_api_key = settings.get("SEMANTIC_SCHOLAR_API_KEY")
     contact_email = settings.get("EMAIL")
@@ -988,10 +1003,15 @@ def enrich_base_study_metadata(base_study_id, *, settings, logger):
             metadata_candidates.append(pubmed_metadata)
             _merge_ids_in_place(external_identifiers, pubmed_metadata)
 
+    return _GatheredEnrichment(base_study_id, external_identifiers, metadata_candidates)
+
+
+def _apply_base_study_enrichment(gathered, *, logger):
+    """Write phase: short, DB-only. Re-locks and applies gathered results."""
     base_study = db.session.scalar(
         sa.select(BaseStudy)
-        .where(BaseStudy.id == base_study_id)
-        .with_for_update(of=BaseStudy)
+        .where(BaseStudy.id == gathered.base_study_id)
+        .with_for_update(of=BaseStudy, key_share=True)
     )
     if base_study is None or base_study.is_active is False:
         return {"base-studies": set(), "studies": set()}
@@ -1003,14 +1023,25 @@ def enrich_base_study_metadata(base_study_id, *, settings, logger):
 
     cache_ids = {"base-studies": {base_study.id}, "studies": set()}
     identifiers = _extract_identifiers(base_study)
-    _merge_ids_in_place(identifiers, external_identifiers)
+    _merge_ids_in_place(identifiers, gathered.external_identifiers)
     _apply_missing_ids(base_study, identifiers)
     base_study, merged_cache_ids = _merge_duplicates(base_study)
     cache_ids = merge_unique_ids(cache_ids, merged_cache_ids)
 
-    _apply_missing_metadata(base_study, metadata_candidates)
+    _apply_missing_metadata(base_study, gathered.metadata_candidates)
     cache_ids.setdefault("base-studies", set()).add(base_study.id)
     return cache_ids
+
+
+def enrich_base_study_metadata(base_study_id, *, settings, logger):
+    gathered = _gather_base_study_enrichment(
+        base_study_id, settings=settings, logger=logger
+    )
+    if gathered is None:
+        return {"base-studies": set(), "studies": set()}
+    if gathered is _NO_OP_ENRICHMENT:
+        return {"base-studies": {base_study_id}, "studies": set()}
+    return _apply_base_study_enrichment(gathered, logger=logger)
 
 
 def enqueue_base_study_metadata_updates(base_study_ids, reason="api-write"):
@@ -1100,6 +1131,9 @@ def _enqueue_base_study_flag_updates_post_commit(
             time.sleep(retry_sleep_seconds)
 
 
+_GATHER_FAILED = object()
+
+
 def process_base_study_metadata_outbox_batch(batch_size=50, *, settings, logger):
     batch_size = max(1, int(batch_size))
 
@@ -1123,14 +1157,44 @@ def process_base_study_metadata_outbox_batch(batch_size=50, *, settings, logger)
         db.session.rollback()
         return 0
 
+    # Release the claim lock immediately -- nothing below this point should
+    # hold it open across the (potentially slow) external lookups in the
+    # gather pass. Touching updated_at pushes these rows to the back of the
+    # claim_query's ORDER BY so a concurrent worker replica doesn't
+    # immediately re-claim them.
+    db.session.execute(
+        sa.update(BaseStudyMetadataOutbox)
+        .where(BaseStudyMetadataOutbox.base_study_id.in_(claimed_ids))
+        .values(updated_at=sa.func.now())
+    )
+    db.session.commit()
+
+    gathered_by_id = {}
     for base_study_id in claimed_ids:
         try:
+            gathered_by_id[base_study_id] = _gather_base_study_enrichment(
+                base_study_id, settings=settings, logger=logger
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "base-study metadata gather failed for %s: %s",
+                base_study_id,
+                exc,
+            )
+            gathered_by_id[base_study_id] = _GATHER_FAILED
+
+    for base_study_id in claimed_ids:
+        gathered = gathered_by_id[base_study_id]
+        try:
             with db.session.begin_nested():
-                affected_ids = enrich_base_study_metadata(
-                    base_study_id,
-                    settings=settings,
-                    logger=logger,
-                )
+                if gathered is _GATHER_FAILED:
+                    raise RuntimeError("base-study metadata gather failed")
+                elif gathered is None:
+                    affected_ids = {"base-studies": set(), "studies": set()}
+                elif gathered is _NO_OP_ENRICHMENT:
+                    affected_ids = {"base-studies": {base_study_id}, "studies": set()}
+                else:
+                    affected_ids = _apply_base_study_enrichment(gathered, logger=logger)
                 cache_ids = merge_unique_ids(cache_ids, affected_ids)
                 flag_update_ids.update(affected_ids.get("base-studies", set()))
                 successful_ids.append(base_study_id)
