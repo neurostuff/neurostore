@@ -1,33 +1,37 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { AddCircleOutline } from '@mui/icons-material';
 import { ButtonProps } from '@mui/material';
+import CreateProjectDialog from 'components/Buttons/CreateProjectDialog';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
 import { hasUnsavedChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useCreateProject } from 'hooks';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { ProjectSearchCriteria, projectsSearchHelper } from 'hooks/projects/useGetProjects';
-import { generateNewProjectData, getNextUntitledProjectName } from 'pages/Project/store/ProjectStore.helpers';
+import { generateNewProjectData, getNextUntitledProjectName } from 'stores/projects/ProjectStore.helpers';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AddCircleOutline } from '@mui/icons-material';
 
 const projectSearchCriteria = new ProjectSearchCriteria(1, 1000);
 
 const CreateProjectButton = (props?: { buttonProps?: ButtonProps }) => {
     const { mutate, isPending: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
+    const [createProjectDialogIsOpen, setCreateProjectDialogIsOpen] = useState(false);
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
     const { user } = useAuth0();
     const [getProjectsIsLoading, setGetProjectsIsLoading] = useState(false);
 
-    const handleCreateProject = async () => {
+    const handleCreateProject = async (analysisType: EAnalysisType) => {
         try {
             setGetProjectsIsLoading(true);
             const userProjects = await projectsSearchHelper(projectSearchCriteria, user?.sub, false);
             const newProjectName = getNextUntitledProjectName(
+                analysisType,
                 userProjects?.data?.results?.map((p) => p.name ?? '') ?? []
             );
-            mutate(generateNewProjectData(newProjectName, ''), {
+            mutate(generateNewProjectData(analysisType, newProjectName, ''), {
                 onSuccess: (arg) => {
                     navigate(`/projects/${arg.data.id || ''}`);
                 },
@@ -44,19 +48,25 @@ const CreateProjectButton = (props?: { buttonProps?: ButtonProps }) => {
         if (unsavedChangesExist) {
             setConfirmationDialogIsOpen(true);
             return;
-        } else {
-            handleCreateProject();
         }
+        setCreateProjectDialogIsOpen(true);
     };
 
     const handleConfirmationDialogClose = (ok: boolean | undefined) => {
+        setConfirmationDialogIsOpen(false);
         if (ok) {
             unsetUnloadHandler('project');
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
-            handleCreateProject();
+            setCreateProjectDialogIsOpen(true);
         }
-        setConfirmationDialogIsOpen(false);
+    };
+
+    const handleCreateProjectDialogClose = (analysisType: EAnalysisType | undefined) => {
+        setCreateProjectDialogIsOpen(false);
+        if (analysisType) {
+            handleCreateProject(analysisType);
+        }
     };
 
     const sx = {
@@ -67,6 +77,7 @@ const CreateProjectButton = (props?: { buttonProps?: ButtonProps }) => {
 
     return (
         <>
+            <CreateProjectDialog isOpen={createProjectDialogIsOpen} onCloseDialog={handleCreateProjectDialogClose} />
             <ConfirmationDialog
                 dialogTitle="You have unsaved changes"
                 dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"

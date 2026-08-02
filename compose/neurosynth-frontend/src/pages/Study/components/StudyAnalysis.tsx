@@ -1,9 +1,11 @@
 import { Box, Typography } from '@mui/material';
-import StudyAnalysisWarnings from './StudyAnalysisWarnings';
-import StudyPoints from './StudyPoints';
-import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
+import StudyAnalysisWarnings from 'pages/Study/components/StudyAnalysisWarnings';
+import StudyPoints from 'pages/Study/components/StudyPoints';
+import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
 const StudyAnalysis = (props: IStoreAnalysis) => {
+    const heightInPx = props.points?.length ? (props.points.length * 50 > 500 ? 500 : props.points.length * 50) : 0;
+
     return (
         <Box>
             <StudyAnalysisWarnings analysisId={props.id || ''} />
@@ -20,6 +22,7 @@ const StudyAnalysis = (props: IStoreAnalysis) => {
                 space={props.pointSpace}
                 title="Coordinates"
                 points={props.points || []}
+                height={`${heightInPx}px`}
             />
 
             {/* <DisplayConditions

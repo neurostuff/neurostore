@@ -22,7 +22,6 @@ vi.mock('hooks/projects/useGetProjects', async (importOriginal) => {
         projectsSearchHelper: mockProjectsSearchHelper,
     };
 });
-vi.mock('components/Dialogs/CreateDetailsDialog');
 vi.mock('components/Dialogs/ConfirmationDialog');
 
 describe('NavDrawer component', () => {
@@ -80,7 +79,7 @@ describe('NavDrawer component', () => {
         expect(screen.queryByText('Help')).toBeInTheDocument();
     });
 
-    it('creates a new project when NEW PROJECT is clicked', async () => {
+    it('creates a new CBMA project when NEW PROJECT is clicked', async () => {
         useAuth0().isAuthenticated = true;
 
         renderResult.rerender(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
@@ -89,10 +88,34 @@ describe('NavDrawer component', () => {
         expect(createProjectButton?.tagName).toBe('BUTTON');
         await userEvent.click(createProjectButton!);
 
+        await userEvent.click(screen.getByRole('button', { name: 'Create new CBMA project' }));
+
         await waitFor(() => {
             expect(mockProjectsSearchHelper).toHaveBeenCalled();
             expect(mockMutate).toHaveBeenCalledWith(
-                expect.objectContaining({ name: 'Untitled' }),
+                expect.objectContaining({ name: 'Untitled CBMA' }),
+                expect.objectContaining({ onSuccess: expect.any(Function) })
+            );
+        });
+        expect(useNavigate()).toHaveBeenCalledWith('/projects/new-project-id');
+    });
+
+    it('creates a new IBMA project when NEW PROJECT is clicked and IBMA is selected', async () => {
+        useAuth0().isAuthenticated = true;
+
+        renderResult.rerender(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
+
+        const [, createProjectButton] = screen.getAllByRole('button', { name: 'NEW PROJECT' });
+        expect(createProjectButton?.tagName).toBe('BUTTON');
+        await userEvent.click(createProjectButton!);
+
+        await userEvent.click(screen.getByRole('button', { name: /IBMA BETA/i }));
+        await userEvent.click(screen.getByRole('button', { name: 'Create new IBMA project' }));
+
+        await waitFor(() => {
+            expect(mockProjectsSearchHelper).toHaveBeenCalled();
+            expect(mockMutate).toHaveBeenCalledWith(
+                expect.objectContaining({ name: 'Untitled IBMA' }),
                 expect.objectContaining({ onSuccess: expect.any(Function) })
             );
         });

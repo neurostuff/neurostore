@@ -17,15 +17,14 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import { useGetWindowHeight, useUserCanEdit } from 'hooks';
 import ImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/ImportFinalizeReviewVirtualizedListItem';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import {
     useProjectCurationColumns,
     useProjectCurationImport,
     useProjectUser,
     useUpdateCurationImportName,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ICurationStubStudy } from '../Curation.types';
+import { EImportMode, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 
 const CurationBoardAIInterfaceImportSummary = ({

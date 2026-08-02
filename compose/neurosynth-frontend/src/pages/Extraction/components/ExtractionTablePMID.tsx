@@ -5,7 +5,11 @@ import { IExtractionTableStudy } from './ExtractionTable';
 
 export const ExtractionTablePMIDCell = (props: CellContext<IExtractionTableStudy, string>) => {
     const value = props.getValue();
-    return <Typography variant="body2">{value}</Typography>;
+    return (
+        <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+            {value}
+        </Typography>
+    );
 };
 
 export const ExtractionTablePMIDHeader = ({ column, table }: HeaderContext<IExtractionTableStudy, string>) => {

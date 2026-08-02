@@ -7,7 +7,7 @@ import { useGetMetaAnalysisById, useGetMetaAnalysisResultById } from 'hooks';
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
-import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectName, useProjectUser } from 'stores/projects/ProjectStore';
 import { useParams } from 'react-router-dom';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 

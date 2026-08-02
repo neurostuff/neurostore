@@ -4,7 +4,7 @@ import ProtectedProjectRoute from './ProtectedProjectRoute';
 import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useGetProjectById, useUserCanEdit } from 'hooks';
-import { useGetProjectIsLoading } from 'pages/Project/store/ProjectStore';
+import { useGetProjectIsLoading } from 'stores/projects/ProjectStore';
 
 vi.mock('react-router-dom', async () => {
     const actualReactRouterDom = await vi.importActual('react-router-dom');
@@ -12,7 +12,7 @@ vi.mock('react-router-dom', async () => {
         ...actualReactRouterDom,
     };
 });
-vi.mock('pages/Project/store/ProjectStore', async () => {
+vi.mock('stores/projects/ProjectStore', async () => {
     return {
         useInitProjectStoreIfRequired: vi.fn(),
         useGetProjectIsLoading: vi.fn(),

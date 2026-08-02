@@ -1,8 +1,7 @@
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
-import { useProjectExtractionStudysetId, useProjectExtractionStudyStatusList } from 'pages/Project/store/ProjectStore';
+import { EExtractionStatus, IStudyExtractionStatus } from 'pages/Extraction/Extraction.types';
+import { useProjectExtractionStudysetId, useProjectExtractionStudyStatusList } from 'stores/projects/ProjectStore';
 import { useEffect, useState } from 'react';
-import { IStudyExtractionStatus } from './projects/useGetProjects';
-import useGetStudysetById from './studysets/useGetStudysetById';
+import useGetStudysetNonNestedById from 'hooks/studysets/useGetStudysetNonNestedById';
 
 export interface IExtractionSummary {
     savedForLater: number;
@@ -45,7 +44,7 @@ export const getExtractionSummary = (studysetStudiesArg: Array<string>, studySta
 const useGetExtractionSummary = (projectId: string | undefined) => {
     const studysetId = useProjectExtractionStudysetId();
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const { data: studyset } = useGetStudysetById(studysetId, false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const [extractionSummary, setExtractionSummary] = useState<IExtractionSummary>({
         savedForLater: 0,
         unreviewed: 0,
@@ -64,7 +63,7 @@ const useGetExtractionSummary = (projectId: string | undefined) => {
                 };
             }
 
-            const studysetStudies = (studyset?.studies || []) as string[];
+            const studysetStudies = studyset?.studies ?? [];
             return getExtractionSummary(studysetStudies, studyStatusList);
         });
     }, [projectId, studyStatusList, studyset, studysetId]);

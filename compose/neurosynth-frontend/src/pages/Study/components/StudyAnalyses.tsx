@@ -1,13 +1,10 @@
 import { Box } from '@mui/material';
-import StudyAnalysesList from './StudyAnalysesList';
+import StudyAnalysesList from 'pages/Study/components/StudyAnalysesList';
 import { useEffect, useMemo, useState } from 'react';
-import StudyAnalysis from './StudyAnalysis';
-import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
+import StudyAnalysis from 'pages/Study/components/StudyAnalysis';
+import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
-const StudyAnalyses = (props: {
-    id: string | undefined;
-    analyses: IStoreAnalysis[];
-}) => {
+const StudyAnalyses = (props: { id: string | undefined; analyses: IStoreAnalysis[] }) => {
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | undefined>('');
 
     useEffect(() => {
@@ -29,17 +26,19 @@ const StudyAnalyses = (props: {
     }, [props.analyses, selectedAnalysisId]);
 
     return (
-        <Box sx={{ display: 'flex' }}>
-            <StudyAnalysesList
-                selectedId={selectedAnalysisId}
-                onSelectAnalysisIndex={handleSelectAnalysis}
-                analyses={props.analyses}
-            />
-            {selectedAnalysis && (
-                <Box sx={{ padding: '1rem', width: 'calc(100% - 250px - 2rem)', height: '100%' }}>
-                    <StudyAnalysis {...selectedAnalysis} />
-                </Box>
-            )}
+        <Box>
+            <Box sx={{ display: 'flex' }}>
+                <StudyAnalysesList
+                    selectedId={selectedAnalysisId}
+                    onSelectAnalysisIndex={handleSelectAnalysis}
+                    analyses={props.analyses}
+                />
+                {selectedAnalysis && (
+                    <Box sx={{ padding: '1rem', width: 'calc(100% - 250px - 2rem)', height: '100%' }}>
+                        <StudyAnalysis {...selectedAnalysis} />
+                    </Box>
+                )}
+            </Box>
         </Box>
     );
 };

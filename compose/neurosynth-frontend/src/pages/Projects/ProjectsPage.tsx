@@ -1,8 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography } from '@mui/material';
-import SearchContainer from 'components/Search/SearchContainer';
+import ProjectsSearchContainer from 'components/Search/ProjectsSearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import useSearchProjects from 'pages/Projects/hooks/useSearchProjects';
 import ProjectsPageCard from './components/ProjectsPageCard';
 import ProjectsPageEmptyState from './components/ProjectsPageEmptyState';
@@ -29,8 +29,7 @@ const ProjectsPage = () => {
                 </Typography>
             </Box>
 
-            <SearchContainer
-                searchMode="project-search"
+            <ProjectsSearchContainer
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
                 onSearch={handleSearch}
@@ -57,7 +56,7 @@ const ProjectsPage = () => {
                         <ProjectsPageEmptyState />
                     )}
                 </StateHandlerComponent>
-            </SearchContainer>
+            </ProjectsSearchContainer>
         </Box>
     );
 };

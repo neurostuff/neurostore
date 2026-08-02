@@ -2,9 +2,9 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { ArrowCircleLeftOutlined, CheckCircleOutline } from '@mui/icons-material';
 import { Box, Button, Chip } from '@mui/material';
 import { useUserCanEdit } from 'hooks';
-import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import CurationPopupExclusionSelector from 'pages/Curation/components/CurationPopupExclusionSelector';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { ICurationStubStudy, ITag } from 'pages/Curation/Curation.types';
 import {
     useAddTagToStub,
     useCreateNewExclusion,
@@ -13,7 +13,7 @@ import {
     useProjectExclusionTag,
     usePromoteStub,
     useSetExclusionForStub,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import React, { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 

@@ -3,29 +3,25 @@ import { BaseStudiesPost200Response, BaseStudiesPostRequest } from 'neurostore-t
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API from 'api/api.config';
+import studyQueries from 'hooks/studies/studyQueries';
 
 // This API call to the POST /base-studies endpoint does our ingestion step (previously this was handled in the FE 1 API call at a time)
 // Given a list of stubs, the BE either (1) returns all version of a matching base-study for the given stub or (2) creates a new /base-study
 const useIngest = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation<
-        AxiosResponse<BaseStudiesPost200Response>,
-        AxiosError,
-        BaseStudiesPostRequest,
-        unknown
-    >({
+    return useMutation<AxiosResponse<BaseStudiesPost200Response>, AxiosError, BaseStudiesPostRequest, unknown>({
         mutationFn: (stubs) => API.NeurostoreServices.BaseStudiesService.baseStudiesPost(stubs),
 
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ['studies']
+                queryKey: studyQueries.studies.all(),
             });
         },
 
         onError: () => {
             enqueueSnackbar('There was an error during ingestion', { variant: 'error' });
-        }
+        },
     });
 };
 

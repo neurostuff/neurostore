@@ -2,10 +2,10 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { IDynamicValueType } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { useProjectName } from 'pages/Project/store/ProjectStore';
+import { useProjectName } from 'stores/projects/ProjectStore';
 import { useEffect, useState } from 'react';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import CreateMetaAnalysisSpecificationAlgorithmStep from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationAlgorithmStep';
 import CreateMetaAnalysisSpecificationDetailsStep from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDetailsStep';
 import {

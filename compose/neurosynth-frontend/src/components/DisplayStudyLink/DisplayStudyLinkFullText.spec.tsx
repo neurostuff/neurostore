@@ -1,10 +1,10 @@
 import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
-import { useStudyName } from 'pages/Study/store/StudyStore';
+import { useStudyName } from 'stores/study/StudyStore';
 import { useGetFullText } from 'hooks';
 
-vi.mock('pages/Study/store/StudyStore');
+vi.mock('stores/study/StudyStore');
 vi.mock('hooks');
 describe('DisplayStudyLinkFullText Component', () => {
     it('should render', () => {

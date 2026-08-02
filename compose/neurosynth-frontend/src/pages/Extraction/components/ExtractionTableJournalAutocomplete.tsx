@@ -1,7 +1,7 @@
 import { Autocomplete, Box, TextField } from '@mui/material';
-import { useGetStudysetById } from 'hooks';
+import { useGetStudysetSummaryById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import { useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 
 const ExtractionTableJournalAutocomplete = ({  value, onChange  }: {
@@ -9,12 +9,12 @@ const ExtractionTableJournalAutocomplete = ({  value, onChange  }: {
     onChange: (value: string | null) => void;
 }) => {
     const studysetId = useProjectExtractionStudysetId();
-    const { data: studyset } = useGetStudysetById(studysetId, false, true);
+    const { data: studyset } = useGetStudysetSummaryById(studysetId);
 
     const options = useMemo(() => {
-        if (!studyset) return [];
+        if (!studyset?.studies) return [];
         const journalsSet = new Set<string>();
-        (studyset.studies || []).forEach((study) => {
+        studyset.studies?.forEach((study) => {
             if ((study as StudyReturn)?.publication) {
                 journalsSet.add((study as StudyReturn)?.publication || '');
             }
