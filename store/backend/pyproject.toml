@@ -14,7 +14,7 @@ dependencies = [
     "auth0-python~=6.1",
     "alembic~=1.18",
     "connexion[swagger-ui,uvicorn]==3.3.0",
-    "cachelib~=0.13",
+    "cachelib~=0.15",
     "gunicorn~=26.0",
     "httpx2~=2.7",
     "uvicorn-worker~=0.4",
