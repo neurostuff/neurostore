@@ -16,7 +16,7 @@ dependencies = [
     "connexion[swagger-ui,uvicorn]==3.3.0",
     "cachelib~=0.15",
     "gunicorn~=26.0",
-    "httpx2~=2.7",
+    "httpx2~=2.9",
     "uvicorn-worker~=0.4",
     "ipython~=9.15",
     "itsdangerous~=2.2",
