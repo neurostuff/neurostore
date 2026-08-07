@@ -142,7 +142,9 @@ class StudiesView(ObjectView, ListView):
         "studyset_studies": "StudysetStudiesResource",
     }
     _parent = {"base_study": "BaseStudiesView"}
-    _nested = {"analyses": "AnalysesView"}
+    # "images" carries study-owned images through the clone payload; StudySchema
+    # has no images field, so ordinary requests never populate it.
+    _nested = {"analyses": "AnalysesView", "images": "ImagesView"}
     _linked = {"studyset_studies": "StudysetStudiesResource"}
     _search_fields = (
         "name",

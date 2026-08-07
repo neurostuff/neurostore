@@ -451,6 +451,7 @@ class AnalysisSchema(BaseDataSchema):
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
+    source_id = fields.String(dump_only=True, allow_none=True)
 
     @pre_load
     def load_values(self, data, **kwargs):
