@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Paper, Stack } from '@mui/material';
 import StudyAnalysesList from 'pages/Study/components/StudyAnalysesList';
 import { useEffect, useMemo, useState } from 'react';
 import StudyAnalysis from 'pages/Study/components/StudyAnalysis';
@@ -26,20 +26,22 @@ const StudyAnalyses = (props: { id: string | undefined; analyses: IStoreAnalysis
     }, [props.analyses, selectedAnalysisId]);
 
     return (
-        <Box>
-            <Box sx={{ display: 'flex' }}>
+        <Stack direction="row" spacing={2}>
+            <Paper variant="outlined" sx={{ width: 250, flexShrink: 0 }}>
                 <StudyAnalysesList
                     selectedId={selectedAnalysisId}
                     onSelectAnalysisIndex={handleSelectAnalysis}
                     analyses={props.analyses}
                 />
-                {selectedAnalysis && (
-                    <Box sx={{ padding: '1rem', width: 'calc(100% - 250px - 2rem)', height: '100%' }}>
+            </Paper>
+            {selectedAnalysis && (
+                <Paper variant="outlined" sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack p={2}>
                         <StudyAnalysis {...selectedAnalysis} />
-                    </Box>
-                )}
-            </Box>
-        </Box>
+                    </Stack>
+                </Paper>
+            )}
+        </Stack>
     );
 };
 

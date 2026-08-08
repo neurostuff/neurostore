@@ -14,7 +14,9 @@ const StudyAnalysis = (props: IStoreAnalysis) => {
                     Details
                 </Typography>
                 <Typography variant="h6">{props.name || ''}</Typography>
-                <Typography>{props.description || ''}</Typography>
+                <Typography variant="body2" color="muted.main">
+                    {props.description || ''}
+                </Typography>
             </Box>
 
             <StudyPoints

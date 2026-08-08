@@ -18,6 +18,16 @@ describe('filterKeyValueRowsByFieldQuery', () => {
         expect(filtered.map((row) => row.key)).toEqual(['value_type', 'map_type']);
     });
 
+    it('filters rows by value case-insensitively', () => {
+        const filtered = filterKeyValueRowsByFieldQuery(rows, 'fmri');
+        expect(filtered.map((row) => row.key)).toEqual(['modality']);
+    });
+
+    it('matches when either the field key or value contains the query', () => {
+        const filtered = filterKeyValueRowsByFieldQuery(rows, 'map');
+        expect(filtered.map((row) => row.key)).toEqual(['filename', 'map_type']);
+    });
+
     it('returns no rows when nothing matches', () => {
         expect(filterKeyValueRowsByFieldQuery(rows, 'nonexistent')).toEqual([]);
     });

@@ -1,4 +1,14 @@
-import { Box, Chip, Divider, TableCell, TableRow, Tooltip, Typography } from '@mui/material';
+import {
+    Box,
+    Chip,
+    Paper,
+    TableCell,
+    TableRow,
+    ToggleButton,
+    ToggleButtonGroup,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
 import { sortMetadataArrayFn } from 'pages/StudyCBMA/components/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
@@ -7,14 +17,56 @@ import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.st
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import { Optional } from 'utils/utilitytypes';
 import StudyAnalyses from 'pages/Study/components/StudyAnalyses';
+import StudyAnalysesIBMA from 'pages/Study/components/StudyAnalysesIBMA';
 import StudyStyles from './Study.styles';
 import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
-import { IStoreStudy } from 'stores/study/StudyStore.helpers';
+import { IStoreAnalysis, IStoreStudy } from 'stores/study/StudyStore.helpers';
+import { type MouseEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+type StudyAnalysisView = 'CBMA' | 'IBMA';
+
+const hasCBMAAnalyses = (analyses: IStoreAnalysis[]): boolean =>
+    analyses.some((analysis) => (analysis.point_count ?? 0) > 0 || (analysis.points?.length ?? 0) > 0);
+
+const hasIBMAAnalyses = (analyses: IStoreAnalysis[]): boolean =>
+    analyses.some((analysis) => (analysis.images?.length ?? 0) > 0);
+
+const resolveAnalysisView = (
+    typeParam: string | null,
+    showCBMA: boolean,
+    showIBMA: boolean
+): StudyAnalysisView => {
+    if (showIBMA && !showCBMA) return 'IBMA';
+    if (showCBMA && showIBMA && typeParam === 'ibma') return 'IBMA';
+    return 'CBMA';
+};
 
 const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
     const { id, name, description, doi, pmid, authors, publication: journal, metadata, pmcid, analyses = [] } = props;
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const hasIBMA = hasIBMAAnalyses(analyses);
+    const hasCBMA = hasCBMAAnalyses(analyses);
+    const showIBMA = hasIBMA;
+    const showCBMA = hasCBMA || !hasIBMA;
+
+    const analysisView = resolveAnalysisView(searchParams.get('type')?.toLowerCase() ?? null, showCBMA, showIBMA);
+
+    const handleAnalysisViewChange = (_event: MouseEvent<HTMLElement>, nextView: StudyAnalysisView | null) => {
+        if (nextView === null) return;
+        setSearchParams(
+            (previous) => {
+                const nextParams = new URLSearchParams(previous);
+                nextParams.set('type', nextView.toLowerCase());
+                return nextParams;
+            },
+            { replace: true }
+        );
+    };
+
     return (
         <Box>
             <Box data-tour="StudyPage-1">
@@ -123,29 +175,45 @@ const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
             )}
 
             <Box>
-                <Typography
-                    data-tour="StudyPage-3"
-                    variant="h6"
-                    sx={[
-                        {
-                            fontWeight: 'bold',
-                        },
-                        StudyStyles.spaceBelow,
-                    ]}
+                <Paper
+                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2 }}
+                    variant="outlined"
                 >
-                    Analyses
-                </Typography>
+                    <Typography data-tour="StudyPage-3" variant="h6" fontWeight="bold">
+                        Analyses
+                    </Typography>
+                    <ToggleButtonGroup
+                        exclusive
+                        size="small"
+                        color="primary"
+                        value={analysisView}
+                        onChange={handleAnalysisViewChange}
+                        aria-label="Analysis view type"
+                    >
+                        {showCBMA && (
+                            <ToggleButton sx={{ px: 2 }} value="CBMA">
+                                CBMA
+                            </ToggleButton>
+                        )}
+                        {showIBMA && (
+                            <ToggleButton sx={{ px: 2 }} value="IBMA">
+                                IBMA
+                            </ToggleButton>
+                        )}
+                    </ToggleButtonGroup>
+                </Paper>
                 {analyses?.length === 0 ? (
                     <Box sx={{ color: 'warning.dark', margin: '15px 0 0 15px' }}>
                         There are no analyses for this study.
                     </Box>
                 ) : (
-                    <>
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            <Divider />
+                    <Box sx={{ marginBottom: '1rem' }}>
+                        {analysisView === 'CBMA' ? (
                             <StudyAnalyses id={id} analyses={analyses} />
-                        </Box>
-                    </>
+                        ) : (
+                            <StudyAnalysesIBMA id={id} analyses={analyses} />
+                        )}
+                    </Box>
                 )}
             </Box>
         </Box>

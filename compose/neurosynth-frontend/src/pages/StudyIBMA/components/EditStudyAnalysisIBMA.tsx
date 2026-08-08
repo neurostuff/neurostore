@@ -1,10 +1,11 @@
-import { Box, Skeleton } from '@mui/material';
+import { Box, Paper, Skeleton } from '@mui/material';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
 import useEditStudyAnalysisBoardState from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import BrainMapDetailPanel from 'pages/StudyIBMA/components/BrainMapDetailPanel';
 import EditStudyAnalysisTable from 'pages/StudyIBMA/components/EditStudyAnalysisTable';
 import UncategorizedImagesColumn from 'pages/StudyIBMA/components/UncategorizedImagesColumn';
+import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
 
 const EditStudyAnalysisIBMA: React.FC = () => {
     const { table, tableMinWidth, uncategorized, noteKeys, isLoading } = useEditStudyAnalysisBoardState();
@@ -58,7 +59,21 @@ const EditStudyAnalysisIBMA: React.FC = () => {
                 <EditStudyAnalysisTable table={table} tableMinWidth={tableMinWidth} noteKeys={noteKeys} />
             )}
 
-            {selectedImage && <BrainMapDetailPanel image={selectedImage} onClose={() => toggleImageSelection?.()} />}
+            {selectedImage && (
+                <Paper
+                    variant="elevation"
+                    elevation={2}
+                    sx={{
+                        flex: '1 1 0',
+                        minWidth: 250,
+                        maxHeight: STUDY_ANALYSIS_TABLE_MAX_HEIGHT,
+                        overflow: 'auto',
+                        p: 2,
+                    }}
+                >
+                    <BrainMapDetailPanel image={selectedImage} onClose={() => toggleImageSelection?.()} />
+                </Paper>
+            )}
         </Box>
     );
 };

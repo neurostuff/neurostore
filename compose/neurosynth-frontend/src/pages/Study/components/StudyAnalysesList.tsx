@@ -1,4 +1,4 @@
-import { Box, List } from '@mui/material';
+import { List } from '@mui/material';
 import StudyAnalysesListItem from 'pages/Study/components/StudyAnalysesListItem';
 import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
@@ -8,31 +8,22 @@ const StudyAnalysesList = (props: {
     onSelectAnalysisIndex: (id: string) => void;
 }) => {
     return (
-        <Box
+        <List
             sx={{
-                borderLeft: '1px solid lightgray',
-                borderRight: '1px solid lightgray',
-                width: '250px',
+                maxHeight: '70vh',
+                overflow: 'auto',
             }}
+            disablePadding
         >
-            <List
-                sx={{
-                    width: '250px',
-                    maxHeight: '70vh',
-                    overflow: 'auto',
-                }}
-                disablePadding
-            >
-                {props.analyses.map((analysis) => (
-                    <StudyAnalysesListItem
-                        key={analysis.id}
-                        analysis={analysis}
-                        selected={(props.selectedId || undefined) === (analysis.id || null)}
-                        onSelectAnalysis={(id) => props.onSelectAnalysisIndex(id)}
-                    />
-                ))}
-            </List>
-        </Box>
+            {props.analyses.map((analysis) => (
+                <StudyAnalysesListItem
+                    key={analysis.id}
+                    analysis={analysis}
+                    selected={(props.selectedId || undefined) === (analysis.id || null)}
+                    onSelectAnalysis={(id) => props.onSelectAnalysisIndex(id)}
+                />
+            ))}
+        </List>
     );
 };
 

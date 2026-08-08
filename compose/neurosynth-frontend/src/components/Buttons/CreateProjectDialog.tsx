@@ -103,7 +103,7 @@ const CreateProjectDialog: React.FC<ICreateProjectDialog> = ({ isOpen, onCloseDi
                         Cancel
                     </Button>
                     <Button variant="contained" color="primary" disableElevation onClick={handleCreate}>
-                        Create new {selectedOption === EAnalysisType.IBMA ? 'IBMA' : 'CBMA'} project
+                        Create new project
                     </Button>
                 </Box>
             </Box>

@@ -37,7 +37,7 @@ const StudyAnalysesListItem = React.memo(
                     <ListItemText
                         sx={{ wordBreak: 'break-word', color: analysis?.name ? '' : 'warning.dark' }}
                         secondaryTypographyProps={{
-                            color: analysis?.description ? '' : 'warning.dark',
+                            color: analysis?.description ? 'muted.main' : 'warning.dark',
                         }}
                         primaryTypographyProps={{
                             variant: mdDown ? 'caption' : 'body1',

@@ -1,7 +1,6 @@
 import { Close } from '@mui/icons-material';
 import {
     IconButton,
-    Paper,
     Skeleton,
     Stack,
     Table,
@@ -16,14 +15,15 @@ import {
 import useGetNeurovaultImages from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
 import { useMemo, useState } from 'react';
-import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT } from '../hooks/useEditStudyAnalysisBoardState.consts';
 
 export type KeyValueRow = { key: string; value: string };
 
 export const filterKeyValueRowsByFieldQuery = (rows: KeyValueRow[], query: string): KeyValueRow[] => {
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return rows;
-    return rows.filter((row) => row.key.toLowerCase().includes(normalizedQuery));
+    return rows.filter(
+        (row) => row.key.toLowerCase().includes(normalizedQuery) || row.value.toLowerCase().includes(normalizedQuery)
+    );
 };
 
 function normalizeMetadataToArray(metadata: object | null | undefined): KeyValueRow[] {
@@ -86,8 +86,16 @@ function KeyValueTable({
                     {showColumnHeader && (
                         <TableHead>
                             <TableRow>
-                                <TableCell width="36%">Field</TableCell>
-                                <TableCell>Value</TableCell>
+                                <TableCell width="36%">
+                                    <Typography variant="body2" fontWeight="bold">
+                                        Field
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>
+                                    <Typography variant="body2" fontWeight="bold">
+                                        Value
+                                    </Typography>
+                                </TableCell>
                             </TableRow>
                         </TableHead>
                     )}
@@ -140,70 +148,49 @@ const BrainMapDetailPanel: React.FC<{
 
     if (nvLoading) {
         return (
-            <Paper sx={{ flex: '1 1 0', minWidth: 250 }}>
-                <Skeleton
-                    sx={{
-                        width: '100%',
-                        height: '100%',
-                        transformOrigin: '0 0',
-                        transform: 'none',
-                    }}
-                />
-            </Paper>
+            <Skeleton
+                data-testid="brain-map-detail-panel"
+                sx={{
+                    width: '100%',
+                    height: '100%',
+                    transformOrigin: '0 0',
+                    transform: 'none',
+                }}
+            />
         );
     }
 
     return (
-        <Paper
-            variant="elevation"
-            elevation={2}
-            data-testid="brain-map-detail-panel"
-            sx={{
-                flex: '1 1 0',
-                minWidth: 250,
-                maxHeight: STUDY_ANALYSIS_TABLE_MAX_HEIGHT,
-                overflow: 'auto',
-                p: 2,
-            }}
-        >
-            <Stack spacing={2}>
-                <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1} minWidth={0}>
-                    <Typography
-                        sx={{ wordBreak: 'break-word' }}
-                        variant="subtitle1"
-                        fontWeight="bold"
-                        title={displayName}
-                    >
-                        {displayName}
-                    </Typography>
-                    <Tooltip title="Close panel">
-                        <IconButton size="small" onClick={onClose} aria-label="Close map details panel">
-                            <Close fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                </Stack>
-
-                <KeyValueTable title="Image (Neurostore)" rows={imageRows} />
-
-                {storeMetaRows.length > 0 && (
-                    <KeyValueTable title="Image metadata (Neurostore)" rows={storeMetaRows} showColumnHeader />
-                )}
-
-                {nvUrl && nvRows.length === 0 && (
-                    <Stack spacing={1}>
-                        <Typography variant="subtitle2" fontWeight="bold">
-                            NeuroVault details
-                        </Typography>
-                        <Typography variant="body2" color="warning.dark">
-                            No extra NeuroVault fields were returned for this URL.
-                        </Typography>
-                    </Stack>
-                )}
-                {nvUrl && nvRows.length > 0 && (
-                    <KeyValueTable title="NeuroVault details" rows={nvRows} showColumnHeader />
-                )}
+        <Stack spacing={2} data-testid="brain-map-detail-panel">
+            <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1} minWidth={0}>
+                <Typography sx={{ wordBreak: 'break-word' }} variant="subtitle1" fontWeight="bold" title={displayName}>
+                    {displayName}
+                </Typography>
+                <Tooltip title="Close panel">
+                    <IconButton size="small" onClick={onClose} aria-label="Close map details panel">
+                        <Close fontSize="small" />
+                    </IconButton>
+                </Tooltip>
             </Stack>
-        </Paper>
+
+            <KeyValueTable title="Image (Neurostore)" rows={imageRows} />
+
+            {storeMetaRows.length > 0 && (
+                <KeyValueTable title="Image metadata (Neurostore)" rows={storeMetaRows} showColumnHeader />
+            )}
+
+            {nvUrl && nvRows.length === 0 && (
+                <Stack spacing={1}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                        NeuroVault details
+                    </Typography>
+                    <Typography variant="body2" color="warning.dark">
+                        No extra NeuroVault fields were returned for this URL.
+                    </Typography>
+                </Stack>
+            )}
+            {nvUrl && nvRows.length > 0 && <KeyValueTable title="NeuroVault details" rows={nvRows} showColumnHeader />}
+        </Stack>
     );
 };
 
