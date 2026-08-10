@@ -56,6 +56,10 @@ const NavToolbar = (props: INav) => {
                         }}
                         options={[
                             {
+                                label: 'Explore maps',
+                                onClick: () => navigate('/explore'),
+                            },
+                            {
                                 label: 'Studies',
                                 onClick: () => navigate('/base-studies'),
                             },

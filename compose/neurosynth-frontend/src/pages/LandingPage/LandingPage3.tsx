@@ -10,19 +10,20 @@ import {
     Search,
     Settings,
 } from '@mui/icons-material';
-import { Box, Button, Card, CardContent, InputAdornment, TextField, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, Autocomplete, InputAdornment, TextField, Typography } from '@mui/material';
+import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
 import { NEUROSYNTH_COMPOSE_CITATION } from 'hooks/useCitationCopy.consts';
 import { useCitationCopy } from 'hooks/useCitationCopy';
-import { useGuard } from 'hooks';
 import useAuthenticate from 'hooks/useAuthenticate';
+import LandingExploreCarousel from 'pages/LandingPage/components/LandingExploreCarousel';
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
-import LandingExploreCarousel from 'pages/LandingPage/components/LandingExploreCarousel';
 import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
-import LandingPageStyles from './LandingPage.styles';
+import { MOCK_ONVOC_TERMS } from 'pages/Explore/Explore.mockData';
+import LandingPage3Styles from './LandingPage3.styles';
 
 const SEO_GRAPH_DATA = JSON.stringify({
     '@context': 'https://schema.org',
@@ -72,19 +73,22 @@ const SEO_GRAPH_DATA = JSON.stringify({
     ],
 });
 
-const LandingPage = () => {
-    const { isAuthenticated, isLoading } = useAuth0();
-    useGuard('/explore', '', isAuthenticated, isLoading, true);
+/**
+ * Wireframe iteration: classic left/right hero with explore search + map carousel.
+ * View at /landing-3. Does not replace the primary landing page.
+ */
+const LandingPage3 = () => {
+    const { isAuthenticated } = useAuth0();
     const { handleLogin } = useAuthenticate();
     const { copyCitations } = useCitationCopy();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
 
     usePageMetadata({
-        title: 'Neurosynth Compose | Neuroimaging Meta-Analysis Platform',
+        title: 'Landing v3 | Neurosynth Compose',
         description:
             'Create, curate, and run neuroimaging meta-analyses in the browser. Build studysets from published fMRI literature and execute reproducible pipelines in the cloud.',
-        canonicalPath: '/',
+        canonicalPath: '/landing-3',
     });
     usePrerenderReady(true);
 
@@ -109,68 +113,93 @@ const LandingPage = () => {
     return (
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SEO_GRAPH_DATA }} />
-            <Box sx={[LandingPageStyles.sectionContainer, LandingPageStyles.exploreHeroSection]}>
-                <Box sx={LandingPageStyles.exploreHeroContents}>
-                    <Box
-                        component="img"
-                        src="/static/synth.png"
-                        alt="neurosynth compose logo"
-                        sx={LandingPageStyles.exploreHeroLogo}
-                    />
-                    <Typography component="h1" sx={LandingPageStyles.exploreHeroTitle}>
-                        Welcome to neurosynth compose
-                    </Typography>
-                    <Typography sx={LandingPageStyles.exploreHeroSubtitle}>
-                        Explore brain maps, and build custom meta-analyses in the browser.
-                    </Typography>
-                    <Box component="form" onSubmit={handleSearchSubmit} sx={LandingPageStyles.exploreSearchForm}>
-                        <TextField
-                            fullWidth
-                            value={searchQuery}
-                            onChange={(event) => setSearchQuery(event.target.value)}
-                            placeholder="Search for brain maps, tasks, or terms…"
-                            inputProps={{ 'aria-label': 'Search brain maps' }}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <Search sx={{ color: 'primary.main' }} />
-                                    </InputAdornment>
-                                ),
-                            }}
-                            sx={LandingPageStyles.exploreSearchField}
-                        />
+            <Box sx={LandingPage3Styles.heroSection}>
+                <Box sx={LandingPage3Styles.heroBannerContentContainer}>
+                    <Box sx={LandingPage3Styles.heroBannerTextContainer}>
+                        <Typography component="h1" sx={LandingPage3Styles.title}>
+                            Welcome to neurosynth Compose: A free and open platform for neuroimaging meta-analysis
+                        </Typography>
+                        <Typography sx={LandingPage3Styles.heroBannerText}>
+                            Explore meta-analyses, or perform custom neuroimaging meta-analyses entirely in the browser,
+                            and quickly get results in the cloud using automated analysis pipelines.
+                        </Typography>
+                        <Box sx={LandingPage3Styles.activitySummaryContainer}>
+                            <NeurosynthActivitySummary />
+                        </Box>
+                        <Box component="form" onSubmit={handleSearchSubmit} sx={LandingPage3Styles.searchForm}>
+                            <Autocomplete
+                                freeSolo
+                                options={MOCK_ONVOC_TERMS}
+                                inputValue={searchQuery}
+                                onInputChange={(_event, value) => setSearchQuery(value)}
+                                onChange={(_event, value) => {
+                                    const selectedTerm = typeof value === 'string' ? value : (value ?? '');
+                                    setSearchQuery(selectedTerm);
+                                    if (selectedTerm.trim()) {
+                                        navigate(`/explore?q=${encodeURIComponent(selectedTerm.trim())}`);
+                                    }
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        fullWidth
+                                        placeholder="Search for brain maps, tasks, or terms…"
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            'aria-label': 'Search brain maps',
+                                        }}
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            startAdornment: (
+                                                <>
+                                                    <InputAdornment position="start">
+                                                        <Search sx={{ color: 'primary.main' }} />
+                                                    </InputAdornment>
+                                                    {params.InputProps.startAdornment}
+                                                </>
+                                            ),
+                                        }}
+                                        sx={LandingPage3Styles.searchField}
+                                    />
+                                )}
+                            />
+                        </Box>
+                        <Box sx={LandingPage3Styles.actionButtons}>
+                            <Button
+                                variant="outlined"
+                                startIcon={<AccountTree />}
+                                onClick={() => navigate('/explore?focus=onvoc')}
+                                sx={LandingPage3Styles.actionButtonOutlined}
+                            >
+                                Explore Terms
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                startIcon={<Psychology />}
+                                onClick={() => navigate('/decode')}
+                                sx={LandingPage3Styles.actionButtonOutlined}
+                            >
+                                Decode
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<Science />}
+                                onClick={handleNewMetaAnalysis}
+                                sx={LandingPage3Styles.actionButtonPrimary}
+                            >
+                                New meta-analysis
+                            </Button>
+                        </Box>
                     </Box>
-                    <Box sx={LandingPageStyles.exploreActionButtons}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<AccountTree />}
-                            onClick={() => navigate('/explore?focus=onvoc')}
-                            sx={LandingPageStyles.exploreActionButton}
-                        >
-                            Explore
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            startIcon={<Psychology />}
-                            onClick={() => navigate('/decode')}
-                            sx={LandingPageStyles.exploreActionButton}
-                        >
-                            Decode
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={<Science />}
-                            onClick={handleNewMetaAnalysis}
-                            sx={LandingPageStyles.exploreActionButtonPrimary}
-                        >
-                            New meta-analysis
-                        </Button>
+                    <Box sx={LandingPage3Styles.carouselPanel}>
+                        <Box sx={LandingPage3Styles.carouselInner}>
+                            <LandingExploreCarousel variant="fillWidth" />
+                        </Box>
                     </Box>
-                    <LandingExploreCarousel />
                 </Box>
             </Box>
-            <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.dark' }]}>
-                <Box sx={LandingPageStyles.sectionContents}>
+            <Box sx={[LandingPage3Styles.sectionContainer, { backgroundColor: 'primary.dark' }]}>
+                <Box sx={LandingPage3Styles.sectionContents}>
                     <Card
                         elevation={0}
                         sx={{
@@ -211,7 +240,7 @@ const LandingPage = () => {
                         >
                             <Button
                                 variant="contained"
-                                sx={[LandingPageStyles.getStartedButton, { color: 'primary.dark' }]}
+                                sx={[LandingPage3Styles.getStartedButton, { color: 'primary.dark' }]}
                                 endIcon={<OpenInNew sx={{ color: 'primary.dark' }} />}
                                 target="_blank"
                                 size="large"
@@ -249,16 +278,16 @@ const LandingPage = () => {
             </Box>
             <Box
                 sx={[
-                    LandingPageStyles.sectionContainer,
+                    LandingPage3Styles.sectionContainer,
                     { backgroundColor: 'primary.contrastText', overflow: 'visible !important' },
                 ]}
             >
-                <Box sx={LandingPageStyles.sectionContents}>
-                    <Box sx={LandingPageStyles.cardsContainer}>
-                        <Card elevation={0} sx={LandingPageStyles.card}>
+                <Box sx={LandingPage3Styles.sectionContents}>
+                    <Box sx={LandingPage3Styles.cardsContainer}>
+                        <Card elevation={0} sx={LandingPage3Styles.card}>
                             <CardContent>
-                                <Search sx={LandingPageStyles.cardIcon} />
-                                <Typography variant="h5" sx={LandingPageStyles.cardTitle}>
+                                <Search sx={LandingPage3Styles.cardIcon} />
+                                <Typography variant="h5" sx={LandingPage3Styles.cardTitle}>
                                     Find Studies
                                 </Typography>
                                 <Typography variant="h6">
@@ -267,10 +296,10 @@ const LandingPage = () => {
                                 </Typography>
                             </CardContent>
                         </Card>
-                        <Card elevation={0} sx={LandingPageStyles.card}>
+                        <Card elevation={0} sx={LandingPage3Styles.card}>
                             <CardContent>
-                                <AutoAwesomeMotion sx={LandingPageStyles.cardIcon} />
-                                <Typography variant="h5" sx={LandingPageStyles.cardTitle}>
+                                <AutoAwesomeMotion sx={LandingPage3Styles.cardIcon} />
+                                <Typography variant="h5" sx={LandingPage3Styles.cardTitle}>
                                     Curate collections
                                 </Typography>
                                 <Typography variant="h6">
@@ -279,10 +308,10 @@ const LandingPage = () => {
                                 </Typography>
                             </CardContent>
                         </Card>
-                        <Card elevation={0} sx={LandingPageStyles.card}>
+                        <Card elevation={0} sx={LandingPage3Styles.card}>
                             <CardContent>
-                                <Settings sx={LandingPageStyles.cardIcon} />
-                                <Typography variant="h5" sx={LandingPageStyles.cardTitle}>
+                                <Settings sx={LandingPage3Styles.cardIcon} />
+                                <Typography variant="h5" sx={LandingPage3Styles.cardTitle}>
                                     Specify & Execute Meta-analysis
                                 </Typography>
                                 <Typography variant="h6">
@@ -291,10 +320,10 @@ const LandingPage = () => {
                                 </Typography>
                             </CardContent>
                         </Card>
-                        <Card elevation={0} sx={LandingPageStyles.card}>
+                        <Card elevation={0} sx={LandingPage3Styles.card}>
                             <CardContent>
-                                <IosShare sx={LandingPageStyles.cardIcon} />
-                                <Typography variant="h5" sx={LandingPageStyles.cardTitle}>
+                                <IosShare sx={LandingPage3Styles.cardIcon} />
+                                <Typography variant="h5" sx={LandingPage3Styles.cardTitle}>
                                     Share your results!
                                 </Typography>
                                 <Typography variant="h6">
@@ -306,8 +335,8 @@ const LandingPage = () => {
                     </Box>
                 </Box>
             </Box>
-            <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'secondary.main' }]}>
-                <Box sx={LandingPageStyles.sectionContents}>
+            <Box sx={[LandingPage3Styles.sectionContainer, { backgroundColor: 'secondary.main' }]}>
+                <Box sx={LandingPage3Styles.sectionContents}>
                     <Typography
                         variant="h3"
                         color="primary.main"
@@ -338,12 +367,12 @@ const LandingPage = () => {
                     </Typography>
 
                     <Box sx={{ width: '100%' }}>
-                        <Box sx={LandingPageStyles.sponsorsImgContainer}>
+                        <Box sx={LandingPage3Styles.sponsorsImgContainer}>
                             {LOGOS.map((logo) => (
-                                <Box key={logo.logoPath} sx={LandingPageStyles.sponsorLogoContainer}>
+                                <Box key={logo.logoPath} sx={LandingPage3Styles.sponsorLogoContainer}>
                                     <Box
                                         component="img"
-                                        sx={LandingPageStyles.sponsorLogo}
+                                        sx={LandingPage3Styles.sponsorLogo}
                                         src={logo.logoPath}
                                         alt={logo.alt}
                                     />
@@ -365,4 +394,4 @@ const LandingPage = () => {
     );
 };
 
-export default LandingPage;
+export default LandingPage3;

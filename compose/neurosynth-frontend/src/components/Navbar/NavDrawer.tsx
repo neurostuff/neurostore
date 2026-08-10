@@ -59,6 +59,12 @@ const NavDrawer = (props: INav) => {
                     <DrawerToggleMenu labelText="EXPLORE">
                         <List>
                             <ListItem>
+                                <ListItemButton onClick={() => navigate('/explore')}>
+                                    <ListItemIcon />
+                                    <ListItemText primary="EXPLORE MAPS" />
+                                </ListItemButton>
+                            </ListItem>
+                            <ListItem>
                                 <ListItemButton onClick={() => navigate('/base-studies')}>
                                     <ListItemIcon />
                                     <ListItemText primary="STUDIES" />

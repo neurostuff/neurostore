@@ -7,7 +7,6 @@ import CurationSearchPage from 'pages/CurationImport/CurationSearchPage';
 import ExtractionPage from 'pages/Extraction/ExtractionPage';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import HelpPage from 'pages/HelpPage/HelpPage';
-import MetaAnalysisRedirect from 'pages/MetaAnalysis/MetaAnalysisRedirect';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
 import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
@@ -19,6 +18,8 @@ import UserProfilePage from 'pages/UserProfile/UserProfilePage';
 import React, { Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
+import LandingPage2 from '../LandingPage/LandingPage2';
+import LandingPage3 from '../LandingPage/LandingPage3';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProtectedRoute from './components/ProtectedRoute';
 import { CurationBoardGroupsProvider } from 'pages/Curation/context/CurationBoardGroupsContext';
@@ -26,6 +27,9 @@ import { CurationBoardGroupsProvider } from 'pages/Curation/context/CurationBoar
 const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
 const ProjectStudyPage = React.lazy(() => import('pages/Study/ProjectStudyPage'));
 const StudiesPage = React.lazy(() => import('pages/Studies/StudiesPage'));
+const ExplorePage = React.lazy(() => import('pages/Explore/ExplorePage'));
+const DecodePage = React.lazy(() => import('pages/Decode/DecodePage'));
+const MetaAnalysisByIdEntry = React.lazy(() => import('pages/Explore/MetaAnalysisByIdEntry'));
 
 const MetaAnalysesPage = React.lazy(() => import('pages/MetaAnalyses/MetaAnalysesPage'));
 const MetaAnalysisPage = React.lazy(() => import('pages/MetaAnalysis/MetaAnalysisPage'));
@@ -66,6 +70,8 @@ const BaseNavigation = () => {
             >
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
+                    <Route path="/landing-2" element={<LandingPage2 />} />
+                    <Route path="/landing-3" element={<LandingPage3 />} />
                     <Route
                         path="/projects"
                         element={
@@ -174,6 +180,22 @@ const BaseNavigation = () => {
                         }
                     />
                     <Route
+                        path="/explore"
+                        element={
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <ExplorePage />
+                            </Box>
+                        }
+                    />
+                    <Route
+                        path="/decode"
+                        element={
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <DecodePage />
+                            </Box>
+                        }
+                    />
+                    <Route
                         path="/base-studies"
                         element={
                             <Box sx={BaseNavigationStyles.pagesContainer}>
@@ -227,7 +249,14 @@ const BaseNavigation = () => {
                             </Box>
                         }
                     />
-                    <Route path="/meta-analyses/:metaAnalysisId" element={<MetaAnalysisRedirect />} />
+                    <Route
+                        path="/meta-analyses/:metaAnalysisId"
+                        element={
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <MetaAnalysisByIdEntry />
+                            </Box>
+                        }
+                    />
                     <Route
                         path="*"
                         element={

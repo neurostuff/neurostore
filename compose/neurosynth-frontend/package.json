@@ -54,6 +54,7 @@
         "@mui/material": "^5.7.0",
         "@mui/styles": "^5.5.1",
         "@mui/system": "^5.5.1",
+        "@mui/x-tree-view": "^7.29.10",
         "@niivue/niivue": "^0.46.0",
         "@reactour/tour": "^3.8.0",
         "@sentry/react": "^10.69.0",

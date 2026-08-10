@@ -171,7 +171,7 @@ const NiiVueVisualizer = ({
             niivue.volumes[1].cal_min = startingValue;
             niivue.volumes[1].cal_max = maxOrThreshold;
 
-            niivue.setInterpolation(true);
+            niivue.setInterpolation(false);
             niivue.updateGLVolume();
         };
 

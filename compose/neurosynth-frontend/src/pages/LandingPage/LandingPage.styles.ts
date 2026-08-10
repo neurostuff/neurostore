@@ -15,96 +15,89 @@ const LandingPageStyles: Style = {
             xl: '6rem auto',
         },
     },
-    // stuff related to first intro section
-    heroBannerContentContainer: {
+    exploreHeroSection: {
+        background: 'linear-gradient(180deg, #e8f4f8 0%, #ffffff 55%, #ffffff 100%)',
+        minHeight: 'calc(100vh - 64px)',
+        boxSizing: 'border-box',
         display: 'flex',
-        width: '100%',
-        justifyContent: 'space-between',
-        flexDirection: {
-            xs: 'column-reverse',
-            md: 'column-reverse',
-            lg: 'row',
-        },
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'auto',
     },
-    title: {
-        color: 'primary.contrastText',
-        fontWeight: 'bold',
-        textAlign: {
-            xs: 'center',
-            lg: 'left',
+    exploreHeroContents: {
+        width: {
+            xs: '92%',
+            sm: '86%',
+            md: 720,
         },
-    },
-    heroBannerTextContainer: {
+        maxWidth: 720,
+        margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'center',
-        position: 'relative',
-        padding: {
-            xs: '2rem',
-            md: '2rem 2rem 2rem 0rem',
-            lg: '2rem 2rem 2rem 0rem',
-            xl: '3rem 6rem 3rem 0rem',
-        },
-        marginLeft: '10%',
-        textAlign: {
-            xs: 'center',
-            lg: 'left',
+        textAlign: 'center',
+        gap: 1.5,
+        py: 2,
+    },
+    exploreHeroLogo: {
+        width: 68,
+        height: 68,
+        mb: 1,
+    },
+    exploreHeroTitle: {
+        color: 'primary.main',
+        fontWeight: 800,
+        fontSize: { xs: '2rem', md: '2.65rem' },
+        lineHeight: 1.15,
+        letterSpacing: '-0.02em',
+    },
+    exploreHeroSubtitle: {
+        color: 'text.secondary',
+        maxWidth: 520,
+        fontSize: { xs: '1.05rem', md: '1.2rem' },
+        lineHeight: 1.6,
+        fontWeight: 400,
+        mb: 1.5,
+    },
+    exploreSearchForm: {
+        width: '100%',
+        mt: 1,
+    },
+    exploreSearchField: {
+        backgroundColor: 'background.paper',
+        borderRadius: 2,
+        '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+            fontSize: '1.05rem',
+            py: 0.5,
         },
     },
-    heroBannerText: {
-        color: 'primary.contrastText',
-        lineHeight: '1.7',
-        padding: {
-            xs: '0.5rem 0',
-            md: '1rem 0',
-        },
-    },
-    heroButtonContainer: {
+    exploreActionButtons: {
         display: 'flex',
-        flexDirection: {
-            xs: 'column',
-            md: 'row',
-        },
+        flexWrap: 'wrap',
+        gap: 1.5,
+        justifyContent: 'center',
+        width: '100%',
+        mb: 5,
     },
-    heroButtons: {
-        fontWeight: 'bold',
-        fontSize: '1.2rem',
-        width: {
-            xs: '100%',
-            lg: '40%',
-        },
+    exploreActionButton: {
+        textTransform: 'none',
+        fontWeight: 600,
+        borderColor: 'primary.main',
+        color: 'primary.main',
+        px: 2,
+    },
+    exploreActionButtonPrimary: {
+        textTransform: 'none',
+        fontWeight: 600,
+        px: 2,
     },
     getStartedButton: {
         backgroundColor: 'white',
         color: 'primary.main',
         '&:hover': {
             backgroundColor: 'lightgray',
-        },
-    },
-    imageContainer: {
-        borderTopLeftRadius: {
-            xs: '0px',
-            md: '0px',
-            lg: '400px',
-        },
-        borderBottomLeftRadius: {
-            xs: '0px',
-            md: '0px',
-            lg: '400px',
-        },
-        display: 'flex',
-        backgroundColor: 'white',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    img: {
-        padding: '0 4rem',
-        height: 'auto',
-        width: {
-            xs: '300px',
-            md: '500px', // we shift orientation here so we can make the image bigger
-            lg: '400px', // image becomes right aligned
-            xl: '600px',
         },
     },
     // stuff related to card section
