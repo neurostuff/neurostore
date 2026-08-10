@@ -37,6 +37,7 @@ const ExploreResultCard = ({ brainMap }: ExploreResultCardProps) => {
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
                 ONVOC | LEGACY | USER
             </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}></Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.55 }}>
                 {brainMap.abstract}
             </Typography>
