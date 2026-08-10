@@ -45,7 +45,7 @@
         "@citation-js/plugin-csl": "^0.7.22",
         "@citation-js/plugin-doi": "^0.7.14",
         "@citation-js/plugin-enw": "^0.3.0",
-        "@citation-js/plugin-ris": "^0.7.14",
+        "@citation-js/plugin-ris": "^0.8.2",
         "@emotion/react": "^11.9.0",
         "@emotion/styled": "^11.8.1",
         "@handsontable/react-wrapper": "^18.0.0",
