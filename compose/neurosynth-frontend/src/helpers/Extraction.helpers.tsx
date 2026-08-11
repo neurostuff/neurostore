@@ -1,5 +1,6 @@
-import { StudyReturn, BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
+import { BaseStudyReturnInfo } from 'hooks/studies/studyQueries.types';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 export const selectBestBaseStudyVersion = (baseStudyVersions: Array<StudyReturn>) => {
@@ -7,20 +8,11 @@ export const selectBestBaseStudyVersion = (baseStudyVersions: Array<StudyReturn>
     return sortedVersion[sortedVersion.length - 1];
 };
 
-export const selectBestVersionsForStudyset = (baseStudies: Array<BaseStudy>): string[] => {
-    const selectedVersions = baseStudies.map((baseStudy) => {
-        const studyVersion = selectBestBaseStudyVersion((baseStudy?.versions || []) as StudyReturn[]);
-        return studyVersion.id as string;
-    });
-
-    return selectedVersions;
-};
-
 type StubLike = Pick<ICurationStubStudy, 'id'>;
 
 export const mapStubsToStudysetPayload = (
     stubs: Array<StubLike>,
-    stubBaseStudies: Array<BaseStudyReturn>,
+    stubBaseStudies: Array<BaseStudyReturnInfo>,
     existingStudyIds?: Set<string>
 ): Array<{ id: string; curation_stub_uuid: string }> => {
     const payload: Array<{ id: string; curation_stub_uuid: string }> = [];
@@ -29,7 +21,7 @@ export const mapStubsToStudysetPayload = (
         const stubBaseStudy = stubBaseStudies[idx];
         if (!stubBaseStudy) return;
 
-        const versions = Array.isArray(stubBaseStudy.versions) ? (stubBaseStudy.versions as Array<StudyReturn>) : [];
+        const versions = stubBaseStudy.versions ?? [];
 
         // Prefer a version that already exists in the studyset.
         // Note: The backend will deduplicate versions, so we dont have to worry about the same version appearing multiple times in the studyset.

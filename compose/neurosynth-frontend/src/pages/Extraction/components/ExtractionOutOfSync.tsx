@@ -1,10 +1,16 @@
 import { ErrorOutline } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import LoadingButton from 'components/Buttons/LoadingButton';
+import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
 import { useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
+import annotationQueries from 'hooks/annotations/annotationQueries';
+import { BaseStudyReturnInfo } from 'hooks/studies/studyQueries.types';
 import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
+import studysetQueries from 'hooks/studysets/studysetQueries';
+import { BaseStudy } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
+import { useState } from 'react';
 import {
     useAllowEditMetaAnalyses,
     useProjectCurationColumn,
@@ -12,12 +18,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
 } from 'stores/projects/ProjectStore';
-import { useState } from 'react';
-import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
-import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
-import studysetQueries from 'hooks/studysets/studysetQueries';
-import annotationQueries from 'hooks/annotations/annotationQueries';
 
 const ExtractionOutOfSync = () => {
     const studysetId = useProjectExtractionStudysetId();
@@ -81,7 +82,7 @@ const ExtractionOutOfSync = () => {
 
         try {
             const returnedBaseStudies = stubsToBaseStudies.length
-                ? ((await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturn>)
+                ? ((await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturnInfo>)
                 : [];
 
             const newStubPayload = mapStubsToStudysetPayload(

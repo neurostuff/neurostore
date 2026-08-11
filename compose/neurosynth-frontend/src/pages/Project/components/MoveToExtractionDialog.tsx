@@ -1,13 +1,16 @@
 import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
+import { getDefaultForNoteKey } from 'components/HotTables/HotTables.utils';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
-import { getDefaultForNoteKey } from 'components/HotTables/HotTables.utils';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
+import { BaseStudyReturnInfo } from 'hooks/studies/studyQueries.types';
 import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
+import { BaseStudy } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     useProjectCurationColumn,
     useProjectDescription,
@@ -18,8 +21,6 @@ import {
     useProjectNumCurationColumns,
     useUpdateExtractionMetadata,
 } from 'stores/projects/ProjectStore';
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
 import MoveToExtractionDialogIntroductionPart2 from './MoveToExtractionDialogIntroPart2';
 
@@ -153,7 +154,7 @@ const MoveToExtractionDialog = (props: IDialog) => {
 
         try {
             const res = await asyncIngest(stubsToBaseStudies);
-            const returnedBaseStudies = res.data as Array<BaseStudyReturn>;
+            const returnedBaseStudies = res.data as Array<BaseStudyReturnInfo>;
 
             const studiesPayload = mapStubsToStudysetPayload(includedStubs, returnedBaseStudies);
 
