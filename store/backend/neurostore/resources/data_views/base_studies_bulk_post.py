@@ -23,6 +23,8 @@ def _base_study_response_load_options(user_model):
             Study.created_at,
             Study.updated_at,
             Study.source,
+            Study.has_coordinates,
+            Study.has_images,
         )
         .options(
             raiseload("*", sql_only=True),

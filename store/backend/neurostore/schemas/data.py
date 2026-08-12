@@ -655,8 +655,8 @@ class StudySchema(BaseDataSchema):
         metadata={"id_field": True},
     )
     base_study_id = fields.String(data_key="base_study", allow_none=True)
-    has_coordinates = fields.Bool(dump_only=True)
-    has_images = fields.Bool(dump_only=True)
+    has_coordinates = fields.Bool(dump_only=True, metadata={"info_field": True})
+    has_images = fields.Bool(dump_only=True, metadata={"info_field": True})
     has_z_maps = fields.Bool(dump_only=True)
     has_t_maps = fields.Bool(dump_only=True)
     has_beta_and_variance_maps = fields.Bool(dump_only=True)
