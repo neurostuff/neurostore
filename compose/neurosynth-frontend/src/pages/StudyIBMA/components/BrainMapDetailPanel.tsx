@@ -1,5 +1,6 @@
 import { Close } from '@mui/icons-material';
 import {
+    Box,
     IconButton,
     Skeleton,
     Stack,
@@ -148,20 +149,25 @@ const BrainMapDetailPanel: React.FC<{
 
     if (nvLoading) {
         return (
-            <Skeleton
+            <Box
                 data-testid="brain-map-detail-panel"
-                sx={{
-                    width: '100%',
-                    height: '100%',
-                    transformOrigin: '0 0',
-                    transform: 'none',
-                }}
-            />
+                sx={{ flex: 1, alignSelf: 'stretch', width: '100%', minHeight: 0, height: '100%' }}
+            >
+                <Skeleton
+                    variant="rectangular"
+                    sx={{
+                        width: '100%',
+                        height: '100%',
+                        transform: 'none',
+                        transformOrigin: '0 0',
+                    }}
+                />
+            </Box>
         );
     }
 
     return (
-        <Stack spacing={2} data-testid="brain-map-detail-panel">
+        <Stack spacing={2} p={{ xs: 2, lg: 6 }} data-testid="brain-map-detail-panel">
             <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1} minWidth={0}>
                 <Typography sx={{ wordBreak: 'break-word' }} variant="subtitle1" fontWeight="bold" title={displayName}>
                     {displayName}

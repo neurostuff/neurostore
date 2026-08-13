@@ -13,12 +13,15 @@ import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import {
     useAllowEditMetaAnalyses,
+    useProjectAnalysisType,
     useProjectCurationColumn,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
 } from 'stores/projects/ProjectStore';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import { SearchDataType } from 'pages/Study/Study.types';
 
 const ExtractionOutOfSync = () => {
     const studysetId = useProjectExtractionStudysetId();
@@ -27,6 +30,7 @@ const ExtractionOutOfSync = () => {
     const numColumns = useProjectNumCurationColumns();
     const setAllowEditMetaAnalyses = useAllowEditMetaAnalyses();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
+    const projectAnalysisType = useProjectAnalysisType();
     const { mutateAsync: ingest } = useIngest();
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
     const getStudysetIsRefetching = useIsFetching({ queryKey: studysetQueries.all() });
@@ -88,7 +92,8 @@ const ExtractionOutOfSync = () => {
             const newStubPayload = mapStubsToStudysetPayload(
                 stubsNeedingIngest,
                 returnedBaseStudies,
-                studiesInStudyset
+                studiesInStudyset,
+                projectAnalysisType === EAnalysisType.IBMA ? SearchDataType.IMAGE : SearchDataType.COORDINATE
             );
             const studiesPayload = [...existingStubPayload, ...newStubPayload];
 

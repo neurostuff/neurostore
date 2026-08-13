@@ -19,10 +19,13 @@ import {
     useProjectId,
     useProjectName,
     useProjectNumCurationColumns,
+    useProjectAnalysisType,
     useUpdateExtractionMetadata,
 } from 'stores/projects/ProjectStore';
 import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
 import MoveToExtractionDialogIntroductionPart2 from './MoveToExtractionDialogIntroPart2';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import { SearchDataType } from 'pages/Study/Study.types';
 
 const MoveToExtractionDialog = (props: IDialog) => {
     const numColumns = useProjectNumCurationColumns();
@@ -30,6 +33,7 @@ const MoveToExtractionDialog = (props: IDialog) => {
     const projectId = useProjectId();
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
+    const projectAnalysisType = useProjectAnalysisType();
     const { mutateAsync: createStudyset } = useCreateStudyset();
     const { mutateAsync: createAnnotation } = useCreateAnnotation();
     const updateExtractionMetadata = useUpdateExtractionMetadata();
@@ -156,7 +160,12 @@ const MoveToExtractionDialog = (props: IDialog) => {
             const res = await asyncIngest(stubsToBaseStudies);
             const returnedBaseStudies = res.data as Array<BaseStudyReturnInfo>;
 
-            const studiesPayload = mapStubsToStudysetPayload(includedStubs, returnedBaseStudies);
+            const studiesPayload = mapStubsToStudysetPayload(
+                includedStubs,
+                returnedBaseStudies,
+                undefined,
+                projectAnalysisType === EAnalysisType.IBMA ? SearchDataType.IMAGE : SearchDataType.COORDINATE
+            );
 
             await asyncUpdateStudyset({
                 studysetId: newStudysetId,

@@ -19,6 +19,7 @@ import {
     sortAnalysesByOrder,
     sortImages,
 } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
+import { STUDY_ANALYSES_PANEL_HEIGHT } from 'pages/Study/components/Study.styles';
 import { useEffect, useMemo, useState } from 'react';
 import { DefaultMapTypes, IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
@@ -33,8 +34,6 @@ type AnalysisWithImages = {
     description: string;
     images: ImageReturn[];
 };
-
-const PANEL_HEIGHT = '80vh';
 
 const imageRowSx = {
     ml: 2,
@@ -198,13 +197,20 @@ const StudyAnalysesIBMA = ({ id, analyses }: StudyAnalysesIBMAProps) => {
     }
 
     return (
-        <Grid container spacing={2} height={PANEL_HEIGHT}>
+        <Grid container spacing={2} height={STUDY_ANALYSES_PANEL_HEIGHT}>
             <Grid item xs={12} md={4} lg={3} height="100%" minHeight={0} display="flex">
                 <Paper
                     variant="outlined"
-                    sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+                    sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                    }}
                 >
-                    <Stack spacing={1} p={1.5} flex={1} minHeight={0}>
+                    <Stack spacing={1} p={1.5} flex={1} minHeight={0} height="100%">
                         <TextField
                             size="small"
                             fullWidth
@@ -269,12 +275,24 @@ const StudyAnalysesIBMA = ({ id, analyses }: StudyAnalysesIBMAProps) => {
             </Grid>
 
             <Grid item xs={12} md={8} lg={9} height="100%" minHeight={0} display="flex">
-                <Paper variant="outlined" sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-                    <Stack p={2}>
+                <Paper
+                    variant="outlined"
+                    sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'auto',
+                    }}
+                >
+                    <Stack flex={1} minHeight={0} height="100%">
                         {selectedImage ? (
                             <BrainMapDetailPanel image={selectedImage} onClose={() => setSelectedImageId(null)} />
                         ) : (
-                            <Typography color="text.secondary">Select an image to view details.</Typography>
+                            <Typography sx={{ p: 2 }} color="text.secondary">
+                                Select an image to view details.
+                            </Typography>
                         )}
                     </Stack>
                 </Paper>

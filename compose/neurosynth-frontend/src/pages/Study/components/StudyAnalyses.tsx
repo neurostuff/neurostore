@@ -1,5 +1,6 @@
 import { Paper, Stack } from '@mui/material';
 import StudyAnalysesList from 'pages/Study/components/StudyAnalysesList';
+import { STUDY_ANALYSES_PANEL_HEIGHT } from 'pages/Study/components/Study.styles';
 import { useEffect, useMemo, useState } from 'react';
 import StudyAnalysis from 'pages/Study/components/StudyAnalysis';
 import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
@@ -26,8 +27,18 @@ const StudyAnalyses = (props: { id: string | undefined; analyses: IStoreAnalysis
     }, [props.analyses, selectedAnalysisId]);
 
     return (
-        <Stack direction="row" spacing={2}>
-            <Paper variant="outlined" sx={{ width: 250, flexShrink: 0 }}>
+        <Stack direction="row" spacing={2} alignItems="stretch" sx={{ height: STUDY_ANALYSES_PANEL_HEIGHT }}>
+            <Paper
+                variant="outlined"
+                sx={{
+                    width: 250,
+                    flexShrink: 0,
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                }}
+            >
                 <StudyAnalysesList
                     selectedId={selectedAnalysisId}
                     onSelectAnalysisIndex={handleSelectAnalysis}
@@ -35,8 +46,18 @@ const StudyAnalyses = (props: { id: string | undefined; analyses: IStoreAnalysis
                 />
             </Paper>
             {selectedAnalysis && (
-                <Paper variant="outlined" sx={{ flex: 1, minWidth: 0 }}>
-                    <Stack p={2}>
+                <Paper
+                    variant="outlined"
+                    sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'auto',
+                    }}
+                >
+                    <Stack p={2} flex={1} minHeight={0}>
                         <StudyAnalysis {...selectedAnalysis} />
                     </Stack>
                 </Paper>

@@ -10,7 +10,7 @@ import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies.helpers
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useProjectId } from 'stores/projects/ProjectStore';
-import { SearchCriteria } from 'pages/Study/Study.types';
+import { SearchCriteria, SearchDataType } from 'pages/Study/Study.types';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import CurationImportStyles from '../CurationImport.styles';
@@ -186,7 +186,14 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
                                 data-tour={index === 0 ? 'StudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
                                 key={studyrow.id || index}
-                                onClick={() => navigate(`/base-studies/${studyrow.id}`)}
+                                onClick={() => {
+                                    if (!studyrow.id) return;
+                                    const typeQuery =
+                                        searchCriteria.dataType && searchCriteria.dataType !== SearchDataType.ALL
+                                            ? `?type=${searchCriteria.dataType}`
+                                            : '';
+                                    navigate(`/base-studies/${studyrow.id}${typeQuery}`);
+                                }}
                             >
                                 <TableCell>
                                     {studyrow?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}

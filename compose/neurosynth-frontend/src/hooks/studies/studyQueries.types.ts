@@ -21,8 +21,23 @@ export type BaseStudyReturnNonNested = Omit<BaseStudyReturn, 'versions'> & {
     versions?: string[];
 };
 
+export type BaseStudyReturnInfoVersion = Pick<
+    StudyReturn,
+    | 'id'
+    | 'user'
+    | 'username'
+    | 'created_at'
+    | 'updated_at'
+    | 'source'
+    | 'has_coordinates'
+    | 'has_images'
+    | 'has_z_maps'
+    | 'has_t_maps'
+    | 'has_beta_and_variance_maps'
+>;
+
 export type BaseStudyReturnInfo = Omit<BaseStudyReturn, 'versions'> & {
-    versions?: Pick<StudyReturn, 'id' | 'user' | 'username' | 'created_at' | 'updated_at' | 'source'>[];
+    versions?: BaseStudyReturnInfoVersion[];
 };
 
 export type BaseStudyListOf<T extends BaseStudyReturn = BaseStudyReturn> = Omit<BaseStudyList, 'results'> & {

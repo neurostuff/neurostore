@@ -23,6 +23,11 @@ def _base_study_response_load_options(user_model):
             Study.created_at,
             Study.updated_at,
             Study.source,
+            Study.has_coordinates,
+            Study.has_images,
+            Study.has_z_maps,
+            Study.has_t_maps,
+            Study.has_beta_and_variance_maps,
         )
         .options(
             raiseload("*", sql_only=True),

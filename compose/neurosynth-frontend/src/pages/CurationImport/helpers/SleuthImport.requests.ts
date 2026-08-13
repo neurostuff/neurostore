@@ -13,6 +13,7 @@ import { ISleuthFileUploadStubs, PUBMED_API_KEY } from '.';
 import { DefaultSpaceTypes, IStudyVersion } from 'stores/study/StudyStore.helpers';
 import API from 'api/api.config';
 import { selectBestBaseStudyVersion } from 'helpers/Extraction.helpers';
+import { SearchDataType } from 'pages/Study/Study.types';
 import { IESearchResult } from 'hooks/external/useGetPubMedIdFromDOI';
 import { INeurosynthParsedPubmedArticle } from 'hooks/external/useFetchPubMedIds.types';
 import { executeHTTPRequestsAsBatches } from 'helpers/requests';
@@ -94,8 +95,10 @@ const organizeSleuthStubsIntoHTTPRequests = (
                 existingStudyCreateRequest!.analyses.push(newAnalysis);
             } else {
                 studyRequestsMap.set(sleuthStudyIdentifier, {
-                    studyId: selectBestBaseStudyVersion((correspondingBaseStudy?.versions as IStudyVersion[]) || [])
-                        .id as string,
+                    studyId: selectBestBaseStudyVersion(
+                        (correspondingBaseStudy?.versions as IStudyVersion[]) || [],
+                        SearchDataType.COORDINATE
+                    ).id as string,
                     analyses: [newAnalysis],
                 });
             }

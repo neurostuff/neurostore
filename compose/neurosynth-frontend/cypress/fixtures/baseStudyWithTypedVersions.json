@@ -3,7 +3,7 @@
     "created_at": "2023-06-21T22:17:27.973390+00:00",
     "description": "lorem ipsum dolor sit amet consectetur adipiscing elit",
     "doi": "10.1016/j.drugalcdep.2017.02.019",
-    "id": "3Y2tJw6Vuy6n",
+    "id": "mock-base-study-id",
     "level": "group",
     "metadata": null,
     "name": "12h abstinence-induced right anterior insula network pattern changes in young smokers.",
@@ -14,15 +14,33 @@
     "versions": [
         {
             "created_at": "2023-07-12T22:43:18.184264+00:00",
-            "id": "66neUWorzjTc",
+            "id": "coord-version-id",
             "source": "neurostore",
             "updated_at": "2023-07-12T22:43:18.184264+00:00",
             "user": "github|2441214",
+            "username": "coord-owner",
             "has_coordinates": true,
             "has_images": false,
             "has_z_maps": false,
             "has_t_maps": false,
-            "has_beta_and_variance_maps": false
+            "has_beta_and_variance_maps": false,
+            "name": "Coordinate extraction",
+            "analyses": []
+        },
+        {
+            "created_at": "2024-01-10T10:00:00.000000+00:00",
+            "id": "image-version-id",
+            "source": "neurostore",
+            "updated_at": "2024-08-01T12:00:00.000000+00:00",
+            "user": "github|2441214",
+            "username": "image-owner",
+            "has_coordinates": false,
+            "has_images": true,
+            "has_z_maps": true,
+            "has_t_maps": false,
+            "has_beta_and_variance_maps": false,
+            "name": "Image extraction",
+            "analyses": []
         }
     ],
     "year": null

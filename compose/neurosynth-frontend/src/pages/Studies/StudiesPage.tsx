@@ -6,6 +6,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import { useNavigate } from 'react-router-dom';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import useSearchStudies from 'pages/Studies/hooks/useSearchStudies';
+import { SearchDataType } from 'pages/Study/Study.types';
 
 const StudiesPage = () => {
     const navigate = useNavigate();
@@ -18,6 +19,7 @@ const StudiesPage = () => {
         handleRowsPerPageChange,
         pageSize,
         pageOfResults,
+        dataType,
     } = useSearchStudies();
 
     const isPrerenderReady = !isLoading && (!!studyData || !!error);
@@ -29,6 +31,12 @@ const StudiesPage = () => {
         canonicalPath: '/base-studies',
     });
     usePrerenderReady(isPrerenderReady);
+
+    const handleStudyRowClick = (baseStudyId: string | undefined) => {
+        if (!baseStudyId) return;
+        const typeQuery = dataType && dataType !== SearchDataType.ALL ? `?type=${dataType}` : '';
+        navigate(`/base-studies/${baseStudyId}${typeQuery}`);
+    };
 
     return (
         <StateHandlerComponent isLoading={false} isError={false}>
@@ -85,7 +93,7 @@ const StudiesPage = () => {
                                 data-tour={index === 0 ? 'StudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
                                 key={studyrow.id || index}
-                                onClick={() => navigate(`/base-studies/${studyrow.id}`)}
+                                onClick={() => handleStudyRowClick(studyrow.id)}
                             >
                                 <TableCell>
                                     {studyrow?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}

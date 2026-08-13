@@ -1,14 +1,4 @@
-import {
-    Box,
-    Chip,
-    Paper,
-    TableCell,
-    TableRow,
-    ToggleButton,
-    ToggleButtonGroup,
-    Tooltip,
-    Typography,
-} from '@mui/material';
+import { Box, Chip, Paper, TableCell, TableRow, Tooltip, Typography } from '@mui/material';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
 import { sortMetadataArrayFn } from 'pages/StudyCBMA/components/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
@@ -22,68 +12,52 @@ import StudyStyles from './Study.styles';
 import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
-import { IStoreAnalysis, IStoreStudy } from 'stores/study/StudyStore.helpers';
-import { type MouseEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
-
-type StudyAnalysisView = 'CBMA' | 'IBMA';
-
-const hasCBMAAnalyses = (analyses: IStoreAnalysis[]): boolean =>
-    analyses.some((analysis) => (analysis.point_count ?? 0) > 0 || (analysis.points?.length ?? 0) > 0);
-
-const hasIBMAAnalyses = (analyses: IStoreAnalysis[]): boolean =>
-    analyses.some((analysis) => (analysis.images?.length ?? 0) > 0);
-
-const resolveAnalysisView = (
-    typeParam: string | null,
-    showCBMA: boolean,
-    showIBMA: boolean
-): StudyAnalysisView => {
-    if (showIBMA && !showCBMA) return 'IBMA';
-    if (showCBMA && showIBMA && typeParam === 'ibma') return 'IBMA';
-    return 'CBMA';
-};
+import { IStoreStudy } from 'stores/study/StudyStore.helpers';
 
 const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
-    const { id, name, description, doi, pmid, authors, publication: journal, metadata, pmcid, analyses = [] } = props;
-    const [searchParams, setSearchParams] = useSearchParams();
+    const {
+        id,
+        name,
+        description,
+        doi,
+        pmid,
+        authors,
+        publication: journal,
+        metadata,
+        pmcid,
+        analyses = [],
+        has_images: hasImages,
+    } = props;
 
-    const hasIBMA = hasIBMAAnalyses(analyses);
-    const hasCBMA = hasCBMAAnalyses(analyses);
-    const showIBMA = hasIBMA;
-    const showCBMA = hasCBMA || !hasIBMA;
-
-    const analysisView = resolveAnalysisView(searchParams.get('type')?.toLowerCase() ?? null, showCBMA, showIBMA);
-
-    const handleAnalysisViewChange = (_event: MouseEvent<HTMLElement>, nextView: StudyAnalysisView | null) => {
-        if (nextView === null) return;
-        setSearchParams(
-            (previous) => {
-                const nextParams = new URLSearchParams(previous);
-                nextParams.set('type', nextView.toLowerCase());
-                return nextParams;
-            },
-            { replace: true }
-        );
-    };
+    const isImageVersion = Boolean(hasImages);
+    const studyTypeLabel = isImageVersion ? 'Images' : 'Coordinates';
 
     return (
         <Box>
             <Box data-tour="StudyPage-1">
-                <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', mb: '0.5rem' }}>
+                    <Chip
+                        variant="filled"
+                        color="primary"
+                        sx={{ borderRadius: '4px' }}
+                        size="medium"
+                        label={studyTypeLabel}
+                        data-testid="study-type-chip"
+                    />
                     {id && (
                         <Chip
-                            variant="filled"
                             color="primary"
-                            sx={{ marginRight: '5px', borderRadius: '8px', marginBottom: '0.5rem' }}
+                            variant="outlined"
+                            sx={{ borderRadius: '4px' }}
                             size="medium"
-                            label={id ? `Version: ${id}` : ''}
+                            label={`Version: ${id}`}
+                            data-testid="study-version-chip"
                         />
                     )}
-                    <Typography variant="h6">
-                        <b>{name}</b>
-                    </Typography>
                 </Box>
+                <Typography variant="h6">
+                    <b>{name}</b>
+                </Typography>
                 <Typography>{authors}</Typography>
                 <Box>
                     <Typography gutterBottom>{journal}</Typography>
@@ -175,32 +149,10 @@ const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
             )}
 
             <Box>
-                <Paper
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2 }}
-                    variant="outlined"
-                >
+                <Paper sx={{ display: 'flex', alignItems: 'center', p: 2, mb: 2 }} variant="outlined">
                     <Typography data-tour="StudyPage-3" variant="h6" fontWeight="bold">
                         Analyses
                     </Typography>
-                    <ToggleButtonGroup
-                        exclusive
-                        size="small"
-                        color="primary"
-                        value={analysisView}
-                        onChange={handleAnalysisViewChange}
-                        aria-label="Analysis view type"
-                    >
-                        {showCBMA && (
-                            <ToggleButton sx={{ px: 2 }} value="CBMA">
-                                CBMA
-                            </ToggleButton>
-                        )}
-                        {showIBMA && (
-                            <ToggleButton sx={{ px: 2 }} value="IBMA">
-                                IBMA
-                            </ToggleButton>
-                        )}
-                    </ToggleButtonGroup>
                 </Paper>
                 {analyses?.length === 0 ? (
                     <Box sx={{ color: 'warning.dark', margin: '15px 0 0 15px' }}>
@@ -208,10 +160,10 @@ const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
                     </Box>
                 ) : (
                     <Box sx={{ marginBottom: '1rem' }}>
-                        {analysisView === 'CBMA' ? (
-                            <StudyAnalyses id={id} analyses={analyses} />
-                        ) : (
+                        {isImageVersion ? (
                             <StudyAnalysesIBMA id={id} analyses={analyses} />
+                        ) : (
+                            <StudyAnalyses id={id} analyses={analyses} />
                         )}
                     </Box>
                 )}

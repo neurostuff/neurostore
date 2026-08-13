@@ -82,6 +82,8 @@ const ProjectStudyPage = () => {
                 authors={study?.authors}
                 publication={study?.publication}
                 analyses={analyses}
+                has_images={study?.has_images}
+                has_coordinates={study?.has_coordinates}
             />
         </StateHandlerComponent>
     );

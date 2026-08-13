@@ -10,7 +10,9 @@ const StudyAnalysesList = (props: {
     return (
         <List
             sx={{
-                maxHeight: '70vh',
+                height: '100%',
+                flex: 1,
+                minHeight: 0,
                 overflow: 'auto',
             }}
             disablePadding
