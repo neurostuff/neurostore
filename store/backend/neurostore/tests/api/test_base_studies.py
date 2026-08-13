@@ -188,6 +188,11 @@ async def test_post_list_of_studies_returns_full_objects(
     assert result.json()[0]["name"] == base_study.name
     assert "versions" in result.json()[0]
     assert isinstance(result.json()[0]["versions"], list)
+    assert "has_coordinates" in result.json()[0]["versions"][0]
+    assert "has_images" in result.json()[0]["versions"][0]
+    assert "has_z_maps" in result.json()[0]["versions"][0]
+    assert "has_t_maps" in result.json()[0]["versions"][0]
+    assert "has_beta_and_variance_maps" in result.json()[0]["versions"][0]
     assert "metadata" not in result.json()[0]
 
 
