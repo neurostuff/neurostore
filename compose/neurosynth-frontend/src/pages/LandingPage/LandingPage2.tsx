@@ -315,7 +315,7 @@ const LandingPage2 = () => {
                         <Button
                             variant="outlined"
                             startIcon={<AccountTree />}
-                            onClick={() => navigate('/explore?focus=onvoc')}
+                            onClick={() => navigate('/explore')}
                             sx={{
                                 textTransform: 'none',
                                 fontWeight: 600,

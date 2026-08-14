@@ -1,0 +1,3227 @@
+{
+  "version": "1.0.0",
+  "tree": [
+    {
+      "id": "ONVOC_0000001",
+      "label": "Behaviors",
+      "children": [
+        {
+          "id": "ONVOC_0000009",
+          "label": "Sleep",
+          "children": [
+            {
+              "id": "ONVOC_0000013",
+              "label": "Dreaming"
+            },
+            {
+              "id": "ONVOC_0000015",
+              "label": "non-Rapid Eye Movement Sleep"
+            },
+            {
+              "id": "ONVOC_0000014",
+              "label": "Rapid Eye Movement Sleep"
+            },
+            {
+              "id": "ONVOC_0000016",
+              "label": "Slow Wave Sleep"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000010",
+          "label": "Substance Abuse",
+          "children": [
+            {
+              "id": "ONVOC_0000017",
+              "label": "Alcohol Abuse"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000011",
+          "label": "Substance Use",
+          "children": [
+            {
+              "id": "ONVOC_0000020",
+              "label": "Alcohol Use"
+            },
+            {
+              "id": "ONVOC_0000018",
+              "label": "Drug Use"
+            },
+            {
+              "id": "ONVOC_0000022",
+              "label": "Smoking"
+            },
+            {
+              "id": "ONVOC_0000021",
+              "label": "Substance Dependence"
+            },
+            {
+              "id": "ONVOC_0000019",
+              "label": "Tobacco Use"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000012",
+          "label": "Technology Use",
+          "children": [
+            {
+              "id": "ONVOC_0000025",
+              "label": "Cyberbullying"
+            },
+            {
+              "id": "ONVOC_0000026",
+              "label": "Gaming"
+            },
+            {
+              "id": "ONVOC_0000024",
+              "label": "Smartphone Use"
+            },
+            {
+              "id": "ONVOC_0000023",
+              "label": "Social Media Use"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ONVOC_0000002",
+      "label": "Brain Regions",
+      "children": [
+        {
+          "id": "ONVOC_0000027",
+          "label": "Brain Networks",
+          "children": [
+            {
+              "id": "ONVOC_0000037",
+              "label": "Central executive network"
+            },
+            {
+              "id": "ONVOC_0000030",
+              "label": "Default mode network"
+            },
+            {
+              "id": "ONVOC_0000032",
+              "label": "Dorsal attention network"
+            },
+            {
+              "id": "ONVOC_0000033",
+              "label": "Frontoparietal network"
+            },
+            {
+              "id": "ONVOC_0000036",
+              "label": "Limbic network"
+            },
+            {
+              "id": "ONVOC_0000031",
+              "label": "Salience network"
+            },
+            {
+              "id": "ONVOC_0000034",
+              "label": "Sensorimotor network"
+            },
+            {
+              "id": "ONVOC_0000035",
+              "label": "Visual cortex"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000028",
+          "label": "Cortical Regions",
+          "children": [
+            {
+              "id": "ONVOC_0000038",
+              "label": "Anterior ascending ramus of the lateral sulcus"
+            },
+            {
+              "id": "ONVOC_0000039",
+              "label": "Anterior horizontal ramus of the lateral sulcus"
+            },
+            {
+              "id": "ONVOC_0000040",
+              "label": "Anterior occipital sulcus"
+            },
+            {
+              "id": "ONVOC_0000041",
+              "label": "Auditory cortex"
+            },
+            {
+              "id": "ONVOC_0000042",
+              "label": "Banks of superior temporal sulcus"
+            },
+            {
+              "id": "ONVOC_0000043",
+              "label": "Calcarine sulcus"
+            },
+            {
+              "id": "ONVOC_0000044",
+              "label": "Callosal sulcus"
+            },
+            {
+              "id": "ONVOC_0000045",
+              "label": "Caudal anterior cingulate cortex"
+            },
+            {
+              "id": "ONVOC_0000046",
+              "label": "Caudal superior temporal sulcus, first segment"
+            },
+            {
+              "id": "ONVOC_0000047",
+              "label": "Caudal superior temporal sulcus, second segment"
+            },
+            {
+              "id": "ONVOC_0000048",
+              "label": "Caudal superior temporal sulcus, third segment"
+            },
+            {
+              "id": "ONVOC_0000049",
+              "label": "Central sulcus"
+            },
+            {
+              "id": "ONVOC_0000050",
+              "label": "Cingulate sulcus"
+            },
+            {
+              "id": "ONVOC_0000051",
+              "label": "Circular insular sulcus"
+            },
+            {
+              "id": "ONVOC_0000052",
+              "label": "Collateral sulcus"
+            },
+            {
+              "id": "ONVOC_0000053",
+              "label": "Cuneus"
+            },
+            {
+              "id": "ONVOC_0000054",
+              "label": "Dorsal prefrontal cortex"
+            },
+            {
+              "id": "ONVOC_0000055",
+              "label": "Entorhinal cortex"
+            },
+            {
+              "id": "ONVOC_0000056",
+              "label": "First transverse temporal sulcus"
+            },
+            {
+              "id": "ONVOC_0000057",
+              "label": "Frontal pole"
+            },
+            {
+              "id": "ONVOC_0000058",
+              "label": "Frontomarginal sulcus"
+            },
+            {
+              "id": "ONVOC_0000059",
+              "label": "Fusiform gyrus"
+            },
+            {
+              "id": "ONVOC_0000060",
+              "label": "Heschl's sulcus"
+            },
+            {
+              "id": "ONVOC_0000061",
+              "label": "Inferior Frontal Gyrus"
+            },
+            {
+              "id": "ONVOC_0000062",
+              "label": "Inferior frontal sulcus"
+            },
+            {
+              "id": "ONVOC_0000063",
+              "label": "Inferior parietal lobule"
+            },
+            {
+              "id": "ONVOC_0000064",
+              "label": "Inferior temporal sulcus"
+            },
+            {
+              "id": "ONVOC_0000065",
+              "label": "Insula"
+            },
+            {
+              "id": "ONVOC_0000066",
+              "label": "Interhemispheric sulcus"
+            },
+            {
+              "id": "ONVOC_0000067",
+              "label": "Intraparietal sulcus"
+            },
+            {
+              "id": "ONVOC_0000068",
+              "label": "Isthmus cingulate cortex"
+            },
+            {
+              "id": "ONVOC_0000069",
+              "label": "Lateral H-shaped orbital sulcus"
+            },
+            {
+              "id": "ONVOC_0000070",
+              "label": "Lateral occipital cortex"
+            },
+            {
+              "id": "ONVOC_0000071",
+              "label": "Lateral occipital sulcus"
+            },
+            {
+              "id": "ONVOC_0000072",
+              "label": "Lateral orbitofrontal cortex"
+            },
+            {
+              "id": "ONVOC_0000073",
+              "label": "Lateral sulcus"
+            },
+            {
+              "id": "ONVOC_0000074",
+              "label": "Lingual gyrus"
+            },
+            {
+              "id": "ONVOC_0000075",
+              "label": "Medial H-shaped orbital sulcus"
+            },
+            {
+              "id": "ONVOC_0000076",
+              "label": "Medial orbitofrontal cortex"
+            },
+            {
+              "id": "ONVOC_0000077",
+              "label": "Middle frontal gyrus"
+            },
+            {
+              "id": "ONVOC_0000078",
+              "label": "Occipitotemporal sulcus"
+            },
+            {
+              "id": "ONVOC_0000079",
+              "label": "Olfactory sulcus"
+            },
+            {
+              "id": "ONVOC_0000080",
+              "label": "Paracentral lobule"
+            },
+            {
+              "id": "ONVOC_0000081",
+              "label": "Paracentral sulcus"
+            },
+            {
+              "id": "ONVOC_0000082",
+              "label": "Parahippocampal gyrus"
+            },
+            {
+              "id": "ONVOC_0000083",
+              "label": "Parietooccipital sulcus"
+            },
+            {
+              "id": "ONVOC_0000084",
+              "label": "Pericalcarine cortex"
+            },
+            {
+              "id": "ONVOC_0000085",
+              "label": "Postcentral gyrus"
+            },
+            {
+              "id": "ONVOC_0000086",
+              "label": "Postcentral sulcus"
+            },
+            {
+              "id": "ONVOC_0000087",
+              "label": "Posterior ascending ramus of the lateral sulcus"
+            },
+            {
+              "id": "ONVOC_0000088",
+              "label": "Posterior cingulate cortex"
+            },
+            {
+              "id": "ONVOC_0000089",
+              "label": "Posterior horizontal ramus of the lateral sulcus"
+            },
+            {
+              "id": "ONVOC_0000090",
+              "label": "Precentral gyrus"
+            },
+            {
+              "id": "ONVOC_0000091",
+              "label": "Precentral sulcus"
+            },
+            {
+              "id": "ONVOC_0000092",
+              "label": "Precuneus"
+            },
+            {
+              "id": "ONVOC_0000093",
+              "label": "Pretriangular sulcus"
+            },
+            {
+              "id": "ONVOC_0000094",
+              "label": "Primary intermediate sulcus"
+            },
+            {
+              "id": "ONVOC_0000095",
+              "label": "Rhinal sulcus"
+            },
+            {
+              "id": "ONVOC_0000096",
+              "label": "Rostral anterior cingulate cortex"
+            },
+            {
+              "id": "ONVOC_0000097",
+              "label": "Subparietal sulcus"
+            },
+            {
+              "id": "ONVOC_0000098",
+              "label": "Superior frontal gyrus"
+            },
+            {
+              "id": "ONVOC_0000099",
+              "label": "Superior frontal sulcus"
+            },
+            {
+              "id": "ONVOC_0000100",
+              "label": "Superior parietal lobule"
+            },
+            {
+              "id": "ONVOC_0000101",
+              "label": "Superior rostral sulcus"
+            },
+            {
+              "id": "ONVOC_0000102",
+              "label": "Superior temporal gyrus"
+            },
+            {
+              "id": "ONVOC_0000103",
+              "label": "Superior temporal sulcus"
+            },
+            {
+              "id": "ONVOC_0000104",
+              "label": "Supramarginal gyrus"
+            },
+            {
+              "id": "ONVOC_0000105",
+              "label": "Temporal gyrus"
+            },
+            {
+              "id": "ONVOC_0000106",
+              "label": "Temporal incisure"
+            },
+            {
+              "id": "ONVOC_0000107",
+              "label": "Temporal pole"
+            },
+            {
+              "id": "ONVOC_0000108",
+              "label": "Temporo-Parietal Junction"
+            },
+            {
+              "id": "ONVOC_0000109",
+              "label": "Transverse occipital sulcus"
+            },
+            {
+              "id": "ONVOC_0000110",
+              "label": "Transverse temporal gyrus"
+            },
+            {
+              "id": "ONVOC_0000111",
+              "label": "Ventral prefrontal cortex"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000029",
+          "label": "Subcortical Regions",
+          "children": [
+            {
+              "id": "ONVOC_0000112",
+              "label": "Amygdala"
+            },
+            {
+              "id": "ONVOC_0000113",
+              "label": "Caudate Nucleus"
+            },
+            {
+              "id": "ONVOC_0000114",
+              "label": "Cerebellum"
+            },
+            {
+              "id": "ONVOC_0000115",
+              "label": "Extended Amygdala"
+            },
+            {
+              "id": "ONVOC_0000116",
+              "label": "Globus Pallidus External Segment"
+            },
+            {
+              "id": "ONVOC_0000117",
+              "label": "Globus Pallidus Internal Segment"
+            },
+            {
+              "id": "ONVOC_0000118",
+              "label": "Habenular Nucleus"
+            },
+            {
+              "id": "ONVOC_0000119",
+              "label": "Hippocampus"
+            },
+            {
+              "id": "ONVOC_0000120",
+              "label": "Hypothalamus"
+            },
+            {
+              "id": "ONVOC_0000121",
+              "label": "Mammillary Nucleus"
+            },
+            {
+              "id": "ONVOC_0000122",
+              "label": "Nucleus Accumbens"
+            },
+            {
+              "id": "ONVOC_0000123",
+              "label": "Parabrachial Pigmented Nucleus"
+            },
+            {
+              "id": "ONVOC_0000124",
+              "label": "Putamen"
+            },
+            {
+              "id": "ONVOC_0000125",
+              "label": "Red Nucleus"
+            },
+            {
+              "id": "ONVOC_0000126",
+              "label": "Substantia Nigra Pars Compacta"
+            },
+            {
+              "id": "ONVOC_0000127",
+              "label": "Substantia Nigra Pars Reticulata"
+            },
+            {
+              "id": "ONVOC_0000128",
+              "label": "Subthalamic Nucleus"
+            },
+            {
+              "id": "ONVOC_0000129",
+              "label": "Thalamus"
+            },
+            {
+              "id": "ONVOC_0000130",
+              "label": "Ventral Pallidum"
+            },
+            {
+              "id": "ONVOC_0000131",
+              "label": "Ventral Tegmental Area"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ONVOC_0000003",
+      "label": "Disorders",
+      "children": [
+        {
+          "id": "ONVOC_0000132",
+          "label": "Medical Disorders",
+          "children": [
+            {
+              "id": "ONVOC_0000135",
+              "label": "Amblyopia"
+            },
+            {
+              "id": "ONVOC_0000150",
+              "label": "Anemia"
+            },
+            {
+              "id": "ONVOC_0000136",
+              "label": "Aneurysm"
+            },
+            {
+              "id": "ONVOC_0000145",
+              "label": "Asthma"
+            },
+            {
+              "id": "ONVOC_0000171",
+              "label": "Blood Disorder"
+            },
+            {
+              "id": "ONVOC_0000137",
+              "label": "Brain Tumor"
+            },
+            {
+              "id": "ONVOC_0000151",
+              "label": "Cancer"
+            },
+            {
+              "id": "ONVOC_0000152",
+              "label": "Cardiovascular Disease"
+            },
+            {
+              "id": "ONVOC_0000169",
+              "label": "Chromosomal Disorder"
+            },
+            {
+              "id": "ONVOC_0000153",
+              "label": "Chronic Fatigue Syndrome"
+            },
+            {
+              "id": "ONVOC_0000146",
+              "label": "Chronic Obstructive Pulmonary Disease"
+            },
+            {
+              "id": "ONVOC_0000154",
+              "label": "Color Blindness"
+            },
+            {
+              "id": "ONVOC_0000147",
+              "label": "Coronary Artery Disease"
+            },
+            {
+              "id": "ONVOC_0000165",
+              "label": "Deafness"
+            },
+            {
+              "id": "ONVOC_0000164",
+              "label": "Disorders of Consciousness"
+            },
+            {
+              "id": "ONVOC_0000148",
+              "label": "Gastroesophageal Reflux Disease"
+            },
+            {
+              "id": "ONVOC_0000163",
+              "label": "Gastrointestinal Disorder"
+            },
+            {
+              "id": "ONVOC_0000170",
+              "label": "Glaucoma"
+            },
+            {
+              "id": "ONVOC_0000155",
+              "label": "Hepatitis B Virus"
+            },
+            {
+              "id": "ONVOC_0000156",
+              "label": "Hepatitis C Virus"
+            },
+            {
+              "id": "ONVOC_0000172",
+              "label": "Hormonal Disorder"
+            },
+            {
+              "id": "ONVOC_0000157",
+              "label": "Human Immunodeficiency Virus"
+            },
+            {
+              "id": "ONVOC_0000139",
+              "label": "Hyperlipidemia"
+            },
+            {
+              "id": "ONVOC_0000138",
+              "label": "Hypertension"
+            },
+            {
+              "id": "ONVOC_0000158",
+              "label": "Hyperthyroidism"
+            },
+            {
+              "id": "ONVOC_0000149",
+              "label": "Hypothyroidism"
+            },
+            {
+              "id": "ONVOC_0000168",
+              "label": "Infectious Disease"
+            },
+            {
+              "id": "ONVOC_0000166",
+              "label": "Insomnia"
+            },
+            {
+              "id": "ONVOC_0000144",
+              "label": "Kidney Disease"
+            },
+            {
+              "id": "ONVOC_0000159",
+              "label": "Liver Disease"
+            },
+            {
+              "id": "ONVOC_0000142",
+              "label": "Obesity"
+            },
+            {
+              "id": "ONVOC_0000143",
+              "label": "Osteoarthritis"
+            },
+            {
+              "id": "ONVOC_0000160",
+              "label": "Sepsis"
+            },
+            {
+              "id": "ONVOC_0000167",
+              "label": "Sleep Disorder"
+            },
+            {
+              "id": "ONVOC_0000162",
+              "label": "Tetralogy of Fallot"
+            },
+            {
+              "id": "ONVOC_0000161",
+              "label": "Thyroiditis"
+            },
+            {
+              "id": "ONVOC_0000140",
+              "label": "Type 1 Diabetes Mellitus"
+            },
+            {
+              "id": "ONVOC_0000141",
+              "label": "Type 2 Diabetes Mellitus"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000133",
+          "label": "Neurological Disorders",
+          "children": [
+            {
+              "id": "ONVOC_0000176",
+              "label": "Alzheimer's Disease"
+            },
+            {
+              "id": "ONVOC_0000201",
+              "label": "Amyotrophic Lateral Sclerosis"
+            },
+            {
+              "id": "ONVOC_0000199",
+              "label": "Aphasia"
+            },
+            {
+              "id": "ONVOC_0000200",
+              "label": "Apraxia"
+            },
+            {
+              "id": "ONVOC_0000203",
+              "label": "Ataxia"
+            },
+            {
+              "id": "ONVOC_0000182",
+              "label": "Carpal Tunnel Syndrome"
+            },
+            {
+              "id": "ONVOC_0000180",
+              "label": "Chronic Pain"
+            },
+            {
+              "id": "ONVOC_0000198",
+              "label": "Communication Disorder"
+            },
+            {
+              "id": "ONVOC_0000190",
+              "label": "Dementia"
+            },
+            {
+              "id": "ONVOC_0000184",
+              "label": "Down Syndrome"
+            },
+            {
+              "id": "ONVOC_0000185",
+              "label": "Dyslexia"
+            },
+            {
+              "id": "ONVOC_0000202",
+              "label": "Dystonia"
+            },
+            {
+              "id": "ONVOC_0000177",
+              "label": "Epilepsy"
+            },
+            {
+              "id": "ONVOC_0000189",
+              "label": "Fibromyalgia"
+            },
+            {
+              "id": "ONVOC_0000186",
+              "label": "Fragile X Syndrome"
+            },
+            {
+              "id": "ONVOC_0000173",
+              "label": "Headache"
+            },
+            {
+              "id": "ONVOC_0000197",
+              "label": "Huntington's Disease"
+            },
+            {
+              "id": "ONVOC_0000188",
+              "label": "Hyperalgesia"
+            },
+            {
+              "id": "ONVOC_0000193",
+              "label": "Meningioma"
+            },
+            {
+              "id": "ONVOC_0000174",
+              "label": "Migraine"
+            },
+            {
+              "id": "ONVOC_0000196",
+              "label": "Motor Neuron Disease"
+            },
+            {
+              "id": "ONVOC_0000179",
+              "label": "Multiple Sclerosis"
+            },
+            {
+              "id": "ONVOC_0000191",
+              "label": "Neurodegeneration"
+            },
+            {
+              "id": "ONVOC_0000192",
+              "label": "Neuroinflammation"
+            },
+            {
+              "id": "ONVOC_0000195",
+              "label": "Palsiy"
+            },
+            {
+              "id": "ONVOC_0000178",
+              "label": "Parkinson's Disease"
+            },
+            {
+              "id": "ONVOC_0000181",
+              "label": "Peripheral Neuropathy"
+            },
+            {
+              "id": "ONVOC_0000194",
+              "label": "Pituitary Adenoma"
+            },
+            {
+              "id": "ONVOC_0000187",
+              "label": "Prosopagnosia"
+            },
+            {
+              "id": "ONVOC_0000183",
+              "label": "Sciatica"
+            },
+            {
+              "id": "ONVOC_0000175",
+              "label": "Stroke"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000134",
+          "label": "Psychiatric Disorders",
+          "children": [
+            {
+              "id": "ONVOC_0000220",
+              "label": "Affective Psychotic Disorder"
+            },
+            {
+              "id": "ONVOC_0000221",
+              "label": "Alexithymia"
+            },
+            {
+              "id": "ONVOC_0000204",
+              "label": "Anxiety Disorders"
+            },
+            {
+              "id": "ONVOC_0000210",
+              "label": "Attention-Deficit Hyperactivity Disorder"
+            },
+            {
+              "id": "ONVOC_0000215",
+              "label": "Autism Spectrum Disorder"
+            },
+            {
+              "id": "ONVOC_0000227",
+              "label": "Behavioral Addiction"
+            },
+            {
+              "id": "ONVOC_0000208",
+              "label": "Bipolar Disorder"
+            },
+            {
+              "id": "ONVOC_0000245",
+              "label": "Body Dysmorphic Disorder"
+            },
+            {
+              "id": "ONVOC_0000209",
+              "label": "Borderline Personality Disorder"
+            },
+            {
+              "id": "ONVOC_0000234",
+              "label": "Cannabis Use Disorder"
+            },
+            {
+              "id": "ONVOC_0000238",
+              "label": "Catatonia"
+            },
+            {
+              "id": "ONVOC_0000222",
+              "label": "Claustrophobia"
+            },
+            {
+              "id": "ONVOC_0000240",
+              "label": "Conduct Disorders"
+            },
+            {
+              "id": "ONVOC_0000244",
+              "label": "Cyclothymic Disorder"
+            },
+            {
+              "id": "ONVOC_0000207",
+              "label": "Depressive Disorder"
+            },
+            {
+              "id": "ONVOC_0000218",
+              "label": "Developmental Disorder"
+            },
+            {
+              "id": "ONVOC_0000235",
+              "label": "Dissociative Disorder"
+            },
+            {
+              "id": "ONVOC_0000213",
+              "label": "Eating Disorders"
+            },
+            {
+              "id": "ONVOC_0000241",
+              "label": "Elimination Disorders"
+            },
+            {
+              "id": "ONVOC_0000228",
+              "label": "Gambling Addiction"
+            },
+            {
+              "id": "ONVOC_0000231",
+              "label": "Gaming Addiction"
+            },
+            {
+              "id": "ONVOC_0000239",
+              "label": "Gender Dysphoria"
+            },
+            {
+              "id": "ONVOC_0000226",
+              "label": "Grief Disorder"
+            },
+            {
+              "id": "ONVOC_0000232",
+              "label": "Internet Addiction"
+            },
+            {
+              "id": "ONVOC_0000237",
+              "label": "Learning Disorder"
+            },
+            {
+              "id": "ONVOC_0000243",
+              "label": "Mood Disorder"
+            },
+            {
+              "id": "ONVOC_0000223",
+              "label": "Mood Dysregulation Disorder"
+            },
+            {
+              "id": "ONVOC_0000236",
+              "label": "Neurodevelopment Disorders"
+            },
+            {
+              "id": "ONVOC_0000212",
+              "label": "Obsessive-Compulsive Disorder"
+            },
+            {
+              "id": "ONVOC_0000224",
+              "label": "Oppositional Defiant Disorder"
+            },
+            {
+              "id": "ONVOC_0000206",
+              "label": "Panic Disorder"
+            },
+            {
+              "id": "ONVOC_0000214",
+              "label": "Personality Disorders"
+            },
+            {
+              "id": "ONVOC_0000205",
+              "label": "Phobia"
+            },
+            {
+              "id": "ONVOC_0000230",
+              "label": "Porn Addiction"
+            },
+            {
+              "id": "ONVOC_0000211",
+              "label": "Post-Traumatic Stress Disorder"
+            },
+            {
+              "id": "ONVOC_0000219",
+              "label": "Psychotic Disorder"
+            },
+            {
+              "id": "ONVOC_0000217",
+              "label": "Schizophrenia"
+            },
+            {
+              "id": "ONVOC_0000229",
+              "label": "Sex Addiction"
+            },
+            {
+              "id": "ONVOC_0000242",
+              "label": "Sexual Dysfunctions"
+            },
+            {
+              "id": "ONVOC_0000225",
+              "label": "Social Phobia"
+            },
+            {
+              "id": "ONVOC_0000216",
+              "label": "Substance Use Disorders"
+            },
+            {
+              "id": "ONVOC_0000233",
+              "label": "Tobacco Use Disorder"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ONVOC_0000004",
+      "label": "Drugs and Medications",
+      "children": [
+        {
+          "id": "ONVOC_0000246",
+          "label": "ADHD Medications Nonstimulants",
+          "children": [
+            {
+              "id": "ONVOC_0000261",
+              "label": "Atomoxetine"
+            },
+            {
+              "id": "ONVOC_0000263",
+              "label": "Clonidine"
+            },
+            {
+              "id": "ONVOC_0000262",
+              "label": "Guanfacine"
+            },
+            {
+              "id": "ONVOC_0000264",
+              "label": "Viloxazine"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000247",
+          "label": "Anesthetics",
+          "children": [
+            {
+              "id": "ONVOC_0000267",
+              "label": "Desflurane"
+            },
+            {
+              "id": "ONVOC_0000270",
+              "label": "Enflurane"
+            },
+            {
+              "id": "ONVOC_0000268",
+              "label": "Isoflurane"
+            },
+            {
+              "id": "ONVOC_0000269",
+              "label": "Nitrous Oxide"
+            },
+            {
+              "id": "ONVOC_0000265",
+              "label": "Propofol"
+            },
+            {
+              "id": "ONVOC_0000266",
+              "label": "Sevoflurane"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000248",
+          "label": "Anti Inflammatory",
+          "children": [
+            {
+              "id": "ONVOC_0000273",
+              "label": "Celecoxib"
+            },
+            {
+              "id": "ONVOC_0000275",
+              "label": "Diclofenac"
+            },
+            {
+              "id": "ONVOC_0000284",
+              "label": "Diflunisal"
+            },
+            {
+              "id": "ONVOC_0000277",
+              "label": "Etodolac"
+            },
+            {
+              "id": "ONVOC_0000282",
+              "label": "Etoricoxib"
+            },
+            {
+              "id": "ONVOC_0000271",
+              "label": "Ibuprofen"
+            },
+            {
+              "id": "ONVOC_0000276",
+              "label": "Indomethacin"
+            },
+            {
+              "id": "ONVOC_0000278",
+              "label": "Ketoprofen"
+            },
+            {
+              "id": "ONVOC_0000285",
+              "label": "Ketorolac"
+            },
+            {
+              "id": "ONVOC_0000274",
+              "label": "Meloxicam"
+            },
+            {
+              "id": "ONVOC_0000281",
+              "label": "Nabumetone"
+            },
+            {
+              "id": "ONVOC_0000272",
+              "label": "Naproxen"
+            },
+            {
+              "id": "ONVOC_0000283",
+              "label": "Oxaprozin"
+            },
+            {
+              "id": "ONVOC_0000279",
+              "label": "Piroxicam"
+            },
+            {
+              "id": "ONVOC_0000280",
+              "label": "Sulindac"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000249",
+          "label": "Anti Psychotics",
+          "children": [
+            {
+              "id": "ONVOC_0000287",
+              "label": "Aripiprazole"
+            },
+            {
+              "id": "ONVOC_0000294",
+              "label": "Asenapine"
+            },
+            {
+              "id": "ONVOC_0000295",
+              "label": "Brexpiprazole"
+            },
+            {
+              "id": "ONVOC_0000296",
+              "label": "Cariprazine"
+            },
+            {
+              "id": "ONVOC_0000293",
+              "label": "Clozapine"
+            },
+            {
+              "id": "ONVOC_0000297",
+              "label": "Iloperidone"
+            },
+            {
+              "id": "ONVOC_0000298",
+              "label": "Loxapine"
+            },
+            {
+              "id": "ONVOC_0000291",
+              "label": "Lurasidone"
+            },
+            {
+              "id": "ONVOC_0000299",
+              "label": "Molindone"
+            },
+            {
+              "id": "ONVOC_0000289",
+              "label": "Olanzapine"
+            },
+            {
+              "id": "ONVOC_0000292",
+              "label": "Paliperidone"
+            },
+            {
+              "id": "ONVOC_0000300",
+              "label": "Pimozide"
+            },
+            {
+              "id": "ONVOC_0000286",
+              "label": "Quetiapine"
+            },
+            {
+              "id": "ONVOC_0000288",
+              "label": "Risperidone"
+            },
+            {
+              "id": "ONVOC_0000290",
+              "label": "Ziprasidone"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000250",
+          "label": "Antidepressants",
+          "children": [
+            {
+              "id": "ONVOC_0000313",
+              "label": "Amitriptyline"
+            },
+            {
+              "id": "ONVOC_0000305",
+              "label": "Bupropion"
+            },
+            {
+              "id": "ONVOC_0000304",
+              "label": "Citalopram"
+            },
+            {
+              "id": "ONVOC_0000314",
+              "label": "Desvenlafaxine"
+            },
+            {
+              "id": "ONVOC_0000307",
+              "label": "Duloxetine"
+            },
+            {
+              "id": "ONVOC_0000302",
+              "label": "Escitalopram"
+            },
+            {
+              "id": "ONVOC_0000303",
+              "label": "Fluoxetine"
+            },
+            {
+              "id": "ONVOC_0000315",
+              "label": "Imipramine"
+            },
+            {
+              "id": "ONVOC_0000309",
+              "label": "Mirtazapine"
+            },
+            {
+              "id": "ONVOC_0000310",
+              "label": "Paroxetine"
+            },
+            {
+              "id": "ONVOC_0000301",
+              "label": "Sertraline"
+            },
+            {
+              "id": "ONVOC_0000308",
+              "label": "Trazodone"
+            },
+            {
+              "id": "ONVOC_0000306",
+              "label": "Venlafaxine"
+            },
+            {
+              "id": "ONVOC_0000311",
+              "label": "Vilazodone"
+            },
+            {
+              "id": "ONVOC_0000312",
+              "label": "Vortioxetine"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000251",
+          "label": "Anxiolytics",
+          "children": [
+            {
+              "id": "ONVOC_0000316",
+              "label": "Alprazolam"
+            },
+            {
+              "id": "ONVOC_0000327",
+              "label": "Buspirone"
+            },
+            {
+              "id": "ONVOC_0000321",
+              "label": "Chlordiazepoxide"
+            },
+            {
+              "id": "ONVOC_0000318",
+              "label": "Clonazepam"
+            },
+            {
+              "id": "ONVOC_0000323",
+              "label": "Clorazepate"
+            },
+            {
+              "id": "ONVOC_0000319",
+              "label": "Diazepam"
+            },
+            {
+              "id": "ONVOC_0000328",
+              "label": "Gabapentin"
+            },
+            {
+              "id": "ONVOC_0000325",
+              "label": "Hydroxyzine"
+            },
+            {
+              "id": "ONVOC_0000317",
+              "label": "Lorazepam"
+            },
+            {
+              "id": "ONVOC_0000322",
+              "label": "Oxazepam"
+            },
+            {
+              "id": "ONVOC_0000324",
+              "label": "Oxcarbazepine"
+            },
+            {
+              "id": "ONVOC_0000329",
+              "label": "Pregabalin"
+            },
+            {
+              "id": "ONVOC_0000326",
+              "label": "Propranolol"
+            },
+            {
+              "id": "ONVOC_0000320",
+              "label": "Temazepam"
+            },
+            {
+              "id": "ONVOC_0000308",
+              "label": "Trazodone"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000252",
+          "label": "Cannabinoids",
+          "children": [
+            {
+              "id": "ONVOC_0000335",
+              "label": "Cannabichromene"
+            },
+            {
+              "id": "ONVOC_0000334",
+              "label": "Cannabidiol"
+            },
+            {
+              "id": "ONVOC_0000333",
+              "label": "Cannabigerol"
+            },
+            {
+              "id": "ONVOC_0000330",
+              "label": "Cannabis"
+            },
+            {
+              "id": "ONVOC_0000331",
+              "label": "Delta-9-Tetrahydrocannabinol"
+            },
+            {
+              "id": "ONVOC_0000332",
+              "label": "Tetrahydrocannabivarin"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000253",
+          "label": "Contraception",
+          "children": [
+            {
+              "id": "ONVOC_0000345",
+              "label": "Chlormadinone Acetate"
+            },
+            {
+              "id": "ONVOC_0000341",
+              "label": "Desogestrel"
+            },
+            {
+              "id": "ONVOC_0000343",
+              "label": "Dienogest"
+            },
+            {
+              "id": "ONVOC_0000340",
+              "label": "Drospirenone"
+            },
+            {
+              "id": "ONVOC_0000336",
+              "label": "Ethinyl Estradiol"
+            },
+            {
+              "id": "ONVOC_0000337",
+              "label": "Levonorgestrel"
+            },
+            {
+              "id": "ONVOC_0000348",
+              "label": "Mestranol"
+            },
+            {
+              "id": "ONVOC_0000344",
+              "label": "Nomegestrol Acetate"
+            },
+            {
+              "id": "ONVOC_0000338",
+              "label": "Norethindrone"
+            },
+            {
+              "id": "ONVOC_0000339",
+              "label": "Norgestimate"
+            },
+            {
+              "id": "ONVOC_0000342",
+              "label": "Norgestrel"
+            },
+            {
+              "id": "ONVOC_0000347",
+              "label": "Segesterone Acetate"
+            },
+            {
+              "id": "ONVOC_0000346",
+              "label": "Ulipristal Acetate"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000254",
+          "label": "Dementia Medication",
+          "children": [
+            {
+              "id": "ONVOC_0000349",
+              "label": "Donepezil"
+            },
+            {
+              "id": "ONVOC_0000351",
+              "label": "Galantamine"
+            },
+            {
+              "id": "ONVOC_0000352",
+              "label": "Memantine"
+            },
+            {
+              "id": "ONVOC_0000350",
+              "label": "Rivastigmine"
+            },
+            {
+              "id": "ONVOC_0000353",
+              "label": "Tacrine"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000255",
+          "label": "Migraine Medication",
+          "children": [
+            {
+              "id": "ONVOC_0000360",
+              "label": "Almotriptan"
+            },
+            {
+              "id": "ONVOC_0000367",
+              "label": "Atogepant"
+            },
+            {
+              "id": "ONVOC_0000356",
+              "label": "Eletriptan"
+            },
+            {
+              "id": "ONVOC_0000364",
+              "label": "Erenumab"
+            },
+            {
+              "id": "ONVOC_0000365",
+              "label": "Fremanezumab"
+            },
+            {
+              "id": "ONVOC_0000358",
+              "label": "Frovatriptan"
+            },
+            {
+              "id": "ONVOC_0000366",
+              "label": "Galcanezumab"
+            },
+            {
+              "id": "ONVOC_0000361",
+              "label": "Lasmiditan"
+            },
+            {
+              "id": "ONVOC_0000359",
+              "label": "Naratriptan"
+            },
+            {
+              "id": "ONVOC_0000368",
+              "label": "OnabotulinumtoxinA"
+            },
+            {
+              "id": "ONVOC_0000363",
+              "label": "Rimegepant"
+            },
+            {
+              "id": "ONVOC_0000355",
+              "label": "Rizatriptan"
+            },
+            {
+              "id": "ONVOC_0000354",
+              "label": "Sumatriptan"
+            },
+            {
+              "id": "ONVOC_0000362",
+              "label": "Ubrogepant"
+            },
+            {
+              "id": "ONVOC_0000357",
+              "label": "Zolmitriptan"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000256",
+          "label": "Mood Stabilizers",
+          "children": [
+            {
+              "id": "ONVOC_0000372",
+              "label": "Carbamazepine"
+            },
+            {
+              "id": "ONVOC_0000328",
+              "label": "Gabapentin"
+            },
+            {
+              "id": "ONVOC_0000369",
+              "label": "Lamotrigine"
+            },
+            {
+              "id": "ONVOC_0000370",
+              "label": "Lithium Carbonate"
+            },
+            {
+              "id": "ONVOC_0000324",
+              "label": "Oxcarbazepine"
+            },
+            {
+              "id": "ONVOC_0000329",
+              "label": "Pregabalin"
+            },
+            {
+              "id": "ONVOC_0000374",
+              "label": "Tiagabine"
+            },
+            {
+              "id": "ONVOC_0000373",
+              "label": "Topiramate"
+            },
+            {
+              "id": "ONVOC_0000371",
+              "label": "Valproic Acid"
+            },
+            {
+              "id": "ONVOC_0000375",
+              "label": "Zonisamide"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000257",
+          "label": "Opioids",
+          "children": [
+            {
+              "id": "ONVOC_0000724",
+              "label": "Acetaminophen"
+            },
+            {
+              "id": "ONVOC_0000732",
+              "label": "Buprenorphine"
+            },
+            {
+              "id": "ONVOC_0000731",
+              "label": "Codeine"
+            },
+            {
+              "id": "ONVOC_0000730",
+              "label": "Fentanyl"
+            },
+            {
+              "id": "ONVOC_0000737",
+              "label": "Heroin"
+            },
+            {
+              "id": "ONVOC_0000723",
+              "label": "Hydrocodone"
+            },
+            {
+              "id": "ONVOC_0000733",
+              "label": "Hydromorphone"
+            },
+            {
+              "id": "ONVOC_0000729",
+              "label": "Morphine Sulfate"
+            },
+            {
+              "id": "ONVOC_0000735",
+              "label": "Naloxone"
+            },
+            {
+              "id": "ONVOC_0000725",
+              "label": "Oxycodone"
+            },
+            {
+              "id": "ONVOC_0000734",
+              "label": "Tapentadol"
+            },
+            {
+              "id": "ONVOC_0000728",
+              "label": "Tramadol"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000258",
+          "label": "Parkinsons Disease Medication",
+          "children": [
+            {
+              "id": "ONVOC_0000392",
+              "label": "Amantadine"
+            },
+            {
+              "id": "ONVOC_0000393",
+              "label": "Apomorphine"
+            },
+            {
+              "id": "ONVOC_0000401",
+              "label": "Bromocriptine"
+            },
+            {
+              "id": "ONVOC_0000389",
+              "label": "Carbidopa"
+            },
+            {
+              "id": "ONVOC_0000397",
+              "label": "Entacapone"
+            },
+            {
+              "id": "ONVOC_0000399",
+              "label": "Istradefylline"
+            },
+            {
+              "id": "ONVOC_0000388",
+              "label": "Levodopa"
+            },
+            {
+              "id": "ONVOC_0000402",
+              "label": "Pergolide"
+            },
+            {
+              "id": "ONVOC_0000390",
+              "label": "Pramipexole"
+            },
+            {
+              "id": "ONVOC_0000395",
+              "label": "Rasagiline"
+            },
+            {
+              "id": "ONVOC_0000391",
+              "label": "Ropinirole"
+            },
+            {
+              "id": "ONVOC_0000400",
+              "label": "Rotigotine"
+            },
+            {
+              "id": "ONVOC_0000396",
+              "label": "Safinamide"
+            },
+            {
+              "id": "ONVOC_0000394",
+              "label": "Selegiline"
+            },
+            {
+              "id": "ONVOC_0000398",
+              "label": "Tolcapone"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000259",
+          "label": "Psychedelics",
+          "children": [
+            {
+              "id": "ONVOC_0000417",
+              "label": "2,5-Dimethoxy-4-bromoamphetamine"
+            },
+            {
+              "id": "ONVOC_0000416",
+              "label": "2,5-Dimethoxy-4-iodoamphetamine"
+            },
+            {
+              "id": "ONVOC_0000415",
+              "label": "2,5-Dimethoxy-4-methylamphetamine"
+            },
+            {
+              "id": "ONVOC_0000404",
+              "label": "3,4-Methylenedioxymethamphetamine"
+            },
+            {
+              "id": "ONVOC_0000411",
+              "label": "5-MeO-DMT"
+            },
+            {
+              "id": "ONVOC_0000406",
+              "label": "Ayahuasca"
+            },
+            {
+              "id": "ONVOC_0000408",
+              "label": "Dimethyltryptamine"
+            },
+            {
+              "id": "ONVOC_0000414",
+              "label": "Harmaline"
+            },
+            {
+              "id": "ONVOC_0000413",
+              "label": "Harmine"
+            },
+            {
+              "id": "ONVOC_0000412",
+              "label": "Ibogaine"
+            },
+            {
+              "id": "ONVOC_0000405",
+              "label": "Ketamine"
+            },
+            {
+              "id": "ONVOC_0000407",
+              "label": "Lysergic Acid Diethylamide"
+            },
+            {
+              "id": "ONVOC_0000409",
+              "label": "Mescaline"
+            },
+            {
+              "id": "ONVOC_0000410",
+              "label": "Psilocin"
+            },
+            {
+              "id": "ONVOC_0000403",
+              "label": "Psilocybin"
+            },
+            {
+              "id": "ONVOC_0000418",
+              "label": "Salvia Divinorim"
+            },
+            {
+              "id": "ONVOC_0000419",
+              "label": "Salvinorin A"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000260",
+          "label": "Psychostimulants",
+          "children": [
+            {
+              "id": "ONVOC_0000420",
+              "label": "Amphetamine"
+            },
+            {
+              "id": "ONVOC_0000423",
+              "label": "Dexmethylphenidate"
+            },
+            {
+              "id": "ONVOC_0000422",
+              "label": "Dextroamphetamine"
+            },
+            {
+              "id": "ONVOC_0000421",
+              "label": "Lisdexamfetamine"
+            },
+            {
+              "id": "ONVOC_0000424",
+              "label": "Methylphenidate"
+            },
+            {
+              "id": "ONVOC_0000425",
+              "label": "Pemoline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ONVOC_0000738",
+      "label": "Population Characteristics",
+      "children": [
+        {
+          "id": "ONVOC_0000514",
+          "label": "Age",
+          "children": [
+            {
+              "id": "ONVOC_0000531",
+              "label": "Adolescence"
+            },
+            {
+              "id": "ONVOC_0000528",
+              "label": "Adult"
+            },
+            {
+              "id": "ONVOC_0000532",
+              "label": "Child"
+            },
+            {
+              "id": "ONVOC_0000529",
+              "label": "Elderly"
+            },
+            {
+              "id": "ONVOC_0000533",
+              "label": "Infant"
+            },
+            {
+              "id": "ONVOC_0000530",
+              "label": "Minor"
+            },
+            {
+              "id": "ONVOC_0000535",
+              "label": "Prepubescent"
+            },
+            {
+              "id": "ONVOC_0000534",
+              "label": "Puberty"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000515",
+          "label": "Education Levels",
+          "children": [
+            {
+              "id": "ONVOC_0000538",
+              "label": "High School Education"
+            },
+            {
+              "id": "ONVOC_0000537",
+              "label": "Middle School Education"
+            },
+            {
+              "id": "ONVOC_0000539",
+              "label": "Post-Secondary Education"
+            },
+            {
+              "id": "ONVOC_0000536",
+              "label": "Primary School Education"
+            },
+            {
+              "id": "ONVOC_0000540",
+              "label": "Tertiary Education"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000516",
+          "label": "Ethnicities",
+          "children": [
+            {
+              "id": "ONVOC_0000541",
+              "label": "Anglo Americans"
+            },
+            {
+              "id": "ONVOC_0000545",
+              "label": "French"
+            },
+            {
+              "id": "ONVOC_0000543",
+              "label": "Hispanic"
+            },
+            {
+              "id": "ONVOC_0000542",
+              "label": "Hispanic Americans"
+            },
+            {
+              "id": "ONVOC_0000544",
+              "label": "Latino"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000517",
+          "label": "Family Relations",
+          "children": [
+            {
+              "id": "ONVOC_0000558",
+              "label": "Adopted Child"
+            },
+            {
+              "id": "ONVOC_0000550",
+              "label": "Aunt"
+            },
+            {
+              "id": "ONVOC_0000532",
+              "label": "Child"
+            },
+            {
+              "id": "ONVOC_0000548",
+              "label": "Cousin"
+            },
+            {
+              "id": "ONVOC_0000556",
+              "label": "Father"
+            },
+            {
+              "id": "ONVOC_0000554",
+              "label": "Grandchild"
+            },
+            {
+              "id": "ONVOC_0000549",
+              "label": "Grandparent"
+            },
+            {
+              "id": "ONVOC_0000557",
+              "label": "Mother"
+            },
+            {
+              "id": "ONVOC_0000553",
+              "label": "Nephew"
+            },
+            {
+              "id": "ONVOC_0000552",
+              "label": "Niece"
+            },
+            {
+              "id": "ONVOC_0000547",
+              "label": "Parent"
+            },
+            {
+              "id": "ONVOC_0000546",
+              "label": "Sibling"
+            },
+            {
+              "id": "ONVOC_0000555",
+              "label": "Spouse"
+            },
+            {
+              "id": "ONVOC_0000551",
+              "label": "Uncle"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000518",
+          "label": "Handedness",
+          "children": [
+            {
+              "id": "ONVOC_0000561",
+              "label": "Ambidextrous"
+            },
+            {
+              "id": "ONVOC_0000560",
+              "label": "Left handed"
+            },
+            {
+              "id": "ONVOC_0000559",
+              "label": "Right handed"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000519",
+          "label": "Health",
+          "children": [
+            {
+              "id": "ONVOC_0000563",
+              "label": "Abnormal Physiological Condition"
+            },
+            {
+              "id": "ONVOC_0000574",
+              "label": "Amputation"
+            },
+            {
+              "id": "ONVOC_0000564",
+              "label": "Chromosomal Abnormality"
+            },
+            {
+              "id": "ONVOC_0000575",
+              "label": "Concussion"
+            },
+            {
+              "id": "ONVOC_0000565",
+              "label": "Head Injury"
+            },
+            {
+              "id": "ONVOC_0000569",
+              "label": "Lesion"
+            },
+            {
+              "id": "ONVOC_0000571",
+              "label": "Menopause"
+            },
+            {
+              "id": "ONVOC_0000576",
+              "label": "Paralysis"
+            },
+            {
+              "id": "ONVOC_0000572",
+              "label": "Perimenopause"
+            },
+            {
+              "id": "ONVOC_0000573",
+              "label": "Postmenopause"
+            },
+            {
+              "id": "ONVOC_0000570",
+              "label": "Pregnancy"
+            },
+            {
+              "id": "ONVOC_0000568",
+              "label": "Skull Fracture"
+            },
+            {
+              "id": "ONVOC_0000567",
+              "label": "Spinal Cord Injury"
+            },
+            {
+              "id": "ONVOC_0000566",
+              "label": "Traumatic Brain Injury"
+            },
+            {
+              "id": "ONVOC_0000562",
+              "label": "Typical Health"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000520",
+          "label": "Intelligence",
+          "children": [
+            {
+              "id": "ONVOC_0000579",
+              "label": "Cognitive Impairment"
+            },
+            {
+              "id": "ONVOC_0000580",
+              "label": "Intellectual Disability"
+            },
+            {
+              "id": "ONVOC_0000578",
+              "label": "Normal Cognitive Development"
+            },
+            {
+              "id": "ONVOC_0000577",
+              "label": "Normal Intelligence Quotient"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000521",
+          "label": "Languages",
+          "children": [
+            {
+              "id": "ONVOC_0000581",
+              "label": "English"
+            },
+            {
+              "id": "ONVOC_0000583",
+              "label": "Polish"
+            },
+            {
+              "id": "ONVOC_0000582",
+              "label": "Spanish"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000522",
+          "label": "Population Groups",
+          "children": [
+            {
+              "id": "ONVOC_0000585",
+              "label": "African"
+            },
+            {
+              "id": "ONVOC_0000586",
+              "label": "African American"
+            },
+            {
+              "id": "ONVOC_0000597",
+              "label": "Alaskan Native"
+            },
+            {
+              "id": "ONVOC_0000584",
+              "label": "Asian"
+            },
+            {
+              "id": "ONVOC_0000588",
+              "label": "Australian"
+            },
+            {
+              "id": "ONVOC_0000587",
+              "label": "Black"
+            },
+            {
+              "id": "ONVOC_0000598",
+              "label": "East Asian"
+            },
+            {
+              "id": "ONVOC_0000589",
+              "label": "European"
+            },
+            {
+              "id": "ONVOC_0000596",
+              "label": "Indian"
+            },
+            {
+              "id": "ONVOC_0000590",
+              "label": "Middle Eastern"
+            },
+            {
+              "id": "ONVOC_0000593",
+              "label": "Native Hawaiian"
+            },
+            {
+              "id": "ONVOC_0000591",
+              "label": "North American"
+            },
+            {
+              "id": "ONVOC_0000592",
+              "label": "Pacific Islander"
+            },
+            {
+              "id": "ONVOC_0000594",
+              "label": "South American"
+            },
+            {
+              "id": "ONVOC_0000599",
+              "label": "Southeast Asian"
+            },
+            {
+              "id": "ONVOC_0000595",
+              "label": "White"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000523",
+          "label": "Sex",
+          "children": [
+            {
+              "id": "ONVOC_0000601",
+              "label": "Female"
+            },
+            {
+              "id": "ONVOC_0000600",
+              "label": "Male"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000524",
+          "label": "Species",
+          "children": [
+            {
+              "id": "ONVOC_0000606",
+              "label": "Bat"
+            },
+            {
+              "id": "ONVOC_0000602",
+              "label": "Human"
+            },
+            {
+              "id": "ONVOC_0000607",
+              "label": "Macaque"
+            },
+            {
+              "id": "ONVOC_0000608",
+              "label": "Marmoset"
+            },
+            {
+              "id": "ONVOC_0000609",
+              "label": "Monkey"
+            },
+            {
+              "id": "ONVOC_0000604",
+              "label": "Mouse"
+            },
+            {
+              "id": "ONVOC_0000603",
+              "label": "Rat"
+            },
+            {
+              "id": "ONVOC_0000605",
+              "label": "Rodent"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000527",
+          "label": "Weight",
+          "children": [
+            {
+              "id": "ONVOC_0000642",
+              "label": "Body Mass Index"
+            },
+            {
+              "id": "ONVOC_0000643",
+              "label": "Normal Body Mass Index"
+            },
+            {
+              "id": "ONVOC_0000644",
+              "label": "Normal Weight"
+            },
+            {
+              "id": "ONVOC_0000142",
+              "label": "Obesity"
+            },
+            {
+              "id": "ONVOC_0000646",
+              "label": "Overweight"
+            },
+            {
+              "id": "ONVOC_0000645",
+              "label": "Underweight"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ONVOC_0000005",
+      "label": "Psychological Concepts",
+      "children": [
+        {
+          "id": "ONVOC_0000426",
+          "label": "Action",
+          "children": [
+            {
+              "id": "ONVOC_0000436",
+              "label": "Action Initiation"
+            },
+            {
+              "id": "ONVOC_0000438",
+              "label": "Motor Control"
+            },
+            {
+              "id": "ONVOC_0000437",
+              "label": "Movement"
+            },
+            {
+              "id": "ONVOC_0000439",
+              "label": "Object Manipulation"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000427",
+          "label": "Attention",
+          "children": [
+            {
+              "id": "ONVOC_0000448",
+              "label": "Attention Shift"
+            },
+            {
+              "id": "ONVOC_0000446",
+              "label": "Auditory Attention"
+            },
+            {
+              "id": "ONVOC_0000442",
+              "label": "Divided Attention"
+            },
+            {
+              "id": "ONVOC_0000447",
+              "label": "Focused Attention"
+            },
+            {
+              "id": "ONVOC_0000449",
+              "label": "Object-Based Attention"
+            },
+            {
+              "id": "ONVOC_0000441",
+              "label": "Selective Attention"
+            },
+            {
+              "id": "ONVOC_0000443",
+              "label": "Spatial Attention"
+            },
+            {
+              "id": "ONVOC_0000440",
+              "label": "Sustained Attention"
+            },
+            {
+              "id": "ONVOC_0000444",
+              "label": "Temporal Attention"
+            },
+            {
+              "id": "ONVOC_0000445",
+              "label": "Visual Attention"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000428",
+          "label": "Decision Making",
+          "children": [
+            {
+              "id": "ONVOC_0000454",
+              "label": "Abductive Reasoning"
+            },
+            {
+              "id": "ONVOC_0000453",
+              "label": "Analogical Reasoning"
+            },
+            {
+              "id": "ONVOC_0000452",
+              "label": "Arithmetic Operation"
+            },
+            {
+              "id": "ONVOC_0000455",
+              "label": "Causal Reasoning"
+            },
+            {
+              "id": "ONVOC_0000457",
+              "label": "Conditional Reasoning"
+            },
+            {
+              "id": "ONVOC_0000456",
+              "label": "Inductive Reasoning"
+            },
+            {
+              "id": "ONVOC_0000460",
+              "label": "Intuitive Reasoning"
+            },
+            {
+              "id": "ONVOC_0000451",
+              "label": "Logical Reasoning"
+            },
+            {
+              "id": "ONVOC_0000459",
+              "label": "Moral Reasoning"
+            },
+            {
+              "id": "ONVOC_0000450",
+              "label": "Numerical Comparison"
+            },
+            {
+              "id": "ONVOC_0000458",
+              "label": "Value-Based Reasoning"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000429",
+          "label": "Emotion",
+          "children": [
+            {
+              "id": "ONVOC_0000461",
+              "label": "Emotion Perception"
+            },
+            {
+              "id": "ONVOC_0000462",
+              "label": "Emotion Regulation"
+            },
+            {
+              "id": "ONVOC_0000464",
+              "label": "Negative Valence"
+            },
+            {
+              "id": "ONVOC_0000463",
+              "label": "Reward Responsiveness"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000430",
+          "label": "Executive Function",
+          "children": [
+            {
+              "id": "ONVOC_0000465",
+              "label": "Attentional Control"
+            },
+            {
+              "id": "ONVOC_0000468",
+              "label": "Cognitive Flexibility"
+            },
+            {
+              "id": "ONVOC_0000466",
+              "label": "Cognitive Inhibition"
+            },
+            {
+              "id": "ONVOC_0000474",
+              "label": "Cognitive Load"
+            },
+            {
+              "id": "ONVOC_0000467",
+              "label": "Inhibitory Control"
+            },
+            {
+              "id": "ONVOC_0000471",
+              "label": "Metacognition"
+            },
+            {
+              "id": "ONVOC_0000472",
+              "label": "Mindset"
+            },
+            {
+              "id": "ONVOC_0000469",
+              "label": "Planning"
+            },
+            {
+              "id": "ONVOC_0000470",
+              "label": "Problem Solving"
+            },
+            {
+              "id": "ONVOC_0000473",
+              "label": "Self-Regulation"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000431",
+          "label": "Language",
+          "children": [
+            {
+              "id": "ONVOC_0000475",
+              "label": "Phonological Processing"
+            },
+            {
+              "id": "ONVOC_0000478",
+              "label": "Reading Comprehension"
+            },
+            {
+              "id": "ONVOC_0000477",
+              "label": "Semantics"
+            },
+            {
+              "id": "ONVOC_0000480",
+              "label": "Speech Perception"
+            },
+            {
+              "id": "ONVOC_0000479",
+              "label": "Speech Production"
+            },
+            {
+              "id": "ONVOC_0000476",
+              "label": "Syntax"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000432",
+          "label": "Learning",
+          "children": [
+            {
+              "id": "ONVOC_0000481",
+              "label": "Classical Conditioning"
+            },
+            {
+              "id": "ONVOC_0000484",
+              "label": "Habituation"
+            },
+            {
+              "id": "ONVOC_0000483",
+              "label": "Observational Learning"
+            },
+            {
+              "id": "ONVOC_0000482",
+              "label": "Operant Conditioning"
+            },
+            {
+              "id": "ONVOC_0000487",
+              "label": "Procedural Learning"
+            },
+            {
+              "id": "ONVOC_0000486",
+              "label": "Reinforcement Learning"
+            },
+            {
+              "id": "ONVOC_0000485",
+              "label": "Skill Acquisition"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000433",
+          "label": "Memory",
+          "children": [
+            {
+              "id": "ONVOC_0000491",
+              "label": "Declarative Memory"
+            },
+            {
+              "id": "ONVOC_0000493",
+              "label": "Episodic Memory"
+            },
+            {
+              "id": "ONVOC_0000490",
+              "label": "Long-Term Memory"
+            },
+            {
+              "id": "ONVOC_0000492",
+              "label": "Procedural Memory"
+            },
+            {
+              "id": "ONVOC_0000494",
+              "label": "Semantic Memory"
+            },
+            {
+              "id": "ONVOC_0000489",
+              "label": "Short-Term Memory"
+            },
+            {
+              "id": "ONVOC_0000488",
+              "label": "Working Memory"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000434",
+          "label": "Perception",
+          "children": [
+            {
+              "id": "ONVOC_0000496",
+              "label": "Auditory Perception"
+            },
+            {
+              "id": "ONVOC_0000500",
+              "label": "Interoception"
+            },
+            {
+              "id": "ONVOC_0000499",
+              "label": "Multisensory Integration"
+            },
+            {
+              "id": "ONVOC_0000497",
+              "label": "Olfactory Perception"
+            },
+            {
+              "id": "ONVOC_0000498",
+              "label": "Tactile Perception"
+            },
+            {
+              "id": "ONVOC_0000495",
+              "label": "Visual Perception"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000435",
+          "label": "Social Cognition",
+          "children": [
+            {
+              "id": "ONVOC_0000502",
+              "label": "Empathy"
+            },
+            {
+              "id": "ONVOC_0000505",
+              "label": "Lying"
+            },
+            {
+              "id": "ONVOC_0000459",
+              "label": "Moral Reasoning"
+            },
+            {
+              "id": "ONVOC_0000504",
+              "label": "Social Decision Making"
+            },
+            {
+              "id": "ONVOC_0000503",
+              "label": "Social Perception"
+            },
+            {
+              "id": "ONVOC_0000501",
+              "label": "Theory of Mind"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ONVOC_0000006",
+      "label": "Sensation and Perception",
+      "children": [
+        {
+          "id": "ONVOC_0000506",
+          "label": "Hearing",
+          "children": [
+            {
+              "id": "ONVOC_0000509",
+              "label": "Hearing Loss"
+            },
+            {
+              "id": "ONVOC_0000510",
+              "label": "Impaired Hearing"
+            },
+            {
+              "id": "ONVOC_0000508",
+              "label": "Normal Hearing"
+            },
+            {
+              "id": "ONVOC_0000511",
+              "label": "Tinnitus"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000507",
+          "label": "Vision",
+          "children": [
+            {
+              "id": "ONVOC_0000135",
+              "label": "Amblyopia"
+            },
+            {
+              "id": "ONVOC_0000154",
+              "label": "Color Blindness"
+            },
+            {
+              "id": "ONVOC_0000513",
+              "label": "Impaired Vision"
+            },
+            {
+              "id": "ONVOC_0000512",
+              "label": "Normal Vision"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ONVOC_0000007",
+      "label": "Study Design",
+      "children": [
+        {
+          "id": "ONVOC_0000525",
+          "label": "Study Types",
+          "children": [
+            {
+              "id": "ONVOC_0000615",
+              "label": "Case Study"
+            },
+            {
+              "id": "ONVOC_0000610",
+              "label": "Case-Control Study"
+            },
+            {
+              "id": "ONVOC_0000611",
+              "label": "Cohort Study"
+            },
+            {
+              "id": "ONVOC_0000616",
+              "label": "Cross-Over Study"
+            },
+            {
+              "id": "ONVOC_0000612",
+              "label": "Cross-Sectional Study"
+            },
+            {
+              "id": "ONVOC_0000613",
+              "label": "Longitudinal Study"
+            },
+            {
+              "id": "ONVOC_0000614",
+              "label": "Randomized Controlled Trial"
+            },
+            {
+              "id": "ONVOC_0000617",
+              "label": "Twin Study"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000526",
+          "label": "Tests",
+          "children": [
+            {
+              "id": "ONVOC_0000758",
+              "label": "Barcelona Neuropsychological Test"
+            },
+            {
+              "id": "ONVOC_0000739",
+              "label": "Behavioural Assessment of Dysexecutive Syndrome"
+            },
+            {
+              "id": "ONVOC_0000618",
+              "label": "Benton Visual Retention Test"
+            },
+            {
+              "id": "ONVOC_0000638",
+              "label": "Boston Diagnostic Aphasia Examination"
+            },
+            {
+              "id": "ONVOC_0000639",
+              "label": "Boston Naming Test"
+            },
+            {
+              "id": "ONVOC_0000630",
+              "label": "California Verbal Learning Test"
+            },
+            {
+              "id": "ONVOC_0000759",
+              "label": "Cambridge Neuropsychological Test Automated Battery"
+            },
+            {
+              "id": "ONVOC_0000631",
+              "label": "Cambridge Prospective Memory Test"
+            },
+            {
+              "id": "ONVOC_0000756",
+              "label": "Clock Test"
+            },
+            {
+              "id": "ONVOC_0000740",
+              "label": "CNS Vital Signs (Brief Core Battery)"
+            },
+            {
+              "id": "ONVOC_0000760",
+              "label": "Cognistat (The Neurobehavioral Cognitive Status Examination)"
+            },
+            {
+              "id": "ONVOC_0000761",
+              "label": "Cognitive Assessment Screening Instrument"
+            },
+            {
+              "id": "ONVOC_0000762",
+              "label": "Cognitive Function Scanner"
+            },
+            {
+              "id": "ONVOC_0000640",
+              "label": "Comprehensive Aphasia Test"
+            },
+            {
+              "id": "ONVOC_0000619",
+              "label": "Continuous Performance Task"
+            },
+            {
+              "id": "ONVOC_0000741",
+              "label": "Controlled Oral Word Association Test"
+            },
+            {
+              "id": "ONVOC_0000742",
+              "label": "d2 Test of Attention"
+            },
+            {
+              "id": "ONVOC_0000763",
+              "label": "Dean–Woodcock Neuropsychological Assessment System"
+            },
+            {
+              "id": "ONVOC_0000743",
+              "label": "Delis–Kaplan Executive Function System"
+            },
+            {
+              "id": "ONVOC_0000744",
+              "label": "Digit Vigilance Test"
+            },
+            {
+              "id": "ONVOC_0000745",
+              "label": "Figural Fluency Test"
+            },
+            {
+              "id": "ONVOC_0000764",
+              "label": "General Practitioner Assessment Of Cognition"
+            },
+            {
+              "id": "ONVOC_0000632",
+              "label": "Gollin figure test"
+            },
+            {
+              "id": "ONVOC_0000746",
+              "label": "Halstead Category Test"
+            },
+            {
+              "id": "ONVOC_0000620",
+              "label": "Halstead–Reitan Neuropsychological Battery"
+            },
+            {
+              "id": "ONVOC_0000621",
+              "label": "Hayling and Brixton Tests"
+            },
+            {
+              "id": "ONVOC_0000757",
+              "label": "Hooper Visual Organisation Task"
+            },
+            {
+              "id": "ONVOC_0000747",
+              "label": "Kaplan Baycrest Neurocognitive Assessment"
+            },
+            {
+              "id": "ONVOC_0000748",
+              "label": "Kaufman Short Neuropsychological Assessment"
+            },
+            {
+              "id": "ONVOC_0000622",
+              "label": "Lexical Decision Task"
+            },
+            {
+              "id": "ONVOC_0000623",
+              "label": "Luria–Nebraska Neuropsychological Battery"
+            },
+            {
+              "id": "ONVOC_0000765",
+              "label": "MCI Screen"
+            },
+            {
+              "id": "ONVOC_0000633",
+              "label": "Memory Assessment Scales"
+            },
+            {
+              "id": "ONVOC_0000637",
+              "label": "Mental Attributes Profiling System"
+            },
+            {
+              "id": "ONVOC_0000766",
+              "label": "MicroCog"
+            },
+            {
+              "id": "ONVOC_0000624",
+              "label": "Mini–Mental State Examination"
+            },
+            {
+              "id": "ONVOC_0000641",
+              "label": "Multilingual Aphasia Examination"
+            },
+            {
+              "id": "ONVOC_0000767",
+              "label": "NEPSY"
+            },
+            {
+              "id": "ONVOC_0000749",
+              "label": "Paced Auditory Serial Addition Test"
+            },
+            {
+              "id": "ONVOC_0000634",
+              "label": "Rey Auditory Verbal Learning Test"
+            },
+            {
+              "id": "ONVOC_0000625",
+              "label": "Rey–Osterrieth Complex Figure"
+            },
+            {
+              "id": "ONVOC_0000635",
+              "label": "Rivermead Behavioural Memory Test"
+            },
+            {
+              "id": "ONVOC_0000750",
+              "label": "Ruff Figural Fluency Test"
+            },
+            {
+              "id": "ONVOC_0000626",
+              "label": "Stroop Test"
+            },
+            {
+              "id": "ONVOC_0000754",
+              "label": "Symbol Digit Modalities Test"
+            },
+            {
+              "id": "ONVOC_0000755",
+              "label": "Test of Everyday Attention"
+            },
+            {
+              "id": "ONVOC_0000636",
+              "label": "Test of Memory and Learning"
+            },
+            {
+              "id": "ONVOC_0000751",
+              "label": "Test of Variables of Attention"
+            },
+            {
+              "id": "ONVOC_0000752",
+              "label": "Tower of London Test"
+            },
+            {
+              "id": "ONVOC_0000753",
+              "label": "Trail-Making Test"
+            },
+            {
+              "id": "ONVOC_0000627",
+              "label": "Wechsler Adult Intelligence Scale"
+            },
+            {
+              "id": "ONVOC_0000628",
+              "label": "Wechsler Memory Scale"
+            },
+            {
+              "id": "ONVOC_0000629",
+              "label": "Wisconsin Card Sorting Task"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ONVOC_0000008",
+      "label": "Symptoms",
+      "children": [
+        {
+          "id": "ONVOC_0000647",
+          "label": "Medical Symptoms",
+          "children": [
+            {
+              "id": "ONVOC_0000661",
+              "label": "Appetite"
+            },
+            {
+              "id": "ONVOC_0000669",
+              "label": "Bladder Habits"
+            },
+            {
+              "id": "ONVOC_0000668",
+              "label": "Bowel Habits"
+            },
+            {
+              "id": "ONVOC_0000652",
+              "label": "Cough"
+            },
+            {
+              "id": "ONVOC_0000658",
+              "label": "Dizziness"
+            },
+            {
+              "id": "ONVOC_0000667",
+              "label": "Dyspnea"
+            },
+            {
+              "id": "ONVOC_0000665",
+              "label": "Edema"
+            },
+            {
+              "id": "ONVOC_0000650",
+              "label": "Fatigue"
+            },
+            {
+              "id": "ONVOC_0000653",
+              "label": "Fever"
+            },
+            {
+              "id": "ONVOC_0000657",
+              "label": "Gastrointestinal Issues"
+            },
+            {
+              "id": "ONVOC_0000173",
+              "label": "Headache"
+            },
+            {
+              "id": "ONVOC_0000672",
+              "label": "Hypercapnia"
+            },
+            {
+              "id": "ONVOC_0000670",
+              "label": "Joint Stiffness"
+            },
+            {
+              "id": "ONVOC_0000659",
+              "label": "Lightheadedness"
+            },
+            {
+              "id": "ONVOC_0000654",
+              "label": "Nasal Congestion"
+            },
+            {
+              "id": "ONVOC_0000651",
+              "label": "Pain"
+            },
+            {
+              "id": "ONVOC_0000655",
+              "label": "Runny Nose"
+            },
+            {
+              "id": "ONVOC_0000666",
+              "label": "Shortness of Breath"
+            },
+            {
+              "id": "ONVOC_0000663",
+              "label": "Skin Irritation"
+            },
+            {
+              "id": "ONVOC_0000662",
+              "label": "Skin Rashes"
+            },
+            {
+              "id": "ONVOC_0000660",
+              "label": "Sleep Disturbances"
+            },
+            {
+              "id": "ONVOC_0000656",
+              "label": "Sore Throat"
+            },
+            {
+              "id": "ONVOC_0000664",
+              "label": "Swelling"
+            },
+            {
+              "id": "ONVOC_0000671",
+              "label": "Swollen Lymph Nodes"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000648",
+          "label": "Neurological Symptoms",
+          "children": [
+            {
+              "id": "ONVOC_0000679",
+              "label": "Balance Problems"
+            },
+            {
+              "id": "ONVOC_0000689",
+              "label": "Bladder Dysfunction"
+            },
+            {
+              "id": "ONVOC_0000688",
+              "label": "Bowel Dysfunction"
+            },
+            {
+              "id": "ONVOC_0000579",
+              "label": "Cognitive Impairment"
+            },
+            {
+              "id": "ONVOC_0000658",
+              "label": "Dizziness"
+            },
+            {
+              "id": "ONVOC_0000681",
+              "label": "Dysarthria"
+            },
+            {
+              "id": "ONVOC_0000687",
+              "label": "Dysphagia"
+            },
+            {
+              "id": "ONVOC_0000650",
+              "label": "Fatigue"
+            },
+            {
+              "id": "ONVOC_0000678",
+              "label": "Gait Disturbances"
+            },
+            {
+              "id": "ONVOC_0000173",
+              "label": "Headache"
+            },
+            {
+              "id": "ONVOC_0000509",
+              "label": "Hearing Loss"
+            },
+            {
+              "id": "ONVOC_0000693",
+              "label": "Hemianopsia"
+            },
+            {
+              "id": "ONVOC_0000690",
+              "label": "Loss of Smell (Anosmia) or Taste (Ageusia)"
+            },
+            {
+              "id": "ONVOC_0000677",
+              "label": "Memory Problems"
+            },
+            {
+              "id": "ONVOC_0000676",
+              "label": "Muscle Weakness"
+            },
+            {
+              "id": "ONVOC_0000673",
+              "label": "Numbness"
+            },
+            {
+              "id": "ONVOC_0000651",
+              "label": "Pain"
+            },
+            {
+              "id": "ONVOC_0000675",
+              "label": "Paresthesia"
+            },
+            {
+              "id": "ONVOC_0000187",
+              "label": "Prosopagnosia"
+            },
+            {
+              "id": "ONVOC_0000685",
+              "label": "Rigidity"
+            },
+            {
+              "id": "ONVOC_0000692",
+              "label": "Scotoma"
+            },
+            {
+              "id": "ONVOC_0000683",
+              "label": "Seizures"
+            },
+            {
+              "id": "ONVOC_0000660",
+              "label": "Sleep Disturbances"
+            },
+            {
+              "id": "ONVOC_0000680",
+              "label": "Speech Difficulties"
+            },
+            {
+              "id": "ONVOC_0000684",
+              "label": "Stiffness"
+            },
+            {
+              "id": "ONVOC_0000686",
+              "label": "Swallowing Difficulties"
+            },
+            {
+              "id": "ONVOC_0000691",
+              "label": "Tics"
+            },
+            {
+              "id": "ONVOC_0000674",
+              "label": "Tingling"
+            },
+            {
+              "id": "ONVOC_0000511",
+              "label": "Tinnitus"
+            },
+            {
+              "id": "ONVOC_0000682",
+              "label": "Tremors"
+            }
+          ]
+        },
+        {
+          "id": "ONVOC_0000649",
+          "label": "Psychiatric Symptoms",
+          "children": [
+            {
+              "id": "ONVOC_0000708",
+              "label": "Agitation"
+            },
+            {
+              "id": "ONVOC_0000704",
+              "label": "Anhedonia"
+            },
+            {
+              "id": "ONVOC_0000694",
+              "label": "Anxiety"
+            },
+            {
+              "id": "ONVOC_0000661",
+              "label": "Appetite"
+            },
+            {
+              "id": "ONVOC_0000712",
+              "label": "Compulsions"
+            },
+            {
+              "id": "ONVOC_0000720",
+              "label": "Delusions"
+            },
+            {
+              "id": "ONVOC_0000717",
+              "label": "Depersonalization"
+            },
+            {
+              "id": "ONVOC_0000695",
+              "label": "Depressed Mood"
+            },
+            {
+              "id": "ONVOC_0000716",
+              "label": "Derealization"
+            },
+            {
+              "id": "ONVOC_0000698",
+              "label": "Difficulty Concentrating"
+            },
+            {
+              "id": "ONVOC_0000722",
+              "label": "Drug Craving"
+            },
+            {
+              "id": "ONVOC_0000714",
+              "label": "Emotional Outbursts"
+            },
+            {
+              "id": "ONVOC_0000702",
+              "label": "Excessive Worry"
+            },
+            {
+              "id": "ONVOC_0000650",
+              "label": "Fatigue"
+            },
+            {
+              "id": "ONVOC_0000715",
+              "label": "Feeling Disconnected"
+            },
+            {
+              "id": "ONVOC_0000706",
+              "label": "Feelings of Guilt"
+            },
+            {
+              "id": "ONVOC_0000705",
+              "label": "Feelings of Worthlessness"
+            },
+            {
+              "id": "ONVOC_0000719",
+              "label": "Hallucinations"
+            },
+            {
+              "id": "ONVOC_0000697",
+              "label": "Irritability"
+            },
+            {
+              "id": "ONVOC_0000703",
+              "label": "Loss of Interest"
+            },
+            {
+              "id": "ONVOC_0000696",
+              "label": "Low Energy"
+            },
+            {
+              "id": "ONVOC_0000711",
+              "label": "Obsessions"
+            },
+            {
+              "id": "ONVOC_0000710",
+              "label": "Panic Attacks"
+            },
+            {
+              "id": "ONVOC_0000718",
+              "label": "Paranoia"
+            },
+            {
+              "id": "ONVOC_0000707",
+              "label": "Restlessness"
+            },
+            {
+              "id": "ONVOC_0000721",
+              "label": "Risk-taking"
+            },
+            {
+              "id": "ONVOC_0000713",
+              "label": "Sex Drive"
+            },
+            {
+              "id": "ONVOC_0000660",
+              "label": "Sleep Disturbances"
+            },
+            {
+              "id": "ONVOC_0000701",
+              "label": "Social Withdrawal"
+            },
+            {
+              "id": "ONVOC_0000709",
+              "label": "Suicidal Thoughts"
+            },
+            {
+              "id": "ONVOC_0000699",
+              "label": "Weight Gain"
+            },
+            {
+              "id": "ONVOC_0000700",
+              "label": "Weight Loss"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

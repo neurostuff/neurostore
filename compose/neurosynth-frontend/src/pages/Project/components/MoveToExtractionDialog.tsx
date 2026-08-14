@@ -1,13 +1,16 @@
 import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
+import { getDefaultForNoteKey } from 'components/HotTables/HotTables.utils';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
-import { getDefaultForNoteKey } from 'components/HotTables/HotTables.utils';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
+import { BaseStudyReturnInfo } from 'hooks/studies/studyQueries.types';
 import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
+import { BaseStudy } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     useProjectCurationColumn,
     useProjectDescription,
@@ -16,12 +19,13 @@ import {
     useProjectId,
     useProjectName,
     useProjectNumCurationColumns,
+    useProjectAnalysisType,
     useUpdateExtractionMetadata,
-} from 'pages/Project/store/ProjectStore';
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+} from 'stores/projects/ProjectStore';
 import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
 import MoveToExtractionDialogIntroductionPart2 from './MoveToExtractionDialogIntroPart2';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import { SearchDataType } from 'pages/Study/Study.types';
 
 const MoveToExtractionDialog = (props: IDialog) => {
     const numColumns = useProjectNumCurationColumns();
@@ -29,6 +33,7 @@ const MoveToExtractionDialog = (props: IDialog) => {
     const projectId = useProjectId();
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
+    const projectAnalysisType = useProjectAnalysisType();
     const { mutateAsync: createStudyset } = useCreateStudyset();
     const { mutateAsync: createAnnotation } = useCreateAnnotation();
     const updateExtractionMetadata = useUpdateExtractionMetadata();
@@ -114,7 +119,7 @@ const MoveToExtractionDialog = (props: IDialog) => {
                     },
                 });
 
-                const newAnnotationId = newAnnotation.data.id;
+                const newAnnotationId = newAnnotation.id;
                 if (!newAnnotationId) throw new Error('expected a studyset id but did not receive one');
 
                 tempAnnotationId = newAnnotationId;
@@ -153,9 +158,14 @@ const MoveToExtractionDialog = (props: IDialog) => {
 
         try {
             const res = await asyncIngest(stubsToBaseStudies);
-            const returnedBaseStudies = res.data as Array<BaseStudyReturn>;
+            const returnedBaseStudies = res.data as Array<BaseStudyReturnInfo>;
 
-            const studiesPayload = mapStubsToStudysetPayload(includedStubs, returnedBaseStudies);
+            const studiesPayload = mapStubsToStudysetPayload(
+                includedStubs,
+                returnedBaseStudies,
+                undefined,
+                projectAnalysisType === EAnalysisType.IBMA ? SearchDataType.IMAGE : SearchDataType.COORDINATE
+            );
 
             await asyncUpdateStudyset({
                 studysetId: newStudysetId,

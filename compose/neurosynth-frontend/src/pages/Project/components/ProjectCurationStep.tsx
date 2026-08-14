@@ -1,7 +1,7 @@
 import { Box, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useInitCuration } from '../store/ProjectStore';
+import { useInitCuration } from 'stores/projects/ProjectStore';
 import ProjectCurationStepCard from './ProjectCurationStepCard';
 import ProjectCurationStepChooseWorkflow from './ProjectCurationStepChooseWorkflow';
 

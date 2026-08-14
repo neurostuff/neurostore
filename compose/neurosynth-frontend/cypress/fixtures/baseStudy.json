@@ -17,7 +17,12 @@
             "id": "66neUWorzjTc",
             "source": "neurostore",
             "updated_at": "2023-07-12T22:43:18.184264+00:00",
-            "user": "github|2441214"
+            "user": "github|2441214",
+            "has_coordinates": true,
+            "has_images": false,
+            "has_z_maps": false,
+            "has_t_maps": false,
+            "has_beta_and_variance_maps": false
         }
     ],
     "year": null

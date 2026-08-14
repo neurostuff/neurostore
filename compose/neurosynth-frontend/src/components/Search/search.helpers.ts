@@ -40,3 +40,12 @@ export const addKVPToSearch = (locationURL: string, key: string, value: string) 
     search.has(key) ? search.set(key, value) : search.append(key, value);
     return search.toString();
 };
+
+export const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
+    if (!totalCount || !pageSize) {
+        return 0;
+    }
+    const numTotalPages = Math.trunc(totalCount / pageSize);
+    const remainder = totalCount % pageSize;
+    return remainder > 0 ? numTotalPages + 1 : numTotalPages;
+};

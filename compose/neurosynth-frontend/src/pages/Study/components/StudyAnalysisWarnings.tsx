@@ -1,8 +1,8 @@
 import { ErrorOutline } from '@mui/icons-material';
 import { Chip } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useDisplayWarnings from '../hooks/useDisplayWarnings';
-import { useGetStudyIsLoading } from 'pages/Study/store/StudyStore';
+import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
+import { useGetStudyIsLoading } from 'stores/study/StudyStore';
 
 const StudyAnalysisWarnings = (props: { analysisId: string }) => {
     const getStudyIsLoading = useGetStudyIsLoading();

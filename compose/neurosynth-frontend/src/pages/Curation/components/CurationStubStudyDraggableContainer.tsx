@@ -3,7 +3,7 @@ import { DragIndicator } from '@mui/icons-material';
 import { Box, Paper } from '@mui/material';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectUser } from 'stores/projects/ProjectStore';
 import React from 'react';
 import CurationStubStudy from './CurationStubStudy';
 import CurationStubStudyStyles from './CurationStubStudy.styles';

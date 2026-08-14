@@ -1,6 +1,6 @@
-import { useStudyAnalyses, useStudyAnalysisName, useStudyAnalysisPoints } from 'pages/Study/store/StudyStore';
-import { IStorePoint } from 'pages/Study/store/StudyStore.helpers';
 import { useMemo } from 'react';
+import { IStorePoint } from 'stores/study/StudyStore.helpers';
+import { useStudyAnalyses, useStudyAnalysisName, useStudyAnalysisPoints } from 'stores/study/StudyStore';
 
 export const isCoordinateMNI = (x: number, y: number, z: number) => {
     const dims = {

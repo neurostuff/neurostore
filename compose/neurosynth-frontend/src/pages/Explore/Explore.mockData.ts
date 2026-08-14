@@ -13,7 +13,7 @@ export type MockBrainMap = {
     mapType: string;
     analysisType: 'CBMA' | 'IBMA';
     onvocTerms: string[];
-    source: 'user' | 'legacy';
+    source: 'user' | 'legacy' | 'neurostore';
 };
 
 export const MOCK_ONVOC_TREE: OnvocTreeNode[] = [
@@ -160,6 +160,8 @@ const collectOnvocLeafLabels = (nodes: OnvocTreeNode[]): string[] => {
     return labels;
 };
 
+export { collectOnvocLeafLabels };
+
 /** Flat leaf terms from the mock ONVOC tree, for autocomplete UIs. */
 export const MOCK_ONVOC_TERMS: string[] = Array.from(new Set(collectOnvocLeafLabels(MOCK_ONVOC_TREE))).sort((left, right) =>
     left.localeCompare(right)
@@ -174,8 +176,8 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'CBMA',
-        onvocTerms: ['working memory', 'selective attention', 'n-back', 'cognitive control', 'task switching'],
-        source: 'legacy',
+        onvocTerms: ['Working Memory', 'Selective Attention', 'Sustained Attention', 'Attentional Control'],
+        source: 'neurostore',
     },
     {
         id: 'map-2',
@@ -186,7 +188,7 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'IBMA',
-        onvocTerms: ['episodic memory', 'recognition memory', 'autobiographical memory'],
+        onvocTerms: ['Episodic Memory', 'Declarative Memory', 'Long-Term Memory'],
         source: 'user',
     },
     {
@@ -198,8 +200,8 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'association',
         analysisType: 'CBMA',
-        onvocTerms: ['semantic processing', 'semantic memory', 'reading', 'naming'],
-        source: 'legacy',
+        onvocTerms: ['Semantic Memory', 'Speech Perception', 'Speech Production'],
+        source: 'neurostore',
     },
     {
         id: 'map-4',
@@ -210,7 +212,7 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'IBMA',
-        onvocTerms: ['speech production', 'motor execution', 'speech comprehension'],
+        onvocTerms: ['Speech Production', 'Motor Control', 'Speech Perception'],
         source: 'user',
     },
     {
@@ -222,8 +224,8 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'CBMA',
-        onvocTerms: ['fear', 'anxiety', 'emotion'],
-        source: 'legacy',
+        onvocTerms: ['Emotion', 'Emotion Perception', 'Anxiety Disorders', 'Emotion Regulation'],
+        source: 'neurostore',
     },
     {
         id: 'map-6',
@@ -234,7 +236,7 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'IBMA',
-        onvocTerms: ['reward', 'decision making', 'happiness'],
+        onvocTerms: ['Reward Responsiveness', 'Decision Making', 'Social Decision Making'],
         source: 'user',
     },
     {
@@ -246,7 +248,7 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'CBMA',
-        onvocTerms: ['pain', 'touch', 'proprioception'],
+        onvocTerms: ['Chronic Pain', 'Emotion Perception', 'Adult'],
         source: 'legacy',
     },
     {
@@ -258,7 +260,7 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'association',
         analysisType: 'IBMA',
-        onvocTerms: ['theory of mind', 'face recognition', 'empathy', 'social cognition'],
+        onvocTerms: ['Theory of Mind', 'Empathy', 'Social Cognition', 'Social Perception'],
         source: 'user',
     },
     {
@@ -270,7 +272,7 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'CBMA',
-        onvocTerms: ['visual motion', 'visual attention', 'object recognition'],
+        onvocTerms: ['Visual Attention', 'Spatial Attention', 'Object-Based Attention'],
         source: 'legacy',
     },
     {
@@ -282,7 +284,7 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'IBMA',
-        onvocTerms: ['object recognition', 'face perception', 'visual attention'],
+        onvocTerms: ['Visual Attention', 'Focused Attention', 'Child'],
         source: 'user',
     },
     {
@@ -294,7 +296,7 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'CBMA',
-        onvocTerms: ['motor imagery', 'motor execution', 'grasping', 'eye movements'],
+        onvocTerms: ['Motor Control', 'Adult', 'Divided Attention'],
         source: 'legacy',
     },
     {
@@ -306,8 +308,85 @@ export const MOCK_BRAIN_MAPS: MockBrainMap[] = [
         modality: 'fMRI',
         mapType: 'activation',
         analysisType: 'IBMA',
-        onvocTerms: ['response inhibition', 'sustained attention', 'cognitive control', 'stroop'],
+        onvocTerms: [
+            'Sustained Attention',
+            'Attentional Control',
+            'Attention-Deficit Hyperactivity Disorder',
+            'Schizophrenia',
+        ],
         source: 'user',
+    },
+    {
+        id: 'map-13',
+        title: 'Reading and orthographic processing in the visual word form area',
+        abstract:
+            'ONVOC-curated synthesis of word versus false-font contrasts with peaks in left occipitotemporal sulcus and inferior frontal gyrus.',
+        year: 2024,
+        modality: 'fMRI',
+        mapType: 'association',
+        analysisType: 'CBMA',
+        onvocTerms: ['Reading Comprehension', 'Semantic Memory', 'Speech Perception', 'Child'],
+        source: 'neurostore',
+    },
+    {
+        id: 'map-14',
+        title: 'Cognitive control and conflict monitoring',
+        abstract:
+            'Neurostore ONVOC map of Stroop, Flanker, and Simon tasks converging on dorsal ACC, dorsolateral prefrontal cortex, and anterior insula.',
+        year: 2023,
+        modality: 'fMRI',
+        mapType: 'activation',
+        analysisType: 'IBMA',
+        onvocTerms: ['Attentional Control', 'Selective Attention', 'Sustained Attention', 'Adult'],
+        source: 'neurostore',
+    },
+    {
+        id: 'map-15',
+        title: 'Social perception of faces and biological motion',
+        abstract:
+            'Curated ONVOC association map for face and biological-motion viewing, highlighting superior temporal sulcus and fusiform face area.',
+        year: 2024,
+        modality: 'fMRI',
+        mapType: 'association',
+        analysisType: 'CBMA',
+        onvocTerms: ['Social Perception', 'Theory of Mind', 'Empathy', 'Emotion Perception'],
+        source: 'neurostore',
+    },
+    {
+        id: 'map-16',
+        title: 'Depression-related alterations in default mode connectivity',
+        abstract:
+            'Image-based ONVOC meta-map of resting-state default mode network differences in major depressive disorder cohorts.',
+        year: 2025,
+        modality: 'fMRI',
+        mapType: 'association',
+        analysisType: 'IBMA',
+        onvocTerms: ['Depressive Disorder', 'Anxiety Disorders', 'Adult', 'Emotion Regulation'],
+        source: 'neurostore',
+    },
+    {
+        id: 'map-17',
+        title: 'Spatial attention in the dorsal frontoparietal network',
+        abstract:
+            'ONVOC coordinate synthesis of covert spatial cueing paradigms with reliable peaks in intraparietal sulcus and frontal eye fields.',
+        year: 2023,
+        modality: 'fMRI',
+        mapType: 'activation',
+        analysisType: 'CBMA',
+        onvocTerms: ['Spatial Attention', 'Visual Attention', 'Selective Attention', 'Divided Attention'],
+        source: 'neurostore',
+    },
+    {
+        id: 'map-18',
+        title: 'Decision making under risk and uncertainty',
+        abstract:
+            'Neurostore-curated IBMA of risky-choice tasks emphasizing ventromedial prefrontal cortex, anterior insula, and dorsomedial striatum.',
+        year: 2024,
+        modality: 'fMRI',
+        mapType: 'activation',
+        analysisType: 'IBMA',
+        onvocTerms: ['Social Decision Making', 'Reward Responsiveness', 'Emotion Regulation', 'Adult'],
+        source: 'neurostore',
     },
 ];
 
@@ -321,6 +400,35 @@ export const getOnvocLabelById = (nodes: OnvocTreeNode[], targetId: string): str
             if (childLabel) {
                 return childLabel;
             }
+        }
+    }
+    return undefined;
+};
+
+/** Case-insensitive leaf lookup by label (parents are ignored). */
+export const getOnvocLeafIdByLabel = (nodes: OnvocTreeNode[], targetLabel: string): string | undefined => {
+    const normalizedLabel = targetLabel.trim().toLowerCase();
+    if (!normalizedLabel) {
+        return undefined;
+    }
+
+    const walk = (node: OnvocTreeNode): string | undefined => {
+        if (!node.children?.length) {
+            return node.label.toLowerCase() === normalizedLabel ? node.id : undefined;
+        }
+        for (const child of node.children) {
+            const matchingLeafId = walk(child);
+            if (matchingLeafId) {
+                return matchingLeafId;
+            }
+        }
+        return undefined;
+    };
+
+    for (const node of nodes) {
+        const matchingLeafId = walk(node);
+        if (matchingLeafId) {
+            return matchingLeafId;
         }
     }
     return undefined;

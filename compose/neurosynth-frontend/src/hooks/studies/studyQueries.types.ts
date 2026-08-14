@@ -1,0 +1,50 @@
+import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
+import type { BaseStudyList, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
+
+export type StudyReturnNested = Omit<StudyReturn, 'analyses'> & {
+    analyses?: AnalysisReturnNested[];
+};
+
+export type StudyReturnNonNested = Omit<StudyReturn, 'analyses'> & {
+    analyses?: string[];
+};
+
+export type StudyReturnFlat = Omit<StudyReturn, 'analyses'>;
+
+export type BaseStudyReturnFlat = Omit<BaseStudyReturn, 'versions'>;
+
+export type BaseStudyReturnNested = Omit<BaseStudyReturn, 'versions'> & {
+    versions?: StudyReturnNested[];
+};
+
+export type BaseStudyReturnNonNested = Omit<BaseStudyReturn, 'versions'> & {
+    versions?: string[];
+};
+
+export type BaseStudyReturnInfoVersion = Pick<
+    StudyReturn,
+    | 'id'
+    | 'user'
+    | 'username'
+    | 'created_at'
+    | 'updated_at'
+    | 'source'
+    | 'has_coordinates'
+    | 'has_images'
+    | 'has_z_maps'
+    | 'has_t_maps'
+    | 'has_beta_and_variance_maps'
+>;
+
+export type BaseStudyReturnInfo = Omit<BaseStudyReturn, 'versions'> & {
+    versions?: BaseStudyReturnInfoVersion[];
+};
+
+export type BaseStudyListOf<T extends BaseStudyReturn = BaseStudyReturn> = Omit<BaseStudyList, 'results'> & {
+    results?: T[];
+};
+
+export type BaseStudyListFlat = BaseStudyListOf<BaseStudyReturnFlat>;
+export type BaseStudyListNested = BaseStudyListOf<BaseStudyReturnNested>;
+export type BaseStudyListNonNested = BaseStudyListOf<BaseStudyReturnNonNested>;
+export type BaseStudyListInfo = BaseStudyListOf<BaseStudyReturnInfo>;

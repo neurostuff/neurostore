@@ -22,22 +22,22 @@
     vertical-align: middle !important;
 }
 
-.boolean {
+:global(.handsontable) td.boolean {
     color: green !important;
     text-align: center !important;
 }
 
-.string {
+:global(.handsontable) td.string {
     color: orange !important;
     text-align: center !important;
 }
 
-.number {
+:global(.handsontable) td.number {
     color: blue !important;
     text-align: center !important;
 }
 
-.null {
+:global(.handsontable) td.null {
     color: gray !important;
     text-align: center !important;
 }

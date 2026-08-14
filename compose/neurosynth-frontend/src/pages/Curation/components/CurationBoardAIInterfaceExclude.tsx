@@ -8,14 +8,14 @@ import {
     useProjectExclusionTag,
     useProjectUser,
     useUpdateExclusionTag,
-} from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
+} from 'stores/projects/ProjectStore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ICurationStubStudy } from '../Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 import { filterStubsBySearch } from './CurationBoardAIInterfaceExclude.helpers';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
+import { ENeurosynthTagIds } from 'stores/projects/ProjectStore.consts';
 
 const ROW_HEIGHT_PX = 90;
 const LIST_WIDTH_PX = 260;

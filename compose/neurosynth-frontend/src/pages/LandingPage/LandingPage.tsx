@@ -10,19 +10,31 @@ import {
     Search,
     Settings,
 } from '@mui/icons-material';
-import { Box, Button, Card, CardContent, InputAdornment, TextField, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, Autocomplete, InputAdornment, TextField, Typography } from '@mui/material';
+import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
 import { NEUROSYNTH_COMPOSE_CITATION } from 'hooks/useCitationCopy.consts';
 import { useCitationCopy } from 'hooks/useCitationCopy';
 import { useGuard } from 'hooks';
 import useAuthenticate from 'hooks/useAuthenticate';
+import LandingExploreCarousel from 'pages/LandingPage/components/LandingExploreCarousel';
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
-import LandingExploreCarousel from 'pages/LandingPage/components/LandingExploreCarousel';
 import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
+import onvocConfig from 'assets/config/onvoc-1.0.0.json';
+import {
+    collectOnvocLeafLabels,
+    getOnvocLeafIdByLabel,
+    OnvocTreeNode,
+} from 'pages/Explore/Explore.mockData';
 import LandingPageStyles from './LandingPage.styles';
+
+const ONVOC_TREE = onvocConfig.tree as OnvocTreeNode[];
+const ONVOC_SEARCH_OPTIONS = Array.from(new Set(collectOnvocLeafLabels(ONVOC_TREE))).sort((left, right) =>
+    left.localeCompare(right)
+);
 
 const SEO_GRAPH_DATA = JSON.stringify({
     '@context': 'https://schema.org',
@@ -88,14 +100,25 @@ const LandingPage = () => {
     });
     usePrerenderReady(true);
 
+    const navigateToExploreSearch = (rawQuery: string) => {
+        const trimmedQuery = rawQuery.trim();
+        if (!trimmedQuery) {
+            navigate('/explore');
+            return;
+        }
+
+        const matchingLeafId = getOnvocLeafIdByLabel(ONVOC_TREE, trimmedQuery);
+        if (matchingLeafId) {
+            navigate(`/explore?onvoc=${encodeURIComponent(matchingLeafId)}`);
+            return;
+        }
+
+        navigate(`/explore?q=${encodeURIComponent(trimmedQuery)}`);
+    };
+
     const handleSearchSubmit = (event: FormEvent) => {
         event.preventDefault();
-        const trimmedQuery = searchQuery.trim();
-        if (trimmedQuery) {
-            navigate(`/explore?q=${encodeURIComponent(trimmedQuery)}`);
-        } else {
-            navigate('/explore');
-        }
+        navigateToExploreSearch(searchQuery);
     };
 
     const handleNewMetaAnalysis = () => {
@@ -109,64 +132,89 @@ const LandingPage = () => {
     return (
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SEO_GRAPH_DATA }} />
-            <Box sx={[LandingPageStyles.sectionContainer, LandingPageStyles.exploreHeroSection]}>
-                <Box sx={LandingPageStyles.exploreHeroContents}>
-                    <Box
-                        component="img"
-                        src="/static/synth.png"
-                        alt="neurosynth compose logo"
-                        sx={LandingPageStyles.exploreHeroLogo}
-                    />
-                    <Typography component="h1" sx={LandingPageStyles.exploreHeroTitle}>
-                        Welcome to neurosynth compose
-                    </Typography>
-                    <Typography sx={LandingPageStyles.exploreHeroSubtitle}>
-                        Explore brain maps, and build custom meta-analyses in the browser.
-                    </Typography>
-                    <Box component="form" onSubmit={handleSearchSubmit} sx={LandingPageStyles.exploreSearchForm}>
-                        <TextField
-                            fullWidth
-                            value={searchQuery}
-                            onChange={(event) => setSearchQuery(event.target.value)}
-                            placeholder="Search for brain maps, tasks, or terms…"
-                            inputProps={{ 'aria-label': 'Search brain maps' }}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <Search sx={{ color: 'primary.main' }} />
-                                    </InputAdornment>
-                                ),
-                            }}
-                            sx={LandingPageStyles.exploreSearchField}
-                        />
+            <Box sx={LandingPageStyles.heroSection}>
+                <Box sx={LandingPageStyles.heroBannerContentContainer}>
+                    <Box sx={LandingPageStyles.heroBannerTextContainer}>
+                        <Typography component="h1" sx={LandingPageStyles.title}>
+                            Welcome to neurosynth Compose: A free and open platform for neuroimaging meta-analysis
+                        </Typography>
+                        <Typography sx={LandingPageStyles.heroBannerText}>
+                            Explore meta-analyses, or perform custom neuroimaging meta-analyses entirely in the browser,
+                            and quickly get results in the cloud using automated analysis pipelines.
+                        </Typography>
+                        <Box sx={LandingPageStyles.activitySummaryContainer}>
+                            <NeurosynthActivitySummary />
+                        </Box>
+                        <Box component="form" onSubmit={handleSearchSubmit} sx={LandingPageStyles.searchForm}>
+                            <Autocomplete
+                                freeSolo
+                                options={ONVOC_SEARCH_OPTIONS}
+                                inputValue={searchQuery}
+                                onInputChange={(_event, value) => setSearchQuery(value)}
+                                onChange={(_event, value) => {
+                                    if (value == null) {
+                                        return;
+                                    }
+                                    setSearchQuery(value);
+                                    navigateToExploreSearch(value);
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        fullWidth
+                                        placeholder="Search for brain maps, tasks, or terms…"
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            'aria-label': 'Search brain maps',
+                                        }}
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            startAdornment: (
+                                                <>
+                                                    <InputAdornment position="start">
+                                                        <Search sx={{ color: 'primary.main' }} />
+                                                    </InputAdornment>
+                                                    {params.InputProps.startAdornment}
+                                                </>
+                                            ),
+                                        }}
+                                        sx={LandingPageStyles.searchField}
+                                    />
+                                )}
+                            />
+                        </Box>
+                        <Box sx={LandingPageStyles.actionButtons}>
+                            <Button
+                                variant="outlined"
+                                startIcon={<AccountTree />}
+                                onClick={() => navigate('/explore')}
+                                sx={LandingPageStyles.actionButtonOutlined}
+                            >
+                                Explore Terms
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                startIcon={<Psychology />}
+                                onClick={() => navigate('/decode')}
+                                sx={LandingPageStyles.actionButtonOutlined}
+                            >
+                                Decode
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<Science />}
+                                onClick={handleNewMetaAnalysis}
+                                sx={LandingPageStyles.actionButtonPrimary}
+                            >
+                                New meta-analysis
+                            </Button>
+                        </Box>
                     </Box>
-                    <Box sx={LandingPageStyles.exploreActionButtons}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<AccountTree />}
-                            onClick={() => navigate('/explore?focus=onvoc')}
-                            sx={LandingPageStyles.exploreActionButton}
-                        >
-                            Explore
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            startIcon={<Psychology />}
-                            onClick={() => navigate('/decode')}
-                            sx={LandingPageStyles.exploreActionButton}
-                        >
-                            Decode
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={<Science />}
-                            onClick={handleNewMetaAnalysis}
-                            sx={LandingPageStyles.exploreActionButtonPrimary}
-                        >
-                            New meta-analysis
-                        </Button>
+                    <Box sx={LandingPageStyles.carouselPanel}>
+                        <Box sx={LandingPageStyles.carouselInner}>
+                            <LandingExploreCarousel variant="fillWidth" />
+                        </Box>
                     </Box>
-                    <LandingExploreCarousel />
                 </Box>
             </Box>
             <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.dark' }]}>

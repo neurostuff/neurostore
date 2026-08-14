@@ -2,142 +2,69 @@
 
 export {};
 
-const PATH = '/base-studies/mock-study-id';
+const BASE_STUDY_ID = 'mock-base-study-id';
+const PATH = `/base-studies/${BASE_STUDY_ID}`;
 const PAGE_NAME = 'BaseStudyPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage();
-        cy.intercept('GET', `https://api.semanticscholar.org/**`, {
-            fixture: 'semanticScholar',
-        }).as('semanticScholarFixture');
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
+        cy.intercept('GET', `**/api/base-studies/${BASE_STUDY_ID}*`, {
+            fixture: 'baseStudyWithTypedVersions',
+        }).as('baseStudyFixture');
+        cy.intercept('GET', '**/api/studies/image-version-id*', {
+            fixture: 'studyVersionImage',
+        }).as('imageStudyFixture');
+        cy.intercept('GET', '**/api/studies/coord-version-id*', {
+            fixture: 'studyVersionCoordinate',
+        }).as('coordStudyFixture');
     });
 
-    /**
-     * Currently the DB is not seeded with actual studies so this may fail
-     */
-    it('should load successfully', () => {
-        cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
-        cy.intercept('GET', `**/api/base-studies/**`, {
-            fixture: 'study',
-        }).as('studyFixture');
-        // .get('tr')
-        // .eq(2)
-        // .click()
-        // .wait('@realStudyFixture');
+    it('defaults to the latest version and shows type then version chips without a toggle', () => {
+        cy.visit(PATH);
+        cy.wait('@baseStudyFixture');
+        cy.wait('@imageStudyFixture');
+
+        cy.url().should('include', `/base-studies/${BASE_STUDY_ID}/image-version-id`);
+        cy.get('[data-testid="study-type-chip"]').should('contain.text', 'Images');
+        cy.get('[data-testid="study-version-chip"]').should('contain.text', 'Version: image-version-id');
+        cy.contains('button', 'CBMA').should('not.exist');
+        cy.contains('button', 'IBMA').should('not.exist');
+        cy.contains('label', 'Select version to view').should('exist');
     });
 
-    // describe('Cloning', () => {
-    //     it('should show a confirmation dialog if you have already cloned the study', () => {
-    //         cy.intercept(
-    //             'GET',
-    //             `**/api/studies/mock-study-id*`,
-    //             mockStudy({ user: 'auth0|62e0e6c9dd47048572613b4d' }) // mock a cloned study by replacing user with our test user
-    //         ).as('studyFixture');
+    it('selects the latest coordinate version when dataType=coordinate is present', () => {
+        cy.visit(`${PATH}?dataType=coordinate`);
+        cy.wait('@baseStudyFixture');
+        cy.wait('@coordStudyFixture');
 
-    //         cy.login('mocked')
-    //             .visit(PATH)
-    //             .wait('@studyFixture')
-    //             .get('body')
-    //             .contains('Clone Study')
-    //             .click()
-    //             .get('[role="dialog"]')
-    //             .should('be.visible');
-    //     });
+        cy.url().should('include', `/base-studies/${BASE_STUDY_ID}/coord-version-id`);
+        cy.url().should('include', 'dataType=coordinate');
+        cy.get('[data-testid="study-type-chip"]').should('contain.text', 'Coordinates');
+        cy.get('[data-testid="study-version-chip"]').should('contain.text', 'Version: coord-version-id');
+    });
 
-    //     it('should not show the confirmation dialog and directly clone the study', () => {
-    //         cy.intercept(
-    //             'GET',
-    //             `**/api/studies/**`,
-    //             mockStudy({ user: 'some-other-user' }) // mock a cloned study by replacing user with our test user
-    //         ).as('studyFixture');
+    it('selects the latest image version when dataType=image is present', () => {
+        cy.visit(`${PATH}?dataType=image`);
+        cy.wait('@baseStudyFixture');
+        cy.wait('@imageStudyFixture');
 
-    //         cy.intercept('POST', '**/api/studies/**', { statusCode: 201 }).as('studyPostRequest');
+        cy.url().should('include', `/base-studies/${BASE_STUDY_ID}/image-version-id`);
+        cy.get('[data-testid="study-type-chip"]').should('contain.text', 'Images');
+    });
 
-    //         cy.login('mocked')
-    //             .visit(PATH)
-    //             .wait('@studyFixture')
-    //             .get('body')
-    //             .contains('Clone Study')
-    //             .click()
-    //             .get('[role="dialog"]')
-    //             .should('not.exist');
-    //     });
-    // });
+    it('shows type prominently in the version dropdown options', () => {
+        cy.visit(`${PATH}/image-version-id`);
+        cy.wait('@baseStudyFixture');
+        cy.wait('@imageStudyFixture');
 
-    // describe('Tour ', () => {
-    //     beforeEach(() => {
-    //         cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
-    //             'studyFixture'
-    //         );
-    //     });
-
-    //     it('should open immediately if it is the users first time logging in', () => {
-    //         cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 1 })
-    //             .visit(PATH)
-    //             .wait('@studyFixture')
-    //             .get('.reactour__popover')
-    //             .should('exist')
-    //             .and('be.visible');
-    //     });
-
-    //     it('should not open immediately if it is not the first time logging in', () => {
-    //         cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
-    //             .visit(PATH)
-    //             .wait('@studyFixture')
-    //             .then(() => {
-    //                 cy.get('.reactour__popover').should('not.exist');
-    //             });
-    //     });
-
-    //     it('should open when the button is clicked', () => {
-    //         cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
-    //             .visit(PATH)
-    //             .wait('@studyFixture')
-    //             .get('[data-testid="HelpIcon"]')
-    //             .click()
-    //             .get('.reactour__popover')
-    //             .should('exist')
-    //             .and('be.visible');
-    //     });
-
-    //     it('should not open if its the first time logging in but the page has been seen already', () => {
-    //         cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 1 })
-    //             .get('body')
-    //             .click(0, 0)
-    //             .then((_res) => {
-    //                 localStorage.setItem(`hasSeen${PAGE_NAME}`, 'true');
-    //             })
-    //             .visit(PATH)
-    //             .wait('@studyFixture')
-    //             .get('.reactour__popover')
-    //             .should('not.exist');
-    //     });
-
-    //     it('should close when clicked out', () => {
-    //         // 1. ARRANGE
-    //         cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
-    //             .visit(PATH)
-    //             .wait('@studyFixture')
-    //             .get('[data-testid="HelpIcon"]')
-    //             .click()
-    //             .get('body')
-    //             .click(0, 0)
-    //             .get('.reactour__popover')
-    //             .should('not.exist');
-    //     });
-
-    //     it('should close when the close button is clicked', () => {
-    //         cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
-    //             .visit(PATH)
-    //             .wait('@studyFixture')
-    //             .get('[data-testid="HelpIcon"]')
-    //             .click()
-    //             .get('[aria-label="Close Tour"]')
-    //             .click()
-    //             .get('.react__popover')
-    //             .should('not.exist');
-    //     });
-    // });
+        cy.contains('label', 'Select version to view').parent().click();
+        cy.get('[role="listbox"]').within(() => {
+            cy.contains('Images').should('exist');
+            cy.contains('Coordinates').should('exist');
+            cy.contains('Owner: image-owner').should('exist');
+            cy.contains('Owner: coord-owner').should('exist');
+        });
+    });
 });

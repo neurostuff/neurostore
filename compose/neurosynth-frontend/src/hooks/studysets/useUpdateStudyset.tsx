@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { StudysetRequest, StudysetReturn } from 'neurostore-typescript-sdk';
 import API from 'api/api.config';
 import { useSnackbar } from 'notistack';
-import { STUDYSET_QUERY_STRING } from './useGetStudysetById';
+import studysetQueries from 'hooks/studysets/studysetQueries';
 
 const useUpdateStudyset = () => {
     const queryClient = useQueryClient();
@@ -17,12 +17,12 @@ const useUpdateStudyset = () => {
         mutationFn: (args) => API.NeurostoreServices.StudySetsService.studysetsIdPut(args.studysetId, args.studyset),
 
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [STUDYSET_QUERY_STRING] });
+            queryClient.invalidateQueries({ queryKey: studysetQueries.details() });
         },
 
         onError: () => {
             enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });
-        }
+        },
     });
 };
 

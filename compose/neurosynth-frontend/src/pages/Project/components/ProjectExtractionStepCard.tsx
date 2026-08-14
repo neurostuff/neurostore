@@ -6,11 +6,11 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import ProjectExtractionStep from './ProjectExtractionStep.style';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
-import { useGetExtractionSummary, useGetStudysetById } from 'hooks';
+import { useGetExtractionSummary, useGetStudysetNonNestedById } from 'hooks';
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
     useProjectExtractionStudysetId,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 
 const getPercentageComplete = (extractionSummary: IExtractionSummary): number => {
@@ -30,13 +30,13 @@ const ProjectExtractionStepCard = ({ disabled }: { disabled: boolean }) => {
         data: studyset,
         isError: getStudysetIsError,
         isLoading: getStudysetIsLoading,
-    } = useGetStudysetById(studysetId, false);
+    } = useGetStudysetNonNestedById(studysetId);
 
     const navigate = useNavigate();
 
     const handleMarkAllAsComplete = (confirm: boolean | undefined) => {
         if (studyset?.studies && confirm) {
-            setGivenStudyStatusesAsComplete((studyset.studies || []) as string[]);
+            setGivenStudyStatusesAsComplete(studyset.studies ?? []);
         }
         setMarkAllAsCompleteConfirmationDialogIsOpen(false);
     };

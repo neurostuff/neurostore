@@ -1,6 +1,6 @@
 import { Bookmark, CheckCircle, QuestionMark } from '@mui/icons-material';
 import { Box, ListItemIcon, ListItemText, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
-import { EExtractionStatus } from '../ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 
 const ExtractionStatusInput = (props: EExtractionStatus | undefined) => {
     switch (props) {
