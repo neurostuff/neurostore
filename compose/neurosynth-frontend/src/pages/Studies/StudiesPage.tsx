@@ -34,8 +34,8 @@ const StudiesPage = () => {
 
     const handleStudyRowClick = (baseStudyId: string | undefined) => {
         if (!baseStudyId) return;
-        const typeQuery = dataType && dataType !== SearchDataType.ALL ? `?type=${dataType}` : '';
-        navigate(`/base-studies/${baseStudyId}${typeQuery}`);
+        const dataTypeQuery = dataType && dataType !== SearchDataType.ALL ? `?dataType=${dataType}` : '';
+        navigate(`/base-studies/${baseStudyId}${dataTypeQuery}`);
     };
 
     return (

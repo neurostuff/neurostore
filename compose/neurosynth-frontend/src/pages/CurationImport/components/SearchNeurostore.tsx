@@ -188,11 +188,11 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
                                 key={studyrow.id || index}
                                 onClick={() => {
                                     if (!studyrow.id) return;
-                                    const typeQuery =
+                                    const dataTypeQuery =
                                         searchCriteria.dataType && searchCriteria.dataType !== SearchDataType.ALL
-                                            ? `?type=${searchCriteria.dataType}`
+                                            ? `?dataType=${searchCriteria.dataType}`
                                             : '';
-                                    navigate(`/base-studies/${studyrow.id}${typeQuery}`);
+                                    navigate(`/base-studies/${studyrow.id}${dataTypeQuery}`);
                                 }}
                             >
                                 <TableCell>

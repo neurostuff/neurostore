@@ -88,7 +88,7 @@ describe('NavDrawer component', () => {
         expect(createProjectButton?.tagName).toBe('BUTTON');
         await userEvent.click(createProjectButton!);
 
-        await userEvent.click(screen.getByRole('button', { name: 'Create new CBMA project' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Create new project' }));
 
         await waitFor(() => {
             expect(mockProjectsSearchHelper).toHaveBeenCalled();
@@ -110,7 +110,7 @@ describe('NavDrawer component', () => {
         await userEvent.click(createProjectButton!);
 
         await userEvent.click(screen.getByRole('button', { name: /IBMA BETA/i }));
-        await userEvent.click(screen.getByRole('button', { name: 'Create new IBMA project' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Create new project' }));
 
         await waitFor(() => {
             expect(mockProjectsSearchHelper).toHaveBeenCalled();

@@ -24,28 +24,28 @@ describe(PAGE_NAME, () => {
             }).as('studiesRequest');
         });
 
-        it('navigates with type=image when the image filter is active', () => {
+        it('navigates with dataType=image when the image filter is active', () => {
             cy.visit(`${PATH}?dataType=image`);
             cy.wait('@studiesRequest');
             cy.contains('Hemispheric specialization').parents('tr').first().click();
             cy.url().should('include', '/base-studies/4JnokyihF8Ao');
-            cy.url().should('include', 'type=image');
+            cy.url().should('include', 'dataType=image');
         });
 
-        it('navigates with type=coordinate when the coordinate filter is active', () => {
+        it('navigates with dataType=coordinate when the coordinate filter is active', () => {
             cy.visit(`${PATH}?dataType=coordinate`);
             cy.wait('@studiesRequest');
             cy.contains('Hemispheric specialization').parents('tr').first().click();
             cy.url().should('include', '/base-studies/4JnokyihF8Ao');
-            cy.url().should('include', 'type=coordinate');
+            cy.url().should('include', 'dataType=coordinate');
         });
 
-        it('navigates without type when the All filter is active', () => {
+        it('navigates without dataType when the All filter is active', () => {
             cy.visit(`${PATH}?dataType=all`);
             cy.wait('@studiesRequest');
             cy.contains('Hemispheric specialization').parents('tr').first().click();
             cy.url().should('include', '/base-studies/4JnokyihF8Ao');
-            cy.url().should('not.include', 'type=');
+            cy.url().should('not.include', 'dataType=');
         });
     });
 });

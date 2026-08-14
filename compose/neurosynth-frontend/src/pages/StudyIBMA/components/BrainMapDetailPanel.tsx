@@ -167,7 +167,7 @@ const BrainMapDetailPanel: React.FC<{
     }
 
     return (
-        <Stack spacing={2} p={{ xs: 2, lg: 6 }} data-testid="brain-map-detail-panel">
+        <Stack spacing={2} p={2} data-testid="brain-map-detail-panel">
             <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1} minWidth={0}>
                 <Typography sx={{ wordBreak: 'break-word' }} variant="subtitle1" fontWeight="bold" title={displayName}>
                     {displayName}

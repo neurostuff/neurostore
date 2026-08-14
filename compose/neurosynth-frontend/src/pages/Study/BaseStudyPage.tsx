@@ -29,9 +29,11 @@ const BaseStudyPage = () => {
     const navigate = useNavigate();
     const initStudyStore = useInitStudyStore();
     const [searchParams] = useSearchParams();
-    const typeParam = searchParams.get('type');
+    const dataTypeParam = searchParams.get('dataType');
     const preferredType =
-        typeParam === SearchDataType.IMAGE || typeParam === SearchDataType.COORDINATE ? typeParam : undefined;
+        dataTypeParam === SearchDataType.IMAGE || dataTypeParam === SearchDataType.COORDINATE
+            ? dataTypeParam
+            : undefined;
 
     const { baseStudyId, studyVersionId } = useParams<{
         baseStudyId: string;

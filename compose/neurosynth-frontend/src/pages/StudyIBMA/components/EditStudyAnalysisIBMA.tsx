@@ -68,7 +68,6 @@ const EditStudyAnalysisIBMA: React.FC = () => {
                         minWidth: 250,
                         maxHeight: STUDY_ANALYSIS_TABLE_MAX_HEIGHT,
                         overflow: 'auto',
-                        p: 2,
                     }}
                 >
                     <BrainMapDetailPanel image={selectedImage} onClose={() => toggleImageSelection?.()} />

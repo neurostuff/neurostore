@@ -34,19 +34,19 @@ describe(PAGE_NAME, () => {
         cy.contains('label', 'Select version to view').should('exist');
     });
 
-    it('selects the latest coordinate version when type=coordinate is present', () => {
-        cy.visit(`${PATH}?type=coordinate`);
+    it('selects the latest coordinate version when dataType=coordinate is present', () => {
+        cy.visit(`${PATH}?dataType=coordinate`);
         cy.wait('@baseStudyFixture');
         cy.wait('@coordStudyFixture');
 
         cy.url().should('include', `/base-studies/${BASE_STUDY_ID}/coord-version-id`);
-        cy.url().should('include', 'type=coordinate');
+        cy.url().should('include', 'dataType=coordinate');
         cy.get('[data-testid="study-type-chip"]').should('contain.text', 'Coordinates');
         cy.get('[data-testid="study-version-chip"]').should('contain.text', 'Version: coord-version-id');
     });
 
-    it('selects the latest image version when type=image is present', () => {
-        cy.visit(`${PATH}?type=image`);
+    it('selects the latest image version when dataType=image is present', () => {
+        cy.visit(`${PATH}?dataType=image`);
         cy.wait('@baseStudyFixture');
         cy.wait('@imageStudyFixture');
 

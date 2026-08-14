@@ -176,7 +176,8 @@ describe('ExtractionTable', () => {
 
         it('should change the study status', () => {
             // ARRANGE
-            cy.get('tbody > tr').eq(0).get('td').eq(5).as('getFirstRowStudyStatusCol');
+            cy.wait('@studysetFixture');
+            cy.get('tbody > tr').eq(0).find('td').eq(5).as('getFirstRowStudyStatusCol');
             cy.get('@getFirstRowStudyStatusCol').within(() => {
                 cy.get('button').eq(0).should('have.class', 'MuiButton-contained');
             });

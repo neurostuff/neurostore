@@ -32,9 +32,7 @@ const EditableDisplayLink = ({  linkProps, label, noLabelText = '', textEditProp
             >
                 {textEditProps.textToEdit ? (
                     <Tooltip title={tooltip} placement="top">
-                        <>
-                            <DisplayLink label={label} {...linkProps} />
-                        </>
+                        <DisplayLink label={label} {...linkProps} />
                     </Tooltip>
                 ) : (
                     <Typography sx={{ color: textEditProps.textToEdit ? 'initial' : 'warning.dark' }} variant="body2">
