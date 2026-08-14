@@ -4,19 +4,19 @@ import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
-import SearchContainer from 'components/Search/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { studiesToStubs } from 'helpers/Curation.helpers';
-import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
+import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies.helpers';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
-import { SearchCriteria } from 'pages/Study/Study.types';
+import { useProjectId } from 'stores/projects/ProjectStore';
+import { SearchCriteria, SearchDataType } from 'pages/Study/Study.types';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import CurationImportStyles from '../CurationImport.styles';
 import { IImportArgs } from './ImportDoImport';
 import LoadingButton from 'components/Buttons/LoadingButton';
+import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
 
 const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }) => {
     const [importIsLoading, setImportIsLoading] = useState(false);
@@ -136,7 +136,7 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
 
     return (
         <StateHandlerComponent isLoading={false} isError={false}>
-            <SearchContainer
+            <StudiesSearchContainer
                 error={error}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
@@ -186,7 +186,14 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
                                 data-tour={index === 0 ? 'StudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
                                 key={studyrow.id || index}
-                                onClick={() => navigate(`/base-studies/${studyrow.id}`)}
+                                onClick={() => {
+                                    if (!studyrow.id) return;
+                                    const dataTypeQuery =
+                                        searchCriteria.dataType && searchCriteria.dataType !== SearchDataType.ALL
+                                            ? `?dataType=${searchCriteria.dataType}`
+                                            : '';
+                                    navigate(`/base-studies/${studyrow.id}${dataTypeQuery}`);
+                                }}
                             >
                                 <TableCell>
                                     {studyrow?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
@@ -209,7 +216,7 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
                         ))}
                     />
                 </Box>
-            </SearchContainer>
+            </StudiesSearchContainer>
 
             <Box sx={CurationImportStyles.actionsContainer}>
                 <Button

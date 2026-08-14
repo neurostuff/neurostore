@@ -2,7 +2,7 @@ import { ErrorOutline } from '@mui/icons-material';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
-import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
+import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import React, { useMemo } from 'react';
 
 const StudyAnalysesListItem = React.memo(
@@ -37,7 +37,7 @@ const StudyAnalysesListItem = React.memo(
                     <ListItemText
                         sx={{ wordBreak: 'break-word', color: analysis?.name ? '' : 'warning.dark' }}
                         secondaryTypographyProps={{
-                            color: analysis?.description ? '' : 'warning.dark',
+                            color: analysis?.description ? 'muted.main' : 'warning.dark',
                         }}
                         primaryTypographyProps={{
                             variant: mdDown ? 'caption' : 'body1',

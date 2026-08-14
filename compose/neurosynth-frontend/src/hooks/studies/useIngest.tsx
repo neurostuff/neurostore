@@ -3,6 +3,7 @@ import { BaseStudiesPost200Response, BaseStudiesPostRequest } from 'neurostore-t
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API from 'api/api.config';
+import studyQueries from 'hooks/studies/studyQueries';
 
 /**
  * This API call to the POST /base-studies endpoint does our ingestion step (previously this was handled in the FE 1 API call at a time)
@@ -20,7 +21,7 @@ const useIngest = () => {
 
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ['studies'],
+                queryKey: studyQueries.studies.all(),
             });
         },
 

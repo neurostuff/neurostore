@@ -1,50 +1,24 @@
-import { axiosInstance, neurostoreConfig, neurosynthConfig } from './api.state';
-import {
-    StudiesApi,
-    StoreApi,
-    ConditionsApi,
-    AnnotationsApi as NeurostoreAnnotationsApi,
-    UserApi,
-    PointsApi,
-    ImagesApi,
-    AnalysesApi,
-    AnnotationBase,
-    ResourceAttributes,
-    Clone,
-    AnnotationReturnRelationships,
-    AnnotationCommon,
-} from '../neurostore-typescript-sdk';
-import {
-    SpecificationsApi,
-    MetaAnalysesApi,
-    AnnotationsApi as NeurosynthAnnotationApi,
-    StudysetsApi as NeurosynthStudysetApi,
-    ProjectsApi,
-    DefaultApi as NeurosynthDefaultApi,
-} from '../neurosynth-compose-typescript-sdk';
 import {
     EAIExtractors,
     IParticipantDemographicExtractor,
     ITaskExtractor,
 } from 'hooks/extractions/useGetAllExtractedDataForStudies';
-
-export type NeurostoreAnnotation = AnnotationBase &
-    ResourceAttributes &
-    Clone &
-    AnnotationReturnRelationships &
-    AnnotationCommon;
+import { StoreApi } from '../neurostore-typescript-sdk';
+import { ComposeApi } from '../neurosynth-compose-typescript-sdk';
+import { axiosInstance, neurostoreConfig, neurosynthConfig } from './api.state';
 
 const storeApi = new StoreApi(neurostoreConfig, undefined, axiosInstance);
+const composeApi = new ComposeApi(neurosynthConfig, undefined, axiosInstance);
 
 const NeurostoreServices = {
     StudiesService: storeApi,
-    BaseStudiesService: new StudiesApi(neurostoreConfig, undefined, axiosInstance),
-    AnalysesService: new AnalysesApi(neurostoreConfig, undefined, axiosInstance),
-    ConditionsService: new ConditionsApi(neurostoreConfig, undefined, axiosInstance),
+    BaseStudiesService: storeApi,
+    AnalysesService: storeApi,
+    ConditionsService: storeApi,
     StudySetsService: storeApi,
-    ImagesService: new ImagesApi(neurostoreConfig, undefined, axiosInstance),
-    PointsService: new PointsApi(neurostoreConfig, undefined, axiosInstance),
-    UsersService: new UserApi(neurostoreConfig, undefined, axiosInstance),
+    ImagesService: storeApi,
+    PointsService: storeApi,
+    UsersService: storeApi,
     ExtractedDataResultsService: {
         getAllExtractedDataResults: (extractors: EAIExtractors[], baseStudyIds?: string[]) => {
             const extractorsSegment = extractors.reduce((acc, curr, index) => {
@@ -82,16 +56,16 @@ const NeurostoreServices = {
             );
         },
     },
-    AnnotationsService: new NeurostoreAnnotationsApi(neurostoreConfig, undefined, axiosInstance),
+    AnnotationsService: storeApi,
 };
 
 const NeurosynthServices = {
-    MetaAnalysisService: new MetaAnalysesApi(neurosynthConfig, undefined, axiosInstance),
-    SpecificationsService: new SpecificationsApi(neurosynthConfig, undefined, axiosInstance),
-    StudysetsService: new NeurosynthStudysetApi(neurosynthConfig, undefined, axiosInstance),
-    AnnotationsService: new NeurosynthAnnotationApi(neurosynthConfig, undefined, axiosInstance),
-    ProjectsService: new ProjectsApi(neurosynthConfig, undefined, axiosInstance),
-    NeurosynthDefaultApi: new NeurosynthDefaultApi(neurosynthConfig, undefined, axiosInstance),
+    MetaAnalysisService: composeApi,
+    SpecificationsService: composeApi,
+    StudysetsService: composeApi,
+    AnnotationsService: composeApi,
+    ProjectsService: composeApi,
+    NeurosynthDefaultApi: composeApi,
 };
 
 const API = {

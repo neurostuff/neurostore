@@ -1,33 +1,39 @@
 import { ErrorOutline } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import LoadingButton from 'components/Buttons/LoadingButton';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
+import { useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
+import annotationQueries from 'hooks/annotations/annotationQueries';
+import { BaseStudyReturnInfo } from 'hooks/studies/studyQueries.types';
 import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
+import studysetQueries from 'hooks/studysets/studysetQueries';
+import { BaseStudy } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
+import { useState } from 'react';
 import {
     useAllowEditMetaAnalyses,
+    useProjectAnalysisType,
     useProjectCurationColumn,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
-} from 'pages/Project/store/ProjectStore';
-import { useState } from 'react';
-import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+} from 'stores/projects/ProjectStore';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
-import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
-import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import { SearchDataType } from 'pages/Study/Study.types';
 
 const ExtractionOutOfSync = () => {
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
-    const { data: studyset } = useGetStudysetById(studysetId, false, false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const numColumns = useProjectNumCurationColumns();
     const setAllowEditMetaAnalyses = useAllowEditMetaAnalyses();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
+    const projectAnalysisType = useProjectAnalysisType();
     const { mutateAsync: ingest } = useIngest();
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
-    const getStudysetIsRefetching = useIsFetching({ queryKey: [STUDYSET_QUERY_STRING] });
+    const getStudysetIsRefetching = useIsFetching({ queryKey: studysetQueries.all() });
     const { enqueueSnackbar } = useSnackbar();
     const queryClient = useQueryClient();
 
@@ -38,7 +44,7 @@ const ExtractionOutOfSync = () => {
         setIsLoading(true);
 
         // studyset_studies is the canonical list (id + curation_stub_uuid); studies is always in sync with it.
-        const studysetStudies = studyset?.studyset_studies || [];
+        const studysetStudies = studyset?.studyset_studies ?? [];
         const stubToStudyId = new Map<string, string>();
         const studiesInStudyset = new Set<string>();
         studysetStudies.forEach((assoc) => {
@@ -80,13 +86,14 @@ const ExtractionOutOfSync = () => {
 
         try {
             const returnedBaseStudies = stubsToBaseStudies.length
-                ? ((await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturn>)
+                ? ((await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturnInfo>)
                 : [];
 
             const newStubPayload = mapStubsToStudysetPayload(
                 stubsNeedingIngest,
                 returnedBaseStudies,
-                studiesInStudyset
+                studiesInStudyset,
+                projectAnalysisType === EAnalysisType.IBMA ? SearchDataType.IMAGE : SearchDataType.COORDINATE
             );
             const studiesPayload = [...existingStubPayload, ...newStubPayload];
 
@@ -99,11 +106,9 @@ const ExtractionOutOfSync = () => {
 
             // Invalidate cached studyset data to ensure subsequent queries reflect the newly updated stub mappings,
             // keeping curation and extraction aligned.
-            await queryClient.invalidateQueries({ queryKey: [STUDYSET_QUERY_STRING] });
+            await queryClient.invalidateQueries({ queryKey: studysetQueries.all() });
 
-            queryClient.invalidateQueries({
-                queryKey: ['annotations'],
-            });
+            queryClient.invalidateQueries({ queryKey: annotationQueries.all() });
 
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });
 

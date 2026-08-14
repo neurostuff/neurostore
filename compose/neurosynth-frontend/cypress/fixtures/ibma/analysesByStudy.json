@@ -1,0 +1,57 @@
+{
+    "metadata": {},
+    "results": [
+        {
+            "id": "5KyvcoE3eE8f",
+            "name": "Analysis 1",
+            "description": "First contrast",
+            "study": "b-mock-study-id",
+            "images": [
+                {
+                    "id": "img-assigned-1",
+                    "filename": "assigned_map.nii",
+                    "analysis": "5KyvcoE3eE8f",
+                    "value_type": "T",
+                    "public": true,
+                    "created_at": "2023-01-01T00:00:00Z",
+                    "updated_at": null,
+                    "user": null,
+                    "username": null,
+                    "metadata": null,
+                    "space": null,
+                    "add_date": null,
+                    "url": null,
+                    "analysis_name": null
+                }
+            ],
+            "points": [],
+            "conditions": []
+        },
+        {
+            "id": "B7GDVjuVThso",
+            "name": "Analysis 2",
+            "description": "Second contrast",
+            "study": "b-mock-study-id",
+            "images": [
+                {
+                    "id": "img-orphan-1",
+                    "filename": "orphan_map.nii",
+                    "analysis": null,
+                    "value_type": "T",
+                    "public": true,
+                    "created_at": "2023-01-01T00:00:00Z",
+                    "updated_at": null,
+                    "user": null,
+                    "username": null,
+                    "metadata": null,
+                    "space": null,
+                    "add_date": null,
+                    "url": null,
+                    "analysis_name": null
+                }
+            ],
+            "points": [],
+            "conditions": []
+        }
+    ]
+}

@@ -1,37 +1,63 @@
-import { Box, Chip, Divider, TableCell, TableRow, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Paper, TableCell, TableRow, Tooltip, Typography } from '@mui/material';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
-import { sortMetadataArrayFn } from 'pages/Study/components/EditStudyMetadata';
+import { sortMetadataArrayFn } from 'pages/StudyCBMA/components/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthTable, { getValue } from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import { IStoreStudy } from 'pages/Study/store/StudyStore.helpers';
 import { Optional } from 'utils/utilitytypes';
-import StudyAnalyses from './StudyAnalyses';
+import StudyAnalyses from 'pages/Study/components/StudyAnalyses';
+import StudyAnalysesIBMA from 'pages/Study/components/StudyAnalysesIBMA';
 import StudyStyles from './Study.styles';
 import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
+import { IStoreStudy } from 'stores/study/StudyStore.helpers';
 
 const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
-    const { id, name, description, doi, pmid, authors, publication: journal, metadata, pmcid, analyses = [] } = props;
+    const {
+        id,
+        name,
+        description,
+        doi,
+        pmid,
+        authors,
+        publication: journal,
+        metadata,
+        pmcid,
+        analyses = [],
+        has_images: hasImages,
+    } = props;
+
+    const isImageVersion = Boolean(hasImages);
+    const studyTypeLabel = isImageVersion ? 'Images' : 'Coordinates';
+
     return (
         <Box>
             <Box data-tour="StudyPage-1">
-                <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', mb: '0.5rem' }}>
+                    <Chip
+                        variant="filled"
+                        color="primary"
+                        sx={{ borderRadius: '4px' }}
+                        size="medium"
+                        label={studyTypeLabel}
+                        data-testid="study-type-chip"
+                    />
                     {id && (
                         <Chip
-                            variant="filled"
                             color="primary"
-                            sx={{ marginRight: '5px', borderRadius: '8px', marginBottom: '0.5rem' }}
+                            variant="outlined"
+                            sx={{ borderRadius: '4px' }}
                             size="medium"
-                            label={id ? `Version: ${id}` : ''}
+                            label={`Version: ${id}`}
+                            data-testid="study-version-chip"
                         />
                     )}
-                    <Typography variant="h6">
-                        <b>{name}</b>
-                    </Typography>
                 </Box>
+                <Typography variant="h6">
+                    <b>{name}</b>
+                </Typography>
                 <Typography>{authors}</Typography>
                 <Box>
                     <Typography gutterBottom>{journal}</Typography>
@@ -123,29 +149,23 @@ const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
             )}
 
             <Box>
-                <Typography
-                    data-tour="StudyPage-3"
-                    variant="h6"
-                    sx={[
-                        {
-                            fontWeight: 'bold',
-                        },
-                        StudyStyles.spaceBelow,
-                    ]}
-                >
-                    Analyses
-                </Typography>
+                <Paper sx={{ display: 'flex', alignItems: 'center', p: 2, mb: 2 }} variant="outlined">
+                    <Typography data-tour="StudyPage-3" variant="h6" fontWeight="bold">
+                        Analyses
+                    </Typography>
+                </Paper>
                 {analyses?.length === 0 ? (
                     <Box sx={{ color: 'warning.dark', margin: '15px 0 0 15px' }}>
                         There are no analyses for this study.
                     </Box>
                 ) : (
-                    <>
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            <Divider />
+                    <Box sx={{ marginBottom: '1rem' }}>
+                        {isImageVersion ? (
+                            <StudyAnalysesIBMA id={id} analyses={analyses} />
+                        ) : (
                             <StudyAnalyses id={id} analyses={analyses} />
-                        </Box>
-                    </>
+                        )}
+                    </Box>
                 )}
             </Box>
         </Box>

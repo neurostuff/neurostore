@@ -25,7 +25,7 @@ export const CuratorTableHeader = ({ table, column }: HeaderContext<ICurationTab
                 padding: '3px 0',
             }}
         >
-            {column.columnDef.meta?.AIExtractor ? <AIICon sx={{ marginRight: '4px' }} /> : <></>}
+            {column.columnDef.meta?.curatorTableColumnAIExtractor ? <AIICon sx={{ marginRight: '4px' }} /> : <></>}
             <Tooltip title={columnLabel} placement="top">
                 <Typography variant="body2" sx={{ marginRight: '2px' }} noWrap>
                     {columnLabel}

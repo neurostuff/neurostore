@@ -7,13 +7,12 @@ import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotatio
 import { getDefaultForNoteKey, noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
 import { CellChange, CellCoords } from 'handsontable';
 import { registerAllModules } from 'handsontable/registry';
-import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
+import { useGetWindowHeight, useUpdateAnnotationByAnnotationAndAnalysisIds, useUpdateAnnotationById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
-import { useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectUser } from 'stores/projects/ProjectStore';
 import React, { useEffect, useRef } from 'react';
 import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
-import useUpdateAnnotationByAnnotationAndAnalysisId from 'hooks/annotations/useUpdateAnnotationByAnnotationAndAnalysisId';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 
 registerAllModules();
@@ -24,7 +23,7 @@ const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
         props.annotationId
     );
     const { mutate: updateAnnotationNoNoteKeys, isPending: updateAnnotationNoNoteKeysIsLoading } =
-        useUpdateAnnotationByAnnotationAndAnalysisId(props.annotationId);
+        useUpdateAnnotationByAnnotationAndAnalysisIds(props.annotationId);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const hotTableRef = useRef<HotTableRef>(null);

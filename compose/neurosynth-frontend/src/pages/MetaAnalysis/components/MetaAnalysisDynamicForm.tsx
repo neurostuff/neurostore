@@ -1,4 +1,6 @@
-import { Alert, Box, Checkbox, FormControlLabel, Link, List, ListItem, Switch, Typography } from '@mui/material';
+import { Alert, Box, Checkbox, FormControlLabel, Link, List, ListItem, Typography } from '@mui/material';
+import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import {
     IDynamicFormInput,
     IDynamicValueType,
@@ -6,18 +8,16 @@ import {
     IParameter,
     KWARG_STRING,
 } from 'pages/MetaAnalysis/components/DynamicForm.types';
+import { useState, type ComponentType } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import { useProjectId } from 'stores/projects/ProjectStore';
+import useStudiesWithMissingSampleSizeALE from '../hooks/useALEMissingSampleSize';
 import DynamicFormBoolInput from './DynamicFormBoolInput';
 import DynamicFormKwargInput from './DynamicFormKwargInput';
 import DynamicFormNumericInput from './DynamicFormNumericInput';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
 import DynamicFormStringInput from './DynamicFormStringInput';
-import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
-import { useState, type ComponentType } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import DynamicFormStyles from './DynamicFormStyles';
-import useStudiesWithMissingSampleSizeALE from '../hooks/useALEMissingSampleSize';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 export const isALE = (correctorOrEstimatorLabel: string) => correctorOrEstimatorLabel === 'ALE';

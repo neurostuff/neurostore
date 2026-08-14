@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { getAuthorsShortName } from 'helpers/utils';
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import { IExtractionTableStudy } from 'pages/Extraction/components/ExtractionTable';
 
@@ -176,7 +176,8 @@ describe('ExtractionTable', () => {
 
         it('should change the study status', () => {
             // ARRANGE
-            cy.get('tbody > tr').eq(0).get('td').eq(5).as('getFirstRowStudyStatusCol');
+            cy.wait('@studysetFixture');
+            cy.get('tbody > tr').eq(0).find('td').eq(5).as('getFirstRowStudyStatusCol');
             cy.get('@getFirstRowStudyStatusCol').within(() => {
                 cy.get('button').eq(0).should('have.class', 'MuiButton-contained');
             });

@@ -3,7 +3,7 @@ import LoadingButton from 'components/Buttons/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateAlgorithmSpecification, useGetAnnotationById } from 'hooks';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import DynamicInputDisplay from 'pages/MetaAnalysis/components/DynamicInputDisplay';
@@ -14,7 +14,7 @@ import {
     useProjectId,
     useProjectMetaAnalyses,
     useUpdateProjectMetaAnalyses,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IAlgorithmSelection, IAnalysesSelection } from './CreateMetaAnalysisSpecificationDialogBase.types';
