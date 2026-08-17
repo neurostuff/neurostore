@@ -12,7 +12,7 @@ authors = [
 license = { text = "MIT" }
 dependencies = [
     "auth0-python~=6.2",
-    "alembic~=1.18",
+    "alembic~=1.19",
     "connexion[swagger-ui,uvicorn]==3.3.0",
     "cachelib~=0.15",
     "gunicorn~=26.0",
