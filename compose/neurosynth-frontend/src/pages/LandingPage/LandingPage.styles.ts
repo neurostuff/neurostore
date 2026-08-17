@@ -36,7 +36,7 @@ const LandingPageStyles: Style = {
         justifyContent: 'space-between',
         gap: {
             xs: 0,
-            lg: 6,
+            lg: 8,
         },
         flexDirection: {
             xs: 'column',
@@ -185,7 +185,6 @@ const LandingPageStyles: Style = {
         borderBottomRightRadius: { lg: 0 },
         borderTopRightRadius: { lg: 0 },
         pl: { xs: 2.5, md: 4, lg: 7 },
-        pr: { xs: 2.5, md: 3.5, lg: 4 },
         py: { xs: 3, lg: 3 },
         my: { lg: 4.5 },
         minHeight: { lg: 'min(480px, calc(100vh - 64px - 72px))' },
