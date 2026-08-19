@@ -117,18 +117,40 @@ def ingest_neurosynth(max_rows):
 
 @main.command("ingest-neurovault")
 @click.option(
-    "--verbose/-v", default=False, help="increase verbosity downloading neurovault"
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="increase verbosity downloading neurovault",
 )
 @click.option(
-    "--limit/-l", default=None, help="number of neurovault studies to download"
+    "-l",
+    "--limit",
+    type=int,
+    default=None,
+    help="number of neurovault studies to download (all of them by default)",
 )
-def ingest_neurovault(verbose, limit):
+@click.option(
+    "--max-images",
+    type=int,
+    default=None,
+    help="skip collections holding this many images or more",
+)
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    default=False,
+    help="re-check collections that are already ingested and add any missing images",
+)
+def ingest_neurovault(verbose, limit, max_images, overwrite):
     def _run(_app, _db):
         from neurostore import ingest
 
         ingest.ingest_neurovault(
             verbose=verbose,
-            limit=int(limit) if limit is not None else None,
+            limit=limit,
+            overwrite=overwrite,
+            max_images=max_images,
         )
 
     _run_with_runtime(_run)

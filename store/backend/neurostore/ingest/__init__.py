@@ -53,8 +53,7 @@ def _coerce_optional_int(value):
     return int(float(value))
 
 
-def _recompute_base_study_flags(base_studies):
-    base_study_ids = [getattr(base_study, "id", None) for base_study in base_studies]
+def _recompute_base_study_flag_ids(base_study_ids):
     base_study_ids = [
         base_study_id for base_study_id in base_study_ids if base_study_id
     ]
@@ -66,127 +65,307 @@ def _recompute_base_study_flags(base_studies):
     db.session.remove()
 
 
-def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
-    # Store existing studies for quick lookup
-    all_studies = {
-        str(s.source_id): s for s in Study.query.filter_by(source="neurovault").all()
+def _recompute_base_study_flags(base_studies):
+    _recompute_base_study_flag_ids(
+        [getattr(base_study, "id", None) for base_study in base_studies]
+    )
+
+
+NEUROVAULT_COLLECTIONS_URL = "https://neurovault.org/api/collections.json"
+NEUROVAULT_IMAGES_URL = "https://neurovault.org/api/collections/{}/images/?format=json"
+
+
+def _neurovault_image_key(image_data):
+    """Identify a NeuroVault image so re-ingests can tell new from stored images."""
+    image_data = image_data or {}
+    image_id = image_data.get("id")
+    if image_id is not None:
+        return ("id", str(image_id))
+    return ("file", image_data.get("file"))
+
+
+def _stored_image_key(image):
+    key = _neurovault_image_key(image.data)
+    if key[1] is None:
+        return ("file", image.url)
+    return key
+
+
+def _fetch_neurovault_images(collection_id, verbose=False):
+    """Return every image in a collection, following NeuroVault's pagination.
+
+    The images endpoint pages at 100 results, so reading only the first page
+    silently truncates larger collections.
+    """
+    url = NEUROVAULT_IMAGES_URL.format(collection_id)
+    results = []
+    seen_urls = set()
+    while url and url not in seen_urls:
+        seen_urls.add(url)
+        payload = requests.get(url).json()
+        results.extend(payload.get("results") or [])
+        url = payload.get("next")
+    if verbose:
+        print(
+            "Fetched {} image(s) for collection {}".format(len(results), collection_id)
+        )
+    return results
+
+
+def _neurovault_ingested_image_counts():
+    """Map each ingested neurovault collection id to how many images are stored."""
+    rows = (
+        db.session.query(Study.source_id, sa.func.count(Image.id))
+        .outerjoin(Image, Image.study_id == Study.id)
+        .filter(Study.source == "neurovault", Study.source_id.isnot(None))
+        .group_by(Study.source_id)
+        .all()
+    )
+    return {str(source_id): count for source_id, count in rows}
+
+
+def _load_conditions(names):
+    """Look up the conditions referenced by a batch of neurovault images."""
+    names = {name for name in names if name}
+    if not names:
+        return {}
+    return {
+        cond.name: cond
+        for cond in Condition.query.filter(Condition.name.in_(names)).all()
     }
 
-    def add_collection(data):
-        collection_id = data.get("id")
-        if str(collection_id) in all_studies and not overwrite:
-            print(
-                "Skipping collection {} with DOI {} (already exists)...".format(
-                    collection_id, data.get("DOI")
+
+def _build_neurovault_images(
+    study,
+    image_payloads,
+    collection_space,
+    analyses,
+    existing_conditions,
+    start_order=0,
+):
+    """Create Analysis/Image rows for image_payloads, reusing analyses by name.
+
+    Issues no queries: callers construct these objects only after every lookup is
+    done, so autoflush cannot fire while a transient row hangs off a persistent one.
+    """
+    new_objects = []
+    conditions = set()
+    order = start_order
+    space = collection_space
+    for img in image_payloads:
+        aname = img.get("name")
+        analysis = None
+        if aname and aname not in analyses:
+            condition = img.get("cognitive_paradigm_cogatlas")
+            analysis = Analysis(
+                name=aname,
+                description=img["description"],
+                study=study,
+                order=order,
+            )
+            order += 1
+            if condition:
+                cond = next(
+                    (cond for cond in conditions if cond.name == condition),
+                    existing_conditions.get(condition),
                 )
-            )
-            return
-        collection_id = data.pop("id")
-        doi = data.pop("DOI", None)
-        base_study = None
-        if doi:
-            base_study = BaseStudy.query.filter_by(doi=doi).one_or_none()
+                if cond is None:
+                    cond = Condition(name=condition)
+                    existing_conditions[condition] = cond
+                conditions.add(cond)
 
-        if base_study is None:
-            base_study = BaseStudy(
-                name=data.pop("name", None),
-                description=data.pop("description", None),
-                doi=doi,
-                authors=data.pop("authors", None),
-                publication=data.pop("journal_name", None),
-                metadata_=data,
-                level="group",
-            )
-        s = Study(
-            name=data.pop("name", None) or base_study.name,
-            description=data.pop("description", None) or base_study.description,
-            doi=doi,
-            pmid=base_study.pmid,
-            authors=data.pop("authors", None) or base_study.authors,
-            publication=data.pop("journal_name", None) or base_study.publication,
-            source_id=collection_id,
-            metadata_=data,
-            source="neurovault",
-            level="group",
-            base_study=base_study,
-        )
-
-        space = data.get("coordinate_space", None)
-        # Process images
-        url = "https://neurovault.org/api/collections/{}/images/?format=json"
-        image_url = url.format(collection_id)
-        data = requests.get(image_url).json()
-        analyses = {}
-        images = []
-        conditions = set()
-        existing_conditions = {cond.name: cond for cond in Condition.query.all()}
-        order = 0
-        for img in data["results"]:
-            aname = img.get("name")
-            analysis = None
-            if aname and aname not in analyses:
-                condition = img.get("cognitive_paradigm_cogatlas")
-                analysis_kwargs = {
-                    "name": aname,
-                    "description": img["description"],
-                    "study": s,
-                    "order": order,
-                }
-                order += 1
-                analysis = Analysis(**analysis_kwargs)
-                if condition:
-                    cond = next(
-                        (cond for cond in conditions if cond.name == condition),
-                        existing_conditions.get(condition),
+                if getattr(cond, "id", None):
+                    analysis.analysis_conditions.append(
+                        AnalysisConditions(weight=1, condition_id=cond.id)
                     )
-                    if cond is None:
-                        cond = Condition(name=condition)
-                        existing_conditions[condition] = cond
-                    conditions.add(cond)
+                else:
+                    analysis.analysis_conditions.append(
+                        AnalysisConditions(weight=1, condition=cond)
+                    )
 
-                    if getattr(cond, "id", None):
-                        analysis.analysis_conditions.append(
-                            AnalysisConditions(weight=1, condition_id=cond.id)
-                        )
-                    else:
-                        analysis.analysis_conditions.append(
-                            AnalysisConditions(weight=1, condition=cond)
-                        )
-
-                analyses[aname] = analysis
-            elif aname:
-                analysis = analyses[aname]
-            space = space or "Unknown" if img.get("not_mni", False) else "MNI"
-            type_ = canonicalize_map_type(img.get("map_type"))
-            entities = []
-            if analysis is not None:
-                entities.append(
-                    Entity(level="group", label=analysis.name, analysis=analysis)
-                )
-            image = Image(
+            analyses[aname] = analysis
+            new_objects.append(analysis)
+        elif aname:
+            analysis = analyses[aname]
+        space = space or "Unknown" if img.get("not_mni", False) else "MNI"
+        type_ = canonicalize_map_type(img.get("map_type"))
+        entities = []
+        if analysis is not None:
+            entities.append(
+                Entity(level="group", label=analysis.name, analysis=analysis)
+            )
+        new_objects.append(
+            Image(
                 url=img["file"],
                 space=space,
                 value_type=type_,
                 analysis=analysis,
-                study=s,
+                study=study,
                 data=img,
                 filename=op.basename(img["file"]),
                 add_date=parse_date(img["add_date"]),
                 entities=entities,
             )
-            images.append(image)
+        )
+    return new_objects, conditions
+
+
+def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
+    """Ingest neurovault collections, topping up ones that are missing images.
+
+    A collection already in the database is skipped when it holds at least as many
+    images as neurovault reports for it. Otherwise its missing images are added to
+    the existing study rather than ingested a second time. ``overwrite`` forces that
+    image-level comparison even when the counts already agree.
+    """
+    # How many images are already stored per collection, so a collection that was
+    # only partially ingested is topped up instead of skipped forever.
+    ingested_image_counts = _neurovault_ingested_image_counts()
+
+    def backfill_collection(data):
+        collection_id = data.get("id")
+        source_id = str(collection_id)
+        image_payloads = _fetch_neurovault_images(collection_id, verbose=verbose)
+        studies = (
+            Study.query.filter_by(source="neurovault", source_id=source_id)
+            .order_by(Study.created_at)
+            .all()
+        )
+        if not studies:
+            # the collection was deleted between the count query and now
+            ingested_image_counts.pop(source_id, None)
+            return None
+        if len(studies) > 1:
+            print(
+                "Collection {} has {} stored versions; "
+                "backfilling the oldest ({})...".format(
+                    collection_id, len(studies), studies[0].id
+                )
+            )
+        study = studies[0]
+        # every lazy load happens here, before any new object is constructed
+        base_study_id = study.base_study_id
+        stored_images = list(study.images)
+        stored_keys = {_stored_image_key(image) for image in stored_images}
+        stored_analyses = list(study.analyses)
+        analyses = {
+            analysis.name: analysis for analysis in stored_analyses if analysis.name
+        }
+        start_order = (
+            max([analysis.order or 0 for analysis in stored_analyses], default=-1) + 1
+        )
+
+        missing = [
+            img
+            for img in image_payloads
+            if _neurovault_image_key(img) not in stored_keys
+        ]
+        ingested_image_counts[source_id] = len(stored_images)
+        if not missing:
+            print(
+                "Skipping collection {} with DOI {} "
+                "({} images stored, none missing)...".format(
+                    collection_id, data.get("DOI"), len(stored_images)
+                )
+            )
+            return None
+
+        print(
+            "Backfilling collection {} with DOI {} ({} of {} images missing)...".format(
+                collection_id, data.get("DOI"), len(missing), len(image_payloads)
+            )
+        )
+        existing_conditions = _load_conditions(
+            img.get("cognitive_paradigm_cogatlas") for img in missing
+        )
+        with db.session.no_autoflush:
+            new_objects, conditions = _build_neurovault_images(
+                study,
+                missing,
+                data.get("coordinate_space"),
+                analyses,
+                existing_conditions,
+                start_order=start_order,
+            )
+        db.session.add_all(new_objects + list(conditions))
+        db.session.commit()
+        _recompute_base_study_flag_ids([base_study_id])
+        ingested_image_counts[source_id] = len(stored_images) + len(missing)
+        return study
+
+    def add_collection(data):
+        collection_id = data.get("id")
+        source_id = str(collection_id)
+        ingested_images = ingested_image_counts.get(source_id)
+        expected_images = data.get("number_of_images")
+        if ingested_images is not None:
+            complete = (
+                expected_images is not None and ingested_images >= expected_images
+            )
+            if complete and not overwrite:
+                print(
+                    "Skipping collection {} with DOI {} "
+                    "({} of {} images already ingested)...".format(
+                        collection_id,
+                        data.get("DOI"),
+                        ingested_images,
+                        expected_images,
+                    )
+                )
+                return None
+            return backfill_collection(data)
+
+        image_payloads = _fetch_neurovault_images(collection_id, verbose=verbose)
+        collection_id = data.pop("id")
+        doi = data.pop("DOI", None)
+        base_study = None
+        if doi:
+            base_study = BaseStudy.query.filter_by(doi=doi).one_or_none()
+        existing_conditions = _load_conditions(
+            img.get("cognitive_paradigm_cogatlas") for img in image_payloads
+        )
+
+        with db.session.no_autoflush:
+            if base_study is None:
+                base_study = BaseStudy(
+                    name=data.pop("name", None),
+                    description=data.pop("description", None),
+                    doi=doi,
+                    authors=data.pop("authors", None),
+                    publication=data.pop("journal_name", None),
+                    metadata_=data,
+                    level="group",
+                )
+            s = Study(
+                name=data.pop("name", None) or base_study.name,
+                description=data.pop("description", None) or base_study.description,
+                doi=doi,
+                pmid=base_study.pmid,
+                authors=data.pop("authors", None) or base_study.authors,
+                publication=data.pop("journal_name", None) or base_study.publication,
+                source_id=collection_id,
+                metadata_=data,
+                source="neurovault",
+                level="group",
+                base_study=base_study,
+            )
+            new_objects, conditions = _build_neurovault_images(
+                s,
+                image_payloads,
+                data.get("coordinate_space"),
+                {},
+                existing_conditions,
+            )
 
         study_source_id = str(s.source_id) if s.source_id is not None else None
-        db.session.add_all(
-            [base_study] + [s] + list(analyses.values()) + images + list(conditions)
-        )
+        db.session.add_all([base_study] + [s] + new_objects + list(conditions))
         db.session.commit()
         _recompute_base_study_flags([base_study])
         if study_source_id is not None:
-            all_studies[study_source_id] = s
+            ingested_image_counts[study_source_id] = len(image_payloads)
         return s
 
-    url = "https://neurovault.org/api/collections.json"
+    url = NEUROVAULT_COLLECTIONS_URL
     count = 0
 
     while True:
