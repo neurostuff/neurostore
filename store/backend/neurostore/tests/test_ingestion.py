@@ -1,8 +1,12 @@
 """Test Ingestion Functions"""
 
+import warnings
+
+from sqlalchemy.exc import SAWarning
+
 from neurostore import ingest
 from neurostore.ingest.extracted_features import ingest_feature
-from neurostore.models import Analysis, Image, Study
+from neurostore.models import Analysis, BaseStudy, Image, Study
 
 
 def test_ingest_ace(ingest_neurosynth, ingest_ace, session):
@@ -105,6 +109,193 @@ def test_ingest_neurovault_assigns_images_to_study_and_name_analysis(
     assert len(shared_analysis.images) == 2
     assert len(singleton_analysis.images) == 1
     assert all(image.analysis_id is not None for image in images)
+
+
+NEUROVAULT_IMAGE_URL = "https://neurovault.org/api/collections/{}/images/?format=json"
+
+
+class FakeResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def json(self):
+        return self.payload
+
+
+def fake_neurovault(monkeypatch, responses, requested=None):
+    """Serve canned neurovault payloads, optionally recording the urls requested."""
+
+    def fake_get(url):
+        if requested is not None:
+            requested.append(url)
+        return FakeResponse(responses[url])
+
+    monkeypatch.setattr(ingest.requests, "get", fake_get)
+
+
+def neurovault_collection(collection_id, number_of_images):
+    return {
+        "id": collection_id,
+        "DOI": f"10.4242/neurovault-{collection_id}",
+        "number_of_images": number_of_images,
+        "name": "NeuroVault Collection",
+        "description": "Synthetic NeuroVault collection",
+        "authors": "Tester",
+        "journal_name": "Testing",
+        "coordinate_space": "MNI",
+    }
+
+
+def neurovault_image(name, image_id):
+    return {
+        "id": image_id,
+        "name": name,
+        "description": f"{name} map",
+        "map_type": "Z map",
+        "file": f"https://neurovault.org/{name}.nii.gz",
+        "add_date": "2026-01-01T00:00:00+00:00",
+        "cognitive_paradigm_cogatlas": None,
+        "not_mni": False,
+    }
+
+
+def test_ingest_neurovault_follows_image_pagination(monkeypatch, session):
+    collection_id = 424243
+    image_url = NEUROVAULT_IMAGE_URL.format(collection_id)
+    second_page_url = f"{image_url}&limit=1&offset=1"
+
+    fake_neurovault(
+        monkeypatch,
+        {
+            ingest.NEUROVAULT_COLLECTIONS_URL: {
+                "next": None,
+                "results": [neurovault_collection(collection_id, 2)],
+            },
+            image_url: {
+                "next": second_page_url,
+                "results": [neurovault_image("first", 1)],
+            },
+            second_page_url: {
+                "next": None,
+                "results": [neurovault_image("second", 2)],
+            },
+        },
+    )
+
+    ingest.ingest_neurovault(limit=1)
+
+    study = Study.query.filter_by(
+        source="neurovault", source_id=str(collection_id)
+    ).one()
+    assert {image.url for image in study.images} == {
+        "https://neurovault.org/first.nii.gz",
+        "https://neurovault.org/second.nii.gz",
+    }
+
+
+def test_ingest_neurovault_backfills_missing_images(monkeypatch, session):
+    collection_id = 424244
+    image_url = NEUROVAULT_IMAGE_URL.format(collection_id)
+
+    def payloads(image_names):
+        return {
+            ingest.NEUROVAULT_COLLECTIONS_URL: {
+                "next": None,
+                "results": [neurovault_collection(collection_id, len(image_names))],
+            },
+            image_url: {
+                "next": None,
+                "results": [
+                    neurovault_image(name, index)
+                    for index, name in enumerate(image_names, start=1)
+                ],
+            },
+        }
+
+    fake_neurovault(monkeypatch, payloads(["first"]))
+    ingest.ingest_neurovault(limit=1)
+
+    study_id = Study.query.filter_by(
+        source="neurovault", source_id=str(collection_id)
+    ).one().id
+
+    fake_neurovault(monkeypatch, payloads(["first", "second", "third"]))
+    ingest.ingest_neurovault(limit=1)
+
+    studies = Study.query.filter_by(
+        source="neurovault", source_id=str(collection_id)
+    ).all()
+    assert [study.id for study in studies] == [study_id]
+    assert {image.url for image in studies[0].images} == {
+        "https://neurovault.org/first.nii.gz",
+        "https://neurovault.org/second.nii.gz",
+        "https://neurovault.org/third.nii.gz",
+    }
+    assert sorted(analysis.order for analysis in studies[0].analyses) == [0, 1, 2]
+
+
+def test_ingest_neurovault_skips_complete_collection_without_refetching(
+    monkeypatch, session
+):
+    collection_id = 424245
+    image_url = NEUROVAULT_IMAGE_URL.format(collection_id)
+
+    def payloads():
+        return {
+            ingest.NEUROVAULT_COLLECTIONS_URL: {
+                "next": None,
+                "results": [neurovault_collection(collection_id, 1)],
+            },
+            image_url: {"next": None, "results": [neurovault_image("only", 1)]},
+        }
+
+    requested = []
+    fake_neurovault(monkeypatch, payloads(), requested)
+    ingest.ingest_neurovault(limit=1)
+    assert image_url in requested
+
+    requested.clear()
+    fake_neurovault(monkeypatch, payloads(), requested)
+    ingest.ingest_neurovault(limit=1)
+
+    assert requested == [ingest.NEUROVAULT_COLLECTIONS_URL]
+    assert Image.query.filter_by(url="https://neurovault.org/only.nii.gz").count() == 1
+
+
+def test_ingest_neurovault_attaches_to_existing_base_study_without_warning(
+    monkeypatch, session
+):
+    collection_id = 424246
+    image_url = NEUROVAULT_IMAGE_URL.format(collection_id)
+    base_study = BaseStudy(
+        name="existing base study",
+        doi=f"10.4242/neurovault-{collection_id}",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+    base_study_id = base_study.id
+
+    fake_neurovault(
+        monkeypatch,
+        {
+            ingest.NEUROVAULT_COLLECTIONS_URL: {
+                "next": None,
+                "results": [neurovault_collection(collection_id, 1)],
+            },
+            image_url: {"next": None, "results": [neurovault_image("only", 1)]},
+        },
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", SAWarning)
+        ingest.ingest_neurovault(limit=1)
+
+    study = Study.query.filter_by(
+        source="neurovault", source_id=str(collection_id)
+    ).one()
+    assert study.base_study_id == base_study_id
+    assert len(study.images) == 1
 
 
 def test_ingest_neuroquery(ingest_neuroquery, session):
