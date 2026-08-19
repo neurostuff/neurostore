@@ -212,23 +212,31 @@
         }
     },
     "IBMA": {
-        "Counter": {
-            "summary": "Dict subclass for counting hashable items.  Sometimes called a bag or multiset.  Elements are stored as dictionary keys and their counts are stored as dictionary values.",
-            "parameters": {},
-            "FWE_enabled": false,
-            "FWE_parameters": null
-        },
         "DerSimonianLaird": {
             "summary": "DerSimonian-Laird meta-regression estimator.",
             "parameters": {
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": true
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 }
             },
             "FWE_enabled": false,
-            "FWE_parameters": null
+            "FWE_parameters": null,
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "beta",
+                    "varcope"
+                ],
+                "metadata": []
+            }
         },
         "Fishers": {
             "summary": "An image-based meta-analytic test using t- or z-statistic images.",
@@ -236,7 +244,12 @@
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": null
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 },
                 "two_sided": {
                     "description": "If True, performs an unsigned t-test. Both positive and negative effects are considered; the null hypothesis is that the effect is zero. If False, only positive effects are considered as relevant. The null hypothesis is that the effect is zero or negative. Default is True.",
@@ -245,7 +258,15 @@
                 }
             },
             "FWE_enabled": false,
-            "FWE_parameters": null
+            "FWE_parameters": null,
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "z"
+                ],
+                "metadata": []
+            }
         },
         "FixedEffectsHedges": {
             "summary": "Fixed Effects Hedges meta-regression estimator.",
@@ -253,7 +274,12 @@
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": null
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 },
                 "tau2": {
                     "description": "Assumed/known value of tau^2. Must be >= 0. Default is 0.",
@@ -262,7 +288,17 @@
                 }
             },
             "FWE_enabled": false,
-            "FWE_parameters": null
+            "FWE_parameters": null,
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "t"
+                ],
+                "metadata": [
+                    "sample_sizes"
+                ]
+            }
         },
         "Hedges": {
             "summary": "Hedges meta-regression estimator.",
@@ -270,11 +306,25 @@
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": true
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 }
             },
             "FWE_enabled": false,
-            "FWE_parameters": null
+            "FWE_parameters": null,
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "beta",
+                    "varcope"
+                ],
+                "metadata": []
+            }
         },
         "PermutedOLS": {
             "summary": "An analysis with permuted ordinary least squares (OLS), using nilearn.",
@@ -282,7 +332,12 @@
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": null
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 },
                 "two_sided": {
                     "description": "If True, performs an unsigned t-test. Both positive and negative effects are considered; the null hypothesis is that the effect is zero. If False, only positive effects are considered as relevant. The null hypothesis is that the effect is zero or negative. Default is True.",
@@ -297,6 +352,14 @@
                     "type": "int",
                     "default": 5000
                 }
+            },
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "beta"
+                ],
+                "metadata": []
             }
         },
         "SampleSizeBasedLikelihood": {
@@ -305,7 +368,12 @@
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": null
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 },
                 "method": {
                     "description": "The estimation method to use. The available options are  ============== ============================= \"ml\" (default) Maximum likelihood \"reml\"         Restricted maximum likelihood ============== =============================",
@@ -314,7 +382,17 @@
                 }
             },
             "FWE_enabled": false,
-            "FWE_parameters": null
+            "FWE_parameters": null,
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "beta"
+                ],
+                "metadata": [
+                    "sample_sizes"
+                ]
+            }
         },
         "Stouffers": {
             "summary": "A t-test on z-statistic images.",
@@ -322,7 +400,12 @@
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": null
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 },
                 "use_sample_size": {
                     "description": "Whether to use sample sizes for weights (i.e., \"weighted Stouffer's\") or not, as described in :footcite:t:`zaykin2011optimally`. Default is False.",
@@ -341,7 +424,15 @@
                 }
             },
             "FWE_enabled": false,
-            "FWE_parameters": null
+            "FWE_parameters": null,
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "z"
+                ],
+                "metadata": []
+            }
         },
         "VarianceBasedLikelihood": {
             "summary": "A likelihood-based meta-analysis method for estimates with known variances.",
@@ -349,7 +440,12 @@
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": null
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 },
                 "method": {
                     "description": "The estimation method to use. The available options are  ============== ============================= \"ml\" (default) Maximum likelihood \"reml\"         Restricted maximum likelihood ============== =============================",
@@ -358,7 +454,16 @@
                 }
             },
             "FWE_enabled": false,
-            "FWE_parameters": null
+            "FWE_parameters": null,
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "beta",
+                    "varcope"
+                ],
+                "metadata": []
+            }
         },
         "WeightedLeastSquares": {
             "summary": "Weighted least-squares meta-regression.",
@@ -366,7 +471,12 @@
                 "aggressive_mask": {
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
-                    "default": null
+                    "default": false
+                },
+                "dependence": {
+                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
+                    "type": "{'auto', 'independent'}",
+                    "default": "auto"
                 },
                 "tau2": {
                     "description": "Assumed/known value of tau^2. Must be >= 0. Default is 0.",
@@ -375,7 +485,16 @@
                 }
             },
             "FWE_enabled": false,
-            "FWE_parameters": null
+            "FWE_parameters": null,
+            "multigroup": false,
+            "requirements": {
+                "coordinates": false,
+                "images": [
+                    "beta",
+                    "varcope"
+                ],
+                "metadata": []
+            }
         }
     },
     "CORRECTOR": {
