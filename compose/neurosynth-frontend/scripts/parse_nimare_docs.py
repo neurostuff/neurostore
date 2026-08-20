@@ -1,11 +1,15 @@
 """Generate the algorithm metadata the frontend uses to build its forms.
 
 By default this rewrites only the IBMA section of the config, leaving the
-CBMA and CORRECTOR sections byte-identical. That keeps the CBMA defaults
-users already depend on frozen while the IBMA side catches up: the committed
-config was generated from a much older NiMARE, so a full regeneration would
-churn every CBMA entry at once. Pass ``--sections all`` to regenerate
-everything deliberately.
+CBMA and CORRECTOR defaults, types and requirements untouched. That keeps the
+CBMA behaviour users already depend on frozen while the IBMA side catches up:
+the committed config was generated from a much older NiMARE, so a full
+regeneration would churn every CBMA entry at once. Pass ``--sections all`` to
+regenerate everything deliberately.
+
+Parameter *descriptions* are the one exception: they are re-rendered in every
+section on each run, because Sphinx roles reach the user as raw markup
+wherever they appear. See render_descriptions.
 
 Requires the pinned NiMARE plus numpydoc::
 
@@ -205,6 +209,105 @@ def _ibma_default(cls, class_signature, param):
     if default is None:
         default = _inherited_default(cls, param.name)
     return default
+
+
+# --- References -----------------------------------------------------------
+#
+# NiMARE docstrings cite with Sphinx roles: ``:footcite:t:`key``` for a textual
+# citation and ``:footcite:p:`key``` for a parenthetical one. The frontend
+# renders a description as plain text inside a MUI <Typography>, so those roles
+# reached the user verbatim, as did ``literal`` markup. Resolve each key
+# against NiMARE's own references.bib and emit a markdown link to the DOI,
+# which MetaAnalysisDynamicFormTitle knows how to render.
+
+BIB_ENTRY_REGEX = re.compile(r"@\w+\{([^,]+),(.*?)\n\}", re.S)
+FOOTCITE_REGEX = re.compile(r":footcite:([tp]):`([^`]+)`")
+# Any other Sphinx role, e.g. :meth:`inspect` or :obj:`bool`. Keep the target
+# text and drop the markup.
+ROLE_REGEX = re.compile(r":[a-z]+:(?::[a-z]+:)?`~?([^`]+)`")
+LITERAL_REGEX = re.compile(r"``([^`]+)``")
+
+
+def _bib_field(body, name):
+    """Read one field out of a BibTeX entry body."""
+    match = re.search(
+        rf"\n\s*{name}\s*=\s*[{{\"](.+?)[}}\"]\s*,?\s*\n", body, re.S | re.I
+    )
+    return " ".join(match.group(1).split()) if match else None
+
+
+def _surnames(author_field):
+    """Turn a BibTeX author list into an APA-style name."""
+    authors = [a.strip() for a in re.split(r"\s+and\s+", author_field) if a.strip()]
+    names = [a.split(",")[0].strip() for a in authors]
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f"{names[0]} & {names[1]}"
+    return f"{names[0]} et al."
+
+
+def _load_references():
+    """Map each citation key onto its display name and DOI URL.
+
+    Read from the installed NiMARE so the citations can never describe a
+    different release than the parameters do.
+    """
+    bib_path = Path(nimare.__file__).parent / "resources" / "references.bib"
+    references = {}
+    for key, body in BIB_ENTRY_REGEX.findall(bib_path.read_text()):
+        doi = _bib_field(body, "doi")
+        url = _bib_field(body, "url")
+        if doi:
+            url = f"https://doi.org/{doi.removeprefix('https://doi.org/')}"
+        author = _bib_field(body, "author")
+        year = _bib_field(body, "year")
+        if not (url and author and year):
+            continue
+        references[key.strip()] = {
+            "name": _surnames(author),
+            "year": year,
+            "url": url,
+        }
+    return references
+
+
+REFERENCES = _load_references()
+
+
+def _render_citation(match):
+    role, key = match.group(1), match.group(2)
+    reference = REFERENCES.get(key)
+    if reference is None:
+        raise ValueError(
+            f"Citation '{key}' has no usable entry in NiMARE's references.bib "
+            "(it needs a doi or url, an author and a year). Without one the "
+            "role would reach the user as raw markup."
+        )
+    # ``t`` is a textual citation -- "described in Zaykin (2011)" -- while ``p``
+    # is parenthetical and supplies its own brackets.
+    if role == "t":
+        return f"[{reference['name']} ({reference['year']})]({reference['url']})"
+    return f"([{reference['name']}, {reference['year']}]({reference['url']}))"
+
+
+def _render_description(description):
+    """Strip Sphinx markup from a description the frontend shows as text."""
+    rendered = FOOTCITE_REGEX.sub(_render_citation, description)
+    rendered = LITERAL_REGEX.sub(r"\1", rendered)
+    rendered = ROLE_REGEX.sub(r"\1", rendered)
+    return " ".join(rendered.split())
+
+
+def render_descriptions(section):
+    """Rewrite every description in one config section, in place."""
+    for spec in section.values():
+        for group in ("parameters", "FWE_parameters"):
+            for parameter in (spec.get(group) or {}).values():
+                if parameter.get("description"):
+                    parameter["description"] = _render_description(
+                        parameter["description"]
+                    )
 
 
 def _is_pairwise_cbma(cls):
@@ -506,6 +609,12 @@ def main(argv=None):
             merged["IBMA"] = config["IBMA"]
         else:
             merged = config
+
+        # Descriptions are rendered for every section, including the ones this
+        # run preserved. Sphinx roles are unreadable wherever they appear, and
+        # rewriting them touches no default, type or requirement.
+        for section in ("CBMA", "IBMA", "CORRECTOR"):
+            render_descriptions(merged.get(section, {}))
 
         with open(fname, "w+") as c:
             json.dump(merged, c, indent=4)
