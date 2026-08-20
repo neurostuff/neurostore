@@ -216,14 +216,19 @@
             "summary": "DerSimonian-Laird meta-regression estimator.",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
                 },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
+                "weight_scheme": {
+                    "description": "How images within a group are weighted, passed to PyMARE. ``'rescale'`` (the default) divides each image's weight by its group size, so a group's total weight does not grow with the number of maps it contributed -- the correlated-effects model of :footcite:t:`hedges2010robust`, weighted as in :footcite:t:`fisher2015robumeta`. ``'individual'`` leaves the weights alone; ``'collapse'`` fits one row per group. Group labels also switch the standard errors to CR2 and the reference to a t distribution with Satterthwaite degrees of freedom :footcite:p:`tipton2015small`.",
+                    "type": "{\"rescale\", \"individual\", \"collapse\"}",
+                    "default": "rescale"
+                },
+                "rho": {
+                    "description": "Assumed within-group correlation, in [0, 1]. Enters only through tau^2, to which results are weakly sensitive. Default is 0.8, matching ``robumeta``. Ignored when ``weight_scheme='individual'``. Together the two choose a working model in the sense of :footcite:t:`pustejovsky2022expanding`: cluster-robust standard errors stay valid if it is wrong, so the choice costs precision rather than validity.",
+                    "type": "float",
+                    "default": 0.8
                 }
             },
             "FWE_enabled": false,
@@ -242,14 +247,14 @@
             "summary": "An image-based meta-analytic test using t- or z-statistic images.",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
                 },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
+                "use_sample_size": {
+                    "description": "Whether to assign each study a total weighted-Fisher coefficient equal to its sample size. Repeated images divide that coefficient internally in PyMARE, so image multiplicity does not change the study's total weight, and a group whose images report different sample sizes is weighted by their mean. Default is False, preserving ordinary Fisher/Brown inference.",
+                    "type": "bool",
+                    "default": false
                 },
                 "two_sided": {
                     "description": "If True, performs an unsigned t-test. Both positive and negative effects are considered; the null hypothesis is that the effect is zero. If False, only positive effects are considered as relevant. The null hypothesis is that the effect is zero or negative. Default is True.",
@@ -272,14 +277,19 @@
             "summary": "Fixed Effects Hedges meta-regression estimator.",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
                 },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
+                "weight_scheme": {
+                    "description": "How images within a group are weighted, passed to PyMARE. ``'rescale'`` (the default) divides each image's weight by its group size, so a group's total weight does not grow with the number of maps it contributed -- the correlated-effects model of :footcite:t:`hedges2010robust`, weighted as in :footcite:t:`fisher2015robumeta`. ``'individual'`` leaves the weights alone; ``'collapse'`` fits one row per group. Group labels also switch the standard errors to CR2 and the reference to a t distribution with Satterthwaite degrees of freedom :footcite:p:`tipton2015small`.",
+                    "type": "{\"rescale\", \"individual\", \"collapse\"}",
+                    "default": "rescale"
+                },
+                "rho": {
+                    "description": "Assumed within-group correlation, in [0, 1]. Enters only through tau^2, to which results are weakly sensitive. Default is 0.8, matching ``robumeta``. Ignored when ``weight_scheme='individual'``. Together the two choose a working model in the sense of :footcite:t:`pustejovsky2022expanding`: cluster-robust standard errors stay valid if it is wrong, so the choice costs precision rather than validity.",
+                    "type": "float",
+                    "default": 0.8
                 },
                 "tau2": {
                     "description": "Assumed/known value of tau^2. Must be >= 0. Default is 0.",
@@ -304,14 +314,19 @@
             "summary": "Hedges meta-regression estimator.",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
                 },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
+                "weight_scheme": {
+                    "description": "How images within a group are weighted, passed to PyMARE. ``'rescale'`` (the default) divides each image's weight by its group size, so a group's total weight does not grow with the number of maps it contributed -- the correlated-effects model of :footcite:t:`hedges2010robust`, weighted as in :footcite:t:`fisher2015robumeta`. ``'individual'`` leaves the weights alone; ``'collapse'`` fits one row per group. Group labels also switch the standard errors to CR2 and the reference to a t distribution with Satterthwaite degrees of freedom :footcite:p:`tipton2015small`.",
+                    "type": "{\"rescale\", \"individual\", \"collapse\"}",
+                    "default": "rescale"
+                },
+                "rho": {
+                    "description": "Assumed within-group correlation, in [0, 1]. Enters only through tau^2, to which results are weakly sensitive. Default is 0.8, matching ``robumeta``. Ignored when ``weight_scheme='individual'``. Together the two choose a working model in the sense of :footcite:t:`pustejovsky2022expanding`: cluster-robust standard errors stay valid if it is wrong, so the choice costs precision rather than validity.",
+                    "type": "float",
+                    "default": 0.8
                 }
             },
             "FWE_enabled": false,
@@ -327,22 +342,27 @@
             }
         },
         "PermutedOLS": {
-            "summary": "An analysis with permuted ordinary least squares (OLS), using nilearn.",
+            "summary": "An analysis with permuted ordinary least squares (OLS).",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
                 },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
+                "use_sample_size": {
+                    "description": "Whether to weight each group's contribution by its sample size. When False (the default), every group is weighted equally and the statistic is the ordinary one-sample t over group means. Default is False.",
+                    "type": "bool",
+                    "default": false
                 },
                 "two_sided": {
                     "description": "If True, performs an unsigned t-test. Both positive and negative effects are considered; the null hypothesis is that the effect is zero. If False, only positive effects are considered as relevant. The null hypothesis is that the effect is zero or negative. Default is True.",
                     "type": "bool",
                     "default": true
+                },
+                "random_state": {
+                    "description": "Seed for the sign-flip null. Default is 42.",
+                    "type": "int",
+                    "default": 42
                 }
             },
             "FWE_enabled": true,
@@ -366,18 +386,23 @@
             "summary": "Method estimates with known sample sizes but unknown sampling variances.",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
                 },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
+                "weight_scheme": {
+                    "description": "How images within a group are weighted, passed to PyMARE. ``'rescale'`` (the default) divides each image's weight by its group size, so a group's total weight does not grow with the number of maps it contributed -- the correlated-effects model of :footcite:t:`hedges2010robust`, weighted as in :footcite:t:`fisher2015robumeta`. ``'individual'`` leaves the weights alone; ``'collapse'`` fits one row per group. Group labels also switch the standard errors to CR2 and the reference to a t distribution with Satterthwaite degrees of freedom :footcite:p:`tipton2015small`.",
+                    "type": "{\"rescale\", \"individual\", \"collapse\"}",
+                    "default": "rescale"
+                },
+                "rho": {
+                    "description": "Assumed within-group correlation, in [0, 1]. Enters only through tau^2, to which results are weakly sensitive. Default is 0.8, matching ``robumeta``. Ignored when ``weight_scheme='individual'``. Together the two choose a working model in the sense of :footcite:t:`pustejovsky2022expanding`: cluster-robust standard errors stay valid if it is wrong, so the choice costs precision rather than validity.",
+                    "type": "float",
+                    "default": 0.8
                 },
                 "method": {
                     "description": "The estimation method to use. The available options are  ============== ============================= \"ml\" (default) Maximum likelihood \"reml\"         Restricted maximum likelihood ============== =============================",
-                    "type": "{'ml', 'reml'}",
+                    "type": "{\"ml\", \"reml\"}",
                     "default": "ml"
                 }
             },
@@ -398,22 +423,12 @@
             "summary": "A t-test on z-statistic images.",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
-                },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
                 },
                 "use_sample_size": {
-                    "description": "Whether to use sample sizes for weights (i.e., \"weighted Stouffer's\") or not, as described in :footcite:t:`zaykin2011optimally`. Default is False.",
-                    "type": "bool",
-                    "default": false
-                },
-                "normalize_contrast_weights": {
-                    "description": "Whether to use number of contrast per study to normalized the weights or not. Default is False.",
+                    "description": "Whether to use sample sizes for weights (i.e., \"weighted Stouffer's\") or not, as described in :footcite:t:`zaykin2011optimally`. A group whose images report different sample sizes is weighted by their mean. Default is False.",
                     "type": "bool",
                     "default": false
                 },
@@ -438,18 +453,23 @@
             "summary": "A likelihood-based meta-analysis method for estimates with known variances.",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
                 },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
+                "weight_scheme": {
+                    "description": "How images within a group are weighted, passed to PyMARE. ``'rescale'`` (the default) divides each image's weight by its group size, so a group's total weight does not grow with the number of maps it contributed -- the correlated-effects model of :footcite:t:`hedges2010robust`, weighted as in :footcite:t:`fisher2015robumeta`. ``'individual'`` leaves the weights alone; ``'collapse'`` fits one row per group. Group labels also switch the standard errors to CR2 and the reference to a t distribution with Satterthwaite degrees of freedom :footcite:p:`tipton2015small`.",
+                    "type": "{\"rescale\", \"individual\", \"collapse\"}",
+                    "default": "rescale"
+                },
+                "rho": {
+                    "description": "Assumed within-group correlation, in [0, 1]. Enters only through tau^2, to which results are weakly sensitive. Default is 0.8, matching ``robumeta``. Ignored when ``weight_scheme='individual'``. Together the two choose a working model in the sense of :footcite:t:`pustejovsky2022expanding`: cluster-robust standard errors stay valid if it is wrong, so the choice costs precision rather than validity.",
+                    "type": "float",
+                    "default": 0.8
                 },
                 "method": {
                     "description": "The estimation method to use. The available options are  ============== ============================= \"ml\" (default) Maximum likelihood \"reml\"         Restricted maximum likelihood ============== =============================",
-                    "type": "{'ml', 'reml'}",
+                    "type": "{\"ml\", \"reml\"}",
                     "default": "ml"
                 }
             },
@@ -469,14 +489,19 @@
             "summary": "Weighted least-squares meta-regression.",
             "parameters": {
                 "aggressive_mask": {
-                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is False.",
                     "type": "bool",
                     "default": false
                 },
-                "dependence": {
-                    "description": "How to treat multiple images contributed by the same study. 'auto' (the default) accounts for the dependence between them whenever a study contributes more than one image; 'independent' treats every image as its own study, which inflates significance when that is not true. Default is 'auto'.",
-                    "type": "{'auto', 'independent'}",
-                    "default": "auto"
+                "weight_scheme": {
+                    "description": "How images within a group are weighted, passed to PyMARE. ``'rescale'`` (the default) divides each image's weight by its group size, so a group's total weight does not grow with the number of maps it contributed -- the correlated-effects model of :footcite:t:`hedges2010robust`, weighted as in :footcite:t:`fisher2015robumeta`. ``'individual'`` leaves the weights alone; ``'collapse'`` fits one row per group. Group labels also switch the standard errors to CR2 and the reference to a t distribution with Satterthwaite degrees of freedom :footcite:p:`tipton2015small`.",
+                    "type": "{\"rescale\", \"individual\", \"collapse\"}",
+                    "default": "rescale"
+                },
+                "rho": {
+                    "description": "Assumed within-group correlation, in [0, 1]. Enters only through tau^2, to which results are weakly sensitive. Default is 0.8, matching ``robumeta``. Ignored when ``weight_scheme='individual'``. Together the two choose a working model in the sense of :footcite:t:`pustejovsky2022expanding`: cluster-robust standard errors stay valid if it is wrong, so the choice costs precision rather than validity.",
+                    "type": "float",
+                    "default": 0.8
                 },
                 "tau2": {
                     "description": "Assumed/known value of tau^2. Must be >= 0. Default is 0.",

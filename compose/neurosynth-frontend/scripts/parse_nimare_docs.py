@@ -91,6 +91,14 @@ BLACKLIST_PARAMS = [
     "self",
 ]
 
+# NiMARE's ``groupby`` accepts None, a metadata field name, an array of labels,
+# or False. A JSON config and a form built from it can express at most the
+# first two, and False -- treating every image from a study as independent --
+# inflates significance whenever that is untrue. Leaving it out means every
+# meta-analysis gets NiMARE's default, which groups by study_id. The escape
+# hatch for the rest is the specification's "**kwargs" entry.
+BLACKLIST_IBMA_PARAMS = ["groupby"]
+
 config = {
     "VERSION": nimare.__version__,
     "CBMA": {},
@@ -99,14 +107,33 @@ config = {
 }
 
 
+def _normalize_choices(type_name):
+    """Rewrite a numpydoc choice set so the frontend can parse it.
+
+    The frontend turns a ``{...}`` type into a select by swapping the braces
+    for brackets and calling ``JSON.parse``, which rejects single quotes. NumPy
+    docstrings are written with single quotes, so ``{'ml', 'reml'}`` reached the
+    form as a parse error and the select rendered empty. The entries that do
+    work in the committed config are already double-quoted; match them.
+    """
+    if not (type_name.startswith("{") and type_name.endswith("}")):
+        return type_name
+    if '"' in type_name:
+        return type_name
+    return type_name.replace("'", '"')
+
+
 def _derive_type(type_name):
     if "or" in type_name:
         spl = type_name.split(" ")
         type_name, _ = spl[0], spl[1:]
     optional_type = PARAM_OPTIONAL_REGEX.match(type_name)
     if optional_type:
-        return optional_type.group("type"), optional_type.group("default")
-    return type_name, None
+        return (
+            _normalize_choices(optional_type.group("type")),
+            optional_type.group("default"),
+        )
+    return _normalize_choices(type_name), None
 
 
 def _derive_default(class_signature, param):
@@ -149,6 +176,34 @@ def _derive_default(class_signature, param):
                 raise ValueError(f"Unknown type: {dtype}")
     if isinstance(default, tuple):
         default = default[0]
+    return default
+
+
+def _inherited_default(cls, param_name):
+    """Find a documented parameter's default on a base class ``__init__``.
+
+    Estimators like ``WeightedLeastSquares`` accept ``weight_scheme`` and
+    ``rho`` through ``**kwargs`` and let ``_PyMARERegressionEstimator`` apply
+    them, so ``inspect.signature()`` on the subclass cannot see them even
+    though its docstring documents them. Without this the config would claim
+    those parameters default to None, and the frontend would post None back to
+    an estimator that expects a weight scheme.
+    """
+    for base in inspect.getmro(cls)[1:]:
+        init = base.__dict__.get("__init__")
+        if init is None:
+            continue
+        parameter = inspect.signature(init).parameters.get(param_name)
+        if parameter is not None and parameter.default is not inspect._empty:
+            return parameter.default
+    return None
+
+
+def _ibma_default(cls, class_signature, param):
+    """The default for a documented IBMA parameter, own signature first."""
+    default = _derive_default(class_signature, param)
+    if default is None:
+        default = _inherited_default(cls, param.name)
     return default
 
 
@@ -321,10 +376,11 @@ for algo, cls in NIMARE_IMAGE_ALGORITHMS:
             param.name: {
                 "description": " ".join(param.desc),
                 "type": _derive_type(param.type)[0] or None,
-                "default": _derive_default(cls_signature, param),
+                "default": _ibma_default(cls, cls_signature, param),
             }
             for param in docs._parsed_data["Parameters"]
             if param.name not in BLACKLIST_PARAMS
+            and param.name not in BLACKLIST_IBMA_PARAMS
         },
         "FWE_enabled": fwe_enabled,
         "FWE_parameters": fwe_parameters,
@@ -339,21 +395,50 @@ config["CORRECTOR"]["FWECorrector"]["parameters"]["method"]["type"] = "str"
 config["CBMA"]["ALE"]["parameters"]["kernel__fwhm"]["default"] = 8
 config["CBMA"]["ALESubtraction"]["parameters"]["kernel__fwhm"]["default"] = 8
 
-# Use the liberal mask by default for every IBMA estimator. NiMARE's own
-# default is aggressive_mask=True, which drops any voxel that is zero or NaN
-# in *any* input map; across heterogeneous studysets that can discard most of
-# the brain. The liberal path instead analyses bags of voxels that share a
-# validity pattern. It is slower, but losing coverage silently is worse.
+# Use the liberal mask by default for every IBMA estimator. The aggressive mask
+# drops any voxel that is zero or NaN in *any* input map, which across
+# heterogeneous studysets can discard most of the brain; the liberal path
+# instead analyses bags of voxels that share a validity pattern. It is slower,
+# but losing coverage silently is worse. NiMARE agreed and flipped its own
+# default to False in 0.21.0, so this is now belt-and-braces -- keep it, so
+# compose does not follow if upstream ever flips back.
 for algo in config["IBMA"]:
     if "aggressive_mask" in config["IBMA"][algo]["parameters"]:
         config["IBMA"][algo]["parameters"]["aggressive_mask"]["default"] = False
 
-# Both of these live on IBMAEstimator and reach the subclasses through
-# **kwargs, so inspect.signature() on the subclass cannot see their defaults
-# and _derive_default returns None. State them explicitly.
-for algo in config["IBMA"]:
-    if "dependence" in config["IBMA"][algo]["parameters"]:
-        config["IBMA"][algo]["parameters"]["dependence"]["default"] = "auto"
+# Every exposed IBMA parameter has to be a real keyword the estimator accepts,
+# because the executor passes the stored arguments straight to its constructor.
+# An earlier version of this config carried a "dependence" parameter that
+# NiMARE never had; it reached the estimator as an unused kwarg and silently
+# did nothing. Fail loudly here instead.
+for algo, cls in NIMARE_IMAGE_ALGORITHMS:
+    if algo in BLACKLIST_ALGORITHMS:
+        continue
+    accepted = set()
+    for base in inspect.getmro(cls):
+        init = base.__dict__.get("__init__")
+        if init is not None:
+            accepted.update(inspect.signature(init).parameters)
+    unknown = sorted(set(config["IBMA"][algo]["parameters"]) - accepted)
+    if unknown:
+        raise ValueError(
+            f"{algo} would expose parameters NiMARE does not accept: {unknown}. "
+            "The docstring and the signature have drifted apart, or a parameter "
+            "was removed upstream."
+        )
+
+# A parameter inherited through **kwargs is invisible to inspect.signature() on
+# the subclass, so its default silently came out as None. None is not a valid
+# weight_scheme or rho, and the frontend seeds the form from these values.
+for algo, spec in config["IBMA"].items():
+    missing = sorted(
+        name for name, param in spec["parameters"].items() if param["default"] is None
+    )
+    if missing:
+        raise ValueError(
+            f"{algo} has IBMA parameters with no derivable default: {missing}. "
+            "Check whether NiMARE moved them onto a base class."
+        )
 
 # save config file
 output_paths = [
