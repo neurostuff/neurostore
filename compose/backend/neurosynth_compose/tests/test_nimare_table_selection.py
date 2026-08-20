@@ -1,8 +1,11 @@
 from pathlib import Path
 
+import pytest
+
 from neurosynth_compose.resources.analysis import (
     NIMARE_TABLE_FILENAME_PATTERNS,
     _expected_cluster_table_targets,
+    _is_pairwise_estimator,
     select_cluster_table_for_specification,
 )
 
@@ -154,3 +157,76 @@ def test_select_cluster_table_prefers_fwe_mass_over_size_for_ale_subtraction():
         "/tmp/z_desc-group1MinusGroup2Mass_level-cluster_corr-FWE_"
         "method-montecarlo_tab-clust.tsv"
     )
+
+
+IBMA_ESTIMATORS = [
+    "Fishers",
+    "Stouffers",
+    "WeightedLeastSquares",
+    "DerSimonianLaird",
+    "Hedges",
+    "SampleSizeBasedLikelihood",
+    "VarianceBasedLikelihood",
+    "PermutedOLS",
+    "FixedEffectsHedges",
+]
+
+
+@pytest.mark.parametrize("estimator", IBMA_ESTIMATORS)
+def test_ibma_estimators_are_not_treated_as_pairwise(estimator):
+    """No IBMA estimator compares two groups.
+
+    _is_pairwise_estimator sniffs for substrings, so this guards against a
+    future estimator name accidentally matching and selecting the wrong tables.
+    """
+    assert not _is_pairwise_estimator({"estimator": {"type": estimator}})
+
+
+@pytest.mark.parametrize("estimator", IBMA_ESTIMATORS)
+def test_expected_cluster_targets_ibma_fdr(estimator):
+    """IBMA output is z-prefixed, so the single-group targets apply."""
+    specification = {
+        "estimator": {"type": estimator},
+        "corrector": {"type": "FDRCorrector", "args": {"method": "indep"}},
+    }
+
+    assert _expected_cluster_table_targets(specification) == ["z_corr-FDR_method-indep"]
+
+
+def test_select_cluster_table_ibma_fdr():
+    """A plain z-prefixed FDR table should be picked for an IBMA spec."""
+    specification = {
+        "estimator": {"type": "Fishers"},
+        "corrector": {"type": "FDRCorrector", "args": {"method": "indep"}},
+    }
+    cluster_table_fnames = [Path("/tmp/z_corr-FDR_method-indep_tab-clust.tsv")]
+
+    selected = select_cluster_table_for_specification(cluster_table_fnames, specification)
+
+    assert selected == Path("/tmp/z_corr-FDR_method-indep_tab-clust.tsv")
+
+
+def test_select_cluster_table_permuted_ols_fwe_voxel_level():
+    """PermutedOLS is the one IBMA estimator with montecarlo FWE.
+
+    It emits only voxel-level tables -- no cluster mass or size -- so the
+    selection has to fall through to the voxel-level target.
+    """
+    specification = {
+        "estimator": {"type": "PermutedOLS"},
+        "corrector": {"type": "FWECorrector", "args": {"method": "montecarlo"}},
+    }
+    cluster_table_fnames = [
+        Path("/tmp/z_level-voxel_corr-FWE_method-montecarlo_tab-clust.tsv"),
+    ]
+
+    selected = select_cluster_table_for_specification(cluster_table_fnames, specification)
+
+    assert selected == Path("/tmp/z_level-voxel_corr-FWE_method-montecarlo_tab-clust.tsv")
+
+
+def test_expected_cluster_targets_ibma_uncorrected():
+    """Without a corrector, an IBMA spec expects the plain z map."""
+    specification = {"estimator": {"type": "Stouffers"}}
+
+    assert _expected_cluster_table_targets(specification) == ["z"]
