@@ -475,3 +475,40 @@ def test_ingest_neurovault_repairs_sample_sizes_without_refetching(
     assert analysis_sample_size(study, "shared") == [20]
     assert analysis_sample_size(study, "solo") == [15]
     assert study.metadata_["sample_sizes"] == [20, 15]
+
+
+def test_backfill_neurovault_sample_sizes_repairs_stored_collections(
+    monkeypatch, session
+):
+    collection_id = 424252
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image("shared", 1, number_of_subjects=20, file_name="a"),
+                neurovault_image("shared", 2, number_of_subjects=20, file_name="b"),
+                neurovault_image("uncounted", 3),
+            ],
+        ),
+    )
+    ingest.ingest_neurovault(limit=1)
+
+    # pretend the collection was ingested before sample sizes were derived
+    study = neurovault_study(collection_id)
+    for analysis in study.analyses:
+        analysis.metadata_ = None
+    study.metadata_ = {
+        key: value for key, value in study.metadata_.items() if key != "sample_sizes"
+    }
+    session.commit()
+
+    assert ingest.backfill_neurovault_sample_sizes(verbose=True) == 1
+
+    study = neurovault_study(collection_id)
+    assert analysis_sample_size(study, "shared") == [20]
+    assert analysis_sample_size(study, "uncounted") is None
+    assert study.metadata_["sample_sizes"] == [20]
+
+    # nothing left to repair, so a second pass is a no-op
+    assert ingest.backfill_neurovault_sample_sizes() == 0

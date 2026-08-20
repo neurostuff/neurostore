@@ -263,6 +263,24 @@ def _repair_neurovault_sample_sizes(source_id, verbose=False):
     return True
 
 
+def backfill_neurovault_sample_sizes(verbose=False):
+    """Derive sample sizes for every stored neurovault collection, without refetching.
+
+    ``ingest_neurovault`` repairs the collections it walks past, which means a full
+    pass over neurovault to fix data ingested before sample sizes were tracked.
+    This repairs every stored collection straight from the image payloads instead.
+    """
+    source_ids = sorted(_neurovault_sample_size_candidates())
+    if verbose:
+        print("{} collection(s) missing sample sizes".format(len(source_ids)))
+    repaired = sum(
+        _repair_neurovault_sample_sizes(source_id, verbose=verbose)
+        for source_id in source_ids
+    )
+    print("Backfilled sample sizes for {} collection(s)".format(repaired))
+    return repaired
+
+
 def _build_neurovault_images(
     study,
     image_payloads,
