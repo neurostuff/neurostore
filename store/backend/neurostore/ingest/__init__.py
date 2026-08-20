@@ -135,6 +135,134 @@ def _load_conditions(names):
     }
 
 
+NEUROVAULT_ANALYSIS_SAMPLE_SIZE_KEY = "sample_size"
+NEUROVAULT_STUDY_SAMPLE_SIZE_KEY = "sample_sizes"
+
+
+def _parse_number_of_subjects(value):
+    """Coerce neurovault's number_of_subjects into a positive int, or None."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number <= 0 or number != int(number):
+        return None
+    return int(number)
+
+
+def _sample_sizes_from_image_data(image_data):
+    """Subject counts for one analysis, deduped to one element when they agree.
+
+    Disagreeing counts are all kept, sorted: ``analysis.images`` has no defined
+    order, so sorting is what makes a re-derived list stable.
+    """
+    values = [
+        subjects
+        for subjects in (
+            _parse_number_of_subjects((data or {}).get("number_of_subjects"))
+            for data in image_data
+        )
+        if subjects is not None
+    ]
+    if not values:
+        return None
+    if len(set(values)) == 1:
+        return values[:1]
+    return sorted(values)
+
+
+def _set_metadata_key(instance, key, value):
+    """Reassign metadata_ so JSONB change tracking notices the update."""
+    metadata = instance.metadata_ or {}
+    if metadata.get(key) == value:
+        return False
+    updated = dict(metadata)
+    updated[key] = value
+    instance.metadata_ = updated
+    return True
+
+
+def _analysis_sort_key(analysis):
+    order = analysis.order
+    return (order is None, order or 0, analysis.name or "")
+
+
+def _apply_neurovault_sample_sizes(study):
+    """Copy subject counts out of stored image data onto analyses and the study.
+
+    The image payloads are the source of truth: each analysis takes the subject
+    counts of its own images (a single element when every image agrees) and the
+    study takes every analysis' counts flattened in analysis order. A level with
+    no counts to report is left alone, so hand-entered metadata survives a
+    re-ingest. Callers must flush new rows first, otherwise ``analysis.images``
+    misses them.
+    """
+    changed = False
+    sample_sizes = []
+    for analysis in sorted(study.analyses, key=_analysis_sort_key):
+        sizes = _sample_sizes_from_image_data(image.data for image in analysis.images)
+        if sizes is None:
+            continue
+        changed |= _set_metadata_key(
+            analysis, NEUROVAULT_ANALYSIS_SAMPLE_SIZE_KEY, sizes
+        )
+        sample_sizes.extend(sizes)
+    if sample_sizes:
+        changed |= _set_metadata_key(
+            study, NEUROVAULT_STUDY_SAMPLE_SIZE_KEY, sample_sizes
+        )
+    return changed
+
+
+def _neurovault_sample_size_candidates():
+    """Collection ids whose stored image data holds counts the metadata lacks.
+
+    A cheap pre-filter: a run that skips an already-complete collection still
+    repairs its sample sizes, without loading every neurovault study to find out
+    there is nothing to do.
+    """
+    rows = (
+        db.session.query(Study.source_id)
+        .join(Analysis, Analysis.study_id == Study.id)
+        .join(Image, Image.analysis_id == Analysis.id)
+        .filter(
+            Study.source == "neurovault",
+            Study.source_id.isnot(None),
+            Image.data["number_of_subjects"].astext.isnot(None),
+            # ``->>`` rather than the jsonb-only ``?``: studies.metadata_ is json
+            sa.or_(
+                Analysis.metadata_[NEUROVAULT_ANALYSIS_SAMPLE_SIZE_KEY].astext.is_(
+                    None
+                ),
+                Study.metadata_[NEUROVAULT_STUDY_SAMPLE_SIZE_KEY].astext.is_(None),
+            ),
+        )
+        .distinct()
+        .all()
+    )
+    return {str(source_id) for (source_id,) in rows}
+
+
+def _repair_neurovault_sample_sizes(source_id, verbose=False):
+    """Derive sample sizes for an already-ingested collection, without refetching."""
+    studies = Study.query.filter_by(
+        source="neurovault", source_id=str(source_id)
+    ).all()
+    repaired = [_apply_neurovault_sample_sizes(study) for study in studies]
+    if not any(repaired):
+        return False
+    db.session.commit()
+    if verbose:
+        print(
+            "Backfilled sample sizes for collection {} from stored image data".format(
+                source_id
+            )
+        )
+    return True
+
+
 def _build_neurovault_images(
     study,
     image_payloads,
@@ -221,6 +349,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
     # How many images are already stored per collection, so a collection that was
     # only partially ingested is topped up instead of skipped forever.
     ingested_image_counts = _neurovault_ingested_image_counts()
+    # Collections whose stored images already carry subject counts that never made
+    # it onto the analyses, so a skipped collection still gets its metadata.
+    sample_size_candidates = _neurovault_sample_size_candidates()
 
     def backfill_collection(data):
         collection_id = data.get("id")
@@ -268,6 +399,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                     collection_id, data.get("DOI"), len(stored_images)
                 )
             )
+            if _apply_neurovault_sample_sizes(study):
+                db.session.commit()
+            sample_size_candidates.discard(source_id)
             return None
 
         print(
@@ -288,7 +422,12 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                 start_order=start_order,
             )
         db.session.add_all(new_objects + list(conditions))
+        # flush first: _apply_neurovault_sample_sizes reads analysis.images, which
+        # would not see the new rows while they are still pending
+        db.session.flush()
+        _apply_neurovault_sample_sizes(study)
         db.session.commit()
+        sample_size_candidates.discard(source_id)
         _recompute_base_study_flag_ids([base_study_id])
         ingested_image_counts[source_id] = len(stored_images) + len(missing)
         return study
@@ -312,6 +451,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                         expected_images,
                     )
                 )
+                if source_id in sample_size_candidates:
+                    _repair_neurovault_sample_sizes(source_id, verbose=verbose)
+                    sample_size_candidates.discard(source_id)
                 return None
             return backfill_collection(data)
 
@@ -359,6 +501,8 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
 
         study_source_id = str(s.source_id) if s.source_id is not None else None
         db.session.add_all([base_study] + [s] + new_objects + list(conditions))
+        db.session.flush()
+        _apply_neurovault_sample_sizes(s)
         db.session.commit()
         _recompute_base_study_flags([base_study])
         if study_source_id is not None:

@@ -146,16 +146,17 @@ def neurovault_collection(collection_id, number_of_images):
     }
 
 
-def neurovault_image(name, image_id):
+def neurovault_image(name, image_id, number_of_subjects=None, file_name=None):
     return {
         "id": image_id,
         "name": name,
         "description": f"{name} map",
         "map_type": "Z map",
-        "file": f"https://neurovault.org/{name}.nii.gz",
+        "file": f"https://neurovault.org/{file_name or name}.nii.gz",
         "add_date": "2026-01-01T00:00:00+00:00",
         "cognitive_paradigm_cogatlas": None,
         "not_mni": False,
+        "number_of_subjects": number_of_subjects,
     }
 
 
@@ -312,3 +313,165 @@ def test_ingest_features(create_pipeline_results, session):
             else:
                 pipeline_version_dir = pipeline_dir / "1.0.0"
                 ingest_feature(pipeline_version_dir)
+
+
+def neurovault_payloads(collection_id, images):
+    return {
+        ingest.NEUROVAULT_COLLECTIONS_URL: {
+            "next": None,
+            "results": [neurovault_collection(collection_id, len(images))],
+        },
+        NEUROVAULT_IMAGE_URL.format(collection_id): {
+            "next": None,
+            "results": images,
+        },
+    }
+
+
+def neurovault_study(collection_id):
+    return Study.query.filter_by(
+        source="neurovault", source_id=str(collection_id)
+    ).one()
+
+
+def analysis_sample_size(study, name):
+    analysis = Analysis.query.filter_by(study_id=study.id, name=name).one()
+    return (analysis.metadata_ or {}).get("sample_size")
+
+
+def test_ingest_neurovault_stores_sample_sizes(monkeypatch, session):
+    collection_id = 424247
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [
+                # two images of one contrast agreeing on the subject count
+                neurovault_image("shared", 1, number_of_subjects=20, file_name="a"),
+                neurovault_image("shared", 2, number_of_subjects=20, file_name="b"),
+                neurovault_image("solo", 3, number_of_subjects=15),
+            ],
+        ),
+    )
+
+    ingest.ingest_neurovault(limit=1)
+
+    study = neurovault_study(collection_id)
+    assert analysis_sample_size(study, "shared") == [20]
+    assert analysis_sample_size(study, "solo") == [15]
+    assert study.metadata_["sample_sizes"] == [20, 15]
+
+
+def test_ingest_neurovault_keeps_disagreeing_sample_sizes(monkeypatch, session):
+    collection_id = 424248
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image("shared", 1, number_of_subjects=30, file_name="a"),
+                neurovault_image("shared", 2, number_of_subjects=20, file_name="b"),
+            ],
+        ),
+    )
+
+    ingest.ingest_neurovault(limit=1)
+
+    study = neurovault_study(collection_id)
+    assert analysis_sample_size(study, "shared") == [20, 30]
+    assert study.metadata_["sample_sizes"] == [20, 30]
+
+
+def test_ingest_neurovault_omits_missing_sample_sizes(monkeypatch, session):
+    collection_id = 424249
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image("no subjects", 1),
+                neurovault_image("bad subjects", 2, number_of_subjects="many"),
+                neurovault_image("counted", 3, number_of_subjects=12),
+            ],
+        ),
+    )
+
+    ingest.ingest_neurovault(limit=1)
+
+    study = neurovault_study(collection_id)
+    assert analysis_sample_size(study, "no subjects") is None
+    assert analysis_sample_size(study, "bad subjects") is None
+    assert analysis_sample_size(study, "counted") == [12]
+    assert study.metadata_["sample_sizes"] == [12]
+
+
+def test_ingest_neurovault_backfill_updates_sample_sizes(monkeypatch, session):
+    collection_id = 424250
+
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [neurovault_image("shared", 1, number_of_subjects=20, file_name="a")],
+        ),
+    )
+    ingest.ingest_neurovault(limit=1)
+    assert analysis_sample_size(neurovault_study(collection_id), "shared") == [20]
+
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image("shared", 1, number_of_subjects=20, file_name="a"),
+                neurovault_image("shared", 2, number_of_subjects=30, file_name="b"),
+                neurovault_image("added", 3, number_of_subjects=8),
+            ],
+        ),
+    )
+    ingest.ingest_neurovault(limit=1)
+
+    study = neurovault_study(collection_id)
+    assert analysis_sample_size(study, "shared") == [20, 30]
+    assert analysis_sample_size(study, "added") == [8]
+    assert study.metadata_["sample_sizes"] == [20, 30, 8]
+
+
+def test_ingest_neurovault_repairs_sample_sizes_without_refetching(
+    monkeypatch, session
+):
+    collection_id = 424251
+
+    # a fresh payload per run: ingest_neurovault pops fields off the dict it fetches
+    def payloads():
+        return neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image("shared", 1, number_of_subjects=20, file_name="a"),
+                neurovault_image("shared", 2, number_of_subjects=20, file_name="b"),
+                neurovault_image("solo", 3, number_of_subjects=15),
+            ],
+        )
+
+    fake_neurovault(monkeypatch, payloads())
+    ingest.ingest_neurovault(limit=1)
+
+    # pretend the collection was ingested before sample sizes were derived
+    study = neurovault_study(collection_id)
+    for analysis in study.analyses:
+        analysis.metadata_ = None
+    study.metadata_ = {
+        key: value for key, value in study.metadata_.items() if key != "sample_sizes"
+    }
+    session.commit()
+
+    requested = []
+    fake_neurovault(monkeypatch, payloads(), requested)
+    ingest.ingest_neurovault(limit=1)
+
+    # the collection is complete, so only the collections endpoint is hit
+    assert requested == [ingest.NEUROVAULT_COLLECTIONS_URL]
+    study = neurovault_study(collection_id)
+    assert analysis_sample_size(study, "shared") == [20]
+    assert analysis_sample_size(study, "solo") == [15]
+    assert study.metadata_["sample_sizes"] == [20, 15]
