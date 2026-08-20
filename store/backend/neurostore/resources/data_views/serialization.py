@@ -90,6 +90,7 @@ def _serialize_image(image, analysis_name=None):
         "filename": image.filename,
         "space": image.space,
         "value_type": map_type_label(image.value_type),
+        "order": image.order,
     }
 
 
@@ -116,7 +117,10 @@ def serialize_analysis_record(analysis):
     ]
     images = [
         _serialize_image(image, analysis_name=analysis.name)
-        for image in sorted(analysis.images, key=lambda image: (image.id or ""))
+        for image in sorted(
+            analysis.images,
+            key=lambda image: _order_sort_key(image.order, image.id),
+        )
     ]
 
     return {
@@ -338,10 +342,11 @@ def serialize_nested_studyset(studyset_id):
                 Image.value_type,
                 Image.filename,
                 Image.add_date,
+                Image.order,
             )
             .select_from(Image)
             .where(Image.analysis_id.in_(analysis_ids))
-            .order_by(Image.analysis_id, Image.id)
+            .order_by(Image.analysis_id, Image.order.is_(None), Image.order, Image.id)
         ).all()
         for (
             analysis_id,
@@ -352,6 +357,7 @@ def serialize_nested_studyset(studyset_id):
             value_type,
             filename,
             add_date,
+            _order,
         ) in image_rows:
             images_by_analysis[analysis_id].append(
                 {

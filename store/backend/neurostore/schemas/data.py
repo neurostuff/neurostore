@@ -15,7 +15,7 @@ from sqlalchemy import func
 
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
-from neurostore.models import Analysis, Point
+from neurostore.models import Analysis, Image, Point
 from neurostore.note_keys import (
     ALLOWED_NOTE_KEY_TYPES,
     canonicalize_note_keys,
@@ -315,11 +315,44 @@ class ImageSchema(BaseDataSchema):
     filename = fields.String(allow_none=True)
     space = fields.String(allow_none=True)
     value_type = fields.String(allow_none=True)
+    order = fields.Integer()
 
     @pre_load
-    def canonicalize_value_type(self, data, **kwargs):
-        if isinstance(data, dict) and data.get("value_type") is not None:
+    def process_values(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+        partial = bool(kwargs.get("partial"))
+
+        if data.get("value_type") is not None:
             data["value_type"] = canonicalize_map_type(data["value_type"])
+
+        if not partial and data.get("order") is None:
+            # Images hang off an analysis when they belong to one, and off the
+            # study directly when they are "uncategorized", so the order runs
+            # within whichever of the two owns the image.
+            analysis_id = data.get("analysis_id") or (
+                data.get("analysis") if isinstance(data.get("analysis"), str) else None
+            )
+            study_id = data.get("study_id") or (
+                data.get("study") if isinstance(data.get("study"), str) else None
+            )
+            if analysis_id:
+                max_order = (
+                    db.session.query(func.max(Image.order))
+                    .filter_by(analysis_id=analysis_id)
+                    .scalar()
+                )
+                data["order"] = 1 if max_order is None else max_order + 1
+            elif study_id:
+                max_order = (
+                    db.session.query(func.max(Image.order))
+                    .filter_by(study_id=study_id, analysis_id=None)
+                    .scalar()
+                )
+                data["order"] = 1 if max_order is None else max_order + 1
+            else:
+                data["order"] = 1
+
         return data
 
     @post_dump
@@ -480,6 +513,17 @@ class AnalysisSchema(BaseDataSchema):
         data.pop("conditions", None)
         data.pop("weights", None)
 
+        # Nested images carry no analysis to count against yet, so number them
+        # by their position in the payload instead of defaulting every one of
+        # them to the same order.
+        if not partial and isinstance(data.get("images"), list):
+            numbered_images = []
+            for index, image in enumerate(data["images"], start=1):
+                if isinstance(image, dict) and image.get("order") is None:
+                    image = {**image, "order": index}
+                numbered_images.append(image)
+            data["images"] = numbered_images
+
         if not partial and data.get("order") is None:
             study_id = data.get("study_id") or (
                 data.get("study") if isinstance(data.get("study"), str) else None
@@ -524,7 +568,7 @@ class AnalysisSchema(BaseDataSchema):
             data["weights"] = [ac["weight"] for ac in data["analysis_conditions"]]
         data.pop("analysis_conditions", None)
         data["points"] = _sort_payload_list(data.get("points"), order_key="order")
-        data["images"] = _sort_payload_list(data.get("images"))
+        data["images"] = _sort_payload_list(data.get("images"), order_key="order")
 
         return data
 
