@@ -240,7 +240,8 @@
                     "beta",
                     "varcope"
                 ],
-                "metadata": []
+                "metadata": [],
+                "conditional": []
             }
         },
         "Fishers": {
@@ -270,7 +271,17 @@
                 "images": [
                     "z"
                 ],
-                "metadata": []
+                "metadata": [],
+                "conditional": [
+                    {
+                        "parameter": "use_sample_size",
+                        "value": true,
+                        "images": [],
+                        "metadata": [
+                            "sample_sizes"
+                        ]
+                    }
+                ]
             }
         },
         "FixedEffectsHedges": {
@@ -307,7 +318,8 @@
                 ],
                 "metadata": [
                     "sample_sizes"
-                ]
+                ],
+                "conditional": []
             }
         },
         "Hedges": {
@@ -338,7 +350,8 @@
                     "beta",
                     "varcope"
                 ],
-                "metadata": []
+                "metadata": [],
+                "conditional": []
             }
         },
         "PermutedOLS": {
@@ -379,7 +392,17 @@
                 "images": [
                     "beta"
                 ],
-                "metadata": []
+                "metadata": [],
+                "conditional": [
+                    {
+                        "parameter": "use_sample_size",
+                        "value": true,
+                        "images": [],
+                        "metadata": [
+                            "sample_sizes"
+                        ]
+                    }
+                ]
             }
         },
         "SampleSizeBasedLikelihood": {
@@ -416,7 +439,8 @@
                 ],
                 "metadata": [
                     "sample_sizes"
-                ]
+                ],
+                "conditional": []
             }
         },
         "Stouffers": {
@@ -446,7 +470,17 @@
                 "images": [
                     "z"
                 ],
-                "metadata": []
+                "metadata": [],
+                "conditional": [
+                    {
+                        "parameter": "use_sample_size",
+                        "value": true,
+                        "images": [],
+                        "metadata": [
+                            "sample_sizes"
+                        ]
+                    }
+                ]
             }
         },
         "VarianceBasedLikelihood": {
@@ -482,7 +516,8 @@
                     "beta",
                     "varcope"
                 ],
-                "metadata": []
+                "metadata": [],
+                "conditional": []
             }
         },
         "WeightedLeastSquares": {
@@ -518,7 +553,8 @@
                     "beta",
                     "varcope"
                 ],
-                "metadata": []
+                "metadata": [],
+                "conditional": []
             }
         }
     },
@@ -562,6 +598,69 @@
                     "default": null
                 }
             }
+        }
+    },
+    "MAP_TYPES": {
+        "value_types": {
+            "P map (given null hypothesis)": "p",
+            "T map": "t",
+            "Z map": "z",
+            "multivariate-beta map": "beta",
+            "p map": "p",
+            "univariate-beta map": "beta",
+            "variance": "varcope"
+        },
+        "derivable_from": {
+            "beta": [
+                [
+                    "t",
+                    "varcope"
+                ],
+                [
+                    "p",
+                    "sample_sizes",
+                    "varcope"
+                ],
+                [
+                    "sample_sizes",
+                    "varcope",
+                    "z"
+                ]
+            ],
+            "p": [
+                [
+                    "z"
+                ],
+                [
+                    "sample_sizes",
+                    "t"
+                ]
+            ],
+            "t": [
+                [
+                    "p",
+                    "sample_sizes"
+                ],
+                [
+                    "sample_sizes",
+                    "z"
+                ]
+            ],
+            "varcope": [
+                [
+                    "beta",
+                    "t"
+                ]
+            ],
+            "z": [
+                [
+                    "p"
+                ],
+                [
+                    "sample_sizes",
+                    "t"
+                ]
+            ]
         }
     }
 }

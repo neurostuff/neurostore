@@ -32,6 +32,7 @@ import nimare.meta.kernel as nikern
 import nimare.correct as crrct
 import nimare
 
+from nimare.io import DEFAULT_MAP_TYPE_CONVERSION
 from nimare.meta.ibma import IBMAEstimator
 
 PARAM_OPTIONAL_REGEX = re.compile(
@@ -310,6 +311,154 @@ def render_descriptions(section):
                     )
 
 
+# --- Data requirements and image transforms --------------------------------
+#
+# Two questions the frontend has to answer before a meta-analysis is worth
+# offering: which statistical maps does this algorithm need, and can those maps
+# be derived from what the studies actually uploaded?
+
+#: NiMARE image keys a neurostore studyset can actually produce. Anything in
+#: SUPPORTED_IMAGE_TYPES without a value_type that maps onto it -- se, sd and
+#: samplevar_dataset -- can never reach a Dataset built from a studyset, so
+#: offering transforms through them would promise routes that cannot be taken.
+REACHABLE_IMAGE_TYPES = sorted(set(DEFAULT_MAP_TYPE_CONVERSION.values()))
+
+#: The metadata field the transforms can draw on, alongside the images.
+TRANSFORM_METADATA = "sample_sizes"
+
+#: Values used to probe resolve_transforms. They only have to be numerically
+#: valid -- a p of 0.05 rather than 0, a positive varcope -- because what is
+#: being measured is which branch NiMARE takes, not the arithmetic.
+PROBE_VALUES = {"z": 2.0, "t": 2.0, "p": 0.05, "beta": 1.0, "varcope": 0.25}
+
+
+def _probe_masker():
+    """A tiny in-memory masker, big enough for resolve_transforms to run."""
+    import nibabel as nib
+    import numpy as np
+    from nilearn.maskers import NiftiMasker
+
+    affine = np.eye(4)
+    masker = NiftiMasker(nib.Nifti1Image(np.ones((4, 4, 4), dtype=np.uint8), affine))
+    masker.fit()
+    return masker, affine
+
+
+def _transform_rules():
+    """Ask NiMARE which maps it can build, rather than restating its source.
+
+    resolve_transforms is a chain of branches whose recursion is uneven -- the
+    beta branch resolves its own inputs, the varcope branch does not -- so a
+    transcribed rule table drifts from it silently. Probing every combination of
+    reachable inputs and keeping the minimal ones that work cannot drift.
+    """
+    import itertools
+    import logging
+    import warnings
+
+    import nibabel as nib
+    import numpy as np
+    from nimare.transforms import resolve_transforms
+
+    masker, affine = _probe_masker()
+    # Probing deliberately asks for targets that are already available, which
+    # NiMARE logs a warning for. That is the probe working, not a problem.
+    transforms_logger = logging.getLogger("nimare.transforms")
+    previous_level = transforms_logger.level
+    transforms_logger.setLevel(logging.ERROR)
+
+    def image(value):
+        return nib.Nifti1Image(np.full((4, 4, 4), value, dtype=float), affine)
+
+    def works(target, sources):
+        available = {s: image(PROBE_VALUES[s]) for s in sources if s in PROBE_VALUES}
+        if TRANSFORM_METADATA in sources:
+            # One subject count is enough; resolve_transforms only needs it to
+            # reach a degrees-of-freedom value.
+            available[TRANSFORM_METADATA] = [30]
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                return resolve_transforms(target, available, masker) is not None
+        except Exception:
+            # A branch that raises is not a route the frontend can offer. NiMARE
+            # 0.21.0's sd branch does exactly this; sd is unreachable from a
+            # studyset anyway, so nothing here depends on it.
+            return False
+
+    pool = REACHABLE_IMAGE_TYPES + [TRANSFORM_METADATA]
+    rules = {}
+    for target in REACHABLE_IMAGE_TYPES:
+        candidates = [s for s in pool if s != target]
+        minimal = []
+        for size in range(1, len(candidates) + 1):
+            for combo in itertools.combinations(candidates, size):
+                if any(set(known) <= set(combo) for known in minimal):
+                    continue
+                if works(target, combo):
+                    minimal.append(tuple(sorted(combo)))
+        rules[target] = [list(recipe) for recipe in minimal]
+
+    _assert_minimal_sets_are_sufficient(rules, pool, works)
+    transforms_logger.setLevel(previous_level)
+    return rules
+
+
+def _assert_minimal_sets_are_sufficient(rules, pool, works):
+    """Check that having more data never takes a transform away.
+
+    The frontend will test "is some recipe a subset of what this study has?",
+    which is only equivalent to asking NiMARE if the transforms are monotone.
+    They are for the reachable types, but NiMARE's varcope branch is an if/elif
+    chain that commits to the first matching input, so a future branch that
+    raises would break the assumption rather than merely narrowing it.
+    """
+    import itertools
+
+    for target, recipes in rules.items():
+        candidates = [s for s in pool if s != target]
+        for size in range(len(candidates) + 1):
+            for combo in itertools.combinations(candidates, size):
+                predicted = any(set(recipe) <= set(combo) for recipe in recipes)
+                if predicted != works(target, combo):
+                    raise ValueError(
+                        f"Transforms to '{target}' are not monotone: NiMARE and the "
+                        f"minimal recipes disagree for {sorted(combo)}. The config "
+                        "cannot describe them as a list of sufficient input sets."
+                    )
+
+
+def _conditional_requirements(cls, parameter_names):
+    """Requirements that only apply for certain parameter values.
+
+    ``_required_inputs`` is a class attribute that several estimators extend in
+    __init__ -- use_sample_size=True is what makes sample_sizes mandatory. A
+    frontend reading only the class attribute would offer an algorithm that then
+    fails on studies with no sample size. Instantiate and diff instead of
+    hardcoding which parameter does this.
+    """
+    baseline = _requirements_from(cls()._required_inputs)
+    conditional = []
+    for name in sorted(parameter_names):
+        if name not in inspect.signature(cls.__init__).parameters:
+            continue
+        for value in (True, False):
+            try:
+                instance = cls(**{name: value})
+            except Exception:
+                continue
+            requirements = _requirements_from(instance._required_inputs)
+            added = {
+                "images": sorted(set(requirements["images"]) - set(baseline["images"])),
+                "metadata": sorted(
+                    set(requirements["metadata"]) - set(baseline["metadata"])
+                ),
+            }
+            if added["images"] or added["metadata"]:
+                conditional.append({"parameter": name, "value": value, **added})
+    return conditional
+
+
 def _is_pairwise_cbma(cls):
     return any(base.__name__ == "PairwiseCBMAEstimator" for base in inspect.getmro(cls))
 
@@ -334,7 +483,12 @@ def _requirements(cls):
     frontend tell the user up front which studies lack the maps an estimator
     needs, instead of failing at run time.
     """
-    required = getattr(cls, "_required_inputs", {}) or {}
+    return _requirements_from(getattr(cls, "_required_inputs", {}))
+
+
+def _requirements_from(required):
+    """Reduce a ``_required_inputs`` mapping to the shape the config uses."""
+    required = required or {}
     images, metadata, coordinates = set(), set(), False
 
     for input_name, spec in required.items():
@@ -473,22 +627,28 @@ for algo, cls in NIMARE_IMAGE_ALGORITHMS:
     docs = ClassDoc(cls)
     cls_signature = inspect.signature(cls)
     fwe_enabled, fwe_parameters = _check_fwe(cls)
+    parameters = {
+        param.name: {
+            "description": " ".join(param.desc),
+            "type": _derive_type(param.type)[0] or None,
+            "default": _ibma_default(cls, cls_signature, param),
+        }
+        for param in docs._parsed_data["Parameters"]
+        if param.name not in BLACKLIST_PARAMS
+        and param.name not in BLACKLIST_IBMA_PARAMS
+    }
     config["IBMA"][algo] = {
         "summary": " ".join(docs._parsed_data["Summary"]),
-        "parameters": {
-            param.name: {
-                "description": " ".join(param.desc),
-                "type": _derive_type(param.type)[0] or None,
-                "default": _ibma_default(cls, cls_signature, param),
-            }
-            for param in docs._parsed_data["Parameters"]
-            if param.name not in BLACKLIST_PARAMS
-            and param.name not in BLACKLIST_IBMA_PARAMS
-        },
+        "parameters": parameters,
         "FWE_enabled": fwe_enabled,
         "FWE_parameters": fwe_parameters,
         "multigroup": _is_multigroup(cls),
-        "requirements": _requirements(cls),
+        # Read off an instance, not the class: several estimators extend
+        # _required_inputs in __init__ depending on their arguments.
+        "requirements": {
+            **_requirements_from(cls()._required_inputs),
+            "conditional": _conditional_requirements(cls, parameters),
+        },
     }
 
 # SET MANUAL DEFAULTS (Hacks!)
@@ -615,6 +775,14 @@ def main(argv=None):
         # rewriting them touches no default, type or requirement.
         for section in ("CBMA", "IBMA", "CORRECTOR"):
             render_descriptions(merged.get(section, {}))
+
+        # How a study's stored value_type becomes a NiMARE image key, and which
+        # keys NiMARE can derive from which. Written in both modes because it
+        # describes NiMARE rather than any one section.
+        merged["MAP_TYPES"] = {
+            "value_types": dict(sorted(DEFAULT_MAP_TYPE_CONVERSION.items())),
+            "derivable_from": _transform_rules(),
+        }
 
         with open(fname, "w+") as c:
             json.dump(merged, c, indent=4)
