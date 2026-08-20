@@ -109,6 +109,9 @@ def test_ingest_neurovault_assigns_images_to_study_and_name_analysis(
     assert len(shared_analysis.images) == 2
     assert len(singleton_analysis.images) == 1
     assert all(image.analysis_id is not None for image in images)
+    # images are numbered within their own analysis
+    assert sorted(image.order for image in shared_analysis.images) == [0, 1]
+    assert [image.order for image in singleton_analysis.images] == [0]
 
 
 NEUROVAULT_IMAGE_URL = "https://neurovault.org/api/collections/{}/images/?format=json"
@@ -233,6 +236,46 @@ def test_ingest_neurovault_backfills_missing_images(monkeypatch, session):
         "https://neurovault.org/third.nii.gz",
     }
     assert sorted(analysis.order for analysis in studies[0].analyses) == [0, 1, 2]
+    assert sorted(image.order for image in studies[0].images) == [0, 0, 0]
+
+
+def test_ingest_neurovault_backfill_continues_image_order(monkeypatch, session):
+    """Topping up an analysis keeps numbering its images where the stored ones stopped."""
+    collection_id = 424250
+    image_url = NEUROVAULT_IMAGE_URL.format(collection_id)
+
+    def payloads(file_names):
+        return {
+            ingest.NEUROVAULT_COLLECTIONS_URL: {
+                "next": None,
+                "results": [neurovault_collection(collection_id, len(file_names))],
+            },
+            image_url: {
+                "next": None,
+                "results": [
+                    # every image shares one name, so they all land on one analysis
+                    neurovault_image("shared", index, file_name=file_name)
+                    for index, file_name in enumerate(file_names, start=1)
+                ],
+            },
+        }
+
+    fake_neurovault(monkeypatch, payloads(["first"]))
+    ingest.ingest_neurovault(limit=1)
+
+    fake_neurovault(monkeypatch, payloads(["first", "second", "third"]))
+    ingest.ingest_neurovault(limit=1)
+
+    study = Study.query.filter_by(
+        source="neurovault", source_id=str(collection_id)
+    ).one()
+    analysis = Analysis.query.filter_by(study_id=study.id, name="shared").one()
+    assert sorted(image.order for image in analysis.images) == [0, 1, 2]
+    assert [image.url for image in sorted(analysis.images, key=lambda i: i.order)] == [
+        "https://neurovault.org/first.nii.gz",
+        "https://neurovault.org/second.nii.gz",
+        "https://neurovault.org/third.nii.gz",
+    ]
 
 
 def test_ingest_neurovault_skips_complete_collection_without_refetching(

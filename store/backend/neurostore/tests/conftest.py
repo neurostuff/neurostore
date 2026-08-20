@@ -637,6 +637,7 @@ def user_data(session, mock_add_users):
                         url="made up",
                         filename="also made up",
                         user=user,
+                        order=0,
                     )
 
                     # put together the analysis

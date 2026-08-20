@@ -870,6 +870,7 @@ class Image(BaseMixin, db.Model):
     )
     data = db.Column(JSONB)
     add_date = db.Column(db.DateTime(timezone=True))
+    order = db.Column(db.Integer)
 
     analysis_name = association_proxy("analysis", "name")
     entities = relationship(

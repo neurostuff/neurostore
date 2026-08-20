@@ -288,8 +288,13 @@ def _build_neurovault_images(
     analyses,
     existing_conditions,
     start_order=0,
+    image_start_orders=None,
 ):
     """Create Analysis/Image rows for image_payloads, reusing analyses by name.
+
+    ``image_start_orders`` maps an analysis name (``None`` for the study-owned
+    images that neurovault gives no name) to the next image order to hand out, so
+    topping up a collection continues numbering where the stored images stopped.
 
     Issues no queries: callers construct these objects only after every lookup is
     done, so autoflush cannot fire while a transient row hangs off a persistent one.
@@ -297,6 +302,7 @@ def _build_neurovault_images(
     new_objects = []
     conditions = set()
     order = start_order
+    image_orders = dict(image_start_orders or {})
     space = collection_space
     for img in image_payloads:
         aname = img.get("name")
@@ -340,6 +346,9 @@ def _build_neurovault_images(
             entities.append(
                 Entity(level="group", label=analysis.name, analysis=analysis)
             )
+        image_order_key = analysis.name if analysis is not None else None
+        image_order = image_orders.get(image_order_key, 0)
+        image_orders[image_order_key] = image_order + 1
         new_objects.append(
             Image(
                 url=img["file"],
@@ -351,6 +360,7 @@ def _build_neurovault_images(
                 filename=op.basename(img["file"]),
                 add_date=parse_date(img["add_date"]),
                 entities=entities,
+                order=image_order,
             )
         )
     return new_objects, conditions
@@ -403,6 +413,15 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         start_order = (
             max([analysis.order or 0 for analysis in stored_analyses], default=-1) + 1
         )
+        # Continue image numbering from the stored images of each analysis (and
+        # of the study, for the images that never got one).
+        analysis_names = {analysis.id: analysis.name for analysis in stored_analyses}
+        image_start_orders = {}
+        for image in stored_images:
+            key = analysis_names.get(image.analysis_id) if image.analysis_id else None
+            next_order = (image.order or 0) + 1
+            if next_order > image_start_orders.get(key, 0):
+                image_start_orders[key] = next_order
 
         missing = [
             img
@@ -438,6 +457,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                 analyses,
                 existing_conditions,
                 start_order=start_order,
+                image_start_orders=image_start_orders,
             )
         db.session.add_all(new_objects + list(conditions))
         # flush first: _apply_neurovault_sample_sizes reads analysis.images, which
