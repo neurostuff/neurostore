@@ -156,6 +156,25 @@ def ingest_neurovault(verbose, limit, max_images, overwrite):
     _run_with_runtime(_run)
 
 
+@main.command("backfill-neurovault-sample-sizes")
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="report each collection that gets sample sizes",
+)
+def backfill_neurovault_sample_sizes(verbose):
+    """Copy neurovault subject counts from stored image data onto analyses/studies."""
+
+    def _run(_app, _db):
+        from neurostore import ingest
+
+        ingest.backfill_neurovault_sample_sizes(verbose=verbose)
+
+    _run_with_runtime(_run)
+
+
 @main.command("ingest-neuroquery")
 @click.option("--max-rows", default=None, help="ingest neuroquery")
 def ingest_neuroquery(max_rows):
