@@ -17,7 +17,7 @@ const LandingPageStyles: Style = {
     },
     heroSection: {
         width: '100%',
-        minHeight: 'calc(100vh - 64px)',
+        minHeight: '800px',
         height: {
             xs: 'auto',
             lg: 'calc(100vh - 64px)',
@@ -25,14 +25,14 @@ const LandingPageStyles: Style = {
         boxSizing: 'border-box',
         backgroundColor: 'primary.main',
         display: 'flex',
-        alignItems: 'stretch',
-        overflow: { xs: 'auto', lg: 'hidden' },
+        flexDirection: 'column',
+        justifyContent: {
+            xs: 'flex-end',
+            md: 'space-around',
+        },
     },
     heroBannerContentContainer: {
         display: 'flex',
-        width: '100%',
-        minHeight: '100%',
-        alignItems: 'stretch',
         justifyContent: 'space-between',
         gap: {
             xs: 0,
@@ -49,7 +49,7 @@ const LandingPageStyles: Style = {
         fontSize: {
             xs: '1.45rem',
             md: '1.75rem',
-            xl: '1.95rem',
+            xl: '2rem',
         },
         lineHeight: 1.25,
         letterSpacing: '-0.02em',
@@ -57,7 +57,6 @@ const LandingPageStyles: Style = {
             xs: 'center',
             lg: 'left',
         },
-        mb: 1.5,
     },
     heroBannerTextContainer: {
         flex: {
@@ -107,7 +106,8 @@ const LandingPageStyles: Style = {
     searchForm: {
         width: '100%',
         mx: { xs: 'auto', lg: 0 },
-        mb: 2,
+        mt: 1,
+        mb: 3,
     },
     searchField: {
         backgroundColor: 'common.white',
@@ -186,9 +186,14 @@ const LandingPageStyles: Style = {
         borderTopRightRadius: { lg: 0 },
         pl: { xs: 2.5, md: 4, lg: 7 },
         py: { xs: 3, lg: 3 },
-        my: { lg: 4.5 },
-        minHeight: { lg: 'min(480px, calc(100vh - 64px - 72px))' },
-        maxHeight: { lg: 'min(480px, calc(100vh - 64px - 72px))' },
+        minHeight: {
+            xs: '350px',
+            lg: '420px',
+        },
+        maxHeight: {
+            xs: '350px',
+            lg: '420px',
+        },
         order: { xs: 2, lg: 2 },
         boxShadow: 'none',
     },

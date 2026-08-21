@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 const MetaAnalysesPage = () => {
     const navigate = useNavigate();
     const { data, isLoading, isError } = useGetMetaAnalysesPublic();
+    const metaAnalyses = data?.results ?? [];
     const isPrerenderReady = !isLoading && (typeof data !== 'undefined' || isError);
 
     usePageMetadata({
@@ -59,7 +60,7 @@ const MetaAnalysesPage = () => {
                                 styles: { fontWeight: 'bold', color: 'primary.contrastText' },
                             },
                         ]}
-                        rows={(data || []).map((metaAnalysis, index) => (
+                        rows={metaAnalyses.map((metaAnalysis, index) => (
                             <TableRow
                                 onClick={() =>
                                     navigate(`/projects/${metaAnalysis?.project}/meta-analyses/${metaAnalysis?.id}`)

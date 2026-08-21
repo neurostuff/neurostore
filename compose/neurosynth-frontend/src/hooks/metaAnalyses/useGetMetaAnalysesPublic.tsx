@@ -1,5 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
+import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk/api';
+
+export interface MetaAnalysisPublicReturn {
+    metadata: {
+        total_count: number;
+    };
+    results: MetaAnalysisReturn[];
+}
 
 const useGetMetaAnalysesPublic = () => {
     const result = useQuery({
@@ -7,9 +15,8 @@ const useGetMetaAnalysesPublic = () => {
         queryFn: () => API.NeurosynthServices.MetaAnalysisService.metaAnalysesGet(false),
 
         select: (axiosResponse) => {
-            const res = axiosResponse.data.results || [];
-            return res;
-        }
+            return axiosResponse.data as MetaAnalysisPublicReturn;
+        },
     });
 
     return result;

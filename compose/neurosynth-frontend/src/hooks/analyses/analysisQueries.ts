@@ -1,7 +1,7 @@
 import API from 'api/api.config';
-import { ImageReturn, PointList } from 'neurostore-typescript-sdk';
+import { ImageList, ImageReturn, PointList } from 'neurostore-typescript-sdk';
 import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
-import { UseQueryOptions } from '@tanstack/react-query';
+import { queryOptions, UseQueryOptions } from '@tanstack/react-query';
 
 const analysisQueries = {
     analyses: {
@@ -58,6 +58,15 @@ const analysisQueries = {
         all: () => ['images'] as const,
         list: () => [...analysisQueries.images.all(), 'list'] as const,
         details: () => [...analysisQueries.images.all(), 'detail'] as const,
+        every: () =>
+            queryOptions({
+                queryKey: ['images'] as const,
+                queryFn: async () => {
+                    const res = await API.NeurostoreServices.ImagesService.imagesGet();
+                    return res.data as ImageList;
+                },
+                enabled: true,
+            }),
         uncategorizedByStudyId: (studyId: string | undefined | null): UseQueryOptions<ImageReturn[]> => ({
             queryKey: [...analysisQueries.images.list(), 'uncategorized', 'study', studyId] as const,
             queryFn: async () => {

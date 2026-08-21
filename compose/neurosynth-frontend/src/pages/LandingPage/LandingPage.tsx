@@ -24,11 +24,7 @@ import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
 import onvocConfig from 'assets/config/onvoc-1.0.0.json';
-import {
-    collectOnvocLeafLabels,
-    getOnvocLeafIdByLabel,
-    OnvocTreeNode,
-} from 'pages/Explore/Explore.mockData';
+import { collectOnvocLeafLabels, getOnvocLeafIdByLabel, OnvocTreeNode } from 'pages/Explore/Explore.mockData';
 import LandingPageStyles from './LandingPage.styles';
 
 const ONVOC_TREE = onvocConfig.tree as OnvocTreeNode[];
@@ -135,16 +131,20 @@ const LandingPage = () => {
             <Box sx={LandingPageStyles.heroSection}>
                 <Box sx={LandingPageStyles.heroBannerContentContainer}>
                     <Box sx={LandingPageStyles.heroBannerTextContainer}>
-                        <Typography component="h1" sx={LandingPageStyles.title}>
-                            Welcome to neurosynth Compose: A free and open platform for neuroimaging meta-analysis
+                        <Typography variant="h1" sx={LandingPageStyles.title}>
+                            Welcome to neurosynth Compose
+                            {/* : A free and open platform for neuroimaging meta-analysis */}
                         </Typography>
-                        <Typography sx={LandingPageStyles.heroBannerText}>
+                        <Typography variant="h5" color="primary.contrastText" sx={{ mb: 2, mt: 0.5 }}>
+                            A free and open platform for neuroimaging meta-analysis
+                        </Typography>
+                        {/* <Typography sx={LandingPageStyles.heroBannerText}>
                             Explore meta-analyses, or perform custom neuroimaging meta-analyses entirely in the browser,
                             and quickly get results in the cloud using automated analysis pipelines.
-                        </Typography>
-                        <Box sx={LandingPageStyles.activitySummaryContainer}>
+                        </Typography> */}
+                        {/* <Box sx={LandingPageStyles.activitySummaryContainer}>
                             <NeurosynthActivitySummary />
-                        </Box>
+                        </Box> */}
                         <Box component="form" onSubmit={handleSearchSubmit} sx={LandingPageStyles.searchForm}>
                             <Autocomplete
                                 freeSolo
@@ -214,6 +214,21 @@ const LandingPage = () => {
                         <Box sx={LandingPageStyles.carouselInner}>
                             <LandingExploreCarousel variant="fillWidth" />
                         </Box>
+                    </Box>
+                </Box>
+                <Box sx={{ display: 'flex', px: '10vw', flexDirection: 'column' }}>
+                    <Box>
+                        {/* <Typography
+                            variant="h4"
+                            color="primary.contrastText"
+                            sx={{ mb: 2, mt: 0.5, fontWeight: 'bold' }}
+                        >
+                            Explore meta-analyses, or perform custom neuroimaging meta-analyses entirely in the browser,
+                            and quickly get results in the cloud using automated analysis pipelines.
+                        </Typography> */}
+                    </Box>
+                    <Box sx={{ pb: 4 }}>
+                        <NeurosynthActivitySummary />
                     </Box>
                 </Box>
             </Box>
