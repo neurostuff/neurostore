@@ -61,7 +61,7 @@ const getAlgorithmDefaultOption = (analysisType: EAnalysisType): IAutocompleteOb
         return algorithms.find((algo) => algo.label === 'MKDADensity') || algorithms[0] || null;
     }
     if (analysisType === EAnalysisType.IBMA) {
-        return algorithms.find((algo) => algo.label === 'Fishers') || algorithms[0] || null;
+        return algorithms.find((algo) => algo.label === 'Stouffers') || algorithms[0] || null;
     }
     return algorithms[0] || null;
 };

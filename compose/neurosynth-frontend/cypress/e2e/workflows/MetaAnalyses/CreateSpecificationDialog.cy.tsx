@@ -153,9 +153,9 @@ describe('CreateSpecificationDialog', () => {
             });
         });
 
-        it('defaults to Fishers and lists only Fishers and Stouffers', () => {
+        it('defaults to Stouffers and lists only Fishers and Stouffers', () => {
             openCreateSpecificationDialog('projectIBMAFixture');
-            cy.get('.MuiDialog-container input').first().should('have.value', 'Fishers');
+            cy.get('.MuiDialog-container input').first().should('have.value', 'Stouffers');
             cy.get('.MuiDialog-container').contains('MKDADensity').should('not.exist');
 
             cy.get('.MuiDialog-container input').first().click();
@@ -166,11 +166,11 @@ describe('CreateSpecificationDialog', () => {
             cy.get('[role="option"]').contains('DerSimonianLaird').should('not.exist');
         });
 
-        it('can select Stouffers', () => {
+        it('can select Fishers', () => {
             openCreateSpecificationDialog('projectIBMAFixture');
             cy.get('.MuiDialog-container input').first().click();
-            cy.get('[role="option"]').contains('Stouffers').click();
-            cy.get('.MuiDialog-container input').first().should('have.value', 'Stouffers');
+            cy.get('[role="option"]').contains('Fishers').click();
+            cy.get('.MuiDialog-container input').first().should('have.value', 'Fishers');
         });
 
         it('submits Fishers with updated algorithm argument values', () => {
@@ -185,6 +185,8 @@ describe('CreateSpecificationDialog', () => {
 
             stubCreateSpecificationApis();
             openCreateSpecificationDialog('projectIBMAFixture');
+            cy.get('.MuiDialog-container input').first().click();
+            cy.get('[role="option"]').contains('Fishers').click();
             cy.get('.MuiDialog-container input').first().should('have.value', 'Fishers');
 
             cy.contains('Algorithm arguments').click();

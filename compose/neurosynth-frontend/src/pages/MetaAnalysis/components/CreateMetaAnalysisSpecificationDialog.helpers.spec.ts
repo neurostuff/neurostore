@@ -66,12 +66,12 @@ describe('CreateMetaAnalysisSpecificationDialog.helpers', () => {
             expect(defaultOption?.description).toBe(metaAnalysisSpecification.CBMA.MKDADensity.summary);
         });
 
-        it('defaults IBMA to Fishers', () => {
+        it('defaults IBMA to Stouffers', () => {
             const defaultOption = getAlgorithmDefaultOption(EAnalysisType.IBMA);
 
             expect(defaultOption).not.toBeNull();
-            expect(defaultOption?.label).toBe('Fishers');
-            expect(defaultOption?.description).toBe(metaAnalysisSpecification.IBMA.Fishers.summary);
+            expect(defaultOption?.label).toBe('Stouffers');
+            expect(defaultOption?.description).toBe(metaAnalysisSpecification.IBMA.Stouffers.summary);
         });
     });
 
