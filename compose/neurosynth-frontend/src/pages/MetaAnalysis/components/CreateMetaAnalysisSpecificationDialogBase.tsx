@@ -15,15 +15,17 @@ import {
 import CreateMetaAnalysisSpecificationReview from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationReview';
 import CreateMetaAnalysisSpecificationSelectionStep from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStep';
 import {
-    getDefaultValuesForTypeAndParameter,
-    correctorDefaultOption,
     getAlgorithmDefaultOption,
+    getCorrectorDefaultOption,
+    getDefaultValuesForAlgorithm,
+    getDefaultValuesForCorrector,
 } from './CreateMetaAnalysisSpecificationDialog.helpers';
 
 const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
     const projectName = useProjectName();
     const analysisType = useProjectAnalysisType() ?? EAnalysisType.CBMA;
     const algorithmDefaultOption = getAlgorithmDefaultOption(analysisType);
+    const correctorDefaultOption = getCorrectorDefaultOption(analysisType);
 
     const [activeStep, setActiveStep] = useState(0);
     const [details, setDetails] = useState({
@@ -38,9 +40,13 @@ const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
     });
     const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>(() => ({
         estimator: algorithmDefaultOption,
-        estimatorArgs: getDefaultValuesForTypeAndParameter(analysisType, algorithmDefaultOption?.label),
+        estimatorArgs: getDefaultValuesForAlgorithm(analysisType, algorithmDefaultOption?.label),
         corrector: correctorDefaultOption,
-        correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorDefaultOption?.label),
+        correctorArgs: getDefaultValuesForCorrector(
+            analysisType,
+            correctorDefaultOption?.label,
+            algorithmDefaultOption?.label
+        ),
     }));
 
     useEffect(() => {
@@ -55,9 +61,13 @@ const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
         setActiveStep(0);
         setAlgorithm({
             estimator: algorithmDefaultOption,
-            estimatorArgs: getDefaultValuesForTypeAndParameter(analysisType, algorithmDefaultOption?.label),
+            estimatorArgs: getDefaultValuesForAlgorithm(analysisType, algorithmDefaultOption?.label),
             corrector: correctorDefaultOption,
-            correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorDefaultOption?.label),
+            correctorArgs: getDefaultValuesForCorrector(
+                analysisType,
+                correctorDefaultOption?.label,
+                algorithmDefaultOption?.label
+            ),
         });
         setSelection({
             selectionKey: undefined,
@@ -72,9 +82,13 @@ const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
         setActiveStep(0);
         setAlgorithm({
             estimator: algorithmDefaultOption,
-            estimatorArgs: getDefaultValuesForTypeAndParameter(analysisType, algorithmDefaultOption?.label),
+            estimatorArgs: getDefaultValuesForAlgorithm(analysisType, algorithmDefaultOption?.label),
             corrector: correctorDefaultOption,
-            correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorDefaultOption?.label),
+            correctorArgs: getDefaultValuesForCorrector(
+                analysisType,
+                correctorDefaultOption?.label,
+                algorithmDefaultOption?.label
+            ),
         });
         setSelection({
             selectionKey: undefined,

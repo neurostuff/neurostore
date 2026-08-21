@@ -1,11 +1,12 @@
 import { EAnalysisType } from 'hooks/projects/Project.types';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import {
-    correctorDefaultOption,
-    correctorOptions,
     getAlgorithmDefaultOption,
-    getDefaultValuesForTypeAndParameter,
+    getCorrectorDefaultOption,
+    getDefaultValuesForAlgorithm,
+    getDefaultValuesForCorrector,
     getMetaAnalyticAlgorithms,
+    getMetaAnalyticCorrectors,
     metaAnalysisSpecification,
 } from './CreateMetaAnalysisSpecificationDialog.helpers';
 
@@ -75,34 +76,51 @@ describe('CreateMetaAnalysisSpecificationDialog.helpers', () => {
         });
     });
 
-    describe('correctorOptions / correctorDefaultOption', () => {
-        it('lists every CORRECTOR with its summary', () => {
+    describe('getMetaAnalyticCorrectors', () => {
+        it('returns every CORRECTOR with its summary for CBMA', () => {
+            const correctors = getMetaAnalyticCorrectors(EAnalysisType.CBMA);
             const correctorKeys = Object.keys(metaAnalysisSpecification.CORRECTOR);
 
-            expect(correctorOptions).toHaveLength(correctorKeys.length);
-            expect(correctorOptions.map((option) => option.label).sort()).toEqual([...correctorKeys].sort());
-            for (const option of correctorOptions) {
+            expect(correctors).toHaveLength(correctorKeys.length);
+            expect(correctors.map((option) => option.label).sort()).toEqual([...correctorKeys].sort());
+            expect(correctors.map((option) => option.label)).toContain('FWECorrector');
+            for (const option of correctors) {
                 expect(option.description).toBe(metaAnalysisSpecification.CORRECTOR[option.label].summary);
             }
         });
 
-        it('defaults the corrector to FDRCorrector', () => {
-            expect(correctorDefaultOption).not.toBeNull();
-            expect(correctorDefaultOption?.label).toBe('FDRCorrector');
-            expect(correctorDefaultOption?.description).toBe(
-                metaAnalysisSpecification.CORRECTOR.FDRCorrector.summary
-            );
+        it('omits FWECorrector for IBMA', () => {
+            const correctors = getMetaAnalyticCorrectors(EAnalysisType.IBMA);
+
+            expect(correctors.map((option) => option.label)).toEqual(['FDRCorrector']);
+            expect(correctors.map((option) => option.label)).not.toContain('FWECorrector');
+            expect(correctors[0].description).toBe(metaAnalysisSpecification.CORRECTOR.FDRCorrector.summary);
         });
     });
 
-    describe('getDefaultValuesForTypeAndParameter', () => {
-        it('returns an empty object when parameterLabel is missing', () => {
-            expect(getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, undefined)).toEqual({});
-            expect(getDefaultValuesForTypeAndParameter('CORRECTOR', undefined)).toEqual({});
+    describe('getCorrectorDefaultOption', () => {
+        it('defaults CBMA to FDRCorrector', () => {
+            const defaultOption = getCorrectorDefaultOption(EAnalysisType.CBMA);
+            expect(defaultOption).not.toBeNull();
+            expect(defaultOption?.label).toBe('FDRCorrector');
+            expect(defaultOption?.description).toBe(metaAnalysisSpecification.CORRECTOR.FDRCorrector.summary);
+        });
+
+        it('defaults IBMA to FDRCorrector', () => {
+            const defaultOption = getCorrectorDefaultOption(EAnalysisType.IBMA);
+            expect(defaultOption).not.toBeNull();
+            expect(defaultOption?.label).toBe('FDRCorrector');
+            expect(defaultOption?.description).toBe(metaAnalysisSpecification.CORRECTOR.FDRCorrector.summary);
+        });
+    });
+
+    describe('getDefaultValuesForAlgorithm', () => {
+        it('returns an empty object when algorithm is missing', () => {
+            expect(getDefaultValuesForAlgorithm(EAnalysisType.CBMA, undefined)).toEqual({});
         });
 
         it('maps CBMA estimator parameter defaults, using {} for kwargs', () => {
-            const defaults = getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, 'ALE');
+            const defaults = getDefaultValuesForAlgorithm(EAnalysisType.CBMA, 'ALE');
             const aleParams = metaAnalysisSpecification.CBMA.ALE.parameters;
 
             expect(defaults.null_method).toBe(aleParams.null_method.default);
@@ -113,16 +131,27 @@ describe('CreateMetaAnalysisSpecificationDialog.helpers', () => {
         });
 
         it('maps IBMA estimator parameter defaults', () => {
-            const defaults = getDefaultValuesForTypeAndParameter(EAnalysisType.IBMA, 'Fishers');
+            const defaults = getDefaultValuesForAlgorithm(EAnalysisType.IBMA, 'Fishers');
             const fishersParams = metaAnalysisSpecification.IBMA.Fishers.parameters;
 
             expect(defaults.aggressive_mask).toBe(fishersParams.aggressive_mask.default);
             expect(defaults.use_sample_size).toBe(fishersParams.use_sample_size.default);
             expect(defaults.two_sided).toBe(fishersParams.two_sided.default);
         });
+    });
 
-        it('maps FDRCorrector defaults without estimator context', () => {
-            const defaults = getDefaultValuesForTypeAndParameter('CORRECTOR', 'FDRCorrector');
+    describe('getDefaultValuesForCorrector', () => {
+        it('returns an empty object when corrector or algorithm is missing', () => {
+            expect(getDefaultValuesForCorrector(EAnalysisType.CBMA, undefined, 'ALE')).toEqual({});
+            expect(getDefaultValuesForCorrector(EAnalysisType.CBMA, 'FDRCorrector', undefined)).toEqual({});
+        });
+
+        it('returns an empty object for an unknown corrector', () => {
+            expect(getDefaultValuesForCorrector(EAnalysisType.CBMA, 'NotACorrector', 'ALE')).toEqual({});
+        });
+
+        it('maps FDRCorrector defaults', () => {
+            const defaults = getDefaultValuesForCorrector(EAnalysisType.CBMA, 'FDRCorrector', 'ALE');
             const fdrParams = metaAnalysisSpecification.CORRECTOR.FDRCorrector.parameters;
 
             expect(defaults).toEqual({
@@ -131,23 +160,8 @@ describe('CreateMetaAnalysisSpecificationDialog.helpers', () => {
             });
         });
 
-        it('uses base FWECorrector defaults when no FWE-enabled estimator is provided', () => {
-            const defaults = getDefaultValuesForTypeAndParameter('CORRECTOR', 'FWECorrector');
-            const fweParams = metaAnalysisSpecification.CORRECTOR.FWECorrector.parameters;
-
-            expect(defaults.method).toBe(fweParams.method.default);
-            expect(defaults.voxel_thresh).toBe(fweParams.voxel_thresh.default);
-            expect(defaults.n_iters).toBe(fweParams.n_iters.default);
-            expect(defaults['**kwargs']).toEqual({});
-        });
-
         it('uses base FWECorrector defaults when the estimator does not enable FWE', () => {
-            const defaults = getDefaultValuesForTypeAndParameter(
-                'CORRECTOR',
-                'FWECorrector',
-                'ALESubtraction',
-                EAnalysisType.CBMA
-            );
+            const defaults = getDefaultValuesForCorrector(EAnalysisType.CBMA, 'FWECorrector', 'ALESubtraction');
             const fweParams = metaAnalysisSpecification.CORRECTOR.FWECorrector.parameters;
 
             expect(defaults.method).toBe(fweParams.method.default);
@@ -156,46 +170,27 @@ describe('CreateMetaAnalysisSpecificationDialog.helpers', () => {
             expect(Object.keys(defaults)).not.toContain('vfwe_only');
         });
 
-        it('merges FWE_parameters from an FWE-enabled CBMA estimator and forces method to montecarlo', () => {
+        it('uses FWE_parameters from an FWE-enabled CBMA estimator', () => {
             const aleFweParams = metaAnalysisSpecification.CBMA.ALE.FWE_parameters;
             expect(aleFweParams).not.toBeNull();
 
-            const defaults = getDefaultValuesForTypeAndParameter(
-                'CORRECTOR',
-                'FWECorrector',
-                'ALE',
-                EAnalysisType.CBMA
-            );
+            const defaults = getDefaultValuesForCorrector(EAnalysisType.CBMA, 'FWECorrector', 'ALE');
 
-            expect(defaults.method).toBe('montecarlo');
             expect(defaults.voxel_thresh).toBe(aleFweParams!.voxel_thresh.default);
             expect(defaults.n_iters).toBe(aleFweParams!.n_iters.default);
             expect(defaults.vfwe_only).toBe(aleFweParams!.vfwe_only.default);
+            expect(defaults).not.toHaveProperty('method');
             expect(defaults).not.toHaveProperty('**kwargs');
         });
 
-        it('merges FWE_parameters from an FWE-enabled IBMA estimator and forces method to montecarlo', () => {
+        it('uses FWE_parameters from an FWE-enabled IBMA estimator', () => {
             const permutedFweParams = metaAnalysisSpecification.IBMA.PermutedOLS.FWE_parameters;
             expect(permutedFweParams).not.toBeNull();
 
-            const defaults = getDefaultValuesForTypeAndParameter(
-                'CORRECTOR',
-                'FWECorrector',
-                'PermutedOLS',
-                EAnalysisType.IBMA
-            );
+            const defaults = getDefaultValuesForCorrector(EAnalysisType.IBMA, 'FWECorrector', 'PermutedOLS');
 
-            expect(defaults.method).toBe('montecarlo');
             expect(defaults.n_iters).toBe(permutedFweParams!.n_iters.default);
-            expect(Object.keys(defaults).sort()).toEqual(['method', 'n_iters'].sort());
-        });
-
-        it('ignores a partial estimator reference (label without type)', () => {
-            const defaults = getDefaultValuesForTypeAndParameter('CORRECTOR', 'FWECorrector', 'ALE');
-            const fweParams = metaAnalysisSpecification.CORRECTOR.FWECorrector.parameters;
-
-            expect(defaults.method).toBe(fweParams.method.default);
-            expect(defaults).not.toHaveProperty('vfwe_only');
+            expect(Object.keys(defaults)).toEqual(['n_iters']);
         });
     });
 });

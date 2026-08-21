@@ -6,9 +6,10 @@ import { EAnalysisType } from 'hooks/projects/Project.types';
 import { useProjectAnalysisType } from 'stores/projects/ProjectStore';
 import { IAlgorithmSelection } from './CreateMetaAnalysisSpecificationDialogBase.types';
 import {
-    correctorOptions,
-    getDefaultValuesForTypeAndParameter,
+    getDefaultValuesForAlgorithm,
+    getDefaultValuesForCorrector,
     getMetaAnalyticAlgorithms,
+    getMetaAnalyticCorrectors,
 } from './CreateMetaAnalysisSpecificationDialog.helpers';
 
 const SelectSpecificationComponent = (props: {
@@ -17,6 +18,7 @@ const SelectSpecificationComponent = (props: {
 }) => {
     const analysisType = useProjectAnalysisType() ?? EAnalysisType.CBMA;
     const metaAnalyticAlgorithms = getMetaAnalyticAlgorithms(analysisType);
+    const metaAnalyticCorrectors = getMetaAnalyticCorrectors(analysisType);
 
     return (
         <Box>
@@ -41,16 +43,15 @@ const SelectSpecificationComponent = (props: {
                         const updatedAlgorithm = {
                             ...props.algorithm,
                             estimator: newVal,
-                            estimatorArgs: getDefaultValuesForTypeAndParameter(analysisType, newVal?.label),
+                            estimatorArgs: getDefaultValuesForAlgorithm(analysisType, newVal?.label),
                         };
                         props.onSelectSpecification(updatedAlgorithm);
 
                         // Trigger update for the corrector
-                        const newCorrectorArgs = getDefaultValuesForTypeAndParameter(
-                            'CORRECTOR',
+                        const newCorrectorArgs = getDefaultValuesForCorrector(
+                            analysisType,
                             props.algorithm?.corrector?.label,
-                            newVal?.label,
-                            analysisType
+                            newVal?.label
                         );
 
                         // Update the corrector in the algorithm object
@@ -117,15 +118,14 @@ const SelectSpecificationComponent = (props: {
                             props.onSelectSpecification({
                                 ...props.algorithm,
                                 corrector: newVal,
-                                correctorArgs: getDefaultValuesForTypeAndParameter(
-                                    'CORRECTOR',
+                                correctorArgs: getDefaultValuesForCorrector(
+                                    analysisType,
                                     newVal?.label,
-                                    props.algorithm.estimator?.label,
-                                    analysisType
+                                    props.algorithm.estimator?.label
                                 ),
                             });
                         }}
-                        options={correctorOptions}
+                        options={metaAnalyticCorrectors}
                     />
 
                     {props.algorithm?.corrector && (

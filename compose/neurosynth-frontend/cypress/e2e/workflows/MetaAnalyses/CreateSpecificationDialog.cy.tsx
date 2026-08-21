@@ -85,13 +85,15 @@ describe('CreateSpecificationDialog', () => {
         cy.get('@correctorInput').click();
         cy.get('[role="option"]').contains('FWECorrector').click();
         cy.get('@correctorInput').should('have.value', 'FWECorrector');
+        cy.get('[role="listbox"]').should('not.exist');
 
-        cy.contains('Corrector arguments').click();
+        cy.contains('Corrector arguments').closest('.MuiAccordionSummary-root').click();
         cy.contains('Corrector arguments')
             .closest('.MuiAccordion-root')
+            .should('have.class', 'Mui-expanded')
             .within(() => {
-                cy.get('input[name="method"]').scrollIntoView().should('be.visible').clear().type('bonferroni');
-                cy.get('input[name="n_iters"]').scrollIntoView().should('be.visible').clear().type('1234');
+                cy.get('input[name="n_iters"]').clear({ force: true }).type('1234', { force: true });
+                cy.get('input[name="method"]').clear({ force: true }).type('bonferroni', { force: true });
             });
 
         completeSpecificationWizard();
@@ -164,6 +166,18 @@ describe('CreateSpecificationDialog', () => {
             cy.get('[role="option"]').contains('Stouffers').should('exist');
             cy.get('[role="option"]').contains('PermutedOLS').should('not.exist');
             cy.get('[role="option"]').contains('DerSimonianLaird').should('not.exist');
+        });
+
+        it('lists only FDRCorrector and omits FWECorrector', () => {
+            openCreateSpecificationDialog('projectIBMAFixture');
+            cy.get('.MuiDialog-container')
+                .contains('label', 'corrector (optional)')
+                .parent()
+                .find('input')
+                .click();
+            cy.get('[role="listbox"] [role="option"]').should('have.length', 1);
+            cy.get('[role="option"]').contains('FDRCorrector').should('exist');
+            cy.get('[role="option"]').contains('FWECorrector').should('not.exist');
         });
 
         it('can select Fishers', () => {
