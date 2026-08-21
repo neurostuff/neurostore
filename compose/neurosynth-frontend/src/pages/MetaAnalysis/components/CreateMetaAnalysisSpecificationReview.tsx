@@ -9,6 +9,7 @@ import { useSnackbar } from 'notistack';
 import DynamicInputDisplay from 'pages/MetaAnalysis/components/DynamicInputDisplay';
 import { getFilteredAnnotationNotes } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
 import {
+    useProjectAnalysisType,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectId,
@@ -41,6 +42,7 @@ const CreateMetaAnalysisSpecificationReview = (props: {
 }) => {
     const navigate = useNavigate();
     const projectId = useProjectId();
+    const analysisType = useProjectAnalysisType() ?? EAnalysisType.CBMA;
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: annotations } = useGetAnnotationById(annotationId);
@@ -63,7 +65,7 @@ const CreateMetaAnalysisSpecificationReview = (props: {
 
         const metaAnalysis = await createMetaAnalysis(
             projectId,
-            EAnalysisType.CBMA,
+            analysisType,
             props.algorithm.estimator,
             props.algorithm.corrector,
             studysetId,

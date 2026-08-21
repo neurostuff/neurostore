@@ -6,11 +6,12 @@ import useGetBaseStudyNestedById from 'hooks/studies/useGetBaseStudyNestedById';
 import studyQueries from 'hooks/studies/studyQueries';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { SearchDataType } from 'pages/Study/Study.types';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { studyAnalysesToStoreAnalyses } from 'stores/study/StudyStore.helpers';
 import { useInitStudyStore } from 'stores/study/StudyStore';
+import { lastUpdatedAtSortFn } from 'helpers/utils';
 
 const formatVersionDate = (dateValue: string | null | undefined): string | undefined => {
     if (!dateValue) return undefined;
@@ -76,8 +77,12 @@ const BaseStudyPage = () => {
     }, [baseStudy, baseStudyId, navigate, preferredType, searchParams, studyVersionId]);
 
     const analyses = studyAnalysesToStoreAnalyses((study?.analyses || []) as Array<AnalysisReturn>);
-    const versions = (baseStudy?.versions || []) as StudyReturn[];
-    const selectedVersion = versions.find((version) => version.id === studyVersionId);
+    const sortedVersions = useMemo(() => {
+        return [...(baseStudy?.versions ?? [])].sort(lastUpdatedAtSortFn);
+    }, [baseStudy?.versions]);
+    const selectedVersion = sortedVersions.find((version) => version.id === studyVersionId);
+
+    console.log({ sortedVersions });
 
     return (
         <StateHandlerComponent
@@ -109,7 +114,7 @@ const BaseStudyPage = () => {
                             return `${typeLabel} · ${user} · ${displayDateText}: ${displayDate}`;
                         }}
                     >
-                        {versions.map((version, index) => {
+                        {sortedVersions.map((version, index) => {
                             const typeLabel = getVersionTypeLabel(version);
                             const owner = version.username ? version.username : 'neurosynth';
                             const updatedAt = formatVersionDate(version.updated_at);

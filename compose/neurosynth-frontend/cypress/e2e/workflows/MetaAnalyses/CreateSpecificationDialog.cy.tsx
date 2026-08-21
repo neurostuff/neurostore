@@ -1,5 +1,45 @@
 /// <reference types="cypress" />
 
+import { EAnalysisType, IProvenance } from 'hooks/projects/Project.types';
+import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
+
+const openCreateSpecificationDialog = (projectAlias = 'projectFixture') => {
+    cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait(`@${projectAlias}`);
+    cy.contains('button', 'Meta-Analyses').click();
+    cy.contains('button', 'Meta-Analysis Specification').click();
+    cy.get('.MuiDialog-container').should('be.visible');
+};
+
+const stubCreateSpecificationApis = () => {
+    cy.intercept('POST', '**/api/specifications', {
+        id: 'mockedSpecificationId',
+    }).as('createSpecificationFixture');
+    cy.intercept('POST', '**/api/snapshot-studysets', {
+        id: 'mockedStudySetId',
+    });
+    cy.intercept('POST', '**/api/snapshot-annotations', {
+        id: 'mockedAnnotationId',
+    });
+    cy.intercept('POST', '**/api/meta-analyses', {
+        id: 'mockedMetaAnalysisId',
+        specification: {},
+    });
+    cy.intercept('GET', '**/api/specifications/*', {
+        fixture: 'MetaAnalysis/specification',
+    });
+    cy.intercept('GET', '**/api/meta-analyses/mockedMetaAnalysisId*', {
+        fixture: 'MetaAnalysis/metaAnalysis',
+    }).as('MetaAnalysis/metaAnalysesFixture');
+};
+
+const completeSpecificationWizard = () => {
+    cy.contains('Next').click();
+    cy.contains('included').should('exist');
+    cy.contains('button', 'Next').click();
+    cy.contains('button', 'Next').click();
+    cy.contains('button', 'Create Meta-Analysis Specification').click();
+};
+
 describe('CreateSpecificationDialog', () => {
     beforeEach(() => {
         cy.clearLocalStorage();
@@ -17,60 +57,182 @@ describe('CreateSpecificationDialog', () => {
     });
 
     it('should show the dialog', () => {
-        cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait('@projectFixture');
-        cy.contains('button', 'Meta-Analyses').click();
-        cy.contains('button', 'Meta-Analysis Specification').click();
-        cy.get('.MuiDialog-container').should('be.visible');
+        openCreateSpecificationDialog();
         cy.contains('button', 'Back').should('be.disabled');
     });
 
     it('should set the default specification values', () => {
-        cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait('@projectFixture');
-        cy.contains('button', 'Meta-Analyses').click();
-        cy.contains('button', 'Meta-Analysis Specification').click();
-        cy.get('.MuiDialog-container').should('be.visible');
+        openCreateSpecificationDialog();
         cy.contains('MKDADensity').should('exist');
         cy.contains('FDRCorrector').should('exist');
     });
 
     it('should step through the wizard', () => {
-        cy.intercept('POST', '**/api/specifications', {
-            id: 'mockedSpecificationId',
-        }).as('createSpecificationFixture');
-        cy.intercept('POST', '**/api/snapshot-studysets', {
-            id: 'mockedStudySetId',
-        });
-        cy.intercept('POST', '**/api/snapshot-annotations', {
-            id: 'mockedAnnotationId',
-        });
-        cy.intercept('POST', '**/api/meta-analyses', {
-            id: 'mockedMetaAnalysisId',
-            specification: {},
-        });
-        cy.intercept('GET', '**/api/specifications/*', {
-            fixture: 'MetaAnalysis/specification',
-        });
+        stubCreateSpecificationApis();
+        openCreateSpecificationDialog();
+        completeSpecificationWizard();
+    });
 
-        cy.intercept('GET', '**/api/meta-analyses/mockedMetaAnalysisId*', {
-            fixture: 'MetaAnalysis/metaAnalysis',
-        }).as('MetaAnalysis/metaAnalysesFixture');
+    it('submits the selected corrector and its argument values', () => {
+        stubCreateSpecificationApis();
+        openCreateSpecificationDialog();
 
-        cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait('@projectFixture');
-        cy.contains('button', 'Meta-Analyses').click();
-        cy.contains('button', 'Meta-Analysis Specification').click();
+        cy.get('.MuiDialog-container')
+            .contains('label', 'corrector (optional)')
+            .parent()
+            .find('input')
+            .as('correctorInput');
+        cy.get('@correctorInput').click();
+        cy.get('[role="option"]').contains('FWECorrector').click();
+        cy.get('@correctorInput').should('have.value', 'FWECorrector');
+        cy.get('[role="listbox"]').should('not.exist');
+
+        cy.contains('Corrector arguments').closest('.MuiAccordionSummary-root').click();
+        cy.contains('Corrector arguments')
+            .closest('.MuiAccordion-root')
+            .should('have.class', 'Mui-expanded')
+            .within(() => {
+                cy.get('input[name="n_iters"]').clear({ force: true }).type('1234', { force: true });
+                cy.get('input[name="method"]').clear({ force: true }).type('bonferroni', { force: true });
+            });
+
+        completeSpecificationWizard();
+
+        cy.wait('@createSpecificationFixture')
+            .its('request.body')
+            .should((body) => {
+                expect(body.corrector).to.deep.include({
+                    type: 'FWECorrector',
+                });
+                expect(body.corrector.args).to.include({
+                    method: 'bonferroni',
+                    n_iters: 1234,
+                });
+            });
+    });
+
+    it('submits the selected annotation inclusion column', () => {
+        stubCreateSpecificationApis();
+        openCreateSpecificationDialog();
         cy.contains('Next').click();
-        cy.contains('included').should('exist');
+
+        cy.get('.MuiDialog-container')
+            .contains('label', 'Inclusion Column')
+            .parent()
+            .find('input')
+            .as('inclusionColumnInput');
+        cy.get('@inclusionColumnInput').should('have.value', 'included');
+        cy.get('@inclusionColumnInput').click();
+        cy.get('[role="option"]').contains('string_key').click();
+        cy.get('@inclusionColumnInput').should('have.value', 'string_key');
+
+        cy.get('.MuiDialog-container')
+            .contains('label', 'Select value to filter on')
+            .parent()
+            .find('input')
+            .click();
+        cy.get('[role="option"]').contains('ABC').click();
+
         cy.contains('button', 'Next').click();
         cy.contains('button', 'Next').click();
         cy.contains('button', 'Create Meta-Analysis Specification').click();
+
+        cy.wait('@createSpecificationFixture')
+            .its('request.body')
+            .should((body) => {
+                expect(body.filter).to.eq('string_key');
+                expect(body.conditions).to.deep.equal(['ABC']);
+            });
+    });
+
+    describe('IBMA algorithm options', () => {
+        beforeEach(() => {
+            cy.fixture('projects/projectCanCreateSpecification').then((raw) => {
+                const project = raw as ProjectReturn;
+                const provenance = (project.provenance || {}) as IProvenance;
+                project.provenance = { ...provenance, type: EAnalysisType.IBMA } as ProjectReturn['provenance'];
+                cy.intercept('GET', `**/api/projects/*`, project).as('projectIBMAFixture');
+            });
+        });
+
+        it('defaults to Stouffers and lists only Fishers and Stouffers', () => {
+            openCreateSpecificationDialog('projectIBMAFixture');
+            cy.get('.MuiDialog-container input').first().should('have.value', 'Stouffers');
+            cy.get('.MuiDialog-container').contains('MKDADensity').should('not.exist');
+
+            cy.get('.MuiDialog-container input').first().click();
+            cy.get('[role="listbox"] [role="option"]').should('have.length', 2);
+            cy.get('[role="option"]').contains('Fishers').should('exist');
+            cy.get('[role="option"]').contains('Stouffers').should('exist');
+            cy.get('[role="option"]').contains('PermutedOLS').should('not.exist');
+            cy.get('[role="option"]').contains('DerSimonianLaird').should('not.exist');
+        });
+
+        it('lists only FDRCorrector and omits FWECorrector', () => {
+            openCreateSpecificationDialog('projectIBMAFixture');
+            cy.get('.MuiDialog-container')
+                .contains('label', 'corrector (optional)')
+                .parent()
+                .find('input')
+                .click();
+            cy.get('[role="listbox"] [role="option"]').should('have.length', 1);
+            cy.get('[role="option"]').contains('FDRCorrector').should('exist');
+            cy.get('[role="option"]').contains('FWECorrector').should('not.exist');
+        });
+
+        it('can select Fishers', () => {
+            openCreateSpecificationDialog('projectIBMAFixture');
+            cy.get('.MuiDialog-container input').first().click();
+            cy.get('[role="option"]').contains('Fishers').click();
+            cy.get('.MuiDialog-container input').first().should('have.value', 'Fishers');
+        });
+
+        it('submits Fishers with updated algorithm argument values', () => {
+            const setBoolArgument = (parameterName: string, value: boolean) => {
+                cy.contains('.MuiTypography-subtitle1', parameterName)
+                    .scrollIntoView()
+                    .parent()
+                    .within(() => {
+                        cy.contains('button', String(value)).click();
+                    });
+            };
+
+            stubCreateSpecificationApis();
+            openCreateSpecificationDialog('projectIBMAFixture');
+            cy.get('.MuiDialog-container input').first().click();
+            cy.get('[role="option"]').contains('Fishers').click();
+            cy.get('.MuiDialog-container input').first().should('have.value', 'Fishers');
+
+            cy.contains('Algorithm arguments').click();
+            cy.contains('Algorithm arguments')
+                .closest('.MuiAccordion-root')
+                .within(() => {
+                    setBoolArgument('aggressive_mask', true);
+                    setBoolArgument('use_sample_size', true);
+                    setBoolArgument('two_sided', false);
+                });
+
+            completeSpecificationWizard();
+
+            cy.wait('@createSpecificationFixture')
+                .its('request.body')
+                .should((body) => {
+                    expect(body.type).to.eq('IBMA');
+                    expect(body.estimator).to.deep.include({
+                        type: 'Fishers',
+                    });
+                    expect(body.estimator.args).to.include({
+                        aggressive_mask: true,
+                        use_sample_size: true,
+                        two_sided: false,
+                    });
+                });
+        });
     });
 
     describe('ALE validation', () => {
         const openDialogAndSelectALE = () => {
-            cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait('@projectFixture');
-            cy.contains('button', 'Meta-Analyses').click();
-            cy.contains('button', 'Meta-Analysis Specification').click();
-            cy.get('.MuiDialog-container').should('be.visible');
+            openCreateSpecificationDialog();
             cy.get('.MuiDialog-container input').first().click();
             cy.get('[role="option"]').contains('ALE').click();
             cy.contains('Algorithm arguments').click();
