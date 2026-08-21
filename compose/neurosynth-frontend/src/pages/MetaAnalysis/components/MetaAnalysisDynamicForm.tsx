@@ -94,6 +94,7 @@ const MetaAnalysisDynamicForm = (props: IDynamicForm) => {
                                             kernel__fwhm: null,
                                         });
                                     } else {
+                                        // Either we accept kernal__sample_size, kernal__fwhm, or NEITHER if we use sample size (from annotations or study metadata)
                                         const sampleSizeParameter = parametersAsInputList.find(
                                             (p) => p.parameterName === 'kernel__sample_size'
                                         );
@@ -123,8 +124,9 @@ const MetaAnalysisDynamicForm = (props: IDynamicForm) => {
                     {isUsingSampleSize && studiesMissingSampleSize.length > 0 && (
                         <Alert severity="error" sx={{ marginBottom: '1rem' }}>
                             <Typography variant="subtitle2" component="span" sx={{ fontWeight: 'bold' }}>
-                                The following studies are missing sample sizes (in annotations and in study metadata).
-                                Add sample sizes to run with this option enabled:
+                                The following studies are missing sample sizes (missing both in annotations and in study
+                                metadata). For each study listed below, add sample sizes either to annotations or to
+                                study metadata to run with this option enabled:
                             </Typography>
                             <List dense disablePadding sx={{ listStyle: 'disc', pl: 2, mt: 0.5 }}>
                                 {studiesMissingSampleSize.map((study) => (
@@ -158,11 +160,11 @@ const MetaAnalysisDynamicForm = (props: IDynamicForm) => {
             {parametersAsInputList.length > 0 &&
                 parametersAsInputList.map((parameterAsInput) => {
                     const DynamicInputComponent = getDynamicFormInputComponentByParameter(parameterAsInput.parameter);
-                    const isSampleSizeParameter =
+                    const hideParameterIfUsingSampleSize =
                         parameterAsInput.parameterName === 'kernel__fwhm' ||
                         parameterAsInput.parameterName === 'kernel__sample_size';
                     const shouldHide =
-                        isALE(props.correctorOrEstimatorLabel) && isUsingSampleSize && isSampleSizeParameter;
+                        isALE(props.correctorOrEstimatorLabel) && isUsingSampleSize && hideParameterIfUsingSampleSize;
 
                     if (shouldHide) {
                         return null;

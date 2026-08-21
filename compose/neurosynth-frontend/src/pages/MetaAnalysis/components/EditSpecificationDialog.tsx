@@ -1,9 +1,6 @@
 import { Box, Typography } from '@mui/material';
-import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-
-import { IMetaAnalysisParamsSpecification } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import {
     getMetaAnalysisAnnotationId,
@@ -30,11 +27,13 @@ import SelectSpecificationComponent from 'pages/MetaAnalysis/components/MetaAnal
 import SelectAnalysesComponent from 'pages/MetaAnalysis/components/SelectAnalysesComponent';
 import { isMultiGroupAlgorithm } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
 import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/SelectAnalysesSummaryComponent';
-
-const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
+import { metaAnalysisSpecification } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialog.helpers';
+import { getEstimatorDescription } from 'pages/MetaAnalysis/MetaAnalysisPage.helpers';
+import { useProjectAnalysisType } from 'stores/projects/ProjectStore';
 
 const EditSpecificationDialog = (props: IDialog) => {
     const { metaAnalysisId } = useParams<{ metaAnalysisId: string }>();
+    const analysisType = useProjectAnalysisType() ?? EAnalysisType.CBMA;
     const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
     const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
     const annotationId = getMetaAnalysisAnnotationId(metaAnalysis);
@@ -85,7 +84,7 @@ const EditSpecificationDialog = (props: IDialog) => {
         const estimator = specification?.estimator?.type
             ? {
                   label: specification.estimator.type,
-                  description: metaAnalysisSpecification.CBMA[specification?.estimator?.type].summary,
+                  description: getEstimatorDescription(analysisType, specification.estimator.type),
               }
             : null;
         const corrector = specification?.corrector?.type
@@ -100,7 +99,7 @@ const EditSpecificationDialog = (props: IDialog) => {
             estimatorArgs: (specification?.estimator?.args as { [key: string]: any } | undefined) || {},
             correctorArgs: (specification?.corrector?.args as { [key: string]: any } | undefined) || {},
         });
-    }, [specification, props.isOpen]); // add isOpen so that on close/open, the selected val, estimator & corrector are reset
+    }, [specification, props.isOpen, analysisType]); // add isOpen so that on close/open, the selected val, estimator & corrector are reset
 
     const handleUpdateSpecification = () => {
         if (
@@ -119,7 +118,7 @@ const EditSpecificationDialog = (props: IDialog) => {
             {
                 specificationId: specification.id,
                 specification: {
-                    type: EAnalysisType.CBMA,
+                    type: analysisType,
                     estimator: {
                         type: algorithmSpec.estimator.label,
                         args: algorithmSpec.estimatorArgs,

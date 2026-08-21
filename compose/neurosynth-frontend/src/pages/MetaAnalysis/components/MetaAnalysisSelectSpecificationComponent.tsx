@@ -3,17 +3,21 @@ import MetaAnalysisDynamicForm from 'pages/MetaAnalysis/components/MetaAnalysisD
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { EAnalysisType } from 'hooks/projects/Project.types';
+import { useProjectAnalysisType } from 'stores/projects/ProjectStore';
 import { IAlgorithmSelection } from './CreateMetaAnalysisSpecificationDialogBase.types';
 import {
     correctorOptions,
     getDefaultValuesForTypeAndParameter,
-    metaAnalyticAlgorithms,
-} from './CreateMetaAnalysisSpecificationDialogConstants';
+    getMetaAnalyticAlgorithms,
+} from './CreateMetaAnalysisSpecificationDialog.helpers';
 
 const SelectSpecificationComponent = (props: {
     onSelectSpecification: (algorithm: IAlgorithmSelection) => void;
     algorithm: IAlgorithmSelection;
 }) => {
+    const analysisType = useProjectAnalysisType() ?? EAnalysisType.CBMA;
+    const metaAnalyticAlgorithms = getMetaAnalyticAlgorithms(analysisType);
+
     return (
         <Box>
             <Box sx={{ marginBottom: '3rem' }}>
@@ -37,7 +41,7 @@ const SelectSpecificationComponent = (props: {
                         const updatedAlgorithm = {
                             ...props.algorithm,
                             estimator: newVal,
-                            estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, newVal?.label),
+                            estimatorArgs: getDefaultValuesForTypeAndParameter(analysisType, newVal?.label),
                         };
                         props.onSelectSpecification(updatedAlgorithm);
 
@@ -46,7 +50,7 @@ const SelectSpecificationComponent = (props: {
                             'CORRECTOR',
                             props.algorithm?.corrector?.label,
                             newVal?.label,
-                            EAnalysisType.CBMA
+                            analysisType
                         );
 
                         // Update the corrector in the algorithm object
@@ -82,7 +86,7 @@ const SelectSpecificationComponent = (props: {
                                         },
                                     });
                                 }}
-                                type={EAnalysisType.CBMA}
+                                type={analysisType}
                                 correctorOrEstimatorLabel={props.algorithm.estimator.label}
                                 values={props.algorithm.estimatorArgs}
                             />
@@ -117,7 +121,7 @@ const SelectSpecificationComponent = (props: {
                                     'CORRECTOR',
                                     newVal?.label,
                                     props.algorithm.estimator?.label,
-                                    EAnalysisType.CBMA
+                                    analysisType
                                 ),
                             });
                         }}

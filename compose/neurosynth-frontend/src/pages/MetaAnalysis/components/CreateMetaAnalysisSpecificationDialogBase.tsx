@@ -2,7 +2,7 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { IDynamicValueType } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { useProjectName } from 'stores/projects/ProjectStore';
+import { useProjectAnalysisType, useProjectName } from 'stores/projects/ProjectStore';
 import { useEffect, useState } from 'react';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EAnalysisType } from 'hooks/projects/Project.types';
@@ -17,11 +17,13 @@ import CreateMetaAnalysisSpecificationSelectionStep from 'pages/MetaAnalysis/com
 import {
     getDefaultValuesForTypeAndParameter,
     correctorDefaultOption,
-    algorithmDefaultOption,
-} from './CreateMetaAnalysisSpecificationDialogConstants';
+    getAlgorithmDefaultOption,
+} from './CreateMetaAnalysisSpecificationDialog.helpers';
 
 const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
     const projectName = useProjectName();
+    const analysisType = useProjectAnalysisType() ?? EAnalysisType.CBMA;
+    const algorithmDefaultOption = getAlgorithmDefaultOption(analysisType);
 
     const [activeStep, setActiveStep] = useState(0);
     const [details, setDetails] = useState({
@@ -34,12 +36,12 @@ const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
         type: undefined,
         referenceDataset: undefined,
     });
-    const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>({
+    const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>(() => ({
         estimator: algorithmDefaultOption,
-        estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, algorithmDefaultOption?.label),
+        estimatorArgs: getDefaultValuesForTypeAndParameter(analysisType, algorithmDefaultOption?.label),
         corrector: correctorDefaultOption,
         correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorDefaultOption?.label),
-    });
+    }));
 
     useEffect(() => {
         setDetails({
@@ -48,12 +50,29 @@ const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
         });
     }, [projectName]);
 
+    useEffect(() => {
+        if (!props.isOpen) return;
+        setActiveStep(0);
+        setAlgorithm({
+            estimator: algorithmDefaultOption,
+            estimatorArgs: getDefaultValuesForTypeAndParameter(analysisType, algorithmDefaultOption?.label),
+            corrector: correctorDefaultOption,
+            correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorDefaultOption?.label),
+        });
+        setSelection({
+            selectionKey: undefined,
+            selectionValue: undefined,
+            type: undefined,
+            referenceDataset: undefined,
+        });
+    }, [props.isOpen, analysisType]); // algorithmDefaultOption is derived from analysisType
+
     const handleCloseDialog = () => {
         props.onCloseDialog();
         setActiveStep(0);
         setAlgorithm({
             estimator: algorithmDefaultOption,
-            estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, algorithmDefaultOption?.label),
+            estimatorArgs: getDefaultValuesForTypeAndParameter(analysisType, algorithmDefaultOption?.label),
             corrector: correctorDefaultOption,
             correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorDefaultOption?.label),
         });
@@ -130,6 +149,7 @@ const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
                 <Box sx={{ marginTop: '1rem' }}>
                     {activeStep === 0 && (
                         <CreateMetaAnalysisSpecificationAlgorithmStep
+                            key={algorithm.estimator?.label ?? analysisType}
                             onChooseAlgorithm={handleChooseAlgorithm}
                             algorithm={algorithm}
                             onNavigate={handleNavigate}

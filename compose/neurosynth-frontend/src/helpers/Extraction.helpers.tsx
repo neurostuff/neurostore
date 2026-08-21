@@ -1,14 +1,23 @@
 import { lastUpdatedAtSortFn } from 'helpers/utils';
 import { BaseStudyReturnInfo, BaseStudyReturnInfoVersion } from 'hooks/studies/studyQueries.types';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { SearchDataType } from 'pages/Study/Study.types';
+import { SearchDataType, SearchDataTypeEnumToString } from 'pages/Study/Study.types';
 
-const versionMatchesPreferredType = (
-    version: BaseStudyReturnInfoVersion,
+export const versionMatchesPreferredType = (
+    version: BaseStudyReturnInfoVersion | undefined,
     preferredType: SearchDataType.COORDINATE | SearchDataType.IMAGE
 ): boolean => {
+    if (!version) return false;
     if (preferredType === SearchDataType.IMAGE) return Boolean(version.has_images);
     return Boolean(version.has_coordinates);
+};
+
+export const getVersionTypeLabel = (
+    version: Pick<BaseStudyReturnInfoVersion, 'has_images' | 'has_coordinates'>
+): string => {
+    if (version.has_images) return SearchDataTypeEnumToString[SearchDataType.IMAGE];
+    if (version.has_coordinates) return SearchDataTypeEnumToString[SearchDataType.COORDINATE];
+    return SearchDataTypeEnumToString[SearchDataType.COORDINATE];
 };
 
 export const selectBestBaseStudyVersion = (

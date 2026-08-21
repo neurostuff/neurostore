@@ -2,11 +2,10 @@ import { OpenInNew, SwapHoriz } from '@mui/icons-material';
 import {
     Box,
     Button,
-    ButtonGroup,
     ButtonProps,
-    ListItem,
-    ListItemButton,
+    IconButton,
     Menu,
+    MenuItem,
     Tooltip,
     Typography,
     TypographyProps,
@@ -16,7 +15,9 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
+import { getVersionTypeLabel, versionMatchesPreferredType } from 'helpers/Extraction.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import {
     useGetBaseStudyInfoById,
     useGetStudyNonNestedById,
@@ -24,16 +25,35 @@ import {
     useUpdateStudyset,
 } from 'hooks';
 import annotationQueries from 'hooks/annotations/annotationQueries';
+import { BaseStudyReturnInfoVersion } from 'hooks/studies/studyQueries.types';
 import { useSnackbar } from 'notistack';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
+import { SearchDataType } from 'pages/Study/Study.types';
 import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+    useProjectAnalysisType,
+    useProjectExtractionAnnotationId,
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
     useProjectId,
-    useProjectExtractionAnnotationId,
 } from 'stores/projects/ProjectStore';
+
+const formatVersionDate = (dateValue: string | null | undefined): string | undefined => {
+    if (!dateValue) return undefined;
+    const parsedDate = new Date(dateValue);
+    if (Number.isNaN(parsedDate.getTime())) return undefined;
+    return parsedDate.toLocaleString();
+};
+
+const getIncompatibleVersionTooltip = (
+    projectAnalysisType: EAnalysisType | undefined,
+    preferredType: SearchDataType.COORDINATE | SearchDataType.IMAGE
+): string => {
+    const projectLabel = projectAnalysisType === EAnalysisType.IBMA ? 'IBMA' : 'CBMA';
+    const requiredTypeLabel = preferredType === SearchDataType.IMAGE ? 'image' : 'coordinate';
+    return `This ${projectLabel} project only allows switching to ${requiredTypeLabel}-based versions`;
+};
 
 const EditStudySwapVersionButtonNext: React.FC<{
     buttonProps?: ButtonProps;
@@ -48,6 +68,8 @@ const EditStudySwapVersionButtonNext: React.FC<{
     const { data: study } = useGetStudyNonNestedById(studyId);
     const { data: baseStudy } = useGetBaseStudyInfoById(study?.base_study ?? undefined);
     const projectId = useProjectId();
+    const projectAnalysisType = useProjectAnalysisType();
+    const preferredType = projectAnalysisType === EAnalysisType.IBMA ? SearchDataType.IMAGE : SearchDataType.COORDINATE;
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
     const replaceStudyWithNewClonedStudy = useProjectExtractionReplaceStudyListStatusId();
     const studysetId = useProjectExtractionStudysetId();
@@ -65,6 +87,11 @@ const EditStudySwapVersionButtonNext: React.FC<{
         isOpen: false,
         selectedVersion: undefined,
     });
+
+    const baseStudyVersions = useMemo(() => {
+        const baseVersions = baseStudy?.versions ?? [];
+        return baseVersions.sort(lastUpdatedAtSortFn);
+    }, [baseStudy?.versions]);
 
     const handleButtonPress = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -119,6 +146,15 @@ const EditStudySwapVersionButtonNext: React.FC<{
             handleCloseNavMenu();
             return;
         }
+
+        const versionToSwap = baseStudyVersions.find((version) => version.id === versionToSwapTo);
+        if (!versionMatchesPreferredType(versionToSwap, preferredType)) {
+            enqueueSnackbar(getIncompatibleVersionTooltip(projectAnalysisType, preferredType), {
+                variant: 'error',
+            });
+            return;
+        }
+
         setIsSwapping(true);
         try {
             handleCloseNavMenu();
@@ -151,16 +187,17 @@ const EditStudySwapVersionButtonNext: React.FC<{
             return;
         }
 
+        const versionToSwap = baseStudyVersions.find((version) => version.id === versionId);
+        if (!versionMatchesPreferredType(versionToSwap, preferredType)) {
+            return;
+        }
+
         setConfirmationDialogState({ isOpen: true, selectedVersion: versionId });
     };
 
-    const baseStudyVersions = useMemo(() => {
-        const baseVersions = baseStudy?.versions ?? [];
-        return baseVersions.sort(lastUpdatedAtSortFn).reverse();
-    }, [baseStudy?.versions]);
-
     const theme = useTheme();
     const mdDown = useMediaQuery(theme.breakpoints.down('md'));
+    const incompatibleTooltip = getIncompatibleVersionTooltip(projectAnalysisType, preferredType);
 
     return (
         <>
@@ -172,6 +209,7 @@ const EditStudySwapVersionButtonNext: React.FC<{
                         onClick={handleButtonPress}
                         size="small"
                         variant="outlined"
+                        aria-label="Swap study version"
                         sx={{
                             width: '40px',
                             maxWidth: '40px',
@@ -207,51 +245,98 @@ const EditStudySwapVersionButtonNext: React.FC<{
                 isOpen={confirmationDialogState.isOpen}
                 rejectText="Cancel"
             />
-            <Menu open={open} onClose={handleCloseNavMenu} anchorEl={anchorEl}>
+            <Menu
+                open={open}
+                onClose={handleCloseNavMenu}
+                anchorEl={anchorEl}
+                slotProps={{
+                    paper: {
+                        sx: { minWidth: 300, maxWidth: 360 },
+                    },
+                }}
+            >
                 {baseStudyVersions.map((version) => {
                     const isCurrentlySelected = version.id === studyId;
+                    const isCompatible = versionMatchesPreferredType(version, preferredType);
                     const username = version.username ? version.username : 'neurosynth';
-                    const lastUpdated = new Date(version.updated_at || version.created_at || '').toLocaleString();
+                    const typeLabel = getVersionTypeLabel(version);
+                    const lastUpdated =
+                        formatVersionDate(version.updated_at) ?? formatVersionDate(version.created_at) ?? 'Unknown';
 
                     return (
-                        <ListItem key={version.id} sx={{ padding: '0.2rem 1rem' }}>
-                            <ListItemButton
-                                selected={isCurrentlySelected}
-                                sx={{ ':hover': { backgroundColor: 'transparent' }, p: '0' }}
-                            >
-                                <ButtonGroup variant="text">
-                                    <Button
-                                        onClick={() => handleSwitchVersion(version.id)}
+                        <MenuItem
+                            key={version.id}
+                            selected={isCurrentlySelected}
+                            aria-disabled={!isCompatible}
+                            data-testid={version.id ? `swap-to-version-${version.id}` : undefined}
+                            onClick={() => {
+                                if (!isCompatible) return;
+                                handleSwitchVersion(version.id);
+                            }}
+                            sx={{
+                                py: 1,
+                                pr: 0.5,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                cursor: isCompatible ? 'pointer' : 'default',
+                            }}
+                        >
+                            <Tooltip title={incompatibleTooltip} disableHoverListener={isCompatible}>
+                                <Box
+                                    sx={{
+                                        minWidth: 0,
+                                        flex: 1,
+                                        opacity: isCompatible ? 1 : 0.38,
+                                        color: isCompatible ? 'inherit' : 'text.disabled',
+                                    }}
+                                >
+                                    <Box
                                         sx={{
-                                            width: '300px',
-                                            textTransform: 'none',
                                             display: 'flex',
-                                            alignItems: 'flex-start',
-                                            flexDirection: 'column',
+                                            alignItems: 'baseline',
+                                            justifyContent: 'space-between',
+                                            gap: 1,
                                         }}
                                     >
-                                        <Typography variant="caption" textAlign="left">
-                                            Switch to version: {version.id}
+                                        <Typography variant="body2" fontWeight={600} noWrap>
+                                            {typeLabel}
                                         </Typography>
-                                        <Typography variant="caption" color="gray" textAlign="left">
-                                            Last Modified: {lastUpdated}
-                                        </Typography>
-                                        <Typography variant="caption" color="gray" textAlign="left">
-                                            Owner: {username}
-                                        </Typography>
-                                    </Button>
-                                    <Button
-                                        href={`/base-studies/${baseStudy?.id ?? ''}/${version.id}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        sx={{ fontSize: '0.8rem' }}
-                                        endIcon={<OpenInNew />}
+                                        {isCurrentlySelected && (
+                                            <Typography
+                                                variant="caption"
+                                                color={isCompatible ? 'primary.main' : 'text.disabled'}
+                                                sx={{ flexShrink: 0 }}
+                                            >
+                                                Current
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                    <Typography
+                                        variant="caption"
+                                        color={isCompatible ? 'text.secondary' : 'text.disabled'}
+                                        display="block"
+                                        noWrap
                                     >
-                                        View version
-                                    </Button>
-                                </ButtonGroup>
-                            </ListItemButton>
-                        </ListItem>
+                                        {username} · {lastUpdated}
+                                    </Typography>
+                                </Box>
+                            </Tooltip>
+                            <Tooltip title="View version">
+                                <IconButton
+                                    size="small"
+                                    component="a"
+                                    href={`/base-studies/${baseStudy?.id ?? ''}/${version.id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label="View version"
+                                    onClick={(event) => event.stopPropagation()}
+                                    sx={{ flexShrink: 0, opacity: 1, color: 'action.active' }}
+                                >
+                                    <OpenInNew fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </MenuItem>
                     );
                 })}
             </Menu>
