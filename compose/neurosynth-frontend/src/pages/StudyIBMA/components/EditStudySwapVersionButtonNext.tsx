@@ -17,7 +17,6 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import { getVersionTypeLabel, versionMatchesPreferredType } from 'helpers/Extraction.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
-import { EAnalysisType } from 'hooks/projects/Project.types';
 import {
     useGetBaseStudyInfoById,
     useGetStudyNonNestedById,
@@ -25,7 +24,7 @@ import {
     useUpdateStudyset,
 } from 'hooks';
 import annotationQueries from 'hooks/annotations/annotationQueries';
-import { BaseStudyReturnInfoVersion } from 'hooks/studies/studyQueries.types';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { useSnackbar } from 'notistack';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import { SearchDataType } from 'pages/Study/Study.types';
