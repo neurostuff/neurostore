@@ -927,6 +927,52 @@ def test_prune_sweeps_shells_left_by_an_earlier_run(session):
     assert BaseStudy.query.filter_by(id=base_study_id).one().is_active is False
 
 
+def test_prune_bumps_cache_versions_for_what_it_changed(session):
+    """A command writing straight to the database must invalidate the api cache.
+
+    Without this the endpoint keeps serving the body it cached before the prune.
+    """
+    from neurostore.cache_versioning import get_cache_version
+
+    collection_id = 424263
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [neurovault_image("subject map", 1, analysis_level="single-subject")],
+    )
+    study_id = study.id
+    image_id = study.images[0].id
+    before = {
+        "study": get_cache_version("studies", study_id),
+        "image": get_cache_version("images", image_id),
+        "study_list": get_cache_version("studies"),
+    }
+
+    ingest.prune_non_group_neurovault_images(dry_run=False)
+
+    assert get_cache_version("studies", study_id) != before["study"]
+    assert get_cache_version("images", image_id) != before["image"]
+    assert get_cache_version("studies") != before["study_list"]
+
+
+def test_prune_dry_run_leaves_cache_versions_alone(session):
+    """Nothing changed, so nothing may be invalidated."""
+    from neurostore.cache_versioning import get_cache_version
+
+    collection_id = 424264
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [neurovault_image("subject map", 1, analysis_level="single-subject")],
+    )
+    image_id = study.images[0].id
+    before = get_cache_version("images", image_id)
+
+    ingest.prune_non_group_neurovault_images()
+
+    assert get_cache_version("images", image_id) == before
+
+
 def test_prune_non_group_neurovault_images_leaves_other_sources_alone(
     ingest_neurosynth, session
 ):

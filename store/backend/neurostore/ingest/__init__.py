@@ -63,6 +63,20 @@ def _coerce_optional_int(value):
     return int(float(value))
 
 
+def _invalidate_cached_responses(unique_ids):
+    """Bump the cache versions for objects a bulk command changed.
+
+    The api invalidates its own writes; a command that writes straight to the
+    database has to do it here, or an endpoint keeps serving the body it cached
+    before the change for as long as that entry lives.
+    """
+    from neurostore.cache_versioning import bump_cache_versions
+
+    bump_cache_versions(
+        {resource: ids for resource, ids in unique_ids.items() if ids}
+    )
+
+
 def _recompute_base_study_flag_ids(base_study_ids):
     base_study_ids = [
         base_study_id for base_study_id in base_study_ids if base_study_id
@@ -338,7 +352,16 @@ def _repair_neurovault_sample_sizes(source_id, verbose=False):
     repaired = [_apply_neurovault_sample_sizes(study) for study in studies]
     if not any(repaired):
         return False
+    # read the ids before the commit expires the instances and makes this reload
+    changed = [study for study, was_changed in zip(studies, repaired) if was_changed]
+    changed_ids = {
+        "studies": [study.id for study in changed],
+        "analyses": [
+            analysis.id for study in changed for analysis in study.analyses
+        ],
+    }
     db.session.commit()
+    _invalidate_cached_responses(changed_ids)
     if verbose:
         print(
             "Backfilled sample sizes for collection {} from stored image data".format(
@@ -823,7 +846,8 @@ def _prune_empty_neurovault_studies(verbose=False, batch_size=1000):
     drops its studyset memberships by cascade; since the study holds nothing
     computable, no meta-analysis result changes, but the studysets do get smaller.
 
-    Returns a count dict. Caller owns the transaction.
+    Returns ``(counts, touched_ids)``, the ids being what the caller invalidates
+    once it commits. Caller owns the transaction.
     """
     rows = _empty_neurovault_studies()
     counts = {
@@ -831,18 +855,22 @@ def _prune_empty_neurovault_studies(verbose=False, batch_size=1000):
         "base_studies_deactivated": 0,
         "studyset_memberships_dropped": 0,
     }
+    touched = {"studies": [], "studysets": []}
     if not rows:
-        return counts
+        return counts, touched
 
     study_ids = [row[0] for row in rows]
     base_study_ids = {row[1] for row in rows if row[1]}
+    touched["studies"] = study_ids
 
     for chunk in _chunked(study_ids, batch_size):
-        counts["studyset_memberships_dropped"] += (
-            db.session.query(StudysetStudy)
-            .filter(StudysetStudy.study_id.in_(chunk))
-            .count()
-        )
+        # the studysets these studies belong to lose a member, so note them for
+        # the cache while the association rows are still there to be read
+        for studyset_id, in db.session.query(StudysetStudy.studyset_id).filter(
+            StudysetStudy.study_id.in_(chunk)
+        ):
+            counts["studyset_memberships_dropped"] += 1
+            touched["studysets"].append(studyset_id)
 
     if verbose:
         for chunk in _chunked(study_ids, batch_size):
@@ -858,7 +886,7 @@ def _prune_empty_neurovault_studies(verbose=False, batch_size=1000):
     counts["base_studies_deactivated"] = _deactivate_base_studies_without_data(
         base_study_ids, batch_size
     )
-    return counts
+    return counts, touched
 
 
 def prune_non_group_neurovault_images(dry_run=True, verbose=False, batch_size=1000):
@@ -987,15 +1015,25 @@ def prune_non_group_neurovault_images(dry_run=True, verbose=False, batch_size=10
 
     # a study stripped of every image keeps nothing a meta-analysis can read, so
     # it goes too, along with the base study when no version is left holding data
-    summary.update(
-        _prune_empty_neurovault_studies(verbose=verbose, batch_size=batch_size)
+    empty_counts, emptied = _prune_empty_neurovault_studies(
+        verbose=verbose, batch_size=batch_size
     )
+    summary.update(empty_counts)
 
     if dry_run:
         db.session.rollback()
     else:
         db.session.commit()
         _recompute_base_study_flag_ids(base_study_ids)
+        _invalidate_cached_responses(
+            {
+                "images": image_ids,
+                "analyses": emptied_analysis_ids,
+                "studies": list(study_ids) + emptied["studies"],
+                "base-studies": list(base_study_ids),
+                "studysets": sorted(set(emptied["studysets"])),
+            }
+        )
 
     print(
         "{} {} non-group image(s) across {} study(ies): {}".format(

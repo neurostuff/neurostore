@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 from sqlalchemy.orm import load_only, selectinload
 
+from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type
 from neurostore.models import Image, ImageValueSummary, Study
@@ -98,6 +99,9 @@ def run_compute_image_summaries(
 
     counts = {"succeeded": 0, "failed": 0, "skipped": 0}
     pending = 0
+    # the api serves the summary as a detail field, so a response cached before
+    # this run has to be invalidated or it keeps reporting no summary
+    summarized_ids = []
 
     for index, image in enumerate(images, start=1):
         summary = compute_image_value_summary(
@@ -111,6 +115,7 @@ def run_compute_image_summaries(
             counts["succeeded"] += 1
         else:
             counts["failed"] += 1
+        summarized_ids.append(image.id)
 
         pending += 1
         if commit_every and pending >= commit_every:
@@ -132,4 +137,6 @@ def run_compute_image_summaries(
             )
 
     db.session.commit()
+    if summarized_ids:
+        bump_cache_versions({"images": summarized_ids})
     return counts
