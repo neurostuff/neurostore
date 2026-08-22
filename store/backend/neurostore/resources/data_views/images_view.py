@@ -8,6 +8,10 @@ from neurostore.exceptions.utils.error_helpers import abort_unprocessable
 from neurostore.models import Analysis, BaseStudy, Image, Study, User
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import ListView, ObjectView
+from neurostore.resources.data_views.common import (
+    IMAGE_DETAIL_ARGS,
+    image_detail_options,
+)
 from neurostore.resources.mutation_core import DefaultMutationPolicy
 from neurostore.resources.utils import view_maker
 
@@ -47,6 +51,7 @@ class ImagesView(ObjectView, ListView):
     mutation_policy_cls = ImageMutationPolicy
     _view_fields = {
         "study": fields.String(load_default=None),
+        **IMAGE_DETAIL_ARGS,
     }
     _m2o = {"analysis": "AnalysesView", "study": "StudiesView"}
     _parent = {"analysis": "AnalysesView", "study": "StudiesView"}
@@ -93,14 +98,17 @@ class ImagesView(ObjectView, ListView):
         return unique_ids
 
     def eager_load(self, q, args=None):
-        return q.options(
+        args = args or {}
+        options = [
             selectinload(Image.user)
             .load_only(User.name, User.external_id)
             .options(raiseload("*", sql_only=True)),
             selectinload(Image.analysis)
             .load_only(Analysis.name, Analysis.id)
             .options(raiseload("*", sql_only=True)),
-        )
+        ]
+        options.extend(image_detail_options(args))
+        return q.options(*options)
 
     def db_validation(self, record, data):
         analysis_id = (

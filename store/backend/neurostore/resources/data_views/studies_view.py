@@ -28,9 +28,11 @@ from neurostore.resources.data_views.cloning import (
     load_study_clone_source,
 )
 from neurostore.resources.data_views.common import (
+    IMAGE_DETAIL_ARGS,
     LIST_CLONE_ARGS,
     LIST_NESTED_ARGS,
     apply_map_type_filter,
+    image_detail_options,
 )
 from neurostore.resources.mutation_core import DefaultMutationPolicy
 from neurostore.resources.utils import view_maker
@@ -118,7 +120,7 @@ class StudyObjectViewPolicy(DefaultObjectViewPolicy):
             return None
         from neurostore.resources.data_views.serialization import serialize_study_detail
 
-        return serialize_study_detail(self.get_record(id, args))
+        return serialize_study_detail(self.get_record(id, args), args)
 
 
 @view_maker
@@ -134,6 +136,7 @@ class StudiesView(ObjectView, ListView):
         "info": fields.Boolean(load_default=False),
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
+        **IMAGE_DETAIL_ARGS,
     }
     _multi_search = ("name", "description")
     _m2o = {"base_study": "BaseStudiesView"}
@@ -213,6 +216,7 @@ class StudiesView(ObjectView, ListView):
                     .options(raiseload("*", sql_only=True)),
                     selectinload(Analysis.images).options(
                         raiseload("*", sql_only=True),
+                        *image_detail_options(args),
                         selectinload(Image.user)
                         .load_only(User.name, User.external_id)
                         .options(raiseload("*", sql_only=True)),

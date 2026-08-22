@@ -209,6 +209,109 @@ def prune_non_group_neurovault_images(apply_changes, verbose):
     _run_with_runtime(_run)
 
 
+@main.command("compute-image-summaries")
+@click.option(
+    "--limit",
+    default=None,
+    type=int,
+    help="stop after this many images (default: no limit)",
+)
+@click.option(
+    "--image-id",
+    default=None,
+    help="summarize a single image by id, ignoring the other filters",
+)
+@click.option(
+    "--source",
+    default=None,
+    help="only images belonging to studies from this source (e.g. neurovault)",
+)
+@click.option(
+    "--value-type",
+    default=None,
+    help="only images with this map type code or label (e.g. Z, 'Z map')",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="recompute images that already have a current summary",
+)
+@click.option(
+    "--retry-failed",
+    is_flag=True,
+    default=False,
+    help="also retry images whose last summary attempt failed",
+)
+@click.option(
+    "--timeout",
+    default=None,
+    type=float,
+    help="per-image download timeout in seconds",
+)
+@click.option(
+    "--max-bytes",
+    default=None,
+    type=int,
+    help="skip images whose file is larger than this",
+)
+@click.option(
+    "--commit-every",
+    default=25,
+    show_default=True,
+    help="how many images to summarize between commits",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="report each image as it is summarized",
+)
+def compute_image_summaries(
+    limit,
+    image_id,
+    source,
+    value_type,
+    force,
+    retry_failed,
+    timeout,
+    max_bytes,
+    commit_every,
+    verbose,
+):
+    """Download images and store distribution statistics for their voxel values.
+
+    Fetches each image once and records percentiles, spread, a value histogram and
+    the nan/zero/negative counts, so the api can serve the numbers that say whether
+    an image matches the map type it claims to be.
+    """
+
+    def _run(_app, _db):
+        from neurostore.scripts.compute_image_summaries import (
+            run_compute_image_summaries,
+        )
+
+        counts = run_compute_image_summaries(
+            limit=limit,
+            image_id=image_id,
+            source=source,
+            value_type=value_type,
+            force=force,
+            retry_failed=retry_failed,
+            timeout=timeout,
+            max_bytes=max_bytes,
+            commit_every=commit_every,
+            verbose=verbose,
+        )
+        click.echo(
+            "Summarized {succeeded} image(s), {failed} failed, "
+            "{skipped} skipped.".format(**counts)
+        )
+
+    _run_with_runtime(_run)
+
+
 @main.command("ingest-neuroquery")
 @click.option("--max-rows", default=None, help="ingest neuroquery")
 def ingest_neuroquery(max_rows):
