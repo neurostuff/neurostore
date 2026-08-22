@@ -17,6 +17,7 @@ from neurostore.models import (
     Studyset,
     StudysetStudy,
 )
+from neurostore.services.image_value_summary import serialize_image_value_summary
 
 
 def _serialize_dt(value):
@@ -75,8 +76,9 @@ def _serialize_point(point):
     }
 
 
-def _serialize_image(image, analysis_name=None):
-    return {
+def _serialize_image(image, analysis_name=None, context=None):
+    context = context or {}
+    payload = {
         "id": image.id,
         "user": image.user_id,
         "username": _serialize_username(getattr(image, "user", None)),
@@ -92,9 +94,16 @@ def _serialize_image(image, analysis_name=None):
         "value_type": map_type_label(image.value_type),
         "order": image.order,
     }
+    if context.get("image_metadata"):
+        payload["metadata"] = image.data
+    if context.get("image_value_summary"):
+        payload["value_summary"] = serialize_image_value_summary(
+            getattr(image, "value_summary", None)
+        )
+    return payload
 
 
-def serialize_analysis_record(analysis):
+def serialize_analysis_record(analysis, context=None):
     analysis_conditions = sorted(
         analysis.analysis_conditions,
         key=lambda analysis_condition: _order_sort_key(
@@ -116,7 +125,7 @@ def serialize_analysis_record(analysis):
         )
     ]
     images = [
-        _serialize_image(image, analysis_name=analysis.name)
+        _serialize_image(image, analysis_name=analysis.name, context=context)
         for image in sorted(
             analysis.images,
             key=lambda image: _order_sort_key(image.order, image.id),
@@ -148,13 +157,13 @@ def serialize_analysis_record(analysis):
     }
 
 
-def serialize_analysis_detail(analysis):
-    return serialize_analysis_record(analysis)
+def serialize_analysis_detail(analysis, context=None):
+    return serialize_analysis_record(analysis, context=context)
 
 
-def serialize_study_record(study):
+def serialize_study_record(study, context=None):
     analyses = [
-        serialize_analysis_record(analysis)
+        serialize_analysis_record(analysis, context=context)
         for analysis in sorted(
             study.analyses,
             key=lambda analysis: _order_sort_key(analysis.order, analysis.id),
@@ -190,8 +199,8 @@ def serialize_study_record(study):
     }
 
 
-def serialize_study_detail(study):
-    return serialize_study_record(study)
+def serialize_study_detail(study, context=None):
+    return serialize_study_record(study, context=context)
 
 
 def serialize_nested_studyset(studyset_id):

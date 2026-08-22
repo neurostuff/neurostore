@@ -19,7 +19,11 @@ from neurostore.models import (
 )
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import DefaultObjectViewPolicy, ListView, ObjectView
-from neurostore.resources.data_views.common import LIST_NESTED_ARGS
+from neurostore.resources.data_views.common import (
+    IMAGE_DETAIL_ARGS,
+    LIST_NESTED_ARGS,
+    image_detail_options,
+)
 from neurostore.resources.utils import view_maker
 
 
@@ -31,7 +35,7 @@ class AnalysisObjectViewPolicy(DefaultObjectViewPolicy):
             serialize_analysis_detail,
         )
 
-        return serialize_analysis_detail(self.get_record(id, args))
+        return serialize_analysis_detail(self.get_record(id, args), args)
 
 
 @view_maker
@@ -39,6 +43,7 @@ class AnalysesView(ObjectView, ListView):
     object_view_policy_cls = AnalysisObjectViewPolicy
     _view_fields = {
         **LIST_NESTED_ARGS,
+        **IMAGE_DETAIL_ARGS,
         "study": fields.String(load_default=None),
     }
     _o2m = {
@@ -127,6 +132,7 @@ class AnalysesView(ObjectView, ListView):
                 .options(raiseload("*", sql_only=True)),
                 selectinload(Analysis.images).options(
                     raiseload("*", sql_only=True),
+                    *image_detail_options(args),
                     selectinload(Image.user)
                     .load_only(User.name, User.external_id)
                     .options(raiseload("*", sql_only=True)),

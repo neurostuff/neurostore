@@ -16,6 +16,7 @@ from sqlalchemy import func
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Image, Point
+from neurostore.services.image_value_summary import serialize_image_value_summary
 from neurostore.note_keys import (
     ALLOWED_NOTE_KEY_TYPES,
     canonicalize_note_keys,
@@ -86,6 +87,21 @@ class ObjToString(fields.Field):
         return {"id": value}
 
 
+def withheld_detail_fields(declared_fields, context):
+    """Fields tagged ``detail_field`` whose context key was not turned on.
+
+    A detail field costs real bytes, so it stays out of every response that did
+    not name it. See IMAGE_DETAIL_ARGS for the keys and which views accept them.
+    """
+    context = context or {}
+    return tuple(
+        field
+        for field, f_obj in declared_fields.items()
+        if f_obj.metadata.get("detail_field")
+        and not context.get(f_obj.metadata["detail_field"])
+    )
+
+
 class StringOrNested(fields.Nested):
     """Handle read/write only fields. Handle nested serialization/deserialization"""
 
@@ -111,6 +127,16 @@ class StringOrNested(fields.Nested):
         """Only relevant when nested=True"""
         schema = self.schema
         schema.context = self.context
+        # The nested schema was built before the parent's context was known, so its
+        # detail fields were all excluded on construction. Re-decide them now.
+        detail = {
+            field
+            for field, f_obj in schema._declared_fields.items()
+            if f_obj.metadata.get("detail_field")
+        }
+        withheld = set(withheld_detail_fields(schema._declared_fields, self.context))
+        schema.exclude |= withheld
+        schema.exclude -= detail - withheld
         if self.context.get("clone"):
             # Check if this schema has preserve_on_clone set for any id field
             has_preserve_on_clone = any(
@@ -254,6 +280,8 @@ class BaseSchema(Schema):
             ]
             for f in relationships:
                 exclude += (f,)
+
+        exclude += tuple(withheld_detail_fields(self._declared_fields, context))
         kwargs["exclude"] = exclude
         super().__init__(*args, **kwargs)
         self.context = context or {}
@@ -316,6 +344,22 @@ class ImageSchema(BaseDataSchema):
     space = fields.String(allow_none=True)
     value_type = fields.String(allow_none=True)
     order = fields.Integer()
+    # the payload the image was ingested from; the neurovault image record, mostly
+    metadata = fields.Raw(
+        attribute="data",
+        dump_only=True,
+        allow_none=True,
+        metadata={"detail_field": "image_metadata"},
+    )
+    value_summary = fields.Method(
+        "dump_value_summary",
+        dump_only=True,
+        allow_none=True,
+        metadata={"detail_field": "image_value_summary"},
+    )
+
+    def dump_value_summary(self, obj):
+        return serialize_image_value_summary(getattr(obj, "value_summary", None))
 
     @pre_load
     def process_values(self, data, **kwargs):
