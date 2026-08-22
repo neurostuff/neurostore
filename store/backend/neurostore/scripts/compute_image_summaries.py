@@ -10,6 +10,7 @@ from neurostore.map_types import canonicalize_map_type
 from neurostore.models import Image, ImageValueSummary, Study
 from neurostore.services.image_value_summary import (
     DEFAULT_MAX_DOWNLOAD_BYTES,
+    DEFAULT_MAX_VOXELS,
     DEFAULT_TIMEOUT_SECONDS,
     IMAGE_VALUE_SUMMARY_VERSION,
     compute_image_value_summary,
@@ -75,6 +76,7 @@ def run_compute_image_summaries(
     retry_failed=False,
     timeout=None,
     max_bytes=None,
+    max_voxels=None,
     commit_every=25,
     verbose=False,
     session=None,
@@ -82,6 +84,7 @@ def run_compute_image_summaries(
     """Summarize every due image, committing in batches. Returns a count dict."""
     timeout = DEFAULT_TIMEOUT_SECONDS if timeout is None else timeout
     max_bytes = DEFAULT_MAX_DOWNLOAD_BYTES if max_bytes is None else max_bytes
+    max_voxels = DEFAULT_MAX_VOXELS if max_voxels is None else max_voxels
 
     query = _select_images(
         image_id=image_id,
@@ -98,7 +101,11 @@ def run_compute_image_summaries(
 
     for index, image in enumerate(images, start=1):
         summary = compute_image_value_summary(
-            image, timeout=timeout, max_bytes=max_bytes, session=session
+            image,
+            timeout=timeout,
+            max_bytes=max_bytes,
+            max_voxels=max_voxels,
+            session=session,
         )
         if summary.status == "SUCCESS":
             counts["succeeded"] += 1
@@ -117,7 +124,12 @@ def run_compute_image_summaries(
                 )
             else:
                 detail = summary.error
-            print(f"[{index}/{len(images)}] {image.id} {summary.status}: {detail}")
+            # flush: a run of this length is watched through a redirected log,
+            # where block buffering would hide progress until the very end
+            print(
+                f"[{index}/{len(images)}] {image.id} {summary.status}: {detail}",
+                flush=True,
+            )
 
     db.session.commit()
     return counts
