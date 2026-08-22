@@ -3,6 +3,7 @@ import re
 import shortuuid
 import sqlalchemy as sa
 from sqlalchemy import ForeignKeyConstraint, exists, func, text
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -894,6 +895,70 @@ class Image(BaseMixin, db.Model):
             elif getattr(value, "study_id", None) is not None:
                 self.study_id = value.study_id
         return value
+
+
+class ImageValueSummary(BaseMixin, db.Model):
+    """Distribution statistics for the voxel values of an :class:`Image`.
+
+    Beside ``images`` rather than on it: the numbers are derived, absent for most
+    rows, recomputed when the summarizer changes, and never wanted by the studyset
+    payloads that read ``images`` constantly.
+
+    Counts are over all voxels in the file. The distribution columns (``value_*``,
+    ``percentiles``, the histogram) cover only the finite, non-zero voxels, counted
+    by ``n_values``: a neuroimaging map stores its background as zero or nan, and
+    including it puts the median on the background rather than on the data.
+    """
+
+    __tablename__ = "image_value_summaries"
+
+    image_id = db.Column(
+        db.Text,
+        db.ForeignKey("images.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    image = relationship(
+        "Image",
+        backref=backref(
+            "value_summary",
+            uselist=False,
+            passive_deletes=True,
+            cascade="all, delete-orphan",
+        ),
+    )
+
+    summarizer_version = db.Column(db.Integer, nullable=False)
+    computed_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    source_url = db.Column(db.String)
+    # tells an unchanged file from one replaced under a url the database still holds
+    source_sha256 = db.Column(db.String(64))
+    source_bytes = db.Column(db.BigInteger)
+    status = db.Column(STATUS_ENUM, nullable=False)
+    error = db.Column(db.String)
+
+    # counts, not fractions: exact and 8 bytes each; the api divides for display
+    n_voxels = db.Column(db.BigInteger)
+    n_nan = db.Column(db.BigInteger)
+    n_zero = db.Column(db.BigInteger)
+    n_negative = db.Column(db.BigInteger)
+    n_values = db.Column(db.BigInteger)
+
+    value_min = db.Column(db.Float)
+    value_max = db.Column(db.Float)
+    value_mean = db.Column(db.Float)
+    value_std = db.Column(db.Float)
+    # aligned with IMAGE_VALUE_SUMMARY_PERCENTILES; one array rather than a column
+    # per probe keeps the probe set defined once, and percentiles[n] still indexes
+    percentiles = db.Column(ARRAY(db.Float))
+
+    # equal-width bins; edges are implied by the bounds and len(histogram_counts)
+    histogram_min = db.Column(db.Float)
+    histogram_max = db.Column(db.Float)
+    histogram_counts = db.Column(ARRAY(db.Integer))
+    histogram_underflow = db.Column(db.BigInteger)
+    histogram_overflow = db.Column(db.BigInteger)
 
 
 class PointValue(BaseMixin, db.Model):
