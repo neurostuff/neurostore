@@ -28,7 +28,11 @@ BETA_MAP_CODES = frozenset({"U", "M"})
 VARIANCE_MAP_CODES = frozenset({"V"})
 
 
-def _normalize(raw_value):
+def normalize_choice_value(raw_value):
+    """Fold a NeuroVault choice code or label into a lookup key, or None if blank.
+
+    Shared with :mod:`neurostore.analysis_levels`, which normalizes the same way.
+    """
     if raw_value is None:
         return None
     value = str(raw_value).strip()
@@ -39,8 +43,8 @@ def _normalize(raw_value):
 
 _MAP_TYPE_LOOKUP = {}
 for _code, _label in MAP_TYPE_CHOICES:
-    _MAP_TYPE_LOOKUP[_normalize(_code)] = _code
-    _MAP_TYPE_LOOKUP[_normalize(_label)] = _code
+    _MAP_TYPE_LOOKUP[normalize_choice_value(_code)] = _code
+    _MAP_TYPE_LOOKUP[normalize_choice_value(_label)] = _code
 
 _MAP_TYPE_LOOKUP.update(
     {
@@ -83,7 +87,7 @@ def canonicalize_map_type(value, default="Other", missing_default=None):
     - Unknown non-empty input -> ``default`` (default: "Other")
     """
 
-    normalized = _normalize(value)
+    normalized = normalize_choice_value(value)
     if normalized is None:
         return missing_default
     return _MAP_TYPE_LOOKUP.get(normalized, default)

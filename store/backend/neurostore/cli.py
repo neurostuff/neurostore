@@ -175,6 +175,40 @@ def backfill_neurovault_sample_sizes(verbose):
     _run_with_runtime(_run)
 
 
+@main.command("prune-non-group-neurovault-images")
+@click.option(
+    "--apply/--dry-run",
+    "apply_changes",
+    default=False,
+    show_default=True,
+    help="delete the images instead of only reporting what would be deleted",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="report each study that loses images",
+)
+def prune_non_group_neurovault_images(apply_changes, verbose):
+    """Delete stored neurovault images that are not group level results.
+
+    Deletes the images neurovault marks single-subject, meta-analysis or other,
+    plus the analyses and entities left holding nothing. Images with no analysis
+    level are kept, matching what ingest-neurovault ingests.
+    """
+
+    def _run(_app, _db):
+        from neurostore import ingest
+
+        ingest.prune_non_group_neurovault_images(
+            dry_run=not apply_changes,
+            verbose=verbose,
+        )
+
+    _run_with_runtime(_run)
+
+
 @main.command("ingest-neuroquery")
 @click.option("--max-rows", default=None, help="ingest neuroquery")
 def ingest_neuroquery(max_rows):
