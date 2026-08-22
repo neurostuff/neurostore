@@ -813,6 +813,120 @@ def test_prune_non_group_neurovault_images_keeps_analyses_with_coordinates(sessi
     assert "sample_sizes" not in (study.metadata_ or {})
 
 
+def test_prune_deletes_studies_left_without_images_or_coordinates(session):
+    """A study stripped of every image keeps nothing readable, so it goes too."""
+    collection_id = 424259
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [
+            neurovault_image("subject map", 1, analysis_level="single-subject"),
+            neurovault_image("another subject map", 2, analysis_level="S"),
+        ],
+    )
+    study_id = study.id
+    base_study_id = study.base_study_id
+
+    dry_run = ingest.prune_non_group_neurovault_images()
+    assert dry_run["studies_deleted"] == 1
+    assert dry_run["base_studies_deactivated"] == 1
+    # a dry run leaves the database alone
+    assert Study.query.filter_by(id=study_id).count() == 1
+
+    summary = ingest.prune_non_group_neurovault_images(dry_run=False, verbose=True)
+    assert summary["images_deleted"] == 2
+    assert summary["studies_deleted"] == 1
+    assert summary["base_studies_deactivated"] == 1
+
+    assert Study.query.filter_by(id=study_id).count() == 0
+    assert BaseStudy.query.filter_by(id=base_study_id).one().is_active is False
+
+
+def test_prune_keeps_base_study_active_when_another_version_has_data(session):
+    """Only the emptied version goes; a sibling holding coordinates keeps it alive."""
+    collection_id = 424260
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [neurovault_image("subject map", 1, analysis_level="single-subject")],
+    )
+    base_study_id = study.base_study_id
+    study_id = study.id
+
+    # a coordinate version of the same paper, which the prune must not touch
+    sibling = Study(
+        name="coordinate version",
+        source="neurosynth",
+        source_id="12345",
+        level="group",
+        base_study_id=base_study_id,
+    )
+    sibling_analysis = Analysis(name="coordinate analysis", study=sibling, order=0)
+    session.add_all(
+        [
+            sibling,
+            sibling_analysis,
+            Point(x=1.0, y=2.0, z=3.0, space="MNI", analysis=sibling_analysis),
+        ]
+    )
+    session.commit()
+    sibling_id = sibling.id
+
+    summary = ingest.prune_non_group_neurovault_images(dry_run=False)
+
+    assert summary["studies_deleted"] == 1
+    assert summary["base_studies_deactivated"] == 0
+    assert Study.query.filter_by(id=study_id).count() == 0
+    assert Study.query.filter_by(id=sibling_id).count() == 1
+    assert BaseStudy.query.filter_by(id=base_study_id).one().is_active is True
+
+
+def test_prune_keeps_a_study_that_still_holds_coordinates(session):
+    """Losing every image is not enough: coordinates keep the study and base study."""
+    collection_id = 424261
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [neurovault_image("subject map", 1, analysis_level="single-subject")],
+    )
+    session.add(
+        Point(x=1.0, y=2.0, z=3.0, space="MNI", analysis=study.analyses[0])
+    )
+    session.commit()
+    study_id = study.id
+    base_study_id = study.base_study_id
+
+    summary = ingest.prune_non_group_neurovault_images(dry_run=False)
+
+    assert summary["studies_deleted"] == 0
+    assert summary["base_studies_deactivated"] == 0
+    assert Study.query.filter_by(id=study_id).count() == 1
+    assert BaseStudy.query.filter_by(id=base_study_id).one().is_active is True
+
+
+def test_prune_sweeps_shells_left_by_an_earlier_run(session):
+    """The sweep must not be skipped when there are no images left to prune."""
+    collection_id = 424262
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [neurovault_image("subject map", 1, analysis_level="single-subject")],
+    )
+    study_id = study.id
+    base_study_id = study.base_study_id
+
+    # delete only the images, the way a run predating the sweep left things
+    Image.query.filter_by(study_id=study_id).delete()
+    session.commit()
+
+    summary = ingest.prune_non_group_neurovault_images(dry_run=False)
+
+    assert summary["images_deleted"] == 0
+    assert summary["studies_deleted"] == 1
+    assert Study.query.filter_by(id=study_id).count() == 0
+    assert BaseStudy.query.filter_by(id=base_study_id).one().is_active is False
+
+
 def test_prune_non_group_neurovault_images_leaves_other_sources_alone(
     ingest_neurosynth, session
 ):
