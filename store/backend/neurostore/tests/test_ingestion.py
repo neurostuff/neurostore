@@ -6,7 +6,7 @@ from sqlalchemy.exc import SAWarning
 
 from neurostore import ingest
 from neurostore.ingest.extracted_features import ingest_feature
-from neurostore.models import Analysis, BaseStudy, Image, Study
+from neurostore.models import Analysis, BaseStudy, Entity, Image, Point, Study
 
 
 def test_ingest_ace(ingest_neurosynth, ingest_ace, session):
@@ -149,7 +149,13 @@ def neurovault_collection(collection_id, number_of_images):
     }
 
 
-def neurovault_image(name, image_id, number_of_subjects=None, file_name=None):
+def neurovault_image(
+    name,
+    image_id,
+    number_of_subjects=None,
+    file_name=None,
+    analysis_level=None,
+):
     return {
         "id": image_id,
         "name": name,
@@ -160,6 +166,7 @@ def neurovault_image(name, image_id, number_of_subjects=None, file_name=None):
         "cognitive_paradigm_cogatlas": None,
         "not_mni": False,
         "number_of_subjects": number_of_subjects,
+        "analysis_level": analysis_level,
     }
 
 
@@ -555,3 +562,263 @@ def test_backfill_neurovault_sample_sizes_repairs_stored_collections(
 
     # nothing left to repair, so a second pass is a no-op
     assert ingest.backfill_neurovault_sample_sizes() == 0
+
+
+def test_ingest_neurovault_only_ingests_group_level_images(monkeypatch, session):
+    collection_id = 424253
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image("group map", 1, analysis_level="group"),
+                neurovault_image("unlabeled map", 2),
+                neurovault_image("subject map", 3, analysis_level="single-subject"),
+                neurovault_image("meta map", 4, analysis_level="meta-analysis"),
+                neurovault_image("other map", 5, analysis_level="other"),
+            ],
+        ),
+    )
+
+    ingest.ingest_neurovault(limit=1)
+
+    study = neurovault_study(collection_id)
+    assert {image.data["name"] for image in study.images} == {
+        "group map",
+        "unlabeled map",
+    }
+    # analyses only exist to hold images, so the dropped images leave none behind
+    assert {analysis.name for analysis in study.analyses} == {
+        "group map",
+        "unlabeled map",
+    }
+    assert study.metadata_[ingest.NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY] == 3
+
+
+def test_ingest_neurovault_skips_collection_without_group_level_images(
+    monkeypatch, session
+):
+    collection_id = 424254
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image("subject one", 1, analysis_level="single-subject"),
+                neurovault_image("subject two", 2, analysis_level="S"),
+            ],
+        ),
+    )
+
+    ingest.ingest_neurovault(limit=1)
+
+    assert (
+        Study.query.filter_by(source="neurovault", source_id=str(collection_id)).first()
+        is None
+    )
+
+
+def test_ingest_neurovault_skips_filtered_collection_without_refetching(
+    monkeypatch, session
+):
+    collection_id = 424255
+    image_url = NEUROVAULT_IMAGE_URL.format(collection_id)
+
+    def payloads():
+        return neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image("group map", 1, analysis_level="group"),
+                neurovault_image("subject map", 2, analysis_level="single-subject"),
+            ],
+        )
+
+    requested = []
+    fake_neurovault(monkeypatch, payloads(), requested)
+    ingest.ingest_neurovault(limit=1)
+    assert image_url in requested
+
+    # the filtered image is accounted for, so the collection reads as complete
+    requested.clear()
+    fake_neurovault(monkeypatch, payloads(), requested)
+    ingest.ingest_neurovault(limit=1)
+
+    assert requested == [ingest.NEUROVAULT_COLLECTIONS_URL]
+    assert len(neurovault_study(collection_id).images) == 1
+
+
+def test_ingest_neurovault_excludes_non_group_sample_sizes(monkeypatch, session):
+    collection_id = 424256
+    fake_neurovault(
+        monkeypatch,
+        neurovault_payloads(
+            collection_id,
+            [
+                neurovault_image(
+                    "group map", 1, number_of_subjects=24, analysis_level="group"
+                ),
+                neurovault_image(
+                    "subject map",
+                    2,
+                    number_of_subjects=1,
+                    analysis_level="single-subject",
+                ),
+            ],
+        ),
+    )
+
+    ingest.ingest_neurovault(limit=1)
+
+    study = neurovault_study(collection_id)
+    assert analysis_sample_size(study, "group map") == [24]
+    assert study.metadata_["sample_sizes"] == [24]
+
+
+def stored_neurovault_study(session, collection_id, images):
+    """Build a neurovault study the way ingest did before the group level filter.
+
+    Images sharing a name share an analysis, and each image carries an entity, so
+    the rows the prune has to reason about are all present.
+    """
+    base_study = BaseStudy(
+        name="stored collection",
+        doi=f"10.4242/neurovault-{collection_id}",
+        level="group",
+    )
+    study = Study(
+        name="stored collection",
+        source="neurovault",
+        source_id=str(collection_id),
+        level="group",
+        base_study=base_study,
+        metadata_={"number_of_images": len(images)},
+    )
+    to_commit = [base_study, study]
+    analyses = {}
+    for payload in images:
+        analysis = analyses.get(payload["name"])
+        if analysis is None:
+            analysis = Analysis(name=payload["name"], study=study, order=len(analyses))
+            analyses[payload["name"]] = analysis
+            to_commit.append(analysis)
+        to_commit.append(
+            Image(
+                url=payload["file"],
+                filename=payload["file"].rsplit("/", 1)[-1],
+                space="MNI",
+                value_type="Z",
+                analysis=analysis,
+                study=study,
+                data=payload,
+                entities=[
+                    Entity(level="group", label=payload["name"], analysis=analysis)
+                ],
+            )
+        )
+    session.add_all(to_commit)
+    session.commit()
+    return study
+
+
+def test_prune_non_group_neurovault_images(session):
+    collection_id = 424257
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [
+            neurovault_image(
+                "group map", 1, number_of_subjects=24, analysis_level="group"
+            ),
+            neurovault_image("unlabeled map", 2, number_of_subjects=18),
+            neurovault_image(
+                "subject map", 3, number_of_subjects=1, analysis_level="single-subject"
+            ),
+            neurovault_image("meta map", 4, analysis_level="meta-analysis"),
+            neurovault_image("other map", 5, analysis_level="other"),
+            # one analysis holding both a group image and a single-subject image,
+            # so the analysis survives the prune and only the image goes
+            neurovault_image("shared map", 6, file_name="shared-g", analysis_level="G"),
+            neurovault_image("shared map", 7, file_name="shared-s", analysis_level="S"),
+        ],
+    )
+    study_id = study.id
+    ingest._apply_neurovault_sample_sizes(study)
+    session.commit()
+    assert study.metadata_["sample_sizes"] == [24, 18, 1]
+
+    dry_run = ingest.prune_non_group_neurovault_images()
+    assert dry_run["images_deleted"] == 4
+    assert dry_run["analyses_deleted"] == 3
+    assert dry_run["entities_deleted"] == 1
+    assert dry_run["levels"] == {"single-subject": 2, "meta-analysis": 1, "other": 1}
+    # a dry run leaves the database alone
+    assert Image.query.filter_by(study_id=study_id).count() == 7
+
+    summary = ingest.prune_non_group_neurovault_images(dry_run=False, verbose=True)
+    assert summary["images_deleted"] == 4
+    assert summary["analyses_deleted"] == 3
+    assert summary["entities_deleted"] == 1
+    assert summary["studies_affected"] == 1
+    assert summary["studies_left_without_images"] == 0
+
+    study = Study.query.filter_by(id=study_id).one()
+    assert {image.data["name"] for image in study.images} == {
+        "group map",
+        "unlabeled map",
+        "shared map",
+    }
+    assert {analysis.name for analysis in study.analyses} == {
+        "group map",
+        "unlabeled map",
+        "shared map",
+    }
+    # nothing is left dangling: every surviving image still has its analysis, and
+    # every surviving entity still has an image
+    assert all(image.analysis_id is not None for image in study.images)
+    surviving_entities = Entity.query.filter(
+        Entity.analysis_id.in_([analysis.id for analysis in study.analyses])
+    ).all()
+    assert len(surviving_entities) == 3
+    assert all(entity.images for entity in surviving_entities)
+    # the sample sizes the deleted images contributed are gone with them
+    assert study.metadata_["sample_sizes"] == [24, 18]
+    assert study.metadata_[ingest.NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY] == 4
+
+    # nothing left to prune, so a second pass is a no-op
+    assert ingest.prune_non_group_neurovault_images(dry_run=False)["images_deleted"] == 0
+
+
+def test_prune_non_group_neurovault_images_keeps_analyses_with_coordinates(session):
+    collection_id = 424258
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [neurovault_image("subject map", 1, analysis_level="single-subject")],
+    )
+    analysis = study.analyses[0]
+    session.add(Point(x=1.0, y=2.0, z=3.0, space="MNI", analysis=analysis))
+    session.commit()
+    analysis_id = analysis.id
+    study_id = study.id
+
+    summary = ingest.prune_non_group_neurovault_images(dry_run=False)
+
+    assert summary["images_deleted"] == 1
+    assert summary["analyses_deleted"] == 0
+    assert summary["studies_left_without_images"] == 1
+    # the study stays, and so does the analysis holding coordinates
+    assert Analysis.query.filter_by(id=analysis_id).one().images == []
+    study = Study.query.filter_by(id=study_id).one()
+    assert study.images == []
+    assert "sample_sizes" not in (study.metadata_ or {})
+
+
+def test_prune_non_group_neurovault_images_leaves_other_sources_alone(
+    ingest_neurosynth, session
+):
+    non_neurovault_images = Image.query.join(Study).filter(Study.source != "neurovault")
+    before = non_neurovault_images.count()
+
+    ingest.prune_non_group_neurovault_images(dry_run=False)
+
+    assert non_neurovault_images.count() == before

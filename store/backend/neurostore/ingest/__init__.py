@@ -13,6 +13,11 @@ from dateutil.parser import parse as parse_date
 from scipy import sparse
 from sqlalchemy import or_
 
+from neurostore.analysis_levels import (
+    NON_GROUP_NORMALIZED_VALUES,
+    canonicalize_analysis_level,
+    is_non_group_analysis_level,
+)
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type
 from neurostore.models import (
@@ -31,7 +36,12 @@ from neurostore.models import (
     Studyset,
     Table,
 )
-from neurostore.models.data import StudysetStudy, _check_type
+from neurostore.models.data import (
+    ImageEntityMap,
+    PointEntityMap,
+    StudysetStudy,
+    _check_type,
+)
 from neurostore.note_keys import resolve_note_key_default
 from neurostore.services.has_media_flags import recompute_media_flags
 
@@ -73,6 +83,9 @@ def _recompute_base_study_flags(base_studies):
 
 NEUROVAULT_COLLECTIONS_URL = "https://neurovault.org/api/collections.json"
 NEUROVAULT_IMAGES_URL = "https://neurovault.org/api/collections/{}/images/?format=json"
+# Bookkeeping rather than payload: how many images the group level filter dropped,
+# so a re-ingest can tell an already-complete collection from a short one.
+NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY = "neurostore_non_group_image_count"
 
 
 def _neurovault_image_key(image_data):
@@ -112,6 +125,22 @@ def _fetch_neurovault_images(collection_id, verbose=False):
     return results
 
 
+def _partition_group_level_images(image_payloads):
+    """Split fetched payloads into the ones to ingest and a count of the rest.
+
+    Single-subject, meta-analytic and "other" maps never reach the database.
+    Unlabeled images are kept, per :func:`is_non_group_analysis_level`.
+    """
+    group_level = []
+    non_group = 0
+    for img in image_payloads:
+        if is_non_group_analysis_level((img or {}).get("analysis_level")):
+            non_group += 1
+        else:
+            group_level.append(img)
+    return group_level, non_group
+
+
 def _neurovault_ingested_image_counts():
     """Map each ingested neurovault collection id to how many images are stored."""
     rows = (
@@ -122,6 +151,40 @@ def _neurovault_ingested_image_counts():
         .all()
     )
     return {str(source_id): count for source_id, count in rows}
+
+
+def _coerce_non_group_image_count(value):
+    """Read a stored filtered-image count, treating missing or unusable as zero."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _neurovault_non_group_image_counts():
+    """How many images each stored collection had filtered out as non-group.
+
+    ``number_of_images`` on the collection payload counts every level, so the
+    completeness check has to add the filtered images back or a mixed collection
+    looks permanently short and gets its images refetched on every run.
+    """
+    rows = (
+        db.session.query(
+            Study.source_id,
+            Study.metadata_[NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY].astext,
+        )
+        .filter(Study.source == "neurovault", Study.source_id.isnot(None))
+        .all()
+    )
+    counts = {}
+    for source_id, value in rows:
+        # duplicate stored versions of one collection: the highest count is the
+        # one that saw the most of the collection
+        source_id = str(source_id)
+        counts[source_id] = max(
+            counts.get(source_id, 0), _coerce_non_group_image_count(value)
+        )
+    return counts
 
 
 def _load_conditions(names):
@@ -189,7 +252,19 @@ def _analysis_sort_key(analysis):
     return (order is None, order or 0, analysis.name or "")
 
 
-def _apply_neurovault_sample_sizes(study):
+def _drop_metadata_key(instance, key):
+    """Reassign metadata_ without ``key``, so JSONB change tracking notices."""
+    metadata = instance.metadata_ or {}
+    if key not in metadata:
+        return False
+    updated = {
+        existing: value for existing, value in metadata.items() if existing != key
+    }
+    instance.metadata_ = updated
+    return True
+
+
+def _apply_neurovault_sample_sizes(study, clear_missing=False):
     """Copy subject counts out of stored image data onto analyses and the study.
 
     The image payloads are the source of truth: each analysis takes the subject
@@ -198,12 +273,20 @@ def _apply_neurovault_sample_sizes(study):
     no counts to report is left alone, so hand-entered metadata survives a
     re-ingest. Callers must flush new rows first, otherwise ``analysis.images``
     misses them.
+
+    ``clear_missing`` drops the key instead, for callers that just deleted the
+    images a stored count came from, where the old value is a stale derivation
+    rather than metadata worth keeping.
     """
     changed = False
     sample_sizes = []
     for analysis in sorted(study.analyses, key=_analysis_sort_key):
         sizes = _sample_sizes_from_image_data(image.data for image in analysis.images)
         if sizes is None:
+            if clear_missing:
+                changed |= _drop_metadata_key(
+                    analysis, NEUROVAULT_ANALYSIS_SAMPLE_SIZE_KEY
+                )
             continue
         changed |= _set_metadata_key(
             analysis, NEUROVAULT_ANALYSIS_SAMPLE_SIZE_KEY, sizes
@@ -213,6 +296,8 @@ def _apply_neurovault_sample_sizes(study):
         changed |= _set_metadata_key(
             study, NEUROVAULT_STUDY_SAMPLE_SIZE_KEY, sample_sizes
         )
+    elif clear_missing:
+        changed |= _drop_metadata_key(study, NEUROVAULT_STUDY_SAMPLE_SIZE_KEY)
     return changed
 
 
@@ -369,14 +454,21 @@ def _build_neurovault_images(
 def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
     """Ingest neurovault collections, topping up ones that are missing images.
 
+    Only group level images are ingested: images neurovault marks single-subject,
+    meta-analysis or other are dropped without being stored, unlabeled ones kept.
+
     A collection already in the database is skipped when it holds at least as many
-    images as neurovault reports for it. Otherwise its missing images are added to
-    the existing study rather than ingested a second time. ``overwrite`` forces that
-    image-level comparison even when the counts already agree.
+    images as neurovault reports for it, counting the images the group level filter
+    dropped. Otherwise its missing images are added to the existing study rather
+    than ingested a second time. ``overwrite`` forces that image-level comparison
+    even when the counts already agree.
     """
     # How many images are already stored per collection, so a collection that was
     # only partially ingested is topped up instead of skipped forever.
     ingested_image_counts = _neurovault_ingested_image_counts()
+    # How many images the group level filter dropped per collection, so a stored
+    # collection is not mistaken for a partial one on every later run.
+    non_group_image_counts = _neurovault_non_group_image_counts()
     # Collections whose stored images already carry subject counts that never made
     # it onto the analyses, so a skipped collection still gets its metadata.
     sample_size_candidates = _neurovault_sample_size_candidates()
@@ -384,7 +476,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
     def backfill_collection(data):
         collection_id = data.get("id")
         source_id = str(collection_id)
-        image_payloads = _fetch_neurovault_images(collection_id, verbose=verbose)
+        image_payloads, non_group_images = _partition_group_level_images(
+            _fetch_neurovault_images(collection_id, verbose=verbose)
+        )
         studies = (
             Study.query.filter_by(source="neurovault", source_id=source_id)
             .order_by(Study.created_at)
@@ -429,6 +523,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             if _neurovault_image_key(img) not in stored_keys
         ]
         ingested_image_counts[source_id] = len(stored_images)
+        non_group_image_counts[source_id] = non_group_images
         if not missing:
             print(
                 "Skipping collection {} with DOI {} "
@@ -436,7 +531,11 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                     collection_id, data.get("DOI"), len(stored_images)
                 )
             )
-            if _apply_neurovault_sample_sizes(study):
+            changed = _set_metadata_key(
+                study, NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY, non_group_images
+            )
+            changed |= _apply_neurovault_sample_sizes(study)
+            if changed:
                 db.session.commit()
             sample_size_candidates.discard(source_id)
             return None
@@ -464,6 +563,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         # would not see the new rows while they are still pending
         db.session.flush()
         _apply_neurovault_sample_sizes(study)
+        _set_metadata_key(study, NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY, non_group_images)
         db.session.commit()
         sample_size_candidates.discard(source_id)
         _recompute_base_study_flag_ids([base_study_id])
@@ -476,16 +576,21 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         ingested_images = ingested_image_counts.get(source_id)
         expected_images = data.get("number_of_images")
         if ingested_images is not None:
+            # number_of_images counts every level, so filtered images count as
+            # seen rather than missing
+            accounted_images = ingested_images + non_group_image_counts.get(
+                source_id, 0
+            )
             complete = (
-                expected_images is not None and ingested_images >= expected_images
+                expected_images is not None and accounted_images >= expected_images
             )
             if complete and not overwrite:
                 print(
                     "Skipping collection {} with DOI {} "
-                    "({} of {} images already ingested)...".format(
+                    "({} of {} images already accounted for)...".format(
                         collection_id,
                         data.get("DOI"),
-                        ingested_images,
+                        accounted_images,
                         expected_images,
                     )
                 )
@@ -495,7 +600,19 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                 return None
             return backfill_collection(data)
 
-        image_payloads = _fetch_neurovault_images(collection_id, verbose=verbose)
+        image_payloads, non_group_images = _partition_group_level_images(
+            _fetch_neurovault_images(collection_id, verbose=verbose)
+        )
+        if not image_payloads:
+            # no group level image means nothing worth a study row
+            print(
+                "Skipping collection {} with DOI {} "
+                "({} images, none at the group level)...".format(
+                    collection_id, data.get("DOI"), non_group_images
+                )
+            )
+            return None
+
         collection_id = data.pop("id")
         doi = data.pop("DOI", None)
         base_study = None
@@ -541,10 +658,12 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         db.session.add_all([base_study] + [s] + new_objects + list(conditions))
         db.session.flush()
         _apply_neurovault_sample_sizes(s)
+        _set_metadata_key(s, NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY, non_group_images)
         db.session.commit()
         _recompute_base_study_flags([base_study])
         if study_source_id is not None:
             ingested_image_counts[study_source_id] = len(image_payloads)
+            non_group_image_counts[study_source_id] = non_group_images
         return s
 
     url = NEUROVAULT_COLLECTIONS_URL
@@ -570,6 +689,206 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         count += len(studies)
         if (limit is not None and count >= int(limit)) or not url:
             break
+
+
+def _chunked(values, size):
+    """Yield ``values`` in lists of at most ``size``, to bound sql parameter counts."""
+    chunk = []
+    for value in values:
+        chunk.append(value)
+        if len(chunk) >= size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
+
+
+def _non_group_neurovault_image_condition():
+    """The sql half of :func:`is_non_group_analysis_level`, over stored payloads."""
+    level = sa.func.lower(sa.func.btrim(Image.data["analysis_level"].astext))
+    return level.in_(sorted(NON_GROUP_NORMALIZED_VALUES))
+
+
+def _no_child_rows(selectable, child_column, parent_column):
+    """Sql for "no row in ``selectable`` points at ``parent_column``"."""
+    return ~sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(selectable)
+        .where(child_column == parent_column)
+    )
+
+
+def _ids_where(model, ids, *conditions, batch_size):
+    """Which of ``ids`` satisfy ``conditions``, asked in batches."""
+    matched = []
+    for chunk in _chunked(ids, batch_size):
+        matched.extend(
+            row_id
+            for (row_id,) in db.session.query(model.id).filter(
+                model.id.in_(chunk), *conditions
+            )
+        )
+    return matched
+
+
+def _delete_by_ids(model, ids, batch_size):
+    """Delete ``ids`` in batches, returning how many rows went."""
+    deleted = 0
+    for chunk in _chunked(ids, batch_size):
+        result = db.session.execute(sa.delete(model).where(model.id.in_(chunk)))
+        deleted += result.rowcount or 0
+    return deleted
+
+
+def prune_non_group_neurovault_images(dry_run=True, verbose=False, batch_size=1000):
+    """Delete stored neurovault images that are not group level results.
+
+    The mirror of the ingest filter, for data stored before that filter existed, and
+    reading the same stored payloads rather than refetching. Rows that only existed
+    to hold a deleted image go too: analyses left with neither images nor coordinates,
+    and entities left with neither images nor points. Studies are kept and reported,
+    so a collection that turns out to be entirely single-subject stays visible.
+
+    Also re-derives the sample sizes taken from the deleted images and updates the
+    filtered-image count, so a later ``ingest_neurovault`` neither trusts stale
+    counts nor reads the study as partially ingested.
+
+    Everything runs in one transaction, so ``dry_run`` reports exactly what a real
+    run would do and then rolls it back.
+    """
+    rows = (
+        db.session.query(
+            Image.id,
+            Image.analysis_id,
+            Image.study_id,
+            Study.base_study_id,
+            Image.data["analysis_level"].astext,
+        )
+        .join(Study, Study.id == Image.study_id)
+        .filter(
+            Study.source == "neurovault",
+            _non_group_neurovault_image_condition(),
+        )
+        .all()
+    )
+
+    summary = {
+        "images_deleted": 0,
+        "analyses_deleted": 0,
+        "entities_deleted": 0,
+        "studies_affected": 0,
+        "studies_left_without_images": 0,
+        "levels": {},
+    }
+    if not rows:
+        print("No non-group neurovault images stored; nothing to prune.")
+        return summary
+
+    image_ids = [row[0] for row in rows]
+    analysis_ids = {row[1] for row in rows if row[1]}
+    study_ids = {row[2] for row in rows if row[2]}
+    base_study_ids = {row[3] for row in rows if row[3]}
+    per_study_counts = {}
+    for _, _, study_id, _, level in rows:
+        canonical = canonicalize_analysis_level(level) or "unrecognized"
+        summary["levels"][canonical] = summary["levels"].get(canonical, 0) + 1
+        if study_id:
+            per_study_counts[study_id] = per_study_counts.get(study_id, 0) + 1
+
+    # image_entities cascades when the image goes, leaving the entity row itself
+    # behind, so note them now while the association rows still exist
+    entity_ids = set()
+    for chunk in _chunked(image_ids, batch_size):
+        entity_ids.update(
+            row_id
+            for (row_id,) in db.session.execute(
+                sa.select(ImageEntityMap.c.entity).where(
+                    ImageEntityMap.c.image.in_(chunk)
+                )
+            )
+        )
+
+    summary["images_deleted"] = _delete_by_ids(Image, image_ids, batch_size)
+    emptied_analysis_ids = _ids_where(
+        Analysis,
+        analysis_ids,
+        _no_child_rows(Image, Image.analysis_id, Analysis.id),
+        _no_child_rows(Point, Point.analysis_id, Analysis.id),
+        batch_size=batch_size,
+    )
+    summary["analyses_deleted"] = _delete_by_ids(
+        Analysis, emptied_analysis_ids, batch_size
+    )
+    # entities of a deleted analysis went with it by cascade; these are the ones left
+    # hanging off an analysis that survived because it kept a group image
+    dangling_entity_ids = _ids_where(
+        Entity,
+        entity_ids,
+        _no_child_rows(ImageEntityMap, ImageEntityMap.c.entity, Entity.id),
+        _no_child_rows(PointEntityMap, PointEntityMap.c.entity, Entity.id),
+        batch_size=batch_size,
+    )
+    summary["entities_deleted"] = _delete_by_ids(
+        Entity, dangling_entity_ids, batch_size
+    )
+
+    # the bulk deletes went round the orm, so drop anything it still remembers
+    # before reading images back through the relationships
+    db.session.expire_all()
+    summary["studies_affected"] = len(study_ids)
+    for chunk in _chunked(study_ids, batch_size):
+        for study in Study.query.filter(Study.id.in_(chunk)):
+            removed = per_study_counts.get(study.id, 0)
+            _apply_neurovault_sample_sizes(study, clear_missing=True)
+            # the images deleted here and the ones a filtered ingest already reported
+            # dropping are one set counted from two sides, so take the larger, not
+            # the sum: an inflated count reads as a complete collection
+            stored_count = _coerce_non_group_image_count(
+                (study.metadata_ or {}).get(NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY)
+            )
+            _set_metadata_key(
+                study,
+                NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY,
+                max(stored_count, removed),
+            )
+            if not study.images:
+                summary["studies_left_without_images"] += 1
+            if verbose:
+                print(
+                    "Study {} (collection {}): removed {} image(s), {} left".format(
+                        study.id, study.source_id, removed, len(study.images)
+                    )
+                )
+
+    if dry_run:
+        db.session.rollback()
+    else:
+        db.session.commit()
+        _recompute_base_study_flag_ids(base_study_ids)
+
+    print(
+        "{} {} non-group image(s) across {} study(ies): {}".format(
+            "Would delete" if dry_run else "Deleted",
+            summary["images_deleted"],
+            summary["studies_affected"],
+            ", ".join(
+                "{} {}".format(count, level)
+                for level, count in sorted(summary["levels"].items())
+            ),
+        )
+    )
+    print(
+        "{} {} emptied analysis(es) and {} orphaned entity(ies); "
+        "{} study(ies) left without any images.".format(
+            "Would delete" if dry_run else "Deleted",
+            summary["analyses_deleted"],
+            summary["entities_deleted"],
+            summary["studies_left_without_images"],
+        )
+    )
+    if dry_run:
+        print("Dry run: nothing was committed. Re-run with --apply to delete.")
+    return summary
 
 
 def ingest_neurosynth(max_rows=None):
