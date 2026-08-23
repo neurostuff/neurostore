@@ -44,7 +44,7 @@ DEFAULT_TIMEOUT_SECONDS = 120
 # alone would admit files that exhaust the host. Bound the voxel count too.
 DEFAULT_MAX_VOXELS = 200_000_000
 
-_NIFTI_SUFFIXES = (".nii.gz", ".nii", ".mgz", ".mgh")
+NIFTI_SUFFIXES = (".nii.gz", ".nii", ".mgz", ".mgh")
 
 # Every measured column on ImageValueSummary. A summary always carries all of them
 # so that writing one over a previous attempt cannot leave a stale value behind.
@@ -191,7 +191,7 @@ def summarize_nifti_file(path, *, max_voxels=DEFAULT_MAX_VOXELS):
 
 def _suffix_for_url(url):
     path = (urlparse(url).path or "").lower()
-    for suffix in _NIFTI_SUFFIXES:
+    for suffix in NIFTI_SUFFIXES:
         if path.endswith(suffix):
             return suffix
     return ".nii.gz"

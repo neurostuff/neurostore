@@ -1,11 +1,23 @@
-"""Run the whole neurovault image clean-up in the order the steps depend on.
+"""Chain the neurovault image clean-up steps in the order they depend on.
 
-The steps are separately useful and separately re-runnable; this exists so a
-fresh database can be brought to the same state without remembering the order or
-which step invalidates what.
+Each step is separately runnable; this exists so a fresh database can be brought
+to the same state without having to remember the order.
 """
 
 from __future__ import annotations
+
+TOTAL_STEPS = 4
+
+
+def _announce(number, title, skipped):
+    """Print the step banner. True when the step should run."""
+    print(
+        "\n[{}/{}] {}{}".format(
+            number, TOTAL_STEPS, "skipped: " if skipped else "", title
+        ),
+        flush=True,
+    )
+    return not skipped
 
 
 def run_process_neurovault_images(
@@ -23,13 +35,13 @@ def run_process_neurovault_images(
 ):
     """Migrate urls, drop non-group images, derive sample sizes, then summarize.
 
-    The order matters. Urls come first so the summarizer has a file to fetch. The
-    prune comes before the sample sizes, which are derived from the images that
-    survive it, and before the summaries so nothing is downloaded for an image
-    that is about to be deleted.
+    The order is a dependency rather than a preference: urls first so the
+    summarizer has a file to fetch, and the prune before both the sample sizes
+    derived from the images that survive it and the summaries, so nothing is
+    downloaded for an image that is about to be deleted.
 
-    ``dry_run`` covers the two destructive steps; deriving sample sizes and
-    summaries only adds rows, so those are skipped rather than faked.
+    ``dry_run`` covers the two destructive steps and then stops; the sample sizes
+    and summaries only add rows, so there is nothing to preview.
     """
     from neurostore import ingest
     from neurostore.scripts.compute_image_summaries import (
@@ -38,63 +50,42 @@ def run_process_neurovault_images(
 
     results = {}
 
-    def _step(number, title):
-        print("\n[{}/4] {}".format(number, title), flush=True)
-
-    if skip_url_migration:
-        print("\n[1/4] skipped: image url migration", flush=True)
-    else:
-        _step(1, "migrating image urls to point at nifti files")
+    if _announce(1, "migrating image urls onto nifti files", skip_url_migration):
         results["url_migration"] = ingest.migrate_image_file_urls(
             dry_run=dry_run, verbose=verbose, verify=verify_urls
         )
 
-    if skip_prune:
-        print("\n[2/4] skipped: non-group image prune", flush=True)
-    else:
-        _step(2, "pruning non-group images and the studies left empty")
+    if _announce(2, "pruning non-group images and emptied studies", skip_prune):
         results["prune"] = ingest.prune_non_group_neurovault_images(
             dry_run=dry_run, verbose=verbose
         )
 
     if dry_run:
-        print(
-            "\nDry run: stopping before the sample sizes and summaries, which "
-            "only add rows and so have nothing to preview.",
-            flush=True,
-        )
+        print("\nDry run: stopping before the steps that only add rows.", flush=True)
         return results
 
-    if skip_sample_sizes:
-        print("\n[3/4] skipped: sample size backfill", flush=True)
-    else:
-        _step(3, "deriving sample sizes from the surviving images")
+    if _announce(3, "deriving sample sizes from surviving images", skip_sample_sizes):
         results["sample_sizes"] = ingest.backfill_neurovault_sample_sizes(
             verbose=verbose
         )
 
-    if skip_summaries:
-        print("\n[4/4] skipped: image value summaries", flush=True)
-    else:
-        _step(4, "summarizing the voxel values of every remaining image")
-        # One pass over everything by default. Filtering by source used to be
-        # necessary because the rows migrated in step 1 held a landing page rather
-        # than a file; now that every stored url names a file, excluding a source
-        # would only leave images unsummarized.
+    if _announce(4, "summarizing voxel values of every image", skip_summaries):
+        # No source filter by default: step 1 leaves every stored url naming a
+        # file, and the rows it repairs have no source to filter on anyway.
         summaries = {}
         for source in summary_sources or (None,):
-            print("  source: {}".format(source or "all"), flush=True)
-            summaries[source or "all"] = run_compute_image_summaries(
+            label = source or "all"
+            print("  source: {}".format(label), flush=True)
+            counts = run_compute_image_summaries(
                 source=source,
                 limit=summary_limit,
                 verbose=verbose,
                 session=session,
             )
+            summaries[label] = counts
             print(
                 "  {}: {succeeded} summarized, {failed} failed, "
-                "{skipped} skipped".format(
-                    source or "all", **summaries[source or "all"]
-                ),
+                "{skipped} skipped".format(label, **counts),
                 flush=True,
             )
         results["summaries"] = summaries

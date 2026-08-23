@@ -3,6 +3,7 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
 import os.path as op
+import re
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -44,6 +45,7 @@ from neurostore.models.data import (
     _check_type,
 )
 from neurostore.note_keys import resolve_note_key_default
+from neurostore.services.image_value_summary import NIFTI_SUFFIXES
 from neurostore.services.has_media_flags import recompute_media_flags
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
@@ -890,17 +892,16 @@ def _prune_empty_neurovault_studies(verbose=False, batch_size=1000):
     return counts, touched
 
 
-# The suffixes summarize_nifti_file can actually read, as a postgres regex.
-_NIFTI_URL_PATTERN = r"[.](nii|nii[.]gz|mgz|mgh)$"
-_NIFTI_FILE_URL_PATTERN = r"^https?://.*" + _NIFTI_URL_PATTERN
+# Postgres regexes built from the one list of suffixes the summarizer can read,
+# so adding a format there does not silently leave these behind.
+_NIFTI_URL_PATTERN = "({})$".format(
+    "|".join(re.escape(suffix) for suffix in NIFTI_SUFFIXES)
+)
+_NIFTI_FILE_URL_PATTERN = "^https?://.*" + _NIFTI_URL_PATTERN
 
 
 def _image_file_url_candidates(limit=None):
-    """Images whose ``url`` is a landing page while ``filename`` holds the file.
-
-    An older ingest path stored the neurovault page in ``url`` and the direct file
-    url in ``filename``, the opposite of what the neurovault ingest stores now.
-    """
+    """Images whose ``url`` is a landing page while ``filename`` holds the file."""
     query = (
         db.session.query(Image.id, Image.filename)
         .filter(
@@ -917,14 +918,14 @@ def _image_file_url_candidates(limit=None):
 
 
 def _as_https(url):
-    """http downloads pay a redirect to https, and there are thousands of them."""
+    """https, so the download does not pay a redirect."""
     if url.startswith("http://"):
         return url.replace("http://", "https://", 1)
     return url
 
 
 def _url_basename(url):
-    """The trailing path segment, matching the filename the newer rows store."""
+    """The trailing path segment, matching the filename newer rows store."""
     return (urlparse(url).path or "").rsplit("/", 1)[-1]
 
 
@@ -933,14 +934,13 @@ def migrate_image_file_urls(
 ):
     """Point ``Image.url`` at the nifti file rather than a neurovault page.
 
-    Rows ingested by an older path hold the landing page in ``url`` and the file
-    url in ``filename``, so the summarizer downloads html and every image fails.
-    This moves the file url into ``url``, reduces ``filename`` to the basename the
-    neurovault ingest stores, and upgrades http to https so a download does not
-    pay a redirect. Rows whose ``url`` already names a file are left alone.
+    Rows from an older ingest path hold the landing page in ``url`` and the file
+    url in ``filename``, so summarizing them downloads html. Swaps the two and
+    reduces ``filename`` to its basename. A ``url`` already naming a file is left
+    alone.
 
-    ``verify`` head-requests that many of the migrated urls and refuses to commit
-    if any of them does not resolve.
+    ``verify`` head-requests that many of the new urls and refuses to commit if
+    one does not resolve.
     """
     rows = _image_file_url_candidates(limit=limit)
     summary = {"migrated": 0, "verified": 0, "unresolved": []}
@@ -958,9 +958,10 @@ def migrate_image_file_urls(
             print("{}: url -> {}".format(image_id, file_url))
 
     if verify:
-        # a sample is enough: these rows all came from one ingest path and share
-        # a shape, so a wrong rewrite shows up in the first few
-        for update in updates[:verify]:
+        # a sample is enough: these rows share one ingest path and one shape, so a
+        # wrong rewrite shows up in the first few
+        sample = updates[:verify]
+        for update in sample:
             try:
                 response = requests.head(
                     update["url"], timeout=60, allow_redirects=True
@@ -974,7 +975,7 @@ def migrate_image_file_urls(
             db.session.rollback()
             print(
                 "{} of {} sampled url(s) did not resolve; nothing was changed:".format(
-                    len(summary["unresolved"]), min(verify, len(updates))
+                    len(summary["unresolved"]), len(sample)
                 )
             )
             for url, error in summary["unresolved"][:10]:
@@ -989,7 +990,9 @@ def migrate_image_file_urls(
         db.session.rollback()
     else:
         db.session.commit()
-        _invalidate_cached_responses({"images": [row[0] for row in rows]})
+        _invalidate_cached_responses(
+            {"images": [update["id"] for update in updates]}
+        )
 
     print(
         "{} {} image url(s) to point at the nifti file{}.".format(
