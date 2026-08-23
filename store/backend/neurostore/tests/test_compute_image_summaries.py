@@ -167,6 +167,33 @@ async def test_backfill_skips_images_that_are_already_current(
     assert len(http.requested) == 1, "an up-to-date image must not be downloaded again"
 
 
+async def test_a_single_ulp_map_summarizes_end_to_end(auth_client, session):
+    """The failure that reached production: an fdr p map where nothing survived.
+
+    Every non-zero value sits within one ulp of 1.0, which numpy cannot divide
+    into histogram bins, and the resulting error arrived labelled as a download
+    failure.
+    """
+    values = np.full((4, 4, 4), 1.0)
+    values.flat[:5] = np.nextafter(1.0, 0.0)
+    url = "https://example.org/p_corr-FDR.nii"
+    image = _make_image(session, auth_client.username, url)
+    image_id = image.id
+
+    counts = run_compute_image_summaries(
+        session=_FakeSession({url: _nifti_bytes(values)})
+    )
+
+    assert counts == {"succeeded": 1, "failed": 0, "skipped": 0}
+    stored = ImageValueSummary.query.filter_by(image_id=image_id).one()
+    assert stored.status == "SUCCESS"
+    assert stored.error is None
+    # the widened range holds every value rather than spilling into the tails
+    assert sum(stored.histogram_counts) == stored.n_values
+    assert stored.histogram_overflow == 0
+    assert stored.histogram_underflow == 0
+
+
 async def test_backfill_bumps_the_cache_version_for_summarized_images(
     auth_client, session, z_map_bytes
 ):

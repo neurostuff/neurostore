@@ -44,7 +44,7 @@ DEFAULT_TIMEOUT_SECONDS = 120
 # alone would admit files that exhaust the host. Bound the voxel count too.
 DEFAULT_MAX_VOXELS = 200_000_000
 
-_NIFTI_SUFFIXES = (".nii.gz", ".nii", ".mgz", ".mgh")
+NIFTI_SUFFIXES = (".nii.gz", ".nii", ".mgz", ".mgh")
 
 # Every measured column on ImageValueSummary. A summary always carries all of them
 # so that writing one over a previous attempt cannot leave a stale value behind.
@@ -85,6 +85,20 @@ def _finite_float(value):
     if not np.isfinite(value):
         return None
     return value
+
+
+def _is_binnable(low, high):
+    """Whether ``[low, high]`` divides into histogram bins of nonzero width.
+
+    An fdr-corrected p map where nothing survived holds only values in
+    ``[0.9999999999999999, 1.0]``. ``high > low`` holds there, but the span is a
+    single ulp, so numpy cannot place that many distinct edges across it.
+    """
+    span = high - low
+    if span <= 0:
+        return False
+    width = span / IMAGE_VALUE_SUMMARY_HISTOGRAM_BINS
+    return width > np.spacing(max(abs(low), abs(high)))
 
 
 def summarize_values(data):
@@ -137,11 +151,14 @@ def summarize_values(data):
     # plenty of, would otherwise push every real value into a single bin.
     low = float(percentiles[0])
     high = float(percentiles[-1])
-    if not np.isfinite(low) or not np.isfinite(high) or high <= low:
+    if not np.isfinite(low) or not np.isfinite(high) or not _is_binnable(low, high):
+        # min/max is never narrower than the percentile range, so falling back can
+        # only help
         low = float(values.min())
         high = float(values.max())
-    if high <= low:
-        # a constant map still needs a range wide enough to bin
+    if not _is_binnable(low, high):
+        # a constant map, or one spanning too few ulps to divide, still needs a
+        # range wide enough to bin
         low, high = low - 0.5, high + 0.5
 
     counts, _ = np.histogram(
@@ -186,12 +203,17 @@ def summarize_nifti_file(path, *, max_voxels=DEFAULT_MAX_VOXELS):
     except Exception as exc:
         raise ImageValueSummaryError(f"could not read image data: {exc}") from exc
 
-    return summarize_values(data)
+    try:
+        return summarize_values(data)
+    except Exception as exc:
+        # otherwise download_and_summarize's handler blames the network for what
+        # is really a numpy failure on the values
+        raise ImageValueSummaryError(f"could not summarize image: {exc}") from exc
 
 
 def _suffix_for_url(url):
     path = (urlparse(url).path or "").lower()
-    for suffix in _NIFTI_SUFFIXES:
+    for suffix in NIFTI_SUFFIXES:
         if path.endswith(suffix):
             return suffix
     return ".nii.gz"

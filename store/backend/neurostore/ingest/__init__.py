@@ -3,7 +3,9 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
 import os.path as op
+import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 import numpy as np
 import pandas as pd
@@ -43,6 +45,7 @@ from neurostore.models.data import (
     _check_type,
 )
 from neurostore.note_keys import resolve_note_key_default
+from neurostore.services.image_value_summary import NIFTI_SUFFIXES
 from neurostore.services.has_media_flags import recompute_media_flags
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
@@ -887,6 +890,120 @@ def _prune_empty_neurovault_studies(verbose=False, batch_size=1000):
         base_study_ids, batch_size
     )
     return counts, touched
+
+
+# Postgres regexes built from the one list of suffixes the summarizer can read,
+# so adding a format there does not silently leave these behind.
+_NIFTI_URL_PATTERN = "({})$".format(
+    "|".join(re.escape(suffix) for suffix in NIFTI_SUFFIXES)
+)
+_NIFTI_FILE_URL_PATTERN = "^https?://.*" + _NIFTI_URL_PATTERN
+
+
+def _image_file_url_candidates(limit=None):
+    """Images whose ``url`` is a landing page while ``filename`` holds the file."""
+    query = (
+        db.session.query(Image.id, Image.filename)
+        .filter(
+            Image.url.isnot(None),
+            Image.filename.isnot(None),
+            ~Image.url.op("~*")(_NIFTI_URL_PATTERN),
+            Image.filename.op("~*")(_NIFTI_FILE_URL_PATTERN),
+        )
+        .order_by(Image.id)
+    )
+    if limit:
+        query = query.limit(limit)
+    return query.all()
+
+
+def _as_https(url):
+    """https, so the download does not pay a redirect."""
+    if url.startswith("http://"):
+        return url.replace("http://", "https://", 1)
+    return url
+
+
+def _url_basename(url):
+    """The trailing path segment, matching the filename newer rows store."""
+    return (urlparse(url).path or "").rsplit("/", 1)[-1]
+
+
+def migrate_image_file_urls(
+    dry_run=True, verbose=False, batch_size=1000, limit=None, verify=0
+):
+    """Point ``Image.url`` at the nifti file rather than a neurovault page.
+
+    Rows from an older ingest path hold the landing page in ``url`` and the file
+    url in ``filename``, so summarizing them downloads html. Swaps the two and
+    reduces ``filename`` to its basename. A ``url`` already naming a file is left
+    alone.
+
+    ``verify`` head-requests that many of the new urls and refuses to commit if
+    one does not resolve.
+    """
+    rows = _image_file_url_candidates(limit=limit)
+    summary = {"migrated": 0, "verified": 0, "unresolved": []}
+    if not rows:
+        print("No image urls to migrate; every url already names a file.")
+        return summary
+
+    updates = []
+    for image_id, filename in rows:
+        file_url = _as_https(filename)
+        updates.append(
+            {"id": image_id, "url": file_url, "filename": _url_basename(file_url)}
+        )
+        if verbose:
+            print("{}: url -> {}".format(image_id, file_url))
+
+    if verify:
+        # a sample is enough: these rows share one ingest path and one shape, so a
+        # wrong rewrite shows up in the first few
+        sample = updates[:verify]
+        for update in sample:
+            try:
+                response = requests.head(
+                    update["url"], timeout=60, allow_redirects=True
+                )
+                response.raise_for_status()
+            except Exception as exc:
+                summary["unresolved"].append((update["url"], str(exc)))
+            else:
+                summary["verified"] += 1
+        if summary["unresolved"]:
+            db.session.rollback()
+            print(
+                "{} of {} sampled url(s) did not resolve; nothing was changed:".format(
+                    len(summary["unresolved"]), len(sample)
+                )
+            )
+            for url, error in summary["unresolved"][:10]:
+                print("  {}: {}".format(url, error))
+            return summary
+
+    for chunk in _chunked(updates, batch_size):
+        db.session.execute(sa.update(Image), chunk)
+        summary["migrated"] += len(chunk)
+
+    if dry_run:
+        db.session.rollback()
+    else:
+        db.session.commit()
+        _invalidate_cached_responses(
+            {"images": [update["id"] for update in updates]}
+        )
+
+    print(
+        "{} {} image url(s) to point at the nifti file{}.".format(
+            "Would migrate" if dry_run else "Migrated",
+            summary["migrated"],
+            "" if not verify else ", {} verified".format(summary["verified"]),
+        )
+    )
+    if dry_run:
+        print("Dry run: nothing was committed. Re-run with --apply to migrate.")
+    return summary
 
 
 def prune_non_group_neurovault_images(dry_run=True, verbose=False, batch_size=1000):

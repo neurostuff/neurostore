@@ -973,6 +973,97 @@ def test_prune_dry_run_leaves_cache_versions_alone(session):
     assert get_cache_version("images", image_id) == before
 
 
+def _landing_page_image(session, url, filename):
+    """An image the way the older ingest path stored it: page in url, file in filename."""
+    study = Study(name="older ingest", source=None, level="group")
+    analysis = Analysis(name="a", study=study, order=0)
+    image = Image(
+        url=url, filename=filename, space="MNI", value_type="Z", analysis=analysis
+    )
+    session.add_all([study, analysis, image])
+    session.commit()
+    return image
+
+
+def test_migrate_image_file_urls_swaps_the_page_for_the_file(session):
+    """The file url lives in filename already, so the fix is local, not a refetch."""
+    image = _landing_page_image(
+        session,
+        "http://neurovault.org/images/1013541/",
+        "http://neurovault.org/media/images/22454/p_corr-FDR_method-indep.nii.gz",
+    )
+    image_id = image.id
+
+    dry_run = ingest.migrate_image_file_urls()
+    assert dry_run["migrated"] == 1
+    # a dry run leaves the database alone
+    assert Image.query.filter_by(id=image_id).one().url.endswith("/1013541/")
+
+    summary = ingest.migrate_image_file_urls(dry_run=False, verbose=True)
+    assert summary["migrated"] == 1
+
+    migrated = Image.query.filter_by(id=image_id).one()
+    # https, so the download does not pay a redirect
+    assert migrated.url == (
+        "https://neurovault.org/media/images/22454/p_corr-FDR_method-indep.nii.gz"
+    )
+    # filename drops to the basename the neurovault ingest stores
+    assert migrated.filename == "p_corr-FDR_method-indep.nii.gz"
+
+
+def test_migrate_image_file_urls_leaves_real_file_urls_alone(session):
+    """A url that already names a file is not a candidate."""
+    collection_id = 424265
+    study = stored_neurovault_study(
+        session,
+        collection_id,
+        [neurovault_image("group map", 1, analysis_level="group")],
+    )
+    before = study.images[0].url
+
+    summary = ingest.migrate_image_file_urls(dry_run=False)
+
+    assert summary["migrated"] == 0
+    assert Study.query.filter_by(id=study.id).one().images[0].url == before
+
+
+def test_migrate_image_file_urls_refuses_to_commit_unresolved_urls(session, monkeypatch):
+    """Verification is the point: a rewrite that does not resolve is worse than none."""
+    image = _landing_page_image(
+        session,
+        "http://neurovault.org/images/999/",
+        "http://neurovault.org/media/images/1/gone.nii.gz",
+    )
+    image_id = image.id
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("404")
+
+    monkeypatch.setattr(ingest.requests, "head", boom)
+
+    summary = ingest.migrate_image_file_urls(dry_run=False, verify=1)
+
+    assert summary["migrated"] == 0
+    assert summary["unresolved"]
+    assert Image.query.filter_by(id=image_id).one().url.endswith("/999/")
+
+
+def test_migrate_image_file_urls_bumps_the_cache(session):
+    from neurostore.cache_versioning import get_cache_version
+
+    image = _landing_page_image(
+        session,
+        "http://neurovault.org/images/1013542/",
+        "http://neurovault.org/media/images/22455/z.nii.gz",
+    )
+    image_id = image.id
+    before = get_cache_version("images", image_id)
+
+    ingest.migrate_image_file_urls(dry_run=False)
+
+    assert get_cache_version("images", image_id) != before
+
+
 def test_prune_non_group_neurovault_images_leaves_other_sources_alone(
     ingest_neurosynth, session
 ):

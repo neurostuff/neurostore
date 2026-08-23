@@ -210,3 +210,39 @@ def test_voxel_cap_can_be_disabled(tmp_path):
     summary = summarize_nifti_file(path, max_voxels=None)
 
     assert summary["n_voxels"] == 1000
+
+
+def test_single_ulp_range_still_gets_a_histogram():
+    """An fdr p map where nothing survived spans one ulp but must still bin.
+
+    high > low holds, so the constant-map guard alone lets it through and numpy
+    then refuses to build bin edges that are not strictly increasing.
+    """
+    data = np.full(1000, 1.0)
+    data[:10] = np.nextafter(1.0, 0.0)
+
+    summary = summarize_values(data)
+
+    assert summary["n_values"] == 1000
+    assert len(summary["histogram_counts"]) == IMAGE_VALUE_SUMMARY_HISTOGRAM_BINS
+    # every value lands in a bin rather than in the over/underflow counters
+    assert sum(summary["histogram_counts"]) == 1000
+    assert summary["histogram_max"] > summary["histogram_min"]
+
+
+def test_summarize_failure_is_not_reported_as_a_fetch_failure(tmp_path, monkeypatch):
+    """Blaming the network for a numpy error sends the reader to the wrong place."""
+    import neurostore.services.image_value_summary as module
+
+    path = _write_nifti(tmp_path / "ok.nii.gz", (4, 4, 4))
+
+    def boom(_data):
+        raise ValueError("Too many bins for data range")
+
+    monkeypatch.setattr(module, "summarize_values", boom)
+
+    with pytest.raises(ImageValueSummaryError) as excinfo:
+        summarize_nifti_file(path)
+
+    assert "could not summarize image" in str(excinfo.value)
+    assert "fetch" not in str(excinfo.value)
