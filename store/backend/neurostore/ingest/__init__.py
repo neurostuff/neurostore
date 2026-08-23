@@ -63,6 +63,20 @@ def _coerce_optional_int(value):
     return int(float(value))
 
 
+def _invalidate_cached_responses(unique_ids):
+    """Bump the cache versions for objects a bulk command changed.
+
+    The api invalidates its own writes; a command that writes straight to the
+    database has to do it here, or an endpoint keeps serving the body it cached
+    before the change for as long as that entry lives.
+    """
+    from neurostore.cache_versioning import bump_cache_versions
+
+    bump_cache_versions(
+        {resource: ids for resource, ids in unique_ids.items() if ids}
+    )
+
+
 def _recompute_base_study_flag_ids(base_study_ids):
     base_study_ids = [
         base_study_id for base_study_id in base_study_ids if base_study_id
@@ -338,7 +352,16 @@ def _repair_neurovault_sample_sizes(source_id, verbose=False):
     repaired = [_apply_neurovault_sample_sizes(study) for study in studies]
     if not any(repaired):
         return False
+    # read the ids before the commit expires the instances and makes this reload
+    changed = [study for study, was_changed in zip(studies, repaired) if was_changed]
+    changed_ids = {
+        "studies": [study.id for study in changed],
+        "analyses": [
+            analysis.id for study in changed for analysis in study.analyses
+        ],
+    }
     db.session.commit()
+    _invalidate_cached_responses(changed_ids)
     if verbose:
         print(
             "Backfilled sample sizes for collection {} from stored image data".format(
@@ -740,6 +763,132 @@ def _delete_by_ids(model, ids, batch_size):
     return deleted
 
 
+def _study_holds_data():
+    """Sql for "this study still has an image or a coordinate somewhere".
+
+    Images hang off a study either directly or through one of its analyses;
+    coordinates only ever hang off an analysis.
+    """
+    return sa.or_(
+        sa.exists(
+            sa.select(sa.literal(1))
+            .select_from(Image)
+            .where(Image.study_id == Study.id)
+        ),
+        sa.exists(
+            sa.select(sa.literal(1))
+            .select_from(Analysis)
+            .join(Image, Image.analysis_id == Analysis.id)
+            .where(Analysis.study_id == Study.id)
+        ),
+        sa.exists(
+            sa.select(sa.literal(1))
+            .select_from(Analysis)
+            .join(Point, Point.analysis_id == Analysis.id)
+            .where(Analysis.study_id == Study.id)
+        ),
+    )
+
+
+def _empty_neurovault_studies():
+    """Neurovault studies left holding neither an image nor a coordinate."""
+    return db.session.execute(
+        sa.select(Study.id, Study.base_study_id).where(
+            Study.source == "neurovault", ~_study_holds_data()
+        )
+    ).all()
+
+
+def _deactivate_base_studies_without_data(base_study_ids, batch_size):
+    """Mark base studies inactive once no surviving version carries data.
+
+    A base study can hold a coordinate version alongside the image one that was
+    just deleted, so this asks what is left rather than assuming the deletion
+    emptied it.
+    """
+    base_study_ids = [
+        base_study_id for base_study_id in base_study_ids if base_study_id
+    ]
+    if not base_study_ids:
+        return 0
+
+    still_holding = set()
+    for chunk in _chunked(base_study_ids, batch_size):
+        still_holding.update(
+            base_study_id
+            for (base_study_id,) in db.session.query(Study.base_study_id)
+            .filter(Study.base_study_id.in_(chunk), _study_holds_data())
+            .distinct()
+        )
+
+    empty_ids = [
+        base_study_id
+        for base_study_id in dict.fromkeys(base_study_ids)
+        if base_study_id not in still_holding
+    ]
+    deactivated = 0
+    for chunk in _chunked(empty_ids, batch_size):
+        result = db.session.execute(
+            sa.update(BaseStudy)
+            .where(BaseStudy.id.in_(chunk), BaseStudy.is_active.is_(True))
+            .values(is_active=False)
+        )
+        deactivated += result.rowcount or 0
+    return deactivated
+
+
+def _prune_empty_neurovault_studies(verbose=False, batch_size=1000):
+    """Delete neurovault studies holding neither images nor coordinates.
+
+    A study whose every image was non-group keeps nothing a meta-analysis can
+    read, so it goes rather than staying as an empty shell, and its base study is
+    deactivated when no other version carries data either. Deleting a study also
+    drops its studyset memberships by cascade; since the study holds nothing
+    computable, no meta-analysis result changes, but the studysets do get smaller.
+
+    Returns ``(counts, touched_ids)``, the ids being what the caller invalidates
+    once it commits. Caller owns the transaction.
+    """
+    rows = _empty_neurovault_studies()
+    counts = {
+        "studies_deleted": 0,
+        "base_studies_deactivated": 0,
+        "studyset_memberships_dropped": 0,
+    }
+    touched = {"studies": [], "studysets": []}
+    if not rows:
+        return counts, touched
+
+    study_ids = [row[0] for row in rows]
+    base_study_ids = {row[1] for row in rows if row[1]}
+    touched["studies"] = study_ids
+
+    for chunk in _chunked(study_ids, batch_size):
+        # the studysets these studies belong to lose a member, so note them for
+        # the cache while the association rows are still there to be read
+        for studyset_id, in db.session.query(StudysetStudy.studyset_id).filter(
+            StudysetStudy.study_id.in_(chunk)
+        ):
+            counts["studyset_memberships_dropped"] += 1
+            touched["studysets"].append(studyset_id)
+
+    if verbose:
+        for chunk in _chunked(study_ids, batch_size):
+            for study in Study.query.filter(Study.id.in_(chunk)):
+                print(
+                    "Study {} (collection {}) holds no images or coordinates".format(
+                        study.id, study.source_id
+                    )
+                )
+
+    counts["studies_deleted"] = _delete_by_ids(Study, study_ids, batch_size)
+    db.session.expire_all()
+    counts["base_studies_deactivated"] = _deactivate_base_studies_without_data(
+        base_study_ids, batch_size
+    )
+    return counts, touched
+
+
 def prune_non_group_neurovault_images(dry_run=True, verbose=False, batch_size=1000):
     """Delete stored neurovault images that are not group level results.
 
@@ -778,11 +927,15 @@ def prune_non_group_neurovault_images(dry_run=True, verbose=False, batch_size=10
         "entities_deleted": 0,
         "studies_affected": 0,
         "studies_left_without_images": 0,
+        "studies_deleted": 0,
+        "base_studies_deactivated": 0,
+        "studyset_memberships_dropped": 0,
         "levels": {},
     }
     if not rows:
-        print("No non-group neurovault images stored; nothing to prune.")
-        return summary
+        # the empty-study sweep below still has work to do: a previous run may have
+        # deleted the images and left the shells, so this must not return early
+        print("No non-group neurovault images stored.")
 
     image_ids = [row[0] for row in rows]
     analysis_ids = {row[1] for row in rows if row[1]}
@@ -860,11 +1013,27 @@ def prune_non_group_neurovault_images(dry_run=True, verbose=False, batch_size=10
                     )
                 )
 
+    # a study stripped of every image keeps nothing a meta-analysis can read, so
+    # it goes too, along with the base study when no version is left holding data
+    empty_counts, emptied = _prune_empty_neurovault_studies(
+        verbose=verbose, batch_size=batch_size
+    )
+    summary.update(empty_counts)
+
     if dry_run:
         db.session.rollback()
     else:
         db.session.commit()
         _recompute_base_study_flag_ids(base_study_ids)
+        _invalidate_cached_responses(
+            {
+                "images": image_ids,
+                "analyses": emptied_analysis_ids,
+                "studies": list(study_ids) + emptied["studies"],
+                "base-studies": list(base_study_ids),
+                "studysets": sorted(set(emptied["studysets"])),
+            }
+        )
 
     print(
         "{} {} non-group image(s) across {} study(ies): {}".format(
@@ -884,6 +1053,15 @@ def prune_non_group_neurovault_images(dry_run=True, verbose=False, batch_size=10
             summary["analyses_deleted"],
             summary["entities_deleted"],
             summary["studies_left_without_images"],
+        )
+    )
+    print(
+        "{} {} study(ies) holding neither images nor coordinates, dropping {} "
+        "studyset membership(s); {} base study(ies) marked inactive.".format(
+            "Would delete" if dry_run else "Deleted",
+            summary["studies_deleted"],
+            summary["studyset_memberships_dropped"],
+            summary["base_studies_deactivated"],
         )
     )
     if dry_run:

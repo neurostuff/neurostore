@@ -37,6 +37,13 @@ IMAGE_VALUE_SUMMARY_HISTOGRAM_BINS = 128
 DEFAULT_MAX_DOWNLOAD_BYTES = 256 * 1024 * 1024
 DEFAULT_TIMEOUT_SECONDS = 120
 
+# max_bytes bounds the download, not the memory: summarizing costs ~22 bytes per
+# voxel (the native array, the float64 copy, the finite mask and the compacted
+# values), and a gzipped mask compresses to 200+ voxels per byte. A real 496KB
+# neurovault file holds 112 million voxels and peaks at 2.5GB, so the byte ceiling
+# alone would admit files that exhaust the host. Bound the voxel count too.
+DEFAULT_MAX_VOXELS = 200_000_000
+
 _NIFTI_SUFFIXES = (".nii.gz", ".nii", ".mgz", ".mgh")
 
 # Every measured column on ImageValueSummary. A summary always carries all of them
@@ -152,7 +159,7 @@ def summarize_values(data):
     return summary
 
 
-def summarize_nifti_file(path):
+def summarize_nifti_file(path, *, max_voxels=DEFAULT_MAX_VOXELS):
     """Summarize the values of a nifti (or freesurfer) file already on disk."""
     # imported here, not at module scope: the api serves stored summaries and must
     # not pay for nibabel on startup
@@ -162,6 +169,17 @@ def summarize_nifti_file(path):
         img = nib.load(path)
     except Exception as exc:  # nibabel raises a wide variety here
         raise ImageValueSummaryError(f"could not read image: {exc}") from exc
+
+    # nib.load reads only the header, so the shape is known before any voxel is
+    # materialized and an oversized file costs nothing to reject
+    if max_voxels:
+        n_voxels = 1
+        for dim in img.shape:
+            n_voxels *= int(dim)
+        if n_voxels > max_voxels:
+            raise ImageValueSummaryError(
+                f"image holds {n_voxels} voxels, over the {max_voxels} limit"
+            )
 
     try:
         data = np.asanyarray(img.dataobj)
@@ -184,6 +202,7 @@ def download_and_summarize(
     *,
     timeout=DEFAULT_TIMEOUT_SECONDS,
     max_bytes=DEFAULT_MAX_DOWNLOAD_BYTES,
+    max_voxels=DEFAULT_MAX_VOXELS,
     session=None,
 ):
     """Fetch an image and summarize it, hashing the bytes on the way past.
@@ -215,7 +234,7 @@ def download_and_summarize(
                     digest.update(chunk)
                     out.write(chunk)
 
-        summary = summarize_nifti_file(handle)
+        summary = summarize_nifti_file(handle, max_voxels=max_voxels)
     except ImageValueSummaryError:
         raise
     except Exception as exc:
@@ -250,6 +269,7 @@ def compute_image_value_summary(
     *,
     timeout=DEFAULT_TIMEOUT_SECONDS,
     max_bytes=DEFAULT_MAX_DOWNLOAD_BYTES,
+    max_voxels=DEFAULT_MAX_VOXELS,
     session=None,
 ):
     """Summarize one image and upsert the row.
@@ -273,7 +293,11 @@ def compute_image_value_summary(
 
     try:
         values = download_and_summarize(
-            image.url, timeout=timeout, max_bytes=max_bytes, session=session
+            image.url,
+            timeout=timeout,
+            max_bytes=max_bytes,
+            max_voxels=max_voxels,
+            session=session,
         )
     except ImageValueSummaryError as exc:
         return _apply_summary(

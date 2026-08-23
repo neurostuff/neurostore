@@ -167,6 +167,22 @@ async def test_backfill_skips_images_that_are_already_current(
     assert len(http.requested) == 1, "an up-to-date image must not be downloaded again"
 
 
+async def test_backfill_bumps_the_cache_version_for_summarized_images(
+    auth_client, session, z_map_bytes
+):
+    """The summary rides on the image endpoint, so its cached body goes stale."""
+    from neurostore.cache_versioning import get_cache_version
+
+    url = "https://example.org/cache.nii"
+    image = _make_image(session, auth_client.username, url)
+    image_id = image.id
+    before = get_cache_version("images", image_id)
+
+    run_compute_image_summaries(session=_FakeSession({url: z_map_bytes}))
+
+    assert get_cache_version("images", image_id) != before
+
+
 async def test_backfill_retries_failures_only_when_asked(auth_client, session, z_map_bytes):
     url = "https://example.org/flaky.nii"
     _make_image(session, auth_client.username, url)

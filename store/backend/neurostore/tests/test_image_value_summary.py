@@ -7,7 +7,9 @@ from neurostore.services.image_value_summary import (
     IMAGE_VALUE_SUMMARY_HISTOGRAM_BINS,
     IMAGE_VALUE_SUMMARY_PERCENTILES,
     PERCENTILE_KEYS,
+    ImageValueSummaryError,
     serialize_image_value_summary,
+    summarize_nifti_file,
     summarize_values,
 )
 
@@ -168,3 +170,43 @@ def test_serializer_handles_a_missing_row_and_an_empty_map():
     assert empty["fraction_negative"] is None
     assert empty["percentiles"] is None
     assert empty["histogram"] is None
+
+
+def _write_nifti(path, shape):
+    nib = pytest.importorskip("nibabel")
+    # zeros compress to almost nothing, which is the point: the file on disk stays
+    # tiny while the voxel count is what would cost the memory
+    img = nib.Nifti1Image(np.zeros(shape, dtype=np.float32), np.eye(4))
+    nib.save(img, str(path))
+    return path
+
+
+def test_oversized_image_is_rejected_from_the_header(tmp_path):
+    """The voxel cap must trip before the data is materialized.
+
+    A gzipped mask reaches 200+ voxels per downloaded byte, so max_bytes alone
+    admits files that need gigabytes of RSS to summarize.
+    """
+    path = _write_nifti(tmp_path / "big.nii.gz", (40, 40, 40))
+
+    with pytest.raises(ImageValueSummaryError) as excinfo:
+        summarize_nifti_file(path, max_voxels=1000)
+
+    assert "64000 voxels" in str(excinfo.value)
+    assert "1000 limit" in str(excinfo.value)
+
+
+def test_image_within_the_voxel_cap_is_summarized(tmp_path):
+    path = _write_nifti(tmp_path / "small.nii.gz", (10, 10, 10))
+
+    summary = summarize_nifti_file(path, max_voxels=1000)
+
+    assert summary["n_voxels"] == 1000
+
+
+def test_voxel_cap_can_be_disabled(tmp_path):
+    path = _write_nifti(tmp_path / "any.nii.gz", (10, 10, 10))
+
+    summary = summarize_nifti_file(path, max_voxels=None)
+
+    assert summary["n_voxels"] == 1000

@@ -256,6 +256,12 @@ def prune_non_group_neurovault_images(apply_changes, verbose):
     help="skip images whose file is larger than this",
 )
 @click.option(
+    "--max-voxels",
+    default=None,
+    type=int,
+    help="skip images holding more voxels than this (bounds memory, not download)",
+)
+@click.option(
     "--commit-every",
     default=25,
     show_default=True,
@@ -277,6 +283,7 @@ def compute_image_summaries(
     retry_failed,
     timeout,
     max_bytes,
+    max_voxels,
     commit_every,
     verbose,
 ):
@@ -301,6 +308,7 @@ def compute_image_summaries(
             retry_failed=retry_failed,
             timeout=timeout,
             max_bytes=max_bytes,
+            max_voxels=max_voxels,
             commit_every=commit_every,
             verbose=verbose,
         )
