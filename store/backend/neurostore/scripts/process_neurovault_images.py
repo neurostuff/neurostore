@@ -7,10 +7,6 @@ which step invalidates what.
 
 from __future__ import annotations
 
-# The sources whose images carry a direct file url, so summarizing them fetches a
-# nifti rather than a landing page. Anything else needs the url migration first.
-SUMMARIZABLE_SOURCES = ("neurovault", "neurostore")
-
 
 def run_process_neurovault_images(
     *,
@@ -20,7 +16,7 @@ def run_process_neurovault_images(
     skip_prune=False,
     skip_sample_sizes=False,
     skip_summaries=False,
-    summary_sources=SUMMARIZABLE_SOURCES,
+    summary_sources=None,
     summary_limit=None,
     verify_urls=0,
     session=None,
@@ -81,10 +77,14 @@ def run_process_neurovault_images(
         print("\n[4/4] skipped: image value summaries", flush=True)
     else:
         _step(4, "summarizing the voxel values of every remaining image")
+        # One pass over everything by default. Filtering by source used to be
+        # necessary because the rows migrated in step 1 held a landing page rather
+        # than a file; now that every stored url names a file, excluding a source
+        # would only leave images unsummarized.
         summaries = {}
-        for source in summary_sources:
-            print("  source: {}".format(source), flush=True)
-            summaries[source] = run_compute_image_summaries(
+        for source in summary_sources or (None,):
+            print("  source: {}".format(source or "all"), flush=True)
+            summaries[source or "all"] = run_compute_image_summaries(
                 source=source,
                 limit=summary_limit,
                 verbose=verbose,
@@ -92,7 +92,9 @@ def run_process_neurovault_images(
             )
             print(
                 "  {}: {succeeded} summarized, {failed} failed, "
-                "{skipped} skipped".format(source, **summaries[source]),
+                "{skipped} skipped".format(
+                    source or "all", **summaries[source or "all"]
+                ),
                 flush=True,
             )
         results["summaries"] = summaries

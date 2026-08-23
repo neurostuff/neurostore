@@ -384,7 +384,7 @@ def compute_image_summaries(
     "summary_sources",
     multiple=True,
     default=None,
-    help="study source(s) to summarize; repeatable (default: neurovault, neurostore)",
+    help="study source(s) to summarize; repeatable (default: every source)",
 )
 @click.option(
     "--summary-limit",
@@ -419,7 +419,6 @@ def process_neurovault_images(
 
     def _run(_app, _db):
         from neurostore.scripts.process_neurovault_images import (
-            SUMMARIZABLE_SOURCES,
             run_process_neurovault_images,
         )
 
@@ -430,7 +429,7 @@ def process_neurovault_images(
             skip_prune=skip_prune,
             skip_sample_sizes=skip_sample_sizes,
             skip_summaries=skip_summaries,
-            summary_sources=summary_sources or SUMMARIZABLE_SOURCES,
+            summary_sources=summary_sources or None,
             summary_limit=summary_limit,
             verify_urls=verify_urls,
         )

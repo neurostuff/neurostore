@@ -51,15 +51,19 @@ def test_steps_run_in_dependency_order(recorded):
         "prune",
         "sample_sizes",
         "summaries",
-        "summaries",
     ]
 
 
-def test_both_summarizable_sources_are_covered(recorded):
+def test_every_source_is_summarized_by_default(recorded):
+    """The url migration is what makes a source filter unnecessary.
+
+    The rows it fixes have source NULL, so any explicit source list would leave
+    them unsummarized forever.
+    """
     pipeline.run_process_neurovault_images(dry_run=False)
 
     sources = [kwargs["source"] for name, kwargs in recorded if name == "summaries"]
-    assert sources == ["neurovault", "neurostore"]
+    assert sources == [None]
 
 
 def test_dry_run_stops_before_the_additive_steps(recorded):
@@ -75,7 +79,7 @@ def test_skips_are_honoured(recorded):
         dry_run=False, skip_url_migration=True, skip_sample_sizes=True
     )
 
-    assert [name for name, _ in recorded] == ["prune", "summaries", "summaries"]
+    assert [name for name, _ in recorded] == ["prune", "summaries"]
 
 
 def test_summary_source_can_be_narrowed(recorded):
