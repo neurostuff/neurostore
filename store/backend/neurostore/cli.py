@@ -209,6 +209,53 @@ def prune_non_group_neurovault_images(apply_changes, verbose):
     _run_with_runtime(_run)
 
 
+@main.command("migrate-image-file-urls")
+@click.option(
+    "--apply/--dry-run",
+    "apply_changes",
+    default=False,
+    show_default=True,
+    help="write the new urls instead of only reporting what would change",
+)
+@click.option(
+    "--limit",
+    default=None,
+    type=int,
+    help="stop after this many images (default: no limit)",
+)
+@click.option(
+    "--verify",
+    default=0,
+    type=int,
+    help="head-request this many migrated urls and abort if any fails to resolve",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="report each url as it is rewritten",
+)
+def migrate_image_file_urls(apply_changes, limit, verify, verbose):
+    """Point image urls at the nifti file rather than a neurovault landing page.
+
+    Rows from an older ingest path hold the page in url and the file url in
+    filename, so summarizing them downloads html. This swaps them round.
+    """
+
+    def _run(_app, _db):
+        from neurostore import ingest
+
+        ingest.migrate_image_file_urls(
+            dry_run=not apply_changes,
+            verbose=verbose,
+            limit=limit,
+            verify=verify,
+        )
+
+    _run_with_runtime(_run)
+
+
 @main.command("compute-image-summaries")
 @click.option(
     "--limit",
@@ -315,6 +362,77 @@ def compute_image_summaries(
         click.echo(
             "Summarized {succeeded} image(s), {failed} failed, "
             "{skipped} skipped.".format(**counts)
+        )
+
+    _run_with_runtime(_run)
+
+
+@main.command("process-neurovault-images")
+@click.option(
+    "--apply/--dry-run",
+    "apply_changes",
+    default=False,
+    show_default=True,
+    help="run the destructive steps instead of only reporting what would change",
+)
+@click.option("--skip-url-migration", is_flag=True, default=False)
+@click.option("--skip-prune", is_flag=True, default=False)
+@click.option("--skip-sample-sizes", is_flag=True, default=False)
+@click.option("--skip-summaries", is_flag=True, default=False)
+@click.option(
+    "--summary-source",
+    "summary_sources",
+    multiple=True,
+    default=None,
+    help="study source(s) to summarize; repeatable (default: neurovault, neurostore)",
+)
+@click.option(
+    "--summary-limit",
+    default=None,
+    type=int,
+    help="stop each summary pass after this many images",
+)
+@click.option(
+    "--verify-urls",
+    default=0,
+    type=int,
+    help="head-request this many migrated urls and abort if any fails to resolve",
+)
+@click.option("-v", "--verbose", is_flag=True, default=False)
+def process_neurovault_images(
+    apply_changes,
+    skip_url_migration,
+    skip_prune,
+    skip_sample_sizes,
+    skip_summaries,
+    summary_sources,
+    summary_limit,
+    verify_urls,
+    verbose,
+):
+    """Run the whole neurovault image clean-up, in dependency order.
+
+    Migrates image urls onto the nifti file, deletes the images neurovault does
+    not mark group level along with the studies left holding nothing, derives
+    sample sizes from what survives, then summarizes every remaining image.
+    """
+
+    def _run(_app, _db):
+        from neurostore.scripts.process_neurovault_images import (
+            SUMMARIZABLE_SOURCES,
+            run_process_neurovault_images,
+        )
+
+        run_process_neurovault_images(
+            dry_run=not apply_changes,
+            verbose=verbose,
+            skip_url_migration=skip_url_migration,
+            skip_prune=skip_prune,
+            skip_sample_sizes=skip_sample_sizes,
+            skip_summaries=skip_summaries,
+            summary_sources=summary_sources or SUMMARIZABLE_SOURCES,
+            summary_limit=summary_limit,
+            verify_urls=verify_urls,
         )
 
     _run_with_runtime(_run)
