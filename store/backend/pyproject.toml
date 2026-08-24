@@ -40,7 +40,7 @@ dependencies = [
     "orjson~=3.12",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.20.0",
-    "openai~=3.0",
+    "openai~=3.3",
     "tenacity~=9.1",
 ]
 
