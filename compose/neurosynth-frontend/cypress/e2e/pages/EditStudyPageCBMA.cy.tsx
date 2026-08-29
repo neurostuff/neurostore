@@ -60,6 +60,17 @@ describe(PAGE_NAME, () => {
             cy.contains('button', 'Back to extraction').should('be.visible');
         });
 
+        it('should show breadcrumbs linking back to extraction', () => {
+            cy.get('.MuiBreadcrumbs-root').within(() => {
+                cy.contains('Projects').should('be.visible');
+                cy.contains('Bulk import test').should('be.visible');
+                cy.contains('Extraction').should('be.visible');
+            });
+            cy.get('.MuiBreadcrumbs-root').contains('a', 'Extraction').click();
+            cy.url().should('include', '/projects/abc123/extraction');
+            cy.url().should('not.include', '/studies/');
+        });
+
         it('should show study title with year and name', () => {
             cy.contains('(2009).').should('be.visible');
             cy.contains('Aberrant functional connectivity in autism').should('be.visible');

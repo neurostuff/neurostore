@@ -1,6 +1,8 @@
 import { ArrowBack } from '@mui/icons-material';
 import { Box, Button, useMediaQuery, useTheme } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import EditStudyAnalysesCBMA from 'pages/StudyCBMA/components/EditStudyAnalysesCBMA';
@@ -11,7 +13,14 @@ import EditStudyPageHeader from 'pages/StudyCBMA/components/EditStudyPageHeader'
 import StudyCBMAPageStyles from 'pages/StudyCBMA/StudyCBMA.styles';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useClearStudyStore, useGetStudyIsLoading, useInitStudyStore, useStudyId } from 'stores/study/StudyStore';
+import { useProjectName } from 'stores/projects/ProjectStore';
+import {
+    useClearStudyStore,
+    useGetStudyIsLoading,
+    useInitStudyStore,
+    useStudyId,
+    useStudyName,
+} from 'stores/study/StudyStore';
 import DisplayExtractionTableState from './components/DisplayExtractionTableState';
 import EditStudyCompleteButton from './components/EditStudyCompleteButton';
 import EditStudyToolbar from './components/EditStudyToolbar';
@@ -25,6 +34,8 @@ const StudyCBMAPage: React.FC = () => {
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
     const studyStoreId = useStudyId();
+    const studyName = useStudyName();
+    const projectName = useProjectName();
     const theme = useTheme();
     const mdDown = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -58,6 +69,33 @@ const StudyCBMAPage: React.FC = () => {
 
     return (
         <StateHandlerComponent disableShrink={false} isError={false} isLoading={!studyStoreId || getStudyIsLoading}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            text: 'Projects',
+                            link: '/projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: projectName || '',
+                            link: `/projects/${projectId}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: 'Extraction',
+                            link: `/projects/${projectId}/extraction`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: studyName || '',
+                            link: '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
+                <LoadingStateIndicatorProject />
+            </Box>
             <EditStudyPageHeader />
             <Box
                 sx={{
