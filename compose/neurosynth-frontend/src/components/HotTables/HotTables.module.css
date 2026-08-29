@@ -5,10 +5,39 @@
     color: black !important;
 }
 
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 :global(.handsontable) td.truncate {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    gap: 4px;
+}
+
+.column-header-label {
+    min-width: 0;
+    max-width: 100px;
+    flex: 1 1 auto;
+}
+
+.column-header-remove {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 :global(.handsontable) td.no-wrap {

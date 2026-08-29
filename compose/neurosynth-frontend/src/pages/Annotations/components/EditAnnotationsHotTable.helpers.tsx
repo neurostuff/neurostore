@@ -129,7 +129,7 @@ export const annotationNotesToHotData = (
 
 export const createColumnHeader = (colKey: string, colType: EPropertyType, allowRemoveColumn: boolean) => {
     const allowRemove = allowRemoveColumn
-        ? `<div style="max-width: 50px; display: flex; align-items: center; justify-content: center">
+        ? `<div class="${styles['column-header-remove']}">
         ${renderToString(
             <div className={styles['remove-column-icon']} style={{ width: '18px', height: '18px' }}>
                 <Cancel
@@ -144,8 +144,8 @@ export const createColumnHeader = (colKey: string, colType: EPropertyType, allow
         : '<div></div>';
 
     return (
-        `<div title="${colKey}" style="display: flex; align-items: center; justify-content: center;">` +
-        `<div class="${styles[colType]} ${styles.truncate}" style="width: 100px">${colKey}</div>` +
+        `<div title="${colKey}" class="${styles['column-header']}">` +
+        `<div class="${styles[colType]} ${styles.truncate} ${styles['column-header-label']}">${colKey}</div>` +
         allowRemove +
         `</div>`
     );
