@@ -265,7 +265,7 @@ describe(PAGE_NAME, () => {
             cy.contains('Run Again').should('exist');
         });
 
-        it.only('should NOT allow specification editing when result exists', () => {
+        it('should NOT allow specification editing when result exists', () => {
             cy.contains('[role="tab"]', 'View Specification').click();
             cy.contains('button', 'Edit Specification').should('not.exist');
         });
@@ -409,6 +409,155 @@ describe(PAGE_NAME, () => {
             cy.contains('run meta-analysis').click();
             cy.contains('Run meta-analysis').click();
             cy.contains('Job submitted').should('exist');
+        });
+    });
+
+    describe('Privacy toggle', () => {
+        beforeEach(() => {
+            cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
+                'specificationFixture'
+            );
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
+                fixture: 'MetaAnalysis/jobs/noJobs',
+            }).as('jobsFixture');
+            cy.intercept('PUT', `**/api/meta-analyses/**`, {
+                fixture: 'MetaAnalysis/metaAnalysisNoResults',
+            }).as('updateMetaAnalysisFixture');
+        });
+
+        it('should set the meta-analysis from public to private when logged in and you own it', () => {
+            cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+                metaAnalysis.public = true;
+                cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+            });
+
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            cy.contains('button', 'Private').click();
+            cy.wait('@updateMetaAnalysisFixture').then((res) => {
+                assert.exists(res.request.body.public);
+                assert.isFalse(res.request.body.public);
+            });
+        });
+
+        it('should set the meta-analysis from private to public when logged in and you own it', () => {
+            cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+                metaAnalysis.public = false;
+                cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+            });
+
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            cy.contains('button', 'Public').click();
+            cy.wait('@updateMetaAnalysisFixture').then((res) => {
+                assert.exists(res.request.body.public);
+                assert.isTrue(res.request.body.public);
+            });
+        });
+
+        it('should not show the privacy toggle when the user does not own the meta-analysis', () => {
+            cy.fixture('projects/project').then((project) => {
+                project.public = true;
+                project.user = 'other-user';
+                cy.intercept('GET', `**/api/projects/*`, project).as('projectFixture');
+            });
+            cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+                metaAnalysis.public = true;
+                metaAnalysis.user = 'other-user';
+                cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+            });
+
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            cy.contains('button', 'Public').should('be.disabled');
+            cy.contains('button', 'Private').should('not.exist');
+        });
+
+        it('should not allow a non-owner to view a private meta-analysis', () => {
+            cy.fixture('projects/project').then((project) => {
+                project.public = true;
+                project.user = 'other-user';
+                cy.intercept('GET', `**/api/projects/*`, project).as('projectFixture');
+            });
+            cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+                metaAnalysis.public = false;
+                metaAnalysis.user = 'other-user';
+                cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+            });
+
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            cy.contains('Forbidden').should('exist');
+            cy.contains('You do not have access to this meta-analysis').should('exist');
+        });
+    });
+
+    describe('Breadcrumbs', () => {
+        beforeEach(() => {
+            cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
+                'specificationFixture'
+            );
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
+                fixture: 'MetaAnalysis/jobs/noJobs',
+            }).as('jobsFixture');
+        });
+
+        it('should show project breadcrumbs when opened from a project', () => {
+            cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+                metaAnalysis.public = true;
+                cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+            });
+
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            cy.get('.MuiBreadcrumbs-root').contains('Projects');
+            cy.get('.MuiBreadcrumbs-root').contains('Bulk import test');
+            cy.get('.MuiBreadcrumbs-root').contains('THIS IS MY TEST META ANALYSIS');
+        });
+
+        it('should show catalog breadcrumbs and a view project button when the project is public', () => {
+            cy.fixture('projects/project').then((project) => {
+                project.public = true;
+                project.user = 'other-user';
+                cy.intercept('GET', `**/api/projects/*`, project).as('projectFixture');
+            });
+            cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+                metaAnalysis.public = true;
+                metaAnalysis.user = 'other-user';
+                cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+            });
+
+            cy.login('mocked')
+                .visit('/meta-analyses/mock-meta-analysis-id')
+                .wait('@metaAnalysisFixture', { timeout: 20000 });
+            cy.wait('@projectFixture');
+
+            cy.get('.MuiBreadcrumbs-root').contains('Meta-Analyses');
+            cy.get('.MuiBreadcrumbs-root').should('not.contain', 'Projects');
+            cy.get('.MuiBreadcrumbs-root').should('not.contain', 'Bulk import test');
+            cy.contains('View project').should('exist');
+        });
+
+        it('should show catalog breadcrumbs without a view project button when the project is private', () => {
+            cy.fixture('projects/project').then((project) => {
+                project.user = 'other-user';
+                cy.intercept('GET', `**/api/projects/*`, project).as('projectFixture');
+            });
+            cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+                metaAnalysis.public = true;
+                metaAnalysis.user = 'other-user';
+                cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+            });
+
+            cy.login('mocked')
+                .visit('/meta-analyses/mock-meta-analysis-id')
+                .wait('@metaAnalysisFixture', { timeout: 20000 });
+            cy.wait('@projectFixture');
+
+            cy.get('.MuiBreadcrumbs-root').contains('Meta-Analyses');
+            cy.get('.MuiBreadcrumbs-root').should('not.contain', 'Bulk import test');
+            cy.contains('View project').should('not.exist');
+            cy.contains('THIS IS MY TEST META ANALYSIS').should('exist');
         });
     });
 

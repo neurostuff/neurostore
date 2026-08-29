@@ -3,11 +3,11 @@ import { ErrorBoundary } from '@sentry/react';
 import ProgressLoader from 'components/ProgressLoader';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage';
 import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProtectedProjectRoute';
+import ProtectedMetaAnalysisRoute from 'pages/BaseNavigation/components/ProtectedMetaAnalysisRoute';
 import CurationSearchPage from 'pages/CurationImport/CurationSearchPage';
 import ExtractionPage from 'pages/Extraction/ExtractionPage';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import HelpPage from 'pages/HelpPage/HelpPage';
-import MetaAnalysisRedirect from 'pages/MetaAnalysis/MetaAnalysisRedirect';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
 import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
@@ -169,11 +169,11 @@ const BaseNavigation = () => {
                     <Route
                         path="/projects/:projectId/meta-analyses/:metaAnalysisId"
                         element={
-                            <ProtectedProjectRoute errorMessage="You do not have access to this page">
+                            <ProtectedMetaAnalysisRoute errorMessage="You do not have access to this meta-analysis">
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <MetaAnalysisPage />
                                 </Box>
-                            </ProtectedProjectRoute>
+                            </ProtectedMetaAnalysisRoute>
                         }
                     />
                     <Route
@@ -204,6 +204,16 @@ const BaseNavigation = () => {
                         }
                     />
                     <Route
+                        path="/meta-analyses/:metaAnalysisId"
+                        element={
+                            <ProtectedMetaAnalysisRoute errorMessage="You do not have access to this meta-analysis">
+                                <Box sx={BaseNavigationStyles.pagesContainer}>
+                                    <MetaAnalysisPage />
+                                </Box>
+                            </ProtectedMetaAnalysisRoute>
+                        }
+                    />
+                    <Route
                         path="/user-profile"
                         element={
                             <ProtectedRoute errorMessage="Please log in to view your user profile">
@@ -230,7 +240,7 @@ const BaseNavigation = () => {
                             </Box>
                         }
                     />
-                    <Route path="/meta-analyses/:metaAnalysisId" element={<MetaAnalysisRedirect />} />
+
                     <Route
                         path="*"
                         element={

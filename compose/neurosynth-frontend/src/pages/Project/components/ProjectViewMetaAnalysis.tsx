@@ -1,7 +1,9 @@
-import { Alert, Box, Button, Card, CardActions, CardContent, Chip, Typography } from '@mui/material';
+import { Box, Button, Card, CardActions, CardContent, Chip, Stack, Tooltip, Typography } from '@mui/material';
+import PrivacyToggle from 'components/PrivacyToggle';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { getLatestMetaAnalysisResultId, getResultStatus } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisResultById } from 'hooks';
+import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import useGetMetaAnalysisJobById from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobById';
@@ -10,9 +12,11 @@ import { useProjectUser } from 'stores/projects/ProjectStore';
 import { useNavigate } from 'react-router-dom';
 
 const ProjectViewMetaAnalysis = (props: MetaAnalysisReturn) => {
-    const { created_at, results, name, description, id, project } = props;
+    const { created_at, updated_at, results, name, description, id, project, public: isPublic, user } = props;
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
+    const canEditPrivacy = useUserCanEdit(user || undefined);
+    const { mutate: updateMetaAnalysisPublic, isPending: updatePublicIsLoading } = useUpdateMetaAnalysis();
 
     const {
         data: metaAnalysisJobs,
@@ -35,13 +39,27 @@ const ProjectViewMetaAnalysis = (props: MetaAnalysisReturn) => {
 
     const navigate = useNavigate();
 
-    const date = new Date(created_at || '');
-    const isLocked = (results?.length || 0) > 0;
+    const hasResults = (results?.length || 0) > 0;
+
+    const formatTimestamp = (value: string) => {
+        const date = new Date(value);
+        return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+    };
 
     const handleUpdate = () => {
         if (!id || !project) return;
 
         navigate(`/projects/${project}/meta-analyses/${id}`);
+    };
+
+    const updatePublic = (nextIsPublic: boolean) => {
+        if (!id) return;
+        updateMetaAnalysisPublic({
+            metaAnalysisId: id,
+            metaAnalysis: {
+                public: nextIsPublic,
+            },
+        });
     };
 
     const resultStatus = getResultStatus(props, metaAnalysisResult, latestMetaAnalysisJob);
@@ -58,39 +76,71 @@ const ProjectViewMetaAnalysis = (props: MetaAnalysisReturn) => {
             }}
         >
             <CardContent>
-                <StateHandlerComponent
-                    isError={getMetaAnalysisResultIsError || metaAnalysisJobsIsError || latestJobIsError}
-                    isLoading={getMetaAnalysisResultIsLoading || metaAnalysisJobsIsLoading || latestJobIsLoading}
-                >
-                    <Box>
-                        <Alert
-                            severity={resultStatus.severity}
-                            color={resultStatus.color}
-                            sx={{ padding: '2px 10px' }}
-                            variant="standard"
-                        >
-                            {resultStatus.statusText}
-                        </Alert>
-                    </Box>
-
-                    <Box sx={{ marginTop: '1rem' }}>
-                        <Chip
-                            sx={{ marginBottom: '0.5rem' }}
-                            size="small"
-                            label={`Created: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`}
+                <Stack>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                        <Box sx={{ minWidth: 0 }}>
+                            <StateHandlerComponent
+                                isError={getMetaAnalysisResultIsError || metaAnalysisJobsIsError || latestJobIsError}
+                                isLoading={
+                                    getMetaAnalysisResultIsLoading || metaAnalysisJobsIsLoading || latestJobIsLoading
+                                }
+                                loaderSize={18}
+                            >
+                                <Tooltip title={resultStatus.description || resultStatus.statusText}>
+                                    <Chip
+                                        size="small"
+                                        color={resultStatus.color}
+                                        label={resultStatus.statusText}
+                                        variant="outlined"
+                                    />
+                                </Tooltip>
+                            </StateHandlerComponent>
+                        </Box>
+                        <PrivacyToggle
+                            isPublic={isPublic ?? true}
+                            canEdit={canEditPrivacy}
+                            onChange={updatePublic}
+                            isLoading={updatePublicIsLoading}
+                            tooltipTitle="Toggle meta-analysis privacy"
                         />
-                        <Typography variant="h6" gutterBottom>
-                            {name || ''}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'muted.main', marginTop: '0.5rem' }}>
-                            {description || ''}
-                        </Typography>
-                    </Box>
-                </StateHandlerComponent>
+                    </Stack>
+
+                    <Typography
+                        variant="h6"
+                        className="line-clamp-1"
+                        color={name ? undefined : 'warning.dark'}
+                        sx={{ minWidth: 0, mt: 2 }}
+                    >
+                        {name || 'No name'}
+                    </Typography>
+
+                    <Typography variant="body2" color={description ? 'muted.main' : 'warning.dark'}>
+                        {description || 'No description'}
+                    </Typography>
+                    <Stack spacing={0.25} sx={{ mt: 1.5 }}>
+                        {updated_at && (
+                            <Typography variant="caption" color="muted.main">
+                                Updated {formatTimestamp(updated_at)}
+                            </Typography>
+                        )}
+                        {created_at && (
+                            <Typography variant="caption" color="muted.main">
+                                Created {formatTimestamp(created_at)}
+                            </Typography>
+                        )}
+                    </Stack>
+                </Stack>
             </CardContent>
-            <CardActions>
-                <Button sx={{ width: '100%' }} onClick={handleUpdate}>
-                    {isLocked || !canEdit ? 'view' : 'view and edit'}
+            <CardActions sx={{ p: 2 }}>
+                <Button
+                    color={hasResults || !canEdit ? 'primary' : 'secondary'}
+                    disableElevation
+                    size="small"
+                    sx={{ minWidth: '120px' }}
+                    variant="contained"
+                    onClick={handleUpdate}
+                >
+                    {hasResults || !canEdit ? 'view' : 'view and edit'}
                 </Button>
             </CardActions>
         </Card>

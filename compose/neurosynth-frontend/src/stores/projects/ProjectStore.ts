@@ -855,7 +855,7 @@ export const useUpdateProjectMetadata = () => useProjectStore((state) => state.u
 export const useInitCuration = () => useProjectStore((state) => state.initCuration);
 export const useUpdateExclusionTag = () => useProjectStore((state) => state.updateExclusionTag);
 
-export const useInitProjectStoreIfRequired = () => {
+export const useInitProjectStoreIfRequired = (projectIdOverride?: string) => {
     const clearProjectStore = useClearProjectStore();
     const initProjectStore = useInitProjectStore();
     const updateProjectMetadata = useUpdateProjectMetadata();
@@ -865,7 +865,8 @@ export const useInitProjectStoreIfRequired = () => {
 
     const { logout } = useAuth0();
 
-    const { projectId } = useParams<{ projectId: string; studyId: string }>();
+    const { projectId: projectIdFromParams } = useParams<{ projectId: string; studyId: string }>();
+    const projectId = projectIdOverride || projectIdFromParams;
     const queryClient = useQueryClient();
 
     const { mutate, isPending: useUpdateProjectIsLoading, isError: useUpdateProjectIsError } = useUpdateProject();
