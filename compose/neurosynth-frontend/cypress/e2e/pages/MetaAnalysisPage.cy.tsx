@@ -631,8 +631,8 @@ describe(PAGE_NAME, () => {
         it('should show the cite me component when tab is clicked', () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
-            cy.contains('Cite Me').click();
-            cy.contains('Copy citations in your preferred format:').should('exist');
+            cy.contains('[role="tab"]', 'Cite Me').click();
+            cy.contains('Copy citations in your preferred format:', { timeout: 20000 }).should('exist');
         });
 
         it('should show citation format dropdown and citation content after loading', () => {
