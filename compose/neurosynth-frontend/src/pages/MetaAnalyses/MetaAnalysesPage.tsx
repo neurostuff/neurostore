@@ -61,9 +61,7 @@ const MetaAnalysesPage = () => {
                         ]}
                         rows={(data || []).map((metaAnalysis, index) => (
                             <TableRow
-                                onClick={() =>
-                                    navigate(`/projects/${metaAnalysis?.project}/meta-analyses/${metaAnalysis?.id}`)
-                                }
+                                onClick={() => navigate(`/meta-analyses/${metaAnalysis?.id}`)}
                                 key={metaAnalysis?.id || index}
                                 sx={NeurosynthTableStyles.tableRow}
                             >

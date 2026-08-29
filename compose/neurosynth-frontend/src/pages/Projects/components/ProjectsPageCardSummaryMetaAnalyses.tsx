@@ -1,13 +1,9 @@
 import { Box, Divider, List, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysesByIds } from 'hooks';
-import React from 'react';
 import ProjectsPageCardSummaryMetaAnalysesListItem from 'pages/Projects/components/ProjectsPageCardSummaryMetaAnalysesListItem';
 
-const ProjectsPageCardSummaryMetaAnalyses = (props: {
-    metaAnalysisIds: string[];
-    projectId: string;
-}) => {
+const ProjectsPageCardSummaryMetaAnalyses = (props: { metaAnalysisIds: string[]; projectId: string }) => {
     const { metaAnalysisIds } = props;
 
     const { data: metaAnalyses, isLoading, isError } = useGetMetaAnalysesByIds(metaAnalysisIds as string[]);

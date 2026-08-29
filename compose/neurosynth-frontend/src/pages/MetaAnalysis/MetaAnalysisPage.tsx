@@ -1,4 +1,5 @@
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
+import PrivacyToggle from 'components/PrivacyToggle';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
@@ -7,8 +8,13 @@ import { useGetMetaAnalysisById, useGetMetaAnalysisResultById } from 'hooks';
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
-import { useProjectName, useProjectUser } from 'stores/projects/ProjectStore';
-import { useParams } from 'react-router-dom';
+import {
+    useProjectIsPublic,
+    useProjectName,
+    useProjectUser,
+    useInitProjectStoreIfRequired,
+} from 'stores/projects/ProjectStore';
+import { Link, useParams } from 'react-router-dom';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 
 const MetaAnalysisPage = () => {
@@ -17,9 +23,17 @@ const MetaAnalysisPage = () => {
         projectId: string;
         metaAnalysisId: string;
     }>();
+    const {
+        data: metaAnalysis,
+        isError: getMetaAnalysisIsError,
+        isLoading: getMetaAnalysisIsLoading,
+    } = useGetMetaAnalysisById(metaAnalysisId);
+    useInitProjectStoreIfRequired(projectId || metaAnalysis?.project || undefined);
+
     const projectUser = useProjectUser();
     const editsAllowed = useUserCanEdit(projectUser || undefined);
     const projectName = useProjectName();
+    const projectIsPublic = useProjectIsPublic();
 
     /**
      * We need to use two separate instances of the same hook so that it only shows
@@ -31,11 +45,9 @@ const MetaAnalysisPage = () => {
     const { mutate: updateMetaAnalysisDescription, isPending: updateMetaAnalysisDescriptionIsLoading } =
         useUpdateMetaAnalysis();
 
-    const {
-        data: metaAnalysis,
-        isError: getMetaAnalysisIsError,
-        isLoading: getMetaAnalysisIsLoading,
-    } = useGetMetaAnalysisById(metaAnalysisId);
+    const { mutate: updateMetaAnalysisPublic, isPending: updateMetaAnalysisPublicIsLoading } = useUpdateMetaAnalysis();
+
+    const canEditMetaAnalysisPrivacy = useUserCanEdit(metaAnalysis?.user || undefined);
     const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
     const { isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(latestResultId);
 
@@ -61,6 +73,49 @@ const MetaAnalysisPage = () => {
         }
     };
 
+    const updatePublic = (isPublic: boolean) => {
+        if (!metaAnalysis?.id) return;
+        updateMetaAnalysisPublic({
+            metaAnalysisId: metaAnalysis.id,
+            metaAnalysis: {
+                public: isPublic,
+            },
+        });
+    };
+
+    const resolvedProjectId = projectId || metaAnalysis?.project || undefined;
+    const isProjectRoute = Boolean(projectId);
+    const breadcrumbItems = isProjectRoute
+        ? [
+              {
+                  link: '/projects',
+                  text: 'Projects',
+                  isCurrentPage: false,
+              },
+              {
+                  link: `/projects/${resolvedProjectId}/meta-analyses`,
+                  text: projectName || '',
+                  isCurrentPage: false,
+              },
+              {
+                  link: '',
+                  text: metaAnalysis?.name || '',
+                  isCurrentPage: true,
+              },
+          ]
+        : [
+              {
+                  link: '/meta-analyses',
+                  text: 'Meta-Analyses',
+                  isCurrentPage: false,
+              },
+              {
+                  link: '',
+                  text: metaAnalysis?.name || '',
+                  isCurrentPage: true,
+              },
+          ];
+
     return (
         <>
             <StateHandlerComponent
@@ -68,25 +123,33 @@ const MetaAnalysisPage = () => {
                 isError={getMetaAnalysisIsError}
                 errorMessage="There was an error getting your meta-analysis"
             >
-                <NeurosynthBreadcrumbs
-                    breadcrumbItems={[
-                        {
-                            link: '/projects',
-                            text: 'Projects',
-                            isCurrentPage: false,
-                        },
-                        {
-                            link: `/projects/${projectId}/meta-analyses`,
-                            text: `${projectName}`,
-                            isCurrentPage: false,
-                        },
-                        {
-                            link: '',
-                            text: metaAnalysis?.name || '',
-                            isCurrentPage: true,
-                        },
-                    ]}
-                />
+                {!isProjectRoute && projectIsPublic && resolvedProjectId && (
+                    <Tooltip title="View the project that generated this meta-analysis" placement="top">
+                        <Button
+                            component={Link}
+                            sx={{ mb: 1 }}
+                            variant="contained"
+                            disableElevation
+                            to={`/projects/${resolvedProjectId}`}
+                            size="small"
+                        >
+                            View project
+                        </Button>
+                    </Tooltip>
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <NeurosynthBreadcrumbs breadcrumbItems={breadcrumbItems} />
+
+                    <Box sx={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <PrivacyToggle
+                            isPublic={metaAnalysis?.public ?? true}
+                            canEdit={canEditMetaAnalysisPrivacy}
+                            onChange={updatePublic}
+                            isLoading={updateMetaAnalysisPublicIsLoading}
+                            tooltipTitle="Toggle meta-analysis privacy"
+                        />
+                    </Box>
+                </Box>
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', marginBottom: '1rem', mt: 1 }}>
                     <TextEdit
