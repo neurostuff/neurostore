@@ -30,7 +30,7 @@ export const getDefaultValuesForCorrector = (
     if (corrector === 'FWECorrector' && metaAnalysisSpecification?.[analysisType]?.[algorithm]?.FWE_enabled) {
         const FWE_parameters = metaAnalysisSpecification?.[analysisType]?.[algorithm]?.FWE_parameters;
         if (FWE_parameters) {
-            parameters = FWE_parameters;
+            parameters = { ...FWE_parameters, method: { ...parameters.method, default: 'montecarlo' } };
         }
     }
     const defaultVals: IDynamicValueType = {};

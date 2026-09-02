@@ -179,7 +179,7 @@ describe('CreateMetaAnalysisSpecificationDialog.helpers', () => {
             expect(defaults.voxel_thresh).toBe(aleFweParams!.voxel_thresh.default);
             expect(defaults.n_iters).toBe(aleFweParams!.n_iters.default);
             expect(defaults.vfwe_only).toBe(aleFweParams!.vfwe_only.default);
-            expect(defaults).not.toHaveProperty('method');
+            expect(defaults.method).toBe('montecarlo');
             expect(defaults).not.toHaveProperty('**kwargs');
         });
 
@@ -190,7 +190,8 @@ describe('CreateMetaAnalysisSpecificationDialog.helpers', () => {
             const defaults = getDefaultValuesForCorrector(EAnalysisType.IBMA, 'FWECorrector', 'PermutedOLS');
 
             expect(defaults.n_iters).toBe(permutedFweParams!.n_iters.default);
-            expect(Object.keys(defaults)).toEqual(['n_iters']);
+            expect(defaults.method).toBe('montecarlo');
+            expect(Object.keys(defaults).sort()).toEqual(['method', 'n_iters']);
         });
     });
 });
