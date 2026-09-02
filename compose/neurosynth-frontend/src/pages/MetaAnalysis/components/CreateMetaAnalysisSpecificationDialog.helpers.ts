@@ -30,9 +30,6 @@ export const getDefaultValuesForCorrector = (
     if (corrector === 'FWECorrector' && metaAnalysisSpecification?.[analysisType]?.[algorithm]?.FWE_enabled) {
         const FWE_parameters = metaAnalysisSpecification?.[analysisType]?.[algorithm]?.FWE_parameters;
         if (FWE_parameters) {
-            // These are the arguments to correct_fwe_montecarlo, so the corrector has to be asked
-            // for that method. Left out, FWECorrector falls back to its own default of bonferroni,
-            // which accepts none of them and fails the run.
             parameters = { ...FWE_parameters, method: { ...parameters.method, default: 'montecarlo' } };
         }
     }
