@@ -259,6 +259,7 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     cli_version = Column(Text)  # neurosynth-compose cli version
     cli_args = Column(JSON)  # Dictionary of cli arguments
     method_description = Column(Text)  # description of the method applied
+    method_references = Column(Text)  # BibTeX references cited by the description
     diagnostic_table = Column(Text)
     studyset_snapshot_id = Column(Text, ForeignKey("studysets.id"), nullable=True)
     annotation_snapshot_id = Column(Text, ForeignKey("annotations.id"), nullable=True)

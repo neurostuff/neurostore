@@ -37,6 +37,28 @@ def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
     assert meta_resp.status_code == 200
 
 
+def test_create_meta_analysis_result_records_cli_version(
+    session, db, auth_client, user_data
+):
+    """compose-runner names itself on upload; that version pins NiMARE's."""
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    headers = {"Compose-Upload-Key": meta_analysis.run_key}
+    data = {
+        "snapshot_studyset": {"name": "my studyset"},
+        "snapshot_annotation": {"name": "my_annotation"},
+        "meta_analysis_id": meta_analysis.id,
+        "cli_version": "0.12.2.dev14+g618cdcef8",
+    }
+    auth_client.token = None
+    resp = auth_client.post("/api/meta-analysis-results", data=data, headers=headers)
+
+    assert resp.status_code == 200
+    assert resp.json["cli_version"] == "0.12.2.dev14+g618cdcef8"
+
+    record = db.session.get(MetaAnalysisResult, resp.json["id"])
+    assert record.cli_version == "0.12.2.dev14+g618cdcef8"
+
+
 def test_create_meta_analysis_result_requires_upload_key(
     session, db, auth_client, user_data
 ):
@@ -236,6 +258,7 @@ def test_put_meta_analysis_result_with_celery(
         add_files("statistical_maps", maps)
         add_files("cluster_tables", cluster_tables)
         add_files("diagnostic_tables", diagnostic_tables)
+        payload.append(("method_description", (None, "An ALE meta-analysis.")))
         return payload, handles
 
     files_payload, file_handles = build_files_payload()
@@ -268,6 +291,7 @@ def test_put_meta_analysis_result_with_celery(
         )
     ).scalar_one()
     assert meta_analysis_result is not None, "MetaAnalysisResult object not found"
+    assert meta_analysis_result.method_description == "An ALE meta-analysis."
 
     # Inspect NeurovaultCollection and NeurovaultFile statuses
     nv_collection = db.session.execute(
@@ -335,3 +359,61 @@ def test_put_meta_analysis_result_requires_upload_key(
     )
 
     assert update_resp.status_code == 401
+
+
+def test_put_meta_analysis_result_stores_method_description(
+    session, db, auth_client, user_data
+):
+    """compose-runner reports NiMARE's method description and its BibTeX."""
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    headers = {"Compose-Upload-Key": meta_analysis.run_key}
+    create_resp = _create_meta_analysis_result(auth_client, meta_analysis)
+    assert create_resp.status_code == 200
+    result_id = create_resp.json["id"]
+
+    description = "An ALE meta-analysis was performed with NiMARE \\citep{Salo2023}."
+    references = "@article{Salo2023,\n  title = {NiMARE},\n}\n"
+
+    update_resp = auth_client.put(
+        f"/api/meta-analysis-results/{result_id}",
+        data=[
+            # (None, value) makes httpx emit a plain multipart field rather
+            # than a file part, matching how compose-runner posts them.
+            ("method_description", (None, description)),
+            ("method_references", (None, references)),
+        ],
+        headers=headers,
+        content_type="multipart/form-data",
+        json_dump=False,
+    )
+
+    assert update_resp.status_code == 200, update_resp.json
+    assert update_resp.json["method_description"] == description
+    assert update_resp.json["method_references"] == references
+
+    record = db.session.get(MetaAnalysisResult, result_id)
+    session.refresh(record)
+    assert record.method_description == description
+    assert record.method_references == references
+
+    get_resp = auth_client.get(f"/api/meta-analysis-results/{result_id}")
+    assert get_resp.status_code == 200
+    assert get_resp.json["method_description"] == description
+    assert get_resp.json["method_references"] == references
+
+    # Multipart has no way to say "leave this alone", so a later upload that
+    # sends empty values must not blank out what is already stored.
+    repeat_resp = auth_client.put(
+        f"/api/meta-analysis-results/{result_id}",
+        data=[
+            ("method_description", (None, "")),
+            ("method_references", (None, "")),
+        ],
+        headers=headers,
+        content_type="multipart/form-data",
+        json_dump=False,
+    )
+
+    assert repeat_resp.status_code == 200, repeat_resp.json
+    assert repeat_resp.json["method_description"] == description
+    assert repeat_resp.json["method_references"] == references

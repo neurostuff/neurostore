@@ -76,6 +76,7 @@ class ResultUploadSchema(ContextSchema):
         fields.Raw(metadata={"type": "string", "format": "binary"})
     )
     method_description = fields.String()
+    method_references = fields.String()
 
 
 class StringOrNested(fields.Nested):
@@ -411,6 +412,8 @@ class MetaAnalysisResultSchema(BaseSchema):
         attribute="annotation_snapshot_id",
     )
     diagnostic_table = fields.String(dump_only=True)
+    method_description = fields.String(dump_only=True)
+    method_references = fields.String(dump_only=True)
     status = fields.String()
 
     @post_load
