@@ -981,6 +981,16 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 form_data.get("annotation_snapshot_id") if form_data else None
             )
 
+        # compose-runner sends these as multipart form fields alongside the
+        # files. Multipart cannot express "clear this", so an empty value is
+        # treated as absent rather than overwriting what is already stored.
+        for attr in ("method_description", "method_references"):
+            value = json_body.get(attr) if isinstance(json_body, dict) else None
+            if not value and form_data:
+                value = form_data.get(attr)
+            if value:
+                setattr(result, attr, value)
+
         meta = getattr(result, "meta_analysis", None)
         if meta:
             meta_neurostore_studyset_id = _resolve_meta_neurostore_studyset_id(meta)
@@ -1062,8 +1072,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 if canonical_ann is not None:
                     result.annotation_snapshot_id = canonical_ann.id
 
-            db.session.add(result)
-            commit_session()
+        db.session.add(result)
+        commit_session()
 
         return make_json_response(serialize_meta_analysis_result(result))
 
