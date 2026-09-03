@@ -39,7 +39,7 @@
     },
     "dependencies": {
         "@auth0/auth0-react": "^2.21.0",
-        "@citation-js/core": "^0.7.18",
+        "@citation-js/core": "^0.8.2",
         "@citation-js/plugin-bibjson": "^0.7.14",
         "@citation-js/plugin-bibtex": "^0.7.14",
         "@citation-js/plugin-csl": "^0.7.22",
