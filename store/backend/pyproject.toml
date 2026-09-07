@@ -18,7 +18,7 @@ dependencies = [
     "gunicorn~=26.2",
     "httpx2~=2.12",
     "uvicorn-worker~=0.4",
-    "ipython~=9.16",
+    "ipython~=9.17",
     "itsdangerous~=2.2",
     "marshmallow~=4.3",
     "numpy<3.0.0",
