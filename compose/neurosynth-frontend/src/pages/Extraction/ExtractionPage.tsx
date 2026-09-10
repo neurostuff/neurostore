@@ -1,15 +1,14 @@
-import { Box, Button, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import CopyableId from 'components/CopyableId/CopyableId';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetSummaryById, useUpdateStudyset } from 'hooks';
-import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useUserCanEdit from 'hooks/useUserCanEdit';
+import ExtractionAdvanceButton from 'pages/Extraction/components/ExtractionAdvanceButton';
 import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
 import { hasDifferenceBetweenStudysetAndCuration } from 'pages/Extraction/ExtractionPage.helpers';
-import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
     useProjectCurationColumns,
@@ -18,7 +17,7 @@ import {
     useProjectName,
     useProjectUser,
 } from 'stores/projects/ProjectStore';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ExtractionTable from './components/ExtractionTable';
 
@@ -31,7 +30,6 @@ const ExtractionPage = () => {
     const annotationId = useProjectExtractionAnnotationId();
     const columns = useProjectCurationColumns();
     const loading = useGetProjectIsLoading();
-    const extractionSummary = useGetExtractionSummary(projectId || '');
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
@@ -74,32 +72,6 @@ const ExtractionPage = () => {
         }
     };
 
-    const handleMoveToSpecificationPhase = () => {
-        navigate(`/projects/${projectId}/project`, {
-            state: {
-                projectPage: {
-                    scrollToMetaAnalysisProceed: true,
-                },
-            } as IProjectPageLocationState,
-        });
-    };
-
-    const isReadyToMoveToNextStep = useMemo(
-        () => extractionSummary.total === extractionSummary.completed && extractionSummary.total > 0,
-        [extractionSummary]
-    );
-
-    const percentageCompleteString = useMemo((): string => {
-        if (extractionSummary.total === 0) return '0 / 0';
-        return `${extractionSummary.completed} / ${extractionSummary.total}`;
-    }, [extractionSummary.completed, extractionSummary.total]);
-
-    const percentageComplete = useMemo((): number => {
-        if (extractionSummary.total === 0) return 0;
-        const percentageComplete = (extractionSummary.completed / extractionSummary.total) * 100;
-        return Math.floor(percentageComplete);
-    }, [extractionSummary.completed, extractionSummary.total]);
-
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
             <Box sx={{ minWidth: '450px', margin: '0 auto' }}>
@@ -135,20 +107,7 @@ const ExtractionPage = () => {
                         >
                             Annotations
                         </Button>
-                        <Tooltip title={`${percentageCompleteString} marked as complete`}>
-                            <span style={{ width: '100%' }}>
-                                <Button
-                                    sx={{ marginLeft: '4px' }}
-                                    onClick={handleMoveToSpecificationPhase}
-                                    color="success"
-                                    variant="contained"
-                                    disableElevation
-                                    disabled={!canEdit || !isReadyToMoveToNextStep}
-                                >
-                                    {isReadyToMoveToNextStep ? 'Advance' : `${percentageComplete}% complete`}
-                                </Button>
-                            </span>
-                        </Tooltip>
+                        <ExtractionAdvanceButton sx={{ marginLeft: '1rem' }} />
                     </Box>
                 </Box>
                 <Box sx={{ display: 'flex', gap: '1.5rem', marginBottom: '0.5rem' }}>
