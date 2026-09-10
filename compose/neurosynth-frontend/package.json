@@ -57,7 +57,7 @@
         "@niivue/niivue": "^0.46.0",
         "@reactour/tour": "^3.8.0",
         "@sentry/react": "^10.69.0",
-        "@tanstack/react-query": "^5.101.2",
+        "@tanstack/react-query": "^5.102.8",
         "@tanstack/react-table": "^8.20.5",
         "@tanstack/react-virtual": "^3.14.9",
         "axios": "^1.15.2",
