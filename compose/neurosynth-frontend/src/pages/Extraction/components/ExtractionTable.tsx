@@ -42,6 +42,7 @@ import { retrieveExtractionTableState, updateExtractionTableState } from './Extr
 import styles from './ExtractionTable.module.css';
 import { ExtractionTableAuthorCell, ExtractionTableAuthorHeader } from './ExtractionTableAuthor';
 import ExtractionTableFilterInput from './ExtractionTableFilterInput';
+import { ExtractionTableIndexCell, ExtractionTableIndexHeader } from './ExtractionTableIndex';
 import { ExtractionTableJournalCell, ExtractionTableJournalHeader } from './ExtractionTableJournal';
 import { ExtractionTableNameCell, ExtractionTableNameHeader } from './ExtractionTableName';
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
@@ -98,6 +99,16 @@ const ExtractionTable = () => {
 
     const columns = useMemo(() => {
         return [
+            columnHelper.display({
+                id: 'index',
+                size: 48,
+                minSize: 48,
+                maxSize: 48,
+                cell: ExtractionTableIndexCell,
+                header: ExtractionTableIndexHeader,
+                enableSorting: false,
+                enableColumnFilter: false,
+            }),
             columnHelper.accessor(({ year }) => (year ? String(year) : ''), {
                 id: 'year',
                 size: 60,

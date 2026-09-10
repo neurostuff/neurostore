@@ -9,9 +9,9 @@ describe('Neurosynth Table Component', () => {
     });
 
     describe('config', () => {
-        it('should load', async () => {
+        it('should reduce opacity when loading', async () => {
             render(<NeurosynthTable tableConfig={{ isLoading: true }} headerCells={[]} rows={[]} />);
-            expect(screen.getByRole('progressbar')).toBeInTheDocument();
+            expect(screen.getByRole('table').parentElement).toHaveStyle({ opacity: 0.5 });
         });
 
         it('should display the custom no data message', async () => {
@@ -25,16 +25,9 @@ describe('Neurosynth Table Component', () => {
             expect(screen.getByText('test-custom-no-data-message')).toBeInTheDocument();
         });
 
-        it('should have the correct loader color', async () => {
-            render(
-                <NeurosynthTable
-                    tableConfig={{ isLoading: true, loaderColor: 'secondary' }}
-                    headerCells={[]}
-                    rows={[]}
-                />
-            );
-            // checking for set mui classes
-            expect(screen.getByRole('progressbar').className).toContain('Secondary');
+        it('should not reduce opacity when not loading', async () => {
+            render(<NeurosynthTable tableConfig={{ isLoading: false }} headerCells={[]} rows={[]} />);
+            expect(screen.getByRole('table').parentElement).not.toHaveStyle({ opacity: 0.5 });
         });
 
         it('should have the correct table elevation', async () => {

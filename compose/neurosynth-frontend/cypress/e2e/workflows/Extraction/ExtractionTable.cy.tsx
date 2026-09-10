@@ -177,7 +177,7 @@ describe('ExtractionTable', () => {
         it('should change the study status', () => {
             // ARRANGE
             cy.wait('@studysetFixture');
-            cy.get('tbody > tr').eq(0).find('td').eq(5).as('getFirstRowStudyStatusCol');
+            cy.get('tbody > tr').eq(0).find('td').eq(6).as('getFirstRowStudyStatusCol');
             cy.get('@getFirstRowStudyStatusCol').within(() => {
                 cy.get('button').eq(0).should('have.class', 'MuiButton-contained');
             });
@@ -211,7 +211,7 @@ describe('ExtractionTable', () => {
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td').eq(0).should('have.text', sortedStudies[index].year?.toString());
+                        cy.get('td').eq(1).should('have.text', sortedStudies[index].year?.toString());
                     });
                 });
             });
@@ -230,7 +230,7 @@ describe('ExtractionTable', () => {
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td').eq(0).should('have.text', sortedStudies[index].year?.toString());
+                        cy.get('td').eq(1).should('have.text', sortedStudies[index].year?.toString());
                     });
                 });
             });
@@ -249,7 +249,7 @@ describe('ExtractionTable', () => {
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td').eq(1).should('have.text', sortedStudies[index].name);
+                        cy.get('td').eq(2).should('have.text', sortedStudies[index].name);
                     });
                 });
             });
@@ -268,7 +268,7 @@ describe('ExtractionTable', () => {
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td').eq(1).should('have.text', sortedStudies[index].name);
+                        cy.get('td').eq(2).should('have.text', sortedStudies[index].name);
                     });
                 });
             });
@@ -286,7 +286,7 @@ describe('ExtractionTable', () => {
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
                         cy.get('td')
-                            .eq(2)
+                            .eq(3)
                             .should('have.text', getAuthorsShortName(sortedStudies?.[index]?.authors || ''));
                     });
                 });
@@ -307,7 +307,7 @@ describe('ExtractionTable', () => {
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
                         cy.get('td')
-                            .eq(2)
+                            .eq(3)
                             .should('have.text', getAuthorsShortName(sortedStudies?.[index]?.authors || ''));
                     });
                 });
@@ -327,7 +327,7 @@ describe('ExtractionTable', () => {
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td').eq(3).should('have.text', sortedStudies[index].publication);
+                        cy.get('td').eq(4).should('have.text', sortedStudies[index].publication);
                     });
                 });
             });
@@ -348,7 +348,7 @@ describe('ExtractionTable', () => {
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td').eq(3).should('have.text', sortedStudies[index].publication);
+                        cy.get('td').eq(4).should('have.text', sortedStudies[index].publication);
                     });
                 });
             });
@@ -411,7 +411,7 @@ describe('ExtractionTable', () => {
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
                         cy.get('td')
-                            .eq(4)
+                            .eq(5)
                             .should('have.text', sortedStudies[index].pmid ?? '');
                     });
                 });
@@ -436,7 +436,7 @@ describe('ExtractionTable', () => {
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
                         cy.get('td')
-                            .eq(4)
+                            .eq(5)
                             .should('have.text', sortedStudies[index].pmid ?? '');
                     });
                 });
@@ -468,7 +468,7 @@ describe('ExtractionTable', () => {
                     cy.get('tbody > tr').each((tr, index) => {
                         cy.wrap(tr).within(() => {
                             cy.get('td')
-                                .eq(5)
+                                .eq(6)
                                 .within(() => {
                                     const studyStatus = sortedStudies[index].status;
                                     const buttonIndex =
@@ -515,7 +515,7 @@ describe('ExtractionTable', () => {
                     cy.get('tbody > tr').each((tr, index) => {
                         cy.wrap(tr).within(() => {
                             cy.get('td')
-                                .eq(5)
+                                .eq(6)
                                 .within(() => {
                                     const studyStatus = sortedStudies[index].status;
                                     const buttonIndex =
