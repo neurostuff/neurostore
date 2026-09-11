@@ -1,22 +1,19 @@
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import Import from './Import';
-import { Box } from '@mui/material';
 import { EImportMode } from 'pages/Curation/Curation.types';
+import Import from './Import';
 
-const ImportStudiesDialog = ({ 
-    isOpen,
-    onCloseDialog,
-    method,
- }: IDialog & { method: EImportMode | undefined }) => {
+const ImportStudiesDialog = ({ isOpen, onCloseDialog, method }: IDialog & { method: EImportMode | undefined }) => {
     return (
-        <BaseDialog isOpen={isOpen} dialogTitle="Import Studies" onCloseDialog={onCloseDialog} maxWidth="lg" fullWidth>
-            <Box
-                sx={{
-                    padding: '2rem',
-                }}
-            >
-                {method && <Import method={method} onClose={onCloseDialog} />}
-            </Box>
+        <BaseDialog
+            dialogTitleSx={{ px: '3rem !important' }}
+            dialogContentSx={{ px: '3rem !important' }}
+            isOpen={isOpen}
+            dialogTitle="Import Studies"
+            onCloseDialog={onCloseDialog}
+            maxWidth="md"
+            fullWidth
+        >
+            {method && <Import method={method} onClose={onCloseDialog} />}
         </BaseDialog>
     );
 };

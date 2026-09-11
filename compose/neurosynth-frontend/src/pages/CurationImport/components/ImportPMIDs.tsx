@@ -5,16 +5,15 @@ import { useFetchPubMedIds } from 'hooks';
 import { useSnackbar } from 'notistack';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { defaultIdentificationSources } from 'stores/projects/ProjectStore.consts';
-import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { IImportArgs } from './ImportDoImport';
 import ImportPMIDsUpload from './ImportPMIDsUpload';
 
-const ImportPMIDs = ({ 
+const ImportPMIDs = ({
     onNavigate,
     onImportStubs,
     onFileUpload,
- }: IImportArgs & { onFileUpload: (fileName: string) => void }) => {
+}: IImportArgs & { onFileUpload: (fileName: string) => void }) => {
     const { mutate: fetchPubMedIds, isPending: isLoading, isError } = useFetchPubMedIds();
     const { enqueueSnackbar } = useSnackbar();
 
