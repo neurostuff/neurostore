@@ -115,6 +115,36 @@ def ingest_neurosynth(max_rows):
     _run_with_runtime(_run)
 
 
+@main.command("repair-annotation-links")
+@click.option(
+    "--dry-run/--apply",
+    default=True,
+    show_default=True,
+    help="report how many annotation notes are missing without creating them",
+)
+def repair_annotation_links(dry_run):
+    """Create annotation notes for studyset analyses that never got one.
+
+    Ingest paths add analyses to studies that may already sit in an annotated
+    studyset, which leaves those analyses with no note (issue #1740).
+    """
+
+    def _run(_app, _db):
+        from neurostore.services.annotation_links import (
+            backfill_annotation_analyses,
+            count_missing_annotation_analyses,
+        )
+
+        missing = count_missing_annotation_analyses()
+        if dry_run:
+            click.echo(f"{missing} missing annotation notes (dry run, nothing written)")
+            return
+        created = backfill_annotation_analyses()
+        click.echo(f"created {created} annotation notes")
+
+    _run_with_runtime(_run)
+
+
 @main.command("ingest-neurovault")
 @click.option(
     "-v",

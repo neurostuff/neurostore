@@ -45,6 +45,7 @@ from neurostore.models.data import (
     _check_type,
 )
 from neurostore.note_keys import resolve_note_key_default
+from neurostore.services.annotation_links import backfill_annotation_analyses
 from neurostore.services.image_value_summary import NIFTI_SUFFIXES
 from neurostore.services.has_media_flags import recompute_media_flags
 
@@ -592,6 +593,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         _set_metadata_key(study, NEUROVAULT_NON_GROUP_IMAGE_COUNT_KEY, non_group_images)
         db.session.commit()
         sample_size_candidates.discard(source_id)
+        backfill_annotation_analyses(study_ids=[study.id])
         _recompute_base_study_flag_ids([base_study_id])
         ingested_image_counts[source_id] = len(stored_images) + len(missing)
         return study
@@ -1684,6 +1686,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
 
     to_commit = []
     all_base_studies = []
+    reused_study_ids = set()
 
     with db.session.no_autoflush:
         all_studies = {
@@ -1735,6 +1738,10 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             all_base_studies.append(base_study)
 
             s = all_studies.get(pmid, Study())
+            if s.id is not None:
+                # a study that already exists may already sit in an annotated
+                # studyset; the analyses added below need notes (issue #1740)
+                reused_study_ids.add(s.id)
             update_study_info(s, metadata_row, text_row, doi, pmcid, year, level)
 
             analyses, points, tables = process_coordinates(pmid, s, metadata_row)
@@ -1745,6 +1752,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
 
     db.session.add_all(to_commit)
     db.session.commit()
+    backfill_annotation_analyses(study_ids=reused_study_ids)
     _recompute_base_study_flags(all_base_studies)
 
 
