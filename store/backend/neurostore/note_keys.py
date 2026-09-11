@@ -107,3 +107,25 @@ def canonicalize_note_keys(
         }
 
     return normalized
+
+
+def build_default_note(note_keys):
+    """Build the default note payload for an annotation's note keys."""
+    if not note_keys:
+        return None
+    if not isinstance(note_keys, dict):
+        return {key: None for key in note_keys}
+
+    defaults = {}
+    for key, descriptor in note_keys.items():
+        if isinstance(descriptor, dict):
+            default_value = resolve_note_key_default(
+                key,
+                descriptor.get("type"),
+                default_provided="default" in descriptor,
+                default_value=descriptor.get("default"),
+            )
+        else:
+            default_value = resolve_note_key_default(key, descriptor)
+        defaults[key] = default_value
+    return defaults

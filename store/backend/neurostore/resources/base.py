@@ -33,7 +33,7 @@ from neurostore.models import (
     StudysetStudy,
     User,
 )
-from neurostore.note_keys import resolve_note_key_default
+from neurostore.note_keys import build_default_note
 from neurostore.resources import data as viewdata
 from neurostore.resources.common import merge_unique_ids
 from neurostore.resources.mutation_core import (
@@ -271,24 +271,7 @@ class BaseView:
 
     @staticmethod
     def _build_default_note(note_keys):
-        if not note_keys:
-            return None
-        if not isinstance(note_keys, dict):
-            return {key: None for key in note_keys}
-
-        defaults = {}
-        for key, descriptor in note_keys.items():
-            if isinstance(descriptor, dict):
-                default_value = resolve_note_key_default(
-                    key,
-                    descriptor.get("type"),
-                    default_provided="default" in descriptor,
-                    default_value=descriptor.get("default"),
-                )
-            else:
-                default_value = resolve_note_key_default(key, descriptor)
-            defaults[key] = default_value
-        return defaults
+        return build_default_note(note_keys)
 
     def db_validation(self, record, data):
         """
