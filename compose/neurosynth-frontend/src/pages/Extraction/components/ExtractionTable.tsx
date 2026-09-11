@@ -306,8 +306,9 @@ const ExtractionTable = () => {
                         dialogMessage="You can skip reviewing to expedite the process, but any studies you have not reviewed may have incomplete or inaccurate metadata or coordinates."
                     />
                     <Button
-                        sx={{ marginLeft: '4px' }}
+                        sx={{ marginLeft: '4px', fontSize: '12px' }}
                         color="success"
+                        size="small"
                         disableElevation
                         disabled={!usercanEdit}
                         onClick={() => setConfirmationDialogIsOpen(true)}
