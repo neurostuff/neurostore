@@ -101,7 +101,7 @@ describe('DynamicFormKwargInput Component', () => {
         });
     });
 
-    it('should hide initially', async () => {
+    it('should show the kwarg input without an advanced toggle', () => {
         render(
             <DynamicFormKwargInput
                 parameterName="**kwargs"
@@ -118,33 +118,8 @@ describe('DynamicFormKwargInput Component', () => {
             />
         );
 
-        const addMetadataRow = screen.getByTestId('trigger-add');
-        const table = screen.getByTestId('mock-table');
-        expect(addMetadataRow).not.toBeVisible();
-        expect(table).not.toBeVisible();
-    });
-
-    it('should become visible', async () => {
-        render(
-            <DynamicFormKwargInput
-                parameterName="**kwargs"
-                parameter={{
-                    type: null,
-                    description: 'test-description',
-                    default: null,
-                }}
-                value={{
-                    some_arg: 'abc',
-                    another_arg: 'def',
-                }}
-                onUpdate={mockOnUpdate}
-            />
-        );
-
-        await userEvent.click(screen.getByRole('button', { name: 'show advanced' }));
-        const addMetadataRow = screen.getByTestId('trigger-add');
-        const table = screen.getByTestId('mock-table');
-        expect(addMetadataRow).toBeVisible();
-        expect(table).toBeVisible();
+        expect(screen.queryByRole('button', { name: /advanced/i })).not.toBeInTheDocument();
+        expect(screen.getByTestId('trigger-add')).toBeVisible();
+        expect(screen.getByTestId('mock-table')).toBeVisible();
     });
 });
