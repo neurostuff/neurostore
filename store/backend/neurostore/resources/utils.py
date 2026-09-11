@@ -213,11 +213,18 @@ def process_group(group_query: str) -> str:
 
         for char in text:
             if char == "(":
+                negated_group = False
                 if depth == 0 and buffer:
-                    current.append(buffer.strip())
+                    pending = buffer.strip()
+                    # A "-" immediately preceding a group negates the whole group
+                    if pending.endswith("-"):
+                        negated_group = True
+                        pending = pending.rstrip("-").strip()
+                    if pending:
+                        current.append(pending)
                     buffer = ""
                 depth += 1
-                buffer += char
+                buffer += "-(" if negated_group else char
             elif char == ")":
                 depth -= 1
                 buffer += char
@@ -236,12 +243,26 @@ def process_group(group_query: str) -> str:
                 inner = process_group(item[1:-1])
                 if inner:
                     groups.append(f"({inner})")
+            elif item.startswith("-(") and item.endswith(")"):
+                # Negated group: -(a OR b)
+                inner = process_group(item[2:-1])
+                if inner:
+                    groups.append(f"!({inner})")
             else:
                 # Process non-group terms
-                parts = re.findall(r'"[^"]*"|\'[^\']*\'|\S+', item)
+                parts = re.findall(r'-?"[^"]*"|-?\'[^\']*\'|\S+', item)
                 for part in parts:
                     part = part.strip()
                     if part:
+                        # A leading "-" negates the term (PubMed-style NOT)
+                        negate = False
+                        if part.startswith("-"):
+                            unsigned = part.lstrip("-").strip()
+                            if not unsigned:
+                                # A bare "-" carries no term to negate
+                                continue
+                            negate = True
+                            part = unsigned
                         if part == "AND":
                             groups.append("&")
                         elif part == "OR":
@@ -251,12 +272,18 @@ def process_group(group_query: str) -> str:
                         elif part.startswith('"') or part.startswith("'"):
                             words = re.findall(r"\w+", part)
                             if words:
-                                groups.append("<->".join(words))
+                                phrase = "<->".join(words)
+                                if negate:
+                                    phrase = (
+                                        f"!({phrase})" if len(words) > 1 else f"!{phrase}"
+                                    )
+                                groups.append(phrase)
                         else:
                             cleaned = re.sub(r"[\[\],;:!?@#]", "", part)
                             if cleaned:
-                                groups.append(cleaned)
+                                groups.append(f"!{cleaned}" if negate else cleaned)
 
+        infix_operators = {"&", "|", "&!"}
         result = []
         for i, term in enumerate(groups):
             if i > 0:
@@ -264,13 +291,24 @@ def process_group(group_query: str) -> str:
                 curr = term
 
                 # Only add operator if neither current nor previous term is an operator
-                if prev not in {"&", "|", "&!"} and curr not in {"&", "|", "&!"}:
+                if prev not in infix_operators and curr not in infix_operators:
                     result.append("&")
-                elif prev in {"&", "|", "&!"} and curr in {"&", "|", "&!"}:
+                elif prev in infix_operators and curr in infix_operators:
                     # Skip consecutive operators
                     continue
 
             result.append(term)
+
+        # A group cannot open with an infix operator (e.g. a leading "NOT");
+        # rewrite "&!" as the prefix negation "!" and drop a dangling "&"/"|".
+        if result and result[0] in infix_operators:
+            if result[0] == "&!":
+                if len(result) > 1:
+                    result = [f"!{result[1]}"] + result[2:]
+                else:
+                    result = []
+            else:
+                result = result[1:]
 
         return " ".join(result)
 

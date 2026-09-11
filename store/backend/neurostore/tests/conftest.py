@@ -1004,7 +1004,17 @@ valid_queries = [
         "DYSLEXIA | READING<->DISORDER | LANGUAGE<->BASED<->LEARNING<->DISABILITY | "
         "PHONOLOGICAL<->PROCESSING<->DISORDER | WORD<->BLINDNESS",
     ),
-    ("emotion and pain -physical -touch", "EMOTION & PAIN & -PHYSICAL & -TOUCH"),
+    ("emotion and pain -physical -touch", "EMOTION & PAIN & !PHYSICAL & !TOUCH"),
+    ("smoking -marijuana", "SMOKING & !MARIJUANA"),
+    ("smoking NOT marijuana", "SMOKING &! MARIJUANA"),
+    ("smoking AND -marijuana", "SMOKING & !MARIJUANA"),
+    ('smoking -"medical marijuana"', "SMOKING & !(MEDICAL<->MARIJUANA)"),
+    ("smoking -(marijuana OR cannabis)", "SMOKING & !(MARIJUANA | CANNABIS)"),
+    ("(smoking OR vaping) -marijuana", "(SMOKING | VAPING) & !MARIJUANA"),
+    ("-marijuana", "!MARIJUANA"),
+    ("NOT marijuana", "!MARIJUANA"),
+    ("smoking - marijuana", "SMOKING & MARIJUANA"),
+    ("decision-making", "DECISION-MAKING"),
     (
         '("Schizophrenia"[Mesh] OR schizophrenia )',
         "(SCHIZOPHRENIA & MESH | SCHIZOPHRENIA)",

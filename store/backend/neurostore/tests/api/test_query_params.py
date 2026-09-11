@@ -206,6 +206,22 @@ async def test_multiword_queries(auth_client, ingest_neurosynth, session):
     assert len(multi_word_search.json()["results"]) > 0
 
 
+async def test_dash_is_a_not_operator(auth_client, ingest_neurosynth, session):
+    """`-term` must exclude, matching the documented PubMed-style NOT (issue #1745)."""
+    study = BaseStudy.query.first()
+    word = study.name.split(" ")[-1]
+
+    included = await auth_client.get(f"/api/base-studies/?search={word}")
+    assert included.status_code == 200
+    assert len(included.json()["results"]) > 0
+
+    for excluded_query in (f"{word} -{word}", f"{word} NOT {word}"):
+        url_safe_query = urlencode({"search": excluded_query})
+        excluded = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
+        assert excluded.status_code == 200
+        assert excluded.json()["results"] == []
+
+
 @pytest.mark.parametrize("query, expected", valid_queries)
 async def test_valid_pubmed_queries(
     query, expected, auth_client, ingest_neurosynth, session
