@@ -126,11 +126,7 @@ describe('CreateSpecificationDialog', () => {
         cy.get('[role="option"]').contains('string_key').click();
         cy.get('@inclusionColumnInput').should('have.value', 'string_key');
 
-        cy.get('.MuiDialog-container')
-            .contains('label', 'Select value to filter on')
-            .parent()
-            .find('input')
-            .click();
+        cy.get('.MuiDialog-container').contains('label', 'Select value to filter on').parent().find('input').click();
         cy.get('[role="option"]').contains('ABC').click();
 
         cy.contains('button', 'Next').click();
@@ -170,11 +166,7 @@ describe('CreateSpecificationDialog', () => {
 
         it('lists only FDRCorrector and omits FWECorrector', () => {
             openCreateSpecificationDialog('projectIBMAFixture');
-            cy.get('.MuiDialog-container')
-                .contains('label', 'corrector (optional)')
-                .parent()
-                .find('input')
-                .click();
+            cy.get('.MuiDialog-container').contains('label', 'corrector (optional)').parent().find('input').click();
             cy.get('[role="listbox"] [role="option"]').should('have.length', 1);
             cy.get('[role="option"]').contains('FDRCorrector').should('exist');
             cy.get('[role="option"]').contains('FWECorrector').should('not.exist');
@@ -238,40 +230,37 @@ describe('CreateSpecificationDialog', () => {
             cy.contains('Algorithm arguments').click();
         };
 
-        it('hides kernel__fwhm and kernel__sample_size when "Use Study/Analysis Specific Sample Sizes" is checked', () => {
+        const showAleAdvancedSettings = () => {
+            cy.contains('button', 'show advanced settings').click();
+        };
+
+        it('shows the sample size option and hides algorithm inputs until advanced settings are shown', () => {
             openDialogAndSelectALE();
-            cy.get('input[name="kernel__fwhm"]').should('exist');
-            cy.get('input[name="kernel__sample_size"]').should('exist');
+            cy.contains('Use Study/Analysis Specific Sample Sizes').should('be.visible');
+            cy.contains('button', 'show advanced settings').should('be.visible');
+            cy.get('input[name="kernel__fwhm"]').should('not.be.visible');
+            showAleAdvancedSettings();
+            cy.get('input[name="kernel__fwhm"]').scrollIntoView().should('be.visible');
+        });
+
+        it('replaces kernel inputs with an alert when using study sample sizes', () => {
+            openDialogAndSelectALE();
+            showAleAdvancedSettings();
             cy.contains('Use Study/Analysis Specific Sample Sizes').click();
             cy.get('input[name="kernel__fwhm"]').should('not.exist');
             cy.get('input[name="kernel__sample_size"]').should('not.exist');
+            cy.contains('This input can only be used when Use Study/Analysis Specific Sample Sizes is not selected')
+                .scrollIntoView()
+                .should('be.visible');
         });
 
-        it('shows expected links when studies are missing sample size', () => {
+        it('disables Next and lists studies missing sample size when that option is checked', () => {
             openDialogAndSelectALE();
             cy.contains('Use Study/Analysis Specific Sample Sizes').click();
             cy.contains('The following studies are missing sample sizes').should('be.visible');
             cy.get('a[href*="/extraction/studies/"]').should('have.length.at.least', 1);
-        });
-
-        it('disables Next button when studies are missing sample size and checkbox is checked', () => {
-            openDialogAndSelectALE();
-            cy.contains('Use Study/Analysis Specific Sample Sizes').click();
             cy.contains('button', 'Next').should('be.disabled');
         });
-
-        it('disables kernel__fwhm input when kernel__sample_size has a value', () => {
-            openDialogAndSelectALE();
-            cy.get('input[name="kernel__fwhm"]').clear();
-            cy.get('input[name="kernel__sample_size"]').clear().type('20');
-            cy.get('input[name="kernel__fwhm"]').should('be.disabled');
-        });
-
-        it('disables kernel__sample_size input when kernel__fwhm has a value', () => {
-            openDialogAndSelectALE();
-            cy.get('input[name="kernel__sample_size"]').should('be.disabled');
-        });
-
         it('shows OK when all studies have sample size and Next button is enabled', () => {
             cy.intercept('GET', '**/api/annotations/*', {
                 fixture: 'MetaAnalysis/annotationAllHaveSampleSize',
