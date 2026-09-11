@@ -45,7 +45,7 @@ const SelectAnalysesSummaryComponent = (props: {
 
         let numStudiesSelected = 0;
         const numAnalysesSelected = filteredAnnotations.length;
-        let numObservationsSelected = 0;
+        let numAnalysisItemsSelected = 0;
         (studyset.studies as StudyReturnWithSummaryAnalyses[]).forEach((study) => {
             if (!study.id || !filteredAnnotationsStudyIdSet.has(study.id)) return;
 
@@ -60,7 +60,7 @@ const SelectAnalysesSummaryComponent = (props: {
                     if (typeof analysis.image_count !== 'number') {
                         throw new Error('Expected analysis.image_count in summary studyset payload');
                     }
-                    numObservationsSelected = numObservationsSelected + analysis.image_count;
+                    numAnalysisItemsSelected = numAnalysisItemsSelected + analysis.image_count;
                     return;
                 }
 
@@ -68,14 +68,14 @@ const SelectAnalysesSummaryComponent = (props: {
                     throw new Error('Expected analysis.point_count in summary studyset payload');
                 }
 
-                numObservationsSelected = numObservationsSelected + analysis.point_count;
+                numAnalysisItemsSelected = numAnalysisItemsSelected + analysis.point_count;
             });
         });
 
         setCount({
             studies: numStudiesSelected,
             analyses: numAnalysesSelected,
-            analysisItems: numObservationsSelected,
+            analysisItems: numAnalysisItemsSelected,
         });
     }, [annotation?.notes, isIbma, props.selectedValue, props.selectedValue?.selectionKey, studyset?.studies]);
 
