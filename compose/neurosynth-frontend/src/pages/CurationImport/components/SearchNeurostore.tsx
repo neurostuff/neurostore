@@ -3,7 +3,12 @@ import { AxiosError } from 'axios';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
-import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
+import {
+    addKVPToSearch,
+    getSearchCriteriaFromURL,
+    getSearchResultRowNumber,
+    getURLFromSearchCriteria,
+} from 'components/Search/search.helpers';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { studiesToStubs } from 'helpers/Curation.helpers';
 import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies.helpers';
@@ -161,6 +166,11 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
                         }}
                         headerCells={[
                             {
+                                text: '#',
+                                key: 'index',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
                                 text: 'Title',
                                 key: 'title',
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
@@ -195,6 +205,13 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
                                     navigate(`/base-studies/${studyrow.id}${dataTypeQuery}`);
                                 }}
                             >
+                                <TableCell>
+                                    {getSearchResultRowNumber(
+                                        searchCriteria.pageOfResults,
+                                        searchCriteria.pageSize,
+                                        index
+                                    )}
+                                </TableCell>
                                 <TableCell>
                                     {studyrow?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
                                 </TableCell>

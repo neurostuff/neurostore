@@ -6,7 +6,6 @@ import {
     TableBody,
     TableCell,
     Paper,
-    LinearProgress,
     Box,
     Typography,
 } from '@mui/material';
@@ -46,7 +45,6 @@ const NeurosynthTable = React.memo((props: INeurosynthTable) => {
         tableHeaderBackgroundColor = 'primary.main',
         tableElevation = 2,
         isLoading = false,
-        loaderColor = 'primary',
         noDataDisplay = (
             <Box sx={{ padding: '1rem' }}>
                 <Typography color="warning.dark">No data</Typography>
@@ -55,7 +53,7 @@ const NeurosynthTable = React.memo((props: INeurosynthTable) => {
     } = tableConfig;
 
     return (
-        <TableContainer component={Paper} elevation={tableElevation}>
+        <TableContainer component={Paper} elevation={tableElevation} sx={isLoading ? { opacity: 0.5 } : undefined}>
             <Table>
                 <TableHead>
                     <TableRow sx={{ backgroundColor: tableHeaderBackgroundColor }}>
@@ -64,13 +62,6 @@ const NeurosynthTable = React.memo((props: INeurosynthTable) => {
                                 {headerCell.text}
                             </TableCell>
                         ))}
-                    </TableRow>
-                    <TableRow sx={{ display: isLoading ? 'table-row' : 'none' }}>
-                        <TableCell sx={{ padding: 0 }} colSpan={headerCells.length}>
-                            <Box>
-                                <LinearProgress color={loaderColor} />
-                            </Box>
-                        </TableCell>
                     </TableRow>
                 </TableHead>
 

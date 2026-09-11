@@ -49,3 +49,8 @@ export const getNumTotalPages = (totalCount: number | undefined, pageSize: numbe
     const remainder = totalCount % pageSize;
     return remainder > 0 ? numTotalPages + 1 : numTotalPages;
 };
+
+export const getSearchResultRowNumber = (pageOfResults: number, pageSize: number, rowIndexOnPage: number): number => {
+    const pageIndex = Math.max(pageOfResults, 1) - 1;
+    return pageIndex * pageSize + rowIndexOnPage + 1;
+};

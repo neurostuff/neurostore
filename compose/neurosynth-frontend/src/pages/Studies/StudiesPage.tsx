@@ -2,6 +2,7 @@ import { Box, TableCell, TableRow, Typography } from '@mui/material';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
+import { getSearchResultRowNumber } from 'components/Search/search.helpers';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useNavigate } from 'react-router-dom';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
@@ -68,6 +69,11 @@ const StudiesPage = () => {
                         }}
                         headerCells={[
                             {
+                                text: '#',
+                                key: 'index',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
                                 text: 'Title',
                                 key: 'title',
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
@@ -95,6 +101,7 @@ const StudiesPage = () => {
                                 key={studyrow.id || index}
                                 onClick={() => handleStudyRowClick(studyrow.id)}
                             >
+                                <TableCell>{getSearchResultRowNumber(pageOfResults, pageSize, index)}</TableCell>
                                 <TableCell>
                                     {studyrow?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
                                 </TableCell>
