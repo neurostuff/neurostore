@@ -66,6 +66,73 @@ async def test_put_images(auth_client, session):
     assert resp.json()["url"] == new_data["url"]
 
 
+async def test_analysis_image_count_updates_on_image_writes(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="image count study",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis-a",
+                user=user,
+                images=[
+                    Image(
+                        filename="seed.nii.gz",
+                        url="seed",
+                        user=user,
+                    )
+                ],
+            ),
+            Analysis(name="analysis-b", user=user),
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    analysis_a = study.analyses[0]
+    analysis_b = study.analyses[1]
+    session.refresh(analysis_a)
+    session.refresh(analysis_b)
+    assert analysis_a.image_count == 1
+    assert analysis_b.image_count == 0
+
+    create_resp = await auth_client.post(
+        "/api/images/",
+        data={
+            "analysis": analysis_b.id,
+            "filename": "created.nii.gz",
+            "url": "created",
+        },
+    )
+    assert create_resp.status_code == 200
+    created_image_id = create_resp.json()["id"]
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    analysis_b = Analysis.query.filter_by(id=analysis_b.id).first()
+    assert analysis_a.image_count == 1
+    assert analysis_b.image_count == 1
+
+    move_resp = await auth_client.put(
+        f"/api/images/{created_image_id}", data={"analysis": analysis_a.id}
+    )
+    assert move_resp.status_code == 200
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    analysis_b = Analysis.query.filter_by(id=analysis_b.id).first()
+    assert analysis_a.image_count == 2
+    assert analysis_b.image_count == 0
+
+    delete_resp = await auth_client.delete(f"/api/images/{created_image_id}")
+    assert delete_resp.status_code == 200
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    assert analysis_a.image_count == 1
+
+
 async def test_delete_images(auth_client, session):
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()

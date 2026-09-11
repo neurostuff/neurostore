@@ -681,6 +681,7 @@ class Analysis(BaseMixin, db.Model):
     order = db.Column(db.Integer)
     source_id = db.Column(db.String, index=True)
     point_count = db.Column(db.Integer, default=0, nullable=False)
+    image_count = db.Column(db.Integer, default=0, nullable=False)
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
     has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
@@ -1066,6 +1067,8 @@ class PipelineEmbedding(db.Model):
     embedding = db.Column(VectorType(), nullable=False)
 
 
+from neurostore.models import image_count_listeners  # noqa E402
 from neurostore.models import point_count_listeners  # noqa E402
 
+del image_count_listeners
 del point_count_listeners
