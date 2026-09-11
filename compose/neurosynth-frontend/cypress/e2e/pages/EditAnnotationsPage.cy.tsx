@@ -45,6 +45,30 @@ describe(PAGE_NAME, () => {
         cy.contains('Annotation for studyset').should('be.visible');
     });
 
+    describe('footer navigation', () => {
+        beforeEach(() => {
+            visitAndWaitForPage();
+        });
+
+        it('should show Back to project button', () => {
+            cy.contains('button', 'Back to project').should('be.visible');
+        });
+
+        it('should navigate to the project page when Back to project is clicked', () => {
+            cy.contains('button', 'Back to project').click();
+            cy.url().should('include', '/projects/abc123');
+            cy.url().should('not.include', '/extraction');
+        });
+
+        it('should open confirmation dialog when Back to project is clicked with unsaved changes', () => {
+            cy.get('.htCore').find('tbody td').eq(3).dblclick();
+            cy.get('textarea.handsontableInput:visible').type('_cell_edit{enter}');
+            cy.contains('button', 'Back to project').click();
+            cy.contains('You have unsaved changes').should('be.visible');
+            cy.contains('Are you sure you want to continue?').should('be.visible');
+        });
+    });
+
     describe('modify columns and save', () => {
         beforeEach(() => {
             visitAndWaitForPage();
@@ -153,7 +177,8 @@ describe(PAGE_NAME, () => {
         it('shows annotation in read-only mode only', () => {
             cy.contains('Annotation for studyset').should('be.visible');
             cy.get('input[placeholder="New Annotation Key"]').should('not.exist');
-            cy.contains('button', 'save').should('not.be.visible');
+            cy.contains('button', 'save').should('not.exist');
+            cy.contains('button', 'Back to project').should('be.visible');
             cy.get('.htCore').should('exist');
         });
     });

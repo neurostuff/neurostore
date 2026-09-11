@@ -51,21 +51,27 @@
     vertical-align: middle !important;
 }
 
+/* Type colors apply to cells (td) and column header labels (div.boolean, etc).
+   The td selector is required so HT18 `.handsontable .htDimmed` does not win on cells. */
+.boolean,
 :global(.handsontable) td.boolean {
     color: green !important;
     text-align: center !important;
 }
 
+.string,
 :global(.handsontable) td.string {
     color: orange !important;
     text-align: center !important;
 }
 
+.number,
 :global(.handsontable) td.number {
     color: blue !important;
     text-align: center !important;
 }
 
+.null,
 :global(.handsontable) td.null {
     color: gray !important;
     text-align: center !important;

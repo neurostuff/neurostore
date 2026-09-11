@@ -1,6 +1,7 @@
 import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
@@ -11,7 +12,8 @@ import { useGetWindowHeight, useUpdateAnnotationByAnnotationAndAnalysisIds, useU
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
 import { useProjectUser } from 'stores/projects/ProjectStore';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 
@@ -19,6 +21,9 @@ registerAllModules();
 
 const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
     const { enqueueSnackbar } = useSnackbar();
+    const { projectId } = useParams<{ projectId: string }>();
+    const navigate = useNavigate();
+    const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
     const { mutate: updateAnnotation, isPending: updateAnnotationIsLoading } = useUpdateAnnotationById(
         props.annotationId
     );
@@ -76,6 +81,22 @@ const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
             if (timeout) clearTimeout(timeout);
         };
     }, [windowSize]);
+
+    const handleBackToProject = () => {
+        if (isEdited) {
+            setConfirmationDialogIsOpen(true);
+            return;
+        }
+
+        navigate(`/projects/${projectId}`);
+    };
+
+    const handleCloseConfirmationDialog = (ok: boolean | undefined) => {
+        setConfirmationDialogIsOpen(false);
+        if (!ok) return;
+
+        navigate(`/projects/${projectId}`);
+    };
 
     const handleClickSave = () => {
         if (!props.annotationId) return;
@@ -399,8 +420,9 @@ const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
                     padding: '1rem 0',
                     backgroundColor: 'white',
                     position: 'fixed',
-                    display: !canEdit ? 'none' : 'flex',
-                    justifyContent: 'flex-end',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     width: {
                         xs: '90%',
                         md: '80%',
@@ -408,17 +430,37 @@ const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
                     zIndex: 999,
                 }}
             >
-                <LoadingButton
-                    size="large"
-                    text="save"
-                    disabled={!isEdited || !canEdit}
-                    isLoading={updateAnnotationIsLoading || updateAnnotationNoNoteKeysIsLoading}
-                    loaderColor="secondary"
-                    color="primary"
-                    variant="contained"
-                    sx={{ width: '300px' }}
-                    onClick={handleClickSave}
+                <ConfirmationDialog
+                    isOpen={confirmationDialogIsOpen}
+                    dialogTitle="You have unsaved changes"
+                    dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                    onCloseDialog={handleCloseConfirmationDialog}
+                    rejectText="Cancel"
+                    confirmText="Continue"
                 />
+                <Button
+                    color="secondary"
+                    disableElevation
+                    size="medium"
+                    variant="contained"
+                    onClick={handleBackToProject}
+                >
+                    Back to project
+                </Button>
+                {canEdit && (
+                    <LoadingButton
+                        size="medium"
+                        text="save"
+                        disableElevation
+                        disabled={!isEdited || !canEdit}
+                        isLoading={updateAnnotationIsLoading || updateAnnotationNoNoteKeysIsLoading}
+                        loaderColor="secondary"
+                        color="primary"
+                        variant="contained"
+                        sx={{ width: '150px' }}
+                        onClick={handleClickSave}
+                    />
+                )}
             </Box>
         </Box>
     );
