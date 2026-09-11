@@ -68,10 +68,10 @@ describe('ImportStudiesDialog', () => {
             cy.get('input[type="text"]').first().type('neuron');
             cy.get('button').contains('Search').click();
             cy.wait('@baseStudiesFixture');
-            cy.contains('button', `next`).should('not.be.disabled');
+            cy.contains('button', 'Next (Import 4 studies)').should('not.be.disabled');
             cy.get('input[type="text"]').first().type(' (my import)');
             cy.get('input[type="text"]').first().should('have.value', 'neuron (my import)');
-            cy.contains('button', 'next').should('not.be.disabled');
+            cy.contains('button', 'Next (Import 4 studies)').should('not.be.disabled');
         });
     });
 });

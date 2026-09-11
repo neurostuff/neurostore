@@ -155,7 +155,6 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
                         color: 'primary.contrastText',
                     },
                 }}
-                tablePaginationSelectorStyles={{ marginBottom: '80px' }}
             >
                 <Box sx={{ marginBottom: '1rem' }}>
                     <NeurosynthTable
@@ -249,7 +248,7 @@ const SearchNeurostore = (props: IImportArgs & { onSetSearchCriteria: (searchCri
                     color="primary"
                     sx={CurationImportStyles.actionsButton}
                     onClick={() => handleButtonClick(ENavigationButton.NEXT)}
-                    text="next"
+                    text={`Next (Import ${studyData?.metadata?.total_count || 0} studies)`}
                     loaderColor="secondary"
                     disableElevation
                     disabled={(studyData?.metadata?.total_count || 0) === 0 || !hasSearch || isLoading || !!error}
