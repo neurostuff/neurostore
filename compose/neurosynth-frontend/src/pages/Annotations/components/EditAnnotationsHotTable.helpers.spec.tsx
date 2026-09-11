@@ -16,6 +16,16 @@ describe('createColumnHeader', () => {
         expect(html).toContain(styles['remove-column-icon']);
     });
 
+    it.each([
+        [EPropertyType.BOOLEAN, styles.boolean],
+        [EPropertyType.STRING, styles.string],
+        [EPropertyType.NUMBER, styles.number],
+    ] as const)('applies the %s type class used for header color', (colType, typeClass) => {
+        const html = createColumnHeader('sample_size', colType, true);
+
+        expect(html).toContain(typeClass);
+    });
+
     it('omits the remove button when removal is not allowed', () => {
         const html = createColumnHeader('included', EPropertyType.BOOLEAN, false);
 

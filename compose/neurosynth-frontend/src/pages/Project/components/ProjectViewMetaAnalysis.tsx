@@ -135,9 +135,8 @@ const ProjectViewMetaAnalysis = (props: MetaAnalysisReturn) => {
                 <Button
                     color={hasResults || !canEdit ? 'primary' : 'secondary'}
                     disableElevation
+                    fullWidth
                     size="small"
-                    sx={{ minWidth: '120px' }}
-                    variant="contained"
                     onClick={handleUpdate}
                 >
                     {hasResults || !canEdit ? 'view' : 'view and edit'}
