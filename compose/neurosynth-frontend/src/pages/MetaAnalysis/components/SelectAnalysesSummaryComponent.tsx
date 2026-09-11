@@ -1,8 +1,11 @@
 import { Box, Typography } from '@mui/material';
 import { useGetAnnotationById, useGetStudysetSummaryById } from 'hooks';
-import { AnalysisReturn, NoteCollectionReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import { StudyReturnWithSummaryAnalyses } from 'hooks/studysets/studysetQueries.types';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useEffect, useState } from 'react';
 import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
+import { useProjectAnalysisType } from 'stores/projects/ProjectStore';
 import { getFilteredAnnotationNotes } from './SelectAnalysesComponent.helpers';
 
 const SelectAnalysesSummaryComponent = (props: {
@@ -12,16 +15,17 @@ const SelectAnalysesSummaryComponent = (props: {
 }) => {
     const { data: annotation } = useGetAnnotationById(props.annotationdId);
     const { data: studyset } = useGetStudysetSummaryById(props.studysetId);
+    const isIbma = (useProjectAnalysisType() ?? EAnalysisType.CBMA) === EAnalysisType.IBMA;
 
     const [count, setCount] = useState({
         studies: 0,
         analyses: 0,
-        coordinates: 0,
+        analysisItems: 0,
     });
 
     useEffect(() => {
         if (!studyset?.studies || !annotation?.notes || !props.selectedValue?.selectionKey) {
-            setCount({ studies: 0, analyses: 0, coordinates: 0 });
+            setCount({ studies: 0, analyses: 0, analysisItems: 0 });
             return;
         }
 
@@ -41,14 +45,22 @@ const SelectAnalysesSummaryComponent = (props: {
 
         let numStudiesSelected = 0;
         const numAnalysesSelected = filteredAnnotations.length;
-        let numCoordinatesSelected = 0;
-        (studyset.studies as StudyReturn[]).forEach((study) => {
+        let numObservationsSelected = 0;
+        (studyset.studies as StudyReturnWithSummaryAnalyses[]).forEach((study) => {
             if (!study.id || !filteredAnnotationsStudyIdSet.has(study.id)) return;
 
             if (study.analyses && study.analyses.length) numStudiesSelected++;
 
-            ((study.analyses || []) as AnalysisReturn[]).forEach((analysis) => {
+            (study.analyses || []).forEach((analysis) => {
                 if (!analysis.id || !filteredAnnotationsAnalysisIdToNoteMap.has(analysis.id)) {
+                    return;
+                }
+
+                if (isIbma) {
+                    if (typeof analysis.image_count !== 'number') {
+                        throw new Error('Expected analysis.image_count in summary studyset payload');
+                    }
+                    numObservationsSelected = numObservationsSelected + analysis.image_count;
                     return;
                 }
 
@@ -56,16 +68,16 @@ const SelectAnalysesSummaryComponent = (props: {
                     throw new Error('Expected analysis.point_count in summary studyset payload');
                 }
 
-                numCoordinatesSelected = numCoordinatesSelected + analysis.point_count;
+                numObservationsSelected = numObservationsSelected + analysis.point_count;
             });
         });
 
         setCount({
             studies: numStudiesSelected,
             analyses: numAnalysesSelected,
-            coordinates: numCoordinatesSelected,
+            analysisItems: numObservationsSelected,
         });
-    }, [annotation?.notes, props.selectedValue, props.selectedValue?.selectionKey, studyset?.studies]);
+    }, [annotation?.notes, isIbma, props.selectedValue, props.selectedValue?.selectionKey, studyset?.studies]);
 
     return (
         <Box sx={{ display: 'flex' }}>
@@ -81,7 +93,7 @@ const SelectAnalysesSummaryComponent = (props: {
             </Typography>{' '}
             |
             <Typography sx={{ marginLeft: '0.5rem', whiteSpace: 'nowrap' }} variant="caption">
-                {count.coordinates} coordinates
+                {count.analysisItems} {isIbma ? 'images' : 'coordinates'}
             </Typography>
         </Box>
     );

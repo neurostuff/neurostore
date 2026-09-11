@@ -9,8 +9,18 @@ const EditStudyComponentsStyles: Style = {
         margin: '0 !important',
     },
     accordionSummary: {
+        minHeight: '64px !important',
+        '&.Mui-expanded': {
+            minHeight: '64px !important',
+        },
         ':hover': {
             backgroundColor: '#f2f2f2',
+        },
+        '& .MuiAccordionSummary-content': {
+            margin: '4px 0',
+            '&.Mui-expanded': {
+                margin: '4px 0',
+            },
         },
     },
     accordionTitle: {

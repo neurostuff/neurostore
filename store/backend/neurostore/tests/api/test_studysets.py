@@ -186,6 +186,7 @@ async def test_get_summary_studyset(auth_client, ingest_neurosynth, session):
             analysis = study["analyses"][0]
             assert "id" in analysis
             assert isinstance(analysis.get("point_count"), int)
+            assert isinstance(analysis.get("image_count"), int)
             assert "metadata" not in analysis
             assert "points" not in analysis
             assert "images" not in analysis

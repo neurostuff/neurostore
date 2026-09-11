@@ -116,9 +116,7 @@ const SelectAnalysesComponent = (props: {
             {stringInclusionColSelected && (
                 <Box
                     sx={{
-                        padding: '1rem 0 2rem 3rem',
-                        borderLeft: '2px solid',
-                        borderColor: 'secondary.main',
+                        paddingTop: '1rem',
                     }}
                 >
                     <SelectAnalysesStringValue
@@ -129,11 +127,7 @@ const SelectAnalysesComponent = (props: {
                 </Box>
             )}
             {showInclusionSummary && (
-                <Box
-                    sx={{
-                        marginTop: '1rem',
-                    }}
-                >
+                <Box sx={{ marginTop: '1rem' }}>
                     <SelectAnalysesComponentTable
                         selectedValue={selectedValue}
                         allNotes={annotation?.notes as NoteCollectionReturn[] | undefined}

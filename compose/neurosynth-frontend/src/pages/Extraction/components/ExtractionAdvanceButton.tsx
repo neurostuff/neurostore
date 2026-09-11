@@ -39,8 +39,8 @@ const ExtractionAdvanceButton: React.FC<ButtonProps> = ({ sx: sxProp, ...restPro
                         study and then mark it as completed.
                     </Typography>
                     <Typography variant="body2">
-                        You can automatically mark all studies as completed by clicking the button "Mark all as
-                        complete".
+                        Alternatively, you can automatically mark all studies as completed by clicking the button "Mark
+                        all as complete".
                     </Typography>
                 </Box>,
                 { variant: 'warning', autoHideDuration: null }
