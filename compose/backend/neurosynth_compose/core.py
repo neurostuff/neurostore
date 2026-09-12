@@ -2,6 +2,7 @@ from celery import Celery, Task
 from celery.signals import worker_process_init
 
 from neurosynth_compose.database import db, init_db
+from neurosynth_compose.observability.sentry import configure_sentry
 from neurosynth_compose.settings import load_settings
 
 
@@ -27,6 +28,12 @@ def create_celery_app(settings=None):
     return celery
 
 
+def _celery_integrations():
+    from sentry_sdk.integrations.celery import CeleryIntegration
+
+    return [CeleryIntegration()]
+
+
 def initialize_worker_runtime(settings=None):
     """Configure the database in a Celery worker process when needed."""
     if db.is_configured:
@@ -34,6 +41,9 @@ def initialize_worker_runtime(settings=None):
 
     settings = load_settings() if settings is None else settings
     init_db(settings)
+    configure_sentry(
+        settings, component="compose-worker", integrations=_celery_integrations
+    )
     return settings
 
 

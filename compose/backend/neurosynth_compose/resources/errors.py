@@ -6,6 +6,8 @@ from connexion.exceptions import ProblemException
 from connexion.lifecycle import ConnexionResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from neurosynth_compose.observability.sentry import capture_exception
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,6 +55,9 @@ async def general_exception_handler(request, exc):
         getattr(request, "method", None),
         getattr(request, "url", None),
     )
+    # Connexion handles Exception itself, so Sentry's ASGI integration never
+    # sees this; report it here instead.
+    capture_exception(exc, request=request)
     return _json_response(
         {
             "type": "about:blank",

@@ -25,6 +25,7 @@ from neurostore.exceptions.handlers import (
     problem_exception_handler,
 )
 from neurostore.extensions import cache
+from neurostore.observability.sentry import configure_sentry
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler
 from neurostore.settings import load_settings
@@ -171,6 +172,7 @@ def initialize_application(settings: Mapping[str, object] | None = None):
 
     db.configure(settings)
     cache.configure(settings)
+    configure_sentry(settings, component="neurostore-api")
     os.environ["BEARERINFO_FUNC"] = str(settings["BEARERINFO_FUNC"])
     return settings, logger
 
