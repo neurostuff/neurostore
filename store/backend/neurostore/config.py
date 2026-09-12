@@ -110,6 +110,13 @@ class Config(object):
     )
     PROPAGATE_EXCEPTIONS = True
 
+    # Logging. ERROR_LOG_FILE writes errors to disk; unset disables the file.
+    LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+    LOG_FORMAT = os.environ.get("LOG_FORMAT")
+    ERROR_LOG_FILE = os.environ.get("ERROR_LOG_FILE")
+    ERROR_LOG_MAX_BYTES = os.environ.get("ERROR_LOG_MAX_BYTES", 10 * 1024 * 1024)
+    ERROR_LOG_BACKUP_COUNT = os.environ.get("ERROR_LOG_BACKUP_COUNT", 5)
+
     # Error reporting; Sentry stays off unless a DSN is provided.
     SENTRY_DSN = os.environ.get("SENTRY_DSN")
     SENTRY_COMPONENT = os.environ.get("SENTRY_COMPONENT")
