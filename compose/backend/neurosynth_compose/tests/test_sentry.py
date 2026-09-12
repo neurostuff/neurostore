@@ -104,3 +104,24 @@ def test_sentry_component_env_overrides_the_caller(monkeypatch):
     )
     _reset()
     assert captured["component"] == "neurostore-release-worker"
+
+
+def test_server_name_is_the_component_not_the_container_id(monkeypatch):
+    """sentry_sdk defaults server_name to the container id, which is churn."""
+    _reset()
+    captured = {}
+    import sentry_sdk
+
+    monkeypatch.setattr(sentry_sdk, "init", lambda **kw: captured.update(kw))
+    monkeypatch.setattr(sentry_sdk, "set_tag", lambda *a, **k: None)
+
+    sentry.configure_sentry(
+        {
+            "ENV": "production",
+            "SENTRY_DSN": "https://k@example.ingest.sentry.io/1",
+            "SENTRY_COMPONENT": "neurostore-release-worker",
+        },
+        component="neurostore",
+    )
+    _reset()
+    assert captured["server_name"] == "neurostore-release-worker"
