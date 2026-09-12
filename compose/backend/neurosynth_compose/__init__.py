@@ -16,6 +16,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from neurosynth_compose.admin import init_admin
 from neurosynth_compose.database import init_db
+from neurosynth_compose.observability.sentry import configure_sentry
 from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
 from neurosynth_compose.resources.errors import (
     general_exception_handler,
@@ -87,6 +88,7 @@ def initialize_application(settings: Mapping[str, object] | None = None):
     logger = logging.getLogger("neurosynth_compose")
 
     init_db(settings)
+    configure_sentry(settings, component="compose-api")
     os.environ["BEARERINFO_FUNC"] = str(settings["BEARERINFO_FUNC"])
     os.environ["APIKEYINFO_FUNC"] = str(settings["APIKEYINFO_FUNC"])
     return settings, logger

@@ -36,6 +36,7 @@ dependencies = [
     "webargs~=8.7",
     "wrapt~=2.1",
     "NiMARE>=0.20.0",
+    "sentry-sdk~=2.69",
     "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
     "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk"
 ]

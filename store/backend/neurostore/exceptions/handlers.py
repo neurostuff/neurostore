@@ -11,6 +11,7 @@ from starlette.requests import Request
 
 from neurostore.exceptions.base import InternalServerError, NeuroStoreException
 from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
+from neurostore.observability.sentry import capture_exception
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,9 @@ async def general_exception_handler(request: Request, exc: Exception):
         getattr(request, "url", None),
     )
     logger.debug(traceback.format_exc())
+    # Connexion handles Exception itself, so Sentry's ASGI integration never
+    # sees this; report it here instead.
+    capture_exception(exc, request=request)
 
     internal = InternalServerError()
     payload = internal.to_payload()

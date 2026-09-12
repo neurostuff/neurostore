@@ -110,6 +110,12 @@ class Config(object):
     )
     PROPAGATE_EXCEPTIONS = True
 
+    # Error reporting; Sentry stays off unless a DSN is provided.
+    SENTRY_DSN = os.environ.get("SENTRY_DSN")
+    SENTRY_RELEASE = os.environ.get("SENTRY_RELEASE")
+    SENTRY_TRACES_SAMPLE_RATE = os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")
+    SENTRY_PROFILES_SAMPLE_RATE = os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "0")
+
     GITHUB_CLIENT_ID = "github-id"
     GITHUB_CLIENT_SECRET = "github-secret"
     DANCE_SECRET_KEY = "temporary"
