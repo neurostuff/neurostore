@@ -22,6 +22,7 @@ from neurosynth_compose.models.analysis import (
     NeurostoreStudyset,
     Project,
     Tag,
+    project_tags,
 )
 from neurosynth_compose.models.auth import User
 from neurosynth_compose.resources.common import get_current_user, make_json_response
@@ -41,6 +42,7 @@ from neurosynth_compose.schemas import ProjectSchema  # noqa: F401
 from neurosynth_compose.schemas.analysis import get_ns_base
 
 _RAW_PROVENANCE_UNSET = object()
+_TAG_NAMES_UNSET = object()
 
 
 def _include_provenance(args):
@@ -78,15 +80,6 @@ def _project_list_query_options(info: bool):
         ),
         joinedload(Project.user).load_only(User.name),
         meta_analysis_loader,
-        selectinload(Project.tags).load_only(
-            Tag.id,
-            Tag.created_at,
-            Tag.updated_at,
-            Tag.name,
-            Tag.group,
-            Tag.description,
-            Tag.official,
-        ),
         selectinload(Project.neurostore_study).load_only(
             NeurostoreStudy.created_at,
             NeurostoreStudy.updated_at,
@@ -340,8 +333,37 @@ def _filter_project_list_provenance(raw_provenance_json):
     return filtered
 
 
+def project_tag_names(project_ids):
+    """Tag names per project, as flat rows.
+
+    The list endpoint only ever renders `tag.name`, so hydrating `Tag` objects
+    for a whole page costs ~7k function calls per request to build objects that
+    are read once and discarded. One flat query keyed by project id avoids them.
+    """
+    project_ids = [pid for pid in project_ids if pid]
+    if not project_ids:
+        return {}
+
+    rows = db.session.execute(
+        select(project_tags.c.project_id, Tag.name)
+        .join(Tag, Tag.id == project_tags.c.tag_id)
+        .where(project_tags.c.project_id.in_(project_ids))
+        .order_by(project_tags.c.project_id, Tag.name)
+    ).all()
+
+    names = {}
+    for project_id, name in rows:
+        names.setdefault(project_id, []).append(name)
+    return names
+
+
 def serialize_project(
-    record, *, info: bool, settings, raw_provenance_json=_RAW_PROVENANCE_UNSET
+    record,
+    *,
+    info: bool,
+    settings,
+    raw_provenance_json=_RAW_PROVENANCE_UNSET,
+    tag_names=_TAG_NAMES_UNSET,
 ):
     provenance = (
         getattr(record, "provenance", None)
@@ -356,7 +378,9 @@ def serialize_project(
         None if neurostore_study is None else neurostore_study.get("neurostore_id")
     )
     meta_analyses = getattr(record, "meta_analyses", None) or ()
-    tags = getattr(record, "tags", None)
+    if tag_names is _TAG_NAMES_UNSET:
+        tags = getattr(record, "tags", None)
+        tag_names = None if tags is None else [getattr(t, "name", None) for t in tags]
 
     output = {
         "id": record.id,
@@ -382,13 +406,8 @@ def serialize_project(
         # its info_field members -- which is `name` alone.
         "tags": (
             []
-            if tags is None
-            else [
-                {"name": getattr(tag, "name", None)}
-                if info
-                else getattr(tag, "name", None)
-                for tag in tags
-            ]
+            if tag_names is None
+            else [{"name": name} if info else name for name in tag_names]
         ),
         "neurostore_study": neurostore_study,
         "neurostore_url": (
@@ -407,7 +426,9 @@ def serialize_project(
     return output
 
 
-def serialize_projects(records, *, info: bool, settings, provenance_map=None):
+def serialize_projects(
+    records, *, info: bool, settings, provenance_map=None, tag_map=None
+):
     provenance_map = provenance_map or {}
     return [
         serialize_project(
@@ -415,6 +436,11 @@ def serialize_projects(records, *, info: bool, settings, provenance_map=None):
             info=info,
             settings=settings,
             raw_provenance_json=provenance_map.get(record.id, _RAW_PROVENANCE_UNSET),
+            tag_names=(
+                _TAG_NAMES_UNSET
+                if tag_map is None
+                else tag_map.get(record.id, [])
+            ),
         )
         for record in records
     ]
@@ -573,6 +599,7 @@ class ProjectsView(ObjectView, ListView):
             records,
             info=bool(args.get("info")),
             settings=request.state.settings,
+            tag_map=project_tag_names([record.id for record in records]),
         )
 
     def finalize_search(self, query, args, *, count_query=None):
@@ -589,6 +616,7 @@ class ProjectsView(ObjectView, ListView):
         rows = db.session.execute(query.offset((page - 1) * page_size).limit(page_size))
         records = rows.all()
         include_provenance = _include_provenance(args)
+        tag_map = project_tag_names([record.id for record, _ in records])
         return make_json_response(
             {
                 "metadata": {"total_count": total},
@@ -602,6 +630,7 @@ class ProjectsView(ObjectView, ListView):
                             if include_provenance
                             else None
                         ),
+                        tag_names=tag_map.get(record.id, []),
                     )
                     for record, raw_provenance_json in records
                 ],

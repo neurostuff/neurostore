@@ -391,5 +391,4 @@ class Project(BaseMixin, db.Model):
         "Tag",
         secondary=project_tags,
         back_populates="projects",
-        lazy="selectin",
     )
