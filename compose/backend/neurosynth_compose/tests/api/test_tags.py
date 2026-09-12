@@ -1,6 +1,6 @@
 from sqlalchemy import select
 
-from neurosynth_compose.models import MetaAnalysis, Tag, User
+from neurosynth_compose.models import MetaAnalysis, Project, Tag, User
 
 
 def test_create_and_list_tags(session, auth_client, user_data):
@@ -79,3 +79,93 @@ def test_meta_analysis_tags_accept_id_and_name(session, auth_client, user_data):
     )
     assert by_name.status_code == 200
     assert "hide" in {t.lower() for t in by_name.json.get("tags", [])}
+
+
+def _own_project(session, auth_client):
+    user = session.execute(
+        select(User).where(User.external_id == auth_client.username)
+    ).scalar_one_or_none()
+    project = (
+        session.execute(select(Project).where(Project.user == user)).scalars().first()
+    )
+    assert project is not None
+    return project
+
+
+def test_project_tags_accept_id_and_name(session, auth_client, user_data):
+    project = _own_project(session, auth_client)
+
+    tag_resp = auth_client.post("/api/tags", data={"name": "hide", "official": True})
+    assert tag_resp.status_code == 200
+    tag_id = tag_resp.json["id"]
+
+    by_id = auth_client.put(f"/api/projects/{project.id}", data={"tags": [tag_id]})
+    assert by_id.status_code == 200
+    assert "hide" in {t.lower() for t in by_id.json.get("tags", [])}
+
+    by_name = auth_client.put(f"/api/projects/{project.id}", data={"tags": ["HIDE"]})
+    assert by_name.status_code == 200
+    assert "hide" in {t.lower() for t in by_name.json.get("tags", [])}
+
+    # a name with no matching tag creates one rather than failing
+    novel = auth_client.put(f"/api/projects/{project.id}", data={"tags": ["scratch"]})
+    assert novel.status_code == 200
+    assert {t.lower() for t in novel.json.get("tags", [])} == {"scratch"}
+
+
+def test_project_tags_serialize_like_the_schema(session, auth_client, user_data):
+    project = _own_project(session, auth_client)
+    assert (
+        auth_client.put(f"/api/projects/{project.id}", data={"tags": ["hide"]}).status_code
+        == 200
+    )
+
+    plain = auth_client.get(f"/api/projects/{project.id}")
+    assert plain.status_code == 200
+    assert plain.json["tags"] == ["hide"]
+
+    # under ?info=true TagSchema is restricted to its info_field members
+    info = auth_client.get(f"/api/projects/{project.id}?info=true")
+    assert info.status_code == 200
+    assert info.json["tags"] == [{"name": "hide"}]
+
+
+def test_project_list_filters_by_tag(session, auth_client, user_data):
+    project = _own_project(session, auth_client)
+    assert (
+        auth_client.put(f"/api/projects/{project.id}", data={"tags": ["hide"]}).status_code
+        == 200
+    )
+
+    included = auth_client.get("/api/projects?tag=hide")
+    assert included.status_code == 200
+    assert project.id in {p["id"] for p in included.json["results"]}
+
+    # the point of the feature: keep tagged-away projects out of the default view
+    excluded = auth_client.get("/api/projects?exclude_tag=hide")
+    assert excluded.status_code == 200
+    assert project.id not in {p["id"] for p in excluded.json["results"]}
+
+    # matching is case-insensitive, as it is for meta-analyses
+    assert project.id in {
+        p["id"] for p in auth_client.get("/api/projects?tag=HIDE").json["results"]
+    }
+
+
+def test_project_list_tag_filter_is_conjunctive(session, auth_client, user_data):
+    project = _own_project(session, auth_client)
+    assert (
+        auth_client.put(
+            f"/api/projects/{project.id}", data={"tags": ["hide", "scratch"]}
+        ).status_code
+        == 200
+    )
+
+    both = auth_client.get("/api/projects?tag=hide,scratch")
+    assert both.status_code == 200
+    assert project.id in {p["id"] for p in both.json["results"]}
+
+    # a tag the project does not carry must exclude it
+    missing = auth_client.get("/api/projects?tag=hide,nonexistent-tag")
+    assert missing.status_code == 200
+    assert project.id not in {p["id"] for p in missing.json["results"]}

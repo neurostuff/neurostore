@@ -582,6 +582,12 @@ class ProjectSchema(BaseSchema):
     description = fields.String(allow_none=True)
     type = fields.String(validate=validate.OneOf(["CBMA", "IBMA"]))
     provenance = fields.Dict(allow_none=True)
+    tags = StringOrNested(
+        TagSchema,
+        metadata={"pluck": "name"},
+        many=True,
+        allow_none=True,
+    )
     public = fields.Boolean()
     draft = fields.Boolean()
     neurostore_studyset_id = fields.String(allow_none=True)

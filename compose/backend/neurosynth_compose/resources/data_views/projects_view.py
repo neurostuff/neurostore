@@ -21,10 +21,15 @@ from neurosynth_compose.models.analysis import (
     NeurostoreStudy,
     NeurostoreStudyset,
     Project,
+    Tag,
 )
 from neurosynth_compose.models.auth import User
-from neurosynth_compose.resources.common import make_json_response
+from neurosynth_compose.resources.common import get_current_user, make_json_response
 from neurosynth_compose.resources.data_views.common import _serialize_datetime
+from neurosynth_compose.resources.data_views.tags_view import (
+    _find_tag_by_name,
+    _tag_accessible,
+)
 from neurosynth_compose.resources.project_cloning import ProjectCloneService
 from neurosynth_compose.resources.resource_services import (
     create_or_update_neurostore_study,
@@ -73,6 +78,15 @@ def _project_list_query_options(info: bool):
         ),
         joinedload(Project.user).load_only(User.name),
         meta_analysis_loader,
+        selectinload(Project.tags).load_only(
+            Tag.id,
+            Tag.created_at,
+            Tag.updated_at,
+            Tag.name,
+            Tag.group,
+            Tag.description,
+            Tag.official,
+        ),
         selectinload(Project.neurostore_study).load_only(
             NeurostoreStudy.created_at,
             NeurostoreStudy.updated_at,
@@ -121,6 +135,15 @@ def _project_detail_query_options(info: bool):
             NeurostoreStudy.status,
         ),
         meta_analysis_loader,
+        selectinload(Project.tags).load_only(
+            Tag.id,
+            Tag.created_at,
+            Tag.updated_at,
+            Tag.name,
+            Tag.group,
+            Tag.description,
+            Tag.official,
+        ),
     )
 
 
@@ -333,6 +356,7 @@ def serialize_project(
         None if neurostore_study is None else neurostore_study.get("neurostore_id")
     )
     meta_analyses = getattr(record, "meta_analyses", None) or ()
+    tags = getattr(record, "tags", None)
 
     output = {
         "id": record.id,
@@ -354,6 +378,18 @@ def serialize_project(
             )
             for meta_analysis in meta_analyses
         ],
+        # ProjectSchema dumps tag names, and under `info` restricts TagSchema to
+        # its info_field members -- which is `name` alone.
+        "tags": (
+            []
+            if tags is None
+            else [
+                {"name": getattr(tag, "name", None)}
+                if info
+                else getattr(tag, "name", None)
+                for tag in tags
+            ]
+        ),
         "neurostore_study": neurostore_study,
         "neurostore_url": (
             None
@@ -391,6 +427,7 @@ class ProjectsView(ObjectView, ListView):
         "neurostore_studysets": "NeurostoreStudysetsView",
         "neurostore_annotations": "NeurostoreAnnotationsView",
         "meta_analyses": "MetaAnalysesView",
+        "tags": "TagsView",
     }
     _project_put_args = {
         "sync_meta_analyses_public": fields.Boolean(load_default=False),
@@ -399,6 +436,14 @@ class ProjectsView(ObjectView, ListView):
     def __init__(self):
         super().__init__()
         self._user_args["include_provenance"] = fields.Boolean(load_default=True)
+        # `tag` selects projects carrying every named tag; `exclude_tag` drops
+        # projects carrying any of them, which is what hiding a project needs.
+        self._user_args["tag"] = fields.DelimitedList(
+            fields.String(), load_default=None
+        )
+        self._user_args["exclude_tag"] = fields.DelimitedList(
+            fields.String(), load_default=None
+        )
 
     @classmethod
     def update_or_create(
@@ -411,6 +456,10 @@ class ProjectsView(ObjectView, ListView):
         record=None,
         flush=True,
     ):
+        tags = data.get("tags")
+        if isinstance(tags, list):
+            data["tags"] = cls._normalize_tags(tags, get_current_user())
+
         neurostore_studyset_id = data.get("neurostore_studyset_id")
         if (
             neurostore_studyset_id
@@ -433,6 +482,56 @@ class ProjectsView(ObjectView, ListView):
             record=record,
             flush=flush,
         )
+
+    @staticmethod
+    def _normalize_tags(tags, current_user):
+        normalized = []
+        for tag in tags:
+            if isinstance(tag, dict):
+                tag_id = tag.get("id")
+                tag_name = tag.get("name")
+            else:
+                tag_id = tag
+                tag_name = tag
+
+            tag_record = None
+            if tag_id:
+                tag_record = (
+                    db.session.execute(select(Tag).where(Tag.id == tag_id))
+                    .scalars()
+                    .first()
+                )
+                if tag_record and not _tag_accessible(tag_record, current_user):
+                    raise_http_error(403, "tag is not accessible to this user")
+                if tag_record is None and not tag_name:
+                    raise_http_error(404, "tag not found")
+
+            if tag_record is None and tag_name:
+                tag_record = _find_tag_by_name(tag_name, current_user)
+
+            if tag_record is not None:
+                normalized.append({"id": tag_record.id})
+            elif tag_name:
+                normalized.append({"name": tag_name})
+        return normalized
+
+    def apply_filters(self, query, args):
+        query = super().apply_filters(query, args)
+
+        for name in args.get("tag") or ():
+            query = query.where(
+                Project.tags.any(func.lower(Tag.name) == func.lower(name))
+            )
+
+        excluded = [name for name in (args.get("exclude_tag") or ()) if name]
+        if excluded:
+            query = query.where(
+                ~Project.tags.any(
+                    func.lower(Tag.name).in_([name.lower() for name in excluded])
+                )
+            )
+
+        return query
 
     def load_query(self, args=None):
         args = args or {}

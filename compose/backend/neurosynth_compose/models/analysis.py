@@ -68,6 +68,14 @@ meta_analysis_tags = Table(
 )
 
 
+project_tags = Table(
+    "project_tags",
+    db.metadata,
+    Column("project_id", Text, ForeignKey("projects.id"), primary_key=True),
+    Column("tag_id", Text, ForeignKey("tags.id"), primary_key=True),
+)
+
+
 class Tag(BaseMixin, db.Model):
     __tablename__ = "tags"
     name = Column(Text, nullable=False)
@@ -78,6 +86,9 @@ class Tag(BaseMixin, db.Model):
     user = relationship("User", backref=backref("tags"))
     meta_analyses = relationship(
         "MetaAnalysis", secondary=meta_analysis_tags, back_populates="tags"
+    )
+    projects = relationship(
+        "Project", secondary=project_tags, back_populates="tags"
     )
 
     __table_args__ = (
@@ -375,4 +386,10 @@ class Project(BaseMixin, db.Model):
     )
     neurostore_study = relationship(
         "NeurostoreStudy", back_populates="project", uselist=False
+    )
+    tags = relationship(
+        "Tag",
+        secondary=project_tags,
+        back_populates="projects",
+        lazy="selectin",
     )
