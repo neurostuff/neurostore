@@ -315,6 +315,58 @@ def process_group(group_query: str) -> str:
     return parse_parentheses(group_query)
 
 
+def tsquery_has_positive_term(tsquery: str) -> bool:
+    """Whether a tsquery has a term an index can narrow on.
+
+    Postgres cannot use a GIN index to satisfy a negation, so a query made only
+    of negations degrades to a sequential scan that matches nearly every row.
+    """
+    i = 0
+    length = len(tsquery)
+
+    def skip_group(start: int) -> int:
+        depth = 0
+        pos = start
+        while pos < length:
+            if tsquery[pos] == "(":
+                depth += 1
+            elif tsquery[pos] == ")":
+                depth -= 1
+                if depth == 0:
+                    return pos + 1
+            pos += 1
+        return pos
+
+    def skip_negated(start: int) -> int:
+        pos = start
+        while pos < length and tsquery[pos].isspace():
+            pos += 1
+        if pos < length and tsquery[pos] == "(":
+            return skip_group(pos)
+        while pos < length and not tsquery[pos].isspace():
+            pos += 1
+        return pos
+
+    while i < length:
+        char = tsquery[i]
+        if char.isspace():
+            i += 1
+        elif char == "!":
+            i = skip_negated(i + 1)
+        elif char == "&" and tsquery[i : i + 2] == "&!":
+            i = skip_negated(i + 2)
+        elif char in "&|":
+            i += 1
+        elif char == "(":
+            end = skip_group(i)
+            if tsquery_has_positive_term(tsquery[i + 1 : end - 1]):
+                return True
+            i = end
+        else:
+            return True
+    return False
+
+
 def pubmed_to_tsquery(query: str) -> str:
     """
     Convert a PubMed-like search query to PostgreSQL tsquery format,

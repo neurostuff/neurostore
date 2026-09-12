@@ -45,6 +45,7 @@ from neurostore.resources.utils import (
     get_current_user,
     is_user_admin,
     pubmed_to_tsquery,
+    tsquery_has_positive_term,
     validate_search_query,
 )
 from neurostore.services.base_study_metadata_enrichment import (
@@ -594,7 +595,15 @@ class ListView(BaseView):
                 validate_search_query(s)
             except errors.SyntaxError as e:
                 abort_validation(e.args[0])
-            tsquery = func.to_tsquery("english", pubmed_to_tsquery(s))
+            tsquery_string = pubmed_to_tsquery(s)
+            if not tsquery_has_positive_term(tsquery_string):
+                # Postgres cannot narrow a GIN index on a negation, so this
+                # would be a sequential scan returning nearly the whole corpus.
+                abort_validation(
+                    "A search must include at least one term to match; a query "
+                    "of only negations matches nearly every record."
+                )
+            tsquery = func.to_tsquery("english", tsquery_string)
             rank_col = func.ts_rank(m._ts_vector, tsquery).label("rank")
             q = q.filter(m._ts_vector.op("@@")(tsquery))
 

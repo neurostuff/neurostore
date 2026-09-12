@@ -10,7 +10,11 @@ from neurostore.schemas.data import (
     StudysetSchema,
 )
 from neurostore.services.has_media_flags import recompute_media_flags
-from neurostore.tests.conftest import invalid_queries, valid_queries
+from neurostore.tests.conftest import (
+    invalid_queries,
+    negation_only_queries,
+    valid_queries,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -220,6 +224,21 @@ async def test_dash_is_a_not_operator(auth_client, ingest_neurosynth, session):
         excluded = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
         assert excluded.status_code == 200
         assert excluded.json()["results"] == []
+
+
+@pytest.mark.parametrize("query, expected", negation_only_queries)
+async def test_negation_only_queries_are_rejected(
+    query, expected, auth_client, ingest_neurosynth, session
+):
+    """A query with no positive term cannot use the GIN index.
+
+    Postgres falls back to a sequential scan matching nearly every record
+    (~650ms on a 41k-row corpus, versus ~3ms for an indexed term), so the
+    endpoint refuses rather than serving it.
+    """
+    url_safe_query = urlencode({"search": query})
+    search = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
+    assert search.status_code == 400
 
 
 @pytest.mark.parametrize("query, expected", valid_queries)

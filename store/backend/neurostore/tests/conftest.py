@@ -975,6 +975,17 @@ invalid_queries = [
     ("fmri &", "Query cannot end with an operator"),
 ]
 
+# A query with no positive term cannot use the GIN index: Postgres falls back to
+# a sequential scan that matches nearly every record (~650ms on a 41k-row corpus
+# versus ~3ms for an indexed term), so these are rejected.
+negation_only_queries = [
+    ("-marijuana", "!MARIJUANA"),
+    ("NOT marijuana", "!MARIJUANA"),
+    ("-marijuana -cannabis", "!MARIJUANA & !CANNABIS"),
+    ('-"medical marijuana"', "!(MEDICAL<->MARIJUANA)"),
+    ("-(marijuana OR cannabis)", "!(MARIJUANA | CANNABIS)"),
+]
+
 valid_queries = [
     (
         '"Mild Cognitive Impairment" or "Early Cognitive Decline" or "Pre-Dementia" or '
@@ -1011,8 +1022,6 @@ valid_queries = [
     ('smoking -"medical marijuana"', "SMOKING & !(MEDICAL<->MARIJUANA)"),
     ("smoking -(marijuana OR cannabis)", "SMOKING & !(MARIJUANA | CANNABIS)"),
     ("(smoking OR vaping) -marijuana", "(SMOKING | VAPING) & !MARIJUANA"),
-    ("-marijuana", "!MARIJUANA"),
-    ("NOT marijuana", "!MARIJUANA"),
     ("smoking - marijuana", "SMOKING & MARIJUANA"),
     ("decision-making", "DECISION-MAKING"),
     (
