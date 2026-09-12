@@ -43,6 +43,11 @@ def configure_sentry(settings, component="api", integrations=None):
     if not dsn:
         return False
 
+    # Every process in a service shares one DSN, so the Sentry project cannot
+    # tell the API apart from its workers. SENTRY_COMPONENT lets each container
+    # name itself; the caller's value is the fallback.
+    component = settings.get("SENTRY_COMPONENT") or component
+
     try:
         import sentry_sdk
     except ImportError:  # pragma: no cover - dependency is declared

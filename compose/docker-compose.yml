@@ -19,6 +19,7 @@ services:
     command: /usr/local/bin/gunicorn -k uvicorn_worker.UvicornWorker -w ${WEB_CONCURRENCY:-1} -b :8000 neurosynth_compose.asgi:asgi_app --log-level debug --timeout 120 --graceful-timeout ${GUNICORN_GRACEFUL_TIMEOUT:-30} --access-logfile - --error-logfile -
     environment:
       FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-*}
+      SENTRY_COMPONENT: compose-api
     env_file:
       - .env
     networks:
@@ -47,6 +48,8 @@ services:
     volumes:
       - ${CELERY_LOG_DIR}:/logs:rw
       - ${FILE_DIR}:/file-data
+    environment:
+      SENTRY_COMPONENT: compose-worker
     env_file:
       - .env
     networks:

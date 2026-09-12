@@ -66,3 +66,41 @@ def test_request_context_skips_missing_fields():
         "url": "http://example.test/api/studies",
         "query_string": "search=memory",
     }
+
+
+def test_component_tag_identifies_the_process(monkeypatch):
+    """Every process shares one DSN, so the component tag is what tells them apart."""
+    _reset()
+    captured = {}
+    import sentry_sdk
+
+    monkeypatch.setattr(sentry_sdk, "init", lambda **kw: None)
+    monkeypatch.setattr(sentry_sdk, "set_tag", lambda k, v: captured.__setitem__(k, v))
+
+    sentry.configure_sentry(
+        {"ENV": "production", "SENTRY_DSN": "https://k@example.ingest.sentry.io/1"},
+        component="a-worker",
+    )
+    _reset()
+    assert captured["component"] == "a-worker"
+
+
+def test_sentry_component_env_overrides_the_caller(monkeypatch):
+    """docker-compose names each container; the caller's value is only a fallback."""
+    _reset()
+    captured = {}
+    import sentry_sdk
+
+    monkeypatch.setattr(sentry_sdk, "init", lambda **kw: None)
+    monkeypatch.setattr(sentry_sdk, "set_tag", lambda k, v: captured.__setitem__(k, v))
+
+    sentry.configure_sentry(
+        {
+            "ENV": "production",
+            "SENTRY_DSN": "https://k@example.ingest.sentry.io/1",
+            "SENTRY_COMPONENT": "neurostore-release-worker",
+        },
+        component="neurostore",
+    )
+    _reset()
+    assert captured["component"] == "neurostore-release-worker"
