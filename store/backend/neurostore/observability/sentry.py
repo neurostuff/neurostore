@@ -57,6 +57,10 @@ def configure_sentry(settings, component="api", integrations=None):
     sentry_sdk.init(
         dsn=dsn,
         environment=str(settings.get("ENV") or "unknown"),
+        # sentry_sdk otherwise fills this with the container id, which is a new
+        # meaningless hash on every deploy. server_name is native and indexed,
+        # so spending it on the process name makes it useful in the UI.
+        server_name=component,
         release=settings.get("SENTRY_RELEASE") or None,
         traces_sample_rate=_sample_rate(settings, "SENTRY_TRACES_SAMPLE_RATE"),
         profiles_sample_rate=_sample_rate(settings, "SENTRY_PROFILES_SAMPLE_RATE"),
