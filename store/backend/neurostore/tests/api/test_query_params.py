@@ -221,3 +221,29 @@ async def test_invalid_pubmed_queries(
     url_safe_query = urlencode({"search": query})
     search = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
     assert search.status_code == 400
+
+
+async def test_error_responses_carry_a_correlation_id(auth_client, session):
+    """A failing request must be traceable from the client to the server log."""
+    url_safe_query = urlencode({"search": "AND OR"})
+    result = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
+
+    assert result.status_code == 400
+    request_id = result.headers.get("X-Request-ID")
+    assert request_id
+    # the id in the body is the one the server logged, not a fresh one
+    assert result.json()["request_id"] == request_id
+    assert result.json()["timestamp"]
+
+
+async def test_request_id_is_echoed_when_the_caller_supplies_one(
+    auth_client, session
+):
+    result = await auth_client.get(
+        "/api/base-studies/does-not-exist",
+        headers={"X-Request-ID": "client-supplied-id"},
+    )
+
+    assert result.status_code == 404
+    assert result.headers.get("X-Request-ID") == "client-supplied-id"
+    assert result.json()["request_id"] == "client-supplied-id"

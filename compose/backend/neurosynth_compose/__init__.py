@@ -16,6 +16,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 from neurosynth_compose.admin import init_admin
 from neurosynth_compose.database import init_db
+from neurosynth_compose.observability.logging_config import configure_logging
+from neurosynth_compose.observability.request_id import RequestIdMiddleware
 from neurosynth_compose.observability.sentry import configure_sentry
 from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
 from neurosynth_compose.resources.errors import (
@@ -87,6 +89,7 @@ def initialize_application(
 ):
     """Configure Compose's process-wide database and auth services."""
     settings = load_settings() if settings is None else settings
+    configure_logging(settings)
     logger = logging.getLogger("neurosynth_compose")
 
     init_db(settings)
@@ -163,4 +166,7 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         settings,
         _logger,
     )
+    # outermost, so every response carries the id -- including ones produced
+    # before the app is reached
+    app = RequestIdMiddleware(app)
     return app
