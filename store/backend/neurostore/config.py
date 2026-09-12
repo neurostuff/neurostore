@@ -112,6 +112,7 @@ class Config(object):
 
     # Error reporting; Sentry stays off unless a DSN is provided.
     SENTRY_DSN = os.environ.get("SENTRY_DSN")
+    SENTRY_COMPONENT = os.environ.get("SENTRY_COMPONENT")
     SENTRY_RELEASE = os.environ.get("SENTRY_RELEASE")
     SENTRY_TRACES_SAMPLE_RATE = os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")
     SENTRY_PROFILES_SAMPLE_RATE = os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "0")

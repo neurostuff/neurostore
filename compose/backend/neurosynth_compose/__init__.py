@@ -82,13 +82,15 @@ class _OrjsonModule:
         return orjson.loads(value)
 
 
-def initialize_application(settings: Mapping[str, object] | None = None):
+def initialize_application(
+    settings: Mapping[str, object] | None = None, component: str = "compose"
+):
     """Configure Compose's process-wide database and auth services."""
     settings = load_settings() if settings is None else settings
     logger = logging.getLogger("neurosynth_compose")
 
     init_db(settings)
-    configure_sentry(settings, component="compose-api")
+    configure_sentry(settings, component=component)
     os.environ["BEARERINFO_FUNC"] = str(settings["BEARERINFO_FUNC"])
     os.environ["APIKEYINFO_FUNC"] = str(settings["APIKEYINFO_FUNC"])
     return settings, logger
@@ -113,7 +115,9 @@ def _asgi_lifespan(settings: Mapping[str, object], database):
 
 def create_asgi_app(settings: Mapping[str, object] | None = None):
     """Create the framework-neutral Connexion ASGI Compose application."""
-    settings, _logger = initialize_application(settings)
+    settings, _logger = initialize_application(
+        settings, component="compose-api"
+    )
     disable_response_validation = _env_flag("CONNEXION_DISABLE_RESPONSE_VALIDATION")
 
     from neurosynth_compose.database import db

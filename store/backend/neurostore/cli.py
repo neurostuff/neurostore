@@ -16,7 +16,7 @@ def _load_app_and_db():
     from neurostore import initialize_application
     from neurostore.database import db
 
-    settings, logger = initialize_application()
+    settings, logger = initialize_application(component="neurostore-cli")
     app = SimpleNamespace(config=settings, logger=logger)
     return app, db
 
