@@ -96,13 +96,16 @@ const RelegateExtractionStudyDialog = ({
             isOpen={isOpen}
             confirmButtonProps={{ isLoading, loaderColor: 'secondary' }}
             onCloseDialog={handleCloseDialog}
-            dialogTitle="Coordinates could not be found for this study."
+            dialogTitle="I could not find coordinates for this study."
             confirmText="Continue"
             rejectText="Cancel"
             dialogMessage={
                 <Box sx={{ mb: 3 }}>
-                    <Typography gutterBottom variant="body2"></Typography>
-                    <Typography gutterBottom variant="body2">
+                    <Typography gutterBottom variant="body2" sx={{ mb: 1 }}>
+                        This option is for cases where the researcher cannot find coordinates in the original source
+                        text of the study and wants to remove it from the extraction phase.
+                    </Typography>
+                    <Typography gutterBottom variant="body2" sx={{ mb: 1 }}>
                         This study will be removed from the extraction phase,{' '}
                         {isPrisma
                             ? `and will be moved to the "eligibility" phase in curation.`
