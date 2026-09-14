@@ -1,8 +1,10 @@
 from urllib.parse import urlencode
 
 import pytest
+import sqlalchemy as sa
 
-from neurostore.models import BaseStudy, Study
+from neurostore.database import db
+from neurostore.models import Analysis, BaseStudy, Study
 from neurostore.schemas.data import (
     AnalysisSchema,
     StringOrNested,
@@ -56,12 +58,57 @@ async def test_user_id(auth_client, user_data, session):
 
 
 async def test_source_id(auth_client, ingest_neurosynth, session):
-
-    study = Study.query.first()
+    # Ordered so the study under test does not depend on the order postgres
+    # happens to return rows in; an unpinned pick made this test fail on only
+    # some runs, depending on how many analyses the chosen study had.
+    study = Study.query.order_by(Study.id).first()
     post = await auth_client.post(f"/api/studies/?source_id={study.id}", data={})
     get = await auth_client.get(f"/api/studies/?source_id={study.id}&nested=true")
 
     assert post.json() == get.json()["results"][0]
+
+
+async def test_source_id_body_matches_stored_analyses(
+    auth_client, ingest_neurosynth, session
+):
+    """A clone's POST body must agree with the rows it just wrote.
+
+    Cloning a study makes `recompute_media_flags` flip the new analyses' flags
+    with a Core UPDATE, which bumps `updated_at` as part of the SET. The body is
+    dumped from the session before the commit, so analyses left stale there used
+    to report `updated_at: null` for rows the database had already stamped.
+    """
+    # A study with several analyses: cloning one whose analyses all stay in
+    # sync never exercised the stale read, so pick the widest study ingested.
+    study_id = db.session.execute(
+        sa.select(Analysis.study_id)
+        .group_by(Analysis.study_id)
+        .order_by(sa.func.count().desc(), Analysis.study_id)
+        .limit(1)
+    ).scalar_one()
+    study = db.session.get(Study, study_id)
+    assert study is not None, "fixture should ingest a study with analyses"
+
+    post = await auth_client.post(f"/api/studies/?source_id={study.id}", data={})
+    assert post.status_code == 200
+    clone = post.json()
+
+    stored = {
+        row.id: row.updated_at
+        for row in db.session.execute(
+            sa.select(Analysis.id, Analysis.updated_at).where(
+                Analysis.study_id == clone["id"]
+            )
+        ).all()
+    }
+    assert stored, "clone should have analyses"
+
+    for analysis in clone["analyses"]:
+        if stored[analysis["id"]] is not None:
+            assert analysis["updated_at"] is not None, (
+                f"analysis {analysis['id']} reported updated_at=null while the "
+                "database had already stamped it"
+            )
 
 
 @pytest.mark.parametrize("endpoint", ["studies", "base-studies"])
