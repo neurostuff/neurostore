@@ -21,10 +21,16 @@ from neurosynth_compose.models.analysis import (
     NeurostoreStudy,
     NeurostoreStudyset,
     Project,
+    Tag,
+    project_tags,
 )
 from neurosynth_compose.models.auth import User
-from neurosynth_compose.resources.common import make_json_response
+from neurosynth_compose.resources.common import get_current_user, make_json_response
 from neurosynth_compose.resources.data_views.common import _serialize_datetime
+from neurosynth_compose.resources.data_views.tags_view import (
+    _find_tag_by_name,
+    _tag_accessible,
+)
 from neurosynth_compose.resources.project_cloning import ProjectCloneService
 from neurosynth_compose.resources.resource_services import (
     create_or_update_neurostore_study,
@@ -36,6 +42,7 @@ from neurosynth_compose.schemas import ProjectSchema  # noqa: F401
 from neurosynth_compose.schemas.analysis import get_ns_base
 
 _RAW_PROVENANCE_UNSET = object()
+_TAG_NAMES_UNSET = object()
 
 
 def _include_provenance(args):
@@ -121,6 +128,15 @@ def _project_detail_query_options(info: bool):
             NeurostoreStudy.status,
         ),
         meta_analysis_loader,
+        selectinload(Project.tags).load_only(
+            Tag.id,
+            Tag.created_at,
+            Tag.updated_at,
+            Tag.name,
+            Tag.group,
+            Tag.description,
+            Tag.official,
+        ),
     )
 
 
@@ -317,8 +333,37 @@ def _filter_project_list_provenance(raw_provenance_json):
     return filtered
 
 
+def project_tag_names(project_ids):
+    """Tag names per project, as flat rows.
+
+    The list endpoint only ever renders `tag.name`, so hydrating `Tag` objects
+    for a whole page costs ~7k function calls per request to build objects that
+    are read once and discarded. One flat query keyed by project id avoids them.
+    """
+    project_ids = [pid for pid in project_ids if pid]
+    if not project_ids:
+        return {}
+
+    rows = db.session.execute(
+        select(project_tags.c.project_id, Tag.name)
+        .join(Tag, Tag.id == project_tags.c.tag_id)
+        .where(project_tags.c.project_id.in_(project_ids))
+        .order_by(project_tags.c.project_id, Tag.name)
+    ).all()
+
+    names = {}
+    for project_id, name in rows:
+        names.setdefault(project_id, []).append(name)
+    return names
+
+
 def serialize_project(
-    record, *, info: bool, settings, raw_provenance_json=_RAW_PROVENANCE_UNSET
+    record,
+    *,
+    info: bool,
+    settings,
+    raw_provenance_json=_RAW_PROVENANCE_UNSET,
+    tag_names=_TAG_NAMES_UNSET,
 ):
     provenance = (
         getattr(record, "provenance", None)
@@ -333,6 +378,9 @@ def serialize_project(
         None if neurostore_study is None else neurostore_study.get("neurostore_id")
     )
     meta_analyses = getattr(record, "meta_analyses", None) or ()
+    if tag_names is _TAG_NAMES_UNSET:
+        tags = getattr(record, "tags", None)
+        tag_names = None if tags is None else [getattr(t, "name", None) for t in tags]
 
     output = {
         "id": record.id,
@@ -354,6 +402,13 @@ def serialize_project(
             )
             for meta_analysis in meta_analyses
         ],
+        # ProjectSchema dumps tag names, and under `info` restricts TagSchema to
+        # its info_field members -- which is `name` alone.
+        "tags": (
+            []
+            if tag_names is None
+            else [{"name": name} if info else name for name in tag_names]
+        ),
         "neurostore_study": neurostore_study,
         "neurostore_url": (
             None
@@ -371,7 +426,9 @@ def serialize_project(
     return output
 
 
-def serialize_projects(records, *, info: bool, settings, provenance_map=None):
+def serialize_projects(
+    records, *, info: bool, settings, provenance_map=None, tag_map=None
+):
     provenance_map = provenance_map or {}
     return [
         serialize_project(
@@ -379,6 +436,11 @@ def serialize_projects(records, *, info: bool, settings, provenance_map=None):
             info=info,
             settings=settings,
             raw_provenance_json=provenance_map.get(record.id, _RAW_PROVENANCE_UNSET),
+            tag_names=(
+                _TAG_NAMES_UNSET
+                if tag_map is None
+                else tag_map.get(record.id, [])
+            ),
         )
         for record in records
     ]
@@ -391,6 +453,7 @@ class ProjectsView(ObjectView, ListView):
         "neurostore_studysets": "NeurostoreStudysetsView",
         "neurostore_annotations": "NeurostoreAnnotationsView",
         "meta_analyses": "MetaAnalysesView",
+        "tags": "TagsView",
     }
     _project_put_args = {
         "sync_meta_analyses_public": fields.Boolean(load_default=False),
@@ -399,6 +462,14 @@ class ProjectsView(ObjectView, ListView):
     def __init__(self):
         super().__init__()
         self._user_args["include_provenance"] = fields.Boolean(load_default=True)
+        # `tag` selects projects carrying every named tag; `exclude_tag` drops
+        # projects carrying any of them, which is what hiding a project needs.
+        self._user_args["tag"] = fields.DelimitedList(
+            fields.String(), load_default=None
+        )
+        self._user_args["exclude_tag"] = fields.DelimitedList(
+            fields.String(), load_default=None
+        )
 
     @classmethod
     def update_or_create(
@@ -411,6 +482,10 @@ class ProjectsView(ObjectView, ListView):
         record=None,
         flush=True,
     ):
+        tags = data.get("tags")
+        if isinstance(tags, list):
+            data["tags"] = cls._normalize_tags(tags, get_current_user())
+
         neurostore_studyset_id = data.get("neurostore_studyset_id")
         if (
             neurostore_studyset_id
@@ -433,6 +508,56 @@ class ProjectsView(ObjectView, ListView):
             record=record,
             flush=flush,
         )
+
+    @staticmethod
+    def _normalize_tags(tags, current_user):
+        normalized = []
+        for tag in tags:
+            if isinstance(tag, dict):
+                tag_id = tag.get("id")
+                tag_name = tag.get("name")
+            else:
+                tag_id = tag
+                tag_name = tag
+
+            tag_record = None
+            if tag_id:
+                tag_record = (
+                    db.session.execute(select(Tag).where(Tag.id == tag_id))
+                    .scalars()
+                    .first()
+                )
+                if tag_record and not _tag_accessible(tag_record, current_user):
+                    raise_http_error(403, "tag is not accessible to this user")
+                if tag_record is None and not tag_name:
+                    raise_http_error(404, "tag not found")
+
+            if tag_record is None and tag_name:
+                tag_record = _find_tag_by_name(tag_name, current_user)
+
+            if tag_record is not None:
+                normalized.append({"id": tag_record.id})
+            elif tag_name:
+                normalized.append({"name": tag_name})
+        return normalized
+
+    def apply_filters(self, query, args):
+        query = super().apply_filters(query, args)
+
+        for name in args.get("tag") or ():
+            query = query.where(
+                Project.tags.any(func.lower(Tag.name) == func.lower(name))
+            )
+
+        excluded = [name for name in (args.get("exclude_tag") or ()) if name]
+        if excluded:
+            query = query.where(
+                ~Project.tags.any(
+                    func.lower(Tag.name).in_([name.lower() for name in excluded])
+                )
+            )
+
+        return query
 
     def load_query(self, args=None):
         args = args or {}
@@ -474,6 +599,7 @@ class ProjectsView(ObjectView, ListView):
             records,
             info=bool(args.get("info")),
             settings=request.state.settings,
+            tag_map=project_tag_names([record.id for record in records]),
         )
 
     def finalize_search(self, query, args, *, count_query=None):
@@ -490,6 +616,7 @@ class ProjectsView(ObjectView, ListView):
         rows = db.session.execute(query.offset((page - 1) * page_size).limit(page_size))
         records = rows.all()
         include_provenance = _include_provenance(args)
+        tag_map = project_tag_names([record.id for record, _ in records])
         return make_json_response(
             {
                 "metadata": {"total_count": total},
@@ -503,6 +630,7 @@ class ProjectsView(ObjectView, ListView):
                             if include_provenance
                             else None
                         ),
+                        tag_names=tag_map.get(record.id, []),
                     )
                     for record, raw_provenance_json in records
                 ],
