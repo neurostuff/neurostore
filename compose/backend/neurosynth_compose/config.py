@@ -107,6 +107,13 @@ class Config:
         "APIKEYINFO_FUNC", "neurosynth_compose.resources.auth.verify_key"
     )
 
+    # Logging. ERROR_LOG_FILE writes errors to disk; unset disables the file.
+    LOG_LEVEL = get_env_var("LOG_LEVEL", "INFO")
+    LOG_FORMAT = get_env_var("LOG_FORMAT")
+    ERROR_LOG_FILE = get_env_var("ERROR_LOG_FILE")
+    ERROR_LOG_MAX_BYTES = get_env_var("ERROR_LOG_MAX_BYTES", 10 * 1024 * 1024)
+    ERROR_LOG_BACKUP_COUNT = get_env_var("ERROR_LOG_BACKUP_COUNT", 5)
+
     # Error reporting; Sentry stays off unless a DSN is provided.
     SENTRY_DSN = get_env_var("SENTRY_DSN")
     SENTRY_COMPONENT = get_env_var("SENTRY_COMPONENT")

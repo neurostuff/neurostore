@@ -25,6 +25,8 @@ from neurostore.exceptions.handlers import (
     problem_exception_handler,
 )
 from neurostore.extensions import cache
+from neurostore.observability.logging_config import configure_logging
+from neurostore.observability.request_id import RequestIdMiddleware
 from neurostore.observability.sentry import configure_sentry
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler
@@ -168,6 +170,7 @@ def initialize_application(
 ):
     """Configure Store's process-wide database, cache, and auth services."""
     settings = load_settings() if settings is None else settings
+    configure_logging(settings)
     logger = logging.getLogger("neurostore")
 
     from neurostore.database import db
@@ -253,4 +256,7 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         settings,
         _logger,
     )
+    # outermost, so every response carries the id -- including ones produced
+    # before the app is reached
+    app = RequestIdMiddleware(app)
     return app
