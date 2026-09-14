@@ -39,7 +39,7 @@ dependencies = [
     "scipy~=1.18",
     "orjson~=3.12",
     "pgvector~=0.5",
-    "NiMARE[parquet]==0.20.0",
+    "NiMARE[parquet]==0.21.0",
     "openai~=3.13",
     "tenacity~=9.1",
 ]
