@@ -1,4 +1,4 @@
-"""Tests for Sentry error reporting (issue #1572)."""
+"""Tests for Sentry error reporting."""
 
 import neurostore.observability.sentry as sentry
 
