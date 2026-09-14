@@ -353,13 +353,13 @@ def tsquery_has_positive_term(tsquery: str) -> bool:
             i += 1
         elif char == "!":
             i = skip_negated(i + 1)
-        elif char == "&" and tsquery[i : i + 2] == "&!":
+        elif char == "&" and tsquery[i : i + 2] == "&!":  # noqa: E203
             i = skip_negated(i + 2)
         elif char in "&|":
             i += 1
         elif char == "(":
             end = skip_group(i)
-            if tsquery_has_positive_term(tsquery[i + 1 : end - 1]):
+            if tsquery_has_positive_term(tsquery[i + 1 : end - 1]):  # noqa: E203
                 return True
             i = end
         else:
