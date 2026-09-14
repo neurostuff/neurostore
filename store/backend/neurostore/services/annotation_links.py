@@ -88,7 +88,7 @@ def backfill_annotation_analyses(study_ids=None, batch_size=1000, commit=True):
 
     for start in range(0, len(mappings), batch_size):
         db.session.execute(
-            sa.insert(AnnotationAnalysis), mappings[start : start + batch_size]
+            sa.insert(AnnotationAnalysis), mappings[start : start + batch_size]  # noqa: E203
         )
         if commit:
             db.session.commit()
