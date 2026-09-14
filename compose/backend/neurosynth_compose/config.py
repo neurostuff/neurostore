@@ -107,6 +107,13 @@ class Config:
         "APIKEYINFO_FUNC", "neurosynth_compose.resources.auth.verify_key"
     )
 
+    # Error reporting; Sentry stays off unless a DSN is provided.
+    SENTRY_DSN = get_env_var("SENTRY_DSN")
+    SENTRY_COMPONENT = get_env_var("SENTRY_COMPONENT")
+    SENTRY_RELEASE = get_env_var("SENTRY_RELEASE")
+    SENTRY_TRACES_SAMPLE_RATE = get_env_var("SENTRY_TRACES_SAMPLE_RATE", "0")
+    SENTRY_PROFILES_SAMPLE_RATE = get_env_var("SENTRY_PROFILES_SAMPLE_RATE", "0")
+
 
 class ProductionConfig(Config):
     ENV = "production"

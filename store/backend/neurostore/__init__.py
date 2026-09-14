@@ -25,6 +25,7 @@ from neurostore.exceptions.handlers import (
     problem_exception_handler,
 )
 from neurostore.extensions import cache
+from neurostore.observability.sentry import configure_sentry
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler
 from neurostore.settings import load_settings
@@ -162,7 +163,9 @@ class _OrjsonModule:
         return orjson.loads(value)
 
 
-def initialize_application(settings: Mapping[str, object] | None = None):
+def initialize_application(
+    settings: Mapping[str, object] | None = None, component: str = "neurostore"
+):
     """Configure Store's process-wide database, cache, and auth services."""
     settings = load_settings() if settings is None else settings
     logger = logging.getLogger("neurostore")
@@ -171,6 +174,7 @@ def initialize_application(settings: Mapping[str, object] | None = None):
 
     db.configure(settings)
     cache.configure(settings)
+    configure_sentry(settings, component=component)
     os.environ["BEARERINFO_FUNC"] = str(settings["BEARERINFO_FUNC"])
     return settings, logger
 
@@ -194,7 +198,9 @@ def _asgi_lifespan(settings: Mapping[str, object], database):
 
 def create_asgi_app(settings: Mapping[str, object] | None = None):
     """Create the framework-neutral Connexion ASGI Store application."""
-    settings, _logger = initialize_application(settings)
+    settings, _logger = initialize_application(
+        settings, component="neurostore-api"
+    )
     disable_connexion_validation = _env_flag("CONNEXION_DISABLE_VALIDATION")
     disable_connexion_body_validation = _env_flag("CONNEXION_DISABLE_BODY_VALIDATION")
     from neurostore.database import db
