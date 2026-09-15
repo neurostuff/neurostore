@@ -86,6 +86,26 @@ export const annotationNotesToTableFormatHelper = (
     return tableFormat;
 };
 
+const valueMatchesFilter = (value: string, filter: string | undefined) => {
+    const normalizedFilter = filter?.trim().toLowerCase() ?? '';
+    if (!normalizedFilter) return true;
+    return value.toLowerCase().includes(normalizedFilter);
+};
+
+export const filterStudyAnalysesTable = (
+    studiesList: IStudyAnalysesTableFormat[],
+    studyFilter: string | undefined,
+    analysisFilter: string | undefined
+): IStudyAnalysesTableFormat[] => {
+    return studiesList
+        .filter((study) => valueMatchesFilter(study.studyName, studyFilter))
+        .map((study) => ({
+            ...study,
+            analyses: study.analyses.filter((analysis) => valueMatchesFilter(analysis.analysisName, analysisFilter)),
+        }))
+        .filter((study) => study.analyses.length > 0);
+};
+
 export const selectedReferenceDatasetIsDefaultDataset = (selectedReferenceDataset: string | undefined) => {
     if (!selectedReferenceDataset) return false;
 

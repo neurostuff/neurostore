@@ -523,6 +523,7 @@ def serialize_studyset_summary(record):
                 Analysis.study_id,
                 Analysis.id,
                 Analysis.point_count,
+                Analysis.image_count,
             )
             .select_from(Analysis)
             .where(Analysis.study_id.in_(study_ids))
@@ -534,7 +535,11 @@ def serialize_studyset_summary(record):
     analyses_by_study = {}
     for row in analysis_rows:
         analyses_by_study.setdefault(row.study_id, []).append(
-            {"id": row.id, "point_count": int(row.point_count or 0)}
+            {
+                "id": row.id,
+                "point_count": int(row.point_count or 0),
+                "image_count": int(row.image_count or 0),
+            }
         )
 
     studies_payload = []
