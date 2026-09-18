@@ -1,11 +1,6 @@
 """Application logging.
 
-Neither backend configured logging, so `logger.exception` in the error handlers
-fell through to `logging.lastResort`: unformatted, no timestamp, no logger name,
-and nothing written to disk. On production that left a 500 with no trace of what
-caused it (issue #1569).
-
-Two levels are configured, not one. ``LOG_LEVEL`` applies to this application's
+Two levels are configured, ``LOG_LEVEL`` applies to this application's
 loggers; the root logger stays at ``ROOT_LOG_LEVEL`` (WARNING by default) so
 turning our own logging up to INFO does not also turn on INFO for every library
 in the process. Records from the application loggers still reach the root
