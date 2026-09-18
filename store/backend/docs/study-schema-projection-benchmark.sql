@@ -28,7 +28,9 @@ ANALYZE pipeline_study_results;
 -- ---------------------------------------------------------------------------
 -- Populate the generated "Group" projection from the documents.
 -- ---------------------------------------------------------------------------
-TRUNCATE "Group";
+-- CASCADE because other projection tables reference Group. That is the
+-- rebuild model working as intended: the projection is disposable.
+TRUNCATE "Group" CASCADE;
 
 INSERT INTO "Group" (
   id, base_study_id, name, description,
@@ -40,7 +42,7 @@ SELECT
   psr.base_study_id,
   g ->> 'group_name',
   g ->> 'subgroup_name',
-  NULLIF(g ->> 'count', '')::int,
+  round(NULLIF(g ->> 'count', '')::numeric)::int,  -- documents hold "18.0"
   NULLIF(g ->> 'age_mean', '')::float,
   NULLIF(g ->> 'age_minimum', '')::float,
   NULLIF(g ->> 'age_maximum', '')::float,
@@ -55,18 +57,18 @@ WHERE psr.result_data ? 'groups';
 -- distinguishable from the handedness/race/ethnicity distributions that share
 -- this table. Without it these rows are indistinguishable once written.
 INSERT INTO "CategoryDistribution" (category, count, "Group_id", group_facet, base_study_id)
-SELECT 'female', NULLIF(g ->> 'female_count', '')::int,
+SELECT 'female', round(NULLIF(g ->> 'female_count', '')::numeric)::int,
        psr.id || ':' || (ord - 1)::text, 'sex_distribution', psr.base_study_id
 FROM pipeline_study_results psr
 CROSS JOIN LATERAL jsonb_array_elements(psr.result_data -> 'groups')
   WITH ORDINALITY AS t(g, ord)
 WHERE psr.result_data ? 'groups' AND g ->> 'female_count' IS NOT NULL;
 
-CREATE INDEX ix_group_age_mean ON "Group" (age_mean);
-CREATE INDEX ix_group_enrolled_count ON "Group" (enrolled_count);
-CREATE INDEX ix_group_medical_condition ON "Group" USING gin (medical_condition);
-CREATE INDEX ix_group_base_study ON "Group" (base_study_id);
-CREATE INDEX ix_catdist_facet ON "CategoryDistribution" (group_facet);
+CREATE INDEX IF NOT EXISTS ix_group_age_mean ON "Group" (age_mean);
+CREATE INDEX IF NOT EXISTS ix_group_enrolled_count ON "Group" (enrolled_count);
+CREATE INDEX IF NOT EXISTS ix_group_medical_condition ON "Group" USING gin (medical_condition);
+CREATE INDEX IF NOT EXISTS ix_group_base_study ON "Group" (base_study_id);
+CREATE INDEX IF NOT EXISTS ix_catdist_facet ON "CategoryDistribution" (group_facet);
 ANALYZE "Group";
 ANALYZE "CategoryDistribution";
 
@@ -76,7 +78,7 @@ SELECT count(*) AS group_rows,
 FROM "Group";
 
 -- ---------------------------------------------------------------------------
--- 1. One numeric filter.
+-- 1. One numeric filter. 84 ms -> 6 ms.
 -- ---------------------------------------------------------------------------
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT count(DISTINCT base_study_id) FROM pipeline_study_results
@@ -86,13 +88,13 @@ EXPLAIN (ANALYZE, BUFFERS)
 SELECT count(DISTINCT base_study_id) FROM "Group" WHERE age_mean > 60;
 
 -- ---------------------------------------------------------------------------
--- 2. Several filters, the shape a meta-analyst actually asks.
+-- 2. Several filters, the shape a meta-analyst actually asks. 94 ms -> 7 ms.
 --
--- The timing is the smaller half of the result. On the JSONB plan the planner
--- estimates the same row count whatever the filter says -- it has no statistics
--- for a path inside a document, so it falls back to a fixed fraction of the
--- table. That estimate is what feeds join planning, so the error compounds in
--- any query that is not this simple.
+-- Note the JSONB estimate: 24,448 rows against 467 actual, and *the same
+-- 24,448* as the single-filter query above. Postgres has no statistics for a
+-- path inside a document, so it is not estimating at all -- 24,448 is one third
+-- of the table, its fallback constant. Adding three conditions changed the
+-- estimate by nothing. The projection estimates 634 against 520.
 -- ---------------------------------------------------------------------------
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT count(DISTINCT base_study_id) FROM pipeline_study_results
@@ -107,9 +109,19 @@ WHERE age_mean > 25 AND age_mean < 60 AND enrolled_count >= 20
   AND medical_condition @> ARRAY['Healthy'];
 
 -- ---------------------------------------------------------------------------
--- 3. Joining the projection to the coordinate skeleton -- the query the
---    projection exists for, and the one the JSONB estimate error hurts most,
---    because a wrong row count at the top of a join picks the wrong join.
+-- 3. Joined to the coordinate skeleton. 349 ms -> 302 ms: only 1.15x, and
+--    worth recording precisely because it is the unflattering case.
+--
+--    The bad estimate does change the plan -- JSONB gets three Parallel Hash
+--    Joins off a 587,006-row estimate against 49,884 actual, the projection
+--    gets nested loops over index scans off an estimate that is close. But
+--    both have to touch ~2.1M points, and that dominates, so the better plan
+--    only buys 15%.
+--
+--    So the projection's order-of-magnitude win is on filtering, not on
+--    joining. A claim that bad estimates wreck join performance is not
+--    supported by this corpus; they change the plan, and here the change is
+--    worth 15%.
 -- ---------------------------------------------------------------------------
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT count(*)
