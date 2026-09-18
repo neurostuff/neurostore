@@ -2,6 +2,7 @@ import API from 'api/api.config';
 import { ImageReturn, PointList } from 'neurostore-typescript-sdk';
 import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import { UseQueryOptions } from '@tanstack/react-query';
+import { sortByOrder } from 'helpers/utils';
 
 const analysisQueries = {
     analyses: {
@@ -25,7 +26,7 @@ const analysisQueries = {
                     undefined,
                     true
                 );
-                return (res.data.results ?? []) as AnalysisReturnNested[];
+                return sortByOrder(res.data.results ?? []) as AnalysisReturnNested[];
             },
             enabled: !!studyId,
         }),
