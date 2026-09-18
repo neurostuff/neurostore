@@ -1,8 +1,6 @@
-import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
+import { useQueryClient } from '@tanstack/react-query';
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
-import analysisQueries from 'hooks/analyses/analysisQueries';
-import annotationQueries from 'hooks/annotations/annotationQueries';
-import type { AnnotationReturnOneOfWithNoteCollection } from 'hooks/annotations/annotationQueries.types';
+import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 import {
     useCreateAnalysis,
     useDeleteAnalysis,
@@ -11,13 +9,14 @@ import {
     useUpdateAnnotationById,
     useUpdateImage,
 } from 'hooks';
+import analysisQueries from 'hooks/analyses/analysisQueries';
+import annotationQueries from 'hooks/annotations/annotationQueries';
+import type { AnnotationReturnOneOfWithNoteCollection } from 'hooks/annotations/annotationQueries.types';
 import type { ImageRequest, NoteCollectionRequest } from 'neurostore-typescript-sdk';
 import type { NewAnnotationColumnPayload } from 'pages/StudyIBMA/components/NewAnnotationColumnDialog';
 import useEnsureWritableStudy from 'pages/StudyIBMA/hooks/useEnsureWritableStudy';
 import { useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSnackbar } from 'notistack';
 
 export type UseIbmaBoardMutationsArgs = {
     studyId: string | undefined;
@@ -36,7 +35,6 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
         invalidateOnSuccess: false,
     });
     const updateImageMutation = useUpdateImage();
-    const { enqueueSnackbar } = useSnackbar();
 
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();

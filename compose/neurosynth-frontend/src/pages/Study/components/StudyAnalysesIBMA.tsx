@@ -12,13 +12,10 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { sortByOrder } from 'helpers/utils';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
 import BrainMapDetailPanel from 'pages/StudyIBMA/components/BrainMapDetailPanel';
-import {
-    imageToBrainMapListItem,
-    sortAnalysesByOrder,
-    sortImages,
-} from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
+import { imageToBrainMapListItem, sortImages } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
 import { STUDY_ANALYSES_PANEL_HEIGHT } from 'pages/Study/components/Study.styles';
 import { useEffect, useMemo, useState } from 'react';
 import { DefaultMapTypes, IStoreAnalysis } from 'stores/study/StudyStore.helpers';
@@ -51,7 +48,7 @@ const getImagesForAnalysis = (analysis: IStoreAnalysis): ImageReturn[] =>
     sortImages(((analysis.images ?? []) as ImageReturn[]).filter((image) => Boolean(image.id)));
 
 const getOrderedImages = (analyses: IStoreAnalysis[]): ImageReturn[] =>
-    sortAnalysesByOrder(analyses).flatMap(getImagesForAnalysis);
+    sortByOrder(analyses).flatMap(getImagesForAnalysis);
 
 const imageMatchesQuery = (image: ImageReturn, normalizedQuery: string): boolean => {
     const listItem = imageToBrainMapListItem(image);
@@ -66,7 +63,7 @@ const imageMatchesQuery = (image: ImageReturn, normalizedQuery: string): boolean
 const buildAnalysisGroups = (analyses: IStoreAnalysis[], searchQuery: string): AnalysisWithImages[] => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    return sortAnalysesByOrder(analyses).flatMap((analysis) => {
+    return sortByOrder(analyses).flatMap((analysis) => {
         if (!analysis.id) return [];
 
         const sortedImages = getImagesForAnalysis(analysis);

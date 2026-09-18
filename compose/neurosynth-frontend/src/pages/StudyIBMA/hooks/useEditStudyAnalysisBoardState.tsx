@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material';
 import { createColumnHelper, getCoreRowModel, useReactTable, type ExpandedState } from '@tanstack/react-table';
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
+import { sortByOrder } from 'helpers/utils';
 import analysisQueries from 'hooks/analyses/analysisQueries';
 import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import { useGetAnalysesByStudyId, useGetAnnotationById } from 'hooks';
@@ -17,7 +18,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
-import { sortAnalysesByOrder, sortImages } from './useEditStudyAnalysisBoardState.helpers';
+import { sortImages } from './useEditStudyAnalysisBoardState.helpers';
 
 const columnHelper = createColumnHelper<AnalysisBoardRow>();
 
@@ -35,6 +36,7 @@ const useEditStudyAnalysisBoardState = () => {
     const { data: annotation, isLoading: getAnnotationIsLoading } = useGetAnnotationById(annotationId);
 
     const analyses = analysesRes ?? EMPTY_ANALYSES;
+    const sortedAnalyses = useMemo(() => sortByOrder(analyses), [analyses]);
     const uncategorized = uncategorizedRes ?? EMPTY_UNCATEGORIZED_IMAGES;
 
     const {
@@ -70,7 +72,7 @@ const useEditStudyAnalysisBoardState = () => {
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const tableData = useMemo((): AnalysisBoardRow[] => {
-        const analysisRows = analyses.map((analysis) => {
+        return sortedAnalyses.map((analysis) => {
             const id = analysis.id!;
             const note = analysisIdToNoteMap.get(id);
             const analysisNote = (note?.note || {}) as Record<string, string | boolean | number | null | undefined>;
@@ -84,14 +86,12 @@ const useEditStudyAnalysisBoardState = () => {
                 analysisAnnotation,
             };
         });
-
-        return sortAnalysesByOrder(analysisRows);
-    }, [analyses, analysisIdToNoteMap, noteKeys]);
+    }, [sortedAnalyses, analysisIdToNoteMap, noteKeys]);
 
     const tableMeta = useMemo(
         () => ({
             selectedImageId: selectedImageId ?? null,
-            analyses,
+            analyses: sortedAnalyses,
             toggleImageSelection,
             updateImage,
             createAnalysis,
@@ -103,7 +103,7 @@ const useEditStudyAnalysisBoardState = () => {
         [
             selectedImageId,
             toggleImageSelection,
-            analyses,
+            sortedAnalyses,
             updateImage,
             createAnalysis,
             addAnnotationColumn,
@@ -127,7 +127,7 @@ const useEditStudyAnalysisBoardState = () => {
                         }}
                     >
                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mr: 1 }}>
-                            Analyses ({analyses.length})
+                            Analyses ({sortedAnalyses.length})
                         </Typography>
                     </Box>
                 ),
@@ -152,7 +152,7 @@ const useEditStudyAnalysisBoardState = () => {
                 })
             ),
         ],
-        [noteKeys, removeAnnotationColumn, analyses.length]
+        [noteKeys, removeAnnotationColumn, sortedAnalyses.length]
     );
 
     const table = useReactTable({
