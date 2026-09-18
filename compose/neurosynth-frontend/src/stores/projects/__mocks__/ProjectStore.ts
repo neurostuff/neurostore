@@ -19,6 +19,12 @@ const useProjectUser = vi.fn().mockReturnValue('user-id');
 
 const useProjectName = vi.fn().mockReturnValue('project-name');
 
+const useProjectDescription = vi.fn().mockReturnValue('project-description');
+
+const useProjectNumCurationColumns = vi.fn().mockReturnValue(1);
+
+const useUpdateExtractionMetadata = vi.fn().mockReturnValue(vi.fn());
+
 const useProjectCurationColumns = vi.fn();
 
 const useProjectCurationColumn = vi.fn().mockReturnValue({ stubStudies: [] });
@@ -45,6 +51,9 @@ export {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectUser,
     useProjectName,
+    useProjectDescription,
+    useProjectNumCurationColumns,
+    useUpdateExtractionMetadata,
     useProjectCurationColumns,
     useProjectCurationColumn,
     useProjectCurationIsPrisma,

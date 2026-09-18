@@ -82,6 +82,13 @@ const useCreateStudyset = vi.fn().mockReturnValue({
     mutate: vi.fn(),
 });
 
+const useCreateAnnotation = vi.fn().mockReturnValue({
+    isPending: false,
+    isError: false,
+    mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({ id: 'annotation-id' }),
+});
+
 const useUpdateStudyset = vi.fn().mockReturnValue({
     isPending: false,
     isError: false,
@@ -171,6 +178,12 @@ const useCreateStudy = vi.fn().mockReturnValue({
     }),
 });
 
+const useIngest = vi.fn().mockReturnValue({
+    isPending: false,
+    isError: false,
+    mutateAsync: vi.fn().mockResolvedValue({ data: [] }),
+});
+
 const useUpdateAnnotationById = vi.fn().mockReturnValue({
     isPending: false,
     mutate: vi.fn(),
@@ -222,6 +235,8 @@ export {
     useCreateProject,
     useCreateStudy,
     useCreateStudyset,
+    useCreateAnnotation,
+    useIngest,
     useDeleteAnalysis,
     useDeletePoint,
     useDeleteProject,

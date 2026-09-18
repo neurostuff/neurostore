@@ -1,218 +1,64 @@
 import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
-import { getDefaultForNoteKey } from 'components/HotTables/HotTables.utils';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
-import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
-import { BaseStudyReturnInfo } from 'hooks/studies/studyQueries.types';
-import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy } from 'neurostore-typescript-sdk';
-import { useSnackbar } from 'notistack';
-import { useMemo, useState } from 'react';
+import MoveToExtractionDialogIntroductionPart1 from 'pages/Project/components/MoveToExtractionDialogIntroPart1';
+import MoveToExtractionDialogIntroductionPart2 from 'pages/Project/components/MoveToExtractionDialogIntroPart2';
+import MoveToExtractionDialogSkipExtraction from 'pages/Project/components/MoveToExtractionDialogSkipExtraction';
+import useInitExtraction from 'pages/Project/hooks/useInitExtraction';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    useProjectCurationColumn,
-    useProjectDescription,
-    useProjectExtractionAnnotationId,
-    useProjectExtractionStudysetId,
-    useProjectId,
-    useProjectName,
-    useProjectNumCurationColumns,
-    useProjectAnalysisType,
-    useUpdateExtractionMetadata,
-} from 'stores/projects/ProjectStore';
-import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
-import MoveToExtractionDialogIntroductionPart2 from './MoveToExtractionDialogIntroPart2';
-import { EAnalysisType } from 'hooks/projects/Project.types';
-import { SearchDataType } from 'pages/Study/Study.types';
+import { useProjectId } from 'stores/projects/ProjectStore';
+import { IProjectPageLocationState } from '../ProjectPage';
 
 const MoveToExtractionDialog = (props: IDialog) => {
-    const numColumns = useProjectNumCurationColumns();
-    const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const projectId = useProjectId();
-    const projectName = useProjectName();
-    const projectDescription = useProjectDescription();
-    const projectAnalysisType = useProjectAnalysisType();
-    const { mutateAsync: createStudyset } = useCreateStudyset();
-    const { mutateAsync: createAnnotation } = useCreateAnnotation();
-    const updateExtractionMetadata = useUpdateExtractionMetadata();
-    const studysetId = useProjectExtractionStudysetId();
-    const annotationId = useProjectExtractionAnnotationId();
-    const { enqueueSnackbar } = useSnackbar();
-    const { mutateAsync: asyncIngest } = useIngest();
-    const { mutateAsync: asyncUpdateStudyset } = useUpdateStudyset();
-
+    const { doExtraction, reset, progress, progressText, isError } = useInitExtraction();
     const [step, setStep] = useState(0);
-
+    const [showSkipPage, setShowSkipPage] = useState(false);
     const navigate = useNavigate();
 
-    const [isError, setIsError] = useState(false);
-    const [loadingStatus, setLoadingStatus] = useState<{
-        createdStudyset: boolean;
-        createdAnnotations: boolean;
-        ingested: boolean;
-    }>({
-        createdStudyset: false,
-        createdAnnotations: false,
-        ingested: false,
-    });
-
     const handleCloseDialog = () => {
-        setLoadingStatus({
-            createdAnnotations: false,
-            createdStudyset: false,
-            ingested: false,
-        });
+        reset();
+        setStep(0);
+        setShowSkipPage(false);
         props.onCloseDialog();
     };
 
-    const handleCreateStudyset = async (): Promise<string> => {
-        try {
-            let tempStudysetId: string;
-            if (studysetId) {
-                tempStudysetId = studysetId;
-            } else {
-                const newStudyset = await createStudyset({
-                    name: `${projectName} Studyset`,
-                    description: projectDescription,
-                });
-
-                const newStudysetId = newStudyset.data.id;
-                if (!newStudysetId) throw new Error('expected a studyset id but did not receive one');
-
-                tempStudysetId = newStudysetId;
-            }
-            setLoadingStatus((prev) => ({
-                ...prev,
-                createdStudyset: true,
-            }));
-            return tempStudysetId;
-        } catch (e) {
-            console.error(e);
-            throw new Error('there was an error creating the studyset');
-        }
-    };
-
-    const handleCreateAnnotations = async (newStudysetId: string): Promise<string> => {
-        if (!newStudysetId) throw new Error('cannot create annotations without a studyset id');
-
-        try {
-            let tempAnnotationId: string;
-            if (annotationId) {
-                tempAnnotationId = annotationId;
-            } else {
-                const newAnnotation = await createAnnotation({
-                    source: 'neurosynth',
-                    sourceId: undefined,
-                    annotation: {
-                        name: `Annotation for studyset ${newStudysetId}`,
-                        description: '',
-                        note_keys: {
-                            included: {
-                                type: EPropertyType.BOOLEAN,
-                                order: 0,
-                                default: getDefaultForNoteKey('included', EPropertyType.BOOLEAN),
-                            },
-                        },
-                        studyset: newStudysetId,
+    const handleSkipExtraction = async () => {
+        setStep(2);
+        setShowSkipPage(false);
+        const didComplete = await doExtraction(true);
+        if (didComplete) {
+            props.onCloseDialog();
+            navigate(`/projects/${projectId}/project`, {
+                state: {
+                    projectPage: {
+                        scrollToMetaAnalysisProceed: true,
                     },
-                });
-
-                const newAnnotationId = newAnnotation.id;
-                if (!newAnnotationId) throw new Error('expected a studyset id but did not receive one');
-
-                tempAnnotationId = newAnnotationId;
-            }
-            setLoadingStatus((prev) => ({
-                ...prev,
-                createdAnnotations: true,
-            }));
-            return tempAnnotationId;
-        } catch (e) {
-            console.error(e);
-            throw new Error('there was an error creating the studyset');
+                } as IProjectPageLocationState,
+            });
         }
     };
 
-    const handleIngest = async (newStudysetId: string, newAnnotationId: string) => {
-        if (!newStudysetId || !newAnnotationId) return;
-        const includedStubs = curationIncludedStudies.stubStudies;
+    const handleRequestSkipExtraction = () => {
+        setShowSkipPage(true);
+        setStep(0);
+    };
 
-        const stubsToBaseStudies: Array<
-            Pick<
-                BaseStudy,
-                'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors' | 'level'
-            >
-        > = includedStubs.map((stub) => ({
-            name: stub.title,
-            doi: stub.doi ? stub.doi : undefined,
-            pmid: stub.pmid ? stub.pmid : undefined,
-            pmcid: stub.pmcid ? stub.pmcid : undefined,
-            year: Number(stub.articleYear),
-            description: stub.abstractText,
-            publication: stub.journal,
-            authors: stub.authors,
-            level: 'group',
-        }));
-
-        try {
-            const res = await asyncIngest(stubsToBaseStudies);
-            const returnedBaseStudies = res.data as Array<BaseStudyReturnInfo>;
-
-            const studiesPayload = mapStubsToStudysetPayload(
-                includedStubs,
-                returnedBaseStudies,
-                undefined,
-                projectAnalysisType === EAnalysisType.IBMA ? SearchDataType.IMAGE : SearchDataType.COORDINATE
-            );
-
-            await asyncUpdateStudyset({
-                studysetId: newStudysetId,
-                studyset: {
-                    studies: studiesPayload,
-                },
-            });
-
-            setLoadingStatus((prev) => ({
-                ...prev,
-                ingested: true,
-            }));
-        } catch (e) {
-            console.error(e);
-            throw new Error('there was an error ingesting');
-        }
+    const handleCancelSkipExtraction = () => {
+        setShowSkipPage(false);
+        setStep(0);
     };
 
     const handleInitialize = async () => {
         setStep(2);
-
-        try {
-            const newStudysetId = await handleCreateStudyset();
-            const newAnnotationId = await handleCreateAnnotations(newStudysetId);
-
-            const updatedExtractionMetadata = {
-                studysetId: newStudysetId,
-                annotationId: newAnnotationId,
-                studyStatusList: [],
-            };
-            updateExtractionMetadata(updatedExtractionMetadata);
-
-            await handleIngest(newStudysetId, newAnnotationId);
-            handleFinalize();
-        } catch (e) {
-            console.error(e);
-            setIsError(true);
-            enqueueSnackbar('there was an error moving to extraction', { variant: 'error' });
+        const didComplete = await doExtraction(false);
+        if (didComplete) {
+            setTimeout(() => {
+                props.onCloseDialog();
+                navigate(`/projects/${projectId}/extraction`);
+            }, 1000);
         }
-    };
-
-    const handleFinalize = () => {
-        // small delay so that user can see the completed progress bar and final message
-        setTimeout(() => {
-            props.onCloseDialog();
-            navigate(`/projects/${projectId}/extraction`);
-        }, 1000);
     };
 
     const handleNavigateNext = () => {
@@ -223,24 +69,6 @@ const MoveToExtractionDialog = (props: IDialog) => {
         setStep((prev) => (prev > 0 ? prev - 1 : prev));
     };
 
-    const progress = useMemo(() => {
-        const createdStudyset = +loadingStatus.createdStudyset;
-        const createdAnnotations = +loadingStatus.createdAnnotations;
-        const ingested = +loadingStatus.ingested;
-        return (100 * (createdStudyset + createdAnnotations + ingested)) / 3;
-    }, [loadingStatus]);
-
-    const progressText = useMemo(() => {
-        const createdStudyset = +loadingStatus.createdStudyset;
-        const createdAnnotations = +loadingStatus.createdAnnotations;
-        const ingested = +loadingStatus.ingested;
-        const sum = createdStudyset + createdAnnotations + ingested;
-        if (sum === 0) return 'creating studyset...';
-        if (sum === 1) return 'creating annotations...';
-        if (sum === 2) return 'ingesting...';
-        if (sum === 3) return 'process complete';
-    }, [loadingStatus.createdAnnotations, loadingStatus.createdStudyset, loadingStatus.ingested]);
-
     return (
         <BaseDialog
             dialogTitle="Extraction Phase: Get Started"
@@ -250,8 +78,16 @@ const MoveToExtractionDialog = (props: IDialog) => {
             onCloseDialog={handleCloseDialog}
         >
             <StateHandlerComponent isLoading={false} isError={isError}>
-                {step === 0 ? (
-                    <MoveToExtractionDialogIntroductionPart1 onNext={handleNavigateNext} />
+                {showSkipPage ? (
+                    <MoveToExtractionDialogSkipExtraction
+                        onCancel={handleCancelSkipExtraction}
+                        onConfirm={handleSkipExtraction}
+                    />
+                ) : step === 0 ? (
+                    <MoveToExtractionDialogIntroductionPart1
+                        onNext={handleNavigateNext}
+                        onSkip={handleRequestSkipExtraction}
+                    />
                 ) : step === 1 ? (
                     <MoveToExtractionDialogIntroductionPart2 onPrev={handleNavigatePrev} onNext={handleInitialize} />
                 ) : (
