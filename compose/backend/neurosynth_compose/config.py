@@ -109,16 +109,17 @@ class Config:
 
     # Logging. LOG_LEVEL is this application's; ROOT_LOG_LEVEL is everything
     # else in the process. ERROR_LOG_FILE writes errors to disk; unset disables
-    # the file. Size-based rotation assumes one writer -- see ERROR_LOG_ROTATION
-    # in .env.example before raising WEB_CONCURRENCY.
+    # the file. ERROR_LOG_ROTATION defaults to one file per worker when
+    # WEB_CONCURRENCY is above 1; see .env.example for the alternatives.
     LOG_LEVEL = get_env_var("LOG_LEVEL", "INFO")
     ROOT_LOG_LEVEL = get_env_var("ROOT_LOG_LEVEL", "WARNING")
     LOG_FORMAT = get_env_var("LOG_FORMAT")
     ERROR_LOG_FILE = get_env_var("ERROR_LOG_FILE")
-    ERROR_LOG_ROTATION = get_env_var("ERROR_LOG_ROTATION", "size")
+    ERROR_LOG_ROTATION = get_env_var("ERROR_LOG_ROTATION", "auto")
     ERROR_LOG_MAX_BYTES = get_env_var("ERROR_LOG_MAX_BYTES", 10 * 1024 * 1024)
     ERROR_LOG_BACKUP_COUNT = get_env_var("ERROR_LOG_BACKUP_COUNT", 5)
-    # read by gunicorn; read here only to warn about unsafe log rotation
+    # gunicorn's worker count, read here because it decides how the error
+    # log can safely be rotated
     WEB_CONCURRENCY = get_env_var("WEB_CONCURRENCY", 1)
 
     # Error reporting; Sentry stays off unless a DSN is provided.

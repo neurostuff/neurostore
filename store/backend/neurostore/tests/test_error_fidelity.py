@@ -3,6 +3,7 @@
 import json
 import logging
 import logging.handlers
+import os
 import re
 
 import connexion
@@ -161,9 +162,66 @@ def test_external_rotation_uses_a_reopening_handler(tmp_path):
     assert [type(h) for h in handlers] == [logging.handlers.WatchedFileHandler]
 
 
-def test_size_rotation_warns_when_several_workers_share_the_file(tmp_path, capsys):
+def test_several_workers_get_a_file_each_by_default(tmp_path):
+    """Production runs several workers; one rotating file would lose records."""
     error_log = tmp_path / "errors.log"
-    logging_config.configure_logging(
+
+    written = logging_config.configure_logging(
+        {"ERROR_LOG_FILE": str(error_log), "WEB_CONCURRENCY": "4"}
+    )
+
+    assert written == tmp_path / f"errors.{os.getpid()}.log"
+    logging.getLogger("test").error("from this worker")
+    _flush_handlers()
+    assert "from this worker" in written.read_text()
+    # the configured path is left alone, so nothing half-writes to it
+    assert not error_log.exists()
+
+
+def test_a_single_worker_keeps_the_configured_path(tmp_path):
+    error_log = tmp_path / "errors.log"
+
+    written = logging_config.configure_logging(
+        {"ERROR_LOG_FILE": str(error_log), "WEB_CONCURRENCY": "1"}
+    )
+
+    assert written == error_log
+
+
+def test_workers_do_not_share_a_rotating_file(tmp_path):
+    """The rotation race, run for real: two writers, a file that rolls over."""
+    error_log = tmp_path / "errors.log"
+    settings = {
+        "ERROR_LOG_FILE": str(error_log),
+        "WEB_CONCURRENCY": "2",
+        "ERROR_LOG_MAX_BYTES": "2000",
+        "ERROR_LOG_BACKUP_COUNT": "2",
+    }
+    written = logging_config.configure_logging(settings)
+
+    # a second process would resolve a different name, so its rotations cannot
+    # rename this one's file out from under it
+    other = logging_config.error_log_path_for(settings, pid=os.getpid() + 1)
+    assert other != written
+
+    for i in range(200):
+        logging.getLogger("test").error("record %s: %s", i, "x" * 100)
+    _flush_handlers()
+
+    # rotation happened, and the surviving files are this process's alone
+    rotated = sorted(p.name for p in tmp_path.iterdir())
+    assert written.name in rotated
+    assert f"{written.name}.1" in rotated
+    assert all(str(os.getpid()) in name for name in rotated)
+
+
+def test_size_rotation_with_several_workers_is_honoured_but_warned_about(
+    tmp_path, capsys
+):
+    """An explicit setting wins; the cost of this one gets said out loud."""
+    error_log = tmp_path / "errors.log"
+
+    written = logging_config.configure_logging(
         {
             "ERROR_LOG_FILE": str(error_log),
             "ERROR_LOG_ROTATION": "size",
@@ -171,7 +229,8 @@ def test_size_rotation_warns_when_several_workers_share_the_file(tmp_path, capsy
         }
     )
 
-    assert "not safe across 4 workers" in capsys.readouterr().err
+    assert written == error_log
+    assert "they share one file" in capsys.readouterr().err
 
 
 def test_records_without_a_request_id_still_format(tmp_path):
