@@ -37,10 +37,14 @@ def _clean_logging():
         if isinstance(logger, logging.Logger)
     }
 
+    handlers = list(root.handlers)
+
     logging_config.reset_logging_for_tests()
     yield
     logging_config.reset_logging_for_tests()
 
+    # a test may apply a logging config of its own; put the process back
+    root.handlers[:] = handlers
     root.setLevel(root_level)
     for name, level in levels.items():
         logging.getLogger(name).setLevel(level)
@@ -316,3 +320,64 @@ async def test_a_500_is_traceable_from_the_client_to_the_error_file(tmp_path):
     assert f"[{request_id}]" in logged
     assert "Traceback (most recent call last)" in logged
     assert "RuntimeError: asgi runtime failure" in logged
+
+
+# what alembic writes into migrations/alembic.ini
+ALEMBIC_STYLE_INI = """\
+[loggers]
+keys = root
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARNING
+handlers = console
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+"""
+
+
+def _alembic_ini(tmp_path):
+    path = tmp_path / "alembic.ini"
+    path.write_text(ALEMBIC_STYLE_INI)
+    return str(path)
+
+
+def test_migrations_leave_configured_logging_alone(tmp_path):
+    """A migration must not silence the process it runs inside.
+
+    ``fileConfig`` replaces the root handlers and disables every logger that
+    already exists. The disabled loggers keep accepting calls, so the symptom
+    is an error log that simply stops being written.
+    """
+    error_log = tmp_path / "errors.log"
+    logging_config.configure_logging({"ERROR_LOG_FILE": str(error_log)})
+    app_logger = logging.getLogger("neurosynth_compose.resources.errors")
+
+    assert logging_config.configure_migration_logging(_alembic_ini(tmp_path)) is False
+
+    assert not app_logger.disabled
+    app_logger.error("after the migration", extra={"request_id": "still-here"})
+    _flush_handlers()
+    assert "still-here" in error_log.read_text()
+
+
+def test_migrations_configure_logging_when_nothing_else_has(tmp_path):
+    """`alembic upgrade` on its own still gets the output the ini asks for."""
+    app_logger = logging.getLogger("neurosynth_compose.resources.errors")
+
+    assert logging_config.configure_migration_logging(_alembic_ini(tmp_path)) is True
+
+    # and even then it does not disable the loggers importing the models made
+    assert not app_logger.disabled

@@ -16,6 +16,7 @@ unwritable path is warned about and replaced with the default.
 """
 
 import logging
+import logging.config
 import logging.handlers
 from pathlib import Path
 
@@ -181,6 +182,26 @@ def configure_logging(settings, app_loggers=(), force=False):
     _configured = True
     _error_log_path = error_log_path
     return error_log_path
+
+
+def is_configured():
+    """Whether this process's logging is already ours."""
+    return _configured
+
+
+def configure_migration_logging(config_file):
+    """Apply Alembic's logging config, unless this process already has one.
+
+    ``fileConfig`` replaces the root handlers and, left to its defaults,
+    disables every logger that already exists. Running a migration inside a
+    process that has configured its own logging would therefore silence the
+    application and its error log -- and silently, since the loggers still
+    accept calls. Returns whether the file was applied.
+    """
+    if not config_file or is_configured():
+        return False
+    logging.config.fileConfig(config_file, disable_existing_loggers=False)
+    return True
 
 
 def resolve_error_log_path(settings):
