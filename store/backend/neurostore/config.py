@@ -110,6 +110,21 @@ class Config(object):
     )
     PROPAGATE_EXCEPTIONS = True
 
+    # Logging. LOG_LEVEL is this application's; ROOT_LOG_LEVEL is everything
+    # else in the process. ERROR_LOG_FILE writes errors to disk; unset disables
+    # the file. ERROR_LOG_ROTATION defaults to one file per worker when
+    # WEB_CONCURRENCY is above 1; see .env.example for the alternatives.
+    LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+    ROOT_LOG_LEVEL = os.environ.get("ROOT_LOG_LEVEL", "WARNING")
+    LOG_FORMAT = os.environ.get("LOG_FORMAT")
+    ERROR_LOG_FILE = os.environ.get("ERROR_LOG_FILE")
+    ERROR_LOG_ROTATION = os.environ.get("ERROR_LOG_ROTATION", "auto")
+    ERROR_LOG_MAX_BYTES = os.environ.get("ERROR_LOG_MAX_BYTES", 5 * 1024 * 1024)
+    ERROR_LOG_BACKUP_COUNT = os.environ.get("ERROR_LOG_BACKUP_COUNT", 3)
+    # gunicorn's worker count, read here because it decides how the error
+    # log can safely be rotated
+    WEB_CONCURRENCY = os.environ.get("WEB_CONCURRENCY", 1)
+
     # Error reporting; Sentry stays off unless a DSN is provided.
     SENTRY_DSN = os.environ.get("SENTRY_DSN")
     SENTRY_COMPONENT = os.environ.get("SENTRY_COMPONENT")

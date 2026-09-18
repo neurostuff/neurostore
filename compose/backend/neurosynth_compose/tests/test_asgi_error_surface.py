@@ -87,3 +87,37 @@ async def test_admin_login_form_uses_https(asgi_error_client):
 
     assert response.status_code == 200
     assert 'action="https://testserver/admin/login"' in response.text
+
+
+async def test_error_responses_carry_a_correlation_id(asgi_error_client):
+    """A failing request must be traceable from the client to the server log."""
+    response = await asgi_error_client.get("/api/not-a-real-route")
+
+    assert response.status_code == 404
+    request_id = response.headers.get("X-Request-ID")
+    assert request_id
+    # the id in the body is the one the server logged, not a fresh one
+    assert response.json()["request_id"] == request_id
+    assert response.json()["timestamp"]
+
+
+async def test_request_id_is_echoed_when_the_caller_supplies_one(asgi_error_client):
+    response = await asgi_error_client.get(
+        "/api/not-a-real-route",
+        headers={"X-Request-ID": "client-supplied-id"},
+    )
+
+    assert response.status_code == 404
+    assert response.headers.get("X-Request-ID") == "client-supplied-id"
+    assert response.json()["request_id"] == "client-supplied-id"
+
+
+async def test_correlation_id_is_readable_cross_origin(asgi_error_client):
+    """A browser can only read the id if CORS exposes the header."""
+    response = await asgi_error_client.get(
+        "/api/not-a-real-route",
+        headers={"Origin": "https://client.example"},
+    )
+
+    exposed = response.headers["Access-Control-Expose-Headers"]
+    assert "X-Request-ID" in exposed
