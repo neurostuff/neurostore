@@ -619,7 +619,14 @@ describe(PAGE_NAME, () => {
                     });
                 });
             cy.contains("I couldn't find coordinates for this study").click();
-            cy.contains('Coordinates could not be found for this study.').should('be.visible');
+            cy.contains('I could not find coordinates for this study.').should('be.visible');
+            cy.contains(
+                'This option is for cases where the researcher cannot find coordinates in the original source text of the study and wants to remove it from the extraction phase.'
+            ).should('be.visible');
+            cy.contains(
+                'This study will be removed from the extraction phase, and will be moved back to "Unreviewed" in the curation phase.'
+            ).should('be.visible');
+            cy.contains('It will be excluded with the label: Insufficient Details').should('be.visible');
             cy.contains('button', 'Continue').click();
             cy.wait('@updateStudyset');
             cy.get('@updateStudyset')
