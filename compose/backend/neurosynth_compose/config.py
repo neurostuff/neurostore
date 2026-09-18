@@ -107,12 +107,19 @@ class Config:
         "APIKEYINFO_FUNC", "neurosynth_compose.resources.auth.verify_key"
     )
 
-    # Logging. ERROR_LOG_FILE writes errors to disk; unset disables the file.
+    # Logging. LOG_LEVEL is this application's; ROOT_LOG_LEVEL is everything
+    # else in the process. ERROR_LOG_FILE writes errors to disk; unset disables
+    # the file. Size-based rotation assumes one writer -- see ERROR_LOG_ROTATION
+    # in .env.example before raising WEB_CONCURRENCY.
     LOG_LEVEL = get_env_var("LOG_LEVEL", "INFO")
+    ROOT_LOG_LEVEL = get_env_var("ROOT_LOG_LEVEL", "WARNING")
     LOG_FORMAT = get_env_var("LOG_FORMAT")
     ERROR_LOG_FILE = get_env_var("ERROR_LOG_FILE")
+    ERROR_LOG_ROTATION = get_env_var("ERROR_LOG_ROTATION", "size")
     ERROR_LOG_MAX_BYTES = get_env_var("ERROR_LOG_MAX_BYTES", 10 * 1024 * 1024)
     ERROR_LOG_BACKUP_COUNT = get_env_var("ERROR_LOG_BACKUP_COUNT", 5)
+    # read by gunicorn; read here only to warn about unsafe log rotation
+    WEB_CONCURRENCY = get_env_var("WEB_CONCURRENCY", 1)
 
     # Error reporting; Sentry stays off unless a DSN is provided.
     SENTRY_DSN = get_env_var("SENTRY_DSN")

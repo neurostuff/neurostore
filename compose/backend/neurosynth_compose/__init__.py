@@ -17,7 +17,10 @@ from starlette.middleware.cors import CORSMiddleware
 from neurosynth_compose.admin import init_admin
 from neurosynth_compose.database import init_db
 from neurosynth_compose.observability.logging_config import configure_logging
-from neurosynth_compose.observability.request_id import RequestIdMiddleware
+from neurosynth_compose.observability.request_id import (
+    REQUEST_ID_HEADER_NAME,
+    RequestIdMiddleware,
+)
 from neurosynth_compose.observability.sentry import configure_sentry
 from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
 from neurosynth_compose.resources.errors import (
@@ -89,7 +92,8 @@ def initialize_application(
 ):
     """Configure Compose's process-wide database and auth services."""
     settings = load_settings() if settings is None else settings
-    configure_logging(settings)
+    # LOG_LEVEL is ours to spend; libraries stay at ROOT_LOG_LEVEL
+    configure_logging(settings, app_loggers=("neurosynth_compose",))
     logger = logging.getLogger("neurosynth_compose")
 
     init_db(settings)
@@ -133,6 +137,9 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # without this a browser cannot read the correlation id off a failed
+        # cross-origin request, which is most of the point of returning it
+        expose_headers=[REQUEST_ID_HEADER_NAME],
     )
     connexion_app.add_error_handler(OAuthProblem, asgi_oauth_problem_handler)
     connexion_app.add_error_handler(ProblemException, problem_exception_handler)
@@ -166,7 +173,8 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         settings,
         _logger,
     )
-    # outermost, so every response carries the id -- including ones produced
-    # before the app is reached
+    # outermost, so the id is bound before any other middleware runs and every
+    # response they produce carries it. A failure above this point is the
+    # server's own bare 500, which no application code can label.
     app = RequestIdMiddleware(app)
     return app

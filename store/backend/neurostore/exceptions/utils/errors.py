@@ -1,7 +1,8 @@
-import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+
+from neurostore.observability.request_id import current_request_id, new_request_id
 
 
 @dataclass
@@ -33,7 +34,11 @@ class ErrorResponse:
                 datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             )
         if not self.request_id:
-            self.request_id = str(uuid.uuid4())[:8]
+            # The id of the request being served, so a response built here
+            # instead of by an error handler is still traceable. A response
+            # built outside a request gets a fresh id of the same shape rather
+            # than an empty required field.
+            self.request_id = current_request_id() or new_request_id()
 
     def to_dict(self) -> Dict[str, Any]:
         result = asdict(self)

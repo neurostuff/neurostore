@@ -329,3 +329,13 @@ async def test_request_id_is_echoed_when_the_caller_supplies_one(
     assert result.status_code == 404
     assert result.headers.get("X-Request-ID") == "client-supplied-id"
     assert result.json()["request_id"] == "client-supplied-id"
+
+
+async def test_correlation_id_is_readable_cross_origin(auth_client, session):
+    """A browser can only read the id if CORS exposes the header."""
+    result = await auth_client.get(
+        "/api/base-studies/does-not-exist",
+        headers={"Origin": "https://client.example"},
+    )
+
+    assert "X-Request-ID" in result.headers["Access-Control-Expose-Headers"]

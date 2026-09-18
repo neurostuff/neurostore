@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import traceback
 from datetime import datetime, timezone
 
 import anyio
@@ -15,6 +14,7 @@ from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 from neurostore.observability.request_id import (
     REQUEST_ID_HEADER_NAME,
     get_request_id,
+    new_request_id,
 )
 from neurostore.observability.sentry import capture_exception
 
@@ -36,13 +36,29 @@ def _json_response(
     )
 
 
+def _setting(request, name, default=None):
+    """Read a process setting off the request, if one was attached to it."""
+    settings = getattr(getattr(request, "state", None), "settings", None)
+    if settings is None:
+        scope = getattr(request, "scope", None)
+        scope_state = scope.get("state") if isinstance(scope, dict) else None
+        if isinstance(scope_state, dict):
+            settings = scope_state.get("settings")
+    if settings is None:
+        return default
+    return settings.get(name, default)
+
+
 def _log_error_response(request, status: int, title: str, detail: str, exc=None):
     """Record every request that ends in an error, keyed by its request id.
 
     Server errors carry the traceback; client errors are a single warning line
-    so a 4xx storm stays readable.
+    so a 4xx storm stays readable. The id returned is the one the client is
+    handed, so it is never a placeholder: outside a request -- a direct handler
+    call in a test, say -- a fresh one is minted and logged with this line, and
+    the record stays self-consistent.
     """
-    request_id = get_request_id(request) or "-"
+    request_id = get_request_id(request) or new_request_id()
     url = getattr(request, "url", None)
     logger.log(
         logging.ERROR if status >= 500 else logging.WARNING,
@@ -157,13 +173,19 @@ async def general_exception_handler(request: Request, exc: Exception):
 
     internal = InternalServerError()
     payload = internal.to_payload()
+    # What went wrong goes to the log for everyone and to the client only on a
+    # development deployment. Gating this on the log level, as it used to be,
+    # would mean that raising verbosity to debug a production incident also
+    # started returning internal exception text -- table names, paths,
+    # unpublished identifiers -- to callers. (The gate is ENV rather than
+    # DEBUG because no config class defines DEBUG; it is only ever read with a
+    # False default.)
     payload["detail"] = (
-        str(exc) if logger.isEnabledFor(logging.DEBUG) else internal.detail
+        str(exc) if _setting(request, "ENV") == "development" else internal.detail
     )
     payload["request_id"] = _log_error_response(
         request, internal.status_code, internal.title, str(exc), exc=exc
     )
-    logger.debug(traceback.format_exc())
     # Connexion handles Exception itself, so Sentry's ASGI integration never
     # sees this; report it here instead.
     capture_exception(exc, request=request)

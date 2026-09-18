@@ -10,6 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from neurosynth_compose.observability.request_id import (
     REQUEST_ID_HEADER_NAME,
     get_request_id,
+    new_request_id,
 )
 from neurosynth_compose.observability.sentry import capture_exception
 
@@ -24,9 +25,12 @@ def _log_error_response(request, status: int, title: str, detail: str, exc=None)
     """Record every request that ends in an error, keyed by its request id.
 
     Server errors carry the traceback; client errors are a single warning line
-    so a 4xx storm stays readable.
+    so a 4xx storm stays readable. The id returned is the one the client is
+    handed, so it is never a placeholder: outside a request -- a direct handler
+    call in a test, say -- a fresh one is minted and logged with this line, and
+    the record stays self-consistent.
     """
-    request_id = get_request_id(request) or "-"
+    request_id = get_request_id(request) or new_request_id()
     url = getattr(request, "url", None)
     logger.log(
         logging.ERROR if status >= 500 else logging.WARNING,
