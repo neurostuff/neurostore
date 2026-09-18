@@ -1066,6 +1066,243 @@ class PipelineEmbedding(db.Model):
     embedding = db.Column(VectorType(), nullable=False)
 
 
+# ---------------------------------------------------------------------------
+# study_schema extraction: the truth layer
+#
+# Documents and claims, written by ingest and read by review. Not the query
+# surface -- see store/backend/docs/study-schema-ingestion-design.md, which
+# these implement. Nothing here replaces the coordinate tables; an extraction
+# hangs off the studies/analyses/points skeleton rather than duplicating it.
+# ---------------------------------------------------------------------------
+
+
+class PipelineAnalysisResult(BaseMixin, db.Model):
+    """One extraction run's payload for one analysis.
+
+    The analysis-level counterpart to PipelineStudyResult. Coordinates and the
+    LLM payload change on different schedules -- coordinates come from the
+    table parse and move rarely, the payload changes every run -- so one
+    durable coordinate skeleton carries N versioned payloads.
+    """
+
+    __tablename__ = "pipeline_analysis_results"
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "config_id", "source_table_analysis", name="uq_par__config_source_analysis"
+        ),
+        sa.Index(
+            "ix_par__analysis_type",
+            sa.text("(result_data -> 'analysis_type')"),
+            postgresql_using="gin",
+        ),
+    )
+
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
+    )
+    base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    # Nullable because an extraction can describe an analysis whose coordinates
+    # were never parsed. It must not be *silently* null: the ingester records
+    # status FAILED when source_table_analysis does not resolve, because a
+    # payload quietly detached from its coordinates is the worst failure here.
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    source_table_analysis = db.Column(db.String, index=True)
+    result_data = db.Column(JSONB)
+    status = db.Column(STATUS_ENUM)
+    date_executed = db.Column(db.DateTime(timezone=True))
+
+    config = relationship(
+        "PipelineConfig",
+        backref=backref("analysis_results", cascade_backrefs=False, passive_deletes=True),
+        cascade_backrefs=False,
+    )
+
+
+class StudyEntity(BaseMixin, db.Model):
+    """Durable identity for one schema entity within one base study.
+
+    Positions and per-run local_ids are reminted by every extraction, so a
+    reviewer's judgement cannot hang off them. This is the foreign key claims
+    point at instead.
+    """
+
+    __tablename__ = "study_entities"
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "base_study_id", "entity_class", "natural_key", name="uq_study_entity__natural_key"
+        ),
+    )
+
+    base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True
+    )
+    entity_class = db.Column(db.String, index=True)
+    #: name; '<table id>#<ordinal>' for Analysis; '' for Study.
+    natural_key = db.Column(db.String)
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True
+    )
+    table_id = db.Column(
+        db.Text, db.ForeignKey("tables.id", ondelete="SET NULL"), nullable=True
+    )
+    first_seen_config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
+    last_seen_config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
+
+
+class StudyEntityAlias(db.Model):
+    """A superseded natural key for an entity the pipeline re-identified.
+
+    No user-facing writer: users cannot rename or merge entities. This exists
+    for the case the pipeline creates itself, where a re-parsed table shifts an
+    ordinal and the same analysis acquires a new key.
+    """
+
+    __tablename__ = "study_entity_aliases"
+
+    entity_id = db.Column(
+        db.Text,
+        db.ForeignKey("study_entities.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    entity_class = db.Column(db.String, primary_key=True)
+    natural_key = db.Column(db.String, primary_key=True)
+    #: 'reordinal' | 'renamed_by_extractor'
+    reason = db.Column(db.String)
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
+
+
+class ExtractionEntityLink(db.Model):
+    """One run's local_id for an entity.
+
+    What makes a record's internal references resolvable to durable entities
+    rather than only within the one document that minted them.
+    """
+
+    __tablename__ = "extraction_entity_links"
+
+    config_id = db.Column(
+        db.Text,
+        db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    local_id = db.Column(db.String, primary_key=True)
+    entity_id = db.Column(
+        db.Text, db.ForeignKey("study_entities.id", ondelete="CASCADE"), index=True
+    )
+
+
+class FieldClaim(BaseMixin, db.Model):
+    """One value a field has been given, by a run or by a person.
+
+    Not a correction against a record: a correction is one more option on a
+    field, the same kind of thing an extraction produces, so machines and
+    people write here on equal terms. Keyed by value rather than by run, which
+    is what makes carry-forward across re-extraction free.
+    """
+
+    __tablename__ = "field_claims"
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "entity_id", "field_path", "value_hash", name="uq_field_claim__value"
+        ),
+        sa.Index("ix_field_claims_entity_field", "entity_id", "field_path"),
+    )
+
+    entity_id = db.Column(
+        db.Text, db.ForeignKey("study_entities.id", ondelete="CASCADE"), index=True
+    )
+    #: entity-relative and key-predicated, e.g. 'terms[name=IC25].local_id'
+    field_path = db.Column(db.String)
+    schema_version = db.Column(db.String)
+
+    value = db.Column(JSONB, nullable=True)
+    #: 'extracted' | 'not_reported'
+    extraction_status = db.Column(db.String)
+    #: 'reported' | 'generated'
+    value_source = db.Column(db.String)
+    value_hash = db.Column(db.String, index=True)
+
+    #: 'extraction' | 'user'
+    origin = db.Column(db.String)
+    origin_user_id = db.Column(
+        db.Text, db.ForeignKey("users.external_id"), nullable=True, index=True
+    )
+
+
+class FieldClaimRun(db.Model):
+    """Which runs produced a claim.
+
+    Separate from the claim because two runs agreeing produce one claim, not
+    two -- which is what makes independent model agreement countable beside
+    human agreement.
+    """
+
+    __tablename__ = "field_claim_runs"
+
+    claim_id = db.Column(
+        db.Text, db.ForeignKey("field_claims.id", ondelete="CASCADE"), primary_key=True
+    )
+    config_id = db.Column(
+        db.Text,
+        db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+
+class FieldClaimEvidence(BaseMixin, db.Model):
+    """The passage supporting one claim.
+
+    Hangs off the claim rather than the field, because two claims for one field
+    are supported by different sentences.
+    """
+
+    __tablename__ = "field_claim_evidence"
+
+    claim_id = db.Column(
+        db.Text, db.ForeignKey("field_claims.id", ondelete="CASCADE"), index=True
+    )
+    #: present | not_found | not_applicable
+    status = db.Column(db.String)
+    #: EvidenceSource, plus 'user'
+    source = db.Column(db.String)
+    #: [{text, start_char, end_char}]; text == fulltext[start_char:end_char]
+    spans = db.Column(JSONB)
+
+    origin = db.Column(db.String)
+    origin_user_id = db.Column(
+        db.Text, db.ForeignKey("users.external_id"), nullable=True
+    )
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
+
+
+class FieldVote(BaseMixin, db.Model):
+    """One person's verdict on one claim."""
+
+    __tablename__ = "field_votes"
+    __table_args__ = (
+        sa.UniqueConstraint("claim_id", "user_id", name="uq_field_vote__claim_user"),
+    )
+
+    claim_id = db.Column(
+        db.Text, db.ForeignKey("field_claims.id", ondelete="CASCADE"), index=True
+    )
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    #: ns-validate's FIELD_VERDICTS: correct | wrong_value | wrong_evidence |
+    #: wrong_both | should_be_not_reported | missed_value | uncertain
+    verdict = db.Column(db.String)
+    why = db.Column(db.Text, nullable=True)
+
+
 from neurostore.models import point_count_listeners  # noqa E402
 
 del point_count_listeners
