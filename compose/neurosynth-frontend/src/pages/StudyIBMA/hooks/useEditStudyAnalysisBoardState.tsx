@@ -36,6 +36,7 @@ const useEditStudyAnalysisBoardState = () => {
     const { data: annotation, isLoading: getAnnotationIsLoading } = useGetAnnotationById(annotationId);
 
     const analyses = analysesRes ?? EMPTY_ANALYSES;
+    const sortedAnalyses = useMemo(() => sortByOrder(analyses), [analyses]);
     const uncategorized = uncategorizedRes ?? EMPTY_UNCATEGORIZED_IMAGES;
 
     const {
@@ -71,8 +72,7 @@ const useEditStudyAnalysisBoardState = () => {
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const tableData = useMemo((): AnalysisBoardRow[] => {
-        // already sorted by order in the query
-        return analyses.map((analysis) => {
+        return sortedAnalyses.map((analysis) => {
             const id = analysis.id!;
             const note = analysisIdToNoteMap.get(id);
             const analysisNote = (note?.note || {}) as Record<string, string | boolean | number | null | undefined>;
@@ -86,12 +86,12 @@ const useEditStudyAnalysisBoardState = () => {
                 analysisAnnotation,
             };
         });
-    }, [analyses, analysisIdToNoteMap, noteKeys]);
+    }, [sortedAnalyses, analysisIdToNoteMap, noteKeys]);
 
     const tableMeta = useMemo(
         () => ({
             selectedImageId: selectedImageId ?? null,
-            analyses,
+            analyses: sortedAnalyses,
             toggleImageSelection,
             updateImage,
             createAnalysis,
@@ -103,7 +103,7 @@ const useEditStudyAnalysisBoardState = () => {
         [
             selectedImageId,
             toggleImageSelection,
-            analyses,
+            sortedAnalyses,
             updateImage,
             createAnalysis,
             addAnnotationColumn,
@@ -127,7 +127,7 @@ const useEditStudyAnalysisBoardState = () => {
                         }}
                     >
                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mr: 1 }}>
-                            Analyses ({analyses.length})
+                            Analyses ({sortedAnalyses.length})
                         </Typography>
                     </Box>
                 ),
@@ -152,7 +152,7 @@ const useEditStudyAnalysisBoardState = () => {
                 })
             ),
         ],
-        [noteKeys, removeAnnotationColumn, analyses.length]
+        [noteKeys, removeAnnotationColumn, sortedAnalyses.length]
     );
 
     const table = useReactTable({

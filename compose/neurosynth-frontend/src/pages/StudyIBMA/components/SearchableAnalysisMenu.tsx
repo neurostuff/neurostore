@@ -9,7 +9,7 @@ export type SearchableAnalysisMenuProps = {
     onClose: () => void;
     analyses: AnalysisReturnNested[];
     onSelectAnalysis: (analysisId: string) => void;
-    /** When set, that analysis is labeled "(current analysis)" and selecting it closes the menu without calling onSelectAnalysis. */
+    /** When set, that analysis is marked selected and choosing it closes the menu without calling onSelectAnalysis. */
     currentAnalysisId?: string;
 };
 

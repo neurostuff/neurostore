@@ -1,8 +1,7 @@
-import API from 'api/api.config';
-import { ImageReturn, PointList } from 'neurostore-typescript-sdk';
-import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import { UseQueryOptions } from '@tanstack/react-query';
-import { sortByOrder } from 'helpers/utils';
+import API from 'api/api.config';
+import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
+import { ImageReturn, PointList } from 'neurostore-typescript-sdk';
 
 const analysisQueries = {
     analyses: {
@@ -17,16 +16,16 @@ const analysisQueries = {
             queryFn: async () => {
                 const res = await API.NeurostoreServices.AnalysesService.analysesGet(
                     undefined,
+                    'order',
                     undefined,
-                    undefined,
-                    undefined,
+                    false,
                     undefined,
                     false,
                     studyId as string,
                     undefined,
                     true
                 );
-                return sortByOrder(res.data.results ?? []) as AnalysisReturnNested[];
+                return (res.data.results ?? []) as AnalysisReturnNested[];
             },
             enabled: !!studyId,
         }),

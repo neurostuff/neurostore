@@ -123,7 +123,7 @@ describe('useEditStudyAnalysisBoardState', () => {
         expect(tableMeta?.addAnnotationColumn).toBe(mutations.addAnnotationColumn);
         expect(tableMeta?.updateAnnotationCell).toBe(mutations.updateAnnotationCell);
         expect(tableMeta?.updateImage).toBe(mutations.updateImage);
-        expect(tableMeta?.analyses).toEqual(analyses);
+        expect(tableMeta?.analyses?.map((analysis) => analysis.id)).toEqual(['analysis-1', 'analysis-2']);
     });
 
     it('toggles selectedImageId through table meta', () => {
