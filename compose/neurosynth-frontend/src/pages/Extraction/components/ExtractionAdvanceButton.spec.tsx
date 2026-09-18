@@ -101,7 +101,7 @@ describe('ExtractionAdvanceButton', () => {
         expect(getByText('There are still studies that have not been marked as completed')).toBeInTheDocument();
         expect(
             getByText(
-                'You can automatically mark all studies as completed by clicking the button "Mark all as complete".'
+                'Alternatively, you can automatically mark all studies as completed by clicking the button "Mark all as complete".'
             )
         ).toBeInTheDocument();
     });
