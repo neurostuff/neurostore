@@ -119,8 +119,8 @@ class Config(object):
     LOG_FORMAT = os.environ.get("LOG_FORMAT")
     ERROR_LOG_FILE = os.environ.get("ERROR_LOG_FILE")
     ERROR_LOG_ROTATION = os.environ.get("ERROR_LOG_ROTATION", "auto")
-    ERROR_LOG_MAX_BYTES = os.environ.get("ERROR_LOG_MAX_BYTES", 10 * 1024 * 1024)
-    ERROR_LOG_BACKUP_COUNT = os.environ.get("ERROR_LOG_BACKUP_COUNT", 5)
+    ERROR_LOG_MAX_BYTES = os.environ.get("ERROR_LOG_MAX_BYTES", 5 * 1024 * 1024)
+    ERROR_LOG_BACKUP_COUNT = os.environ.get("ERROR_LOG_BACKUP_COUNT", 3)
     # gunicorn's worker count, read here because it decides how the error
     # log can safely be rotated
     WEB_CONCURRENCY = os.environ.get("WEB_CONCURRENCY", 1)

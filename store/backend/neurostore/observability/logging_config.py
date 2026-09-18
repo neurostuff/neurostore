@@ -26,8 +26,8 @@ from pathlib import Path
 from .request_id import current_request_id
 
 DEFAULT_FORMAT = "%(asctime)s %(levelname)s %(name)s [%(request_id)s] %(message)s"
-DEFAULT_MAX_BYTES = 10 * 1024 * 1024
-DEFAULT_BACKUP_COUNT = 5
+DEFAULT_MAX_BYTES = 5 * 1024 * 1024
+DEFAULT_BACKUP_COUNT = 3
 
 #: ``per-process`` when this deployment runs more than one worker, else
 #: ``size``. The default, because it is right in both shapes.
