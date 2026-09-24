@@ -1,6 +1,7 @@
+import { sortByOrder } from 'helpers/utils';
 import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
-import { sortAnalysesByOrder, sortImages } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
+import { sortImages } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
 
 export type EnsureWriteableStudySnapshot = {
     studyId: string;
@@ -28,7 +29,7 @@ export const buildStudySnapshot = (
     analyses: AnalysisReturnNested[],
     uncategorizedImages: ImageReturn[]
 ): EnsureWriteableStudySnapshot => {
-    const sortedAnalyses = sortAnalysesByOrder(analyses);
+    const sortedAnalyses = sortByOrder(analyses);
     const analysisIdToImageIdsMap: Record<string, string[]> = {};
 
     const analysisIds = sortedAnalyses.map((analysis) => {

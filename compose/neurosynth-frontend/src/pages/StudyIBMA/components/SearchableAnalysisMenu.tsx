@@ -9,7 +9,7 @@ export type SearchableAnalysisMenuProps = {
     onClose: () => void;
     analyses: AnalysisReturnNested[];
     onSelectAnalysis: (analysisId: string) => void;
-    /** When set, that analysis is labeled "(current analysis)" and selecting it closes the menu without calling onSelectAnalysis. */
+    /** When set, that analysis is marked selected and choosing it closes the menu without calling onSelectAnalysis. */
     currentAnalysisId?: string;
 };
 
@@ -98,7 +98,6 @@ const SearchableAnalysisMenu: React.FC<SearchableAnalysisMenuProps> = ({
                     const isCurrentAnalysis =
                         currentAnalysisId != null && analysis.id != null && analysis.id === currentAnalysisId;
                     const displayName = getAnalysisDisplayName(analysis);
-                    const menuItemLabel = isCurrentAnalysis ? `${displayName} (current analysis)` : displayName;
 
                     return (
                         <MenuItem
@@ -111,10 +110,11 @@ const SearchableAnalysisMenu: React.FC<SearchableAnalysisMenuProps> = ({
                                 }
                                 onSelectAnalysis(analysis.id);
                             }}
+                            selected={isCurrentAnalysis}
                             sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1, px: 2 }}
                         >
                             <ListItemText
-                                primary={menuItemLabel}
+                                primary={displayName}
                                 primaryTypographyProps={{
                                     variant: 'body2',
                                     color: !analysis.name?.trim() ? 'warning.dark' : undefined,

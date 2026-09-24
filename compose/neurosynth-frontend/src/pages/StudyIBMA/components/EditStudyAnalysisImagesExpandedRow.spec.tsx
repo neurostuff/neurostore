@@ -114,15 +114,15 @@ describe('EditStudyAnalysisImagesExpandedRow', () => {
         expect(updateImage).toHaveBeenCalledWith('assigned-image', { analysis: 'analysis-2' });
     });
 
-    it('labels the current analysis in the move menu and does not reassign to it', async () => {
+    it('marks the current analysis as selected and does not reassign to it', async () => {
         const { updateImage } = renderExpandedRow();
 
         await userEvent.click(screen.getByLabelText('Move image to analysis'));
 
-        const menu = screen.getByRole('menu');
-        expect(within(menu).getByRole('menuitem', { name: 'Contrast A (current analysis)' })).toBeInTheDocument();
+        const currentItem = within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Contrast A' });
+        expect(currentItem).toHaveClass('Mui-selected');
 
-        await userEvent.click(screen.getByRole('menuitem', { name: 'Contrast A (current analysis)' }));
+        await userEvent.click(currentItem);
 
         expect(updateImage).not.toHaveBeenCalled();
     });
