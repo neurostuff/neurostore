@@ -24,8 +24,8 @@ describe('Ingestion', () => {
             fixture: 'IngestionFixtures/studysetPutFixture',
         });
         cy.intercept('GET', `**/api/studysets/*`, {
-            fixture: 'IngestionFixtures/studysetFixture',
-        }).as('studysetFixture');
+            fixture: 'IngestionFixtures/studysetPutFixture',
+        }).as('studysetGetFixture');
 
         cy.intercept('POST', `**/api/annotations/*`, {
             fixture: 'IngestionFixtures/annotationsFixture',
@@ -51,5 +51,21 @@ describe('Ingestion', () => {
         cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'doi');
         cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'pmid');
         cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'pmcid');
+    });
+
+    it('should skip extraction and land on the project page', () => {
+        cy.login('mocked').visit(PATH);
+        cy.contains('button', 'start extraction').click();
+        cy.contains('button', 'Skip Extraction').click();
+        cy.contains('Skip extraction?').should('be.visible');
+        cy.contains('button', 'Yes, skip Extraction').click();
+
+        cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'doi');
+        cy.url().should('include', '/projects/5uEqnaad4Hfe/project');
+        cy.contains('Extraction Phase: Get Started').should('not.exist');
+        cy.contains('Specify Meta-Analyses').should('be.visible');
+        cy.contains('Extract & Annotate').should('be.visible');
+        cy.contains('button', 'Project').should('be.visible');
+        cy.contains('button', 'Proceed to Meta-Analyses Page').should('be.enabled');
     });
 });

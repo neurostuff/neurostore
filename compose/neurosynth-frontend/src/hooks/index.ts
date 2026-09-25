@@ -26,6 +26,7 @@ import useGetAnnotationById from './annotations/useGetAnnotationById';
 import useDeleteAnnotation from './annotations/useDeleteAnnotation';
 import useCreateAnnotation from './annotations/useCreateAnnotation';
 import useCreateStudy from './studies/useCreateStudy';
+import useIngest from './studies/useIngest';
 import useCreateProject from './projects/useCreateProject';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
 import useGetStudysetNonNestedById from './studysets/useGetStudysetNonNestedById';
@@ -75,6 +76,7 @@ export {
     useGetStudyNonNestedById,
     useUpdateStudy,
     useCreateStudy,
+    useIngest,
     // META-ANALYSES
     useCreateAlgorithmSpecification,
     useGetMetaAnalysesByIds,
