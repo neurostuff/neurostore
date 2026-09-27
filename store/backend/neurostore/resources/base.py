@@ -612,10 +612,10 @@ class ListView(BaseView):
                 # Default to created_at when no search
                 q = q.order_by(m.created_at.desc(), m.id.desc())
         else:
-            # Use user-specified sort column
+            # Use user-specified sort column.
+            # lower() is text-only; integers, booleans, and timestamps sort as-is.
             attr = getattr(m, sort_col)
-            # Case-insensitive sorting
-            if sort_col not in ("created_at", "updated_at"):
+            if isinstance(getattr(attr, "type", None), sa.String):
                 attr = func.lower(attr)
             q = q.order_by(getattr(attr, desc)(), m.id.desc())
 
