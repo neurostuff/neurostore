@@ -59,6 +59,52 @@ async def test_get_analyses(auth_client, ingest_neurosynth, session):
     assert resp_json["id"] == a_id
 
 
+async def test_get_analyses_sort_by_order_uses_numeric_order(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="numeric order sort",
+        user=user,
+        analyses=[
+            Analysis(name="ten", user=user, order=10),
+            Analysis(name="two", user=user, order=2),
+            Analysis(name="one", user=user, order=1),
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    resp = await auth_client.get(
+        f"/api/analyses/?sort=order&desc=false&paginate=false&study={study.id}"
+    )
+
+    assert resp.status_code == 200
+    assert [analysis["order"] for analysis in resp.json()["results"]] == [1, 2, 10]
+
+
+async def test_get_analyses_sort_by_name_is_case_insensitive(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="case insensitive name sort",
+        user=user,
+        analyses=[
+            Analysis(name="b", user=user, order=1),
+            Analysis(name="A", user=user, order=2),
+            Analysis(name="C", user=user, order=3),
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    resp = await auth_client.get(
+        f"/api/analyses/?sort=name&desc=false&paginate=false&study={study.id}"
+    )
+
+    assert resp.status_code == 200
+    assert [analysis["name"] for analysis in resp.json()["results"]] == ["A", "b", "C"]
+
+
 async def test_get_analyses_filter_by_study(auth_client, session):
     first_study_resp = await auth_client.post(
         "/api/studies/",
