@@ -1,5 +1,5 @@
 import { Table } from '@tanstack/react-table';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ICurationTableStudy } from 'pages/Curation/hooks/useCuratorTableState.types';
 import { vi } from 'vitest';
