@@ -6,9 +6,11 @@ import useSubmitMetaAnalysisJob from '../hooks/useSubmitMetaAnalysisJob';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { localStorageStatusAlertKey } from './MetaAnalysisStatusAlert';
 
-const MetaAnalysisInstructions = ({  metaAnalysisId, onSubmitMetaAnalysisJob = () => {}  }: {
+const MetaAnalysisInstructions = ({
+    metaAnalysisId,
+    onSubmitMetaAnalysisJob = () => {},
+}: {
     metaAnalysisId: string;
     onSubmitMetaAnalysisJob?: () => void;
 }) => {
@@ -25,11 +27,6 @@ const MetaAnalysisInstructions = ({  metaAnalysisId, onSubmitMetaAnalysisJob = (
                         enqueueSnackbar('Meta-analysis job submitted successfully', { variant: 'success' });
                         setShowConfirmationDialog(false);
                         onSubmitMetaAnalysisJob();
-                        // show the alert in case the user has previously hidden it as it contains important info about the job status.
-                        // we show the alert by removing the item from the localStorage
-                        if (localStorage.getItem(`${localStorageStatusAlertKey}-${metaAnalysisId}`)) {
-                            localStorage.removeItem(`${localStorageStatusAlertKey}-${metaAnalysisId}`);
-                        }
                     },
                 }
             );

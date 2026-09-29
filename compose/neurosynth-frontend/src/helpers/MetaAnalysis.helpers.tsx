@@ -100,6 +100,10 @@ export const getResultStatus = (
     description?: string;
     status: 'SUCCESS' | 'FAILED' | 'RUNNING' | 'SUBMITTED' | 'UNKNOWN' | 'NONE';
 } => {
+    if (latestMetaAnalysisJob?.status === 'FAILED') {
+        return getMetaAnalysisJobStatus(latestMetaAnalysisJob);
+    }
+
     if (!latestMetaAnalysisJob && !latestMetaAnalysisResult) {
         return {
             statusText: 'No run detected',
