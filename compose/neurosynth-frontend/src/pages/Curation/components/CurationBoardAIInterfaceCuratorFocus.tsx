@@ -17,23 +17,52 @@ const CurationBoardAIInterfaceCuratorFocus = ({
     onSetSelectedStub,
     columnIndex,
 }: ICurationBoardAIInterfaceCurator) => {
-    const rows = useMemo(() => {
-        return table.getRowModel().rows.map((row) => row.original) ?? [];
-    }, [table]);
+    const rows = table.getRowModel().rows.map((row) => row.original);
 
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
 
+    const selectStubByOffset = useCallback(
+        (offset: number) => {
+            if (!selectedStub?.id) return;
+            const stubIndex = rows.findIndex((row) => row.id === selectedStub.id);
+            if (stubIndex < 0) return;
+
+            const nextStubId = rows[stubIndex + offset]?.id;
+            if (!nextStubId) return;
+            onSetSelectedStub(nextStubId);
+        },
+        [onSetSelectedStub, rows, selectedStub?.id]
+    );
+
     const handleMoveToNextStub = useCallback(() => {
-        if (!selectedStub?.id) return;
-        const stubIndex = rows.findIndex((row) => row.id === selectedStub.id);
-        if (stubIndex < 0) return;
+        selectStubByOffset(1);
+    }, [selectStubByOffset]);
 
-        const nextStubId = rows[stubIndex + 1]?.id;
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+            if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
 
-        if (!nextStubId) return;
-        onSetSelectedStub(nextStubId);
-    }, [onSetSelectedStub, rows, selectedStub?.id]);
+            // Prevent stub selection when arrow keys are being used in inputs and popups (menus, autocomplete, dialogs)
+            // so they can move a cursor or highlight an option.
+            const target = event.target;
+            if (
+                target instanceof HTMLElement &&
+                target.closest(
+                    'input, textarea, select, [contenteditable="true"], [role="listbox"], [role="menu"], [role="combobox"], [role="dialog"]'
+                )
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+            selectStubByOffset(event.key === 'ArrowDown' ? 1 : -1);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectStubByOffset]);
 
     const pxInVh = Math.round(windowHeight - 250);
 
@@ -66,7 +95,7 @@ const CurationBoardAIInterfaceCuratorFocus = ({
                         width={LIST_WIDTH_PX}
                         overscan={5}
                         scrollToIndex={selectedItemIndex >= 0 ? selectedItemIndex : undefined}
-                        scrollToAlign="center"
+                        scrollToAlign="auto"
                         scrollBehavior="auto"
                         getItemKey={(stub) => stub.id}
                         renderRow={(stub, style) => (

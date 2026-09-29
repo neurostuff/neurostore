@@ -920,6 +920,31 @@ describe('CurationAIInterface', () => {
         });
 
         describe('focus', () => {
+            it('should remove a promoted study from the focus list', () => {
+                cy.fixture('projects/projectCurationSimpleWithStudies').then(
+                    (projectFixture: INeurosynthProjectReturn) => {
+                        const unreviewedStudies = projectFixture.provenance.curationMetadata.columns[0].stubStudies;
+                        const promotedStudyTitle = unreviewedStudies[0].title;
+                        const remainingStudyTitles = unreviewedStudies.slice(1).map((study) => study.title);
+
+                        cy.intercept('GET', '**/api/projects/*', projectFixture).as('projectFixture');
+                        cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+                        cy.wait('@taskExtraction');
+                        cy.wait('@participantDemographicsExtraction');
+
+                        cy.get('tr').eq(1).click({ force: true });
+                        cy.get('li').contains(promotedStudyTitle).should('exist');
+
+                        cy.contains('button', /^Include$/).click();
+
+                        cy.get('li').contains(promotedStudyTitle).should('not.exist');
+                        remainingStudyTitles.forEach((title) => {
+                            cy.get('li').contains(title).should('exist');
+                        });
+                    }
+                );
+            });
+
             it('should move the study from identification to screening, eligibility, and then included', () => {
                 cy.intercept('GET', '**/api/projects/*', {
                     fixture: 'projects/projectCurationPRISMAWithStudies',
@@ -1079,7 +1104,7 @@ describe('CurationAIInterface', () => {
             cy.get('.virtualized-import-list-item').should('have.length', 1);
         });
 
-        it.only('should let the user rename an import and send the update to the server', () => {
+        it('should let the user rename an import and send the update to the server', () => {
             cy.fixture('projects/projectCurationSimpleWithStudies').then((raw) => {
                 const projectFixture = JSON.parse(JSON.stringify(raw)) as INeurosynthProjectReturn;
                 projectFixture.user = 'auth0|62e0e6c9dd47048572613b4d';
