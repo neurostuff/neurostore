@@ -29,7 +29,7 @@ dependencies = [
     "redis",
     "shortuuid~=1.0",
     "starlette>=1.6.0,<2",
-    "sqlalchemy~=2.0",
+    "sqlalchemy[asyncio]~=2.0.0",
     "sqlalchemy-utils",
     "sqladmin~=0.31",
     "sqltap",
@@ -42,7 +42,7 @@ dependencies = [
     "NiMARE[parquet]==0.21.0",
     "openai~=3.15",
     "tenacity~=9.1",
-    "sentry-sdk~=2.69",
+    "sentry-sdk~=2.70",
 ]
 
 [tool.setuptools.packages.find]

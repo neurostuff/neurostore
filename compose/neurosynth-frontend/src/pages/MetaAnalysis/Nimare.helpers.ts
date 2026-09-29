@@ -17,6 +17,8 @@ export const NimareOutputs = [
     { key: 'tau2', label: 'type', description: 'Estimated between-study variance (IBMA only)' },
     { key: 'sigma2', label: 'type', description: 'Estimated within-study variance (IBMA only)' },
     { key: 'label', label: 'type', description: 'Label map' },
+    // IBMA degrees-of-freedom map. Kept after the statistical maps so it sorts last.
+    { key: 'dof', label: 'type', description: 'Degrees of freedom (IBMA only)' },
     // KVPs that describe the methods applied to generate the meta analysis
     {
         key: 'desc',
