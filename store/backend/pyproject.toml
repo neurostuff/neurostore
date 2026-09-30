@@ -31,7 +31,7 @@ dependencies = [
     "starlette>=1.7.0,<2",
     "sqlalchemy[asyncio]~=2.0.0",
     "sqlalchemy-utils",
-    "sqladmin~=0.31",
+    "sqladmin~=0.32",
     "sqltap",
     "webargs~=8.7",
     "wrapt~=2.4",
