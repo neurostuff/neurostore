@@ -41,6 +41,10 @@ const useProjectExclusionTags = vi.fn().mockReturnValue(vi.fn());
 
 const useProjectAnalysisType = vi.fn().mockReturnValue(EAnalysisType.CBMA);
 
+const useProjectIsPublic = vi.fn().mockReturnValue(false);
+
+const useInitProjectStoreIfRequired = vi.fn();
+
 export {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
@@ -62,4 +66,6 @@ export {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExclusionTags,
     useProjectAnalysisType,
+    useProjectIsPublic,
+    useInitProjectStoreIfRequired,
 };
