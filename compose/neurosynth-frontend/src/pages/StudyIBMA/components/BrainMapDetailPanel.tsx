@@ -1,4 +1,4 @@
-import { Close } from '@mui/icons-material';
+import { Close, Edit } from '@mui/icons-material';
 import {
     Box,
     IconButton,
@@ -15,7 +15,8 @@ import {
 } from '@mui/material';
 import useGetNeurovaultImages from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
-import { useMemo, useState } from 'react';
+import EditImageFieldsDialog, { type EditImageFieldsPayload } from 'pages/StudyIBMA/components/EditImageFieldsDialog';
+import { useMemo, useState, type ReactNode } from 'react';
 
 export type KeyValueRow = { key: string; value: string };
 
@@ -53,10 +54,12 @@ function KeyValueTable({
     title,
     rows,
     showColumnHeader = false,
+    titleAction,
 }: {
     title: string;
     rows: KeyValueRow[];
     showColumnHeader?: boolean;
+    titleAction?: ReactNode;
 }) {
     const [fieldFilterQuery, setFieldFilterQuery] = useState('');
     const filteredRows = useMemo(
@@ -67,9 +70,12 @@ function KeyValueTable({
 
     return (
         <Stack spacing={1}>
-            <Typography variant="subtitle2" fontWeight="bold">
-                {title}
-            </Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                <Typography variant="subtitle2" fontWeight="bold">
+                    {title}
+                </Typography>
+                {titleAction}
+            </Stack>
             <TextField
                 size="small"
                 fullWidth
@@ -125,7 +131,10 @@ function KeyValueTable({
 const BrainMapDetailPanel: React.FC<{
     image: ImageReturn;
     onClose: () => void;
-}> = ({ image, onClose }) => {
+    onEditImage?: (payload: EditImageFieldsPayload) => void | Promise<void>;
+    isEditImageLoading?: boolean;
+}> = ({ image, onClose, onEditImage, isEditImageLoading = false }) => {
+    const [editImageOpen, setEditImageOpen] = useState(false);
     const displayName = (image.filename || image.url || 'Image').trim() || 'Image';
     const storeMetaRows = useMemo(() => normalizeMetadataToArray(image.metadata ?? undefined), [image.metadata]);
 
@@ -179,11 +188,33 @@ const BrainMapDetailPanel: React.FC<{
                 </Tooltip>
             </Stack>
 
-            <KeyValueTable title="Image (Neurostore)" rows={imageRows} />
+            <KeyValueTable
+                title="Image"
+                rows={imageRows}
+                titleAction={
+                    onEditImage ? (
+                        <Tooltip title="Edit image">
+                            <IconButton
+                                size="small"
+                                color="secondary"
+                                aria-label="Edit image"
+                                onClick={() => setEditImageOpen(true)}
+                            >
+                                <Edit fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    ) : undefined
+                }
+            />
+            <EditImageFieldsDialog
+                image={image}
+                isOpen={editImageOpen}
+                isLoading={isEditImageLoading}
+                onClose={() => setEditImageOpen(false)}
+                onSave={onEditImage}
+            />
 
-            {storeMetaRows.length > 0 && (
-                <KeyValueTable title="Image metadata (Neurostore)" rows={storeMetaRows} showColumnHeader />
-            )}
+            {storeMetaRows.length > 0 && <KeyValueTable title="Image metadata" rows={storeMetaRows} showColumnHeader />}
 
             {nvUrl && nvRows.length === 0 && (
                 <Stack spacing={1}>

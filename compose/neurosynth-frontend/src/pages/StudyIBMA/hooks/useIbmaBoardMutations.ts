@@ -216,10 +216,12 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
                 ...image,
                 id: targetImageId,
             };
-            if (typeof image.analysis === 'string') {
-                targetImage.analysis = writableStudy.idMap.oldAnalysisIdsToNewIdsMap[image.analysis];
-            } else {
-                targetImage.analysis = null;
+            if ('analysis' in image) {
+                if (typeof image.analysis === 'string') {
+                    targetImage.analysis = writableStudy.idMap.oldAnalysisIdsToNewIdsMap[image.analysis];
+                } else {
+                    targetImage.analysis = null;
+                }
             }
 
             try {

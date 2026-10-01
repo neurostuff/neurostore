@@ -157,7 +157,18 @@ const StudyIBMAPage: React.FC = () => {
                         <EditStudyAnalysisIBMA />
                     </Box>
                 </Box>
-                <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, gap: 2 }}>
+                <Box
+                    sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0,
+                        gap: 2,
+                        width: { xs: 260, xl: 320 },
+                        minWidth: 0,
+                        flexShrink: 0,
+                    }}
+                >
                     <ExtractionStudiesPreviewer />
                     <Paper sx={{ p: 2, boxSizing: 'border-box' }}>
                         <EditStudyToolbarNext />

@@ -81,12 +81,18 @@ const EditStudyAnalysisTable = ({ table, tableMinWidth, noteKeys = [] }: EditStu
                         onClick={() => setNewAnnotationColumnDialogOpen(true)}
                         startIcon={<Add />}
                     >
-                        New Annotation Column
+                        Annotation Column
                     </Button>
                 </Stack>
                 <TableContainer
                     className="sleek-scrollbar"
-                    sx={{ flex: 1, minHeight: 0, bgcolor: 'background.paper', containerType: 'inline-size' }}
+                    sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        bgcolor: 'background.paper',
+                        containerType: 'inline-size',
+                        scrollbarGutter: 'stable',
+                    }}
                 >
                     <Table
                         stickyHeader

@@ -155,7 +155,8 @@ const ExtractionStudiesPreviewer: React.FC = () => {
             data-testid="extraction-studies-previewer"
             sx={{
                 display: 'flex',
-                width: '320px',
+                width: '100%',
+                minWidth: 0,
                 minHeight: 0,
                 flexDirection: 'column',
                 height: '100%',

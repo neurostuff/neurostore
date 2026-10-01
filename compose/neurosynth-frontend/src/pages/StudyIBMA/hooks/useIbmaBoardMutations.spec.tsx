@@ -242,6 +242,19 @@ describe('useIbmaBoardMutations', () => {
         expect(invalidateQueries()).toHaveBeenCalled();
     });
 
+    it('updateImage leaves analysis off the request when the key is omitted', async () => {
+        const { result } = renderHook(() => useIbmaBoardMutations(hookArgs));
+
+        await act(async () => {
+            await result.current.updateImage('img-1', { filename: 'renamed.nii.gz', value_type: 'Z map' });
+        });
+
+        expect(mutateAsync(useUpdateImage as Mock)).toHaveBeenCalledWith({
+            imageId: 'img-1',
+            image: { id: 'img-1', filename: 'renamed.nii.gz', value_type: 'Z map' },
+        });
+    });
+
     it('updateImage clears image.analysis and invalidates board', async () => {
         const { result } = renderHook(() => useIbmaBoardMutations(hookArgs));
 
