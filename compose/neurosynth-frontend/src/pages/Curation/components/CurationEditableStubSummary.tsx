@@ -3,10 +3,11 @@ import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLi
 import EditableDisplayLink from 'components/DisplayStudyLink/EditableDisplayLink';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
+import { useKeyboardShortcuts } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
 import { useProjectCurationColumns, useProjectUser, useUpdateStubField } from 'stores/projects/ProjectStore';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 
@@ -19,16 +20,26 @@ interface ICurationEditableStubSummary {
 
 const DOI_PREFIX = 'https://doi.org/';
 
-const CurationEditableStubSummary = ({ 
+const CurationEditableStubSummary = ({
     stub,
     columnIndex,
     onMoveToNextStub,
     children,
- }: ICurationEditableStubSummary) => {
+}: ICurationEditableStubSummary) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
+    const [isDetailsExpanded, setIsDetailsExpanded] = useState<boolean>(true);
+
+    useKeyboardShortcuts({
+        e: (event) => {
+            if (event.repeat) return;
+            setIsDetailsExpanded((currentlyExpanded) => {
+                return !currentlyExpanded;
+            });
+        },
+    });
 
     const handleUpdateStub = (updatedText: string | number | ISource, label: string) => {
         if (!canEdit) return;
@@ -176,7 +187,13 @@ const CurationEditableStubSummary = ({
             </Typography>
 
             {/* add a key to the text expansion to force a re-render when the stub changes */}
-            <TextExpansion key={stub.id} text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
+            <TextExpansion
+                key={stub.id}
+                text={stub.abstractText}
+                isExpanded={isDetailsExpanded ?? true}
+                setIsExpanded={setIsDetailsExpanded}
+                textSx={{ typography: 'body2' }}
+            ></TextExpansion>
 
             <Box>{children}</Box>
         </Box>

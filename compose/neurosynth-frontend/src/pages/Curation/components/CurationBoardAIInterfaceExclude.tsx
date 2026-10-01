@@ -131,45 +131,47 @@ const CurationBoardAIInterfaceExclude = ({ group }: { group: IGroupListItem }) =
                 </Box>
             ) : (
                 <Box>
-                    <TextField
-                        ref={searchbarContainerRef}
-                        size="small"
-                        value={searchTerm}
-                        onChange={(event) => setSearchTerm(event.target.value)}
-                        placeholder="Search excluded studies..."
-                        sx={{ width: '260px', paddingBottom: '0.5rem' }}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <Search fontSize="small" />
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
                     {filteredStubs.length === 0 ? (
                         <Box sx={{ display: 'flex' }}>
                             <Typography color="warning.dark">No excluded studies match your search.</Typography>
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex' }}>
-                            <VirtualizedList
-                                rows={filteredStubs}
-                                rowHeightInPx={ROW_HEIGHT_PX}
-                                listHeightInPx={pxInVh}
-                                width={LIST_WIDTH_PX}
-                                overscan={5}
-                                scrollToIndex={selectedItemIndex >= 0 ? selectedItemIndex : undefined}
-                                scrollToAlign="auto"
-                                getItemKey={(stub) => stub.id}
-                                renderRow={(stub, style) => (
-                                    <CurationStubListItemVirtualizedContainer
-                                        stub={stub}
-                                        selectedStubId={selectedStub?.id}
-                                        onSetSelectedStub={setSelectedStubId}
-                                        style={style}
-                                    />
-                                )}
-                            />
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                <TextField
+                                    ref={searchbarContainerRef}
+                                    size="small"
+                                    value={searchTerm}
+                                    onChange={(event) => setSearchTerm(event.target.value)}
+                                    placeholder="Search excluded studies..."
+                                    sx={{ width: '260px', paddingBottom: '0.5rem' }}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Search fontSize="small" />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                                <VirtualizedList
+                                    rows={filteredStubs}
+                                    rowHeightInPx={ROW_HEIGHT_PX}
+                                    listHeightInPx={pxInVh}
+                                    width={LIST_WIDTH_PX}
+                                    overscan={5}
+                                    scrollToIndex={selectedItemIndex >= 0 ? selectedItemIndex : undefined}
+                                    scrollToAlign="auto"
+                                    getItemKey={(stub) => stub.id}
+                                    renderRow={(stub, style) => (
+                                        <CurationStubListItemVirtualizedContainer
+                                            stub={stub}
+                                            selectedStubId={selectedStub?.id}
+                                            onSetSelectedStub={setSelectedStubId}
+                                            style={style}
+                                        />
+                                    )}
+                                />
+                            </Box>
                             <Box
                                 ref={scrollableBoxRef}
                                 sx={{ overflowY: 'auto', width: '100%', height: `${pxInVh}px` }}

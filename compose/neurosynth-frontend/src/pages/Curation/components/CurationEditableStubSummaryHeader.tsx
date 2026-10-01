@@ -1,9 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { ArrowCircleLeftOutlined, CheckCircleOutline } from '@mui/icons-material';
 import { Box, Button, Chip } from '@mui/material';
-import { useUserCanEdit } from 'hooks';
+import { useKeyboardShortcuts, useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import CurationPopupExclusionSelector from 'pages/Curation/components/CurationPopupExclusionSelector';
+import { getDefaultExclusionTag } from 'pages/Curation/components/CurationPopupExclusionSelector.helpers';
 import { ICurationStubStudy, ITag } from 'pages/Curation/Curation.types';
 import {
     useAddTagToStub,
@@ -93,6 +94,24 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
             props.onMoveToNextStub();
         }
     };
+
+    const canCategorize = props.type === 'default' && canEdit && !exclusionTagSelectorIsOpen;
+    const canDemote = props.columnIndex !== 0 && props.type !== 'excluded' && canEdit && !exclusionTagSelectorIsOpen;
+
+    useKeyboardShortcuts({
+        a: (event) => {
+            if (event.repeat || !canCategorize) return;
+            handlePromote();
+        },
+        s: (event) => {
+            if (event.repeat || !canCategorize) return;
+            handleAddExclusion(getDefaultExclusionTag(prismaConfig.isPrisma, prismaPhase));
+        },
+        d: (event) => {
+            if (event.repeat || !canDemote) return;
+            handleDemoteStub();
+        },
+    });
 
     // const handleSaveForLater = () => {
     //     handleAddTag(defaultInfoTags.needsReview);

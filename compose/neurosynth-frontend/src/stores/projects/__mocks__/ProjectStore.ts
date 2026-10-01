@@ -41,6 +41,22 @@ const useProjectExclusionTags = vi.fn().mockReturnValue(vi.fn());
 
 const useProjectAnalysisType = vi.fn().mockReturnValue(EAnalysisType.CBMA);
 
+const useAddTagToStub = vi.fn().mockReturnValue(vi.fn());
+
+const useCreateNewExclusion = vi.fn().mockReturnValue(vi.fn());
+
+const useDemoteStub = vi.fn().mockReturnValue(vi.fn());
+
+const usePromoteStub = vi.fn().mockReturnValue(vi.fn());
+
+const useSetExclusionForStub = vi.fn().mockReturnValue(vi.fn());
+
+const useProjectExclusionTag = vi.fn().mockReturnValue(undefined);
+
+const useProjectCurationPrismaConfig = vi.fn().mockReturnValue({ isPrisma: false });
+
+const useUpdateStubField = vi.fn().mockReturnValue(vi.fn());
+
 export {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
@@ -62,4 +78,12 @@ export {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExclusionTags,
     useProjectAnalysisType,
+    useAddTagToStub,
+    useCreateNewExclusion,
+    useDemoteStub,
+    usePromoteStub,
+    useSetExclusionForStub,
+    useProjectExclusionTag,
+    useProjectCurationPrismaConfig,
+    useUpdateStubField,
 };

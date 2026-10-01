@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
-import { useGetWindowHeight } from 'hooks';
+import { useGetWindowHeight, useKeyboardShortcuts } from 'hooks';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
@@ -10,6 +10,7 @@ import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirt
 
 const ROW_HEIGHT_PX = 90;
 const LIST_WIDTH_PX = 260;
+const DETAIL_PANE_SCROLL_RATIO = 0.5;
 
 const CurationBoardAIInterfaceCuratorFocus = ({
     selectedStub,
@@ -39,30 +40,25 @@ const CurationBoardAIInterfaceCuratorFocus = ({
         selectStubByOffset(1);
     }, [selectStubByOffset]);
 
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
-            if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const scrollDetailPane = useCallback((direction: 1 | -1) => {
+        const detailPane = scrollableBoxRef.current;
+        if (!detailPane) return;
+        detailPane.scrollBy({
+            top: direction * Math.round(detailPane.clientHeight * DETAIL_PANE_SCROLL_RATIO),
+            behavior: 'smooth',
+        });
+    }, []);
 
-            // Prevent stub selection when arrow keys are being used in inputs and popups (menus, autocomplete, dialogs)
-            // so they can move a cursor or highlight an option.
-            const target = event.target;
-            if (
-                target instanceof HTMLElement &&
-                target.closest(
-                    'input, textarea, select, [contenteditable="true"], [role="listbox"], [role="menu"], [role="combobox"], [role="dialog"]'
-                )
-            ) {
-                return;
-            }
-
-            event.preventDefault();
-            selectStubByOffset(event.key === 'ArrowDown' ? 1 : -1);
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectStubByOffset]);
+    useKeyboardShortcuts({
+        // ArrowDown: () => scrollDetailPane(1),
+        // ArrowUp: () => scrollDetailPane(-1),
+        // ArrowRight: () => selectStubByOffset(1),
+        // ArrowLeft: () => selectStubByOffset(-1),
+        ArrowRight: () => scrollDetailPane(1),
+        ArrowLeft: () => scrollDetailPane(-1),
+        ArrowDown: () => selectStubByOffset(1),
+        ArrowUp: () => selectStubByOffset(-1),
+    });
 
     const pxInVh = Math.round(windowHeight - 250);
 
