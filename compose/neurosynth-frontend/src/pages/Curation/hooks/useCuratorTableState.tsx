@@ -37,8 +37,9 @@ const useCuratorTableState = (
         )[]
     >([]);
     const [sorting, setSorting] = useState<SortingState>([]);
-    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [hasLoadedSavedColumns, setHasLoadedSavedColumns] = useState(false);
     const stubsWithNeurostoreIds = useMemo(() => {
         return (allStubs.filter((stub) => !!stub.neurostoreId).map((stub) => stub!.neurostoreId) as string[]).sort();
     }, [allStubs]);
@@ -80,6 +81,7 @@ const useCuratorTableState = (
         setColumns(newColumns);
         setSorting(state.sorting);
         setColumnFilters(state.columnFilters);
+        setHasLoadedSavedColumns(true);
 
         updateCurationTableState(
             projectId,
@@ -120,8 +122,7 @@ const useCuratorTableState = (
             {
                 taskExtraction: (ITaskExtractor & { dateExecuted?: string }) | null;
                 participantDemographicsExtraction:
-                    | (IParticipantDemographicExtractor & { dateExecuted?: string })
-                    | null;
+                    (IParticipantDemographicExtractor & { dateExecuted?: string }) | null;
             }
         >();
 
@@ -253,6 +254,12 @@ const useCuratorTableState = (
         );
     }, [sorting, projectId, allowAIColumns]);
     useEffect(() => {
+        // columns starts empty. Saving that list before the localStorage read is applied
+        // replaces the saved selection. Dev Strict Mode mounts twice, so the second read
+        // then loads the empty list. Production builds do not double-mount, which is why
+        // these tests pass in GitHub Actions.
+        if (!hasLoadedSavedColumns || !projectId) return;
+
         updateCurationTableState(
             projectId,
             {
@@ -262,11 +269,11 @@ const useCuratorTableState = (
             },
             allowAIColumns ? '' : 'identification'
         );
-    }, [allowAIColumns, columns, projectId]);
+    }, [allowAIColumns, columns, hasLoadedSavedColumns, projectId]);
 
     return {
         table,
-        isLoading,
+        isLoading: isLoading || !hasLoadedSavedColumns,
     };
 };
 

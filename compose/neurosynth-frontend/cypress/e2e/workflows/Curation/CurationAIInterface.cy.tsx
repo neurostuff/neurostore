@@ -343,7 +343,7 @@ describe('CurationAIInterface', () => {
             cy.contains('There are no more studies left to review').should('exist');
         });
 
-        it('should show excluded count chip (eq(1)) when a study is excluded in identification', () => {
+        it('should show the excluded count when a study is excluded in identification', () => {
             cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
                 projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
                     defaultExclusionTags.duplicate.id;
@@ -357,7 +357,7 @@ describe('CurationAIInterface', () => {
             cy.wait('@taskExtraction');
             cy.wait('@participantDemographicsExtraction');
 
-            cy.contains('li', '1. Identification').find('.MuiChip-label').eq(1).should('have.text', 1);
+            cy.contains('li', '1. Identification').contains('1 excluded').should('exist');
         });
 
         it('should set the duplicate tag in the table row', () => {
@@ -743,7 +743,7 @@ describe('CurationAIInterface', () => {
 
                 cy.get('tr').eq(1).click();
                 cy.contains('button', 'Exclude').click();
-                cy.contains('li', 'Excluded').find('.MuiChip-label').should('have.text', 1);
+                cy.contains('li', 'Excluded').contains('1 excluded').should('exist');
             });
 
             it('should create a new exclusion and then exclude the study', () => {
@@ -785,7 +785,7 @@ describe('CurationAIInterface', () => {
                 cy.contains('li', 'Excluded').click();
                 cy.contains('li', 'some new exclusion reason').should('exist');
 
-                cy.contains('li', 'some new exclusion reason').find('.MuiChip-label').should('have.text', 2);
+                cy.contains('li', 'some new exclusion reason').contains('2 excluded').should('exist');
             });
 
             it('should demote multiple studies', () => {
@@ -920,6 +920,31 @@ describe('CurationAIInterface', () => {
         });
 
         describe('focus', () => {
+            it('should remove a promoted study from the focus list', () => {
+                cy.fixture('projects/projectCurationSimpleWithStudies').then(
+                    (projectFixture: INeurosynthProjectReturn) => {
+                        const unreviewedStudies = projectFixture.provenance.curationMetadata.columns[0].stubStudies;
+                        const promotedStudyTitle = unreviewedStudies[0].title;
+                        const remainingStudyTitles = unreviewedStudies.slice(1).map((study) => study.title);
+
+                        cy.intercept('GET', '**/api/projects/*', projectFixture).as('projectFixture');
+                        cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+                        cy.wait('@taskExtraction');
+                        cy.wait('@participantDemographicsExtraction');
+
+                        cy.get('tr').eq(1).click({ force: true });
+                        cy.get('li').contains(promotedStudyTitle).should('exist');
+
+                        cy.contains('button', /^Include$/).click();
+
+                        cy.get('li').contains(promotedStudyTitle).should('not.exist');
+                        remainingStudyTitles.forEach((title) => {
+                            cy.get('li').contains(title).should('exist');
+                        });
+                    }
+                );
+            });
+
             it('should move the study from identification to screening, eligibility, and then included', () => {
                 cy.intercept('GET', '**/api/projects/*', {
                     fixture: 'projects/projectCurationPRISMAWithStudies',
@@ -971,7 +996,7 @@ describe('CurationAIInterface', () => {
                 cy.contains('li', '1. Unreviewed').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Exclude$/).click();
-                cy.contains('li', 'Excluded').find('.MuiChip-label').should('have.text', 1);
+                cy.contains('li', 'Excluded').contains('1 excluded').should('exist');
             });
 
             it('should create a new exclusion and then exclude the study', () => {
@@ -1079,7 +1104,7 @@ describe('CurationAIInterface', () => {
             cy.get('.virtualized-import-list-item').should('have.length', 1);
         });
 
-        it.only('should let the user rename an import and send the update to the server', () => {
+        it('should let the user rename an import and send the update to the server', () => {
             cy.fixture('projects/projectCurationSimpleWithStudies').then((raw) => {
                 const projectFixture = JSON.parse(JSON.stringify(raw)) as INeurosynthProjectReturn;
                 projectFixture.user = 'auth0|62e0e6c9dd47048572613b4d';
@@ -1183,8 +1208,8 @@ describe('CurationAIInterface', () => {
 
             cy.contains('h4', 'My Custom Exclusion').parent().find('[data-testid="EditIcon"]').click();
 
-            cy.get('input[type="text"]').clear();
-            cy.get('input[type="text"]').type('New My Custom Exclusion');
+            cy.contains('label', 'Group Label').parent().find('input').clear();
+            cy.contains('label', 'Group Label').parent().find('input').type('New My Custom Exclusion');
 
             cy.contains('button', 'Save').click();
             cy.contains('h4', 'New My Custom Exclusion').should('exist');
