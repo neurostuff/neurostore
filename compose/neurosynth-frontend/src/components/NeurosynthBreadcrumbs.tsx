@@ -86,7 +86,7 @@ const NeurosynthBreadcrumbs = React.memo(
                                     component={NavLink}
                                     to={breadcrumb.link}
                                     variant="h5"
-                                    sx={{ maxWidth: '250px' }}
+                                    sx={{ maxWidth: '250px', wordBreak: 'break-all' }}
                                     onClick={(e) => {
                                         e.preventDefault();
                                         handleNavigate(breadcrumb.link);

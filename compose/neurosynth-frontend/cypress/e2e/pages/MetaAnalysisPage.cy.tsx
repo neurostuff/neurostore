@@ -5,6 +5,13 @@ import { MetaAnalysisJobList, MetaAnalysisJobResponse, ResultReturn } from 'neur
 const PAGE_NAME = 'MetaAnalysisPage';
 const PROJECT_PATH = '/projects/mock-project-id/meta-analyses/mock-meta-analysis-id';
 
+const expectMetaAnalysisTabs = (labels: string[]) => {
+    cy.get('[role="tab"]').should(($tabs) => {
+        const actual = [...$tabs].map((tab) => tab.textContent?.trim());
+        expect(actual).to.deep.equal(labels);
+    });
+};
+
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage();
@@ -47,6 +54,11 @@ describe(PAGE_NAME, () => {
             cy.contains('Projects').should('exist');
             cy.contains('Bulk import test').should('exist');
             cy.contains('THIS IS MY TEST META ANALYSIS').should('exist');
+            cy.contains('ALE meta analysis').should('exist');
+            cy.contains('Owner: mock-username').should('exist');
+            cy.contains('Public').should('exist');
+            cy.contains('.MuiChip-root', /^Created:/).should('exist');
+            cy.contains('.MuiChip-root', /^Last updated:/).should('not.exist');
             cy.contains('Run your meta-analysis via one of the following methods').should('exist');
         });
     });
@@ -74,17 +86,18 @@ describe(PAGE_NAME, () => {
             cy.contains('Meta-Analysis').should('exist');
         });
 
-        it('should show "No run detected" alert message', () => {
-            cy.contains('No run detected').should('exist');
+        it('should show a "No run detected" status chip', () => {
+            cy.wait('@jobsFixture');
+            cy.contains('.MuiChip-root', 'No run detected').should('be.visible');
+            cy.contains('.MuiChip-root', 'No run detected').trigger('mouseover');
             cy.contains(
                 'If you are running a meta-analysis via google colab, you will not be able to see the progress here until it has completed'
             ).should('exist');
+            cy.get('[role="alert"]').should('not.exist');
         });
 
         it('should show correct tab labels when no results or jobs exist', () => {
-            cy.contains('Run Meta-Analysis').should('exist');
-            cy.contains('Edit Specification').should('exist');
-            cy.contains('Settings').should('exist');
+            expectMetaAnalysisTabs(['Run Meta-Analysis', 'Edit Specification', 'Cite Me', 'Settings']);
         });
 
         it('should allow specification editing when no results or jobs exist', () => {
@@ -94,7 +107,9 @@ describe(PAGE_NAME, () => {
 
         it('should show Settings tab when no results or jobs exist', () => {
             cy.contains('Settings').should('exist');
-            cy.contains('Settings').click();
+            cy.contains('[role="tab"]', 'Settings').click();
+            cy.contains('Access').should('exist');
+            cy.contains('label', 'Name').should('exist');
             cy.contains('Danger zone').should('exist');
             cy.contains('delete this meta-analysis').should('exist').and('be.visible').and('not.be.disabled');
         });
@@ -125,15 +140,19 @@ describe(PAGE_NAME, () => {
             cy.contains('Running...').should('exist');
         });
 
-        it('should show "Run in progress" alert message for running job', () => {
-            cy.contains('Run in progress').should('exist');
-            cy.get('[role="progressbar"]').should('exist');
+        it('should show a "Run in progress" status chip for a running job', () => {
+            cy.contains('.MuiChip-root', 'Run in progress').should('exist');
+            cy.get('.MuiChip-root').find('[role="progressbar"]').should('exist');
         });
 
         it('should show correct tab labels when job is running', () => {
-            cy.contains('Run Meta-Analysis').should('exist');
-            cy.contains('View Specification').should('exist');
-            cy.contains('Run Again').should('exist');
+            expectMetaAnalysisTabs([
+                'Run Meta-Analysis',
+                'View Specification',
+                'Cite Me',
+                'Run Again',
+                'Settings',
+            ]);
         });
 
         it('should NOT allow specification editing when job is running', () => {
@@ -141,11 +160,13 @@ describe(PAGE_NAME, () => {
             cy.contains('button', 'Edit Specification').should('not.exist');
         });
 
-        it('should show "Run Again" instead of "Settings" when job is running', () => {
-            cy.contains('Settings').should('not.exist');
-            cy.contains('Run Again').should('exist');
-            cy.contains('Run Again').click();
+        it('should show Settings and Run Again when a job is running', () => {
+            cy.contains('[role="tab"]', 'Settings').should('exist');
+            cy.contains('[role="tab"]', 'Run Again').click();
             cy.contains('Run your meta-analysis via one of the following methods').should('exist');
+            cy.contains('[role="tab"]', 'Settings').click();
+            cy.contains('Access').should('exist');
+            cy.contains('Danger zone').should('not.exist');
         });
     });
 
@@ -167,8 +188,8 @@ describe(PAGE_NAME, () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
-        it('should show "Job submitted" alert message', () => {
-            cy.contains('Job submitted').should('exist');
+        it('should show a "Job submitted" status chip', () => {
+            cy.contains('.MuiChip-root', 'Job submitted').should('exist');
         });
 
         it('should show job logs', () => {
@@ -198,8 +219,8 @@ describe(PAGE_NAME, () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
-        it('should show "Run successful" alert message', () => {
-            cy.contains('Run successful').should('exist');
+        it('should show a "Run successful" status chip', () => {
+            cy.contains('.MuiChip-root', 'Run successful').should('exist');
         });
 
         it('should show result display', () => {
@@ -223,8 +244,8 @@ describe(PAGE_NAME, () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
-        it('should show "Run failed" alert message', () => {
-            cy.contains('Run failed').should('exist');
+        it('should show a "Run failed" status chip', () => {
+            cy.contains('.MuiChip-root', 'Run failed').should('exist');
         });
 
         it('should show job logs with error information', () => {
@@ -255,14 +276,18 @@ describe(PAGE_NAME, () => {
             cy.contains('Open in neurovault').should('exist');
         });
 
-        it('should show "Run successful" alert for successful result', () => {
-            cy.contains('Run successful').should('exist');
+        it('should show a "Run successful" status chip for a successful result', () => {
+            cy.contains('.MuiChip-root', 'Run successful').should('exist');
         });
 
         it('should show correct tab labels when result exists', () => {
-            cy.contains('Meta Analysis Results').should('exist');
-            cy.contains('View Specification').should('exist');
-            cy.contains('Run Again').should('exist');
+            expectMetaAnalysisTabs([
+                'Meta Analysis Results',
+                'View Specification',
+                'Cite Me',
+                'Run Again',
+                'Settings',
+            ]);
         });
 
         it('should NOT allow specification editing when result exists', () => {
@@ -347,29 +372,8 @@ describe(PAGE_NAME, () => {
         });
     });
 
-    describe('Alert message dismissal', () => {
-        it('should allow dismissing the alert message', () => {
-            cy.intercept('GET', `**/api/meta-analyses/**`, {
-                fixture: 'MetaAnalysis/metaAnalysisWithResult',
-            }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
-                fixture: 'MetaAnalysis/jobs/noJobs',
-            }).as('jobsFixture');
-            cy.intercept('GET', `**/api/meta-analysis-results/*`, {
-                fixture: 'MetaAnalysis/resultSuccess',
-            }).as('resultFixture');
-
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
-
-            cy.contains('Run successful').should('exist');
-            cy.get('[role="alert"]').within(() => {
-                cy.get('button').click();
-            });
-
-            cy.contains('Run successful').should('not.exist');
-        });
-
-        it('should redisplay the alert after running a meta-analysis if it was previously dismissed', () => {
+    describe('Status chip', () => {
+        it('should update the status chip after running a meta-analysis', () => {
             cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
                 'specificationFixture'
             );
@@ -396,23 +400,14 @@ describe(PAGE_NAME, () => {
 
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
-            // Alert is visible at first
-            cy.contains('No run detected').should('exist');
-
-            // Dismiss the alert
-            cy.get('[role="alert"]').within(() => {
-                cy.get('button').click();
-            });
-            cy.contains('No run detected').should('not.exist');
-
-            // The alert should appear again
+            cy.contains('.MuiChip-root', 'No run detected').should('exist');
             cy.contains('run meta-analysis').click();
             cy.contains('Run meta-analysis').click();
-            cy.contains('Job submitted').should('exist');
+            cy.contains('.MuiChip-root', 'Job submitted').should('exist');
         });
     });
 
-    describe('Privacy toggle', () => {
+    describe('Edit meta-analysis', () => {
         beforeEach(() => {
             cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
                 'specificationFixture'
@@ -433,7 +428,9 @@ describe(PAGE_NAME, () => {
 
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
+            cy.contains('[role="tab"]', 'Settings').click();
             cy.contains('button', 'Private').click();
+            cy.contains('button', 'Save').click();
             cy.wait('@updateMetaAnalysisFixture').then((res) => {
                 assert.exists(res.request.body.public);
                 assert.isFalse(res.request.body.public);
@@ -448,7 +445,10 @@ describe(PAGE_NAME, () => {
 
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
+            cy.contains('Private').should('exist');
+            cy.contains('[role="tab"]', 'Settings').click();
             cy.contains('button', 'Public').click();
+            cy.contains('button', 'Save').click();
             cy.wait('@updateMetaAnalysisFixture').then((res) => {
                 assert.exists(res.request.body.public);
                 assert.isTrue(res.request.body.public);
@@ -469,7 +469,8 @@ describe(PAGE_NAME, () => {
 
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
-            cy.contains('button', 'Public').should('be.disabled');
+            cy.contains('Public').should('exist');
+            cy.contains('[role="tab"]', 'Settings').should('not.exist');
             cy.contains('button', 'Private').should('not.exist');
         });
 
@@ -558,6 +559,22 @@ describe(PAGE_NAME, () => {
             cy.get('.MuiBreadcrumbs-root').should('not.contain', 'Bulk import test');
             cy.contains('View project').should('not.exist');
             cy.contains('THIS IS MY TEST META ANALYSIS').should('exist');
+        });
+    });
+
+    describe('Logged out viewer', () => {
+        it('should show results, specification, and cite me tabs', () => {
+            cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+                metaAnalysis.public = true;
+                cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+            });
+            cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
+                'specificationFixture'
+            );
+
+            cy.visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            expectMetaAnalysisTabs(['Meta Analysis Results', 'View Specification', 'Cite Me']);
         });
     });
 
