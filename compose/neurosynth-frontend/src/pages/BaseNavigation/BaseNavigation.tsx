@@ -16,26 +16,33 @@ import ProjectsPage from 'pages/Projects/ProjectsPage';
 import BaseStudyPage from 'pages/Study/BaseStudyPage';
 import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
 import UserProfilePage from 'pages/UserProfile/UserProfilePage';
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProtectedRoute from './components/ProtectedRoute';
 import { CurationBoardGroupsProvider } from 'pages/Curation/context/CurationBoardGroupsContext';
 import AnnotationGuard from './components/AnnotationGuard';
+import lazyWithRetry, { clearChunkReloadFlag } from 'helpers/lazyWithRetry';
 
-const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
-const ProjectStudyPage = React.lazy(() => import('pages/Study/ProjectStudyPage'));
-const StudiesPage = React.lazy(() => import('pages/Studies/StudiesPage'));
+const EditStudyPage = lazyWithRetry(() => import('pages/Study/EditStudyPage'));
+const ProjectStudyPage = lazyWithRetry(() => import('pages/Study/ProjectStudyPage'));
+const StudiesPage = lazyWithRetry(() => import('pages/Studies/StudiesPage'));
 
-const MetaAnalysesPage = React.lazy(() => import('pages/MetaAnalyses/MetaAnalysesPage'));
-const MetaAnalysisPage = React.lazy(() => import('pages/MetaAnalysis/MetaAnalysisPage'));
+const MetaAnalysesPage = lazyWithRetry(() => import('pages/MetaAnalyses/MetaAnalysesPage'));
+const MetaAnalysisPage = lazyWithRetry(() => import('pages/MetaAnalysis/MetaAnalysisPage'));
 
-// const ProjectsPage = React.lazy(() => import('pages/Projects/ProjectsPage'));
+// const ProjectsPage = lazyWithRetry(() => import('pages/Projects/ProjectsPage'));
 
-const CurationPage = React.lazy(() => import('pages/Curation/CurationPage'));
+const CurationPage = lazyWithRetry(() => import('pages/Curation/CurationPage'));
 
 const BaseNavigation = () => {
+    // Clear the chunk-reload guard once the app has mounted successfully,
+    // so future deployments can also trigger a reload recovery.
+    useEffect(() => {
+        clearChunkReloadFlag();
+    }, []);
+
     return (
         <ErrorBoundary
             fallback={
