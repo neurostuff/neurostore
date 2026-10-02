@@ -41,18 +41,13 @@ describe('CurationStubAITableSummary', () => {
         (useProjectCurationColumns as Mock).mockReturnValue([{}]);
     });
 
-    it('expands both extraction tables on e and shrinks them on the next e', async () => {
+    it('shrinks both extraction tables on e and expands them on the next e', async () => {
         const user = userEvent.setup();
         render(
             <CurationEditableStubSummary stub={study} columnIndex={0} onMoveToNextStub={vi.fn()}>
                 <CurationStubAITableSummary stub={tableStudy} />
             </CurationEditableStubSummary>
         );
-
-        expect(expandedState(/experimental details/i)).toBe('false');
-        expect(expandedState(/participant demographics/i)).toBe('false');
-
-        await user.keyboard('e');
 
         expect(expandedState(/experimental details/i)).toBe('true');
         expect(expandedState(/participant demographics/i)).toBe('true');
@@ -61,5 +56,10 @@ describe('CurationStubAITableSummary', () => {
 
         expect(expandedState(/experimental details/i)).toBe('false');
         expect(expandedState(/participant demographics/i)).toBe('false');
+
+        await user.keyboard('e');
+
+        expect(expandedState(/experimental details/i)).toBe('true');
+        expect(expandedState(/participant demographics/i)).toBe('true');
     });
 });

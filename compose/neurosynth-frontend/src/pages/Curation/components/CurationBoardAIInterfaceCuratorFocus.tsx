@@ -3,6 +3,7 @@ import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import { useGetWindowHeight, useKeyboardShortcuts } from 'hooks';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
+import CurationBoardAIInterfaceCuratorFocusShortcutsDialog from './CurationBoardAIInterfaceCuratorFocusShortcutsDialog';
 import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubAITableSummary from './CurationStubAITableSummary';
@@ -75,6 +76,7 @@ const CurationBoardAIInterfaceCuratorFocus = ({
 
     return (
         <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
+            <CurationBoardAIInterfaceCuratorFocusShortcutsDialog />
             {rows.length === 0 && (
                 <CurationBoardAIInterfaceCuratorTableHints
                     table={table}

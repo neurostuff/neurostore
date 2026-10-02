@@ -2,14 +2,14 @@ import { Box, Typography } from '@mui/material';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import EditableDisplayLink from 'components/DisplayStudyLink/EditableDisplayLink';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
 import { useKeyboardShortcuts } from 'hooks';
+import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
+import React, { useState } from 'react';
 import { useProjectCurationColumns, useProjectUser, useUpdateStubField } from 'stores/projects/ProjectStore';
-import React, { useEffect, useState } from 'react';
 import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
-import TextExpansion from 'components/TextExpansion/TextExpansion';
 
 interface ICurationEditableStubSummary {
     stub: ICurationStubStudy | undefined;

@@ -1,11 +1,12 @@
 import { Table } from '@tanstack/react-table';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ICurationTableStudy } from 'pages/Curation/hooks/useCuratorTableState.types';
 import { vi } from 'vitest';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
 
 vi.mock('components/VirtualizedList/VirtualizedList');
+vi.mock('./CurationBoardAIInterfaceCuratorFocusShortcutsDialog');
 vi.mock('./CurationEditableStubSummary');
 vi.mock('./CurationStubAITableSummary');
 vi.mock('./CurationStubListItemVirtualizedContainer');
@@ -44,38 +45,44 @@ describe('CurationBoardAIInterfaceCuratorFocus', () => {
         });
     });
 
-    it('selects the next stub when ArrowRight is pressed', async () => {
+    it('shows the focus mode shortcuts dialog', () => {
+        renderFocus(stubs[0]);
+
+        expect(screen.getByTestId('focus-mode-shortcuts-dialog')).toBeInTheDocument();
+    });
+
+    it('selects the next stub when ArrowDown is pressed', async () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[0]);
 
-        await user.keyboard('{ArrowRight}');
+        await user.keyboard('{ArrowDown}');
 
         expect(onSetSelectedStub).toHaveBeenCalledWith('stub-2');
     });
 
-    it('selects the previous stub when ArrowLeft is pressed', async () => {
+    it('selects the previous stub when ArrowUp is pressed', async () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[1]);
 
-        await user.keyboard('{ArrowLeft}');
+        await user.keyboard('{ArrowUp}');
 
         expect(onSetSelectedStub).toHaveBeenCalledWith('stub-1');
     });
 
-    it('stays on the first stub when ArrowLeft is pressed', async () => {
+    it('stays on the first stub when ArrowUp is pressed', async () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[0]);
 
-        await user.keyboard('{ArrowLeft}');
+        await user.keyboard('{ArrowUp}');
 
         expect(onSetSelectedStub).not.toHaveBeenCalled();
     });
 
-    it('stays on the last stub when ArrowRight is pressed', async () => {
+    it('stays on the last stub when ArrowDown is pressed', async () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[2]);
 
-        await user.keyboard('{ArrowRight}');
+        await user.keyboard('{ArrowDown}');
 
         expect(onSetSelectedStub).not.toHaveBeenCalled();
     });
@@ -84,12 +91,12 @@ describe('CurationBoardAIInterfaceCuratorFocus', () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[0]);
 
-        await user.keyboard('{ArrowDown}');
-        await user.keyboard('{ArrowUp}');
+        await user.keyboard('{ArrowRight}');
+        await user.keyboard('{ArrowLeft}');
 
         expect(onSetSelectedStub).not.toHaveBeenCalled();
-        expect(Element.prototype.scrollBy).toHaveBeenNthCalledWith(1, { top: 400, behavior: 'smooth' });
-        expect(Element.prototype.scrollBy).toHaveBeenNthCalledWith(2, { top: -400, behavior: 'smooth' });
+        expect(Element.prototype.scrollBy).toHaveBeenNthCalledWith(1, { top: 250, behavior: 'smooth' });
+        expect(Element.prototype.scrollBy).toHaveBeenNthCalledWith(2, { top: -250, behavior: 'smooth' });
     });
 
     it('does not change the selected stub when an input is focused', async () => {
@@ -99,7 +106,7 @@ describe('CurationBoardAIInterfaceCuratorFocus', () => {
         document.body.appendChild(input);
         input.focus();
 
-        await user.keyboard('{ArrowRight}');
+        await user.keyboard('{ArrowDown}');
 
         expect(onSetSelectedStub).not.toHaveBeenCalled();
         input.remove();
