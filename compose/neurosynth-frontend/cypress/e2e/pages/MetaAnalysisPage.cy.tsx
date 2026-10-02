@@ -672,5 +672,27 @@ describe(PAGE_NAME, () => {
             cy.get('[role="option"]').contains('Vancouver').click();
             cy.contains('NiMARE').should('exist');
         });
+
+        it('should show the compose-runner version and the methods with readable citations', () => {
+            cy.fixture('MetaAnalysis/resultSuccess').then((result) => {
+                result.cli_version = '0.6.6';
+                result.method_description =
+                    'An ALE meta-analysis was performed with NiMARE (RRID:SCR_017398; \\citealt{Salo2023}).';
+                result.method_references =
+                    '@article{Salo2023,\n  title = {NiMARE: Neuroimaging Meta-Analysis Research Environment},\n  author = {Salo, Taylor and Laird, Angela R},\n  journal = {Aperture Neuro},\n  year = {2023}\n}';
+                cy.intercept('GET', `**/api/meta-analysis-results/*`, result).as('resultFixture');
+            });
+
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            cy.contains('[role="tab"]', 'Cite Me').click();
+            cy.contains('Run with compose-runner 0.6.6').should('exist');
+            cy.contains('An ALE meta-analysis was performed with NiMARE (RRID:SCR_017398; Salo & Laird, 2023).', {
+                timeout: 15000,
+            }).should('exist');
+            cy.contains(
+                'Salo, T., & Laird, A. R. (2023). NiMARE: Neuroimaging Meta-Analysis Research Environment.'
+            ).should('exist');
+        });
     });
 });
