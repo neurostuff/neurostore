@@ -2,29 +2,33 @@ import { Box, Typography } from '@mui/material';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import EditableDisplayLink from 'components/DisplayStudyLink/EditableDisplayLink';
 import TextEdit from 'components/TextEdit/TextEdit';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
-import { useProjectCurationColumns, useProjectUser, useUpdateStubField } from 'stores/projects/ProjectStore';
 import React from 'react';
-import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
-import TextExpansion from 'components/TextExpansion/TextExpansion';
+import { useProjectCurationColumns, useProjectUser, useUpdateStubField } from 'stores/projects/ProjectStore';
+import CurationEditableStubSummaryActions from './CurationEditableStubSummaryActions';
 
 interface ICurationEditableStubSummary {
     stub: ICurationStubStudy | undefined;
     columnIndex: number;
     onMoveToNextStub: () => void;
+    isAbstractExpanded?: boolean;
+    onSetIsAbstractExpanded?: (expanded: boolean) => void;
     children?: React.ReactNode;
 }
 
 const DOI_PREFIX = 'https://doi.org/';
 
-const CurationEditableStubSummary = ({ 
+const CurationEditableStubSummary = ({
     stub,
     columnIndex,
     onMoveToNextStub,
+    isAbstractExpanded,
+    onSetIsAbstractExpanded,
     children,
- }: ICurationEditableStubSummary) => {
+}: ICurationEditableStubSummary) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
     const projectUser = useProjectUser();
@@ -64,7 +68,7 @@ const CurationEditableStubSummary = ({
                     zIndex: 1000,
                 }}
             >
-                <Box sx={{ display: 'flex' }}>
+                <Box sx={{ display: 'flex', mb: 0.5 }}>
                     <EditableDisplayLink
                         stubId={stub.id}
                         linkProps={{ href: `${DOI_PREFIX}${stub.doi}` }}
@@ -117,7 +121,7 @@ const CurationEditableStubSummary = ({
                     />
                     {stub.title && <DisplayStudyLinkFullText studyName={stub.title} />}
                 </Box>
-                <CurationEditableStubSummaryHeader
+                <CurationEditableStubSummaryActions
                     type={isLastColumn ? 'included' : stub.exclusionTag ? 'excluded' : 'default'}
                     stub={stub}
                     columnIndex={columnIndex}
@@ -176,7 +180,13 @@ const CurationEditableStubSummary = ({
             </Typography>
 
             {/* add a key to the text expansion to force a re-render when the stub changes */}
-            <TextExpansion key={stub.id} text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
+            <TextExpansion
+                key={stub.id}
+                text={stub.abstractText}
+                isExpanded={isAbstractExpanded}
+                setIsExpanded={onSetIsAbstractExpanded}
+                textSx={{ typography: 'body2' }}
+            ></TextExpansion>
 
             <Box>{children}</Box>
         </Box>

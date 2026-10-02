@@ -12,39 +12,32 @@ import {
     TableRow,
     Typography,
 } from '@mui/material';
+import { useIsFetching } from '@tanstack/react-query';
 import AIICon from 'components/AIIcon';
 import { IfMRITask, IGroup } from 'hooks/extractions/useGetAllExtractedDataForStudies';
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import {
     PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS,
     TASK_EXTRACTOR_CURATOR_COLUMNS,
 } from '../hooks/useCuratorTableState.consts';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
-import { useIsFetching } from '@tanstack/react-query';
 
-const CurationStubAITableSummary = ({  stub  }: { stub: ICurationTableStudy | undefined }) => {
+const CurationStubAITableSummary = ({
+    stub,
+    expandedState,
+    onSetExpandedState,
+}: {
+    stub: ICurationTableStudy | undefined;
+    expandedState: [boolean, boolean];
+    onSetExpandedState: (expandedState: [boolean, boolean]) => void;
+}) => {
     const isFetchingExtractions = useIsFetching({ queryKey: ['extraction'] }) > 0;
     const TaskExtractor = stub?.TaskExtractor;
-    const { projectId } = useParams<{ projectId: string }>();
-    const AIFocusModeSummaryLocalStorageKey = `${projectId}_FOCUS_MODE_AI_SUMMARY_EXPANDED_STATE`;
     const ParticipantDemographicsExtractor = stub?.ParticipantDemographicsExtractor;
-
-    const [expandedState, setExpandedState] = useState(() => {
-        const value = localStorage.getItem(AIFocusModeSummaryLocalStorageKey);
-        if (!value) return [false, false];
-        return JSON.parse(value);
-    });
 
     const modalityStr = (stub?.TaskExtractor?.Modality || []).reduce((acc, curr, index) => {
         if (index === 0) return curr;
         return `${acc}, ${curr}`;
     }, '');
-
-    const handleSetExpandedState = (newExpandedState: [boolean, boolean]) => {
-        localStorage.setItem(AIFocusModeSummaryLocalStorageKey, JSON.stringify(newExpandedState));
-        setExpandedState(newExpandedState);
-    };
 
     if (isFetchingExtractions) {
         return (
@@ -67,7 +60,7 @@ const CurationStubAITableSummary = ({  stub  }: { stub: ICurationTableStudy | un
         <Box>
             <Accordion expanded={expandedState[0]}>
                 <AccordionSummary
-                    onClick={() => handleSetExpandedState([!expandedState[0], expandedState[1]])}
+                    onClick={() => onSetExpandedState([!expandedState[0], expandedState[1]])}
                     expandIcon={<ExpandMoreOutlined />}
                 >
                     <Box sx={{ display: 'flex' }}>
@@ -210,7 +203,7 @@ const CurationStubAITableSummary = ({  stub  }: { stub: ICurationTableStudy | un
 
             <Accordion expanded={expandedState[1]}>
                 <AccordionSummary
-                    onClick={() => handleSetExpandedState([expandedState[0], !expandedState[1]])}
+                    onClick={() => onSetExpandedState([expandedState[0], !expandedState[1]])}
                     expandIcon={<ExpandMoreOutlined />}
                 >
                     <Box sx={{ display: 'flex' }}>
