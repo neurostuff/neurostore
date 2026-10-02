@@ -76,7 +76,7 @@
         "zustand": "^4.3.3"
     },
     "devDependencies": {
-        "@eslint/js": "^9.14.0",
+        "@eslint/js": "^10.0.1",
         "@prerenderer/prerenderer": "^1.2.5",
         "@prerenderer/renderer-puppeteer": "^1.2.4",
         "@sentry/vite-plugin": "^4.0.0",
