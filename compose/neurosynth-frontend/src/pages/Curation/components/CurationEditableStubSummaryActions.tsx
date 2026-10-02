@@ -18,14 +18,14 @@ import {
 import React, { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
-interface ICurationEditableStubSummaryHeader {
+interface ICurationEditableStubSummaryActions {
     type: 'excluded' | 'included' | 'default';
     columnIndex: number;
     stub: ICurationStubStudy;
     onMoveToNextStub: () => void;
 }
 
-const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableStubSummaryHeader) => {
+const CurationEditableStubSummaryActions = React.memo((props: ICurationEditableStubSummaryActions) => {
     const { user } = useAuth0();
     const canEdit = useUserCanEdit(user?.sub || undefined);
 
@@ -118,10 +118,10 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
     //     props.onMoveToNextStub();
     // };
 
-    let categorizeHeader: React.ReactNode;
+    let categorizeActions: React.ReactNode;
     switch (props.type) {
         case 'excluded':
-            categorizeHeader = (
+            categorizeActions = (
                 <Chip
                     sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleRemoveExclusion}
@@ -133,7 +133,7 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
             );
             break;
         case 'included':
-            categorizeHeader = (
+            categorizeActions = (
                 <Chip
                     sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleDemoteStub}
@@ -145,7 +145,7 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
             );
             break;
         default:
-            categorizeHeader = (
+            categorizeActions = (
                 <Box sx={{ display: 'flex' }}>
                     <Button
                         onClick={handlePromote}
@@ -208,7 +208,7 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
     return (
         <Box sx={{ paddingBottom: '4px' }}>
             <Box sx={{ display: 'flex' }}>
-                <Box>{categorizeHeader}</Box>
+                <Box>{categorizeActions}</Box>
                 {/* <Box sx={{ marginLeft: 'auto' }}>
                     <NeurosynthPopper
                         open={tagSelectorIsOpen}
@@ -242,4 +242,4 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
     );
 });
 
-export default CurationEditableStubSummaryHeader;
+export default CurationEditableStubSummaryActions;

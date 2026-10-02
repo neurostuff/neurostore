@@ -8,7 +8,7 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
 import React from 'react';
 import { useProjectCurationColumns, useProjectUser, useUpdateStubField } from 'stores/projects/ProjectStore';
-import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
+import CurationEditableStubSummaryActions from './CurationEditableStubSummaryActions';
 
 interface ICurationEditableStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -68,7 +68,7 @@ const CurationEditableStubSummary = ({
                     zIndex: 1000,
                 }}
             >
-                <Box sx={{ display: 'flex' }}>
+                <Box sx={{ display: 'flex', mb: 0.5 }}>
                     <EditableDisplayLink
                         stubId={stub.id}
                         linkProps={{ href: `${DOI_PREFIX}${stub.doi}` }}
@@ -121,7 +121,7 @@ const CurationEditableStubSummary = ({
                     />
                     {stub.title && <DisplayStudyLinkFullText studyName={stub.title} />}
                 </Box>
-                <CurationEditableStubSummaryHeader
+                <CurationEditableStubSummaryActions
                     type={isLastColumn ? 'included' : stub.exclusionTag ? 'excluded' : 'default'}
                     stub={stub}
                     columnIndex={columnIndex}

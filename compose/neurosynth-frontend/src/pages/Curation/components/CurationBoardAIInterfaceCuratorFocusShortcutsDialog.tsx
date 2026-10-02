@@ -2,8 +2,10 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { KeyboardArrowDown, KeyboardArrowLeft, KeyboardArrowRight, KeyboardArrowUp } from '@mui/icons-material';
 import { Button, Checkbox, Chip, FormControlLabel, Stack, Typography } from '@mui/material';
 import BaseDialog from 'components/Dialogs/BaseDialog';
+import { useUserCanEdit } from 'hooks';
 import { ReactNode, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useProjectUser } from 'stores/projects/ProjectStore';
 
 export const getCurationFocusModeSeenStorageKey = (userId: string, projectId: string) =>
     `${userId}-${projectId}-seen-curation-focus-mode`;
@@ -22,7 +24,11 @@ const ShortcutRow = ({ label, children }: { label: string; children: ReactNode }
 const CurationBoardAIInterfaceCuratorFocusShortcutsDialog = () => {
     const { user } = useAuth0();
     const { projectId } = useParams<{ projectId: string }>();
-    const storageKey = user?.sub && projectId ? getCurationFocusModeSeenStorageKey(user.sub, projectId) : undefined;
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
+    const storageKey = projectId
+        ? getCurationFocusModeSeenStorageKey(user?.sub ?? 'non-authenticated-user', projectId)
+        : undefined;
     const [isOpen, setIsOpen] = useState(false);
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
@@ -51,9 +57,13 @@ const CurationBoardAIInterfaceCuratorFocusShortcutsDialog = () => {
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
                     <Stack spacing={1} flex={1}>
                         <Typography variant="subtitle2">Review</Typography>
-                        <ShortcutRow label="Include or promote">A</ShortcutRow>
-                        <ShortcutRow label="Exclude">S</ShortcutRow>
-                        <ShortcutRow label="Demote">D</ShortcutRow>
+                        {canEdit && (
+                            <>
+                                <ShortcutRow label="Include or promote">A</ShortcutRow>
+                                <ShortcutRow label="Exclude">S</ShortcutRow>
+                                <ShortcutRow label="Demote">D</ShortcutRow>
+                            </>
+                        )}
                         <ShortcutRow label="Expand or collapse details">E</ShortcutRow>
                     </Stack>
                     <Stack spacing={1} flex={1}>

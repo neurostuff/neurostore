@@ -10,7 +10,7 @@ import {
 } from 'stores/projects/ProjectStore';
 import { defaultExclusionTags, ENeurosynthTagIds } from 'stores/projects/ProjectStore.consts';
 import { Mock, vi } from 'vitest';
-import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
+import CurationEditableStubSummaryActions from './CurationEditableStubSummaryActions';
 
 vi.mock('@auth0/auth0-react');
 vi.mock('stores/projects/ProjectStore');
@@ -22,7 +22,7 @@ const demoteStub = vi.fn();
 
 const stub = { id: 'stub-1', exclusionTag: null } as ICurationStubStudy;
 
-const renderHeader = ({
+const renderActions = ({
     type = 'default',
     columnIndex = 0,
     onMoveToNextStub = vi.fn(),
@@ -32,7 +32,7 @@ const renderHeader = ({
     onMoveToNextStub?: () => void;
 } = {}) => {
     render(
-        <CurationEditableStubSummaryHeader
+        <CurationEditableStubSummaryActions
             type={type}
             columnIndex={columnIndex}
             stub={stub}
@@ -42,7 +42,7 @@ const renderHeader = ({
     return onMoveToNextStub;
 };
 
-describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
+describe('CurationEditableStubSummaryActions keyboard shortcuts', () => {
     beforeEach(() => {
         promoteStub.mockReset();
         setExclusionForStub.mockReset();
@@ -59,7 +59,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
 
     it('promotes the study and moves to the next stub when a is pressed', async () => {
         const user = userEvent.setup();
-        const onMoveToNextStub = renderHeader();
+        const onMoveToNextStub = renderActions();
 
         await user.keyboard('a');
 
@@ -69,7 +69,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
 
     it('does not promote when the study is in the last column', async () => {
         const user = userEvent.setup();
-        const onMoveToNextStub = renderHeader({ type: 'included', columnIndex: 2 });
+        const onMoveToNextStub = renderActions({ type: 'included', columnIndex: 2 });
 
         await user.keyboard('a');
 
@@ -79,7 +79,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
 
     it('excludes the study with the default tag and moves to the next stub when s is pressed', async () => {
         const user = userEvent.setup();
-        const onMoveToNextStub = renderHeader();
+        const onMoveToNextStub = renderActions();
 
         await user.keyboard('s');
 
@@ -90,7 +90,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
     it('uses the phase default exclusion tag', async () => {
         const user = userEvent.setup();
         (useProjectCurationPrismaConfig as Mock).mockReturnValue({ isPrisma: true });
-        renderHeader({ columnIndex: 0 });
+        renderActions({ columnIndex: 0 });
 
         await user.keyboard('s');
 
@@ -99,7 +99,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
 
     it('demotes the study and moves to the next stub when d is pressed', async () => {
         const user = userEvent.setup();
-        const onMoveToNextStub = renderHeader({ columnIndex: 1 });
+        const onMoveToNextStub = renderActions({ columnIndex: 1 });
 
         await user.keyboard('d');
 
@@ -109,7 +109,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
 
     it('demotes an included study in the last column when d is pressed', async () => {
         const user = userEvent.setup();
-        const onMoveToNextStub = renderHeader({ type: 'included', columnIndex: 2 });
+        const onMoveToNextStub = renderActions({ type: 'included', columnIndex: 2 });
 
         await user.keyboard('d');
 
@@ -119,7 +119,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
 
     it('does not demote when the study is in the first column', async () => {
         const user = userEvent.setup();
-        const onMoveToNextStub = renderHeader({ columnIndex: 0 });
+        const onMoveToNextStub = renderActions({ columnIndex: 0 });
 
         await user.keyboard('d');
 
@@ -129,7 +129,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
 
     it('does not promote, exclude, or demote an already excluded study', async () => {
         const user = userEvent.setup();
-        renderHeader({ type: 'excluded', columnIndex: 1 });
+        renderActions({ type: 'excluded', columnIndex: 1 });
 
         await user.keyboard('a');
         await user.keyboard('s');
@@ -142,7 +142,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
 
     it('does not promote or exclude when an input is focused', async () => {
         const user = userEvent.setup();
-        renderHeader();
+        renderActions();
         const input = document.createElement('input');
         document.body.appendChild(input);
         input.focus();
@@ -156,7 +156,7 @@ describe('CurationEditableStubSummaryHeader keyboard shortcuts', () => {
     });
 
     it('does not exclude again when the key is held down', () => {
-        renderHeader();
+        renderActions();
 
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', repeat: true }));
 
