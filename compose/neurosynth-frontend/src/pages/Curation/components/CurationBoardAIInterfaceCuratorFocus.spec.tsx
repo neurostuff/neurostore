@@ -51,38 +51,38 @@ describe('CurationBoardAIInterfaceCuratorFocus', () => {
         expect(screen.getByTestId('focus-mode-shortcuts-dialog')).toBeInTheDocument();
     });
 
-    it('selects the next stub when ArrowDown is pressed', async () => {
+    it('selects the next stub when ArrowRight is pressed', async () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[0]);
 
-        await user.keyboard('{ArrowDown}');
+        await user.keyboard('{ArrowRight}');
 
         expect(onSetSelectedStub).toHaveBeenCalledWith('stub-2');
     });
 
-    it('selects the previous stub when ArrowUp is pressed', async () => {
+    it('selects the previous stub when ArrowLeft is pressed', async () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[1]);
 
-        await user.keyboard('{ArrowUp}');
+        await user.keyboard('{ArrowLeft}');
 
         expect(onSetSelectedStub).toHaveBeenCalledWith('stub-1');
     });
 
-    it('stays on the first stub when ArrowUp is pressed', async () => {
+    it('stays on the first stub when ArrowLeft is pressed', async () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[0]);
 
-        await user.keyboard('{ArrowUp}');
+        await user.keyboard('{ArrowLeft}');
 
         expect(onSetSelectedStub).not.toHaveBeenCalled();
     });
 
-    it('stays on the last stub when ArrowDown is pressed', async () => {
+    it('stays on the last stub when ArrowRight is pressed', async () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[2]);
 
-        await user.keyboard('{ArrowDown}');
+        await user.keyboard('{ArrowRight}');
 
         expect(onSetSelectedStub).not.toHaveBeenCalled();
     });
@@ -91,8 +91,8 @@ describe('CurationBoardAIInterfaceCuratorFocus', () => {
         const user = userEvent.setup();
         const onSetSelectedStub = renderFocus(stubs[0]);
 
-        await user.keyboard('{ArrowRight}');
-        await user.keyboard('{ArrowLeft}');
+        await user.keyboard('{ArrowDown}');
+        await user.keyboard('{ArrowUp}');
 
         expect(onSetSelectedStub).not.toHaveBeenCalled();
         expect(Element.prototype.scrollBy).toHaveBeenNthCalledWith(1, { top: 250, behavior: 'smooth' });
@@ -106,9 +106,40 @@ describe('CurationBoardAIInterfaceCuratorFocus', () => {
         document.body.appendChild(input);
         input.focus();
 
-        await user.keyboard('{ArrowDown}');
+        await user.keyboard('{ArrowRight}');
 
         expect(onSetSelectedStub).not.toHaveBeenCalled();
         input.remove();
+    });
+
+    it('collapses and expands the abstract and both extraction tables together on e', async () => {
+        const user = userEvent.setup();
+        renderFocus(stubs[0]);
+
+        expect(screen.getByTestId('stub-summary')).toHaveAttribute('data-abstract-expanded', 'true');
+        expect(screen.getByTestId('ai-table-summary')).toHaveAttribute('data-expanded-state', 'true,true');
+
+        await user.keyboard('e');
+
+        expect(screen.getByTestId('stub-summary')).toHaveAttribute('data-abstract-expanded', 'false');
+        expect(screen.getByTestId('ai-table-summary')).toHaveAttribute('data-expanded-state', 'false,false');
+
+        await user.keyboard('e');
+
+        expect(screen.getByTestId('stub-summary')).toHaveAttribute('data-abstract-expanded', 'true');
+        expect(screen.getByTestId('ai-table-summary')).toHaveAttribute('data-expanded-state', 'true,true');
+    });
+
+    it('expands everything on e when only one section was collapsed by hand', async () => {
+        const user = userEvent.setup();
+        renderFocus(stubs[0]);
+
+        await user.click(screen.getByRole('button', { name: 'toggle experimental details' }));
+        expect(screen.getByTestId('ai-table-summary')).toHaveAttribute('data-expanded-state', 'false,true');
+
+        await user.keyboard('e');
+
+        expect(screen.getByTestId('stub-summary')).toHaveAttribute('data-abstract-expanded', 'true');
+        expect(screen.getByTestId('ai-table-summary')).toHaveAttribute('data-expanded-state', 'true,true');
     });
 });

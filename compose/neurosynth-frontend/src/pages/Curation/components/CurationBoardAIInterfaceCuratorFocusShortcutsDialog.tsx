@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { KeyboardArrowDown, KeyboardArrowLeft, KeyboardArrowRight, KeyboardArrowUp } from '@mui/icons-material';
-import { Box, Button, Checkbox, FormControlLabel, Stack, Typography } from '@mui/material';
+import { Button, Checkbox, Chip, FormControlLabel, Stack, Typography } from '@mui/material';
 import BaseDialog from 'components/Dialogs/BaseDialog';
 import { ReactNode, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -9,27 +9,7 @@ export const getCurationFocusModeSeenStorageKey = (userId: string, projectId: st
     `${userId}-${projectId}-seen-curation-focus-mode`;
 
 const KeyboardKey = ({ children }: { children: ReactNode }) => (
-    <Box
-        component="kbd"
-        sx={{
-            border: '1px solid',
-            borderBottomWidth: 3,
-            borderColor: 'divider',
-            borderRadius: '6px',
-            minWidth: 36,
-            height: 36,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'grey.50',
-            fontFamily: 'inherit',
-            fontWeight: 700,
-            fontSize: '0.875rem',
-            lineHeight: 1,
-        }}
-    >
-        {children}
-    </Box>
+    <Chip component="kbd" variant="outlined" label={children} sx={{ minWidth: 40, borderRadius: '4px' }} />
 );
 
 const ShortcutRow = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -79,16 +59,16 @@ const CurationBoardAIInterfaceCuratorFocusShortcutsDialog = () => {
                     <Stack spacing={1} flex={1}>
                         <Typography variant="subtitle2">Navigate</Typography>
                         <ShortcutRow label="Previous study">
-                            <KeyboardArrowUp fontSize="small" />
-                        </ShortcutRow>
-                        <ShortcutRow label="Next study">
-                            <KeyboardArrowDown fontSize="small" />
-                        </ShortcutRow>
-                        <ShortcutRow label="Scroll up">
                             <KeyboardArrowLeft fontSize="small" />
                         </ShortcutRow>
-                        <ShortcutRow label="Scroll down">
+                        <ShortcutRow label="Next study">
                             <KeyboardArrowRight fontSize="small" />
+                        </ShortcutRow>
+                        <ShortcutRow label="Scroll up">
+                            <KeyboardArrowUp fontSize="small" />
+                        </ShortcutRow>
+                        <ShortcutRow label="Scroll down">
+                            <KeyboardArrowDown fontSize="small" />
                         </ShortcutRow>
                     </Stack>
                 </Stack>

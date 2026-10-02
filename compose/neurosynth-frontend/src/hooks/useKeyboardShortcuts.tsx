@@ -13,7 +13,9 @@ const useKeyboardShortcuts = (shortcuts: Record<string, KeyboardShortcutHandler>
         if (!enabled) return;
 
         const handleKeyDown = (event: KeyboardEvent) => {
-            const handler = shortcutsRef.current[event.key];
+            // Caps Lock reports letters as uppercase without shiftKey, so match single characters case-insensitively.
+            const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+            const handler = shortcutsRef.current[key];
             if (!handler) return;
             if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
 

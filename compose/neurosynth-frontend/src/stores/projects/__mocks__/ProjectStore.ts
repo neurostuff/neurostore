@@ -57,6 +57,8 @@ const useProjectCurationPrismaConfig = vi.fn().mockReturnValue({ isPrisma: false
 
 const useUpdateStubField = vi.fn().mockReturnValue(vi.fn());
 
+const useUpdateExclusionTag = vi.fn().mockReturnValue(vi.fn());
+
 export {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
@@ -86,4 +88,5 @@ export {
     useProjectExclusionTag,
     useProjectCurationPrismaConfig,
     useUpdateStubField,
+    useUpdateExclusionTag,
 };

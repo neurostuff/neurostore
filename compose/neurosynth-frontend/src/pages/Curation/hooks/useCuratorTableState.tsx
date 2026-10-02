@@ -58,9 +58,9 @@ const useCuratorTableState = (
         if (allowRowSelection) newColumns.push(createColumn('select'));
         if (allowAIColumns) newColumns.push(createColumn('summary'));
 
+        const stateSelectedColumns = [...state.selectedColumns];
         if (state.firstTimeSeeingPage) {
             // set defaults
-            const stateSelectedColumns = [...state.selectedColumns];
             if (allowAIColumns) {
                 ['fMRITasks.TaskName', 'group_name', 'diagnosis'].forEach((column) => {
                     newColumns.push(createColumn(column));
@@ -72,7 +72,6 @@ const useCuratorTableState = (
                     stateSelectedColumns.push(column);
                 });
             }
-            state.selectedColumns = stateSelectedColumns;
         } else {
             COMBINED_CURATOR_TABLE_COLUMNS.forEach((column) => {
                 if (state.selectedColumns.includes(column.id)) newColumns.push(createColumn(column.id));
@@ -88,7 +87,7 @@ const useCuratorTableState = (
             projectId,
             {
                 firstTimeSeeingPage: false,
-                selectedColumns: state.selectedColumns,
+                selectedColumns: stateSelectedColumns,
             },
             allowAIColumns ? '' : 'identification'
         );

@@ -14,34 +14,30 @@ import {
 } from '@mui/material';
 import { useIsFetching } from '@tanstack/react-query';
 import AIICon from 'components/AIIcon';
-import { useKeyboardShortcuts } from 'hooks';
 import { IfMRITask, IGroup } from 'hooks/extractions/useGetAllExtractedDataForStudies';
-import { useState } from 'react';
 import {
     PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS,
     TASK_EXTRACTOR_CURATOR_COLUMNS,
 } from '../hooks/useCuratorTableState.consts';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
-const CurationStubAITableSummary = ({ stub }: { stub: ICurationTableStudy | undefined }) => {
+const CurationStubAITableSummary = ({
+    stub,
+    expandedState,
+    onSetExpandedState,
+}: {
+    stub: ICurationTableStudy | undefined;
+    expandedState: [boolean, boolean];
+    onSetExpandedState: (expandedState: [boolean, boolean]) => void;
+}) => {
     const isFetchingExtractions = useIsFetching({ queryKey: ['extraction'] }) > 0;
     const TaskExtractor = stub?.TaskExtractor;
     const ParticipantDemographicsExtractor = stub?.ParticipantDemographicsExtractor;
-
-    const [expandedState, setExpandedState] = useState([true, true]);
 
     const modalityStr = (stub?.TaskExtractor?.Modality || []).reduce((acc, curr, index) => {
         if (index === 0) return curr;
         return `${acc}, ${curr}`;
     }, '');
-
-    useKeyboardShortcuts({
-        e: (event) => {
-            if (event.repeat) return;
-            const nextExpanded = !(expandedState[0] && expandedState[1]);
-            setExpandedState([nextExpanded, nextExpanded]);
-        },
-    });
 
     if (isFetchingExtractions) {
         return (
@@ -64,7 +60,7 @@ const CurationStubAITableSummary = ({ stub }: { stub: ICurationTableStudy | unde
         <Box>
             <Accordion expanded={expandedState[0]}>
                 <AccordionSummary
-                    onClick={() => setExpandedState([!expandedState[0], expandedState[1]])}
+                    onClick={() => onSetExpandedState([!expandedState[0], expandedState[1]])}
                     expandIcon={<ExpandMoreOutlined />}
                 >
                     <Box sx={{ display: 'flex' }}>
@@ -207,7 +203,7 @@ const CurationStubAITableSummary = ({ stub }: { stub: ICurationTableStudy | unde
 
             <Accordion expanded={expandedState[1]}>
                 <AccordionSummary
-                    onClick={() => setExpandedState([expandedState[0], !expandedState[1]])}
+                    onClick={() => onSetExpandedState([expandedState[0], !expandedState[1]])}
                     expandIcon={<ExpandMoreOutlined />}
                 >
                     <Box sx={{ display: 'flex' }}>

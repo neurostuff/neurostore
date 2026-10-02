@@ -120,4 +120,25 @@ describe('TextExpansion Component', () => {
         rerender(<TextExpansion text={longTestText} isExpanded={true} setIsExpanded={setIsExpanded} />);
         expect(screen.getByRole('button', { name: 'Read less' })).toBeInTheDocument();
     });
+
+    it('hides Read less without collapsing a controlled parent when the text fits on one line', () => {
+        Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+            configurable: true,
+            value: 400,
+        });
+        Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+            configurable: true,
+            value: 400,
+        });
+        const getComputedStyleSpy = vi
+            .spyOn(window, 'getComputedStyle')
+            .mockReturnValue({ getPropertyValue: () => '20px' } as unknown as CSSStyleDeclaration);
+
+        const setIsExpanded = vi.fn();
+        render(<TextExpansion text="short" isExpanded={true} setIsExpanded={setIsExpanded} />);
+
+        expect(setIsExpanded).not.toHaveBeenCalled();
+        expect(screen.queryByRole('button', { name: 'Read less' })).not.toBeInTheDocument();
+        getComputedStyleSpy.mockRestore();
+    });
 });

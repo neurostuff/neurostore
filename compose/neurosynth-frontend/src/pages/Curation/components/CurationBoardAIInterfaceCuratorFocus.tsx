@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import { useGetWindowHeight, useKeyboardShortcuts } from 'hooks';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorFocusShortcutsDialog from './CurationBoardAIInterfaceCuratorFocusShortcutsDialog';
 import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
@@ -23,6 +23,8 @@ const CurationBoardAIInterfaceCuratorFocus = ({
 
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
+    const [isAbstractExpanded, setIsAbstractExpanded] = useState(true);
+    const [extractionsExpandedState, setExtractionsExpandedState] = useState<[boolean, boolean]>([true, true]);
 
     const selectStubByOffset = useCallback(
         (offset: number) => {
@@ -51,14 +53,16 @@ const CurationBoardAIInterfaceCuratorFocus = ({
     }, []);
 
     useKeyboardShortcuts({
-        // ArrowDown: () => scrollDetailPane(1),
-        // ArrowUp: () => scrollDetailPane(-1),
-        // ArrowRight: () => selectStubByOffset(1),
-        // ArrowLeft: () => selectStubByOffset(-1),
-        ArrowRight: () => scrollDetailPane(1),
-        ArrowLeft: () => scrollDetailPane(-1),
-        ArrowDown: () => selectStubByOffset(1),
-        ArrowUp: () => selectStubByOffset(-1),
+        ArrowDown: () => scrollDetailPane(1),
+        ArrowUp: () => scrollDetailPane(-1),
+        ArrowRight: () => selectStubByOffset(1),
+        ArrowLeft: () => selectStubByOffset(-1),
+        e: (event) => {
+            if (event.repeat) return;
+            const nextExpanded = !(isAbstractExpanded && extractionsExpandedState[0] && extractionsExpandedState[1]);
+            setIsAbstractExpanded(nextExpanded);
+            setExtractionsExpandedState([nextExpanded, nextExpanded]);
+        },
     });
 
     const pxInVh = Math.round(windowHeight - 250);
@@ -110,9 +114,15 @@ const CurationBoardAIInterfaceCuratorFocus = ({
                             onMoveToNextStub={handleMoveToNextStub}
                             columnIndex={columnIndex}
                             stub={selectedStub}
+                            isAbstractExpanded={isAbstractExpanded}
+                            onSetIsAbstractExpanded={setIsAbstractExpanded}
                         >
                             <Box sx={{ marginTop: '0.5rem' }}>
-                                <CurationStubAITableSummary stub={selectedStub} />
+                                <CurationStubAITableSummary
+                                    stub={selectedStub}
+                                    expandedState={extractionsExpandedState}
+                                    onSetExpandedState={setExtractionsExpandedState}
+                                />
                             </Box>
                         </CurationEditableStubSummary>
                     </Box>

@@ -3,11 +3,10 @@ import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLi
 import EditableDisplayLink from 'components/DisplayStudyLink/EditableDisplayLink';
 import TextEdit from 'components/TextEdit/TextEdit';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import { useKeyboardShortcuts } from 'hooks';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
-import React, { useState } from 'react';
+import React from 'react';
 import { useProjectCurationColumns, useProjectUser, useUpdateStubField } from 'stores/projects/ProjectStore';
 import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
 
@@ -15,6 +14,8 @@ interface ICurationEditableStubSummary {
     stub: ICurationStubStudy | undefined;
     columnIndex: number;
     onMoveToNextStub: () => void;
+    isAbstractExpanded?: boolean;
+    onSetIsAbstractExpanded?: (expanded: boolean) => void;
     children?: React.ReactNode;
 }
 
@@ -24,22 +25,14 @@ const CurationEditableStubSummary = ({
     stub,
     columnIndex,
     onMoveToNextStub,
+    isAbstractExpanded,
+    onSetIsAbstractExpanded,
     children,
 }: ICurationEditableStubSummary) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
-    const [isDetailsExpanded, setIsDetailsExpanded] = useState<boolean>(true);
-
-    useKeyboardShortcuts({
-        e: (event) => {
-            if (event.repeat) return;
-            setIsDetailsExpanded((currentlyExpanded) => {
-                return !currentlyExpanded;
-            });
-        },
-    });
 
     const handleUpdateStub = (updatedText: string | number | ISource, label: string) => {
         if (!canEdit) return;
@@ -190,8 +183,8 @@ const CurationEditableStubSummary = ({
             <TextExpansion
                 key={stub.id}
                 text={stub.abstractText}
-                isExpanded={isDetailsExpanded ?? true}
-                setIsExpanded={setIsDetailsExpanded}
+                isExpanded={isAbstractExpanded}
+                setIsExpanded={onSetIsAbstractExpanded}
                 textSx={{ typography: 'body2' }}
             ></TextExpansion>
 

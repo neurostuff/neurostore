@@ -1,34 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { ICurationTableStudy } from 'pages/Curation/hooks/useCuratorTableState.types';
-import { useProjectCurationColumns } from 'stores/projects/ProjectStore';
-import { Mock, vi } from 'vitest';
-import CurationEditableStubSummary from './CurationEditableStubSummary';
+import { vi } from 'vitest';
 import CurationStubAITableSummary from './CurationStubAITableSummary';
 
-vi.mock('@auth0/auth0-react');
-vi.mock('stores/projects/ProjectStore');
-vi.mock('./CurationPopupExclusionSelector');
 vi.mock('@tanstack/react-query');
-vi.mock('react-router-dom');
-
-const study = {
-    id: 'stub-1',
-    doi: '',
-    pmid: '',
-    pmcid: '',
-    title: 'Title',
-    authors: '',
-    journal: '',
-    keywords: '',
-    abstractText: 'Abstract',
-    exclusionTag: null,
-    articleLink: '',
-} as ICurationStubStudy;
 
 const tableStudy = {
-    ...study,
+    id: 'stub-1',
+    title: 'Title',
     TaskExtractor: { Modality: [], StudyObjective: '', fMRITasks: [] },
     ParticipantDemographicsExtractor: { groups: [] },
 } as unknown as ICurationTableStudy;
@@ -36,30 +16,30 @@ const tableStudy = {
 const expandedState = (name: RegExp) => screen.getByRole('button', { name }).getAttribute('aria-expanded');
 
 describe('CurationStubAITableSummary', () => {
-    beforeEach(() => {
-        localStorage.clear();
-        (useProjectCurationColumns as Mock).mockReturnValue([{}]);
-    });
-
-    it('shrinks both extraction tables on e and expands them on the next e', async () => {
-        const user = userEvent.setup();
+    it('shows each extraction table as expanded or collapsed from expandedState', () => {
         render(
-            <CurationEditableStubSummary stub={study} columnIndex={0} onMoveToNextStub={vi.fn()}>
-                <CurationStubAITableSummary stub={tableStudy} />
-            </CurationEditableStubSummary>
+            <CurationStubAITableSummary stub={tableStudy} expandedState={[true, false]} onSetExpandedState={vi.fn()} />
         );
 
         expect(expandedState(/experimental details/i)).toBe('true');
-        expect(expandedState(/participant demographics/i)).toBe('true');
-
-        await user.keyboard('e');
-
-        expect(expandedState(/experimental details/i)).toBe('false');
         expect(expandedState(/participant demographics/i)).toBe('false');
+    });
 
-        await user.keyboard('e');
+    it('toggles only the clicked extraction table', async () => {
+        const user = userEvent.setup();
+        const onSetExpandedState = vi.fn();
+        render(
+            <CurationStubAITableSummary
+                stub={tableStudy}
+                expandedState={[true, true]}
+                onSetExpandedState={onSetExpandedState}
+            />
+        );
 
-        expect(expandedState(/experimental details/i)).toBe('true');
-        expect(expandedState(/participant demographics/i)).toBe('true');
+        await user.click(screen.getByRole('button', { name: /experimental details/i }));
+        expect(onSetExpandedState).toHaveBeenLastCalledWith([false, true]);
+
+        await user.click(screen.getByRole('button', { name: /participant demographics/i }));
+        expect(onSetExpandedState).toHaveBeenLastCalledWith([true, false]);
     });
 });

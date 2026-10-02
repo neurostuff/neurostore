@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import useKeyboardShortcuts from './useKeyboardShortcuts';
@@ -38,6 +38,15 @@ describe('useKeyboardShortcuts', () => {
 
         expect(onPromote).toHaveBeenCalledTimes(1);
         expect(onExclude).toHaveBeenCalledTimes(1);
+    });
+
+    it('matches letter shortcuts when Caps Lock is on', async () => {
+        const onPromote = vi.fn();
+        render(<ShortcutHarness onPromote={onPromote} />);
+
+        fireEvent.keyDown(window, { key: 'P' });
+
+        expect(onPromote).toHaveBeenCalledTimes(1);
     });
 
     it('ignores keys that are not registered', async () => {

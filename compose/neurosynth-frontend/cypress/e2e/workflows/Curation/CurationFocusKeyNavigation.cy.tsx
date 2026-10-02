@@ -113,26 +113,26 @@ describe('Curation focus key navigation', () => {
             cy.contains('Focus mode shortcuts').should('not.exist');
         });
 
-        it('selects the next and previous study with arrow down and up', () => {
-            pressKey('ArrowUp');
+        it('selects the next and previous study with arrow right and left', () => {
+            pressKey('ArrowLeft');
             expectFocusedStudy(FIRST_STUDY_TITLE);
 
-            pressKey('ArrowDown');
+            pressKey('ArrowRight');
             expectFocusedStudy(SECOND_STUDY_TITLE);
 
-            pressKey('ArrowDown');
+            pressKey('ArrowRight');
             expectFocusedStudy(THIRD_STUDY_TITLE);
 
-            pressKey('ArrowUp');
+            pressKey('ArrowLeft');
             expectFocusedStudy(SECOND_STUDY_TITLE);
         });
 
-        it('scrolls the detail pane down and up with arrow right and left', () => {
+        it('scrolls the detail pane down and up with arrow down and up', () => {
             detailPane().should(($el) => {
                 expect($el[0].scrollHeight).to.be.greaterThan($el[0].clientHeight);
             });
 
-            pressKey('ArrowRight');
+            pressKey('ArrowDown');
             expectSettledScrollTop((scrollTop) => {
                 expect(scrollTop).to.be.greaterThan(0);
             });
@@ -140,7 +140,7 @@ describe('Curation focus key navigation', () => {
             detailPane()
                 .invoke('scrollTop')
                 .then((scrolledDown) => {
-                    pressKey('ArrowLeft');
+                    pressKey('ArrowUp');
                     expectSettledScrollTop((scrollTop) => {
                         expect(scrollTop).to.be.lessThan(scrolledDown);
                     });
@@ -162,7 +162,7 @@ describe('Curation focus key navigation', () => {
             expectFocusedStudy(SECOND_STUDY_TITLE);
             cy.contains('.MuiListItemButton-root', FIRST_STUDY_TITLE).should('contain', 'Duplicate');
 
-            pressKey('ArrowUp');
+            pressKey('ArrowLeft');
             expectFocusedStudy(FIRST_STUDY_TITLE);
             cy.contains('.MuiChip-root', 'Duplicate').should('be.visible');
         });
