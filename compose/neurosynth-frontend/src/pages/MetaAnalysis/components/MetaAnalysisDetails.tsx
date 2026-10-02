@@ -127,7 +127,7 @@ function MetaAnalysisDetails() {
                         </Box>
                     </Box>
                 ) : tab === 2 ? (
-                    <CiteMe />
+                    <CiteMe metaAnalysis={metaAnalysis} />
                 ) : tab === 3 ? (
                     <MetaAnalysisInstructions
                         metaAnalysisId={metaAnalysisId || ''}
