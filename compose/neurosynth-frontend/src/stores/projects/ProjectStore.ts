@@ -1,4 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import * as Sentry from '@sentry/react';
 import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import useGetProjectById from 'hooks/projects/useGetProjectById';
 import { EAnalysisType, INeurosynthProject, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
@@ -233,8 +234,28 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                                     enqueueSnackbar('You must log in to make changes. Please log in and try again', {
                                         variant: 'error',
                                     });
+                                    // Do not throw here: onError runs asynchronously inside react-query, so a
+                                    // thrown error becomes an unhandled rejection and bypasses the catch below.
+                                    // Network errors also have no response, which produced an empty message.
+                                    const errorMessage = err?.response?.data?.message || err?.message;
                                 } else {
-                                    console.error(err);
+                                    Sentry.captureException(err, {
+                                        tags: { projectId: oldDebouncedStoreData.id as string },
+                                    });
+                                    enqueueSnackbar(
+                                        `There was an error updating the project${
+                                            errorMessage ? `: ${errorMessage}` : ''
+                                        }. Please refresh the page, otherwise your changes will not be saved`,
+                                        { variant: 'error' }
+                                    );
+                                    set((state) => ({
+                                        ...state,
+                                        metadata: {
+                                            ...state.metadata,
+                                            isError: true,
+                                            hasUnsavedChanges: true,
+                                        },
+                                    }));
                                     throw new Error(err.response?.data?.message);
                                 }
                             },
