@@ -234,11 +234,12 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                                     enqueueSnackbar('You must log in to make changes. Please log in and try again', {
                                         variant: 'error',
                                     });
+                                } else {
                                     // Do not throw here: onError runs asynchronously inside react-query, so a
                                     // thrown error becomes an unhandled rejection and bypasses the catch below.
                                     // Network errors also have no response, which produced an empty message.
                                     const errorMessage = err?.response?.data?.message || err?.message;
-                                } else {
+                                    console.error(err);
                                     Sentry.captureException(err, {
                                         tags: { projectId: oldDebouncedStoreData.id as string },
                                     });
@@ -256,7 +257,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                                             hasUnsavedChanges: true,
                                         },
                                     }));
-                                    throw new Error(err.response?.data?.message);
                                 }
                             },
                             onSettled: () => {
