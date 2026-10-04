@@ -227,7 +227,8 @@ def test_create_neurovault_collection_applies_request_timeout(app, monkeypatch):
     )
 
     assert nv_collection.collection_id == 789
-    assert seen_kwargs and seen_kwargs[0].get("timeout") == 20
+    # Split across the connect and read phases so the total stays within budget.
+    assert seen_kwargs and sum(seen_kwargs[0]["timeout"]) == pytest.approx(20.0)
 
 
 @pytest.mark.parametrize("status_code", [401, 403, 429, 503])
@@ -323,4 +324,5 @@ def test_create_neurovault_collection_caps_request_timeout_to_deadline(
     )
 
     assert nv_collection.collection_id == 790
-    assert seen_kwargs and seen_kwargs[0]["timeout"] == pytest.approx(10.0)
+    # 10s of budget left, and connect + read together may not exceed it.
+    assert seen_kwargs and sum(seen_kwargs[0]["timeout"]) == pytest.approx(10.0)

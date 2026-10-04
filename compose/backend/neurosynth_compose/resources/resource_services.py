@@ -222,7 +222,13 @@ def _setting(settings, key, default):
 
 
 def _apply_default_timeout(client, get_timeout):
-    """Cap every NeuroVault HTTP call to ``get_timeout()`` seconds."""
+    """Cap every NeuroVault HTTP call to ``get_timeout()`` seconds in total.
+
+    ``requests`` applies a scalar timeout to the connect and the read phase
+    separately, so a single budget would allow twice that long on the wire and
+    let a request outlive the overall deadline. Split the budget across both
+    phases so ``get_timeout()`` stays a wall-clock bound.
+    """
     for attr in ("session", "_session", "s"):
         session = getattr(client, attr, None)
         if isinstance(session, requests.Session):
@@ -231,12 +237,16 @@ def _apply_default_timeout(client, get_timeout):
             @functools.wraps(original_request)
             def request_with_timeout(method, url, _orig=original_request, **kwargs):
                 budget = get_timeout()
-                if budget <= 0:
-                    raise requests.Timeout("Neurovault collection create deadline exceeded")
                 requested = kwargs.get("timeout")
                 if isinstance(requested, (int, float)):
                     budget = min(budget, requested)
-                kwargs["timeout"] = budget
+                elif isinstance(requested, tuple):
+                    budget = min(budget, sum(requested))
+                if budget <= 0:
+                    raise requests.Timeout(
+                        "Neurovault collection create deadline exceeded"
+                    )
+                kwargs["timeout"] = (budget / 2, budget / 2)
                 return _orig(method, url, **kwargs)
 
             session.request = request_with_timeout
