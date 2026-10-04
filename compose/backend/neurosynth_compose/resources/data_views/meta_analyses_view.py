@@ -848,8 +848,12 @@ class MetaAnalysisResultsView(ObjectView, ListView):
     ):
         upload_meta_id = token_info.get("meta_analysis_id")
 
+        # Lock the result row so concurrent/retried uploads cannot both see no
+        # NeuroVault collection and each create a remote one.
         result = db.session.execute(
-            select(self._model).where(self._model.id == id)
+            select(self._model)
+            .where(self._model.id == id)
+            .with_for_update(of=self._model)
         ).scalar_one()
         if (
             upload_meta_id is not None

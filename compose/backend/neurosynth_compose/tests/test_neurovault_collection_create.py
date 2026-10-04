@@ -228,3 +228,99 @@ def test_create_neurovault_collection_applies_request_timeout(app, monkeypatch):
 
     assert nv_collection.collection_id == 789
     assert seen_kwargs and seen_kwargs[0].get("timeout") == 20
+
+
+@pytest.mark.parametrize("status_code", [401, 403, 429, 503])
+def test_create_neurovault_collection_does_not_retry_non_name_http_errors(
+    app, monkeypatch, status_code
+):
+    """Auth/rate-limit/server errors can't be fixed by renaming; fail fast."""
+    from starlette.exceptions import HTTPException
+
+    from neurosynth_compose.resources.resource_services import (
+        create_neurovault_collection,
+    )
+
+    _configure(app)
+
+    class FakeHTTPError(Exception):
+        def __init__(self, status):
+            super().__init__(f"HTTP {status}")
+            self.response = types.SimpleNamespace(status_code=status)
+
+    class FakeClient:
+        names = []
+
+        def __init__(self, access_token):
+            self.access_token = access_token
+
+        def create_collection(self, name, description=None, full_dataset_url=None):
+            FakeClient.names.append(name)
+            raise FakeHTTPError(status_code)
+
+    monkeypatch.setitem(sys.modules, "pynv", types.SimpleNamespace(Client=FakeClient))
+
+    with pytest.raises(HTTPException) as excinfo:
+        create_neurovault_collection(
+            _make_nv_collection(),
+            public_base_url="http://example.com/",
+            settings=app.config,
+            logger=logging.getLogger(__name__),
+        )
+
+    assert excinfo.value.status_code == 503
+    assert len(FakeClient.names) == 1
+
+
+def test_create_neurovault_collection_caps_request_timeout_to_deadline(
+    app, monkeypatch
+):
+    """A request started near the deadline only gets the remaining budget."""
+    import requests
+
+    from neurosynth_compose.resources import resource_services
+
+    _configure(app)
+    seen_kwargs = []
+
+    # First call (deadline computation) returns 0; later calls return 50,
+    # leaving 10s of the 60s budget when the request is issued.
+    clock = {"calls": 0}
+
+    def fake_monotonic():
+        clock["calls"] += 1
+        return 0.0 if clock["calls"] == 1 else 50.0
+
+    monkeypatch.setattr(
+        resource_services,
+        "time",
+        types.SimpleNamespace(monotonic=fake_monotonic),
+        raising=False,
+    )
+
+    class RecordingSession(requests.Session):
+        def request(self, method, url, **kwargs):
+            seen_kwargs.append(kwargs)
+            return None
+
+    class FakeClient:
+        def __init__(self, access_token):
+            self.access_token = access_token
+            self.session = RecordingSession()
+
+        def create_collection(self, name, description=None, full_dataset_url=None):
+            self.session.request("POST", "https://neurovault.org/api/collections/")
+            return {"id": 790}
+
+    monkeypatch.setitem(sys.modules, "pynv", types.SimpleNamespace(Client=FakeClient))
+
+    nv_collection = _make_nv_collection()
+    resource_services.create_neurovault_collection(
+        nv_collection,
+        public_base_url="http://example.com/",
+        settings=app.config,
+        logger=logging.getLogger(__name__),
+    )
+
+    assert nv_collection.collection_id == 790
+    assert seen_kwargs and seen_kwargs[0]["timeout"] == pytest.approx(10.0)

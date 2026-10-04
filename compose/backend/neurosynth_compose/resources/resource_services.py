@@ -221,8 +221,8 @@ def _setting(settings, key, default):
     return default if value is None else value
 
 
-def _apply_default_timeout(client, timeout):
-    """Ensure HTTP calls made by the NeuroVault client cannot hang forever."""
+def _apply_default_timeout(client, get_timeout):
+    """Cap every NeuroVault HTTP call to ``get_timeout()`` seconds."""
     for attr in ("session", "_session", "s"):
         session = getattr(client, attr, None)
         if isinstance(session, requests.Session):
@@ -230,10 +230,20 @@ def _apply_default_timeout(client, timeout):
 
             @functools.wraps(original_request)
             def request_with_timeout(method, url, _orig=original_request, **kwargs):
-                kwargs.setdefault("timeout", timeout)
+                budget = get_timeout()
+                if budget <= 0:
+                    raise requests.Timeout("Neurovault collection create deadline exceeded")
+                requested = kwargs.get("timeout")
+                if isinstance(requested, (int, float)):
+                    budget = min(budget, requested)
+                kwargs["timeout"] = budget
                 return _orig(method, url, **kwargs)
 
             session.request = request_with_timeout
+
+
+# Responses where a different collection name might succeed.
+_NAME_RETRYABLE_STATUSES = {400, 409, 422}
 
 
 def _is_transient_upstream_error(exception):
@@ -242,7 +252,7 @@ def _is_transient_upstream_error(exception):
         return True
     response = getattr(exception, "response", None)
     status = getattr(response, "status_code", None)
-    return isinstance(status, int) and status >= 500
+    return isinstance(status, int) and status not in _NAME_RETRYABLE_STATUSES
 
 
 def create_neurovault_collection(nv_collection, *, settings, logger, public_base_url):
@@ -280,7 +290,9 @@ def create_neurovault_collection(nv_collection, *, settings, logger, public_base
     last_attempted_name = None
     try:
         api = Client(access_token=settings["NEUROVAULT_ACCESS_TOKEN"])
-        _apply_default_timeout(api, request_timeout)
+        _apply_default_timeout(
+            api, lambda: min(request_timeout, deadline - time.monotonic())
+        )
         tried_names = set()
         for name_length in name_length_candidates:
             for suffix_number in [None, *range(1, max_suffix + 1)]:
