@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import functools
 import pathlib
+import time
 from datetime import datetime, timezone
 from operator import itemgetter
 
+import requests
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from starlette.exceptions import HTTPException
 
 from neurosynth_compose.asgi_requests import raise_http_error
 from neurosynth_compose.database import db
@@ -209,6 +213,38 @@ def select_cluster_table_for_specification(cluster_table_fnames, specification):
     return None
 
 
+def _setting(settings, key, default):
+    try:
+        value = settings[key]
+    except (KeyError, TypeError):
+        return default
+    return default if value is None else value
+
+
+def _apply_default_timeout(client, timeout):
+    """Ensure HTTP calls made by the NeuroVault client cannot hang forever."""
+    for attr in ("session", "_session", "s"):
+        session = getattr(client, attr, None)
+        if isinstance(session, requests.Session):
+            original_request = session.request
+
+            @functools.wraps(original_request)
+            def request_with_timeout(method, url, _orig=original_request, **kwargs):
+                kwargs.setdefault("timeout", timeout)
+                return _orig(method, url, **kwargs)
+
+            session.request = request_with_timeout
+
+
+def _is_transient_upstream_error(exception):
+    """Return True for errors where retrying with a different name is futile."""
+    if isinstance(exception, (requests.Timeout, requests.ConnectionError)):
+        return True
+    response = getattr(exception, "response", None)
+    status = getattr(response, "status_code", None)
+    return isinstance(status, int) and status >= 500
+
+
 def create_neurovault_collection(nv_collection, *, settings, logger, public_base_url):
     from pynv import Client
 
@@ -236,13 +272,27 @@ def create_neurovault_collection(nv_collection, *, settings, logger, public_base
     ]
 
     url = f"{public_base_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
+    request_timeout = float(_setting(settings, "NEUROVAULT_REQUEST_TIMEOUT_SECONDS", 20))
+    deadline = time.monotonic() + float(
+        _setting(settings, "NEUROVAULT_COLLECTION_CREATE_DEADLINE_SECONDS", 60)
+    )
     last_exception = None
     last_attempted_name = None
     try:
         api = Client(access_token=settings["NEUROVAULT_ACCESS_TOKEN"])
+        _apply_default_timeout(api, request_timeout)
         tried_names = set()
         for name_length in name_length_candidates:
             for suffix_number in [None, *range(1, max_suffix + 1)]:
+                if time.monotonic() >= deadline:
+                    raise_http_error(
+                        503,
+                        (
+                            "Timed out creating Neurovault collection. "
+                            f"Last attempted name: {last_attempted_name}. "
+                            f"Last error: {last_exception}"
+                        ),
+                    )
                 collection_name = build_collection_name(
                     base_name=base_name,
                     created_at=created_at,
@@ -268,6 +318,18 @@ def create_neurovault_collection(nv_collection, *, settings, logger, public_base
                         collection_name,
                         str(exception),
                     )
+                    if _is_transient_upstream_error(exception):
+                        # NeuroVault is unreachable/unhealthy; trying more
+                        # names will not help and only delays the response.
+                        raise_http_error(
+                            503,
+                            (
+                                "Neurovault is unavailable; could not create "
+                                f"collection. Last error: {exception}"
+                            ),
+                        )
+    except HTTPException:
+        raise
     except Exception as exception:  # noqa: BLE001
         last_exception = exception
 

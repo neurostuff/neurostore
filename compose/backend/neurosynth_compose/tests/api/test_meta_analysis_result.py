@@ -37,6 +37,45 @@ def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
     assert meta_resp.status_code == 200
 
 
+def test_create_meta_analysis_result_does_not_call_neurovault(
+    session, db, auth_client, user_data, monkeypatch
+):
+    """Regression for COMPOSE-RUNNER-3H.
+
+    Creating a result must not block on NeuroVault: when NeuroVault is down,
+    the synchronous collection-create retries pushed the request past the
+    nginx proxy timeout and compose-runner received a 504.
+    """
+    import sys
+    import types
+
+    import requests
+
+    calls = []
+
+    class UnreachableNeurovaultClient:
+        def __init__(self, access_token=None, **kwargs):
+            del access_token, kwargs
+
+        def create_collection(self, name, description=None, full_dataset_url=None):
+            calls.append(name)
+            raise requests.ConnectionError("neurovault unreachable")
+
+    monkeypatch.setitem(
+        sys.modules,
+        "pynv",
+        types.SimpleNamespace(Client=UnreachableNeurovaultClient),
+    )
+
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    resp = _create_meta_analysis_result(auth_client, meta_analysis)
+
+    assert resp.status_code == 200
+    assert calls == []
+    record = db.session.get(MetaAnalysisResult, resp.json["id"])
+    assert record.neurovault_collection is None
+
+
 def test_create_meta_analysis_result_records_cli_version(
     session, db, auth_client, user_data
 ):
