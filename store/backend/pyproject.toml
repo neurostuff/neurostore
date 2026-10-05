@@ -40,7 +40,7 @@ dependencies = [
     "orjson~=3.12",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.21.0",
-    "openai~=3.19",
+    "openai~=3.23",
     "tenacity~=9.1",
     "sentry-sdk~=2.70",
 ]
