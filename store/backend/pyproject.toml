@@ -42,7 +42,7 @@ dependencies = [
     "NiMARE[parquet]==0.21.0",
     "openai~=3.23",
     "tenacity~=9.1",
-    "sentry-sdk~=2.70",
+    "sentry-sdk~=2.71",
 ]
 
 [tool.setuptools.packages.find]
