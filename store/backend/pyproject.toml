@@ -34,7 +34,7 @@ dependencies = [
     "sqladmin~=0.32",
     "sqltap",
     "webargs~=8.7",
-    "wrapt~=2.4",
+    "wrapt~=2.5",
     "openapi-spec-validator~=0.9",
     "scipy~=1.18",
     "orjson~=3.12",
