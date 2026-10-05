@@ -47,11 +47,10 @@ const CiteMe = ({ metaAnalysis }: { metaAnalysis: MetaAnalysisReturn | undefined
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {(methodDescription || composeRunnerVersion) && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
-                    <Typography variant="h6">Methods</Typography>
+                    <Typography variant="h6">Method</Typography>
                     {composeRunnerVersion && (
                         <Typography variant="body2" color="text.secondary">
-                            Run with compose-runner {composeRunnerVersion}, which pins the NiMARE version used for this
-                            meta-analysis.
+                            The latest meta-analysis was run with compose-runner {composeRunnerVersion}
                         </Typography>
                     )}
                     {methodDescription && isFormattedMethodsLoading ? (
@@ -60,7 +59,7 @@ const CiteMe = ({ metaAnalysis }: { metaAnalysis: MetaAnalysisReturn | undefined
                         <>
                             <CodeSnippet
                                 sx={{ whiteSpace: 'normal', overflow: 'auto' }}
-                                title="Methods"
+                                title="Method description"
                                 linesOfCode={(formattedMethods?.description || methodDescription).split('\n')}
                             />
                             {formattedMethods?.references && (
@@ -80,7 +79,7 @@ const CiteMe = ({ metaAnalysis }: { metaAnalysis: MetaAnalysisReturn | undefined
                 </Box>
             ) : citationPayload ? (
                 <>
-                    <Typography variant="h6">Copy citations in your preferred format:</Typography>
+                    <Typography variant="h6">Platform citations:</Typography>
                     <FormControl size="small" sx={{ minWidth: 200, my: 1 }}>
                         <InputLabel id="citation-format-label">Citation Format</InputLabel>
                         <Select

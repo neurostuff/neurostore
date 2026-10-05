@@ -91,10 +91,6 @@ export const parseNimareFileName = (
     });
 };
 
-// NiMARE writes method descriptions with natbib commands: \citep{a,b} -> (A, 2020; B, 2021),
-// \citealt{a} -> A, 2020 (already inside parentheses), \cite{a} -> A (2020)
-const NIMARE_CITATION_COMMAND_REGEX = /\\(citep|citealt|cite)\{([^}]+)\}/g;
-
 export const formatNimareMethodDescription = async (
     methodDescription: string,
     methodReferences: string | null | undefined
@@ -106,31 +102,29 @@ export const formatNimareMethodDescription = async (
     // @ts-expect-error citation-js packages do not provide first-party TS types
     await import('@citation-js/plugin-csl');
 
-    const references = new citationCore.Cite(methodReferences || '');
-    const referenceIds = new Set<string>(references.data.map((reference: { id: string }) => reference.id));
+    const apa = { template: 'apa', lang: 'en-US' } as const;
+    const cite = new citationCore.Cite(methodReferences || '');
+    const knownIds = new Set(cite.data.map((entry: { id: string }) => entry.id));
 
-    const formatCitationWithoutParentheses = (citationKey: string) => {
-        if (!referenceIds.has(citationKey)) return citationKey;
-        const citation = String(references.format('citation', { template: 'apa', lang: 'en-US', entry: citationKey }));
-        return citation.replace(/^\(|\)$/g, '');
+    // APA citation() returns "(Author, year)"; strip the parens so each command can wrap differently.
+    const formatKey = (key: string) => {
+        if (!knownIds.has(key)) return key;
+        return String(cite.format('citation', { ...apa, entry: key })).slice(1, -1);
     };
 
+    // NiMARE: \citep{a,b} -> (A, 2020; B, 2021); \citealt{a} -> A, 2020; \cite{a} -> A (2020)
     const description = methodDescription.replace(
-        NIMARE_CITATION_COMMAND_REGEX,
-        (_match, citationCommand: string, citationKeys: string) => {
-            const citations = citationKeys
-                .split(',')
-                .map((citationKey) => formatCitationWithoutParentheses(citationKey.trim()));
-            if (citationCommand === 'citep') return `(${citations.join('; ')})`;
-            if (citationCommand === 'citealt') return citations.join('; ');
-            return citations.map((citation) => citation.replace(/, ([^,]+)$/, ' ($1)')).join('; ');
+        /\\(citep|citealt|cite)\{([^}]+)\}/g,
+        (_match, command: string, rawKeys: string) => {
+            const parts = rawKeys.split(',').map((key) => formatKey(key.trim()));
+            if (command === 'citep') return `(${parts.join('; ')})`;
+            if (command === 'citealt') return parts.join('; ');
+            return parts.map((part) => part.replace(/, ([^,]+)$/, ' ($1)')).join('; ');
         }
     );
 
     return {
         description,
-        references: String(
-            references.format('bibliography', { format: 'text', template: 'apa', lang: 'en-US' })
-        ).trim(),
+        references: String(cite.format('bibliography', { format: 'text', ...apa })).trim(),
     };
 };
