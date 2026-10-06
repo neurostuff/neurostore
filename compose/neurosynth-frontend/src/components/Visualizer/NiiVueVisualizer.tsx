@@ -101,6 +101,8 @@ const NiiVueVisualizer = ({
     };
 
     useEffect(() => {
+        let cancelled = false;
+
         const updateNiivue = async () => {
             if (!canvasRef.current) return;
 
@@ -122,6 +124,7 @@ const NiiVueVisualizer = ({
                     opacity: 1,
                     colorbarVisible: false,
                 });
+                if (cancelled) return;
             }
 
             const niivue = niivueRef.current;
@@ -134,6 +137,8 @@ const NiiVueVisualizer = ({
                 cal_maxNeg: 0, // default
                 opacity: 1,
             });
+
+            if (cancelled || !niivue.volumes[1]) return;
 
             const globalMax = niivue.volumes[1].global_max || 2.58;
             const globalMin = niivue.volumes[1].global_min || 0;
@@ -178,6 +183,7 @@ const NiiVueVisualizer = ({
         updateNiivue();
 
         return () => {
+            cancelled = true;
             if (niivueRef.current && niivueRef.current.volumes[1]) {
                 niivueRef.current.removeVolume(niivueRef.current.volumes[1]);
             }
