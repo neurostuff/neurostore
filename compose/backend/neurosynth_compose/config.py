@@ -79,9 +79,7 @@ class Config:
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("compose", "production")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
-    )
+    SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     PROPAGATE_EXCEPTIONS = True
 
     GITHUB_CLIENT_ID = get_env_var("GITHUB_CLIENT_ID", "github-id")
@@ -137,7 +135,7 @@ class ProductionConfig(Config):
     ENV = "production"
     DB_NAME = resolve_database_name("compose", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"postgresql+psycopg2://postgres:{Config.POSTGRES_PASSWORD}"
         f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -154,7 +152,7 @@ class StagingConfig(Config):
     ENV = "staging"
     DB_NAME = resolve_database_name("compose", "staging")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"postgresql+psycopg2://postgres:{Config.POSTGRES_PASSWORD}"
         f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -177,9 +175,7 @@ class DevelopmentConfig(Config):
 
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
-    )
+    SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
     AUTH0_CLIENT_SECRET = get_env_var("AUTH0_CLIENT_SECRET", required=True)
@@ -201,9 +197,7 @@ class TestingConfig(Config):
 
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
-    )
+    SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
     AUTH0_CLIENT_SECRET = get_env_var("AUTH0_CLIENT_SECRET", required=True)
@@ -218,10 +212,8 @@ class DockerTestConfig(TestingConfig):
     DB_NAME = resolve_database_name("compose", "docker_test")
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
-    )
+    SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
 
 
 class TravisConfig(TestingConfig):
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres@localhost/travis_ci_test"
+    SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres@localhost/travis_ci_test"
