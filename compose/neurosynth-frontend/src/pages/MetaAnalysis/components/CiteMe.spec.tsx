@@ -46,7 +46,7 @@ describe('CiteMe', () => {
         render(<CiteMe metaAnalysis={undefined} />);
 
         expect(screen.getByRole('progressbar')).toBeInTheDocument();
-        expect(screen.queryByText('Copy citations in your preferred format:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Platform citations:')).not.toBeInTheDocument();
     });
 
     it('renders no citation formats when citation payload is null', async () => {
@@ -57,14 +57,14 @@ describe('CiteMe', () => {
 
         render(<CiteMe metaAnalysis={undefined} />);
 
-        expect(screen.queryByText('Copy citations in your preferred format:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Platform citations:')).not.toBeInTheDocument();
         expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     });
 
     it('does not render the methods section when the result has no methods or version', async () => {
         render(<CiteMe metaAnalysis={undefined} />);
 
-        expect(screen.queryByText('Methods')).not.toBeInTheDocument();
+        expect(screen.queryByText('Method')).not.toBeInTheDocument();
     });
 
     it('renders the compose-runner version and the methods with readable citations', async () => {
@@ -88,11 +88,7 @@ describe('CiteMe', () => {
 
         render(<CiteMe metaAnalysis={undefined} />);
 
-        expect(
-            screen.getByText(
-                'Run with compose-runner 0.6.6, which pins the NiMARE version used for this meta-analysis.'
-            )
-        ).toBeInTheDocument();
+        expect(screen.getByText('The latest meta-analysis was run with compose-runner 0.6.6')).toBeInTheDocument();
         expect(
             screen.getByText('An ALE meta-analysis was performed with NiMARE (Salo et al., 2023).')
         ).toBeInTheDocument();
@@ -121,7 +117,7 @@ describe('CiteMe', () => {
     it('renders heading, dropdown, and default APA citation when loaded', async () => {
         render(<CiteMe metaAnalysis={undefined} />);
 
-        expect(screen.getByText('Copy citations in your preferred format:')).toBeInTheDocument();
+        expect(screen.getByText('Platform citations:')).toBeInTheDocument();
         expect(screen.getByRole('combobox')).toBeInTheDocument();
         expect(screen.getByDisplayValue('apa')).toBeInTheDocument();
         expect(screen.getByText('APA citation text')).toBeInTheDocument();

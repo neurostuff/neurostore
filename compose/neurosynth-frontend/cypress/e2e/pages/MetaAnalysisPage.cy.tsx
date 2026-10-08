@@ -649,7 +649,7 @@ describe(PAGE_NAME, () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             cy.contains('[role="tab"]', 'Method & Citations').click();
-            cy.contains('Copy citations in your preferred format:', { timeout: 20000 }).should('exist');
+            cy.contains('Platform citations:', { timeout: 20000 }).should('exist');
         });
 
         it('should show citation format dropdown and citation content after loading', () => {
@@ -686,7 +686,7 @@ describe(PAGE_NAME, () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             cy.contains('[role="tab"]', 'Method & Citations').click();
-            cy.contains('Run with compose-runner 0.6.6').should('exist');
+            cy.contains('The latest meta-analysis was run with compose-runner 0.6.6').should('exist');
             cy.contains('An ALE meta-analysis was performed with NiMARE (RRID:SCR_017398; Salo & Laird, 2023).', {
                 timeout: 15000,
             }).should('exist');
