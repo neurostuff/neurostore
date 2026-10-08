@@ -8,7 +8,6 @@ Create Date: 2024-03-21 22:10:26.133187
 
 from alembic import op
 import sqlalchemy as sa
-import sqlalchemy_utils
 import neurostore.models.migration_types
 from sqlalchemy.dialects import postgresql
 
