@@ -11,7 +11,7 @@ export interface IGenericCustomAccessorReturn {
     value: number | string | boolean | null | undefined | string[] | Record<string, string | null>;
 }
 
-export type ICurationTableColumnType = IGenericCustomAccessorReturn[] | string | number | string[];
+export type ICurationTableColumnType = IGenericCustomAccessorReturn[] | string | number | string[] | null;
 
 export interface ICurationBoardAIInterfaceCuratorColumnType {
     id: string;
