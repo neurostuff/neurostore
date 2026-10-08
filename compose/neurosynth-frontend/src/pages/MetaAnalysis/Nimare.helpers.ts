@@ -107,6 +107,7 @@ export const formatNimareMethodDescription = async (
     const knownIds = new Set(cite.data.map((entry: { id: string }) => entry.id));
 
     // APA citation() returns "(Author, year)"; strip the parens so each command can wrap differently.
+    // For example, formats "wager2007meta" => "Wager et al., 2007"
     const formatKey = (key: string) => {
         if (!knownIds.has(key)) return key;
         return String(cite.format('citation', { ...apa, entry: key })).slice(1, -1);
