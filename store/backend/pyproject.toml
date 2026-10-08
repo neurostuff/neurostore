@@ -30,7 +30,6 @@ dependencies = [
     "shortuuid~=1.0",
     "starlette>=1.7.0,<2",
     "sqlalchemy[asyncio]~=2.1.2",
-    "sqlalchemy-utils",
     "sqladmin~=0.32",
     "sqltap",
     "webargs~=8.7",
