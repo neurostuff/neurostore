@@ -283,6 +283,40 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     assert note["TaskExtractor.fMRITasks[0].TaskName"] == "Resting-state fMRI"
 
 
+def test_release_build_harmonizes_mixed_metadata_types(app, session, tmp_path):
+    app.config["FILE_DIR"] = tmp_path
+    _base, _old_study, newest_study, _analysis = _seed_release_data(session)
+    newest_study.metadata_ = {"ad_meanage": 75, "site": 3}
+    other = Study(
+        name="Second Coordinate Study",
+        level="group",
+        public=True,
+        has_coordinates=True,
+        metadata_={"ad_meanage": "75.65", "site": "Austin"},
+        base_study=BaseStudy(
+            name="Second Base", level="group", public=True, has_coordinates=True
+        ),
+    )
+    other_analysis = Analysis(name="Second Analysis", study=other, order=1)
+    session.add_all([other, Point(analysis=other_analysis, x=4, y=5, z=6)])
+    session.commit()
+
+    build_neurostore_studyset_release(settings=app.config, nightly=True)
+
+    archive_path = tmp_path / "neurostore-studyset-releases/nightly"
+    archive_path = archive_path / "neurostore-studyset-nightly.tar.gz"
+    with tarfile.open(archive_path, mode="r:gz") as tar:
+        member = next(
+            m for m in tar.getmembers() if m.name.endswith("/metadata.parquet")
+        )
+        metadata_df = pd.read_parquet(BytesIO(tar.extractfile(member).read()))
+    by_study = metadata_df.set_index("study_id")
+    assert by_study.loc[newest_study.id, "ad_meanage"] == 75.0
+    assert by_study.loc[other.id, "ad_meanage"] == 75.65
+    assert by_study.loc[newest_study.id, "site"] == "3"
+    assert by_study.loc[other.id, "site"] == "Austin"
+
+
 def test_release_build_tracks_partial_update_manifest(app, session, tmp_path):
     app.config["FILE_DIR"] = tmp_path
     base, _old_study, newest_study, _analysis = _seed_release_data(session)
