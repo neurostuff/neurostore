@@ -50,6 +50,7 @@ services:
       - ${FILE_DIR}:/file-data
     environment:
       SENTRY_COMPONENT: compose-worker
+      ERROR_LOG_FILE: /file-data/logs/compose-worker-errors.log
     env_file:
       - .env
     networks:

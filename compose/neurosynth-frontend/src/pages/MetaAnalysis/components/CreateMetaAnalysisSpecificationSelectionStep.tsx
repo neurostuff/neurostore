@@ -1,6 +1,7 @@
-import { Box, Button, Link, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
+import GlossaryLink from 'components/GlossaryLink';
 import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import {
@@ -43,23 +44,9 @@ const CreateMetaAnalysisSpecificationSelectionStep = (props: {
             </Box>
             <Box>
                 <Typography gutterBottom>
-                    Select the{' '}
-                    <Link
-                        target="_blank"
-                        rel="noreferrer"
-                        href="https://neurostuff.github.io/compose-docs/guide/glossary#annotation"
-                    >
-                        annotation
-                    </Link>{' '}
-                    column for inclusion. This will determine which{' '}
-                    <Link
-                        target="_blank"
-                        rel="noreferrer"
-                        href="https://neurostuff.github.io/compose-docs/guide/glossary#analysis"
-                    >
-                        analyses
-                    </Link>{' '}
-                    are used for this meta-analysis.
+                    Select the <GlossaryLink hash="annotation">annotation</GlossaryLink> column for inclusion. This will
+                    determine which <GlossaryLink hash="analysis">analyses</GlossaryLink> are used for this
+                    meta-analysis.
                 </Typography>
 
                 <Typography gutterBottom sx={{ marginBottom: '1rem' }}>

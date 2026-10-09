@@ -151,7 +151,7 @@ class ObjectView(BaseView):
 
         db.session.delete(record)
         commit_session()
-        return "", 204
+        return None, 204
 
     def insert_data(self, id, data):
         return data

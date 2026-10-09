@@ -36,6 +36,7 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
+      - ${FILE_DIR}:/file-data
     command: manage process-base-study-flag-outbox --loop
     healthcheck:
       test:
@@ -49,6 +50,7 @@ services:
       start_period: 30s
     environment:
       SENTRY_COMPONENT: neurostore-flag-outbox
+      ERROR_LOG_FILE: /file-data/logs/neurostore-flag-outbox-errors.log
     env_file:
       - .env
 
@@ -65,6 +67,7 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
+      - ${FILE_DIR}:/file-data
     command: manage process-base-study-metadata-outbox --loop
     healthcheck:
       test:
@@ -78,6 +81,7 @@ services:
       start_period: 30s
     environment:
       SENTRY_COMPONENT: neurostore-metadata-outbox
+      ERROR_LOG_FILE: /file-data/logs/neurostore-metadata-outbox-errors.log
     env_file:
       - .env
 
@@ -109,6 +113,7 @@ services:
       done'
     environment:
       SENTRY_COMPONENT: neurostore-release-worker
+      ERROR_LOG_FILE: /file-data/logs/neurostore-release-worker-errors.log
     env_file:
       - .env
   

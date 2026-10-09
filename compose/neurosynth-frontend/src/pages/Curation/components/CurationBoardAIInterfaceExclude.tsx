@@ -130,28 +130,26 @@ const CurationBoardAIInterfaceExclude = ({ group }: { group: IGroupListItem }) =
                     <Typography color="warning.dark">No studies have been marked as {group?.label || ''}.</Typography>
                 </Box>
             ) : (
-                <Box>
-                    <TextField
-                        ref={searchbarContainerRef}
-                        size="small"
-                        value={searchTerm}
-                        onChange={(event) => setSearchTerm(event.target.value)}
-                        placeholder="Search excluded studies..."
-                        sx={{ width: '260px', paddingBottom: '0.5rem' }}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <Search fontSize="small" />
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-                    {filteredStubs.length === 0 ? (
-                        <Box sx={{ display: 'flex' }}>
+                <Box sx={{ display: 'flex' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                        <TextField
+                            ref={searchbarContainerRef}
+                            size="small"
+                            value={searchTerm}
+                            onChange={(event) => setSearchTerm(event.target.value)}
+                            placeholder="Search excluded studies..."
+                            sx={{ width: '260px', paddingBottom: '0.5rem' }}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search fontSize="small" />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+                        {filteredStubs.length === 0 ? (
                             <Typography color="warning.dark">No excluded studies match your search.</Typography>
-                        </Box>
-                    ) : (
-                        <Box sx={{ display: 'flex' }}>
+                        ) : (
                             <VirtualizedList
                                 rows={filteredStubs}
                                 rowHeightInPx={ROW_HEIGHT_PX}
@@ -170,16 +168,15 @@ const CurationBoardAIInterfaceExclude = ({ group }: { group: IGroupListItem }) =
                                     />
                                 )}
                             />
-                            <Box
-                                ref={scrollableBoxRef}
-                                sx={{ overflowY: 'auto', width: '100%', height: `${pxInVh}px` }}
-                            >
-                                <CurationEditableStubSummary
-                                    onMoveToNextStub={handleMoveToNextStub}
-                                    columnIndex={selectedColumnIndex || 0}
-                                    stub={selectedStub}
-                                />
-                            </Box>
+                        )}
+                    </Box>
+                    {filteredStubs.length > 0 && (
+                        <Box ref={scrollableBoxRef} sx={{ overflowY: 'auto', width: '100%', height: `${pxInVh}px` }}>
+                            <CurationEditableStubSummary
+                                onMoveToNextStub={handleMoveToNextStub}
+                                columnIndex={selectedColumnIndex || 0}
+                                stub={selectedStub}
+                            />
                         </Box>
                     )}
                 </Box>

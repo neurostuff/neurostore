@@ -8,7 +8,6 @@ Create Date: 2020-09-03 21:00:23.544196
 
 from alembic import op
 import sqlalchemy as sa
-import sqlalchemy_utils
 
 # revision identifiers, used by Alembic.
 revision = "276fe2a389a4"
@@ -94,7 +93,7 @@ def upgrade():
         "oauth",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("token", sqlalchemy_utils.types.json.JSONType(), nullable=False),
+        sa.Column("token", sa.JSON(), nullable=False),
         sa.Column("user_id", sa.Text(), nullable=True),
         sa.Column("provider_user_id", sa.Text(), nullable=False),
         sa.Column("provider", sa.Text(), nullable=True),

@@ -25,6 +25,11 @@ from neurostore.exceptions.handlers import (
     problem_exception_handler,
 )
 from neurostore.extensions import cache
+from neurostore.observability.logging_config import configure_logging
+from neurostore.observability.request_id import (
+    REQUEST_ID_HEADER_NAME,
+    RequestIdMiddleware,
+)
 from neurostore.observability.sentry import configure_sentry
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler
@@ -168,6 +173,8 @@ def initialize_application(
 ):
     """Configure Store's process-wide database, cache, and auth services."""
     settings = load_settings() if settings is None else settings
+    # LOG_LEVEL is ours to spend; libraries stay at ROOT_LOG_LEVEL
+    configure_logging(settings, app_loggers=("neurostore",))
     logger = logging.getLogger("neurostore")
 
     from neurostore.database import db
@@ -213,6 +220,9 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # without this a browser cannot read the correlation id off a failed
+        # cross-origin request, which is most of the point of returning it
+        expose_headers=[REQUEST_ID_HEADER_NAME],
     )
     connexion_app.add_error_handler(NeuroStoreException, neurostore_exception_handler)
     connexion_app.add_error_handler(OAuthProblem, asgi_oauth_problem_handler)
@@ -253,4 +263,8 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         settings,
         _logger,
     )
+    # outermost, so the id is bound before any other middleware runs and every
+    # response they produce carries it. A failure above this point is the
+    # server's own bare 500, which no application code can label.
+    app = RequestIdMiddleware(app)
     return app

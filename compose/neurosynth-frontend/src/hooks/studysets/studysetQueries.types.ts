@@ -6,7 +6,8 @@ type StudyReturnWithFullAnalyses = Omit<StudyReturn, 'analyses'> & {
 
 type AnalysisReturnSummary = {
     id: string;
-    point_count: number;
+    point_count?: number;
+    image_count?: number;
 };
 
 export type StudyReturnWithSummaryAnalyses = Omit<StudyReturn, 'analyses'> & {

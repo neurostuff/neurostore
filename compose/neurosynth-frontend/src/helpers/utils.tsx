@@ -1,3 +1,35 @@
+type SortByOrderItem = {
+    order?: number | null;
+    created_at?: string | null;
+    id?: string | null;
+};
+
+const compareCreatedAt = (left?: string | null, right?: string | null): number | null => {
+    const leftTime = Date.parse(left || '');
+    const rightTime = Date.parse(right || '');
+    const leftValid = !Number.isNaN(leftTime);
+    const rightValid = !Number.isNaN(rightTime);
+
+    if (!leftValid && !rightValid) return null;
+    if (!leftValid) return 1;
+    if (!rightValid) return -1;
+    if (leftTime !== rightTime) return leftTime - rightTime;
+    return null;
+};
+
+export const sortByOrder = <T extends SortByOrderItem>(items: T[]): T[] => {
+    return [...items].sort((left, right) => {
+        const leftOrder = left.order ?? Number.MAX_SAFE_INTEGER;
+        const rightOrder = right.order ?? Number.MAX_SAFE_INTEGER;
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+
+        const createdAtCompare = compareCreatedAt(left.created_at, right.created_at);
+        if (createdAtCompare !== null) return createdAtCompare;
+
+        return (left.id ?? '').localeCompare(right.id ?? '');
+    });
+};
+
 export const lastUpdatedAtSortFn = (
     a: { updated_at?: string | null; created_at?: string | null },
     b: { updated_at?: string | null; created_at?: string | null }

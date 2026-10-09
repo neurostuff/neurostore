@@ -1,5 +1,6 @@
 """Tests for Sentry error reporting."""
 
+import neurosynth_compose.observability.request_id as request_id
 import neurosynth_compose.observability.sentry as sentry
 
 
@@ -125,3 +126,39 @@ def test_server_name_is_the_component_not_the_container_id(monkeypatch):
     )
     _reset()
     assert captured["server_name"] == "neurostore-release-worker"
+
+
+def test_capture_tags_the_reported_exception_with_the_request_id(monkeypatch):
+    """A user-reported id has to find the Sentry event, not just the log."""
+    import sentry_sdk
+
+    tags = {}
+
+    class _Scope:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc_info):
+            return False
+
+        def set_context(self, *args):
+            pass
+
+        def set_transaction_name(self, *args):
+            pass
+
+        def set_tag(self, key, value):
+            tags[key] = value
+
+    monkeypatch.setattr(sentry_sdk, "new_scope", _Scope)
+    monkeypatch.setattr(sentry_sdk, "capture_exception", lambda exc: "event-id")
+
+    sentry._initialized = True
+    token = request_id.bind_request_id("trace-me")
+    try:
+        assert sentry.capture_exception(RuntimeError("boom")) == "event-id"
+    finally:
+        request_id.reset_request_id(token)
+        _reset()
+
+    assert tags["request_id"] == "trace-me"

@@ -1021,11 +1021,39 @@ def refresh_shards(
     )
 
 
+def harmonize_metadata_types(metadatas):
+    """Give each key one type, as pyarrow rejects mixed-type columns.
+
+    NiMARE 0.20 did this before writing parquet; 0.21 does not. Numbers and
+    numeric strings become floats; any other mix becomes strings.
+    """
+    values_by_key = {}
+    for metadata in metadatas:
+        for key, value in metadata.items():
+            if value is not None:
+                values_by_key.setdefault(key, []).append(value)
+    for key, values in values_by_key.items():
+        if len({float if type(v) is int else type(v) for v in values}) < 2:
+            continue
+        try:
+            [float(v) for v in values]
+            convert = float
+        except (TypeError, ValueError):
+            convert = str
+        for metadata in metadatas:
+            if metadata.get(key) is not None:
+                metadata[key] = convert(metadata[key])
+
+
 def build_studyset_dict(root, selected, studyset):
     studies = []
     for entry in selected:
         shard_path = root / "_cache" / "studies" / f"{entry['study_id']}.json"
         studies.append(orjson.loads(shard_path.read_bytes()))
+    harmonize_metadata_types([s["metadata"] for s in studies if s["metadata"]])
+    harmonize_metadata_types(
+        [a["metadata"] for s in studies for a in s["analyses"] if a["metadata"]]
+    )
     return {
         "id": studyset.id,
         "name": studyset.name,

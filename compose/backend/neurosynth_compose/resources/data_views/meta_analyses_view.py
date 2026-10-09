@@ -47,7 +47,6 @@ from neurosynth_compose.resources.data_views.tags_view import (
     _tag_accessible,
 )
 from neurosynth_compose.resources.resource_services import (
-    create_neurovault_collection,
     ensure_canonical_annotation,
     ensure_canonical_studyset,
     parse_upload_files,
@@ -772,25 +771,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             if canonical_ss is not None or canonical_ann is not None:
                 db.session.add(record)
 
-            nv_collection = NeurovaultCollection(result=record)
-            create_neurovault_collection(
-                nv_collection,
-                settings=request.state.settings,
-                logger=request.state.logger,
-                public_base_url=str(request.base_url),
-            )
-            existing = db.session.execute(
-                select(NeurovaultCollection).where(
-                    NeurovaultCollection.collection_id == nv_collection.collection_id
-                )
-            ).scalar_one_or_none()
-            if existing is not None:
-                nv_collection = existing
-                nv_collection.result = record
             if meta and getattr(meta, "project", None):
                 meta.project.draft = False
                 db.session.add(meta)
-            db.session.add(nv_collection)
             commit_session()
         return make_json_response(serialize_meta_analysis_result(record))
 
@@ -865,8 +848,12 @@ class MetaAnalysisResultsView(ObjectView, ListView):
     ):
         upload_meta_id = token_info.get("meta_analysis_id")
 
+        # Lock the result row so concurrent/retried uploads cannot both see no
+        # NeuroVault collection and each create a remote one.
         result = db.session.execute(
-            select(self._model).where(self._model.id == id)
+            select(self._model)
+            .where(self._model.id == id)
+            .with_for_update(of=self._model)
         ).scalar_one()
         if (
             upload_meta_id is not None

@@ -2,7 +2,14 @@ import { Box, LinkProps, Tooltip, Typography } from '@mui/material';
 import TextEdit, { ITextEdit } from 'components/TextEdit/TextEdit';
 import DisplayLink from './DisplayLink';
 
-const EditableDisplayLink = ({  linkProps, label, noLabelText = '', textEditProps, stubId, tooltip  }: {
+const EditableDisplayLink = ({
+    linkProps,
+    label,
+    noLabelText = '',
+    textEditProps,
+    stubId,
+    tooltip,
+}: {
     linkProps: LinkProps;
     label: string;
     textEditProps: ITextEdit;
@@ -35,7 +42,14 @@ const EditableDisplayLink = ({  linkProps, label, noLabelText = '', textEditProp
                         <DisplayLink label={label} {...linkProps} />
                     </Tooltip>
                 ) : (
-                    <Typography sx={{ color: textEditProps.textToEdit ? 'initial' : 'warning.dark' }} variant="body2">
+                    <Typography
+                        sx={{
+                            color: textEditProps.textToEdit ? 'initial' : 'warning.dark',
+                            fontSize: '12px',
+                            lineHeight: 'normal',
+                        }}
+                        variant="body2"
+                    >
                         {noLabelText}
                     </Typography>
                 )}

@@ -1,6 +1,6 @@
 {
     "name": "neurosynth",
-    "version": "0.21.0",
+    "version": "0.23.1",
     "private": true,
     "scripts": {
         "start:dev": "vite --mode dev",
@@ -81,9 +81,9 @@
         "@prerenderer/renderer-puppeteer": "^1.2.4",
         "@sentry/vite-plugin": "^4.0.0",
         "@tanstack/react-query-devtools": "^5.101.2",
-        "@testing-library/dom": "^10.4.1",
+        "@testing-library/dom": "^10.4.2",
         "@testing-library/jest-dom": "^5.14.1",
-        "@testing-library/react": "^16.3.2",
+        "@testing-library/react": "^16.3.3",
         "@testing-library/user-event": "^14.6.1",
         "@types/eslint__js": "^8.42.3",
         "@types/node": "^20.19.0",

@@ -9,6 +9,8 @@ handlers instead.
 
 import logging
 
+from .request_id import get_request_id
+
 logger = logging.getLogger(__name__)
 
 _initialized = False
@@ -89,6 +91,11 @@ def capture_exception(exc, request=None):
         if context:
             scope.set_context("request", context)
             scope.set_transaction_name(context.get("url") or "unknown")
+        # the same id the client was handed and the log line carries, so a
+        # user-reported id finds the Sentry event and the log entry alike
+        request_id = get_request_id(request)
+        if request_id:
+            scope.set_tag("request_id", request_id)
         return sentry_sdk.capture_exception(exc)
 
 
