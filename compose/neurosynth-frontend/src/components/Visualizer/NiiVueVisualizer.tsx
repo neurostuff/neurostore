@@ -15,6 +15,9 @@ const NiiVueVisualizer = ({
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const niivueRef = useRef<Niivue | null>(null);
+    // Tracks the in-flight (or resolved) MNI underlay promise so that subsequent
+    // renders wait for the same fetch rather than starting a second one.
+    const mniLoadPromiseRef = useRef<ReturnType<Niivue['addVolumeFromUrl']> | null>(null);
     const [softThreshold, setSoftThreshold] = useState(true);
     const [showNegatives, setShowNegatives] = useState(false);
     const [disableNegatives, setDisableNegatives] = useState(false);
@@ -117,18 +120,26 @@ const NiiVueVisualizer = ({
                 niivueRef.current.opts.isColorbar = true;
                 niivueRef.current.setSliceMM(false);
                 niivueRef.current.onLocationChange = handleChangeLocation;
-                await niivueRef.current.addVolumeFromUrl({
+                // Store the promise so subsequent renders wait for the same fetch
+                // instead of kicking off a second MNI download.
+                mniLoadPromiseRef.current = niivueRef.current.addVolumeFromUrl({
                     // we can assume that maps will only be in MNI space
                     url: 'https://neurovault.org/static/images/GenericMNI.nii.gz',
                     colormap: 'gray',
                     opacity: 1,
                     colorbarVisible: false,
                 });
-                if (cancelled) return;
             }
 
+            // Wait for the MNI underlay (already-resolved promise on subsequent renders)
+            // before adding the overlay so volumes[0]/volumes[1] ordering is always correct.
+            await mniLoadPromiseRef.current!;
+            if (cancelled) return;
+
             const niivue = niivueRef.current;
-            await niivueRef.current.addVolumeFromUrl({
+            // Capture the NVImage returned by addVolumeFromUrl so we can remove the
+            // exact volume on cancellation rather than relying on the volumes[1] index.
+            const overlayImage = await niivueRef.current.addVolumeFromUrl({
                 url: file,
                 colormap: 'warm',
                 cal_min: 0, // default
@@ -138,10 +149,17 @@ const NiiVueVisualizer = ({
                 opacity: 1,
             });
 
-            if (cancelled || !niivue.volumes[1]) return;
+            // If this effect was cancelled while the overlay was loading, the volume
+            // was already inserted by addVolumeFromUrl — remove it explicitly and bail.
+            if (cancelled) {
+                niivue.removeVolume(overlayImage);
+                return;
+            }
 
-            const globalMax = niivue.volumes[1].global_max || 2.58;
-            const globalMin = niivue.volumes[1].global_min || 0;
+            // Read calibration values from the specific NVImage, not from volumes[1],
+            // so the correct object is used regardless of current array ordering.
+            const globalMax = overlayImage.global_max || 2.58;
+            const globalMin = overlayImage.global_min || 0;
             const largestAbsoluteValue = Math.max(Math.abs(globalMin), globalMax);
 
             updateCrosshairsInNiivue(showCrosshairs); // update crosshair settings in case they have been updated in other maps
@@ -173,8 +191,9 @@ const NiiVueVisualizer = ({
                 value: Math.round(startingValue * 100) / 100,
             });
 
-            niivue.volumes[1].cal_min = startingValue;
-            niivue.volumes[1].cal_max = maxOrThreshold;
+            // Set calibration on the captured NVImage directly.
+            overlayImage.cal_min = startingValue;
+            overlayImage.cal_max = maxOrThreshold;
 
             niivue.setInterpolation(true);
             niivue.updateGLVolume();
