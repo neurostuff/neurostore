@@ -1236,6 +1236,18 @@ class FieldClaim(BaseMixin, db.Model):
         db.Text, db.ForeignKey("users.external_id"), nullable=True, index=True
     )
 
+    #: The claim this one was copied from, when a revised coordinate parse
+    #: split or merged the analysis that claim was made against; its entity is
+    #: the superseded analysis, kept unchanged as history. Null for a claim
+    #: made against this entity directly. A merge can collapse two copies into
+    #: one claim, and this then names the first one copied.
+    carried_from = db.Column(
+        db.Text,
+        db.ForeignKey("field_claims.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
 
 class FieldClaimRun(db.Model):
     """Which runs produced a claim.

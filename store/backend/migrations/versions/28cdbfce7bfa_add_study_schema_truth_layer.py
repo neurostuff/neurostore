@@ -137,8 +137,14 @@ def upgrade():
         sa.Column("value_hash", sa.String(), nullable=True),
         sa.Column("origin", sa.String(), nullable=True),
         sa.Column("origin_user_id", sa.Text(), nullable=True),
+        # The claim this one was copied from when a revised parse split or
+        # merged its analysis; null for a claim made here directly.
+        sa.Column("carried_from", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(["entity_id"], ["study_entities.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["origin_user_id"], ["users.external_id"]),
+        sa.ForeignKeyConstraint(
+            ["carried_from"], ["field_claims.id"], ondelete="SET NULL"
+        ),
         sa.PrimaryKeyConstraint("id"),
         # The load-bearing constraint: two runs producing the same value for a
         # field produce one claim, not two.
@@ -147,7 +153,7 @@ def upgrade():
         ),
     )
     _index("field_claims", ["id", "created_at", "updated_at"])
-    _index("field_claims", ["entity_id", "value_hash", "origin_user_id"])
+    _index("field_claims", ["entity_id", "value_hash", "origin_user_id", "carried_from"])
     op.create_index(
         "ix_field_claims_entity_field", "field_claims", ["entity_id", "field_path"]
     )
