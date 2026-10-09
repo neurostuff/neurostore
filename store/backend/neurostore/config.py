@@ -75,7 +75,8 @@ class Config(object):
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("neurostore", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:"
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
     BASE_STUDY_FLAGS_ASYNC = os.environ.get(
         "BASE_STUDY_FLAGS_ASYNC", "true"
@@ -110,6 +111,28 @@ class Config(object):
     )
     PROPAGATE_EXCEPTIONS = True
 
+    # Logging. LOG_LEVEL is this application's; ROOT_LOG_LEVEL is everything
+    # else in the process. ERROR_LOG_FILE writes errors to disk; unset disables
+    # the file. ERROR_LOG_ROTATION defaults to one file per worker when
+    # WEB_CONCURRENCY is above 1; see .env.example for the alternatives.
+    LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+    ROOT_LOG_LEVEL = os.environ.get("ROOT_LOG_LEVEL", "WARNING")
+    LOG_FORMAT = os.environ.get("LOG_FORMAT")
+    ERROR_LOG_FILE = os.environ.get("ERROR_LOG_FILE")
+    ERROR_LOG_ROTATION = os.environ.get("ERROR_LOG_ROTATION", "auto")
+    ERROR_LOG_MAX_BYTES = os.environ.get("ERROR_LOG_MAX_BYTES", 5 * 1024 * 1024)
+    ERROR_LOG_BACKUP_COUNT = os.environ.get("ERROR_LOG_BACKUP_COUNT", 3)
+    # gunicorn's worker count, read here because it decides how the error
+    # log can safely be rotated
+    WEB_CONCURRENCY = os.environ.get("WEB_CONCURRENCY", 1)
+
+    # Error reporting; Sentry stays off unless a DSN is provided.
+    SENTRY_DSN = os.environ.get("SENTRY_DSN")
+    SENTRY_COMPONENT = os.environ.get("SENTRY_COMPONENT")
+    SENTRY_RELEASE = os.environ.get("SENTRY_RELEASE")
+    SENTRY_TRACES_SAMPLE_RATE = os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0")
+    SENTRY_PROFILES_SAMPLE_RATE = os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "0")
+
     GITHUB_CLIENT_ID = "github-id"
     GITHUB_CLIENT_SECRET = "github-secret"
     DANCE_SECRET_KEY = "temporary"
@@ -123,7 +146,7 @@ class ProductionConfig(Config):
     ENV = "production"
     DB_NAME = resolve_database_name("neurostore", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:"
+        f"postgresql+psycopg2://postgres:"
         f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -140,7 +163,7 @@ class StagingConfig(Config):
     ENV = "staging"
     DB_NAME = resolve_database_name("neurostore", "staging")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:"
+        f"postgresql+psycopg2://postgres:"
         f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -169,7 +192,8 @@ class DevelopmentConfig(Config):
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:"
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
 
@@ -188,7 +212,8 @@ class TestingConfig(Config):
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:"
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
     BASE_STUDY_FLAGS_ASYNC = False
     BASE_STUDY_METADATA_ASYNC = False
@@ -199,9 +224,10 @@ class DockerTestConfig(TestingConfig):
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:"
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
 
 class TravisConfig(TestingConfig):
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres@localhost/travis_ci_test"
+    SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres@localhost/travis_ci_test"

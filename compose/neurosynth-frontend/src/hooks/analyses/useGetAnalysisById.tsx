@@ -1,15 +1,8 @@
-import { AxiosResponse } from 'axios';
-import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import { useQuery } from '@tanstack/react-query';
-import API from 'api/api.config';
+import analysisQueries from 'hooks/analyses/analysisQueries';
 
 const useGetAnalysisById = (analysisId: string | undefined) => {
-    return useQuery({
-        queryKey: ['analyses', analysisId],
-        queryFn: () => API.NeurostoreServices.AnalysesService.analysesIdGet(analysisId || '', true),
-        select: (res: AxiosResponse<AnalysisReturn>) => res.data,
-        enabled: !!analysisId
-    });
+    return useQuery(analysisQueries.analyses.byId(analysisId));
 };
 
 export default useGetAnalysisById;

@@ -17,6 +17,7 @@ from neurostore.models import (
     Studyset,
     StudysetStudy,
 )
+from neurostore.services.image_value_summary import serialize_image_value_summary
 
 
 def _serialize_dt(value):
@@ -75,8 +76,9 @@ def _serialize_point(point):
     }
 
 
-def _serialize_image(image, analysis_name=None):
-    return {
+def _serialize_image(image, analysis_name=None, context=None):
+    context = context or {}
+    payload = {
         "id": image.id,
         "user": image.user_id,
         "username": _serialize_username(getattr(image, "user", None)),
@@ -90,10 +92,18 @@ def _serialize_image(image, analysis_name=None):
         "filename": image.filename,
         "space": image.space,
         "value_type": map_type_label(image.value_type),
+        "order": image.order,
     }
+    if context.get("image_metadata"):
+        payload["metadata"] = image.data
+    if context.get("image_value_summary"):
+        payload["value_summary"] = serialize_image_value_summary(
+            getattr(image, "value_summary", None)
+        )
+    return payload
 
 
-def serialize_analysis_record(analysis):
+def serialize_analysis_record(analysis, context=None):
     analysis_conditions = sorted(
         analysis.analysis_conditions,
         key=lambda analysis_condition: _order_sort_key(
@@ -115,8 +125,11 @@ def serialize_analysis_record(analysis):
         )
     ]
     images = [
-        _serialize_image(image, analysis_name=analysis.name)
-        for image in sorted(analysis.images, key=lambda image: (image.id or ""))
+        _serialize_image(image, analysis_name=analysis.name, context=context)
+        for image in sorted(
+            analysis.images,
+            key=lambda image: _order_sort_key(image.order, image.id),
+        )
     ]
 
     return {
@@ -144,13 +157,13 @@ def serialize_analysis_record(analysis):
     }
 
 
-def serialize_analysis_detail(analysis):
-    return serialize_analysis_record(analysis)
+def serialize_analysis_detail(analysis, context=None):
+    return serialize_analysis_record(analysis, context=context)
 
 
-def serialize_study_record(study):
+def serialize_study_record(study, context=None):
     analyses = [
-        serialize_analysis_record(analysis)
+        serialize_analysis_record(analysis, context=context)
         for analysis in sorted(
             study.analyses,
             key=lambda analysis: _order_sort_key(analysis.order, analysis.id),
@@ -186,8 +199,8 @@ def serialize_study_record(study):
     }
 
 
-def serialize_study_detail(study):
-    return serialize_study_record(study)
+def serialize_study_detail(study, context=None):
+    return serialize_study_record(study, context=context)
 
 
 def serialize_nested_studyset(studyset_id):
@@ -338,10 +351,11 @@ def serialize_nested_studyset(studyset_id):
                 Image.value_type,
                 Image.filename,
                 Image.add_date,
+                Image.order,
             )
             .select_from(Image)
             .where(Image.analysis_id.in_(analysis_ids))
-            .order_by(Image.analysis_id, Image.id)
+            .order_by(Image.analysis_id, Image.order.is_(None), Image.order, Image.id)
         ).all()
         for (
             analysis_id,
@@ -352,6 +366,7 @@ def serialize_nested_studyset(studyset_id):
             value_type,
             filename,
             add_date,
+            _order,
         ) in image_rows:
             images_by_analysis[analysis_id].append(
                 {
@@ -508,6 +523,7 @@ def serialize_studyset_summary(record):
                 Analysis.study_id,
                 Analysis.id,
                 Analysis.point_count,
+                Analysis.image_count,
             )
             .select_from(Analysis)
             .where(Analysis.study_id.in_(study_ids))
@@ -519,7 +535,11 @@ def serialize_studyset_summary(record):
     analyses_by_study = {}
     for row in analysis_rows:
         analyses_by_study.setdefault(row.study_id, []).append(
-            {"id": row.id, "point_count": int(row.point_count or 0)}
+            {
+                "id": row.id,
+                "point_count": int(row.point_count or 0),
+                "image_count": int(row.image_count or 0),
+            }
         )
 
     studies_payload = []

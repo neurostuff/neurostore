@@ -1,6 +1,8 @@
+from sqlalchemy.orm import defer, raiseload, selectinload
 from webargs import fields
 
 from neurostore.exceptions.utils.error_helpers import abort_validation
+from neurostore.models import Image
 from neurostore.schemas import BooleanOrString
 
 LIST_CLONE_ARGS = {
@@ -16,6 +18,32 @@ LIST_NESTED_ARGS = {
 LIST_SUMMARY_ARGS = {
     "summary": fields.Boolean(load_default=False),
 }
+
+# Per-image detail, withheld until a request names it. The studyset views do not
+# declare these args, which is what keeps the detail out of studyset payloads.
+IMAGE_DETAIL_ARGS = {
+    # Image.data: the payload the image was ingested from
+    "image_metadata": fields.Boolean(load_default=False),
+    "image_value_summary": fields.Boolean(load_default=False),
+}
+
+
+def image_detail_options(args):
+    """Loader options matching the detail an image request asked for.
+
+    Image.data is deferred otherwise: it averages ~1.6kb an image, and no default
+    response reads it.
+    """
+    args = args or {}
+    options = []
+    if not args.get("image_metadata"):
+        options.append(defer(Image.data))
+    if args.get("image_value_summary"):
+        options.append(
+            selectinload(Image.value_summary).options(raiseload("*", sql_only=True))
+        )
+    return tuple(options)
+
 
 MAP_TYPE_QUERY_FIELDS = {
     "z": "has_z_maps",

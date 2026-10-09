@@ -68,6 +68,14 @@ meta_analysis_tags = Table(
 )
 
 
+project_tags = Table(
+    "project_tags",
+    db.metadata,
+    Column("project_id", Text, ForeignKey("projects.id"), primary_key=True),
+    Column("tag_id", Text, ForeignKey("tags.id"), primary_key=True),
+)
+
+
 class Tag(BaseMixin, db.Model):
     __tablename__ = "tags"
     name = Column(Text, nullable=False)
@@ -78,6 +86,9 @@ class Tag(BaseMixin, db.Model):
     user = relationship("User", backref=backref("tags"))
     meta_analyses = relationship(
         "MetaAnalysis", secondary=meta_analysis_tags, back_populates="tags"
+    )
+    projects = relationship(
+        "Project", secondary=project_tags, back_populates="tags"
     )
 
     __table_args__ = (
@@ -259,6 +270,7 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     cli_version = Column(Text)  # neurosynth-compose cli version
     cli_args = Column(JSON)  # Dictionary of cli arguments
     method_description = Column(Text)  # description of the method applied
+    method_references = Column(Text)  # BibTeX references cited by the description
     diagnostic_table = Column(Text)
     studyset_snapshot_id = Column(Text, ForeignKey("studysets.id"), nullable=True)
     annotation_snapshot_id = Column(Text, ForeignKey("annotations.id"), nullable=True)
@@ -375,4 +387,9 @@ class Project(BaseMixin, db.Model):
     )
     neurostore_study = relationship(
         "NeurostoreStudy", back_populates="project", uselist=False
+    )
+    tags = relationship(
+        "Tag",
+        secondary=project_tags,
+        back_populates="projects",
     )

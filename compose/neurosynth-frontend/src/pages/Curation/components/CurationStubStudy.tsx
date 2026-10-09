@@ -1,5 +1,5 @@
 import { Box, Chip, Tooltip, Typography } from '@mui/material';
-import { useProjectCurationIsLastColumn, useProjectExclusionTag } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationIsLastColumn, useProjectExclusionTag } from 'stores/projects/ProjectStore';
 import React from 'react';
 import CurationStubStudyStyles from 'pages/Curation/components/CurationStubStudy.styles';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';

@@ -12,9 +12,10 @@ describe(PAGE_NAME, () => {
         cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
             'specificationFixture'
         );
-        cy.intercept('GET', `**/api/meta-analyses/**`, { fixture: 'MetaAnalysis/metaAnalysis' }).as(
-            'metaAnalysisFixture'
-        );
+        cy.fixture('MetaAnalysis/metaAnalysis').then((metaAnalysis) => {
+            metaAnalysis.public = true;
+            cy.intercept('GET', `**/api/meta-analyses/**`, metaAnalysis).as('metaAnalysisFixture');
+        });
         cy.fixture('projects/project').then((project) => {
             project.public = true;
             cy.intercept('GET', `**/api/projects/*`, project).as('projectFixture');

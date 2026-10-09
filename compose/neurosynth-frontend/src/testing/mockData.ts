@@ -7,10 +7,10 @@ import {
     AnalysisReturn,
     BaseStudyReturn,
 } from 'neurostore-typescript-sdk';
-import { NeurostoreAnnotation } from 'api/api.config';
-import { IStoreStudy } from 'pages/Study/store/StudyStore.helpers';
+import { IStoreStudy } from 'stores/study/StudyStore.helpers';
 import { INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import { v4 as uuidv4 } from 'uuid';
+import { AnnotationReturnOneOfWithNoteCollection } from 'hooks/annotations/annotationQueries.types';
 
 const mockConditions: () => ConditionReturn[] = () => [
     {
@@ -241,7 +241,7 @@ const mockStudysetNotNested: () => StudysetReturn = () => ({
     user: 'github|26612023',
 });
 
-const mockAnnotations: () => NeurostoreAnnotation[] = () => [
+const mockAnnotations: () => AnnotationReturnOneOfWithNoteCollection[] = () => [
     {
         description: 'this is an annotation',
         user: 'github|26612023',

@@ -168,12 +168,13 @@ def create_or_update_neurostore_analysis(
                 point_idx += 1
         # reference the uploaded images on neurovault to associate images
         images = []
-        for nv_file in nv_collection.files:
+        for image_idx, nv_file in enumerate(nv_collection.files):
             image = {
                 "url": nv_file.url,
                 "filename": nv_file.filename,
                 "space": nv_file.space,
                 "value_type": canonicalize_map_type(nv_file.value_type),
+                "order": image_idx,
             }
             images.append(image)
 

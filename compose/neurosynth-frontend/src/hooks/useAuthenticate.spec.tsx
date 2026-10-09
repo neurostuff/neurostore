@@ -1,6 +1,6 @@
 import { OAuthError, useAuth0 } from '@auth0/auth0-react';
-import { initAPISetAccessTokenFunc } from 'api';
-import { act, render, screen } from '@testing-library/react';
+import { initAPISetAccessTokenFunc, initAPISetLogoutFunc } from 'api';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +13,10 @@ const AUTH0_FORCE_PROMPT_LOGIN_KEY = 'neurosynth_auth0_force_prompt_login';
 vi.mock('@auth0/auth0-react');
 vi.mock('notistack');
 vi.mock('react-router-dom');
-vi.mock('api');
+vi.mock('api', () => ({
+    initAPISetAccessTokenFunc: vi.fn(),
+    initAPISetLogoutFunc: vi.fn(),
+}));
 
 const enqueueSnackbarMock = () => (useSnackbar() as unknown as { enqueueSnackbar: Mock }).enqueueSnackbar;
 
@@ -60,7 +63,10 @@ describe('useAuthenticate', () => {
                 },
             });
             expect(initAPISetAccessTokenFunc).toHaveBeenCalledWith(useAuth0().getAccessTokenSilently as Mock);
-            expect(useNavigate() as Mock).toHaveBeenCalledWith('/');
+            expect(initAPISetLogoutFunc).toHaveBeenCalledWith(useAuth0().logout as Mock);
+            await waitFor(() => {
+                expect(useNavigate() as Mock).toHaveBeenCalledWith('/');
+            });
             expect(enqueueSnackbarMock()).not.toHaveBeenCalled();
         });
 
@@ -92,7 +98,9 @@ describe('useAuthenticate', () => {
                 await userEvent.click(screen.getByTestId('login'));
             });
 
-            expect(gtag).toHaveBeenCalledWith('event', 'login');
+            await waitFor(() => {
+                expect(gtag).toHaveBeenCalledWith('event', 'login');
+            });
         });
 
         it('sets session flag and warning snackbar on access_denied (OAuthError)', async () => {
@@ -191,7 +199,9 @@ describe('useAuthenticate', () => {
                 },
             });
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
-            expect(useNavigate() as Mock).toHaveBeenCalledWith('/');
+            await waitFor(() => {
+                expect(useNavigate() as Mock).toHaveBeenCalledWith('/');
+            });
         });
     });
 

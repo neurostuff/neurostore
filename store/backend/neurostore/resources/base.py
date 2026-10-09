@@ -33,7 +33,7 @@ from neurostore.models import (
     StudysetStudy,
     User,
 )
-from neurostore.note_keys import resolve_note_key_default
+from neurostore.note_keys import build_default_note
 from neurostore.resources import data as viewdata
 from neurostore.resources.common import merge_unique_ids
 from neurostore.resources.mutation_core import (
@@ -45,6 +45,7 @@ from neurostore.resources.utils import (
     get_current_user,
     is_user_admin,
     pubmed_to_tsquery,
+    tsquery_has_positive_term,
     validate_search_query,
 )
 from neurostore.services.base_study_metadata_enrichment import (
@@ -271,24 +272,7 @@ class BaseView:
 
     @staticmethod
     def _build_default_note(note_keys):
-        if not note_keys:
-            return None
-        if not isinstance(note_keys, dict):
-            return {key: None for key in note_keys}
-
-        defaults = {}
-        for key, descriptor in note_keys.items():
-            if isinstance(descriptor, dict):
-                default_value = resolve_note_key_default(
-                    key,
-                    descriptor.get("type"),
-                    default_provided="default" in descriptor,
-                    default_value=descriptor.get("default"),
-                )
-            else:
-                default_value = resolve_note_key_default(key, descriptor)
-            defaults[key] = default_value
-        return defaults
+        return build_default_note(note_keys)
 
     def db_validation(self, record, data):
         """
@@ -594,7 +578,15 @@ class ListView(BaseView):
                 validate_search_query(s)
             except errors.SyntaxError as e:
                 abort_validation(e.args[0])
-            tsquery = func.to_tsquery("english", pubmed_to_tsquery(s))
+            tsquery_string = pubmed_to_tsquery(s)
+            if not tsquery_has_positive_term(tsquery_string):
+                # Postgres cannot narrow a GIN index on a negation, so this
+                # would be a sequential scan returning nearly the whole corpus.
+                abort_validation(
+                    "A search must include at least one term to match; a query "
+                    "of only negations matches nearly every record."
+                )
+            tsquery = func.to_tsquery("english", tsquery_string)
             rank_col = func.ts_rank(m._ts_vector, tsquery).label("rank")
             q = q.filter(m._ts_vector.op("@@")(tsquery))
 
@@ -620,10 +612,10 @@ class ListView(BaseView):
                 # Default to created_at when no search
                 q = q.order_by(m.created_at.desc(), m.id.desc())
         else:
-            # Use user-specified sort column
+            # Use user-specified sort column.
+            # lower() is text-only; integers, booleans, and timestamps sort as-is.
             attr = getattr(m, sort_col)
-            # Case-insensitive sorting
-            if sort_col not in ("created_at", "updated_at"):
+            if isinstance(getattr(attr, "type", None), sa.String):
                 attr = func.lower(attr)
             q = q.order_by(getattr(attr, desc)(), m.id.desc())
 

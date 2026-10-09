@@ -2,8 +2,8 @@ import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow } from
 import { flexRender, RowData } from '@tanstack/react-table';
 import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
-import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useProjectCurationPrismaConfig } from 'stores/projects/ProjectStore';
 import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
@@ -15,7 +15,7 @@ import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationB
 declare module '@tanstack/react-table' {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface ColumnMeta<TData extends RowData, TValue> {
-        columnLabel: string;
+        columnLabel?: string;
         AIExtractor?: EAIExtractors;
     }
 
@@ -26,12 +26,12 @@ declare module '@tanstack/react-table' {
     }
 }
 
-const CurationBoardAIInterfaceCuratorTable = ({ 
+const CurationBoardAIInterfaceCuratorTable = ({
     table,
     onSetSelectedStub,
     selectedStub,
     columnIndex,
- }: ICurationBoardAIInterfaceCurator) => {
+}: ICurationBoardAIInterfaceCurator) => {
     const prismaConfig = useProjectCurationPrismaConfig();
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
 

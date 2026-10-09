@@ -21,13 +21,12 @@ import {
     getPaginationRowModel,
     getSortedRowModel,
     PaginationState,
-    RowData,
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import { useGetStudysetById, useUserCanEdit } from 'hooks';
-import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
+import { useGetStudysetSummaryById, useUserCanEdit } from 'hooks';
+
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
@@ -35,27 +34,21 @@ import {
     useProjectExtractionStudyStatusList,
     useProjectId,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EExtractionStatus } from '../ExtractionPage';
+import { EExtractionStatus, IStudyExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { retrieveExtractionTableState, updateExtractionTableState } from './ExtractionTable.helpers';
 import styles from './ExtractionTable.module.css';
 import { ExtractionTableAuthorCell, ExtractionTableAuthorHeader } from './ExtractionTableAuthor';
 import ExtractionTableFilterInput from './ExtractionTableFilterInput';
+import { ExtractionTableIndexCell, ExtractionTableIndexHeader } from './ExtractionTableIndex';
 import { ExtractionTableJournalCell, ExtractionTableJournalHeader } from './ExtractionTableJournal';
 import { ExtractionTableNameCell, ExtractionTableNameHeader } from './ExtractionTableName';
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
-
-//allows us to define custom properties for our columns
-declare module '@tanstack/react-table' {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    interface ColumnMeta<TData extends RowData, TValue> {
-        filterVariant?: 'text' | 'numeric' | 'status-select' | 'journal-autocomplete' | 'autocomplete';
-    }
-}
+import 'pages/Curation/hooks/useCuratorTableState.tableMeta';
 
 export type IExtractionTableStudy = StudyReturn & { status: EExtractionStatus | undefined };
 
@@ -66,7 +59,7 @@ const ExtractionTable = () => {
     const projectId = useProjectId();
     const navigate = useNavigate();
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const { data: studyset } = useGetStudysetById(studysetId, false, true); // this should already be loaded in the cache from the parent component
+    const { data: studyset } = useGetStudysetSummaryById(studysetId); // this should already be loaded in the cache from the parent component
     const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
     const projectUser = useProjectUser();
     const usercanEdit = useUserCanEdit(projectUser || undefined);
@@ -97,15 +90,25 @@ const ExtractionTable = () => {
     }, [studyStatusList]);
 
     const data: Array<StudyReturn & { status: EExtractionStatus | undefined }> = useMemo(() => {
-        const studies = (studyset?.studies || []) as Array<StudyReturn>;
+        const studies = studyset?.studies ?? [];
         return studies.map((study) => ({
             ...study,
-            status: studyStatusMap.get(study?.id || '')?.status,
+            status: studyStatusMap.get(study.id ?? '')?.status,
         }));
     }, [studyStatusMap, studyset?.studies]);
 
     const columns = useMemo(() => {
         return [
+            columnHelper.display({
+                id: 'index',
+                size: 48,
+                minSize: 48,
+                maxSize: 48,
+                cell: ExtractionTableIndexCell,
+                header: ExtractionTableIndexHeader,
+                enableSorting: false,
+                enableColumnFilter: false,
+            }),
             columnHelper.accessor(({ year }) => (year ? String(year) : ''), {
                 id: 'year',
                 size: 60,
@@ -257,8 +260,8 @@ const ExtractionTable = () => {
     const handleMarkAllAsComplete = useCallback(
         (ok: boolean | undefined) => {
             if (ok) {
-                const studies = (studyset?.studies || []) as Array<StudyReturn>;
-                setGivenStudyStatusesAsComplete(studies.map((x) => x.id) as string[]);
+                const studies = studyset?.studies ?? [];
+                setGivenStudyStatusesAsComplete(studies.map((x) => x.id ?? ''));
             }
 
             setConfirmationDialogIsOpen(false);
@@ -303,8 +306,9 @@ const ExtractionTable = () => {
                         dialogMessage="You can skip reviewing to expedite the process, but any studies you have not reviewed may have incomplete or inaccurate metadata or coordinates."
                     />
                     <Button
-                        sx={{ marginLeft: '4px' }}
+                        sx={{ marginLeft: '4px', fontSize: '12px' }}
                         color="success"
+                        size="small"
                         disableElevation
                         disabled={!usercanEdit}
                         onClick={() => setConfirmationDialogIsOpen(true)}

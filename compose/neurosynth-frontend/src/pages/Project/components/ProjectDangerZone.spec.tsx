@@ -12,7 +12,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectMetaAnalyses,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 
 // Mock all the dependencies
 vi.mock('react-router-dom', async () => {
@@ -42,7 +42,7 @@ vi.mock('hooks/useUserCanEdit', () => ({
     default: vi.fn(),
 }));
 
-vi.mock('pages/Project/store/ProjectStore', () => ({
+vi.mock('stores/projects/ProjectStore', () => ({
     useProjectUser: vi.fn(),
     useClearProvenance: vi.fn(),
     useProjectExtractionStudysetId: vi.fn(),

@@ -45,6 +45,7 @@ def _clone_image_payload(image):
         "space": image.space,
         "value_type": image.value_type,
         "add_date": image.add_date,
+        "order": image.order,
         "data": deepcopy(image.data) if image.data is not None else None,
     }
 
@@ -96,6 +97,17 @@ def _sorted_analyses(analyses):
             analysis.order is None,
             analysis.order if analysis.order is not None else 0,
             analysis.id or "",
+        ),
+    )
+
+
+def _sorted_images(images):
+    return sorted(
+        images,
+        key=lambda image: (
+            image.order is None,
+            image.order if image.order is not None else 0,
+            image.id or "",
         ),
     )
 
@@ -243,7 +255,9 @@ def _clone_analysis_payload(analysis):
             _clone_analysis_condition_payload(analysis_condition)
             for analysis_condition in analysis.analysis_conditions
         ],
-        "images": [_clone_image_payload(image) for image in analysis.images],
+        "images": [
+            _clone_image_payload(image) for image in _sorted_images(analysis.images)
+        ],
         "points": [
             _clone_point_payload(point) for point in _sorted_points(analysis.points)
         ],
@@ -323,7 +337,7 @@ def build_study_clone_payload(study, override_data=None):
         # under, so they would otherwise be dropped from the clone.
         "images": [
             _clone_image_payload(image)
-            for image in sorted(study.images, key=lambda image: image.id or "")
+            for image in _sorted_images(study.images)
             if image.analysis_id is None
         ],
         "source": "neurostore",

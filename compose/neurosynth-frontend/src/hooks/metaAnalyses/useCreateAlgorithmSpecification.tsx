@@ -12,12 +12,9 @@ import {
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import API, { NeurostoreAnnotation } from 'api/api.config';
-
-export enum EAnalysisType {
-    CBMA = 'CBMA',
-    IBMA = 'IBMA',
-}
+import API from 'api/api.config';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import { AnnotationReturnOneOfWithNoteCollection } from 'hooks/annotations/annotationQueries.types';
 
 const useCreateAlgorithmSpecification = () => {
     const queryClient = useQueryClient();
@@ -27,7 +24,8 @@ const useCreateAlgorithmSpecification = () => {
         SpecificationPostBody,
         unknown
     >({
-        mutationFn: (spec: SpecificationPostBody) => API.NeurosynthServices.SpecificationsService.specificationsPost(spec),
+        mutationFn: (spec: SpecificationPostBody) =>
+            API.NeurosynthServices.SpecificationsService.specificationsPost(spec),
     });
     const createSynthStudysetMutation = useMutation<
         AxiosResponse<StudysetReturn>,
@@ -39,7 +37,7 @@ const useCreateAlgorithmSpecification = () => {
             API.NeurosynthServices.StudysetsService.snapshotStudysetsPost(studyset),
     });
     const createSynthAnnotationMutation = useMutation<
-        AxiosResponse<NeurostoreAnnotation>,
+        AxiosResponse<AnnotationReturnOneOfWithNoteCollection>,
         AxiosError,
         AnnotationPostBody,
         unknown
@@ -54,7 +52,7 @@ const useCreateAlgorithmSpecification = () => {
         unknown
     >({
         mutationFn: (metaAnalysis: MetaAnalysisPostBody) =>
-            API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost(metaAnalysis)
+            API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost(metaAnalysis),
     });
 
     const createMetaAnalysis = async (

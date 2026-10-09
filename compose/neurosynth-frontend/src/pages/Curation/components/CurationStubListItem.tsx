@@ -1,7 +1,7 @@
 import { Box, ListItem, ListItemButton, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { useProjectExclusionTag } from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
+import { useProjectExclusionTag } from 'stores/projects/ProjectStore';
+import { ENeurosynthTagIds } from 'stores/projects/ProjectStore.consts';
 import React from 'react';
 
 interface ICurationStubListItem {
@@ -58,21 +58,6 @@ const CurationStubListItem = React.memo((props: ICurationStubListItem) => {
                         {props.stub.journal}
                     </Typography>
                 </Box>
-                {/* <Box sx={{ display: 'flex', width: '100%' }}>
-                    {props.stub.tags.map((tag) => (
-                        <Chip
-                            key={tag.id}
-                            label={tag.label}
-                            size="small"
-                            sx={{
-                                margin: '3px',
-                                marginRight: '4px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                            }}
-                        />
-                    ))}
-                </Box> */}
             </ListItemButton>
         </ListItem>
     );

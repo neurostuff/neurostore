@@ -5,9 +5,10 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import { ITag } from 'hooks/projects/useGetProjects';
-import { useProjectCurationExclusionTags, useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
-import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
+import { ITag } from 'pages/Curation/Curation.types';
+import { useProjectCurationExclusionTags, useProjectCurationPrismaConfig } from 'stores/projects/ProjectStore';
+import { defaultExclusionTags } from 'stores/projects/ProjectStore.consts';
+import { getDefaultExclusionTag } from './CurationPopupExclusionSelector.helpers';
 import { useEffect, useRef, useState } from 'react';
 
 interface IExclusionSelectorPopup {
@@ -59,31 +60,16 @@ const CurationPopupExclusionSelector = (props: IExclusionSelectorPopup) => {
                 addOptionActualLabel: null,
             }));
             setExclusions(exclusionOptions);
-
-            // identification and screening phases only have a single exclusion
-            if (props.prismaPhase === 'identification') {
-                setDefaultExclusion({
-                    id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-                    label: 'Duplicate',
-                    addOptionActualLabel: null,
-                });
-            } else if (props.prismaPhase === 'screening') {
-                setDefaultExclusion({
-                    id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
-                    label: 'Irrelevant',
-                    addOptionActualLabel: null,
-                });
-            } else if (props.prismaPhase === 'eligibility') {
-                setDefaultExclusion({
-                    id: ENeurosynthTagIds.OUT_OF_SCOPE_EXCLUSION_ID,
-                    label: 'Out of scope',
-                    addOptionActualLabel: null,
-                });
-            }
         } else {
-            setDefaultExclusion(defaultExclusionTags.exclusion);
             setExclusions(genericExclusionTags);
         }
+
+        const defaultExclusionTag = getDefaultExclusionTag(prismaConfig.isPrisma, props.prismaPhase);
+        setDefaultExclusion({
+            id: defaultExclusionTag.id,
+            label: defaultExclusionTag.label,
+            addOptionActualLabel: null,
+        });
     }, [prismaConfig, genericExclusionTags, props.prismaPhase]);
 
     const handleChange = (_event: React.SyntheticEvent<Element, Event>, newValue: string | AutoSelectOption | null) => {

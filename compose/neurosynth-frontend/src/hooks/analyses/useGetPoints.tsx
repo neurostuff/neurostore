@@ -1,22 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import API from 'api/api.config';
+import analysisQueries from './analysisQueries';
 
 const useGetPoints = () => {
-    return useQuery({
-        queryKey: ['points'],
-
-        queryFn: () => {
-            return API.NeurostoreServices.PointsService.pointsGet();
-        },
-
-        select: (res) => {
-            const pointsList = res.data;
-            return pointsList;
-        },
-
-        refetchOnWindowFocus: false,
-        staleTime: 10000
-    });
+    return useQuery({ ...analysisQueries.points.every(), refetchOnWindowFocus: false, staleTime: 10000 });
 };
 
 export default useGetPoints;

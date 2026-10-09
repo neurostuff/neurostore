@@ -19,6 +19,7 @@ services:
       - ${ACE_DIR}:/ace
     command: /usr/local/bin/gunicorn -w ${WEB_CONCURRENCY:-1} -b :8000 neurostore.core:asgi_app --worker-class uvicorn_worker.UvicornWorker --log-level debug --timeout 120 --graceful-timeout ${GUNICORN_GRACEFUL_TIMEOUT:-30} --access-logfile - --error-logfile -
     environment:
+      SENTRY_COMPONENT: neurostore-api
       FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-*}
     env_file:
       - .env
@@ -35,6 +36,7 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
+      - ${FILE_DIR}:/file-data
     command: manage process-base-study-flag-outbox --loop
     healthcheck:
       test:
@@ -46,6 +48,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    environment:
+      SENTRY_COMPONENT: neurostore-flag-outbox
+      ERROR_LOG_FILE: /file-data/logs/neurostore-flag-outbox-errors.log
     env_file:
       - .env
 
@@ -62,6 +67,7 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
+      - ${FILE_DIR}:/file-data
     command: manage process-base-study-metadata-outbox --loop
     healthcheck:
       test:
@@ -73,6 +79,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    environment:
+      SENTRY_COMPONENT: neurostore-metadata-outbox
+      ERROR_LOG_FILE: /file-data/logs/neurostore-metadata-outbox-errors.log
     env_file:
       - .env
 
@@ -102,6 +111,9 @@ services:
       sleep "$${NEUROSTORE_STUDYSET_RELEASE_RETRY_SECONDS:-300}";
       fi;
       done'
+    environment:
+      SENTRY_COMPONENT: neurostore-release-worker
+      ERROR_LOG_FILE: /file-data/logs/neurostore-release-worker-errors.log
     env_file:
       - .env
   

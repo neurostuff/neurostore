@@ -1,8 +1,9 @@
 import { Box } from '@mui/material';
 import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
-import { useGetWindowHeight } from 'hooks';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useGetWindowHeight, useKeyboardShortcuts } from 'hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
+import CurationBoardAIInterfaceCuratorFocusShortcutsDialog from './CurationBoardAIInterfaceCuratorFocusShortcutsDialog';
 import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubAITableSummary from './CurationStubAITableSummary';
@@ -10,6 +11,7 @@ import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirt
 
 const ROW_HEIGHT_PX = 90;
 const LIST_WIDTH_PX = 260;
+const DETAIL_PANE_SCROLL_RATIO = 0.5;
 
 const CurationBoardAIInterfaceCuratorFocus = ({
     selectedStub,
@@ -17,23 +19,51 @@ const CurationBoardAIInterfaceCuratorFocus = ({
     onSetSelectedStub,
     columnIndex,
 }: ICurationBoardAIInterfaceCurator) => {
-    const rows = useMemo(() => {
-        return table.getRowModel().rows.map((row) => row.original) ?? [];
-    }, [table]);
+    const rows = table.getRowModel().rows.map((row) => row.original);
 
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
+    const [isAbstractExpanded, setIsAbstractExpanded] = useState(true);
+    const [extractionsExpandedState, setExtractionsExpandedState] = useState<[boolean, boolean]>([true, true]);
+
+    const selectStubByOffset = useCallback(
+        (offset: number) => {
+            if (!selectedStub?.id) return;
+            const stubIndex = rows.findIndex((row) => row.id === selectedStub.id);
+            if (stubIndex < 0) return;
+
+            const nextStubId = rows[stubIndex + offset]?.id;
+            if (!nextStubId) return;
+            onSetSelectedStub(nextStubId);
+        },
+        [onSetSelectedStub, rows, selectedStub?.id]
+    );
 
     const handleMoveToNextStub = useCallback(() => {
-        if (!selectedStub?.id) return;
-        const stubIndex = rows.findIndex((row) => row.id === selectedStub.id);
-        if (stubIndex < 0) return;
+        selectStubByOffset(1);
+    }, [selectStubByOffset]);
 
-        const nextStubId = rows[stubIndex + 1]?.id;
+    const scrollDetailPane = useCallback((direction: 1 | -1) => {
+        const detailPane = scrollableBoxRef.current;
+        if (!detailPane) return;
+        detailPane.scrollBy({
+            top: direction * Math.round(detailPane.clientHeight * DETAIL_PANE_SCROLL_RATIO),
+            behavior: 'smooth',
+        });
+    }, []);
 
-        if (!nextStubId) return;
-        onSetSelectedStub(nextStubId);
-    }, [onSetSelectedStub, rows, selectedStub?.id]);
+    useKeyboardShortcuts({
+        ArrowDown: () => scrollDetailPane(1),
+        ArrowUp: () => scrollDetailPane(-1),
+        ArrowRight: () => selectStubByOffset(1),
+        ArrowLeft: () => selectStubByOffset(-1),
+        e: (event) => {
+            if (event.repeat) return;
+            const nextExpanded = !(isAbstractExpanded && extractionsExpandedState[0] && extractionsExpandedState[1]);
+            setIsAbstractExpanded(nextExpanded);
+            setExtractionsExpandedState([nextExpanded, nextExpanded]);
+        },
+    });
 
     const pxInVh = Math.round(windowHeight - 250);
 
@@ -50,6 +80,7 @@ const CurationBoardAIInterfaceCuratorFocus = ({
 
     return (
         <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
+            <CurationBoardAIInterfaceCuratorFocusShortcutsDialog />
             {rows.length === 0 && (
                 <CurationBoardAIInterfaceCuratorTableHints
                     table={table}
@@ -66,7 +97,7 @@ const CurationBoardAIInterfaceCuratorFocus = ({
                         width={LIST_WIDTH_PX}
                         overscan={5}
                         scrollToIndex={selectedItemIndex >= 0 ? selectedItemIndex : undefined}
-                        scrollToAlign="center"
+                        scrollToAlign="auto"
                         scrollBehavior="auto"
                         getItemKey={(stub) => stub.id}
                         renderRow={(stub, style) => (
@@ -83,9 +114,15 @@ const CurationBoardAIInterfaceCuratorFocus = ({
                             onMoveToNextStub={handleMoveToNextStub}
                             columnIndex={columnIndex}
                             stub={selectedStub}
+                            isAbstractExpanded={isAbstractExpanded}
+                            onSetIsAbstractExpanded={setIsAbstractExpanded}
                         >
                             <Box sx={{ marginTop: '0.5rem' }}>
-                                <CurationStubAITableSummary stub={selectedStub} />
+                                <CurationStubAITableSummary
+                                    stub={selectedStub}
+                                    expandedState={extractionsExpandedState}
+                                    onSetExpandedState={setExtractionsExpandedState}
+                                />
                             </Box>
                         </CurationEditableStubSummary>
                     </Box>

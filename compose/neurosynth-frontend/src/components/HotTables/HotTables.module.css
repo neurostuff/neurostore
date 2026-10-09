@@ -5,10 +5,39 @@
     color: black !important;
 }
 
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 :global(.handsontable) td.truncate {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    gap: 4px;
+}
+
+.column-header-label {
+    min-width: 0;
+    max-width: 100px;
+    flex: 1 1 auto;
+}
+
+.column-header-remove {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 :global(.handsontable) td.no-wrap {
@@ -22,22 +51,28 @@
     vertical-align: middle !important;
 }
 
-.boolean {
+/* Type colors apply to cells (td) and column header labels (div.boolean, etc).
+   The td selector is required so HT18 `.handsontable .htDimmed` does not win on cells. */
+.boolean,
+:global(.handsontable) td.boolean {
     color: green !important;
     text-align: center !important;
 }
 
-.string {
+.string,
+:global(.handsontable) td.string {
     color: orange !important;
     text-align: center !important;
 }
 
-.number {
+.number,
+:global(.handsontable) td.number {
     color: blue !important;
     text-align: center !important;
 }
 
-.null {
+.null,
+:global(.handsontable) td.null {
     color: gray !important;
     text-align: center !important;
 }

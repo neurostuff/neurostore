@@ -12,9 +12,18 @@ import 'handsontable/styles/ht-theme-classic.min.css';
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { HelmetProvider } from 'react-helmet-async';
+import { enqueueSnackbar } from 'notistack';
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions = 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+
+declare module '@tanstack/react-query' {
+    interface Register {
+        queryMeta: {
+            errorMessage?: string;
+        };
+    }
+}
 
 declare module '@mui/material/styles/createPalette' {
     interface Palette {
@@ -101,11 +110,14 @@ const queryClient = new QueryClient({
         },
     },
     queryCache: new QueryCache({
-        onError: (error) => {
+        onError: (error, query) => {
             console.log({ error });
             const responseStatus = (error as AxiosError)?.response?.status;
             if (responseStatus && responseStatus === 404) {
                 console.error('could not find resource');
+            }
+            if (query.meta?.errorMessage) {
+                enqueueSnackbar(query.meta.errorMessage, { variant: 'error' });
             }
         },
     }),

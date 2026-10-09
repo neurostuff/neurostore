@@ -2,7 +2,7 @@ import { ArrowDropDown } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, ButtonGroupProps, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ProgressLoader from 'components/ProgressLoader';
-import { useProjectCurationColumns, useProjectExclusionTags, useProjectName } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationColumns, useProjectExclusionTags, useProjectName } from 'stores/projects/ProjectStore';
 import { useRef, useState } from 'react';
 import { downloadFile } from 'helpers/downloadFile.helpers';
 import { stubsToBibtex, stubsToCSV } from './CurationDownloadSummary.helpers';

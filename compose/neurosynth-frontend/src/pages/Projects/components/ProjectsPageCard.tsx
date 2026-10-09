@@ -1,16 +1,16 @@
+import { ChangeHistory, Lock, Public } from '@mui/icons-material';
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
-import { useGetMetaAnalysesByIds, useGetStudysetById } from 'hooks';
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { useGetMetaAnalysesByIds, useGetStudysetNonNestedById } from 'hooks';
+import { EAnalysisType, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
+import { MetaAnalysis, ProjectReturnTypeEnum } from 'neurosynth-compose-typescript-sdk';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ProjectsPageCardStep from './ProjectsPageCardStep';
 import ProjectsPageCardSummaryCuration from './ProjectsPageCardSummaryCuration';
 import ProjectsPageCardExtractionSummary from './ProjectsPageCardSummaryExtraction';
 import ProjectsPageCardSummaryMetaAnalyses from './ProjectsPageCardSummaryMetaAnalyses';
-import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
-import { Lock, Public, ChangeHistory } from '@mui/icons-material';
 
 const isToday = (date: Date) => {
     const today = new Date();
@@ -28,12 +28,13 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
         provenance,
         updated_at,
         created_at,
+        type,
         id,
         public: isPublic, // public is a reserved keyword
         meta_analyses = [],
     } = props;
 
-    const { data: studyset } = useGetStudysetById(provenance?.extractionMetadata?.studysetId, false);
+    const { data: studyset } = useGetStudysetNonNestedById(provenance?.extractionMetadata?.studysetId);
     const { data: metaAnalyses = [] } = useGetMetaAnalysesByIds(meta_analyses as string[]);
 
     const lastUpdateDate = useMemo(() => {
@@ -61,7 +62,7 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
     const extractionSummary = useMemo(() => {
         if (!provenance.extractionMetadata.studysetId) return;
 
-        const studysetStudies = (studyset?.studies || []) as string[];
+        const studysetStudies = studyset?.studies ?? [];
         const studyStatusesList = provenance.extractionMetadata?.studyStatusList ?? [];
         return getExtractionSummary(studysetStudies, studyStatusesList);
     }, [provenance.extractionMetadata?.studyStatusList, provenance.extractionMetadata.studysetId, studyset?.studies]);
@@ -133,7 +134,14 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
                 </Stepper>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
-                <Box mb="0.5rem" sx={{ width: '100%' }}>
+                <Box mb="0.5rem" sx={{ width: '100%', display: 'flex' }}>
+                    <Chip
+                        label={type === ProjectReturnTypeEnum.Ibma ? 'IBMA' : 'CBMA'}
+                        size="small"
+                        variant="outlined"
+                        color="info"
+                        sx={{ mr: '6px' }}
+                    />
                     <Chip
                         label={isPublic ? 'Public' : 'Private'}
                         icon={isPublic ? <Public /> : <Lock />}
@@ -141,17 +149,6 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
                         size="small"
                         sx={{ mr: '6px' }}
                     />
-                    {updated_at && (
-                        <Chip
-                            label={`Last updated: ${lastUpdateDate}`}
-                            variant="outlined"
-                            size="small"
-                            sx={{ mr: '6px' }}
-                        />
-                    )}
-                    {created_at && (
-                        <Chip label={`Created: ${createdDate}`} variant="outlined" size="small" sx={{ mr: '6px' }} />
-                    )}
                     {provenance?.curationMetadata?.prismaConfig?.isPrisma && (
                         <Chip
                             label="PRISMA"
@@ -162,7 +159,15 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
                         />
                     )}
                     {studyset && (
-                        <Chip variant="outlined" size="small" label={`${(studyset.studies || []).length} studies`} />
+                        <Chip size="small" label={`${(studyset.studies || []).length} studies`} sx={{ mr: '6px' }} />
+                    )}
+                    {created_at && <Chip label={`Created: ${createdDate}`} size="small" sx={{ mr: '6px' }} />}
+                    {updated_at && (
+                        <Box sx={{ marginLeft: 'auto' }}>
+                            <Typography variant="body2" color="muted.main" sx={{ marginRight: '6px' }}>
+                                Last updated: {lastUpdateDate}
+                            </Typography>
+                        </Box>
                     )}
                 </Box>
                 <MuiLink

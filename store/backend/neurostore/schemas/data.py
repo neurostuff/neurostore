@@ -15,7 +15,8 @@ from sqlalchemy import func
 
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
-from neurostore.models import Analysis, Point
+from neurostore.models import Analysis, Image, Point
+from neurostore.services.image_value_summary import serialize_image_value_summary
 from neurostore.note_keys import (
     ALLOWED_NOTE_KEY_TYPES,
     canonicalize_note_keys,
@@ -86,6 +87,21 @@ class ObjToString(fields.Field):
         return {"id": value}
 
 
+def withheld_detail_fields(declared_fields, context):
+    """Fields tagged ``detail_field`` whose context key was not turned on.
+
+    A detail field costs real bytes, so it stays out of every response that did
+    not name it. See IMAGE_DETAIL_ARGS for the keys and which views accept them.
+    """
+    context = context or {}
+    return tuple(
+        field
+        for field, f_obj in declared_fields.items()
+        if f_obj.metadata.get("detail_field")
+        and not context.get(f_obj.metadata["detail_field"])
+    )
+
+
 class StringOrNested(fields.Nested):
     """Handle read/write only fields. Handle nested serialization/deserialization"""
 
@@ -111,6 +127,16 @@ class StringOrNested(fields.Nested):
         """Only relevant when nested=True"""
         schema = self.schema
         schema.context = self.context
+        # The nested schema was built before the parent's context was known, so its
+        # detail fields were all excluded on construction. Re-decide them now.
+        detail = {
+            field
+            for field, f_obj in schema._declared_fields.items()
+            if f_obj.metadata.get("detail_field")
+        }
+        withheld = set(withheld_detail_fields(schema._declared_fields, self.context))
+        schema.exclude |= withheld
+        schema.exclude -= detail - withheld
         if self.context.get("clone"):
             # Check if this schema has preserve_on_clone set for any id field
             has_preserve_on_clone = any(
@@ -254,6 +280,8 @@ class BaseSchema(Schema):
             ]
             for f in relationships:
                 exclude += (f,)
+
+        exclude += tuple(withheld_detail_fields(self._declared_fields, context))
         kwargs["exclude"] = exclude
         super().__init__(*args, **kwargs)
         self.context = context or {}
@@ -315,11 +343,60 @@ class ImageSchema(BaseDataSchema):
     filename = fields.String(allow_none=True)
     space = fields.String(allow_none=True)
     value_type = fields.String(allow_none=True)
+    order = fields.Integer()
+    # the payload the image was ingested from; the neurovault image record, mostly
+    metadata = fields.Raw(
+        attribute="data",
+        dump_only=True,
+        allow_none=True,
+        metadata={"detail_field": "image_metadata"},
+    )
+    value_summary = fields.Method(
+        "dump_value_summary",
+        dump_only=True,
+        allow_none=True,
+        metadata={"detail_field": "image_value_summary"},
+    )
+
+    def dump_value_summary(self, obj):
+        return serialize_image_value_summary(getattr(obj, "value_summary", None))
 
     @pre_load
-    def canonicalize_value_type(self, data, **kwargs):
-        if isinstance(data, dict) and data.get("value_type") is not None:
+    def process_values(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+        partial = bool(kwargs.get("partial"))
+
+        if data.get("value_type") is not None:
             data["value_type"] = canonicalize_map_type(data["value_type"])
+
+        if not partial and data.get("order") is None:
+            # Images hang off an analysis when they belong to one, and off the
+            # study directly when they are "uncategorized", so the order runs
+            # within whichever of the two owns the image.
+            analysis_id = data.get("analysis_id") or (
+                data.get("analysis") if isinstance(data.get("analysis"), str) else None
+            )
+            study_id = data.get("study_id") or (
+                data.get("study") if isinstance(data.get("study"), str) else None
+            )
+            if analysis_id:
+                max_order = (
+                    db.session.query(func.max(Image.order))
+                    .filter_by(analysis_id=analysis_id)
+                    .scalar()
+                )
+                data["order"] = 1 if max_order is None else max_order + 1
+            elif study_id:
+                max_order = (
+                    db.session.query(func.max(Image.order))
+                    .filter_by(study_id=study_id, analysis_id=None)
+                    .scalar()
+                )
+                data["order"] = 1 if max_order is None else max_order + 1
+            else:
+                data["order"] = 1
+
         return data
 
     @post_dump
@@ -480,6 +557,17 @@ class AnalysisSchema(BaseDataSchema):
         data.pop("conditions", None)
         data.pop("weights", None)
 
+        # Nested images carry no analysis to count against yet, so number them
+        # by their position in the payload instead of defaulting every one of
+        # them to the same order.
+        if not partial and isinstance(data.get("images"), list):
+            numbered_images = []
+            for index, image in enumerate(data["images"], start=1):
+                if isinstance(image, dict) and image.get("order") is None:
+                    image = {**image, "order": index}
+                numbered_images.append(image)
+            data["images"] = numbered_images
+
         if not partial and data.get("order") is None:
             study_id = data.get("study_id") or (
                 data.get("study") if isinstance(data.get("study"), str) else None
@@ -524,7 +612,7 @@ class AnalysisSchema(BaseDataSchema):
             data["weights"] = [ac["weight"] for ac in data["analysis_conditions"]]
         data.pop("analysis_conditions", None)
         data["points"] = _sort_payload_list(data.get("points"), order_key="order")
-        data["images"] = _sort_payload_list(data.get("images"))
+        data["images"] = _sort_payload_list(data.get("images"), order_key="order")
 
         return data
 
@@ -655,11 +743,13 @@ class StudySchema(BaseDataSchema):
         metadata={"id_field": True},
     )
     base_study_id = fields.String(data_key="base_study", allow_none=True)
-    has_coordinates = fields.Bool(dump_only=True)
-    has_images = fields.Bool(dump_only=True)
-    has_z_maps = fields.Bool(dump_only=True)
-    has_t_maps = fields.Bool(dump_only=True)
-    has_beta_and_variance_maps = fields.Bool(dump_only=True)
+    has_coordinates = fields.Bool(dump_only=True, metadata={"info_field": True})
+    has_images = fields.Bool(dump_only=True, metadata={"info_field": True})
+    has_z_maps = fields.Bool(dump_only=True, metadata={"info_field": True})
+    has_t_maps = fields.Bool(dump_only=True, metadata={"info_field": True})
+    has_beta_and_variance_maps = fields.Bool(
+        dump_only=True, metadata={"info_field": True}
+    )
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     class Meta:

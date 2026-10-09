@@ -32,6 +32,13 @@ const caseRandomOrderDataTypes: Partial<INeurovault>[] = [
     { id: 6, name: 'prob_desc-ABC' },
     { id: 9, name: 'se_desc-ABC' },
     { id: 7, name: 'stat_desc-ABC' },
+    { id: 13, name: 'dof_desc-ABC' },
+];
+const caseDofLast: Partial<INeurovault>[] = [
+    { id: 1, name: 'dof.nii.gz' },
+    { id: 2, name: 'p.nii.gz' },
+    { id: 3, name: 'z_corr-FDR_method-indep.nii.gz' },
+    { id: 4, name: 'est.nii.gz' },
 ];
 const caseSameKeyDifferentValues: Partial<INeurovault>[] = [
     { id: 2, name: 'z_desc-DEF' },
@@ -126,6 +133,25 @@ describe('DisplayMetaAnalysisResults', () => {
         expect(buttons[9].textContent).toBe('tau2_desc-ABC');
         expect(buttons[10].textContent).toBe('sigma2_desc-ABC');
         expect(buttons[11].textContent).toBe('label_desc-ABC');
+        expect(buttons[12].textContent).toBe('dof_desc-ABC');
+    });
+
+    it('should place dof.nii.gz last', () => {
+        (useGetNeurovaultImages as Mock).mockReturnValue({
+            data: caseDofLast,
+            isLoading: false,
+            isError: false,
+        });
+
+        render(<DisplayMetaAnalysisResults metaAnalysis={currentShapeMetaAnalysis()} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
+        const buttons = screen.getAllByRole('button');
+        expect(buttons.length).toEqual(caseDofLast.length);
+        expect(buttons[0].textContent).toBe('z_corr-FDR_method-indep.nii.gz');
+        expect(buttons[1].textContent).toBe('p.nii.gz');
+        expect(buttons[2].textContent).toBe('est.nii.gz');
+        expect(buttons[3].textContent).toBe('dof.nii.gz');
     });
 
     it('should show the correctly sorted list for same key different values', () => {

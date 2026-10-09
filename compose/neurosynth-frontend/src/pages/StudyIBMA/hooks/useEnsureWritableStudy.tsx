@@ -1,0 +1,84 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useGetAnalysesByStudyId, useGetStudyNonNestedById, useUserCanEdit } from 'hooks';
+import analysisQueries from 'hooks/analyses/analysisQueries';
+import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
+import { StudyReturnNested } from 'hooks/studies/studyQueries.types';
+import type { ImageReturn, StudyRequest } from 'neurostore-typescript-sdk';
+import {
+    buildClonedStudyIdMap,
+    buildStudySnapshot,
+    type ClonedStudyIdMap,
+} from 'pages/StudyIBMA/hooks/buildWritableStudyIdMapping.helpers';
+import useCloneStudy from 'pages/StudyIBMA/hooks/useCloneStudy';
+import { useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+
+const EMPTY_ANALYSES: AnalysisReturnNested[] = [];
+const EMPTY_UNCATEGORIZED_IMAGES: ImageReturn[] = [];
+
+type EnsureWritableStudyOptions = {
+    /** Applied when cloning (e.g. study details form). Defaults to `{}` for board actions. */
+    studyRequest?: StudyRequest;
+};
+
+type EnsureWritableStudyResult = {
+    studyId: string;
+    didClone: boolean;
+    /** Maps board ids to ids on the writable study (identity when owned, remapped after clone). */
+    idMap: ClonedStudyIdMap;
+};
+
+const useEnsureWritableStudy = () => {
+    const { studyId } = useParams<{ studyId: string }>();
+    const queryClient = useQueryClient();
+    const { data: study } = useGetStudyNonNestedById(studyId);
+    const { data: analyses = EMPTY_ANALYSES } = useGetAnalysesByStudyId(studyId);
+    const { data: uncategorizedImages = EMPTY_UNCATEGORIZED_IMAGES } = useQuery(
+        analysisQueries.images.uncategorizedByStudyId(studyId)
+    );
+    const userOwnsStudy = useUserCanEdit(study?.user ?? undefined);
+    const { cloneStudy, isLoading: cloneStudyIsLoading } = useCloneStudy();
+
+    const buildCloneSnapshot = useCallback(
+        async (clonedStudy: StudyReturnNested) => {
+            const clonedStudyId = clonedStudy.id;
+            if (!clonedStudyId) throw new Error('cloned study is missing an id');
+
+            const clonedUncategorized = await queryClient.fetchQuery(
+                analysisQueries.images.uncategorizedByStudyId(clonedStudyId)
+            );
+            return buildStudySnapshot(clonedStudyId, clonedStudy.analyses ?? [], clonedUncategorized);
+        },
+        [queryClient]
+    );
+
+    const ensureWritableStudy = useCallback(
+        async (override?: EnsureWritableStudyOptions): Promise<EnsureWritableStudyResult | undefined> => {
+            if (!studyId || !study?.id) return undefined;
+
+            if (userOwnsStudy) {
+                const snapshot = buildStudySnapshot(studyId, analyses, uncategorizedImages);
+                // user already owns study, so no need to clone. idMap is the identity mapping.
+                return { studyId, didClone: false, idMap: buildClonedStudyIdMap(snapshot, snapshot) };
+            }
+
+            const oldSnapshot = buildStudySnapshot(studyId, analyses, uncategorizedImages);
+            // if override is an empty object, the backend will just clone the study as is
+            const clonedStudy = await cloneStudy(override?.studyRequest ?? {});
+            if (!clonedStudy?.id) return undefined;
+
+            const newSnapshot = await buildCloneSnapshot(clonedStudy);
+
+            return {
+                studyId: clonedStudy.id,
+                didClone: true,
+                idMap: buildClonedStudyIdMap(oldSnapshot, newSnapshot),
+            };
+        },
+        [analyses, buildCloneSnapshot, cloneStudy, study?.id, studyId, uncategorizedImages, userOwnsStudy]
+    );
+
+    return { ensureWritableStudy, isLoading: cloneStudyIsLoading, userOwnsStudy };
+};
+
+export default useEnsureWritableStudy;

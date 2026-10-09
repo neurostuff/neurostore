@@ -3,8 +3,8 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItemStyles from './ReadOnlyStudySummary.styles';
 import { Check, Bookmark } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
-import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
+import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'stores/projects/ProjectStore';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const ReadOnlyStudySummaryVirtualizedItem = (

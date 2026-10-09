@@ -1,40 +1,26 @@
-import { AxiosResponse } from 'axios';
-import { ProjectList } from 'neurosynth-compose-typescript-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { ProjectSearchCriteria, projectsSearchHelper } from './useGetProjects';
+import { useMemo } from 'react';
+import useDebounced from 'hooks/useDebounce';
 
-let debounce: NodeJS.Timeout;
 const useGetDebouncedProjects = (
     projectsearchCriteria: Partial<ProjectSearchCriteria>,
     userId?: string,
     enabled?: boolean
 ) => {
+    const stableArgs = useMemo(() => ({ projectsearchCriteria, userId }), [projectsearchCriteria, userId]);
+    const debouncedSearchCriteria = useDebounced(stableArgs, 300);
+
     return useQuery({
-        queryKey: ['projects', { ...projectsearchCriteria }, userId],
-
-        queryFn: () => {
-            if (debounce) clearTimeout(debounce);
-
-            return new Promise<AxiosResponse<ProjectList>>((resolve, reject) => {
-                debounce = setTimeout(async () => {
-                    try {
-                        const res = await projectsSearchHelper(projectsearchCriteria, userId);
-                        resolve(res);
-                    } catch (e) {
-                        reject(e);
-                    }
-                }, 500);
-            });
-        },
-
+        queryKey: ['projects', debouncedSearchCriteria.projectsearchCriteria, debouncedSearchCriteria.userId],
+        queryFn: () =>
+            projectsSearchHelper(debouncedSearchCriteria.projectsearchCriteria, debouncedSearchCriteria.userId),
         enabled,
-
         select: (res) => {
             const projectsList = res.data;
             return projectsList;
         },
-
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
     });
 };
 

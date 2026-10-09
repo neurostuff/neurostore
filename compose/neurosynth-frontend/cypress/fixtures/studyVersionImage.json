@@ -1,0 +1,27 @@
+{
+    "id": "image-version-id",
+    "name": "Image extraction",
+    "authors": "Bi Y, Zhang Y",
+    "publication": "Drug and alcohol dependence",
+    "description": "Image version of the study",
+    "doi": "10.1016/j.drugalcdep.2017.02.019",
+    "pmid": "28544994",
+    "has_coordinates": false,
+    "has_images": true,
+    "analyses": [
+        {
+            "id": "image-analysis-1",
+            "name": "Main contrast",
+            "description": "",
+            "points": [],
+            "images": [
+                {
+                    "id": "image-1",
+                    "filename": "zmap.nii.gz",
+                    "value_type": "Z",
+                    "url": "https://example.com/zmap.nii.gz"
+                }
+            ]
+        }
+    ]
+}

@@ -1,8 +1,10 @@
 from urllib.parse import urlencode
 
 import pytest
+import sqlalchemy as sa
 
-from neurostore.models import BaseStudy, Study
+from neurostore.database import db
+from neurostore.models import Analysis, BaseStudy, Study
 from neurostore.schemas.data import (
     AnalysisSchema,
     StringOrNested,
@@ -10,7 +12,11 @@ from neurostore.schemas.data import (
     StudysetSchema,
 )
 from neurostore.services.has_media_flags import recompute_media_flags
-from neurostore.tests.conftest import invalid_queries, valid_queries
+from neurostore.tests.conftest import (
+    invalid_queries,
+    negation_only_queries,
+    valid_queries,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -52,12 +58,57 @@ async def test_user_id(auth_client, user_data, session):
 
 
 async def test_source_id(auth_client, ingest_neurosynth, session):
-
-    study = Study.query.first()
+    # Ordered so the study under test does not depend on the order postgres
+    # happens to return rows in; an unpinned pick made this test fail on only
+    # some runs, depending on how many analyses the chosen study had.
+    study = Study.query.order_by(Study.id).first()
     post = await auth_client.post(f"/api/studies/?source_id={study.id}", data={})
     get = await auth_client.get(f"/api/studies/?source_id={study.id}&nested=true")
 
     assert post.json() == get.json()["results"][0]
+
+
+async def test_source_id_body_matches_stored_analyses(
+    auth_client, ingest_neurosynth, session
+):
+    """A clone's POST body must agree with the rows it just wrote.
+
+    Cloning a study makes `recompute_media_flags` flip the new analyses' flags
+    with a Core UPDATE, which bumps `updated_at` as part of the SET. The body is
+    dumped from the session before the commit, so analyses left stale there used
+    to report `updated_at: null` for rows the database had already stamped.
+    """
+    # A study with several analyses: cloning one whose analyses all stay in
+    # sync never exercised the stale read, so pick the widest study ingested.
+    study_id = db.session.execute(
+        sa.select(Analysis.study_id)
+        .group_by(Analysis.study_id)
+        .order_by(sa.func.count().desc(), Analysis.study_id)
+        .limit(1)
+    ).scalar_one()
+    study = db.session.get(Study, study_id)
+    assert study is not None, "fixture should ingest a study with analyses"
+
+    post = await auth_client.post(f"/api/studies/?source_id={study.id}", data={})
+    assert post.status_code == 200
+    clone = post.json()
+
+    stored = {
+        row.id: row.updated_at
+        for row in db.session.execute(
+            sa.select(Analysis.id, Analysis.updated_at).where(
+                Analysis.study_id == clone["id"]
+            )
+        ).all()
+    }
+    assert stored, "clone should have analyses"
+
+    for analysis in clone["analyses"]:
+        if stored[analysis["id"]] is not None:
+            assert analysis["updated_at"] is not None, (
+                f"analysis {analysis['id']} reported updated_at=null while the "
+                "database had already stamped it"
+            )
 
 
 @pytest.mark.parametrize("endpoint", ["studies", "base-studies"])
@@ -206,6 +257,37 @@ async def test_multiword_queries(auth_client, ingest_neurosynth, session):
     assert len(multi_word_search.json()["results"]) > 0
 
 
+async def test_dash_is_a_not_operator(auth_client, ingest_neurosynth, session):
+    """`-term` must exclude, matching the documented PubMed-style NOT (issue #1745)."""
+    study = BaseStudy.query.first()
+    word = study.name.split(" ")[-1]
+
+    included = await auth_client.get(f"/api/base-studies/?search={word}")
+    assert included.status_code == 200
+    assert len(included.json()["results"]) > 0
+
+    for excluded_query in (f"{word} -{word}", f"{word} NOT {word}"):
+        url_safe_query = urlencode({"search": excluded_query})
+        excluded = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
+        assert excluded.status_code == 200
+        assert excluded.json()["results"] == []
+
+
+@pytest.mark.parametrize("query, expected", negation_only_queries)
+async def test_negation_only_queries_are_rejected(
+    query, expected, auth_client, ingest_neurosynth, session
+):
+    """A query with no positive term cannot use the GIN index.
+
+    Postgres falls back to a sequential scan matching nearly every record
+    (~650ms on a 41k-row corpus, versus ~3ms for an indexed term), so the
+    endpoint refuses rather than serving it.
+    """
+    url_safe_query = urlencode({"search": query})
+    search = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
+    assert search.status_code == 400
+
+
 @pytest.mark.parametrize("query, expected", valid_queries)
 async def test_valid_pubmed_queries(
     query, expected, auth_client, ingest_neurosynth, session
@@ -221,3 +303,39 @@ async def test_invalid_pubmed_queries(
     url_safe_query = urlencode({"search": query})
     search = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
     assert search.status_code == 400
+
+
+async def test_error_responses_carry_a_correlation_id(auth_client, session):
+    """A failing request must be traceable from the client to the server log."""
+    url_safe_query = urlencode({"search": "AND OR"})
+    result = await auth_client.get(f"/api/base-studies/?{url_safe_query}")
+
+    assert result.status_code == 400
+    request_id = result.headers.get("X-Request-ID")
+    assert request_id
+    # the id in the body is the one the server logged, not a fresh one
+    assert result.json()["request_id"] == request_id
+    assert result.json()["timestamp"]
+
+
+async def test_request_id_is_echoed_when_the_caller_supplies_one(
+    auth_client, session
+):
+    result = await auth_client.get(
+        "/api/base-studies/does-not-exist",
+        headers={"X-Request-ID": "client-supplied-id"},
+    )
+
+    assert result.status_code == 404
+    assert result.headers.get("X-Request-ID") == "client-supplied-id"
+    assert result.json()["request_id"] == "client-supplied-id"
+
+
+async def test_correlation_id_is_readable_cross_origin(auth_client, session):
+    """A browser can only read the id if CORS exposes the header."""
+    result = await auth_client.get(
+        "/api/base-studies/does-not-exist",
+        headers={"Origin": "https://client.example"},
+    )
+
+    assert "X-Request-ID" in result.headers["Access-Control-Expose-Headers"]

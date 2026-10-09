@@ -16,7 +16,7 @@ def _load_app_and_db():
     from neurostore import initialize_application
     from neurostore.database import db
 
-    settings, logger = initialize_application()
+    settings, logger = initialize_application(component="neurostore-cli")
     app = SimpleNamespace(config=settings, logger=logger)
     return app, db
 
@@ -115,20 +115,353 @@ def ingest_neurosynth(max_rows):
     _run_with_runtime(_run)
 
 
+@main.command("repair-annotation-links")
+@click.option(
+    "--dry-run/--apply",
+    default=True,
+    show_default=True,
+    help="report how many annotation notes are missing without creating them",
+)
+def repair_annotation_links(dry_run):
+    """Create annotation notes for studyset analyses that never got one.
+
+    Ingest paths add analyses to studies that may already sit in an annotated
+    studyset, which leaves those analyses with no note (issue #1740).
+    """
+
+    def _run(_app, _db):
+        from neurostore.services.annotation_links import (
+            backfill_annotation_analyses,
+            count_missing_annotation_analyses,
+        )
+
+        missing = count_missing_annotation_analyses()
+        if dry_run:
+            click.echo(f"{missing} missing annotation notes (dry run, nothing written)")
+            return
+        created = backfill_annotation_analyses()
+        click.echo(f"created {created} annotation notes")
+
+    _run_with_runtime(_run)
+
+
 @main.command("ingest-neurovault")
 @click.option(
-    "--verbose/-v", default=False, help="increase verbosity downloading neurovault"
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="increase verbosity downloading neurovault",
 )
 @click.option(
-    "--limit/-l", default=None, help="number of neurovault studies to download"
+    "-l",
+    "--limit",
+    type=int,
+    default=None,
+    help="number of neurovault studies to download (all of them by default)",
 )
-def ingest_neurovault(verbose, limit):
+@click.option(
+    "--max-images",
+    type=int,
+    default=None,
+    help="skip collections holding this many images or more",
+)
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    default=False,
+    help="re-check collections that are already ingested and add any missing images",
+)
+def ingest_neurovault(verbose, limit, max_images, overwrite):
     def _run(_app, _db):
         from neurostore import ingest
 
         ingest.ingest_neurovault(
             verbose=verbose,
-            limit=int(limit) if limit is not None else None,
+            limit=limit,
+            overwrite=overwrite,
+            max_images=max_images,
+        )
+
+    _run_with_runtime(_run)
+
+
+@main.command("backfill-neurovault-sample-sizes")
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="report each collection that gets sample sizes",
+)
+def backfill_neurovault_sample_sizes(verbose):
+    """Copy neurovault subject counts from stored image data onto analyses/studies."""
+
+    def _run(_app, _db):
+        from neurostore import ingest
+
+        ingest.backfill_neurovault_sample_sizes(verbose=verbose)
+
+    _run_with_runtime(_run)
+
+
+@main.command("prune-non-group-neurovault-images")
+@click.option(
+    "--apply/--dry-run",
+    "apply_changes",
+    default=False,
+    show_default=True,
+    help="delete the images instead of only reporting what would be deleted",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="report each study that loses images",
+)
+def prune_non_group_neurovault_images(apply_changes, verbose):
+    """Delete stored neurovault images that are not group level results.
+
+    Deletes the images neurovault marks single-subject, meta-analysis or other,
+    plus the analyses and entities left holding nothing. Images with no analysis
+    level are kept, matching what ingest-neurovault ingests.
+    """
+
+    def _run(_app, _db):
+        from neurostore import ingest
+
+        ingest.prune_non_group_neurovault_images(
+            dry_run=not apply_changes,
+            verbose=verbose,
+        )
+
+    _run_with_runtime(_run)
+
+
+@main.command("migrate-image-file-urls")
+@click.option(
+    "--apply/--dry-run",
+    "apply_changes",
+    default=False,
+    show_default=True,
+    help="write the new urls instead of only reporting what would change",
+)
+@click.option(
+    "--limit",
+    default=None,
+    type=int,
+    help="stop after this many images (default: no limit)",
+)
+@click.option(
+    "--verify",
+    default=0,
+    type=int,
+    help="head-request this many migrated urls and abort if any fails to resolve",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="report each url as it is rewritten",
+)
+def migrate_image_file_urls(apply_changes, limit, verify, verbose):
+    """Point image urls at the nifti file rather than a neurovault landing page.
+
+    Rows from an older ingest path hold the page in url and the file url in
+    filename, so summarizing them downloads html. This swaps them round.
+    """
+
+    def _run(_app, _db):
+        from neurostore import ingest
+
+        ingest.migrate_image_file_urls(
+            dry_run=not apply_changes,
+            verbose=verbose,
+            limit=limit,
+            verify=verify,
+        )
+
+    _run_with_runtime(_run)
+
+
+@main.command("compute-image-summaries")
+@click.option(
+    "--limit",
+    default=None,
+    type=int,
+    help="stop after this many images (default: no limit)",
+)
+@click.option(
+    "--image-id",
+    default=None,
+    help="summarize a single image by id, ignoring the other filters",
+)
+@click.option(
+    "--source",
+    default=None,
+    help="only images belonging to studies from this source (e.g. neurovault)",
+)
+@click.option(
+    "--value-type",
+    default=None,
+    help="only images with this map type code or label (e.g. Z, 'Z map')",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="recompute images that already have a current summary",
+)
+@click.option(
+    "--retry-failed",
+    is_flag=True,
+    default=False,
+    help="also retry images whose last summary attempt failed",
+)
+@click.option(
+    "--timeout",
+    default=None,
+    type=float,
+    help="per-image download timeout in seconds",
+)
+@click.option(
+    "--max-bytes",
+    default=None,
+    type=int,
+    help="skip images whose file is larger than this",
+)
+@click.option(
+    "--max-voxels",
+    default=None,
+    type=int,
+    help="skip images holding more voxels than this (bounds memory, not download)",
+)
+@click.option(
+    "--commit-every",
+    default=25,
+    show_default=True,
+    help="how many images to summarize between commits",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    default=False,
+    help="report each image as it is summarized",
+)
+def compute_image_summaries(
+    limit,
+    image_id,
+    source,
+    value_type,
+    force,
+    retry_failed,
+    timeout,
+    max_bytes,
+    max_voxels,
+    commit_every,
+    verbose,
+):
+    """Download images and store distribution statistics for their voxel values.
+
+    Fetches each image once and records percentiles, spread, a value histogram and
+    the nan/zero/negative counts, so the api can serve the numbers that say whether
+    an image matches the map type it claims to be.
+    """
+
+    def _run(_app, _db):
+        from neurostore.scripts.compute_image_summaries import (
+            run_compute_image_summaries,
+        )
+
+        counts = run_compute_image_summaries(
+            limit=limit,
+            image_id=image_id,
+            source=source,
+            value_type=value_type,
+            force=force,
+            retry_failed=retry_failed,
+            timeout=timeout,
+            max_bytes=max_bytes,
+            max_voxels=max_voxels,
+            commit_every=commit_every,
+            verbose=verbose,
+        )
+        click.echo(
+            "Summarized {succeeded} image(s), {failed} failed, "
+            "{skipped} skipped.".format(**counts)
+        )
+
+    _run_with_runtime(_run)
+
+
+@main.command("process-neurovault-images")
+@click.option(
+    "--apply/--dry-run",
+    "apply_changes",
+    default=False,
+    show_default=True,
+    help="run the destructive steps instead of only reporting what would change",
+)
+@click.option("--skip-url-migration", is_flag=True, default=False)
+@click.option("--skip-prune", is_flag=True, default=False)
+@click.option("--skip-sample-sizes", is_flag=True, default=False)
+@click.option("--skip-summaries", is_flag=True, default=False)
+@click.option(
+    "--summary-source",
+    "summary_sources",
+    multiple=True,
+    default=None,
+    help="study source(s) to summarize; repeatable (default: every source)",
+)
+@click.option(
+    "--summary-limit",
+    default=None,
+    type=int,
+    help="stop each summary pass after this many images",
+)
+@click.option(
+    "--verify-urls",
+    default=0,
+    type=int,
+    help="head-request this many migrated urls and abort if any fails to resolve",
+)
+@click.option("-v", "--verbose", is_flag=True, default=False)
+def process_neurovault_images(
+    apply_changes,
+    skip_url_migration,
+    skip_prune,
+    skip_sample_sizes,
+    skip_summaries,
+    summary_sources,
+    summary_limit,
+    verify_urls,
+    verbose,
+):
+    """Run the whole neurovault image clean-up, in dependency order.
+
+    Migrates image urls onto the nifti file, deletes the images neurovault does
+    not mark group level along with the studies left holding nothing, derives
+    sample sizes from what survives, then summarizes every remaining image.
+    """
+
+    def _run(_app, _db):
+        from neurostore.scripts.process_neurovault_images import (
+            run_process_neurovault_images,
+        )
+
+        run_process_neurovault_images(
+            dry_run=not apply_changes,
+            verbose=verbose,
+            skip_url_migration=skip_url_migration,
+            skip_prune=skip_prune,
+            skip_sample_sizes=skip_sample_sizes,
+            skip_summaries=skip_summaries,
+            summary_sources=summary_sources or None,
+            summary_limit=summary_limit,
+            verify_urls=verify_urls,
         )
 
     _run_with_runtime(_run)

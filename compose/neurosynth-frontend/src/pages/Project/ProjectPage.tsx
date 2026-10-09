@@ -2,21 +2,26 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Chip, Tab, Tabs, Typography } from '@mui/material';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
+import PrivacyToggle from 'components/PrivacyToggle';
 import TextEdit from 'components/TextEdit/TextEdit';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import ProjectComponentsEditPrivacyToggle from 'pages/Project/components/ProjectEditPrivacyToggle';
 import {
     useProjectCreatedAt,
     useProjectDescription,
+    useProjectIsPublic,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
+    useProjectType,
     useProjectUser,
     useProjectUsername,
     useUpdateProjectDescription,
+    useUpdateProjectIsPublic,
+    useUpdateProjectIsLoading,
     useUpdateProjectName,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ProjectReturnTypeEnum } from 'neurosynth-compose-typescript-sdk';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -37,9 +42,13 @@ const ProjectPage = () => {
     const projectName = useProjectName();
     const createdAt = useProjectCreatedAt();
     const projectUser = useProjectUser();
+    const projectType = useProjectType();
     const projectUserName = useProjectUsername();
     const projectDescription = useProjectDescription();
     const userCanEdit = useUserCanEdit(projectUser || undefined);
+    const isPublic = useProjectIsPublic();
+    const updateProjectIsPublic = useUpdateProjectIsPublic();
+    const updateProjectIsLoading = useUpdateProjectIsLoading();
 
     const tab = useMemo(() => {
         if (!metaAnalysesTabEnabled) return 0;
@@ -66,6 +75,15 @@ const ProjectPage = () => {
                     />
                 )}
                 <LoadingStateIndicatorProject />
+                <Box sx={{ marginLeft: 'auto' }}>
+                    <PrivacyToggle
+                        isPublic={!!isPublic}
+                        canEdit={userCanEdit}
+                        onChange={updateProjectIsPublic}
+                        isLoading={updateProjectIsLoading}
+                        tooltipTitle="Toggle project privacy"
+                    />
+                </Box>
             </Box>
 
             <Box sx={{ marginBottom: '0.5rem' }}>
@@ -89,7 +107,6 @@ const ProjectPage = () => {
                             </Typography>
                         </TextEdit>
                     </Box>
-                    <ProjectComponentsEditPrivacyToggle />
                 </Box>
                 <TextEdit
                     onSave={(updatedDescription) => updateProjectDescription(updatedDescription)}
@@ -116,6 +133,13 @@ const ProjectPage = () => {
                     }}
                 >
                     <Box>
+                        <Chip
+                            size="small"
+                            label={projectType === ProjectReturnTypeEnum.Ibma ? 'IBMA' : 'CBMA'}
+                            variant="outlined"
+                            color="info"
+                            sx={{ marginRight: '0.5rem' }}
+                        />
                         {projectUserName && (
                             <Chip
                                 size="small"

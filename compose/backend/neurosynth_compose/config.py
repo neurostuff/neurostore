@@ -80,7 +80,8 @@ class Config:
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("compose", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
     PROPAGATE_EXCEPTIONS = True
 
@@ -94,6 +95,9 @@ class Config:
     NEUROVAULT_ACCESS_TOKEN = get_env_var("NEUROVAULT_ACCESS_TOKEN")
     NEUROVAULT_COLLECTION_NAME_MAX_LEN = 200
     NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX = 25
+    # Keep NeuroVault calls well below the nginx proxy_read_timeout (300s).
+    NEUROVAULT_REQUEST_TIMEOUT_SECONDS = 20
+    NEUROVAULT_COLLECTION_CREATE_DEADLINE_SECONDS = 60
     COMPOSE_RUNNER_SUBMIT_URL = get_env_var("COMPOSE_RUNNER_SUBMIT_URL")
     COMPOSE_RUNNER_STATUS_URL = get_env_var("COMPOSE_RUNNER_STATUS_URL")
     COMPOSE_RUNNER_LOGS_URL = get_env_var("COMPOSE_RUNNER_LOGS_URL")
@@ -107,12 +111,34 @@ class Config:
         "APIKEYINFO_FUNC", "neurosynth_compose.resources.auth.verify_key"
     )
 
+    # Logging. LOG_LEVEL is this application's; ROOT_LOG_LEVEL is everything
+    # else in the process. ERROR_LOG_FILE writes errors to disk; unset disables
+    # the file. ERROR_LOG_ROTATION defaults to one file per worker when
+    # WEB_CONCURRENCY is above 1; see .env.example for the alternatives.
+    LOG_LEVEL = get_env_var("LOG_LEVEL", "INFO")
+    ROOT_LOG_LEVEL = get_env_var("ROOT_LOG_LEVEL", "WARNING")
+    LOG_FORMAT = get_env_var("LOG_FORMAT")
+    ERROR_LOG_FILE = get_env_var("ERROR_LOG_FILE")
+    ERROR_LOG_ROTATION = get_env_var("ERROR_LOG_ROTATION", "auto")
+    ERROR_LOG_MAX_BYTES = get_env_var("ERROR_LOG_MAX_BYTES", 5 * 1024 * 1024)
+    ERROR_LOG_BACKUP_COUNT = get_env_var("ERROR_LOG_BACKUP_COUNT", 3)
+    # gunicorn's worker count, read here because it decides how the error
+    # log can safely be rotated
+    WEB_CONCURRENCY = get_env_var("WEB_CONCURRENCY", 1)
+
+    # Error reporting; Sentry stays off unless a DSN is provided.
+    SENTRY_DSN = get_env_var("SENTRY_DSN")
+    SENTRY_COMPONENT = get_env_var("SENTRY_COMPONENT")
+    SENTRY_RELEASE = get_env_var("SENTRY_RELEASE")
+    SENTRY_TRACES_SAMPLE_RATE = get_env_var("SENTRY_TRACES_SAMPLE_RATE", "0")
+    SENTRY_PROFILES_SAMPLE_RATE = get_env_var("SENTRY_PROFILES_SAMPLE_RATE", "0")
+
 
 class ProductionConfig(Config):
     ENV = "production"
     DB_NAME = resolve_database_name("compose", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"postgresql+psycopg2://postgres:{Config.POSTGRES_PASSWORD}"
         f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -129,7 +155,7 @@ class StagingConfig(Config):
     ENV = "staging"
     DB_NAME = resolve_database_name("compose", "staging")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"postgresql+psycopg2://postgres:{Config.POSTGRES_PASSWORD}"
         f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -153,7 +179,8 @@ class DevelopmentConfig(Config):
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
@@ -177,7 +204,8 @@ class TestingConfig(Config):
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
@@ -194,9 +222,10 @@ class DockerTestConfig(TestingConfig):
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
 
 class TravisConfig(TestingConfig):
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres@localhost/travis_ci_test"
+    SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres@localhost/travis_ci_test"

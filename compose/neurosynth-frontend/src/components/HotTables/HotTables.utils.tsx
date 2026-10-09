@@ -1,14 +1,15 @@
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import { CellValue } from 'handsontable';
+import { sortByOrder } from 'helpers/utils';
 
 export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
     if (!noteKeys) return [];
     const noteKeyTypes = noteKeys as {
         [key: string]: { type: EPropertyType; order?: number; default?: AnnotationNoteValue };
     };
-    const arr = Object.entries(noteKeyTypes)
-        .map(([key, descriptor]) => {
+    const arr = sortByOrder(
+        Object.entries(noteKeyTypes).map(([key, descriptor]) => {
             if (!descriptor?.type) throw new Error('Invalid note_keys descriptor: missing type');
             return {
                 type: descriptor.type,
@@ -17,8 +18,7 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
                 default: descriptor.default ?? null,
             };
         })
-        .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
-        .map((noteKey, index) => ({ ...noteKey, order: index }));
+    ).map((noteKey, index) => ({ ...noteKey, order: index }));
     return arr;
 };
 

@@ -45,6 +45,17 @@ def _build_project_namespace():
         },
         public=False,
         draft=True,
+        tags=[
+            SimpleNamespace(
+                id="tag-1",
+                created_at=None,
+                updated_at=None,
+                name="tag-a",
+                group="group-a",
+                description="desc",
+                official=True,
+            )
+        ],
         studyset=SimpleNamespace(
             id="studyset-1", neurostore_id="neurostore-studyset-1"
         ),

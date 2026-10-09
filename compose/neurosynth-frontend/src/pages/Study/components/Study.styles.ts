@@ -1,5 +1,7 @@
 import { Style } from 'index';
 
+export const STUDY_ANALYSES_PANEL_HEIGHT = '80vh';
+
 const StudyStyles: Style = {
     spaceBelow: {
         marginBottom: '8px !important',

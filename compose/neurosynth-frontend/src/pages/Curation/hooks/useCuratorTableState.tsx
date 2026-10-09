@@ -9,6 +9,7 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
+import 'pages/Curation/hooks/useCuratorTableState.tableMeta';
 import useGetAllAIExtractedDataForStudies, {
     EAIExtractors,
     IParticipantDemographicExtractor,
@@ -18,7 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     retrieveCurationTableState,
     updateCurationTableState,
-} from '../components/CurationBoardAIInterfaceCuratorTable.helpers';
+} from 'pages/Curation/components/CurationBoardAIInterfaceCuratorTable.helpers';
 import { ICurationStubStudy } from '../Curation.types';
 import { COMBINED_CURATOR_TABLE_COLUMNS, createColumn } from './useCuratorTableState.helpers';
 import { ICurationTableColumnType, ICurationTableStudy } from './useCuratorTableState.types';
@@ -36,8 +37,9 @@ const useCuratorTableState = (
         )[]
     >([]);
     const [sorting, setSorting] = useState<SortingState>([]);
-    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [hasLoadedSavedColumns, setHasLoadedSavedColumns] = useState(false);
     const stubsWithNeurostoreIds = useMemo(() => {
         return (allStubs.filter((stub) => !!stub.neurostoreId).map((stub) => stub!.neurostoreId) as string[]).sort();
     }, [allStubs]);
@@ -56,19 +58,19 @@ const useCuratorTableState = (
         if (allowRowSelection) newColumns.push(createColumn('select'));
         if (allowAIColumns) newColumns.push(createColumn('summary'));
 
+        const stateSelectedColumns = [...state.selectedColumns];
         if (state.firstTimeSeeingPage) {
             // set defaults
             if (allowAIColumns) {
-                newColumns.push(createColumn('fMRITasks.TaskName'));
-                newColumns.push(createColumn('group_name'));
-                newColumns.push(createColumn('diagnosis'));
+                ['fMRITasks.TaskName', 'group_name', 'diagnosis'].forEach((column) => {
+                    newColumns.push(createColumn(column));
+                    stateSelectedColumns.push(column);
+                });
             } else {
-                newColumns.push(createColumn('articleYear'));
-                newColumns.push(createColumn('title'));
-                newColumns.push(createColumn('journal'));
-                newColumns.push(createColumn('authors'));
-                newColumns.push(createColumn('pmid'));
-                newColumns.push(createColumn('doi'));
+                ['articleYear', 'title', 'journal', 'authors', 'pmid', 'doi'].forEach((column) => {
+                    newColumns.push(createColumn(column));
+                    stateSelectedColumns.push(column);
+                });
             }
         } else {
             COMBINED_CURATOR_TABLE_COLUMNS.forEach((column) => {
@@ -79,12 +81,13 @@ const useCuratorTableState = (
         setColumns(newColumns);
         setSorting(state.sorting);
         setColumnFilters(state.columnFilters);
+        setHasLoadedSavedColumns(true);
 
         updateCurationTableState(
             projectId,
             {
                 firstTimeSeeingPage: false,
-                selectedColumns: state.selectedColumns,
+                selectedColumns: stateSelectedColumns,
             },
             allowAIColumns ? '' : 'identification'
         );
@@ -119,8 +122,7 @@ const useCuratorTableState = (
             {
                 taskExtraction: (ITaskExtractor & { dateExecuted?: string }) | null;
                 participantDemographicsExtraction:
-                    | (IParticipantDemographicExtractor & { dateExecuted?: string })
-                    | null;
+                    (IParticipantDemographicExtractor & { dateExecuted?: string }) | null;
             }
         >();
 
@@ -206,7 +208,7 @@ const useCuratorTableState = (
                 const indexB = COMBINED_CURATOR_TABLE_COLUMNS.findIndex((col) => col.id === colB.id);
                 return indexA - indexB;
             })
-            .filter((column) => (allowAIColumns ? column : !column.meta?.AIExtractor));
+            .filter((column) => (allowAIColumns ? column : !column.meta?.curatorTableColumnAIExtractor));
     }, [allowAIColumns, columns]);
 
     const table = useReactTable({
@@ -252,6 +254,12 @@ const useCuratorTableState = (
         );
     }, [sorting, projectId, allowAIColumns]);
     useEffect(() => {
+        // columns starts empty. Saving that list before the localStorage read is applied
+        // replaces the saved selection. Dev Strict Mode mounts twice, so the second read
+        // then loads the empty list. Production builds do not double-mount, which is why
+        // these tests pass in GitHub Actions.
+        if (!hasLoadedSavedColumns || !projectId) return;
+
         updateCurationTableState(
             projectId,
             {
@@ -261,11 +269,11 @@ const useCuratorTableState = (
             },
             allowAIColumns ? '' : 'identification'
         );
-    }, [allowAIColumns, columns, projectId]);
+    }, [allowAIColumns, columns, hasLoadedSavedColumns, projectId]);
 
     return {
         table,
-        isLoading,
+        isLoading: isLoading || !hasLoadedSavedColumns,
     };
 };
 

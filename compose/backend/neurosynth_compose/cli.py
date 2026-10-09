@@ -14,7 +14,7 @@ def _load_app_and_db():
     from neurosynth_compose import initialize_application
     from neurosynth_compose.database import db
 
-    settings, logger = initialize_application()
+    settings, logger = initialize_application(component="compose-cli")
     app = SimpleNamespace(config=settings, logger=logger)
     return app, db
 

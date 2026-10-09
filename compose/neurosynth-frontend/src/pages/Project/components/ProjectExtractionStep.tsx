@@ -2,7 +2,7 @@ import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from
 import CopyableId from 'components/CopyableId/CopyableId';
 import MoveToExtractionDialog from 'pages/Project/components/MoveToExtractionDialog';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
-import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import ProjectExtractionStepCard from './ProjectExtractionStepCard';

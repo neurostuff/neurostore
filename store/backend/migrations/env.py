@@ -1,17 +1,17 @@
 from __future__ import with_statement
 from alembic import context
 from sqlalchemy import engine_from_config, pool
-from logging.config import fileConfig
 import logging
+from neurostore.observability.logging_config import configure_migration_logging
 
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-fileConfig(config.config_file_name)
+# Alembic's logging config replaces the root handlers and disables the loggers
+# that already exist, so it is applied only when nothing else owns logging.
+configure_migration_logging(config.config_file_name)
 logger = logging.getLogger("alembic.env")
 
 # add your model's MetaData object here

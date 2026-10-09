@@ -2,7 +2,7 @@ import { useSnackbar } from 'notistack';
 import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API from 'api/api.config';
-import { STUDYSET_QUERY_STRING } from './useGetStudysetById';
+import studysetQueries from 'hooks/studysets/studysetQueries';
 
 const useDeleteStudyset = () => {
     const queryClient = useQueryClient();
@@ -12,13 +12,13 @@ const useDeleteStudyset = () => {
 
         onSuccess: () => {
             // we need to send a request to retrieve studies again with its associated analyses and points
-            queryClient.invalidateQueries({ queryKey: [STUDYSET_QUERY_STRING] });
+            queryClient.invalidateQueries({ queryKey: studysetQueries.all() });
             enqueueSnackbar('studyset deleted successfully', { variant: 'success' });
         },
 
         onError: () => {
             enqueueSnackbar('there was an error deleting the studyset', { variant: 'error' });
-        }
+        },
     });
 };
 

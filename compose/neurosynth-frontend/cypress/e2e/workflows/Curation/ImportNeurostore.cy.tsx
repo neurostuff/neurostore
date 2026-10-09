@@ -25,19 +25,22 @@ describe('ImportStudiesDialog', () => {
         it('should show the neurostore search page', () => {
             // we can target the table as the neurostore search is the only table HTML that appears in this workflow
             cy.get('.MuiTableContainer-root').should('be.visible');
+            cy.contains('button', /Next \(Import \d+ studies\)/)
+                .parent()
+                .should('have.css', 'position', 'sticky');
         });
 
         it('should be disabled initially', () => {
             cy.wait('@baseStudiesFixture');
-            cy.contains('button', `next`).should('be.disabled');
+            cy.contains('button', 'Next (Import 4 studies)').should('be.disabled');
         });
 
         it('should import studies', () => {
             cy.get('input[type="text"]').type('neuron');
             cy.get('button').contains('Search').click();
             cy.wait('@baseStudiesFixture');
-            cy.contains('button', 'next').should('not.be.disabled');
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'Next (Import 4 studies)').should('not.be.disabled');
+            cy.contains('button', 'Next (Import 4 studies)').click();
             cy.wait('@baseStudiesFixture');
             cy.get('input[type="text"]').first().clear().type('my new import');
             cy.contains('button', 'Import').click({ force: true });

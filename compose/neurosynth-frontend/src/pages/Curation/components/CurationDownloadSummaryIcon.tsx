@@ -1,4 +1,4 @@
-import { useProjectCurationColumns, useProjectExclusionTags, useProjectName } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationColumns, useProjectExclusionTags, useProjectName } from 'stores/projects/ProjectStore';
 import { useRef, useState } from 'react';
 import { stubsToBibtex, stubsToCSV } from './CurationDownloadSummary.helpers';
 import { downloadFile } from 'helpers/downloadFile.helpers';

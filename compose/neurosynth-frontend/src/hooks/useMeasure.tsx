@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface UseMeasureResult<T extends HTMLElement> {
-    ref: React.RefObject<T>;
+    ref: React.RefObject<T | null>;
     width: number;
     height: number;
 }

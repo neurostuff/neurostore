@@ -1,0 +1,26 @@
+{
+    "id": "coord-version-id",
+    "name": "Coordinate extraction",
+    "authors": "Bi Y, Zhang Y",
+    "publication": "Drug and alcohol dependence",
+    "description": "Coordinate version of the study",
+    "doi": "10.1016/j.drugalcdep.2017.02.019",
+    "pmid": "28544994",
+    "has_coordinates": true,
+    "has_images": false,
+    "analyses": [
+        {
+            "id": "coord-analysis-1",
+            "name": "Main contrast",
+            "description": "",
+            "points": [
+                {
+                    "id": "point-1",
+                    "coordinates": [0, 0, 0],
+                    "space": "MNI"
+                }
+            ],
+            "images": []
+        }
+    ]
+}

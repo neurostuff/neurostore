@@ -2,10 +2,29 @@ from importlib import import_module
 
 from nimare.nimads import Annotation, Studyset
 
+# The nimare.meta submodules that hold estimators, keyed by specification type.
+ANALYSIS_MODULES = frozenset({"cbma", "ibma"})
+
+
+def _analysis_module(spec_type):
+    """Resolve a specification type onto a nimare.meta submodule name.
+
+    Specifications store this uppercase ("CBMA"/"IBMA"), but the module names
+    are lowercase, so compare case-insensitively rather than trusting the
+    stored casing.
+    """
+    normalized = str(spec_type or "").strip().lower()
+    if normalized not in ANALYSIS_MODULES:
+        raise ValueError(
+            f"Unsupported specification type {spec_type!r}; "
+            f"expected one of {sorted(ANALYSIS_MODULES)} (case-insensitive)."
+        )
+    return normalized
+
 
 def load_specification(spec):
     """Returns function to run analysis on dataset."""
-    est_mod = import_module(".".join(["nimare", "meta", spec["type"]]))
+    est_mod = import_module(".".join(["nimare", "meta", _analysis_module(spec.get("type"))]))
     estimator = getattr(est_mod, spec["estimator"]["type"])
     if spec["estimator"].get("args"):
         if "kernel_transformer" in spec["estimator"].get("args"):

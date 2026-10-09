@@ -1,16 +1,14 @@
-import { Box, Button, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import CopyableId from 'components/CopyableId/CopyableId';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
-import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
+import { useGetStudysetSummaryById, useUpdateStudyset } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import ExtractionAdvanceButton from 'pages/Extraction/components/ExtractionAdvanceButton';
 import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
 import { hasDifferenceBetweenStudysetAndCuration } from 'pages/Extraction/ExtractionPage.helpers';
-import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
     useProjectCurationColumns,
@@ -18,16 +16,10 @@ import {
     useProjectExtractionStudysetId,
     useProjectName,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
-import { useEffect, useMemo, useState } from 'react';
+} from 'stores/projects/ProjectStore';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ExtractionTable from './components/ExtractionTable';
-
-export enum EExtractionStatus {
-    'COMPLETED' = 'completed',
-    'SAVEDFORLATER' = 'savedforlater',
-    'UNCATEGORIZED' = 'uncategorized',
-}
 
 const ExtractionPage = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
@@ -38,7 +30,6 @@ const ExtractionPage = () => {
     const annotationId = useProjectExtractionAnnotationId();
     const columns = useProjectCurationColumns();
     const loading = useGetProjectIsLoading();
-    const extractionSummary = useGetExtractionSummary(projectId || '');
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
@@ -47,7 +38,7 @@ const ExtractionPage = () => {
         isLoading: getStudysetIsLoading,
         isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
-    } = useGetStudysetById(studysetId, false, true);
+    } = useGetStudysetSummaryById(studysetId);
 
     const { mutate } = useUpdateStudyset();
 
@@ -57,10 +48,7 @@ const ExtractionPage = () => {
     useEffect(() => {
         if (!loading && !getStudysetIsLoading && columns.length > 0 && studyset?.studies) {
             const includedStudies = columns[columns.length - 1].stubStudies;
-            const isDifferent = hasDifferenceBetweenStudysetAndCuration(
-                includedStudies,
-                studyset.studies as StudyReturn[]
-            );
+            const isDifferent = hasDifferenceBetweenStudysetAndCuration(includedStudies, studyset.studies);
             setShowReconcilePrompt(isDifferent);
         }
     }, [columns, getStudysetIsLoading, studyset?.studies, loading]);
@@ -83,32 +71,6 @@ const ExtractionPage = () => {
             );
         }
     };
-
-    const handleMoveToSpecificationPhase = () => {
-        navigate(`/projects/${projectId}/project`, {
-            state: {
-                projectPage: {
-                    scrollToMetaAnalysisProceed: true,
-                },
-            } as IProjectPageLocationState,
-        });
-    };
-
-    const isReadyToMoveToNextStep = useMemo(
-        () => extractionSummary.total === extractionSummary.completed && extractionSummary.total > 0,
-        [extractionSummary]
-    );
-
-    const percentageCompleteString = useMemo((): string => {
-        if (extractionSummary.total === 0) return '0 / 0';
-        return `${extractionSummary.completed} / ${extractionSummary.total}`;
-    }, [extractionSummary.completed, extractionSummary.total]);
-
-    const percentageComplete = useMemo((): number => {
-        if (extractionSummary.total === 0) return 0;
-        const percentageComplete = (extractionSummary.completed / extractionSummary.total) * 100;
-        return Math.floor(percentageComplete);
-    }, [extractionSummary.completed, extractionSummary.total]);
 
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
@@ -145,20 +107,7 @@ const ExtractionPage = () => {
                         >
                             Annotations
                         </Button>
-                        <Tooltip title={`${percentageCompleteString} marked as complete`}>
-                            <span style={{ width: '100%' }}>
-                                <Button
-                                    sx={{ marginLeft: '4px' }}
-                                    onClick={handleMoveToSpecificationPhase}
-                                    color="success"
-                                    variant="contained"
-                                    disableElevation
-                                    disabled={!canEdit || !isReadyToMoveToNextStep}
-                                >
-                                    {isReadyToMoveToNextStep ? 'Advance' : `${percentageComplete}% complete`}
-                                </Button>
-                            </span>
-                        </Tooltip>
+                        <ExtractionAdvanceButton sx={{ marginLeft: '1rem' }} />
                     </Box>
                 </Box>
                 <Box sx={{ display: 'flex', gap: '1.5rem', marginBottom: '0.5rem' }}>

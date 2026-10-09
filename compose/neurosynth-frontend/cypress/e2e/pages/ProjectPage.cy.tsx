@@ -61,4 +61,28 @@ describe(PAGE_NAME, () => {
         cy.get('button').contains('Project');
         cy.get('button').should('not.contain', 'Meta-Analyses');
     });
+
+    it('should set a meta-analysis from public to private from the meta-analyses list when you own it', () => {
+        cy.login('mocked');
+        cy.intercept('GET', `**/api/projects/*`, {
+            fixture: 'ProjectPage/projectWithMetaAnalyses',
+        }).as('projectFixture');
+        cy.fixture('MetaAnalysis/metaAnalysisNoResults').then((metaAnalysis) => {
+            metaAnalysis.public = true;
+            cy.intercept('GET', `**/api/meta-analyses*`, { results: [metaAnalysis] }).as('metaAnalysesFixture');
+        });
+        cy.intercept('GET', `**/api/meta-analysis-jobs*`, { fixture: 'MetaAnalysis/jobs/noJobs' }).as('jobsFixture');
+        cy.intercept('PUT', `**/api/meta-analyses/**`, { fixture: 'MetaAnalysis/metaAnalysisNoResults' }).as(
+            'updateMetaAnalysisFixture'
+        );
+
+        cy.visit(`${PATH}/meta-analyses`);
+        cy.wait('@projectFixture');
+        cy.wait('@metaAnalysesFixture');
+        cy.get('.MuiCardContent-root').contains('button', 'Private').click();
+        cy.wait('@updateMetaAnalysisFixture').then((res) => {
+            assert.exists(res.request.body.public);
+            assert.isFalse(res.request.body.public);
+        });
+    });
 });

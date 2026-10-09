@@ -35,6 +35,24 @@ def _analysis_in_scope(base_study_ids):
     )
 
 
+def _expire_changed(model, changed_ids):
+    """Drop stale in-session copies of rows the bulk updates just changed.
+
+    Those updates run as Core statements, so an instance already loaded in
+    this session keeps the column values it was loaded with -- including the
+    `updated_at` that `onupdate` bumps as part of the SET. Writers dump their
+    response from those instances before committing, so without this the
+    response reports the pre-update row while the very next read returns the
+    updated one.
+    """
+    if not changed_ids:
+        return
+
+    for instance in list(db.session.identity_map.values()):
+        if isinstance(instance, model) and instance.id in changed_ids:
+            db.session.expire(instance)
+
+
 def enqueue_base_study_flag_updates(base_study_ids, reason="api-write"):
     base_study_ids = normalize_ids(base_study_ids)
     if not base_study_ids:
@@ -137,6 +155,7 @@ def recompute_media_flags(base_study_ids):
             .returning(Analysis.id)
         ).all()
     )
+    _expire_changed(Analysis, changed_analysis_ids)
 
     # Study coordinate flags derive from analyses; image flags derive from
     # direct study-owned images so uncategorized images are included.
@@ -209,6 +228,7 @@ def recompute_media_flags(base_study_ids):
             .returning(Study.id)
         ).all()
     )
+    _expire_changed(Study, changed_study_ids)
 
     # Base-study flags from studies + analyses + child rows
     base_points_exist = sa.exists(
@@ -274,6 +294,7 @@ def recompute_media_flags(base_study_ids):
             .returning(BaseStudy.id)
         ).all()
     )
+    _expire_changed(BaseStudy, changed_base_study_ids)
 
     return {
         "base-studies": changed_base_study_ids,

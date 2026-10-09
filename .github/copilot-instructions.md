@@ -130,7 +130,9 @@ Navigate to `compose/neurosynth-frontend/`:
 Both services use similar `.env` configurations:
 
 - `APP_ENV` -- Primary environment selector (`development`, `staging`, `production`). This drives the service config class and the default database name used by app/runtime services.
-- `WEB_CONCURRENCY` -- Gunicorn worker count. Local `.env` defaults to `1`; increase only after measuring the target host's memory and load.
+- `WEB_CONCURRENCY` -- Gunicorn worker count. Local `.env` defaults to `1`; increase only after measuring the target host's memory and load. Above `1`, each worker writes its own error log (`<name>.<pid>.log`) because workers cannot share a self-rotating file; see `ERROR_LOG_ROTATION` in `.env.example`.
+- `LOG_LEVEL` / `ROOT_LOG_LEVEL` -- Verbosity for this application's loggers and for everything else in the process (default `INFO` / `WARNING`).
+- `ERROR_LOG_FILE` -- Where errors (ERROR and above) are also written on disk; unset writes to stderr only. Set per service in `docker-compose.yml` so no two processes share a file.
 - `POSTGRES_HOST` -- Database host (store-pgsql17 or compose-pgsql17)
 - `POSTGRES_PASSWORD` -- Database password (usually "example")
 - `AUTH0_CLIENT_ID` -- Auth0 integration (can be placeholder for dev)

@@ -3,6 +3,7 @@ import pytest
 from neurostore.models import Study, Studyset
 from neurostore.schemas import (
     AnalysisSchema,
+    ImageSchema,
     PointSchema,
     StudySchema,
     StudysetSchema,
@@ -179,6 +180,13 @@ def test_AnalysisSchema_partial_load_does_not_apply_missing_order():
     schema = AnalysisSchema()
     result = schema.load({"name": "updated analysis"}, partial=True)
     assert result["name"] == "updated analysis"
+    assert "order" not in result
+
+
+def test_ImageSchema_partial_load_does_not_apply_missing_order():
+    schema = ImageSchema()
+    result = schema.load({"filename": "updated.nii.gz"}, partial=True)
+    assert result["filename"] == "updated.nii.gz"
     assert "order" not in result
 
 

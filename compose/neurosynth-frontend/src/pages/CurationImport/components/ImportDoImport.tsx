@@ -1,6 +1,5 @@
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import { EImportMode, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import ImportCreateStub from 'pages/CurationImport/components/ImportCreateStub';
 import ImportPMIDs from 'pages/CurationImport/components/ImportPMIDs';
 import ImportStandardFormat from './ImportStandardFormat';

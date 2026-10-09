@@ -76,6 +76,7 @@ class ResultUploadSchema(ContextSchema):
         fields.Raw(metadata={"type": "string", "format": "binary"})
     )
     method_description = fields.String()
+    method_references = fields.String()
 
 
 class StringOrNested(fields.Nested):
@@ -411,6 +412,8 @@ class MetaAnalysisResultSchema(BaseSchema):
         attribute="annotation_snapshot_id",
     )
     diagnostic_table = fields.String(dump_only=True)
+    method_description = fields.String(dump_only=True)
+    method_references = fields.String(dump_only=True)
     status = fields.String()
 
     @post_load
@@ -582,6 +585,12 @@ class ProjectSchema(BaseSchema):
     description = fields.String(allow_none=True)
     type = fields.String(validate=validate.OneOf(["CBMA", "IBMA"]))
     provenance = fields.Dict(allow_none=True)
+    tags = StringOrNested(
+        TagSchema,
+        metadata={"pluck": "name"},
+        many=True,
+        allow_none=True,
+    )
     public = fields.Boolean()
     draft = fields.Boolean()
     neurostore_studyset_id = fields.String(allow_none=True)

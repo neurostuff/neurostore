@@ -3,7 +3,7 @@ import InfoPopup from 'components/InfoPopup';
 import { NAVBAR_HEIGHT } from 'components/Navbar/Navbar';
 import { useSnackbar } from 'notistack';
 import CurationBoardAIGroupsList from 'pages/Curation/components/CurationBoardAIGroupsList';
-import { useDeleteCurationImport } from 'pages/Project/store/ProjectStore';
+import { useDeleteCurationImport } from 'stores/projects/ProjectStore';
 import CurationBoardAIInterfaceCurator from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceExclude from './CurationBoardAIInterfaceExclude';
 import CurationBoardAIInterfaceImportSummary from './CurationBoardAIInterfaceImportSummary';

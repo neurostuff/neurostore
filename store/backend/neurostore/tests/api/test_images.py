@@ -66,6 +66,73 @@ async def test_put_images(auth_client, session):
     assert resp.json()["url"] == new_data["url"]
 
 
+async def test_analysis_image_count_updates_on_image_writes(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="image count study",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis-a",
+                user=user,
+                images=[
+                    Image(
+                        filename="seed.nii.gz",
+                        url="seed",
+                        user=user,
+                    )
+                ],
+            ),
+            Analysis(name="analysis-b", user=user),
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    analysis_a = study.analyses[0]
+    analysis_b = study.analyses[1]
+    session.refresh(analysis_a)
+    session.refresh(analysis_b)
+    assert analysis_a.image_count == 1
+    assert analysis_b.image_count == 0
+
+    create_resp = await auth_client.post(
+        "/api/images/",
+        data={
+            "analysis": analysis_b.id,
+            "filename": "created.nii.gz",
+            "url": "created",
+        },
+    )
+    assert create_resp.status_code == 200
+    created_image_id = create_resp.json()["id"]
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    analysis_b = Analysis.query.filter_by(id=analysis_b.id).first()
+    assert analysis_a.image_count == 1
+    assert analysis_b.image_count == 1
+
+    move_resp = await auth_client.put(
+        f"/api/images/{created_image_id}", data={"analysis": analysis_a.id}
+    )
+    assert move_resp.status_code == 200
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    analysis_b = Analysis.query.filter_by(id=analysis_b.id).first()
+    assert analysis_a.image_count == 2
+    assert analysis_b.image_count == 0
+
+    delete_resp = await auth_client.delete(f"/api/images/{created_image_id}")
+    assert delete_resp.status_code == 200
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    assert analysis_a.image_count == 1
+
+
 async def test_delete_images(auth_client, session):
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
@@ -313,3 +380,146 @@ async def test_image_value_type_is_canonicalized_on_read(auth_client, session):
     assert resp.status_code == 200
     assert resp.json()["value_type"] == "Z map"
     assert "value_type_label" not in resp.json()
+
+
+async def test_post_images_without_order_increments_within_analysis(
+    auth_client, session
+):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    study = Study(
+        name="image order study",
+        user=user,
+        analyses=[Analysis(name="image order analysis", user=user)],
+    )
+    session.add(study)
+    session.commit()
+
+    payload = {"analysis": study.analyses[0].id, "filename": "ordered.nii.gz"}
+
+    # POST two images to the same analysis, neither carrying an explicit order.
+    resp1 = await auth_client.post("/api/images/", data=dict(payload))
+    resp2 = await auth_client.post("/api/images/", data=dict(payload))
+
+    assert resp1.status_code == 200
+    assert resp2.status_code == 200
+
+    # First image in the analysis -> order 1; second -> order 2 (not 1).
+    assert resp1.json()["order"] == 1
+    assert resp2.json()["order"] == 2
+
+
+async def test_post_uncategorized_images_without_order_increments_within_study(
+    auth_client, session
+):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    study = Study(
+        name="uncategorized image order study",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis with its own images",
+                user=user,
+                images=[Image(filename="analysis-owned.nii.gz", user=user, order=7)],
+            )
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    payload = {"study": study.id, "filename": "uncategorized.nii.gz"}
+
+    resp1 = await auth_client.post("/api/images/", data=dict(payload))
+    resp2 = await auth_client.post("/api/images/", data=dict(payload))
+
+    assert resp1.status_code == 200
+    assert resp2.status_code == 200
+
+    # Study-owned images are numbered independently of the analysis-owned ones.
+    assert resp1.json()["order"] == 1
+    assert resp2.json()["order"] == 2
+
+
+async def test_put_image_partial_does_not_reset_order(auth_client, session):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    study = Study(
+        name="partial image update",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis",
+                user=user,
+                images=[Image(filename="fake.nii.gz", user=user, order=3)],
+            )
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    image_id = study.analyses[0].images[0].id
+    resp = await auth_client.put(
+        f"/api/images/{image_id}", data={"filename": "renamed.nii.gz"}
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["filename"] == "renamed.nii.gz"
+    assert resp.json()["order"] == 3
+
+
+async def test_nested_study_images_are_sorted_by_order(auth_client, session):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    study = Study(
+        name="nested image order",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis",
+                user=user,
+                order=1,
+                images=[
+                    Image(filename="third.nii.gz", user=user, order=3),
+                    Image(filename="first.nii.gz", user=user, order=1),
+                    Image(filename="second.nii.gz", user=user, order=2),
+                ],
+            )
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    resp = await auth_client.get(f"/api/studies/{study.id}?nested=true")
+
+    assert resp.status_code == 200
+    images = resp.json()["analyses"][0]["images"]
+    assert [image["order"] for image in images] == [1, 2, 3]
+    assert [image["filename"] for image in images] == [
+        "first.nii.gz",
+        "second.nii.gz",
+        "third.nii.gz",
+    ]
+
+
+async def test_nested_images_are_numbered_by_payload_position(auth_client, session):
+    resp = await auth_client.post(
+        "/api/studies/",
+        data={
+            "name": "nested image numbering",
+            "doi": "10.5555/nested-image-numbering",
+            "analyses": [
+                {
+                    "name": "image analysis",
+                    "images": [
+                        {"filename": "first.nii.gz"},
+                        {"filename": "second.nii.gz"},
+                        {"filename": "third.nii.gz"},
+                    ],
+                }
+            ],
+        },
+    )
+
+    assert resp.status_code == 200
+    analysis = Analysis.query.filter_by(id=resp.json()["analyses"][0]).one()
+    assert [
+        (image.filename, image.order)
+        for image in sorted(analysis.images, key=lambda image: image.order)
+    ] == [("first.nii.gz", 1), ("second.nii.gz", 2), ("third.nii.gz", 3)]

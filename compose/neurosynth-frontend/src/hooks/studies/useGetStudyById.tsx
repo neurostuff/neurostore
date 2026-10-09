@@ -1,7 +1,6 @@
-import { AxiosError, AxiosResponse } from 'axios';
-import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
+import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
 const useGetStudyById = (studyId: string | undefined) => {
     return useQuery({
@@ -24,7 +23,7 @@ const useGetStudyById = (studyId: string | undefined) => {
             return res.data;
         },
 
-        enabled: !!studyId
+        enabled: !!studyId,
     });
 };
 

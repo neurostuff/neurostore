@@ -6,11 +6,12 @@ import { useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
 import {
+    useProjectAnalysisType,
     useProjectCurationColumns,
     useProjectCurationIsLastColumn,
     useProjectCurationIsPrisma,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
@@ -21,6 +22,7 @@ import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
+import { getCurationSearchPath } from 'pages/CurationImport/CurationSearchPage.helpers';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
@@ -71,6 +73,7 @@ const CurationBoardAIInterfaceCurator = () => {
     });
 
     const projectUser = useProjectUser();
+    const projectAnalysisType = useProjectAnalysisType();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
     const [selectedStubId, setSelectedStubId] = useState<string>();
@@ -169,7 +172,10 @@ const CurationBoardAIInterfaceCurator = () => {
                                 variant="contained"
                                 disableElevation
                                 size="small"
-                                onClick={() => navigate(`/projects/${projectId}/curation/search`)}
+                                onClick={() => {
+                                    if (!projectId) return;
+                                    navigate(getCurationSearchPath(projectId, projectAnalysisType));
+                                }}
                                 sx={{
                                     fontSize: '12px',
                                     borderColor: 'white !important',

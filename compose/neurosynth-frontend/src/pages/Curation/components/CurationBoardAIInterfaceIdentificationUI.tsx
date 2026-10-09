@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import { useGetCurationSummary, useUserCanEdit } from 'hooks';
-import { useProjectCurationDuplicates, useProjectCurationImports } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationDuplicates, useProjectCurationImports } from 'stores/projects/ProjectStore';
 import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
 import { ChevronRight } from '@mui/icons-material';
 import StartExtractionButton from './StartExtractionButton';

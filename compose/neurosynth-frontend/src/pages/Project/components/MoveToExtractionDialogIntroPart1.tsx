@@ -1,47 +1,61 @@
-import { Box, Button, Link, Typography } from '@mui/material';
+import { PlayArrow, SkipNext } from '@mui/icons-material';
+import { Alert, Box, Button, Link, Stack } from '@mui/material';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import MoveToExtractionDialogSection from 'pages/Project/components/MoveToExtractionDialogSection';
+import { useProjectAnalysisType } from 'stores/projects/ProjectStore';
 
-const MoveToExtractionDialogIntroductionPart1 = (props: {
-    onNext: () => void;
-}) => {
+const getOptions = (analysisType: EAnalysisType) => [
+    {
+        icon: <PlayArrow color="primary" />,
+        title: 'Continue to Extraction',
+        description:
+            analysisType === EAnalysisType.IBMA
+                ? 'Finalize the data for your image based meta-analysis by reviewing study images and annotating analyses.'
+                : 'Finalize the data for your coordinate based meta-analysis by reviewing study coordinates and annotating analyses.',
+    },
+    {
+        icon: <SkipNext color="secondary" />,
+        title: 'Skip Extraction',
+        description: 'Jump straight to specifying your meta-analysis.',
+    },
+];
+
+const MoveToExtractionDialogIntroductionPart1 = (props: { onNext: () => void; onSkip: () => void }) => {
+    const analysisType = useProjectAnalysisType() ?? EAnalysisType.CBMA;
+    const options = getOptions(analysisType);
+
     return (
         <Box>
-            <Typography sx={{ fontWeight: 'bold' }} gutterBottom>
-                Congratulations on completing the Curation phase! You are now in{' '}
-                <Link
-                    underline="hover"
-                    target="_blank"
-                    rel="noreferrer"
-                    href="https://neurostuff.github.io/compose-docs/guide/Project/Extraction"
-                >
-                    Extraction
-                </Link>
-                , where you'll finalize the data for your meta-analysis.
-            </Typography>
-            <Typography gutterBottom>Your main tasks in this step are:</Typography>
-            <ul>
-                <li>
-                    <Typography>
-                        <b>Add & Review Study Data</b>: Ensure every study has accurate activation coordinates. You will
-                        need to either separate coordinates into distinct analyses for automatically processed studies,
-                        or input coordinates from the original paper manually for new studies.
-                    </Typography>
-                </li>
-                <li>
-                    <Typography>
-                        <b>Annotate Analyses</b>: Use annotations to tag the specific analyses (i.e., contrasts) you
-                        want to include. This allows you to group analyses from different studies to generate distinct
-                        meta-analyses later.
-                    </Typography>
-                </li>
-            </ul>
+            <Stack spacing={2}>
+                <Alert severity="success" sx={{ fontWeight: 'bold' }}>
+                    Congratulations on completing the Curation phase! You are now in{' '}
+                    <Link
+                        underline="hover"
+                        target="_blank"
+                        rel="noreferrer"
+                        href="https://neurostuff.github.io/compose-docs/guide/Project/Extraction"
+                    >
+                        Extraction
+                    </Link>
+                    , where you can finalize the data for your meta-analysis.
+                </Alert>
 
-            <Typography gutterBottom>
-                Click <span style={{ fontWeight: 'bold', color: '#0077b6' }}>NEXT</span> to continue.
-            </Typography>
+                <MoveToExtractionDialogSection title="What would you like to do?" items={options} />
+            </Stack>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
                 <Button
-                    sx={{ width: '220px', marginTop: '1rem' }}
+                    sx={{ width: '220px', mr: 1 }}
+                    onClick={props.onSkip}
+                    disableElevation
+                    color="secondary"
+                    startIcon={<SkipNext />}
+                >
+                    Skip Extraction
+                </Button>
+                <Button
+                    startIcon={<PlayArrow />}
+                    sx={{ width: '220px' }}
                     onClick={props.onNext}
                     variant="contained"
                     disableElevation

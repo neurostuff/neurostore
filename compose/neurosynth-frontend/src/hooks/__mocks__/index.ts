@@ -3,7 +3,6 @@ import useInputValidation from 'hooks/useInputValidation'; // don't need to mock
 import {
     mockAnnotations,
     mockBaseStudy,
-    mockConditions,
     mockMetaAnalysisResult,
     mockMetaAnalysisReturn,
     mockNeurovault,
@@ -18,22 +17,13 @@ const useUpdateAnalysis = vi.fn().mockReturnValue({
     isPending: false,
     isError: false,
     mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
 const useDeleteAnalysis = vi.fn().mockReturnValue({
     isPending: false,
     mutate: vi.fn(),
-});
-
-const useCreateCondition = vi.fn().mockReturnValue({
-    mutate: vi.fn(),
-    isPending: false,
-});
-
-const useGetConditions = vi.fn().mockReturnValue({
-    isLoading: false,
-    data: mockConditions(),
-    isError: false,
+    mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
 const useCreatePoint = vi.fn().mockReturnValue({
@@ -51,14 +41,29 @@ const useDeletePoint = vi.fn().mockReturnValue({
     mutate: vi.fn(),
 });
 
-const useGetStudyById = vi.fn().mockReturnValue({
+const studyByIdMockReturn = {
     isLoading: false,
     data: mockStudy(),
-});
+};
+
+const useGetStudyNonNestedById = vi.fn().mockReturnValue(studyByIdMockReturn);
 
 const useCreateAnalysis = vi.fn().mockReturnValue({
     isPending: false,
     mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({ data: { id: 'analysis-new' } }),
+});
+
+const useUpdateImage = vi.fn().mockReturnValue({
+    isLoading: false,
+    mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
+});
+
+const useUpdateAnnotationByAnnotationAndAnalysisIds = vi.fn().mockReturnValue({
+    isLoading: false,
+    mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
 const useCreateMetaAnalysis = vi.fn().mockReturnValue({
@@ -77,6 +82,13 @@ const useCreateStudyset = vi.fn().mockReturnValue({
     mutate: vi.fn(),
 });
 
+const useCreateAnnotation = vi.fn().mockReturnValue({
+    isPending: false,
+    isError: false,
+    mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({ id: 'annotation-id' }),
+});
+
 const useUpdateStudyset = vi.fn().mockReturnValue({
     isPending: false,
     isError: false,
@@ -89,10 +101,16 @@ const useUpdateStudy = vi.fn().mockReturnValue({
     mutate: vi.fn(),
 });
 
-const useGetAnnotationsByStudysetId = vi.fn().mockReturnValue({
+const useGetAnalysesByStudyId = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
-    data: mockAnnotations(),
+    data: [],
+});
+
+const useGetAnnotationById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockAnnotations()[0],
 });
 
 const useCreateProject = vi.fn().mockReturnValue({
@@ -124,12 +142,27 @@ const useGetStudysetById = vi.fn().mockImplementation((studysetId: string, isNes
         data: isNested ? studysetNested : studysetNotNested,
     };
 });
+const useGetStudysetNonNestedById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: studysetNotNested,
+});
+const useGetStudysetSummaryById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: studysetNested,
+});
 
-const useGetBaseStudyById = vi.fn().mockReturnValue({
+const baseStudyByIdMockReturn = {
     isLoading: false,
     isError: false,
     data: mockBaseStudy(),
-});
+};
+
+const useGetBaseStudyFlatById = vi.fn().mockReturnValue(baseStudyByIdMockReturn);
+const useGetBaseStudyInfoById = vi.fn().mockReturnValue(baseStudyByIdMockReturn);
+const useGetBaseStudyNestedById = vi.fn().mockReturnValue(baseStudyByIdMockReturn);
+const useGetBaseStudyNonNestedById = vi.fn().mockReturnValue(baseStudyByIdMockReturn);
 
 const useGetFullText = vi.fn().mockReturnValue({
     isLoading: false,
@@ -145,10 +178,16 @@ const useCreateStudy = vi.fn().mockReturnValue({
     }),
 });
 
+const useIngest = vi.fn().mockReturnValue({
+    isPending: false,
+    isError: false,
+    mutateAsync: vi.fn().mockResolvedValue({ data: [] }),
+});
+
 const useUpdateAnnotationById = vi.fn().mockReturnValue({
     isPending: false,
     mutate: vi.fn(),
-    mutateAsync: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
 const useGetProjectById = vi.fn().mockReturnValue({
@@ -189,22 +228,30 @@ const useGetNeurovaultImages = vi.fn().mockReturnValue({
 
 export {
     useCreateAnalysis,
-    useCreateCondition,
+    useUpdateImage,
+    useUpdateAnnotationByAnnotationAndAnalysisIds,
     useCreateMetaAnalysis,
     useCreatePoint,
     useCreateProject,
     useCreateStudy,
     useCreateStudyset,
+    useCreateAnnotation,
+    useIngest,
     useDeleteAnalysis,
     useDeletePoint,
     useDeleteProject,
-    useGetAnnotationsByStudysetId,
-    useGetBaseStudyById,
-    useGetConditions,
+    useGetAnnotationById,
+    useGetAnalysesByStudyId,
+    useGetBaseStudyFlatById,
+    useGetBaseStudyInfoById,
+    useGetBaseStudyNestedById,
+    useGetBaseStudyNonNestedById,
     useGetExtractionSummary,
     useGetFullText,
-    useGetStudyById,
+    useGetStudyNonNestedById,
     useGetStudysetById,
+    useGetStudysetNonNestedById,
+    useGetStudysetSummaryById,
     useInputValidation,
     useIsMounted,
     useUpdateAnalysis,

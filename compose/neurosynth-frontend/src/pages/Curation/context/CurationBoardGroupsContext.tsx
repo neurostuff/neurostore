@@ -1,15 +1,15 @@
-import { indexToPRISMAMapping, IPRISMAConfig } from 'hooks/projects/useGetProjects';
+import { SxProps } from '@mui/system';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
+import { IPRISMAConfig } from 'pages/Curation/Curation.types';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
     useProjectCurationColumns,
     useProjectCurationDuplicates,
     useProjectCurationExclusionTags,
     useProjectCurationImports,
     useProjectCurationPrismaConfig,
-} from 'pages/Project/store/ProjectStore';
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
-import { type ReactNode,  createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { SxProps } from '@mui/system';
+} from 'stores/projects/ProjectStore';
 import { IGroupListItem } from '../components/CurationBoardAIGroupsList';
 import { ECurationBoardAIInterface } from '../components/CurationBoardAi';
 
@@ -40,7 +40,7 @@ interface ICurationBoardGroupsContext {
 
 const CurationBoardGroupsContext = createContext<ICurationBoardGroupsContext | undefined>(undefined);
 
-export const CurationBoardGroupsProvider = ({  children  }: { children: React.ReactNode }) => {
+export const CurationBoardGroupsProvider = ({ children }: { children: React.ReactNode }) => {
     const curationColumns = useProjectCurationColumns();
     const curationDuplicates = useProjectCurationDuplicates();
     const { projectId } = useParams<{ projectId: string }>();

@@ -3,18 +3,19 @@ import LoadingButton from 'components/Buttons/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateAlgorithmSpecification, useGetAnnotationById } from 'hooks';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import DynamicInputDisplay from 'pages/MetaAnalysis/components/DynamicInputDisplay';
 import { getFilteredAnnotationNotes } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
 import {
+    useProjectAnalysisType,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectId,
     useProjectMetaAnalyses,
     useUpdateProjectMetaAnalyses,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IAlgorithmSelection, IAnalysesSelection } from './CreateMetaAnalysisSpecificationDialogBase.types';
@@ -41,6 +42,7 @@ const CreateMetaAnalysisSpecificationReview = (props: {
 }) => {
     const navigate = useNavigate();
     const projectId = useProjectId();
+    const analysisType = useProjectAnalysisType() ?? EAnalysisType.CBMA;
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: annotations } = useGetAnnotationById(annotationId);
@@ -63,7 +65,7 @@ const CreateMetaAnalysisSpecificationReview = (props: {
 
         const metaAnalysis = await createMetaAnalysis(
             projectId,
-            EAnalysisType.CBMA,
+            analysisType,
             props.algorithm.estimator,
             props.algorithm.corrector,
             studysetId,
