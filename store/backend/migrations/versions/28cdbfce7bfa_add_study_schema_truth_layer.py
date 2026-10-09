@@ -10,7 +10,7 @@ extraction hangs off the existing coordinate skeleton.
 See store/backend/docs/study-schema-ingestion-design.md.
 
 Revision ID: 28cdbfce7bfa
-Revises: b3d5e7f9a1c4
+Revises: c4e6f8a0b2d4
 Create Date: 2026-09-18
 
 """
@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
 revision = "28cdbfce7bfa"
-down_revision = "b3d5e7f9a1c4"
+down_revision = "c4e6f8a0b2d4"
 branch_labels = None
 depends_on = None
 

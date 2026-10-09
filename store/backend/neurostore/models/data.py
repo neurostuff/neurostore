@@ -1104,7 +1104,7 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
     # Nullable because an extraction can describe an analysis whose coordinates
     # were never parsed. It must not be *silently* null: the ingester records
-    # status FAILED when source_table_analysis does not resolve, because a
+    # status FAILURE when source_table_analysis does not resolve, because a
     # payload quietly detached from its coordinates is the worst failure here.
     analysis_id = db.Column(
         db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True, nullable=True
