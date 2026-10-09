@@ -20,16 +20,18 @@ _RULES = (
     (
         MNI,
         re.compile(
-            r"\bmni|\bnmi\b|\bicbm|montreal\s+neurolog|"
+            r"\bmni|\bnmi\b|\bicbm|2(?:mni|icbm)|montreal\s+neurolog|"
             r"international\s+consortium\s+for\s+brain\s+mapping|\bcolin\s*27",
             re.IGNORECASE,
         ),
     ),
-    # Beyond pondie: "T&T", and "2tal" so that mni2tal matches both families.
+    # Beyond pondie: T&T, TT88 and AFNI's TLRC / T88; and the digit forms
+    # (mni2tal, tal2mni, icbm2tal) match both families, so they are not guessed.
     (
         TAL,
         re.compile(
-            r"\btal\b|t[ao]l[ai]+r[ai]+ch|tournoux|2tal\b|\bt\s*&\s*t\b",
+            r"\btal\b|t[ao]l[ai]+r[ai]+ch|tournoux|\bt\s*&\s*t\b|"
+            r"\btal88\b|\btt(?:88)?\b|\bt88\b|tlrc|\btt_n27|2tal\b|\btal2",
             re.IGNORECASE,
         ),
     ),
@@ -45,7 +47,8 @@ _RULES = (
 )
 
 _UNKNOWN = re.compile(
-    r"^\s*(unknown|not\s+(reported|stated|specified)|n/?a|none|unspecified)\s*$",
+    r"^\s*(?:unknown(?:\s+space)?|not\s+(?:reported|stated|specified|applicable|available)|"
+    r"n\.?\s*/?\s*a\.?|none(?:\s+reported)?|missing|null|unspecified|[\W_]+)\s*$",
     re.IGNORECASE,
 )
 
@@ -56,8 +59,8 @@ def normalize_space(value):
     - Missing or blank input returns None.
     - A spelling of MNI or TAL ("MNI152 2mm", "Talairach & Tournoux 1988")
       returns that space.
-    - A string naming both ("MNI converted to Talairach", "mni2tal") returns
-      ``"UNKNOWN"``: which space the numbers are in is not decidable from it.
+    - A string naming both ("MNI converted to Talairach", "mni2tal", "tal2mni")
+      returns ``"UNKNOWN"``: which space the numbers are in is not decidable.
     - "unknown", "not reported" and the like return ``"UNKNOWN"``.
     - Anything else returns ``"OTHER"``, the value the frontend shows and writes
       back for any space it does not know.
