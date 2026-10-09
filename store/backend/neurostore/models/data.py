@@ -841,6 +841,12 @@ class Point(BaseMixin, db.Model):
     cluster_size = db.Column(db.Float)
     cluster_measurement_unit = db.Column(db.String)
     subpeak = db.Column(db.Boolean)
+    # deactivation and is_seed hold existing data and remain settable through the
+    # API, but the extraction pipeline does not write them. It splits a set by
+    # the sign of its statistic and stores the negative half as its own analysis,
+    # the inverse contrast, so direction is a property of the analysis. A seed is
+    # the role of a coordinate set, kept on the analysis, not on its points.
+    # NiMARE reads neither column.
     deactivation = db.Column(db.Boolean, default=False, index=True)
     is_seed = db.Column(db.Boolean, default=False, nullable=False)
     order = db.Column(db.Integer)
