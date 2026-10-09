@@ -60,9 +60,11 @@ The schema already names the repair. `study_schema/README.md` gives a natural ke
 analyses there is something better than a name: `Analysis.source_table_analysis`, the
 key the *coordinate parse* derives from where the analysis was read, rather than one chosen
 by the model. For a table analysis it is `<table_id>#<h>`, where `h` is the first 12 hex
-characters of the sha1 of its cells written as `<row>:<column_group>`, sorted and
-comma-joined; text and figure analyses get `text#<h>` and `figure#<h>` from their character
-spans (study_schema `ParsedAnalysis.key`). Because the key hashes cells, not list position,
+characters of the sha1 of its cells written as `<row>:<column_group>`, deduplicated, sorted
+as integers by row and then column group (not as strings, which reorders them from row 10
+on), and comma-joined; text and figure analyses get `text#<h>` and `figure#<h>` from their
+character spans (study_schema `ParsedAnalysis.key`). Call `study_schema.keys.table_key` /
+`key_for` rather than reimplementing it. Because the key hashes cells, not list position,
 a re-run that reads the same cells reaches the same key.
 
 So a reviewer's judgement has to attach to a key rather than a position. The design gets
