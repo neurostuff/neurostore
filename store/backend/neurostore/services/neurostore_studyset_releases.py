@@ -1028,6 +1028,16 @@ def metadata_text(value):
     return str(value)
 
 
+def arrow_accepts(values):
+    import pyarrow as pa
+
+    try:
+        pa.array(values)
+    except (pa.ArrowInvalid, pa.ArrowTypeError):
+        return False
+    return True
+
+
 def harmonize_metadata_types(metadatas):
     """Give each key one type, as pyarrow rejects mixed-type columns.
 
@@ -1035,19 +1045,14 @@ def harmonize_metadata_types(metadatas):
     cannot store becomes floats if its values are all numeric, else text (JSON
     for nested values).
     """
-    import pyarrow as pa
-
     values_by_key = {}
     for metadata in metadatas:
         for key, value in metadata.items():
             if value is not None:
                 values_by_key.setdefault(key, []).append(value)
     for key, values in values_by_key.items():
-        try:
-            pa.array(values)
+        if arrow_accepts(values):
             continue
-        except (pa.ArrowInvalid, pa.ArrowTypeError):
-            pass
         try:
             [float(v) for v in values]
             convert = float
