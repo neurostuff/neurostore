@@ -11,6 +11,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
 
+from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
 from neurostore.models.migration_types import TSVector, VectorType
@@ -852,6 +853,10 @@ class Point(BaseMixin, db.Model):
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("points", passive_deletes=True))
+
+    @validates("space")
+    def validate_space(self, key, value):
+        return normalize_space(value)
 
 
 class Image(BaseMixin, db.Model):
