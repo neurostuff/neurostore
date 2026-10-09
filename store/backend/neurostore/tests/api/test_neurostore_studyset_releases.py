@@ -290,6 +290,7 @@ def test_release_build_harmonizes_mixed_metadata_types(app, session, tmp_path):
         "ad_meanage": 75,
         "site": 3,
         "raw_metadata": {"tasks": ["rest"]},
+        "sample_sizes": [10, 12],
     }
     other = Study(
         name="Second Coordinate Study",
@@ -300,6 +301,7 @@ def test_release_build_harmonizes_mixed_metadata_types(app, session, tmp_path):
             "ad_meanage": "75.65",
             "site": "Austin",
             "raw_metadata": {"tasks": "rest"},
+            "sample_sizes": [8],
         },
         base_study=BaseStudy(
             name="Second Base", level="group", public=True, has_coordinates=True
@@ -325,6 +327,8 @@ def test_release_build_harmonizes_mixed_metadata_types(app, session, tmp_path):
     assert by_study.loc[other.id, "site"] == "Austin"
     assert by_study.loc[newest_study.id, "raw_metadata"] == '{"tasks":["rest"]}'
     assert by_study.loc[other.id, "raw_metadata"] == '{"tasks":"rest"}'
+    assert list(by_study.loc[newest_study.id, "sample_sizes"]) == [10, 12]
+    assert list(by_study.loc[other.id, "sample_sizes"]) == [8]
 
 
 def test_release_build_tracks_partial_update_manifest(app, session, tmp_path):

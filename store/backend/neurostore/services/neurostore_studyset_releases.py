@@ -1031,19 +1031,23 @@ def metadata_text(value):
 def harmonize_metadata_types(metadatas):
     """Give each key one type, as pyarrow rejects mixed-type columns.
 
-    NiMARE 0.20 did this before writing parquet; 0.21 does not. Numbers and
-    numeric strings become floats; any other mix, or any nested value, becomes
-    text (JSON for nested values, whose inferred struct type can conflict).
+    NiMARE 0.20 did this before writing parquet; 0.21 does not. A key pyarrow
+    cannot store becomes floats if its values are all numeric, else text (JSON
+    for nested values).
     """
+    import pyarrow as pa
+
     values_by_key = {}
     for metadata in metadatas:
         for key, value in metadata.items():
             if value is not None:
                 values_by_key.setdefault(key, []).append(value)
     for key, values in values_by_key.items():
-        kinds = {float if type(v) is int else type(v) for v in values}
-        if len(kinds) < 2 and not any(isinstance(v, (dict, list)) for v in values):
+        try:
+            pa.array(values)
             continue
+        except (pa.ArrowInvalid, pa.ArrowTypeError):
+            pass
         try:
             [float(v) for v in values]
             convert = float
