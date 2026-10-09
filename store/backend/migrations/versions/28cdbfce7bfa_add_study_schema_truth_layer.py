@@ -56,8 +56,13 @@ def upgrade():
         sa.ForeignKeyConstraint(["base_study_id"], ["base_studies.id"]),
         sa.ForeignKeyConstraint(["analysis_id"], ["analyses.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
+        # Keys are per paper (table ids like "tbl2" repeat across papers), so
+        # the study is part of what makes one unique within a run.
         sa.UniqueConstraint(
-            "config_id", "source_table_analysis", name="uq_par__config_source_analysis"
+            "config_id",
+            "base_study_id",
+            "source_table_analysis",
+            name="uq_par__config_study_source_analysis",
         ),
     )
     _index("pipeline_analysis_results", ["id", "created_at", "updated_at"])

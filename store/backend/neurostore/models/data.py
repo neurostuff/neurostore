@@ -1088,8 +1088,13 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
 
     __tablename__ = "pipeline_analysis_results"
     __table_args__ = (
+        # Keys are per paper (table ids like "tbl2" repeat across papers), so
+        # the study is part of what makes one unique within a run.
         sa.UniqueConstraint(
-            "config_id", "source_table_analysis", name="uq_par__config_source_analysis"
+            "config_id",
+            "base_study_id",
+            "source_table_analysis",
+            name="uq_par__config_study_source_analysis",
         ),
         sa.Index(
             "ix_par__analysis_type",
