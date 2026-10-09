@@ -841,7 +841,6 @@ def serialize_study_shards(study_ids, batch_size=STUDY_SHARD_BATCH_SIZE):
 def build_note_shard(
     annotation_id, study_id, base_id, rows, features_by_base, note_keys
 ):
-    # no null fill: NiMARE stores notes sparsely, and filling made shards ~97% nulls
     note = note_for_base(base_id, features_by_base, ())
     notes = []
     for row in rows:
