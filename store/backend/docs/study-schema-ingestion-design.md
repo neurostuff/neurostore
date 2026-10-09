@@ -58,7 +58,12 @@ absorb.** A schema change that re-nests a slot breaks them a second way.
 The schema already names the repair. `study_schema/README.md` gives a natural key per class
 (`local_id`, `name`); `local_id` is the per-run half and `name` is the durable half. For
 analyses there is something better than a name: `Analysis.source_table_analysis`, the
-`<table id>#<ordinal>` key produced by the *table parse* rather than chosen by the model.
+key the *coordinate parse* derives from where the analysis was read, rather than one chosen
+by the model. For a table analysis it is `<table_id>#<h>`, where `h` is the first 12 hex
+characters of the sha1 of its cells written as `<row>:<column_group>`, sorted and
+comma-joined; text and figure analyses get `text#<h>` and `figure#<h>` from their character
+spans (study_schema `ParsedAnalysis.key`). Because the key hashes cells, not list position,
+a re-run that reads the same cells reaches the same key.
 
 So a reviewer's judgement has to attach to a key rather than a position. The design gets
 this for less than it first appears: because edits are confined to values and evidence, a
@@ -196,7 +201,7 @@ base_studies
   └── studies                     ← ONE pipeline-owned version per base study
         │                           (source = 'study_schema')
         ├── tables                ← t_id = schema Table.id
-        └── analyses              ← source_id = '<t_id>#<ordinal>'   [the durable anchor]
+        └── analyses              ← source_id = '<table_id>#<h>'     [the durable anchor]
               └── points          ← the coordinates
 
 pipeline_configs                  ← one per (model, workflow, schema version)
@@ -361,7 +366,7 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
     config_id      = FK("pipeline_configs.id", ondelete="CASCADE"), index=True
     base_study_id  = FK("base_studies.id"), index=True
     analysis_id    = FK("analyses.id", ondelete="CASCADE"), index=True, nullable=True
-    source_table_analysis = Column(String, index=True)   # '<t_id>#<ordinal>'
+    source_table_analysis = Column(String, index=True)   # '<table_id>#<h>'
     result_data    = JSONB    # the Analysis object: analysis_type, effect, cells,
                               # measure, statistic, inference_settings, coordinate_space,
                               # model/preprocessing references, details payloads
@@ -397,7 +402,7 @@ class StudyEntity(BaseMixin, db.Model):
     entity_class  = Column(String)   # 'Study' | 'Group' | 'Task' | 'Acquisition' |
                                      # 'Preprocessing' | 'ModelEstimation' | 'Assessment' |
                                      # 'Region' | 'Analysis' | 'Table' | ...
-    natural_key   = Column(String)   # name; '<t_id>#<ordinal>' for Analysis; '' for Study
+    natural_key   = Column(String)   # name; '<table_id>#<h>' for Analysis; '' for Study
     analysis_id   = FK("analyses.id", ondelete="SET NULL"), nullable=True
     table_id      = FK("tables.id",   ondelete="SET NULL"), nullable=True
     first_seen_config_id = FK("pipeline_configs.id"), nullable=True
@@ -411,8 +416,9 @@ class StudyEntity(BaseMixin, db.Model):
 ### `study_entity_aliases` — machine-side re-identification
 
 Users cannot rename or merge entities, so this table has no user-facing writer. It exists
-for the case the pipeline creates on its own: a re-parsed table re-segments, `#ordinal`
-shifts, and an analysis that is the same analysis acquires a new natural key.
+for the case the pipeline creates on its own: a re-parse reads an analysis from different
+cells (rows regrouped, a row added), so its key changes, and an analysis that is the same
+analysis acquires a new natural key. Reordering alone never re-keys an analysis.
 
 ```python
 class StudyEntityAlias(db.Model):
@@ -421,7 +427,7 @@ class StudyEntityAlias(db.Model):
     entity_id    = FK("study_entities.id", ondelete="CASCADE"), primary_key=True
     entity_class = Column(String, primary_key=True)
     natural_key  = Column(String, primary_key=True)   # the superseded key
-    reason       = Column(String)   # 'reordinal' | 'renamed_by_extractor'
+    reason       = Column(String)   # 'cells_changed' | 'renamed_by_extractor'
     config_id    = FK("pipeline_configs.id"), nullable=True
 ```
 
@@ -596,7 +602,7 @@ regions[0].definition_method
   → entity (Region, 'Left middle occipital gyrus (MOG.L)') · 'definition_method'
 
 analyses[3].inference_settings.multiple_comparison_method
-  → entity (Analysis, 'T3#1') · 'inference_settings.multiple_comparison_method'
+  → entity (Analysis, 'T3#8724df24f9f6') · 'inference_settings.multiple_comparison_method'
 
 model_estimations[1].terms[2].local_id
   → entity (ModelEstimation, 'group ICA') · 'terms[name=IC25].local_id'
@@ -676,10 +682,14 @@ and the projection rebuild silently drops the column they described.
 
 Order matters; each step depends on the previous one's ids.
 
-1. **Table parse** → upsert `tables` (`t_id` = schema `Table.id`), `analyses`
-   (`source_id` = `<t_id>#<ordinal>`), `points`, on the single pipeline-owned `Study`.
-   Idempotent. Where an ordinal shifts, write a `study_entity_aliases` row with
-   `reason = 'reordinal'`.
+1. **Coordinate parse** → upsert `tables` (`t_id` = schema `Table.id`), `analyses`
+   (`source_id` = the parse's `<table_id>#<h>` key), `points`, on the single pipeline-owned
+   `Study`. Idempotent. A point's `space` is stored as exactly `MNI` or `TAL` where it is
+   either (`neurostore.coordinate_spaces.normalize_space`) and never defaulted to MNI.
+   `Point.deactivation` and `Point.is_seed` are not written: the negative half of a sign
+   split is its own analysis, and a seed is a set's role. Where a re-parse reads an
+   analysis from different cells, write a `study_entity_aliases` row with
+   `reason = 'cells_changed'`.
 2. **Extraction record** → `pipeline_study_results` (whole record, immutable) and one
    `pipeline_analysis_results` per Analysis, resolving `source_table_analysis` to
    `analyses.id` and failing loudly when it does not resolve.
