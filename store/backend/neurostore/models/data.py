@@ -1145,7 +1145,9 @@ class StudyEntity(BaseMixin, db.Model):
         db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True
     )
     entity_class = db.Column(db.String, index=True)
-    #: name; '<table id>#<ordinal>' for Analysis; '' for Study.
+    #: name; '' for Study; for Analysis, the coordinate parse's key:
+    #: '<table_id>#<h>', 'text#<h>' or 'figure#<h>', where h hashes the cells or
+    #: text spans the analysis was read from (study_schema ParsedAnalysis.key).
     natural_key = db.Column(db.String)
     analysis_id = db.Column(
         db.Text, db.ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True
@@ -1165,8 +1167,9 @@ class StudyEntityAlias(db.Model):
     """A superseded natural key for an entity the pipeline re-identified.
 
     No user-facing writer: users cannot rename or merge entities. This exists
-    for the case the pipeline creates itself, where a re-parsed table shifts an
-    ordinal and the same analysis acquires a new key.
+    for the case the pipeline creates itself, where a re-parse reads the same
+    analysis from different cells and it acquires a new key. Reordering alone
+    never re-keys an analysis: keys hash cells, not list positions.
     """
 
     __tablename__ = "study_entity_aliases"
@@ -1178,7 +1181,7 @@ class StudyEntityAlias(db.Model):
     )
     entity_class = db.Column(db.String, primary_key=True)
     natural_key = db.Column(db.String, primary_key=True)
-    #: 'reordinal' | 'renamed_by_extractor'
+    #: 'cells_changed' | 'renamed_by_extractor'
     reason = db.Column(db.String)
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
