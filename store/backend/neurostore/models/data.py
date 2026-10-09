@@ -151,6 +151,9 @@ class AnnotationAnalysis(db.Model):
             ["studyset_studies.study_id", "studyset_studies.studyset_id"],
             ondelete="CASCADE",
         ),
+        sa.Index(
+            "ix_annotation_analyses_study_id_studyset_id", "study_id", "studyset_id"
+        ),
     )
     __mapper_args__ = {"confirm_deleted_rows": False}
 
