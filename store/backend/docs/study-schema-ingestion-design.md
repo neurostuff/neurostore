@@ -613,7 +613,7 @@ uniquely for 10%, by name-matching for a further 65%, and not at all for 25%.
 
 The ingester must therefore treat a `source_table_analysis` that does not resolve to an
 `analyses` row as an **ingest error on that analysis**, recorded with
-`status = 'FAILED'` and a null `analysis_id`, not as a quiet null. An analysis payload
+`status = 'FAILURE'` and a null `analysis_id`, not as a quiet null. An analysis payload
 silently detached from its coordinates is the failure mode that would be hardest to notice
 later and most damaging in a meta-analysis.
 
