@@ -42,8 +42,10 @@ dependencies = [
     "openai~=3.23",
     "tenacity~=9.1",
     "sentry-sdk~=2.71",
-    # study_schema main: the shapes, keys and statistic signs the pipeline ingester reads.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@d5b90460293ae1b7b379a9f0bdd20ec1c99b172a",
+    # The shapes, keys and statistic signs the pipeline ingester reads. Pinned to
+    # neurostuff/study_schema#26 (sign split halves original/inverse); repin to main
+    # once #26 merges.
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@12ccd2a9c80f2c26bb5c332ea8b262a1ef1651a7",
 ]
 
 [tool.setuptools.packages.find]

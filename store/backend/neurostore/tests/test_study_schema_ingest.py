@@ -79,45 +79,39 @@ def _claims(base_study_id, key):
 
 def _revision():
     """Split Gain by sign; merge Loss and Risk."""
-    positive = fx.table_analysis(
+    original = fx.table_analysis(
         "tbl1",
         [0, 1],
         "Gain > Neutral",
         GAIN["points"][:2],
-        split={
-            "group": "gain",
-            "direction": "positive",
-            "rule": "sign_of_directional_statistic",
-            "primary": True,
-        },
+        split={"half": "original", "rule": "sign_of_directional_statistic"},
     )
-    negative = fx.table_analysis(
+    inverse = fx.table_analysis(
         "tbl1",
         [2, 3],
         "Neutral > Gain",
         GAIN["points"][2:],
         split={
-            "group": "gain",
-            "direction": "negative",
+            "half": "inverse",
+            "original_analysis": original["key"],
             "rule": "sign_of_directional_statistic",
-            "primary": False,
         },
     )
     merged = fx.table_analysis(
         "tbl1", [4, 5, 6, 7], "Loss or Risk > Neutral", LOSS["points"] + RISK["points"]
     )
     revision = fx.parse(
-        [positive, negative, merged, SEED],
+        [original, inverse, merged, SEED],
         revision_of=ORIGINAL["parse_id"],
         verdicts=[
-            fx.verdict(GAIN["key"], "split", [positive["key"], negative["key"]]),
+            fx.verdict(GAIN["key"], "split", [original["key"], inverse["key"]]),
             fx.verdict(LOSS["key"], "merge", [merged["key"]]),
             fx.verdict(RISK["key"], "merge", [merged["key"]]),
             fx.verdict(SEED["key"], "accept", [SEED["key"]]),
         ],
     )
-    _ANALYSES.update({a["key"]: a for a in (positive, negative, merged)})
-    return revision, positive, negative, merged
+    _ANALYSES.update({a["key"]: a for a in (original, inverse, merged)})
+    return revision, original, inverse, merged
 
 
 def test_parse_alone_stores_skeleton_keyed_by_cells(session):
@@ -266,19 +260,19 @@ def test_revision_versions_analyses_and_carries_claims(session):
     base_study_id = first["base_study_id"]
     old_ids = {a.source_id: a.id for a in _current(base_study_id).analyses}
 
-    revision, positive, negative, merged = _revision()
+    revision, original, inverse, merged = _revision()
     summary = ingest_upload({"coordinate_parse": revision})
 
     assert summary["kind"] == "revision"
     current = _current(base_study_id)
     assert current.source_id == revision["parse_id"]
     assert {a.source_id for a in current.analyses} == {
-        positive["key"],
-        negative["key"],
+        original["key"],
+        inverse["key"],
         merged["key"],
     }
     by_key = {a.source_id: a for a in current.analyses}
-    assert by_key[negative["key"]].metadata_["split"]["direction"] == "negative"
+    assert by_key[inverse["key"]].metadata_["split"]["half"] == "inverse"
     assert len(by_key[merged["key"]].points) == 2
 
     # The old version is kept, whole, as non-public history.
@@ -291,7 +285,7 @@ def test_revision_versions_analyses_and_carries_claims(session):
 
     # Split: each half gets a copy of every claim on Gain, naming its origin.
     gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
-    for half in (positive, negative):
+    for half in (original, inverse):
         copies = _claims(base_study_id, half["key"])
         assert {c.carried_from for c in copies} == gain_claims
     # Merge: the merged analysis holds both originals' claims; differing names compete.
@@ -305,12 +299,12 @@ def test_revision_versions_analyses_and_carries_claims(session):
         "Risk > Neutral",
     ]
     assert summary["carried"]["claims"] == len(merged_claims) + 2 * len(gain_claims)
-    entity = _entity(base_study_id, positive["key"])
-    assert entity.analysis_id == by_key[positive["key"]].id
+    entity = _entity(base_study_id, original["key"])
+    assert entity.analysis_id == by_key[original["key"]].id
 
     # Re-uploading the revision copies nothing twice; its record resolves to the revision.
     again = ingest_upload(
-        {"coordinate_parse": revision, "record": _record(positive, negative, merged)}
+        {"coordinate_parse": revision, "record": _record(original, inverse, merged)}
     )
     assert again["carried"] == {"claims": 0}
     assert again["record"]["analyses"]["resolved"] == 3
@@ -467,7 +461,7 @@ def test_replaying_a_superseded_parse_is_refused(session):
 
 def test_record_of_a_revised_parse_is_superseded_and_carried(session):
     base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
-    revision, positive, negative, _ = _revision()
+    revision, original, inverse, _ = _revision()
     ingest_upload({"coordinate_parse": revision})
 
     summary = ingest_upload(
@@ -481,12 +475,12 @@ def test_record_of_a_revised_parse_is_superseded_and_carried(session):
     assert analyses["resolved"] == 0
     assert analyses["superseded"][0]["key"] == GAIN["key"]
     assert analyses["superseded"][0]["replaced_by"] == sorted(
-        [positive["key"], negative["key"]]
+        [original["key"], inverse["key"]]
     )
     row = PipelineAnalysisResult.query.filter_by(source_table_analysis=GAIN["key"]).one()
     assert row.status == "FAILURE"
     gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
-    for half in (positive, negative):
+    for half in (original, inverse):
         assert {c.carried_from for c in _claims(base_study_id, half["key"])} == gain_claims
 
 
@@ -519,21 +513,21 @@ def _weights(analysis):
     return {ac.condition.name: ac.weight for ac in analysis.analysis_conditions}
 
 
-def test_negative_half_takes_the_conditions_negated(session):
-    revision, positive, negative, merged = _revision()
+def test_inverse_half_takes_the_conditions_negated(session):
+    revision, original, inverse, merged = _revision()
     ingest_upload({"coordinate_parse": ORIGINAL})
     summary = ingest_upload(
         {
             "coordinate_parse": revision,
-            "record": fx.record([_contrast(positive, gain="positive", neutral="negative")]),
+            "record": fx.record([_contrast(original, gain="positive", neutral="negative")]),
         }
     )
     by_key = {a.source_id: a for a in _current(summary["base_study_id"]).analyses}
-    assert _weights(by_key[positive["key"]]) == {"gain": 1.0, "neutral": -1.0}
+    assert _weights(by_key[original["key"]]) == {"gain": 1.0, "neutral": -1.0}
     # Sign lives on the condition: the inverse contrast is the same conditions, negated.
-    assert _weights(by_key[negative["key"]]) == {"gain": -1.0, "neutral": 1.0}
+    assert _weights(by_key[inverse["key"]]) == {"gain": -1.0, "neutral": 1.0}
     assert _weights(by_key[merged["key"]]) == {}
-    assert by_key[negative["key"]].metadata_["split"]["direction"] == "negative"
+    assert by_key[inverse["key"]].metadata_["split"]["half"] == "inverse"
 
 
 def test_a_parse_that_states_no_space_stores_a_null_space_never_mni():

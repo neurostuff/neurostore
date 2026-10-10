@@ -41,8 +41,8 @@ different document for the paper is refused (RUN_ID_REUSED).
 Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
 refused (NOT_CURRENT). A record that read an older parse reports the keys that resolve to
 history as ``superseded`` (a FAILURE row), and its claims are carried through the revisions
-since. The sign of a contrast lives on its condition weights: the negative half of a sign
-split gets its positive half's conditions, negated.
+since. The sign of a contrast lives on its condition weights: the inverse half of a sign
+split gets its original half's conditions, negated.
 """
 
 import hashlib
@@ -1261,7 +1261,7 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
         elif analysis is not None:
             analyses["resolved"] += 1
             _want_conditions(conditions, analysis, extracted, derived=False)
-            partner = _negative_half(study, analysis)
+            partner = _inverse_half(study, analysis)
             if partner is not None:
                 _want_conditions(conditions, partner, extracted, derived=True)
         elif positional:
@@ -1320,17 +1320,20 @@ def _split(analysis):
     return (analysis.metadata_ or {}).get("split") or {}
 
 
-def _negative_half(study, analysis):
-    """The negative half of a sign split whose positive half is ``analysis``."""
-    split = _split(analysis)
-    if split.get("direction") != "positive":
+def _inverse_half(study, analysis):
+    """The inverse half of a sign split whose original half is ``analysis``.
+
+    The inverse half names its original by key (``split.original_analysis``), which the
+    ingester stores as ``Analysis.source_id``.
+    """
+    if _split(analysis).get("half") != "original":
         return None
     return next(
         (
             a
             for a in study.analyses
-            if _split(a).get("group") == split.get("group")
-            and _split(a).get("direction") == "negative"
+            if _split(a).get("half") == "inverse"
+            and _split(a).get("original_analysis") == analysis.source_id
         ),
         None,
     )
@@ -1353,14 +1356,14 @@ def _cell_weights(extracted):
 def _want_conditions(wanted, analysis, extracted, derived):
     """Queue ``extracted``'s conditions for ``analysis``.
 
-    ``derived`` conditions come from another analysis's cells: the positive half of a
-    split, or a key a revision replaced. On a negative half they are negated, since the
-    negative half is the inverse contrast. An analysis's own record entry wins over them.
+    ``derived`` conditions come from another analysis's cells: the original half of a
+    split, or a key a revision replaced. On an inverse half they are negated, since the
+    inverse half is the reversed contrast. An analysis's own record entry wins over them.
     """
     weights = _cell_weights(extracted)
     if not weights or (derived and analysis.id in wanted and not wanted[analysis.id][2]):
         return
-    if derived and _split(analysis).get("direction") == "negative":
+    if derived and _split(analysis).get("half") == "inverse":
         weights = {name: -weight for name, weight in weights.items()}
     wanted[analysis.id] = (analysis, weights, derived)
 
