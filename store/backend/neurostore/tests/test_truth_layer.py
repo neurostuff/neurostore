@@ -90,3 +90,17 @@ def test_a_name_cannot_be_mistaken_for_a_locator():
     locator = analysis_identity("table", "tbl1", cells=[(0, 0)])
     as_group = study_entity_hash("bs1", "Group", locator)
     assert as_group != study_entity_hash("bs1", "Analysis", locator)
+
+
+def test_the_locator_is_the_string_the_analysis_key_hashes():
+    # One cell and span rule: study_schema.keys writes it for both the key and the hash.
+    import hashlib
+
+    from study_schema.keys import span_key, table_key
+
+    located = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0)]).rsplit("|", 1)[1]
+    assert table_key("tbl2", [(3, 0), (4, 0)]) == (
+        "tbl2#" + hashlib.sha1(located.encode()).hexdigest()[:12]
+    )
+    located = analysis_identity("text", spans=[(5, 9)]).rsplit("|", 1)[1]
+    assert span_key("text", [(5, 9)]) == "text#" + hashlib.sha1(located.encode()).hexdigest()[:12]

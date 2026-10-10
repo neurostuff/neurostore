@@ -96,11 +96,14 @@ def upgrade():
         sa.Column("base_study_id", sa.Text(), nullable=True),
         sa.Column("entity_class", sa.String(), nullable=True),
         sa.Column("entity_hash", sa.String(64), nullable=False),
+        sa.Column("parent_id", sa.Text(), nullable=True),
+        sa.Column("identity", JSONB(), nullable=True),
         sa.Column("analysis_id", sa.Text(), nullable=True),
         sa.Column("table_id", sa.Text(), nullable=True),
         sa.Column("first_seen_config_id", sa.Text(), nullable=True),
         sa.Column("last_seen_config_id", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(["base_study_id"], ["base_studies.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["parent_id"], ["study_entities.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["analysis_id"], ["analyses.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["table_id"], ["tables.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["first_seen_config_id"], ["pipeline_configs.id"]),
@@ -110,6 +113,7 @@ def upgrade():
     )
     _index("study_entities", ["id", "created_at", "updated_at"])
     _index("study_entities", ["base_study_id", "entity_class"])
+    _index("study_entities", ["parent_id"])
 
     op.create_table(
         "study_entity_aliases",
