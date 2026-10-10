@@ -1295,15 +1295,38 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
     for revision in revisions:
         for name, count in _carry_claims(base_study, study, revision).items():
             carried[name] += count
+    exported = _exported_state(study)
     for analysis, weights, _ in conditions.values():
         _set_conditions(analysis, weights, user)
     for analysis, outcome, _ in outcomes.values():
         analysis.outcome = outcome
     db.session.flush()
+    if _exported_state(study) != exported:
+        _touch(study)
     summary = {"config_id": config.id, "analyses": analyses, "claims": claims}
     if revisions:
         summary["carried"] = carried
     return summary, result
+
+
+def _exported_state(study):
+    """What a release exports from the record's writes: each analysis's outcome and conditions."""
+    return {
+        a.id: (a.outcome, {(ac.condition_id, ac.weight) for ac in a.analysis_conditions})
+        for a in study.analyses
+    }
+
+
+def _touch(study):
+    """Mark ``study`` changed, so a release rebuilds its cached shard.
+
+    Writes to its analyses alone leave the Study row's ``updated_at``, which the release
+    compares, as it was.
+    """
+    now = _now()
+    study.source_updated_at = now
+    study.updated_at = now
+    db.session.flush()
 
 
 def _revisions_since(base_study, parse_id, study):

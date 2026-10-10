@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from neurostore.ingest.study_schema import HISTORY_SOURCE, STUDY_SOURCE
+from neurostore.ingest.study_schema import HISTORY_SOURCE, STUDY_SOURCE, ingest_upload
 from neurostore.models import (
     Analysis,
     Annotation,
@@ -26,6 +26,8 @@ from neurostore.services.neurostore_studyset_releases import (
     STUDYSET_SOURCE_ID,
     build_neurostore_studyset_release,
 )
+
+from neurostore.tests import study_schema_fixtures as fx
 
 pytestmark = pytest.mark.anyio
 
@@ -543,7 +545,18 @@ def test_release_keeps_null_only_studies_and_exports_their_outcome(
         user=user,
     )
     Analysis(name="Unread", study=empty, user=user, order=0)
-    session.add_all([study, empty])
+    # Nor does one whose only pointless analysis found something: not a null.
+    found_base, _ = _release_base(session, "Found Base", has_coordinates=False)
+    found = Study(
+        name="Found Study",
+        level="group",
+        public=True,
+        has_coordinates=False,
+        base_study=found_base,
+        user=user,
+    )
+    Analysis(name="Found", study=found, user=user, order=0, outcome="significant_effect")
+    session.add_all([study, empty, found])
     session.flush()
 
     manifest = build_neurostore_studyset_release(settings=app.config, nightly=True)[
@@ -640,3 +653,64 @@ def test_release_prefers_the_pipeline_study_over_a_fresher_version(session):
     pipeline.public = False
     session.flush()
     assert _selected_study_ids() == {fresher.id}
+
+
+def _archive_outcomes(tmp_path):
+    archive = tmp_path / "neurostore-studyset-releases/nightly"
+    with tarfile.open(archive / "neurostore-studyset-nightly.tar.gz", mode="r:gz") as tar:
+        member = next(m for m in tar.getmembers() if m.name.endswith("/metadata.parquet"))
+        metadata_df = pd.read_parquet(BytesIO(tar.extractfile(member).read()))
+    return metadata_df.get("outcome", pd.Series(dtype=object)).dropna().tolist()
+
+
+def test_record_after_its_parse_rebuilds_the_cached_shard(app, session, tmp_path):
+    app.config["FILE_DIR"] = tmp_path
+    loss = fx.table_analysis("tbl1", [0], "Loss > Neutral", [fx.point((1, 2, 3))])
+    null = fx.table_analysis("tbl2", [0], "Risk > Loss", [])
+    parse = fx.parse([loss, null])
+    summary = ingest_upload({"coordinate_parse": parse})
+    base_id = summary["base_study_id"]
+    first = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+    assert base_id in first["studies"]
+    assert _archive_outcomes(tmp_path) == []
+
+    analysis = fx.record_analysis("a0", null["key"], null["name"])
+    analysis["outcome"] = fx.extracted("no_significant_effect")
+    ingest_upload(
+        {"parse_id": parse["parse_id"], "base_study_id": base_id, "record": fx.record([analysis])}
+    )
+    second = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+    assert second["changed_base_study_ids"] == [base_id]
+    assert _archive_outcomes(tmp_path) == ["no_significant_effect"]
+
+    # The same record again changes nothing, and the shard is reused.
+    ingest_upload(
+        {"parse_id": parse["parse_id"], "base_study_id": base_id, "record": fx.record([analysis])}
+    )
+    third = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+    assert third["changed_base_study_ids"] == []
+
+
+def test_anchor_points_alone_do_not_make_a_study_eligible(session):
+    roi = fx.table_analysis(
+        "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor"
+    )
+    summary = ingest_upload({"coordinate_parse": fx.parse([roi])})
+    pipeline = Study.query.filter_by(
+        base_study_id=summary["base_study_id"], source=STUDY_SOURCE
+    ).one()
+    assert pipeline.public and pipeline.has_coordinates
+    # An ROI-only paper is not an empty study in the studyset.
+    assert pipeline.id not in _selected_study_ids()
+
+    # A curated version with results is chosen over the anchor-only pipeline Study.
+    curated, _ = _coordinate_study(pipeline.base_study, pipeline.user, "Curated")
+    session.add(curated)
+    session.flush()
+    assert _selected_study_ids() == {curated.id}

@@ -223,8 +223,9 @@ class BaseStudy(BaseMixin, db.Model):
     superseded_by = db.Column(db.Text, db.ForeignKey("base_studies.id"), nullable=True)
     # From the parsed paper's bibliography.corrections; null until a parsed paper with
     # corrections looked up is ingested. A retracted paper is kept, and releases leave
-    # it out unless asked.
-    is_retracted = db.Column(db.Boolean, nullable=True, index=True)
+    # it out unless asked. Not indexed: the release filters on IS NOT TRUE, nearly every
+    # row, so a scan is what the planner uses.
+    is_retracted = db.Column(db.Boolean, nullable=True)
     retraction_notice = db.Column(JSONB, nullable=True)
     _ts_vector = db.Column(
         "__ts_vector__",

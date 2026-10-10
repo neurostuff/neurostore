@@ -247,11 +247,23 @@ def acquire_build_lock():
     return bool(locked)
 
 
-def select_coordinate_studies(include_retracted=False):
-    """One Study per base study: the pipeline's when there is one, else the freshest.
+def release_version_order(freshness):
+    """The order that picks a paper's version for the release; the first eligible wins.
 
-    A study qualifies with coordinates, or with an analysis that found nothing (a null
-    analysis has no points and enters NiMARE as one). Retracted papers are left out
+    The pipeline's Study (study_schema) wins over any curator's or user's version, so an
+    edit elsewhere cannot flip the release between versions; without one, the freshest
+    version wins. Whether a curated version should win instead is open (F27): flip it here.
+    """
+    pipeline_first = sa.case((Study.source == STUDY_SOURCE, 0), else_=1)
+    return (pipeline_first, freshness.desc(), Study.id.desc())
+
+
+def select_coordinate_studies(include_retracted=False):
+    """One Study per base study, chosen by ``release_version_order``.
+
+    A study qualifies with a result coordinate, or with an analysis that found nothing (a
+    null analysis has no points and enters NiMARE as one); anchor points alone do not
+    qualify, since anchors never enter the studyset. Retracted papers are left out
     unless ``include_retracted``.
     """
     freshness = sa.func.greatest(
@@ -264,13 +276,21 @@ def select_coordinate_studies(include_retracted=False):
         .where(Analysis.outcome == AnalysisOutcome.no_significant_effect.value)
         .exists()
     )
+    has_result_point = (
+        sa.select(Point.id)
+        .join(Analysis, Point.analysis_id == Analysis.id)
+        .where(Analysis.study_id == Study.id)
+        .where(IS_STUDYSET_ANALYSIS)
+        .exists()
+    )
     eligible = sa.or_(
-        sa.and_(BaseStudy.has_coordinates.is_(True), Study.has_coordinates.is_(True)),
+        sa.and_(
+            BaseStudy.has_coordinates.is_(True),
+            Study.has_coordinates.is_(True),
+            has_result_point,
+        ),
         has_null_analysis,
     )
-    # The pipeline's Study is the paper's single ingested version (study_schema); a
-    # curator's or user's edit elsewhere must not flip the release between versions.
-    pipeline_first = sa.case((Study.source == STUDY_SOURCE, 0), else_=1)
     ranked = (
         sa.select(
             BaseStudy.id.label("base_study_id"),
@@ -281,7 +301,7 @@ def select_coordinate_studies(include_retracted=False):
             sa.func.row_number()
             .over(
                 partition_by=Study.base_study_id,
-                order_by=(pipeline_first, freshness.desc(), Study.id.desc()),
+                order_by=release_version_order(freshness),
             )
             .label("rank"),
         )

@@ -32,11 +32,9 @@ def upgrade():
         "base_studies",
         sa.Column("retraction_notice", postgresql.JSONB(), nullable=True),
     )
-    op.create_index("ix_base_studies_is_retracted", "base_studies", ["is_retracted"])
 
 
 def downgrade():
-    op.drop_index("ix_base_studies_is_retracted", table_name="base_studies")
     op.drop_column("base_studies", "retraction_notice")
     op.drop_column("base_studies", "is_retracted")
     op.drop_index("ix_analyses_role", table_name="analyses")

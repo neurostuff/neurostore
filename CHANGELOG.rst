@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* [ENH] Analysis ``outcome``, ``role`` and ``from_prior_study`` and base study
+  ``is_retracted`` / ``retraction_notice`` columns, written by the study_schema ingester (#1825)
+* [ENH] Studyset releases keep null-only studies (``metadata.outcome =
+  "no_significant_effect"``), leave out retracted papers unless ``--include-retracted``,
+  leave out anchor analyses, and prefer the pipeline Study over other versions (#1825).
+  Run one ``build-neurostore-studyset-release --clear-cache`` after deploying; see
+  ``RELEASE_DEPLOYMENT.md``.
+
 Version 0.2.1 (October, 5, 2023)
 --------------------------------
 
