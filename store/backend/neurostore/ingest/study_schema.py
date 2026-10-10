@@ -94,9 +94,11 @@ HISTORY_SOURCE = "study_schema:superseded"
 PARSE_PIPELINE = "coordinate-parse"
 DEFAULT_RECORD_PIPELINE = "pondie"
 
-# Roles stored as analyses. References, display positions and localizations stay in the
-# stored parse document only (see the paper-parse schema's CoordinateRole).
-UPLOADED_ROLES = {"result", "anchor"}
+# Roles stored as analyses: results, anchors, and `other` real brain coordinates that fit
+# no other role (never a result, so never released or given an outcome). References,
+# display positions and localizations stay in the stored parse document only (see the
+# paper-parse schema's CoordinateRole).
+UPLOADED_ROLES = {"result", "anchor", "other"}
 
 # Roles whose analyses have an outcome: only a result was tested in the study. None is an
 # analysis no parse has given a role yet.
@@ -1481,7 +1483,7 @@ def _claimed_outcome(base_study_id, key):
     if latest is None:
         return None
     for item in (latest.result_data or {}).get("analyses") or []:
-        if _natural_key("Analysis", item) == key:
+        if _record_key("Analysis", item) == key:
             outcome = item.get("outcome") or {}
             if outcome.get("extraction_status") == "extracted":
                 return outcome.get("value")

@@ -25,6 +25,7 @@ from neurostore.models import (
     StudyEntityAlias,
 )
 from neurostore.models.data import analysis_identity, study_entity_hash
+from neurostore.services.neurostore_studyset_releases import is_studyset_analysis
 from neurostore.tests import study_schema_fixtures as fx
 
 # Table 1 of one paper: rows 0-3 are one contrast with both signs, rows 4-7 two more.
@@ -633,6 +634,7 @@ NULL = fx.table_analysis("tbl3", [0], "Risk > Loss", [])
 ROI = fx.table_analysis(
     "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor", from_prior_study=True
 )
+_ANALYSES.update({a["key"]: a for a in (NULL, ROI)})
 
 
 def _outcome_record(*pairs):
@@ -650,7 +652,8 @@ def _by_key(study):
 
 
 def test_parse_writes_role_and_from_prior_study(session):
-    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, ROI])})
+    other = fx.table_analysis("tbl5", [0], "Peak voxel", [fx.point((2, 4, 6))], role="other")
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, ROI, other])})
 
     analyses = _by_key(_current(summary["base_study_id"]))
     assert (analyses[LOSS["key"]].role, analyses[LOSS["key"]].from_prior_study) == (
@@ -665,6 +668,10 @@ def test_parse_writes_role_and_from_prior_study(session):
     assert "role" not in analyses[ROI["key"]].metadata_
     assert "from_prior_study" not in analyses[ROI["key"]].metadata_
     assert Analysis.query.filter_by(role="anchor").one().source_id == ROI["key"]
+    # `other` coordinates are kept as analyses, but are not results.
+    assert analyses[other["key"]].role == "other"
+    assert analyses[other["key"]].outcome is None
+    assert not is_studyset_analysis(analyses[other["key"]])
 
 
 def test_record_writes_outcome(session):
