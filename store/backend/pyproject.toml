@@ -44,7 +44,7 @@ dependencies = [
     "sentry-sdk~=2.71",
     # study_schema main + #20 + #21 (neuroimaging-paper-parse 0.6.0): the shapes, keys and
     # statistic signs the pipeline ingester reads. Repin to main when #20 and #21 merge.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@0c78d9f2eaa19fb091a940319eb10348804b775e",
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@e69ec93dbddc3b02b8d659b1eabc115f40263a01",
 ]
 
 [tool.setuptools.packages.find]
