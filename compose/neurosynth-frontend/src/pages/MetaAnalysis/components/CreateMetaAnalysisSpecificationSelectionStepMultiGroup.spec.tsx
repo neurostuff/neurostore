@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { Mock, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
@@ -8,6 +8,7 @@ import {
 } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
 import CreateMetaAnalysisSpecificationSelectionStepMultiGroup from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup';
 import { DEFAULT_REFERENCE_DATASETS } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
+import useInclusionColumnOptions from 'pages/MetaAnalysis/hooks/useInclusionColumnOptions';
 
 vi.mock('pages/MetaAnalysis/hooks/useInclusionColumnOptions');
 vi.mock('components/NeurosynthAutocomplete/NeurosynthAutocomplete');
@@ -27,6 +28,15 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
     };
 
     const mockSelectValue = vi.fn();
+    const largeReferenceWarning = 'Specifying ALE subtraction with a large reference dataset is not recommended.';
+
+    beforeEach(() => {
+        (useInclusionColumnOptions as Mock).mockReturnValue({
+            'val-1': 1,
+            'val-2': 1,
+            'val-3': 1,
+        });
+    });
 
     it('should render', async () => {
         render(
@@ -82,5 +92,57 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
         await userEvent.click(button);
 
         expect(mockSelectValue).toHaveBeenCalled();
+    });
+
+    it('should warn when ALE subtraction uses the neurostore reference dataset', () => {
+        render(
+            <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
+                algorithm={{
+                    ...algorithmMock,
+                    estimator: { label: 'ALESubtraction', description: '' },
+                }}
+                annotationId="abc123"
+                selectedValue={{ ...selectedValueMock, referenceDataset: 'neurostore' }}
+                onSelectValue={mockSelectValue}
+            />
+        );
+
+        expect(screen.getByText(largeReferenceWarning, { exact: false })).toBeInTheDocument();
+    });
+
+    it('should warn when ALE subtraction uses a custom reference of 1000 or more studies', () => {
+        (useInclusionColumnOptions as Mock).mockReturnValue({
+            'large-group': 1000,
+        });
+
+        render(
+            <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
+                algorithm={{
+                    ...algorithmMock,
+                    estimator: { label: 'ALESubtraction', description: '' },
+                }}
+                annotationId="abc123"
+                selectedValue={{ ...selectedValueMock, referenceDataset: 'large-group' }}
+                onSelectValue={mockSelectValue}
+            />
+        );
+
+        expect(screen.getByText(largeReferenceWarning, { exact: false })).toBeInTheDocument();
+    });
+
+    it('should not warn for MKDA chi-square against the neurostore reference dataset', () => {
+        render(
+            <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
+                algorithm={{
+                    ...algorithmMock,
+                    estimator: { label: 'MKDAChi2', description: '' },
+                }}
+                annotationId="abc123"
+                selectedValue={{ ...selectedValueMock, referenceDataset: 'neurostore' }}
+                onSelectValue={mockSelectValue}
+            />
+        );
+
+        expect(screen.queryByText(largeReferenceWarning, { exact: false })).not.toBeInTheDocument();
     });
 });
