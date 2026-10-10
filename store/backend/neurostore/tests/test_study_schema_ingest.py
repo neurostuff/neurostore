@@ -825,3 +825,37 @@ def test_a_role_change_applies_or_withdraws_the_claimed_outcome(session):
     ingest_upload({"coordinate_parse": fx.parse([LOSS, {**ROI, "description": "ROI"}])})
     assert (roi.role, roi.outcome) == ("anchor", None)
     assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+
+
+def test_a_role_change_applies_only_the_latest_records_outcome(session):
+    parse = fx.parse([LOSS, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record((LOSS, None), (ROI, "no_significant_effect")),
+        }
+    )
+    base_id = summary["base_study_id"]
+    # The same config re-run reports no outcome for the ROI. The first run's claim stays,
+    # still linked to that config, but it is not what the latest run says.
+    ingest_upload(
+        {"coordinate_parse": parse, "record": _outcome_record((LOSS, None), (ROI, None))}
+    )
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+
+    as_result = {**ROI, "role": "result", "from_prior_study": None}
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    roi = _by_key(_current(base_id))[ROI["key"]]
+    assert (roi.role, roi.outcome) == ("result", None)
+
+    # Back to an anchor; a later run reports an outcome again, and that one applies.
+    as_anchor = fx.parse([LOSS, {**ROI, "description": "ROI"}])
+    ingest_upload({"coordinate_parse": as_anchor})
+    ingest_upload(
+        {
+            "coordinate_parse": as_anchor,
+            "record": _outcome_record((LOSS, None), (ROI, "significant_effect")),
+        }
+    )
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, {**as_result, "description": "R"}])})
+    assert (roi.role, roi.outcome) == ("result", "significant_effect")

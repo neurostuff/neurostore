@@ -1455,38 +1455,38 @@ def _want_outcome(wanted, analysis, extracted, derived):
 
 
 def _claimed_outcome(base_study_id, key):
-    """The outcome the newest record claimed for the analysis under ``key``, else None.
+    """The outcome the latest record run reported for the analysis under ``key``, else None.
 
     Applied when a parse makes an anchor (or other set) a result: the outcome a record
-    reported for it while it was not one was kept only as a claim.
+    reported for it while it was not one was kept only as a claim. Only the latest run
+    counts, read from its stored record, because claims are linked to a config rather than
+    to one execution of it: a claim an earlier run made and the latest one dropped stays
+    linked and would otherwise be restored.
     """
-    claim = (
-        db.session.query(FieldClaim.value, FieldClaim.extraction_status)
-        .join(StudyEntity, StudyEntity.id == FieldClaim.entity_id)
-        .join(FieldClaimRun, FieldClaimRun.claim_id == FieldClaim.id)
-        .join(
-            PipelineStudyResult,
-            sa.and_(
-                PipelineStudyResult.config_id == FieldClaimRun.config_id,
-                PipelineStudyResult.base_study_id == StudyEntity.base_study_id,
-            ),
+    latest = (
+        PipelineStudyResult.query.join(
+            PipelineConfig, PipelineConfig.id == PipelineStudyResult.config_id
         )
         .filter(
-            StudyEntity.base_study_id == base_study_id,
-            StudyEntity.entity_class == "Analysis",
-            StudyEntity.natural_key == key,
-            FieldClaim.field_path == "outcome",
-            FieldClaim.origin == "extraction",
+            PipelineStudyResult.base_study_id == base_study_id,
+            PipelineConfig.schema["name"].astext == "neuroimaging-study-extraction",
         )
         .order_by(
             PipelineStudyResult.date_executed.desc().nulls_last(),
-            FieldClaim.created_at.desc(),
+            PipelineStudyResult.updated_at.desc().nulls_last(),
+            PipelineStudyResult.created_at.desc(),
         )
         .first()
     )
-    if claim is None or claim.extraction_status != "extracted":
+    if latest is None:
         return None
-    return claim.value
+    for item in (latest.result_data or {}).get("analyses") or []:
+        if _natural_key("Analysis", item) == key:
+            outcome = item.get("outcome") or {}
+            if outcome.get("extraction_status") == "extracted":
+                return outcome.get("value")
+            return None
+    return None
 
 
 def _set_conditions(analysis, weights, user):
