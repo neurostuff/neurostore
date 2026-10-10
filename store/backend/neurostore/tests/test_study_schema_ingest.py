@@ -8,6 +8,7 @@ from neurostore.ingest.study_schema import (
     ALIAS_CELLS_CHANGED,
     HISTORY_SOURCE,
     STUDY_SOURCE,
+    _point_rows,
     ingest_upload,
 )
 from neurostore.models import (
@@ -473,6 +474,16 @@ def test_negative_half_takes_the_conditions_negated(session):
     assert _weights(by_key[negative["key"]]) == {"gain": -1.0, "neutral": 1.0}
     assert _weights(by_key[merged["key"]]) == {}
     assert by_key[negative["key"]].metadata_["split"]["direction"] == "negative"
+
+
+def test_a_parse_that_states_no_space_stores_a_null_space_never_mni():
+    parsed = fx.table_analysis("tbl3", [0, 1], "No space", [fx.point((1, 1, 1))])
+    del parsed["coordinate_space"]
+    (row,) = _point_rows(parsed)
+    assert row["space"] is None
+    # A point's own space still wins over a missing analysis space.
+    parsed["points"] = [fx.point((1, 1, 1), space="TAL")]
+    assert _point_rows(parsed)[0]["space"] == "TAL"
 
 
 def test_unsigned_points_are_counted_from_values(session):

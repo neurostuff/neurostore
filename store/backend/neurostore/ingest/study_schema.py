@@ -678,7 +678,7 @@ def _analysis_metadata(parsed, parse_id):
 def _point_rows(parsed):
     rows = []
     for point in parsed.get("points") or []:
-        space = normalize_space(point.get("space") or parsed["coordinate_space"])
+        space = normalize_space(point.get("space") or parsed.get("coordinate_space"))
         x, y, z = point["coordinates"]
         rows.append(
             {
