@@ -9,6 +9,7 @@ from neurostore.resources.pipeline import (
     PipelineStudyResultsView,
     PipelinesView,
 )
+from neurostore.resources.study_schema_uploads import StudySchemaUploadsView
 from neurostore.resources.users import UsersView
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     "PipelineStudyResultsView",
     "PipelineEmbeddingsView",
     "NeurostoreStudysetReleasesView",
+    "StudySchemaUploadsView",
 ]
 
 
