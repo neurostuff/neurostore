@@ -6,7 +6,8 @@ field-level claims with their evidence. No feedback or voting tables yet,
 and nothing here is exposed through the API.
 
 Additive. Nothing here alters studies, analyses, points or images; an
-extraction hangs off the existing coordinate skeleton.
+extraction hangs off the existing coordinate skeleton. pipeline_study_results
+gains a nullable run_id, the caller's id for the run that produced a result.
 
 See store/backend/docs/study-schema-ingestion-design.md.
 
@@ -41,6 +42,15 @@ STATUS_ENUM = PGEnum(
 
 
 def upgrade():
+    op.add_column("pipeline_study_results", sa.Column("run_id", sa.String(), nullable=True))
+    op.create_index(
+        "ix_pipeline_study_results_run_id", "pipeline_study_results", ["run_id"]
+    )
+    op.create_unique_constraint(
+        "uq_psr__config_run_study",
+        "pipeline_study_results",
+        ["config_id", "run_id", "base_study_id"],
+    )
     op.create_table(
         "pipeline_analysis_results",
         sa.Column("id", sa.Text(), nullable=False),
@@ -199,6 +209,9 @@ def downgrade():
         "pipeline_analysis_results",
     ):
         op.drop_table(table)
+    op.drop_constraint("uq_psr__config_run_study", "pipeline_study_results", type_="unique")
+    op.drop_index("ix_pipeline_study_results_run_id", table_name="pipeline_study_results")
+    op.drop_column("pipeline_study_results", "run_id")
 
 
 def _index(table: str, columns: list[str]) -> None:

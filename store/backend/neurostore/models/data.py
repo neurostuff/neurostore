@@ -1025,12 +1025,22 @@ class PipelineStudyResult(BaseMixin, db.Model):
             sa.text("(result_data -> 'Modality')"),
             postgresql_using="gin",
         ),
+        # A run uploads one result per config and paper; replaying it is a no-op.
+        # Rows without a run_id (NULLs are distinct) are not constrained.
+        sa.UniqueConstraint(
+            "config_id",
+            "run_id",
+            "base_study_id",
+            name="uq_psr__config_run_study",
+        ),
     )
 
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
     )
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    # The caller's id for the pipeline run that produced this result.
+    run_id = db.Column(db.String, nullable=True, index=True)
     date_executed = db.Column(db.DateTime(timezone=True))
     result_data = db.Column(JSONB)
     file_inputs = db.Column(JSONB)
