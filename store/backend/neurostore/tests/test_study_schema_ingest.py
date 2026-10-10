@@ -626,7 +626,7 @@ def test_a_concurrent_upload_taking_the_run_id_is_refused_as_reused(session, mon
 
 
 # ---------------------------------------------------------------------------
-# Outcome, role and retraction columns
+# outcome, role and retraction columns
 # ---------------------------------------------------------------------------
 
 NULL = fx.table_analysis("tbl3", [0], "Risk > Loss", [])

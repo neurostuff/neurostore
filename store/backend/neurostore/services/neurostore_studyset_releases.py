@@ -252,7 +252,7 @@ def release_version_order(freshness):
 
     The pipeline's Study (study_schema) wins over any curator's or user's version, so an
     edit elsewhere cannot flip the release between versions; without one, the freshest
-    version wins. Whether a curated version should win instead is open (F27): flip it here.
+    version wins. Whether a curated version should win instead is undecided: flip it here.
     """
     pipeline_first = sa.case((Study.source == STUDY_SOURCE, 0), else_=1)
     return (pipeline_first, freshness.desc(), Study.id.desc())
