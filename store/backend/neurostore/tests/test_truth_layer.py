@@ -18,6 +18,7 @@ TRUTH_LAYER = (
     data.PipelineAnalysisResult,
     data.StudyEntity,
     data.StudyEntityAlias,
+    data.StudyEntityCandidateLink,
     data.ExtractionEntityLink,
     data.FieldClaim,
     data.FieldClaimRun,

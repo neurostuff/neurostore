@@ -1,6 +1,7 @@
 import hashlib
 import json
 import re
+import unicodedata
 
 import shortuuid
 import sqlalchemy as sa
@@ -1208,10 +1209,11 @@ def analysis_identity(origin, table_id=None, cells=(), spans=()):
 
 
 def normalize_entity_name(name):
-    """`name` casefolded, with whitespace collapsed and trimmed; None when empty."""
+    """`name` NFKC-normalized and casefolded, with whitespace collapsed and
+    trimmed; None when empty."""
     if not isinstance(name, str):
         return None
-    return " ".join(name.casefold().split()) or None
+    return " ".join(unicodedata.normalize("NFKC", name).casefold().split()) or None
 
 
 def sibling_identity(name, ordinal):
@@ -1219,8 +1221,8 @@ def sibling_identity(name, ordinal):
 
     `[normalized name, ordinal]`, the ordinal counting earlier siblings of the
     same class and the same normalized name under the same parent. A class with
-    no name (Acquisition, Device, ...) has name None, so its ordinal counts every
-    earlier sibling of its class.
+    no name (Device, Preprocessing, ...) has name None, so its ordinal counts
+    every earlier sibling of its class.
     """
     return [normalize_entity_name(name), ordinal]
 
@@ -1239,7 +1241,8 @@ class StudyEntity(BaseMixin, db.Model):
     both called "patients" are two entities and "Healthy controls" re-extracted
     as "healthy  controls" is the same one. The trade-off: when an extraction
     reorders same-named siblings (or, for a class with no name, any siblings),
-    the ordinals follow the new order and the siblings swap claims.
+    the ordinals follow the new order and the siblings swap claims. A name that
+    changes beyond normalization is a new entity; the old one keeps its claims.
     """
 
     __tablename__ = "study_entities"
@@ -1264,7 +1267,7 @@ class StudyEntity(BaseMixin, db.Model):
     )
     #: What the hash covers besides version, study, class and parent, so a
     #: version bump can re-hash the row.
-    identity = db.Column(JSONB)
+    identity = db.Column(JSONB, nullable=False)
     analysis_id = db.Column(
         db.Text, db.ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True
     )
@@ -1304,13 +1307,40 @@ class StudyEntityAlias(db.Model):
         nullable=False,
     )
     #: 'cells_changed': a re-parse read the analysis from other cells;
-    #: 'renamed_by_extractor': its normalized name changed, parent and ordinal
-    #: did not; 'parent_rehashed': its parent took a new hash;
+    #: 'parent_rehashed': its parent took a new hash;
     #: 'version_bumped': ENTITY_HASH_VERSION changed.
     reason = db.Column(db.String)
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
     )
+
+
+class StudyEntityCandidateLink(db.Model):
+    """A link between two entities that the pipeline suspects but has not applied.
+
+    'renamed_by_extractor': a re-extraction stopped naming `entity_id` and named
+    `candidate_id` in its place, at the same parent, class and ordinal. Claims
+    stay where they are until a curator confirms the link.
+    """
+
+    __tablename__ = "study_entity_candidate_links"
+
+    entity_id = db.Column(
+        db.Text,
+        db.ForeignKey("study_entities.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    candidate_id = db.Column(
+        db.Text,
+        db.ForeignKey("study_entities.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
+    reason = db.Column(db.String, primary_key=True)
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
 
 class ExtractionEntityLink(db.Model):

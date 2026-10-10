@@ -97,7 +97,7 @@ def upgrade():
         sa.Column("entity_class", sa.String(), nullable=True),
         sa.Column("entity_hash", sa.String(64), nullable=False),
         sa.Column("parent_id", sa.Text(), nullable=True),
-        sa.Column("identity", JSONB(), nullable=True),
+        sa.Column("identity", JSONB(), nullable=False),
         sa.Column("analysis_id", sa.Text(), nullable=True),
         sa.Column("table_id", sa.Text(), nullable=True),
         sa.Column("first_seen_config_id", sa.Text(), nullable=True),
@@ -126,6 +126,20 @@ def upgrade():
         sa.PrimaryKeyConstraint("entity_hash"),
     )
     _index("study_entity_aliases", ["entity_id"])
+
+    op.create_table(
+        "study_entity_candidate_links",
+        sa.Column("entity_id", sa.Text(), nullable=False),
+        sa.Column("candidate_id", sa.Text(), nullable=False),
+        sa.Column("reason", sa.String(), nullable=False),
+        sa.Column("config_id", sa.Text(), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.ForeignKeyConstraint(["entity_id"], ["study_entities.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["candidate_id"], ["study_entities.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["config_id"], ["pipeline_configs.id"]),
+        sa.PrimaryKeyConstraint("entity_id", "candidate_id", "reason"),
+    )
+    _index("study_entity_candidate_links", ["candidate_id"])
 
     op.create_table(
         "extraction_entity_links",
@@ -208,6 +222,7 @@ def downgrade():
         "field_claim_runs",
         "field_claims",
         "extraction_entity_links",
+        "study_entity_candidate_links",
         "study_entity_aliases",
         "study_entities",
         "pipeline_analysis_results",
