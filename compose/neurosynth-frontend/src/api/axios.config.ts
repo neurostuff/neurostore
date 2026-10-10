@@ -1,9 +1,26 @@
 import { enqueueSnackbar } from 'notistack';
 import { _getAccessTokenSilentlyFunc, _logoutFunc, axiosInstance } from './api.state';
-import { OAuthError } from '@auth0/auth0-react';
 import { clearUnloadHandlers } from 'helpers/BeforeUnload.helpers';
 
 const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+const AUTH_ERROR_CODES_REQUIRING_LOGOUT = ['login_required', 'missing_refresh_token', 'invalid_grant'];
+let isSessionLogoutPending = false;
+
+const logoutExpiredSession = () => {
+    const logout = _logoutFunc;
+    if (isSessionLogoutPending || !logout) return;
+
+    isSessionLogoutPending = true;
+    enqueueSnackbar('Your session has expired. You are now being logged out.', { variant: 'error' });
+    setTimeout(() => {
+        clearUnloadHandlers();
+        logout({
+            logoutParams: {
+                returnTo: window.location.origin,
+            },
+        });
+    }, 2500);
+};
 
 axiosInstance.interceptors.request.use(
     async (config) => {
@@ -17,14 +34,10 @@ axiosInstance.interceptors.request.use(
             }
             return config;
         } catch (error) {
-            if (error instanceof OAuthError && error.error === 'login_required') {
-                enqueueSnackbar('Your session has expired. You are now being logged out.', { variant: 'error' });
-                setTimeout(() => {
-                    if (_logoutFunc) {
-                        clearUnloadHandlers();
-                        _logoutFunc({ returnTo: window.location.origin });
-                    }
-                }, 2500);
+            const authErrorCode =
+                typeof error === 'object' && error !== null && 'error' in error ? error.error : undefined;
+            if (typeof authErrorCode === 'string' && AUTH_ERROR_CODES_REQUIRING_LOGOUT.includes(authErrorCode)) {
+                logoutExpiredSession();
             }
             throw new Error('Error getting access token', { cause: error });
         }

@@ -12,7 +12,7 @@ gains a nullable run_id, the caller's id for the run that produced a result.
 See store/backend/docs/study-schema-ingestion-design.md.
 
 Revision ID: 28cdbfce7bfa
-Revises: c4e6f8a0b2d4
+Revises: e7a9c1d3f5b7
 Create Date: 2026-09-18
 
 """
@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
 revision = "28cdbfce7bfa"
-down_revision = "c4e6f8a0b2d4"
+down_revision = "e7a9c1d3f5b7"
 branch_labels = None
 depends_on = None
 

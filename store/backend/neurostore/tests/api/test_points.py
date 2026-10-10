@@ -74,6 +74,47 @@ async def test_post_points(auth_client, ingest_neurosynth, session):
     assert resp.json()["coordinates"] == point["coordinates"]
 
 
+@pytest.mark.parametrize(
+    "space,expected",
+    [
+        ("Talairach", "TAL"),
+        ("mni152", "MNI"),
+        ("ICBM", "MNI"),
+        ("native", "OTHER"),
+        ("UNKNOWN", None),
+    ],
+)
+async def test_post_point_normalizes_space(auth_client, session, space, expected):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    analysis = Analysis(name="space analysis", user=user)
+    session.add(Study(name="space study", user=user, analyses=[analysis]))
+    session.commit()
+
+    resp = await auth_client.post(
+        "/api/points/",
+        data={"analysis": analysis.id, "x": 1, "y": 2, "z": 3, "space": space},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["space"] == expected
+    assert Point.query.filter_by(id=resp.json()["id"]).one().space == expected
+
+
+async def test_post_point_without_space_is_not_defaulted(auth_client, session):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    analysis = Analysis(name="no space analysis", user=user)
+    session.add(Study(name="no space study", user=user, analyses=[analysis]))
+    session.commit()
+
+    resp = await auth_client.post(
+        "/api/points/",
+        data={"analysis": analysis.id, "x": 1, "y": 2, "z": 3},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["space"] is None
+
+
 async def test_delete_points(auth_client, session):
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()

@@ -841,7 +841,7 @@ def serialize_study_shards(study_ids, batch_size=STUDY_SHARD_BATCH_SIZE):
 def build_note_shard(
     annotation_id, study_id, base_id, rows, features_by_base, note_keys
 ):
-    note = note_for_base(base_id, features_by_base, note_keys)
+    note = note_for_base(base_id, features_by_base, ())
     notes = []
     for row in rows:
         notes.append(
@@ -1021,11 +1021,28 @@ def refresh_shards(
     )
 
 
+def metadata_text(value):
+    if isinstance(value, (dict, list)):
+        return orjson.dumps(value, option=orjson.OPT_SORT_KEYS).decode()
+    return str(value)
+
+
+def arrow_accepts(values):
+    import pyarrow as pa
+
+    try:
+        pa.array(values)
+    except (pa.ArrowInvalid, pa.ArrowTypeError):
+        return False
+    return True
+
+
 def harmonize_metadata_types(metadatas):
     """Give each key one type, as pyarrow rejects mixed-type columns.
 
-    NiMARE 0.20 did this before writing parquet; 0.21 does not. Numbers and
-    numeric strings become floats; any other mix becomes strings.
+    NiMARE 0.20 did this before writing parquet; 0.21 does not. A key pyarrow
+    cannot store becomes floats if its values are all numeric, else text (JSON
+    for nested values).
     """
     values_by_key = {}
     for metadata in metadatas:
@@ -1033,13 +1050,13 @@ def harmonize_metadata_types(metadatas):
             if value is not None:
                 values_by_key.setdefault(key, []).append(value)
     for key, values in values_by_key.items():
-        if len({float if type(v) is int else type(v) for v in values}) < 2:
+        if arrow_accepts(values):
             continue
         try:
             [float(v) for v in values]
             convert = float
         except (TypeError, ValueError):
-            convert = str
+            convert = metadata_text
         for metadata in metadatas:
             if metadata.get(key) is not None:
                 metadata[key] = convert(metadata[key])
