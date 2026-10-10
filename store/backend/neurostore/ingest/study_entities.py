@@ -215,6 +215,7 @@ def sync_record_entities(base_study, record, locate=None, config=None):
         .join(StudyEntity, StudyEntity.id == StudyEntityAlias.entity_id)
         .filter(StudyEntity.base_study_id == base_study.id)
     )
+    chains = _rename_chains(by_id)
     claimed = set()
     result = {"created": 0, "matched": 0, "rename_candidates": [], "released_aliases": []}
 
@@ -262,7 +263,7 @@ def sync_record_entities(base_study, record, locate=None, config=None):
             take(record_entity, entity)
             result["created"] += 1
 
-        for record_entity, old in _rename_candidates(pending, existing, claimed):
+        for record_entity, old in _rename_candidates(pending, existing, claimed, chains):
             db.session.add(
                 StudyEntityCandidateLink(
                     entity_id=old.id,
@@ -291,7 +292,34 @@ def sync_record_entities(base_study, record, locate=None, config=None):
     }
 
 
-def _rename_candidates(created, existing, claimed):
+def _rename_chains(by_id):
+    """entity id -> (chain id, ids that link onward), over 'renamed_by_extractor' links.
+
+    Entities joined by such links are one thing seen under several names.
+    """
+    links = (
+        db.session.query(StudyEntityCandidateLink.entity_id, StudyEntityCandidateLink.candidate_id)
+        .filter(
+            StudyEntityCandidateLink.reason == RENAMED_BY_EXTRACTOR,
+            StudyEntityCandidateLink.entity_id.in_(list(by_id)),
+        )
+        .all()
+    )
+    root = {}
+
+    def find(x):
+        while root.setdefault(x, x) != x:
+            root[x] = root[root[x]]
+            x = root[x]
+        return x
+
+    for entity_id, candidate_id in links:
+        root[find(entity_id)] = find(candidate_id)
+    has_next = {entity_id for entity_id, _ in links}
+    return {i: (find(i), i in has_next) for i in root}
+
+
+def _rename_candidates(created, existing, claimed, chains=None):
     """(new item, unclaimed old entity) pairs that are each alone in their slot.
 
     An entity under a parent is slotted by its class, parent and ordinal, and
@@ -301,7 +329,12 @@ def _rename_candidates(created, existing, claimed):
     that the version bump gave the empty name) becomes a candidate rather than
     a silent split. Two contrasts at one place that are both read again are
     both claimed by their hashes, so neither is a candidate.
+
+    Old entities already joined by rename links (A renamed to B) count as one
+    chain, and the new item links to the chain's newest member, so a third name
+    at the same place is a candidate too.
     """
+    chains = chains or {}
     slots = defaultdict(list)
     for record_entity in created:
         parent = record_entity.parent
@@ -318,11 +351,16 @@ def _rename_candidates(created, existing, claimed):
             slot = _slot(entity.entity_class, entity.identity, entity.parent_id)
             if slot in slots:
                 old[slot].append(entity)
-    return [
-        (new[0], old[slot][0])
-        for slot, new in slots.items()
-        if len(new) == 1 and len(old[slot]) == 1
-    ]
+    pairs = []
+    for slot, new in slots.items():
+        tails = {}
+        for entity in old[slot]:
+            chain, has_next = chains.get(entity.id, (entity.id, False))
+            if chain not in tails or not has_next:
+                tails[chain] = entity
+        if len(new) == 1 and len(tails) == 1:
+            pairs.append((new[0], next(iter(tails.values()))))
+    return pairs
 
 
 def _slot(entity_class, identity, parent_id):

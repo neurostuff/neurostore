@@ -115,6 +115,29 @@ def ingest_neurosynth(max_rows):
     _run_with_runtime(_run)
 
 
+@main.command("rehash-entities")
+@click.option(
+    "--base-study-id",
+    default=None,
+    help="only this base study (default: every base study)",
+)
+@click.option("--batch-size", default=500, show_default=True)
+def rehash_entities_command(base_study_id, batch_size):
+    """Re-hash study entities under the current ENTITY_HASH_VERSION.
+
+    Run after a version bump and before ingesting: ingest refuses base studies
+    whose entities are still hashed under an older version.
+    """
+
+    def _run(_app, _db):
+        from neurostore.ingest.study_entities import rehash_entities
+
+        moved = rehash_entities(base_study_id=base_study_id, batch_size=batch_size)
+        click.echo(f"rehashed {moved} entities")
+
+    _run_with_runtime(_run)
+
+
 @main.command("repair-annotation-links")
 @click.option(
     "--dry-run/--apply",

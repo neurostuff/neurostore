@@ -52,3 +52,21 @@ def test_database_migrations_round_trip_at_head(db):
     service_migrations.downgrade("-1")
     service_migrations.upgrade("heads")
     service_migrations.current()
+
+
+def test_rehash_entities_runs_the_rehash(monkeypatch):
+    from neurostore.ingest import study_entities
+
+    calls = []
+    monkeypatch.setattr(cli, "_run_with_runtime", lambda callback: callback(None, None))
+    monkeypatch.setattr(
+        study_entities,
+        "rehash_entities",
+        lambda base_study_id, batch_size: calls.append((base_study_id, batch_size)) or 3,
+    )
+
+    result = CliRunner().invoke(main, ["rehash-entities", "--base-study-id", "abc"])
+
+    assert result.exit_code == 0, result.output
+    assert "rehashed 3 entities" in result.output
+    assert calls == [("abc", 500)]

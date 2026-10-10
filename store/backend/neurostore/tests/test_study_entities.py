@@ -525,6 +525,40 @@ def test_a_renamed_coordinate_set_is_a_candidate_and_keeps_its_claims(base_study
     assert (_claims(old), _claims(new)) == (1, 0)
 
 
+def test_each_new_name_at_one_place_links_to_the_chain(base_study):
+    spans = [(1200, 1288)]
+    first = _sync(base_study, {"coordinate_sets": [_named("PO > Sil", spans=spans)]})
+    a = _entity(first, "coordinate_sets[0]")
+    _claim(a, "statistic", "t")
+    b = _entity(_sync(base_study, {"coordinate_sets": [_named("PO vs Sil", spans=spans)]}),
+                "coordinate_sets[0]")
+
+    third = _sync(base_study, {"coordinate_sets": [_named("PO versus silence", spans=spans)]})
+    c = _entity(third, "coordinate_sets[0]")
+    assert third["created"] == 1
+    linked = [(x["entity_id"], x["candidate_id"]) for x in third["rename_candidates"]]
+    assert linked == [(b.id, c.id)]
+    links = {(k.entity_id, k.candidate_id) for k in StudyEntityCandidateLink.query}
+    assert links == {(a.id, b.id), (b.id, c.id)}
+    assert (_claims(a), _claims(b), _claims(c)) == (1, 0, 0)
+
+
+def test_a_name_that_comes_back_does_not_loop_or_duplicate(base_study):
+    spans = [(1200, 1288)]
+    first = _sync(base_study, {"coordinate_sets": [_named("PO > Sil", spans=spans)]})
+    a = _entity(first, "coordinate_sets[0]")
+    b = _entity(_sync(base_study, {"coordinate_sets": [_named("PO vs Sil", spans=spans)]}),
+                "coordinate_sets[0]")
+
+    back = _sync(base_study, {"coordinate_sets": [_named("PO > Sil", spans=spans)]})
+    assert _entity(back, "coordinate_sets[0]").id == a.id
+    assert back["created"] == 0 and back["rename_candidates"] == []
+    again = _sync(base_study, {"coordinate_sets": [_named("PO vs Sil", spans=spans)]})
+    assert _entity(again, "coordinate_sets[0]").id == b.id
+    assert StudyEntityCandidateLink.query.count() == 1
+    assert StudyEntity.query.filter_by(entity_class="CoordinateSet").count() == 2
+
+
 def test_a_coordinate_set_elsewhere_or_of_another_class_is_not_a_candidate(base_study):
     _sync(base_study, {"coordinate_sets": [_named("PO > Sil", spans=[(1200, 1288)])]})
     moved = _sync(base_study, {"coordinate_sets": [_named("PO vs Sil", spans=[(1200, 1300)])]})

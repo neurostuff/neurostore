@@ -1158,7 +1158,9 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
 #: Bump to change what an entity hash covers. Every entity row stores what its
 #: hash was computed from (`identity`, `parent_id`), so after a bump
 #: `neurostore.ingest.study_entities.rehash_entities` recomputes the hashes in
-#: place and keeps the old ones as aliases; no claim moves.
+#: place and keeps the old ones as aliases; no claim moves. Any change to
+#: study_schema's `normalize_name` changes identities, so it needs a bump here
+#: too: the stale-hash guard at ingest only trips on a version change.
 ENTITY_HASH_VERSION = "study-entity/3"
 
 
