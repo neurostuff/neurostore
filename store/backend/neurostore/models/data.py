@@ -1,3 +1,5 @@
+import hashlib
+import json
 import re
 
 import shortuuid
@@ -10,6 +12,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
+from study_schema.keys import cell_locator, span_locator
 
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
@@ -1037,12 +1040,22 @@ class PipelineStudyResult(BaseMixin, db.Model):
             sa.text("(result_data -> 'Modality')"),
             postgresql_using="gin",
         ),
+        # A run uploads one result per config and paper; replaying it is a no-op.
+        # Rows without a run_id (NULLs are distinct) are not constrained.
+        sa.UniqueConstraint(
+            "config_id",
+            "run_id",
+            "base_study_id",
+            name="uq_psr__config_run_study",
+        ),
     )
 
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
     )
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    # The caller's id for the pipeline run that produced this result.
+    run_id = db.Column(db.String, nullable=True, index=True)
     date_executed = db.Column(db.DateTime(timezone=True))
     result_data = db.Column(JSONB)
     file_inputs = db.Column(JSONB)
@@ -1079,6 +1092,343 @@ class PipelineEmbedding(db.Model):
 
     # Store the vector directly on the parent; partitions will add per-dimension CHECKs
     embedding = db.Column(VectorType(), nullable=False)
+
+
+# ---------------------------------------------------------------------------
+# study_schema extraction: the truth layer
+#
+# Documents and claims, written by ingest. Internal for now: no API schema,
+# route or admin view reads these tables (tests/test_truth_layer.py holds that),
+# and there is no feedback or voting table yet. Not the query surface -- see
+# store/backend/docs/study-schema-ingestion-design.md, which these implement.
+# Nothing here replaces the coordinate tables; an extraction hangs off the
+# studies/analyses/tables/points skeleton rather than duplicating it.
+# ---------------------------------------------------------------------------
+
+
+class PipelineAnalysisResult(BaseMixin, db.Model):
+    """One extraction run's payload for one analysis.
+
+    The analysis-level counterpart to PipelineStudyResult. Coordinates and the
+    LLM payload change on different schedules -- coordinates come from the
+    table parse and move rarely, the payload changes every run -- so one
+    durable coordinate skeleton carries N versioned payloads.
+    """
+
+    __tablename__ = "pipeline_analysis_results"
+    __table_args__ = (
+        # Keys are per paper (table ids like "tbl2" repeat across papers), so
+        # the study is part of what makes one unique within a run.
+        sa.UniqueConstraint(
+            "config_id",
+            "base_study_id",
+            "source_table_analysis",
+            name="uq_par__config_study_source_analysis",
+        ),
+        sa.Index(
+            "ix_par__analysis_type",
+            sa.text("(result_data -> 'analysis_type')"),
+            postgresql_using="gin",
+        ),
+    )
+
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
+    )
+    base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    # Nullable because an extraction can describe an analysis whose coordinates
+    # were never parsed. It must not be *silently* null: the ingester records
+    # status FAILURE when source_table_analysis does not resolve, because a
+    # payload quietly detached from its coordinates is the worst failure here.
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    source_table_analysis = db.Column(db.String, index=True)
+    result_data = db.Column(JSONB)
+    status = db.Column(STATUS_ENUM)
+    date_executed = db.Column(db.DateTime(timezone=True))
+
+    config = relationship(
+        "PipelineConfig",
+        backref=backref("analysis_results", cascade_backrefs=False, passive_deletes=True),
+        cascade_backrefs=False,
+    )
+
+
+#: Bump to change what an entity hash covers. Every entity row stores what its
+#: hash was computed from (`identity`, `parent_id`), so after a bump
+#: `neurostore.ingest.study_entities.rehash_entities` recomputes the hashes in
+#: place and keeps the old ones as aliases; no claim moves.
+ENTITY_HASH_VERSION = "study-entity/2"
+
+
+def study_entity_hash(base_study_id, entity_class, identity, parent_hash=None):
+    """The `StudyEntity.entity_hash` of one schema entity in one base study.
+
+    A full sha256 (64 hex characters) over the version, the base study, the
+    class, the hash of the entity it sits under and what identifies it there.
+    Base study and class are inside the hash, so a hash names one entity across
+    the whole database, and two papers' coordinate sets never collide even when
+    their tables share ids and layouts. `identity` is:
+
+    - Analysis, CoordinateSet: `analysis_identity(...)`, with no parent --
+      where in the paper the coordinate set was read, never its points, so a
+      re-parse that reads the same place reaches the same hash and a null
+      contrast with no points still has one;
+    - Study: '', with no parent;
+    - every other class: `sibling_identity(...)`, under its parent's hash.
+    """
+    payload = json.dumps(
+        [ENTITY_HASH_VERSION, base_study_id, entity_class, parent_hash, identity],
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def analysis_identity(origin, table_id=None, cells=(), spans=()):
+    """Where a coordinate set was read: origin, table and every cell or span.
+
+    The cells or spans are written by `study_schema.keys.cell_locator` /
+    `span_locator`, the strings `ParsedAnalysis.key` takes the sha1 of, but kept
+    whole rather than truncated to twelve hex characters, so the hash covers
+    every cell.
+    """
+    if origin == "table":
+        located = cell_locator(cells)
+        if not table_id or not located:
+            raise ValueError("a table coordinate set needs its table id and cells")
+    elif origin in ("text", "figure"):
+        located = span_locator(spans)
+        if not located:
+            raise ValueError(f"a {origin} coordinate set needs its spans")
+    else:
+        raise ValueError(f"unknown origin {origin!r}")
+    return f"{origin}|{table_id or ''}|{located}"
+
+
+def normalize_entity_name(name):
+    """`name` casefolded, with whitespace collapsed and trimmed; None when empty."""
+    if not isinstance(name, str):
+        return None
+    return " ".join(name.casefold().split()) or None
+
+
+def sibling_identity(name, ordinal):
+    """The identity of an entity that is not read from cells or spans.
+
+    `[normalized name, ordinal]`, the ordinal counting earlier siblings of the
+    same class and the same normalized name under the same parent. A class with
+    no name (Acquisition, Device, ...) has name None, so its ordinal counts every
+    earlier sibling of its class.
+    """
+    return [normalize_entity_name(name), ordinal]
+
+
+class StudyEntity(BaseMixin, db.Model):
+    """Durable identity for one schema entity within one base study.
+
+    Positions and per-run local_ids are reminted by every extraction, so a
+    reviewer's judgement cannot hang off them. This is the foreign key claims
+    point at instead, and `entity_hash` is how an entity is found again.
+
+    Analyses and coordinate sets are identified by the cells or spans they were
+    read from. Every other entity is identified under its parent (the Study, or
+    the Task of a Condition, the ModelEstimation of a ModelTerm) by its
+    normalized name and its ordinal among same-named siblings, so two groups
+    both called "patients" are two entities and "Healthy controls" re-extracted
+    as "healthy  controls" is the same one. The trade-off: when an extraction
+    reorders same-named siblings (or, for a class with no name, any siblings),
+    the ordinals follow the new order and the siblings swap claims.
+    """
+
+    __tablename__ = "study_entities"
+    __table_args__ = (
+        sa.UniqueConstraint("entity_hash", name="uq_study_entity__hash"),
+    )
+
+    base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True
+    )
+    #: The study_schema class: Study, Group, Task, Condition, Acquisition,
+    #: Device, Preprocessing, ModelEstimation, ModelTerm, InferenceSettings,
+    #: Measure, Assessment, Region, Arm, Timepoint, Table, Analysis or
+    #: CoordinateSet. Every acquisition modality is an Acquisition.
+    entity_class = db.Column(db.String, index=True)
+    #: study_entity_hash(base_study_id, entity_class, identity, parent's hash).
+    entity_hash = db.Column(db.String(64), nullable=False)
+    #: The entity this one is identified under; None for Study, Analysis and
+    #: CoordinateSet.
+    parent_id = db.Column(
+        db.Text, db.ForeignKey("study_entities.id", ondelete="CASCADE"), index=True
+    )
+    #: What the hash covers besides version, study, class and parent, so a
+    #: version bump can re-hash the row.
+    identity = db.Column(JSONB)
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True
+    )
+    #: The existing `tables` row an Analysis, CoordinateSet or Table entity was
+    #: read from, resolved through (study_id, t_id). Set for a coordinate set
+    #: with no points too, which has no `analyses` row to reach a table through.
+    table_id = db.Column(
+        db.Text, db.ForeignKey("tables.id", ondelete="SET NULL"), nullable=True
+    )
+    first_seen_config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
+    last_seen_config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
+
+    parent = relationship("StudyEntity", remote_side="StudyEntity.id")
+
+
+class StudyEntityAlias(db.Model):
+    """A hash an entity used to have, kept so claims made against it still resolve.
+
+    No user-facing writer: users cannot rename or merge entities. The pipeline
+    writes one when it re-identifies an entity under a new hash
+    (`neurostore.ingest.study_entities.rehash_entity`), and `reason` says why,
+    so a deliberate re-identification can be told from a bug. An alias is never
+    also a live hash: an entity that takes a hash back drops it as an alias.
+    """
+
+    __tablename__ = "study_entity_aliases"
+
+    entity_hash = db.Column(db.String(64), primary_key=True)
+    entity_id = db.Column(
+        db.Text,
+        db.ForeignKey("study_entities.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    #: 'cells_changed': a re-parse read the analysis from other cells;
+    #: 'renamed_by_extractor': its normalized name changed, parent and ordinal
+    #: did not; 'parent_rehashed': its parent took a new hash;
+    #: 'version_bumped': ENTITY_HASH_VERSION changed.
+    reason = db.Column(db.String)
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
+
+
+class ExtractionEntityLink(db.Model):
+    """One run's local_id for an entity.
+
+    What makes a record's internal references resolvable to durable entities
+    rather than only within the one document that minted them.
+    """
+
+    __tablename__ = "extraction_entity_links"
+
+    config_id = db.Column(
+        db.Text,
+        db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    local_id = db.Column(db.String, primary_key=True)
+    entity_id = db.Column(
+        db.Text, db.ForeignKey("study_entities.id", ondelete="CASCADE"), index=True
+    )
+
+
+class FieldClaim(BaseMixin, db.Model):
+    """One value a field has been given, by a run or by a person.
+
+    Not a correction against a record: a correction is one more option on a
+    field, the same kind of thing an extraction produces, so machines and
+    people write here on equal terms. Keyed by value rather than by run, which
+    is what makes carry-forward across re-extraction free.
+    """
+
+    __tablename__ = "field_claims"
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "entity_id", "field_path", "value_hash", name="uq_field_claim__value"
+        ),
+        sa.Index("ix_field_claims_entity_field", "entity_id", "field_path"),
+    )
+
+    entity_id = db.Column(
+        db.Text, db.ForeignKey("study_entities.id", ondelete="CASCADE"), index=True
+    )
+    #: entity-relative and key-predicated, e.g. 'terms[name=IC25].local_id'
+    field_path = db.Column(db.String)
+    schema_version = db.Column(db.String)
+
+    value = db.Column(JSONB, nullable=True)
+    #: 'extracted' | 'not_reported'
+    extraction_status = db.Column(db.String)
+    #: 'reported' | 'generated'
+    value_source = db.Column(db.String)
+    value_hash = db.Column(db.String, index=True)
+
+    #: 'extraction' | 'user'
+    origin = db.Column(db.String)
+    origin_user_id = db.Column(
+        db.Text, db.ForeignKey("users.external_id"), nullable=True, index=True
+    )
+
+    #: The claim this one was copied from, when a revised coordinate parse
+    #: split or merged the analysis that claim was made against; its entity is
+    #: the superseded analysis, kept unchanged as history. Null for a claim
+    #: made against this entity directly. A merge can collapse two copies into
+    #: one claim, and this then names the first one copied.
+    carried_from = db.Column(
+        db.Text,
+        db.ForeignKey("field_claims.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+
+class FieldClaimRun(db.Model):
+    """Which runs produced a claim.
+
+    Separate from the claim because two runs agreeing produce one claim, not
+    two -- which is what makes independent model agreement countable beside
+    human agreement.
+    """
+
+    __tablename__ = "field_claim_runs"
+
+    claim_id = db.Column(
+        db.Text, db.ForeignKey("field_claims.id", ondelete="CASCADE"), primary_key=True
+    )
+    config_id = db.Column(
+        db.Text,
+        db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+
+class FieldClaimEvidence(BaseMixin, db.Model):
+    """The passage supporting one claim.
+
+    Hangs off the claim rather than the field, because two claims for one field
+    are supported by different sentences.
+    """
+
+    __tablename__ = "field_claim_evidence"
+
+    claim_id = db.Column(
+        db.Text, db.ForeignKey("field_claims.id", ondelete="CASCADE"), index=True
+    )
+    #: present | not_found | not_applicable
+    status = db.Column(db.String)
+    #: EvidenceSource, plus 'user'
+    source = db.Column(db.String)
+    #: [{text, start_char, end_char}]; text == fulltext[start_char:end_char]
+    spans = db.Column(JSONB)
+
+    origin = db.Column(db.String)
+    origin_user_id = db.Column(
+        db.Text, db.ForeignKey("users.external_id"), nullable=True
+    )
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
+    )
 
 
 from neurostore.models import image_count_listeners  # noqa E402
