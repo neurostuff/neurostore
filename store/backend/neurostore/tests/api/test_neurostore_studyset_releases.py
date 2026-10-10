@@ -748,3 +748,33 @@ def test_a_null_outcome_on_an_anchor_does_not_qualify(session):
     anchor.role = "result"
     session.flush()
     assert study.id in _selected_study_ids()
+
+
+def test_a_release_leaves_out_role_other_analyses(app, session, tmp_path):
+    app.config["FILE_DIR"] = tmp_path
+    loss = fx.table_analysis("tbl1", [0], "Loss > Neutral", [fx.point((1, 2, 3))])
+    other = fx.table_analysis(
+        "tbl5", [0], "Peak voxels", [fx.point((7, 8, 9))], role="other"
+    )
+    with_result = ingest_upload({"coordinate_parse": fx.parse([loss, other])})
+    other_only = ingest_upload(
+        {
+            "coordinate_parse": fx.parse(
+                [fx.table_analysis("tbl6", [0], "Clusters", [fx.point((4, 4, 4))], role="other")],
+                pmid="87654321",
+            )
+        }
+    )
+
+    manifest = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+
+    # The 'other' analysis is stored on the study but not exported.
+    study = Study.query.get(with_result["study_id"])
+    assert {a.source_id: a.role for a in study.analyses}[other["key"]] == "other"
+    shard = release_service.serialize_study_shard(study.id)
+    assert [a["name"] for a in shard["analyses"]] == [loss["name"]]
+    # A paper whose only coordinates are 'other' is not in the release.
+    assert with_result["base_study_id"] in manifest["studies"]
+    assert other_only["base_study_id"] not in manifest["studies"]
