@@ -345,13 +345,29 @@ def test_revision_must_cover_a_stored_parse(session):
 
 def test_reparse_reading_other_cells_aliases_the_hash(session):
     base_study_id = ingest_upload(
-        {"coordinate_parse": ORIGINAL, "record": _record(GAIN, LOSS, RISK)}
+        {
+            "coordinate_parse": ORIGINAL,
+            "record": fx.record(
+                [
+                    fx.record_analysis(f"a{i}", p["key"], p["name"])
+                    for i, p in enumerate((GAIN, LOSS, RISK))
+                ],
+                coordinate_sets=[LOSS["key"]],
+            ),
+        }
     )["base_study_id"]
+    assert (
+        StudyEntity.query.filter_by(
+            entity_hash=_hash(base_study_id, LOSS["key"], "CoordinateSet")
+        ).count()
+        == 1
+    )
     wider = fx.table_analysis("tbl1", [4, 5, 8], "Loss > Neutral", LOSS["points"])
     reparse = fx.parse([GAIN, wider, RISK, SEED])
 
     summary = ingest_upload({"coordinate_parse": reparse})
 
+    # Analysis and coordinate-set entities both move, yet the pair is listed once.
     assert summary["skeleton"]["aliased"] == [{"from": LOSS["key"], "to": wider["key"]}]
     _ANALYSES[wider["key"]] = wider
     alias = StudyEntityAlias.query.get(_hash(base_study_id, LOSS["key"]))
@@ -596,3 +612,18 @@ def test_replaying_a_run_id_returns_the_same_results_and_adds_none(session):
     with pytest.raises(NeuroStoreException) as error:
         ingest_upload({**body, "record": _record(GAIN, LOSS)})
     assert error.value.status_code == 422
+
+
+def test_a_concurrent_upload_taking_the_run_id_is_refused_as_reused(session, monkeypatch):
+    ingest_upload({"coordinate_parse": ORIGINAL, "run_id": "run-1"})
+    other = fx.parse([GAIN], pmid="12345678")
+    body = {"coordinate_parse": other, "run_id": "run-1"}
+    # The run_id check passes as it would for an upload racing the first one.
+    monkeypatch.setattr("neurostore.ingest.study_schema._check_run", lambda *a: None)
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(body)
+
+    assert error.value.status_code == 422
+    assert "RUN_ID_REUSED" in str(error.value.__dict__)
+    assert PipelineStudyResult.query.filter_by(run_id="run-1").count() == 1

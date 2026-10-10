@@ -51,6 +51,7 @@ import re
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
+from sqlalchemy.exc import IntegrityError
 from jsonschema import validators
 from study_schema import keys as parse_keys
 from study_schema.jsonschema import load as load_json_schema
@@ -544,18 +545,21 @@ def _store_parse(base_study, parse, run_id=None):
         },
     )
     _check_run(config, base_study, run_id, parse)
-    result = PipelineStudyResult(
-        config_id=config.id,
-        base_study_id=base_study.id,
-        run_id=run_id,
-        result_data=parse,
-        file_inputs=parse["header"].get("inputs"),
-        status="SUCCESS",
-        date_executed=parse["header"].get("created_at") or _now(),
-    )
-    db.session.add(result)
-    db.session.flush()
-    return result
+
+    def write():
+        result = PipelineStudyResult(
+            config_id=config.id,
+            base_study_id=base_study.id,
+            run_id=run_id,
+            result_data=parse,
+            file_inputs=parse["header"].get("inputs"),
+            status="SUCCESS",
+            date_executed=parse["header"].get("created_at") or _now(),
+        )
+        db.session.add(result)
+        return result
+
+    return _write_run(write, config, base_study, run_id, parse)
 
 
 def _check_run(config, base_study, run_id, document):
@@ -569,6 +573,30 @@ def _check_run(config, base_study, run_id, document):
         config_id=config.id, base_study_id=base_study.id, run_id=run_id
     ).first()
     if stored is not None and stored.result_data != document:
+        abort_unprocessable(
+            "This run_id already stored a different document for the paper.",
+            [make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
+        )
+
+
+def _write_run(write, config, base_study, run_id, document):
+    """Run ``write``, which adds the result; a run_id a concurrent upload just took is refused.
+
+    Returns ``write``'s result, or the stored one when that upload stored this same document.
+    """
+    try:
+        with db.session.begin_nested():
+            result = write()
+            db.session.flush()
+        return result
+    except IntegrityError:
+        stored = PipelineStudyResult.query.filter_by(
+            config_id=config.id, base_study_id=base_study.id, run_id=run_id
+        ).first()
+        if run_id is None or stored is None:
+            raise
+        if stored.result_data == document:
+            return stored
         abort_unprocessable(
             "This run_id already stored a different document for the paper.",
             [make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
@@ -1166,17 +1194,28 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
     ]
 
     _check_run(config, base_study, run_id, record)
-    result = PipelineStudyResult.query.filter_by(
-        config_id=config.id, base_study_id=base_study.id
-    ).first()
-    if result is None:
-        result = PipelineStudyResult(config_id=config.id, base_study_id=base_study.id)
-        db.session.add(result)
-    result.run_id = run_id
-    result.result_data = record
-    result.file_inputs = inputs
-    result.status = "SUCCESS"
-    result.date_executed = executed
+
+    def write():
+        result = PipelineStudyResult.query.filter_by(
+            config_id=config.id, base_study_id=base_study.id
+        ).first()
+        if result is None:
+            result = PipelineStudyResult(config_id=config.id, base_study_id=base_study.id)
+            db.session.add(result)
+        result.run_id = run_id
+        result.result_data = record
+        result.file_inputs = inputs
+        result.status = "SUCCESS"
+        result.date_executed = executed
+        return result
+
+    result = _write_run(write, config, base_study, run_id, record)
+    if result.run_id != run_id or result.result_data is not record:
+        # A concurrent upload stored this same record under the run_id; its results stand.
+        abort_unprocessable(
+            "This run_id already stored this record; replay the upload as a whole.",
+            [make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
+        )
 
     # A record that read an older parse: its keys the revisions since split or merged
     # resolve to history, and its claims are carried on to their replacements.
