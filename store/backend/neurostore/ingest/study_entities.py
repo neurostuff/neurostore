@@ -7,6 +7,7 @@ new hash, keeping the old one as an alias, and `rehash_entities` re-hashes every
 entity after `ENTITY_HASH_VERSION` changes.
 """
 
+import json
 import logging
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
@@ -16,10 +17,11 @@ from sqlalchemy.dialects.postgresql import insert
 
 from neurostore.database import db
 from neurostore.models.data import (
+    Analysis,
     StudyEntity,
     StudyEntityAlias,
     StudyEntityCandidateLink,
-    normalize_entity_name,
+    entity_name_key,
     sibling_identity,
     study_entity_hash,
 )
@@ -99,8 +101,8 @@ def record_entities(base_study_id, record, locate=None):
     RecordEntity of each item; the paths of located-class items with no
     locator; the paths of entity lists that are not lists and of their items
     that are not objects; and the paths of items whose hash an earlier item of
-    the record already has (an analysis and its mirror read from the same
-    cells). None of the last three is in ``entities``.
+    the record already has (one analysis read twice from the same cells under
+    the same name). None of the last three is in ``entities``.
     """
     study = RecordEntity("Study", "", record, "", study_entity_hash(base_study_id, "Study", ""))
     entities, unlocated, unidentified, duplicates = [study], [], [], []
@@ -134,7 +136,7 @@ def record_entities(base_study_id, record, locate=None):
                         study_entity_hash(base_study_id, entity_class, identity),
                     )
                 else:
-                    name = normalize_entity_name(
+                    name = entity_name_key(
                         _value(item.get(NAME_FIELDS.get(entity_class, "name")))
                     )
                     identity = sibling_identity(name, ordinals[name])
@@ -341,7 +343,8 @@ def rehash_entities(base_study_id=None, batch_size=500):
     """Re-hash every entity (of one base study, if given) under the current version.
 
     Run after a change to ENTITY_HASH_VERSION or the hash rule; each moved
-    entity keeps its old hash as a 'version_bumped' alias. Works through
+    entity keeps its old hash as a 'version_bumped' alias. Identities are
+    re-derived first (see `current_identity`) and stored with the new hash. Works through
     ``batch_size`` base studies at a time and commits after each batch, so an
     interrupted run can simply be run again. Returns the number of entities
     moved.
@@ -359,6 +362,25 @@ def rehash_entities(base_study_id=None, batch_size=500):
     return moved
 
 
+def current_identity(entity_class, identity, analysis_name=None):
+    """``identity`` as the current rule writes it.
+
+    An Analysis or CoordinateSet identity written before the name was part of it
+    (``origin|table|locator``) gains the normalized name of its `analyses` row
+    (``analysis_name``; the empty name when it has none). A sibling identity's
+    name is normalized again, so a change to `normalize_name` reaches stored
+    rows. The ordinal is kept; `_rehash_batch` moves it on if two siblings come
+    to share a name.
+    """
+    if entity_class in LOCATED_CLASSES:
+        if identity.count("|") == 2:
+            return f"{identity}|{entity_name_key(analysis_name) or ''}"
+        return identity
+    if isinstance(identity, list):
+        return sibling_identity(identity[0], identity[1])
+    return identity
+
+
 def _rehash_batch(base_study_ids):
     rows = db.session.execute(
         sa.select(
@@ -368,26 +390,46 @@ def _rehash_batch(base_study_ids):
             StudyEntity.entity_class,
             StudyEntity.identity,
             StudyEntity.entity_hash,
-        ).where(StudyEntity.base_study_id.in_(base_study_ids))
+            Analysis.name.label("analysis_name"),
+        )
+        .outerjoin(Analysis, Analysis.id == StudyEntity.analysis_id)
+        .where(StudyEntity.base_study_id.in_(base_study_ids))
+        .order_by(StudyEntity.created_at, StudyEntity.id)
     ).all()
     children = defaultdict(list)
     for row in rows:
         children[row.parent_id].append(row)
-    ids, old_hashes, new_hashes = [], [], []
-    stack = [(root, None) for root in children[None]]
+    ids, old_hashes, new_hashes, identities = [], [], [], []
+    stack = [(None, None)]
     while stack:
-        row, parent_hash = stack.pop()
-        expected = study_entity_hash(
-            row.base_study_id, row.entity_class, row.identity, parent_hash
-        )
-        if expected != row.entity_hash:
-            ids.append(row.id)
-            old_hashes.append(row.entity_hash)
-            new_hashes.append(expected)
-        stack.extend((child, expected) for child in children[row.id])
+        parent_id, parent_hash = stack.pop()
+        taken = set()
+        for row in children[parent_id]:
+            identity = current_identity(row.entity_class, row.identity, row.analysis_name)
+            expected = study_entity_hash(
+                row.base_study_id, row.entity_class, identity, parent_hash
+            )
+            while isinstance(identity, list) and expected in taken:
+                identity = [identity[0], identity[1] + 1]
+                expected = study_entity_hash(
+                    row.base_study_id, row.entity_class, identity, parent_hash
+                )
+            taken.add(expected)
+            if expected != row.entity_hash or identity != row.identity:
+                ids.append(row.id)
+                old_hashes.append(row.entity_hash)
+                new_hashes.append(expected)
+                identities.append(json.dumps(identity))
+            stack.append((row.id, expected))
     if not ids:
         return 0
-    params = {"ids": ids, "old": old_hashes, "new": new_hashes, "reason": VERSION_BUMPED}
+    params = {
+        "ids": ids,
+        "old": old_hashes,
+        "new": new_hashes,
+        "identities": identities,
+        "reason": VERSION_BUMPED,
+    }
     db.session.execute(
         sa.text(
             "DELETE FROM study_entity_aliases WHERE entity_hash = ANY(CAST(:new AS text[]))"
@@ -396,8 +438,10 @@ def _rehash_batch(base_study_ids):
     )
     db.session.execute(
         sa.text(
-            "UPDATE study_entities AS e SET entity_hash = m.new_hash, updated_at = now() "
-            "FROM unnest(CAST(:ids AS text[]), CAST(:new AS text[])) AS m(id, new_hash) "
+            "UPDATE study_entities AS e SET entity_hash = m.new_hash, "
+            "identity = CAST(m.identity AS jsonb), updated_at = now() "
+            "FROM unnest(CAST(:ids AS text[]), CAST(:new AS text[]), "
+            "CAST(:identities AS text[])) AS m(id, new_hash, identity) "
             "WHERE e.id = m.id"
         ),
         params,

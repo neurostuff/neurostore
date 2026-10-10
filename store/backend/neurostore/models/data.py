@@ -1,7 +1,6 @@
 import hashlib
 import json
 import re
-import unicodedata
 
 import shortuuid
 import sqlalchemy as sa
@@ -13,7 +12,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
-from study_schema.keys import cell_locator, span_locator
+from study_schema.keys import cell_locator, normalize_name, span_locator
 
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
@@ -1160,7 +1159,7 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
 #: hash was computed from (`identity`, `parent_id`), so after a bump
 #: `neurostore.ingest.study_entities.rehash_entities` recomputes the hashes in
 #: place and keeps the old ones as aliases; no claim moves.
-ENTITY_HASH_VERSION = "study-entity/2"
+ENTITY_HASH_VERSION = "study-entity/3"
 
 
 def study_entity_hash(base_study_id, entity_class, identity, parent_hash=None):
@@ -1173,9 +1172,10 @@ def study_entity_hash(base_study_id, entity_class, identity, parent_hash=None):
     their tables share ids and layouts. `identity` is:
 
     - Analysis, CoordinateSet: `analysis_identity(...)`, with no parent --
-      where in the paper the coordinate set was read, never its points, so a
-      re-parse that reads the same place reaches the same hash and a null
-      contrast with no points still has one;
+      where in the paper the coordinate set was read and what it is called,
+      never its points, so a re-parse that reads the same place under the same
+      name reaches the same hash and a null contrast with no points still has
+      one;
     - Study: '', with no parent;
     - every other class: `sibling_identity(...)`, under its parent's hash.
     """
@@ -1187,13 +1187,16 @@ def study_entity_hash(base_study_id, entity_class, identity, parent_hash=None):
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def analysis_identity(origin, table_id=None, cells=(), spans=()):
-    """Where a coordinate set was read: origin, table and every cell or span.
+def analysis_identity(origin, table_id=None, cells=(), spans=(), *, name):
+    """Where a coordinate set was read and what it is called: origin, table,
+    every cell or span, and the normalized name.
 
     The cells or spans are written by `study_schema.keys.cell_locator` /
-    `span_locator`, the strings `ParsedAnalysis.key` takes the sha1 of, but kept
-    whole rather than truncated to twelve hex characters, so the hash covers
-    every cell.
+    `span_locator` and the name by `normalize_name`, the parts `ParsedAnalysis.key`
+    takes the sha1 of, but kept whole rather than truncated to twelve hex
+    characters, so the hash covers every cell. The name is part of it because
+    two contrasts can be read from the same cells or the same sentence
+    ("PO > Sil" and "PC > Sil"); `name` None is the empty name.
     """
     if origin == "table":
         located = cell_locator(cells)
@@ -1205,15 +1208,12 @@ def analysis_identity(origin, table_id=None, cells=(), spans=()):
             raise ValueError(f"a {origin} coordinate set needs its spans")
     else:
         raise ValueError(f"unknown origin {origin!r}")
-    return f"{origin}|{table_id or ''}|{located}"
+    return f"{origin}|{table_id or ''}|{located}|{normalize_name(name or '')}"
 
 
-def normalize_entity_name(name):
-    """`name` NFKC-normalized and casefolded, with whitespace collapsed and
-    trimmed; None when empty."""
-    if not isinstance(name, str):
-        return None
-    return " ".join(unicodedata.normalize("NFKC", name).casefold().split()) or None
+def entity_name_key(name):
+    """`study_schema.keys.normalize_name(name)`; None for a missing or empty name."""
+    return normalize_name(name) or None if isinstance(name, str) else None
 
 
 def sibling_identity(name, ordinal):
@@ -1224,7 +1224,7 @@ def sibling_identity(name, ordinal):
     no name (Device, Preprocessing, ...) has name None, so its ordinal counts
     every earlier sibling of its class.
     """
-    return [normalize_entity_name(name), ordinal]
+    return [entity_name_key(name), ordinal]
 
 
 class StudyEntity(BaseMixin, db.Model):
@@ -1235,7 +1235,7 @@ class StudyEntity(BaseMixin, db.Model):
     point at instead, and `entity_hash` is how an entity is found again.
 
     Analyses and coordinate sets are identified by the cells or spans they were
-    read from. Every other entity is identified under its parent (the Study, or
+    read from and their name. Every other entity is identified under its parent (the Study, or
     the Task of a Condition, the ModelEstimation of a ModelTerm) by its
     normalized name and its ordinal among same-named siblings, so two groups
     both called "patients" are two entities and "Healthy controls" re-extracted

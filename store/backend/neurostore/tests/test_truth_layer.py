@@ -48,60 +48,84 @@ def test_no_route_or_component_names_the_truth_layer():
 
 
 def test_the_hash_is_a_full_sha256():
-    locator = analysis_identity("table", "tbl1", cells=[(0, 0)])
+    locator = analysis_identity("table", "tbl1", cells=[(0, 0)], name="PO > Sil")
     value = study_entity_hash("bs1", "Analysis", locator)
     assert re.fullmatch(r"[0-9a-f]{64}", value)
 
 
 def test_the_hash_separates_papers_classes_and_cells():
-    cells = analysis_identity("table", "tbl2", cells=[(3, 0), (4, 0)])
+    cells = analysis_identity("table", "tbl2", cells=[(3, 0), (4, 0)], name="PO > Sil")
     base = study_entity_hash("bs1", "Analysis", cells)
     assert base != study_entity_hash("bs2", "Analysis", cells)  # same table id, other paper
     assert base != study_entity_hash("bs1", "CoordinateSet", cells)
     assert base != study_entity_hash(
-        "bs1", "Analysis", analysis_identity("table", "tbl2", cells=[(3, 0), (4, 1)])
+        "bs1",
+        "Analysis",
+        analysis_identity("table", "tbl2", cells=[(3, 0), (4, 1)], name="PO > Sil"),
     )
     assert base != study_entity_hash(
-        "bs1", "Analysis", analysis_identity("table", "tbl3", cells=[(3, 0), (4, 0)])
+        "bs1",
+        "Analysis",
+        analysis_identity("table", "tbl3", cells=[(3, 0), (4, 0)], name="PO > Sil"),
     )
 
 
 def test_the_hash_ignores_cell_order_and_repeats():
-    a = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0), (4, 0)])
-    assert a == analysis_identity("table", "tbl2", cells=[(3, 0), (4, 0)]) == "table|tbl2|3:0,4:0"
+    a = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0), (4, 0)], name="PO > Sil")
+    b = analysis_identity("table", "tbl2", cells=[(3, 0), (4, 0)], name="PO > Sil")
+    assert a == b == "table|tbl2|3:0,4:0|po > sil"
 
 
 def test_text_and_figure_sets_hash_their_spans():
     spans = [(1288, 1300), (1200, 1288)]
-    assert analysis_identity("text", spans=spans) == "text||1200-1288,1288-1300"
-    assert analysis_identity("figure", spans=[(5, 9)]) != analysis_identity("text", spans=[(5, 9)])
+    text = analysis_identity("text", spans=spans, name="PO > Sil")
+    assert text == "text||1200-1288,1288-1300|po > sil"
+    figure = analysis_identity("figure", spans=[(5, 9)], name="PO > Sil")
+    assert figure != analysis_identity("text", spans=[(5, 9)], name="PO > Sil")
 
 
 def test_a_set_with_nothing_to_locate_it_is_refused():
     with pytest.raises(ValueError):
-        analysis_identity("table", "tbl1", cells=[])
+        analysis_identity("table", "tbl1", cells=[], name="PO > Sil")
     with pytest.raises(ValueError):
-        analysis_identity("text", spans=[])
+        analysis_identity("text", spans=[], name="PO > Sil")
     with pytest.raises(ValueError):
-        analysis_identity("prose", spans=[(0, 1)])
+        analysis_identity("prose", spans=[(0, 1)], name="PO > Sil")
 
 
 def test_a_name_cannot_be_mistaken_for_a_locator():
     # The class is inside the hash, so a Group named like a locator is still a Group.
-    locator = analysis_identity("table", "tbl1", cells=[(0, 0)])
+    locator = analysis_identity("table", "tbl1", cells=[(0, 0)], name="PO > Sil")
     as_group = study_entity_hash("bs1", "Group", locator)
     assert as_group != study_entity_hash("bs1", "Analysis", locator)
 
 
+def test_the_hash_separates_names_read_from_the_same_place():
+    # gx2zzUbbydf9 reads "PO > Sil" and "PC > Sil" from the same spans; one
+    # identity for both merged two contrasts' claims onto one coordinate set.
+    for kwargs in ({"origin": "text", "spans": [(5, 9)]},
+                   {"origin": "table", "table_id": "tbl2", "cells": [(3, 0), (4, 0)]}):
+        po = analysis_identity(**kwargs, name="PO > Sil")
+        assert po != analysis_identity(**kwargs, name="PC > Sil")
+        # Case, dash and spacing are not a different contrast.
+        assert po == analysis_identity(**kwargs, name="po  >  SIL")
+        assert analysis_identity(**kwargs, name="PO - Sil") == analysis_identity(
+            **kwargs, name="po \u2013 sil"
+        )
+
+
 def test_the_locator_is_the_string_the_analysis_key_hashes():
-    # One cell and span rule: study_schema.keys writes it for both the key and the hash.
+    # One cell, span and name rule: study_schema.keys writes it for both the key and the hash.
     import hashlib
 
     from study_schema.keys import span_key, table_key
 
-    located = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0)]).rsplit("|", 1)[1]
-    assert table_key("tbl2", [(3, 0), (4, 0)]) == (
+    located = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0)], name="PO > Sil")
+    located = located.split("|", 2)[2]
+    assert table_key("tbl2", [(3, 0), (4, 0)], "PO > Sil") == (
         "tbl2#" + hashlib.sha1(located.encode()).hexdigest()[:12]
     )
-    located = analysis_identity("text", spans=[(5, 9)]).rsplit("|", 1)[1]
-    assert span_key("text", [(5, 9)]) == "text#" + hashlib.sha1(located.encode()).hexdigest()[:12]
+    located = analysis_identity("text", spans=[(5, 9)], name="PO > Sil").split("|", 2)[2]
+    assert span_key("text", [(5, 9)], "PO > Sil") == (
+        "text#" + hashlib.sha1(located.encode()).hexdigest()[:12]
+    )
