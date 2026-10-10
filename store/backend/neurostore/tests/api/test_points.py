@@ -76,7 +76,13 @@ async def test_post_points(auth_client, ingest_neurosynth, session):
 
 @pytest.mark.parametrize(
     "space,expected",
-    [("Talairach", "TAL"), ("mni152", "MNI"), ("ICBM", "MNI"), ("native", "OTHER")],
+    [
+        ("Talairach", "TAL"),
+        ("mni152", "MNI"),
+        ("ICBM", "MNI"),
+        ("native", "OTHER"),
+        ("UNKNOWN", None),
+    ],
 )
 async def test_post_point_normalizes_space(auth_client, session, space, expected):
     user = User.query.filter_by(external_id=auth_client.username).first()

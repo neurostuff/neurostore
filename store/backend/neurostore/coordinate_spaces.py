@@ -2,8 +2,9 @@
 
 NiMARE transforms between coordinate spaces only when a point's space is exactly
 ``"MNI"`` or ``"TAL"``; any other spelling goes into a meta-analysis untransformed.
-Every space a point is written with is folded to one of ``MNI``, ``TAL``, ``OTHER``
-or ``UNKNOWN``. A missing space stays missing: it is never defaulted to MNI.
+Every space a point is written with is folded to ``MNI``, ``TAL`` or ``OTHER`` (a
+stated space that is neither), or to None when no space is stated. None is never
+defaulted to MNI.
 
 The family patterns are pondie's ``pondie.normalization.coordinate_space.RULES``,
 so a space pondie reads and the point neurostore stores agree.
@@ -14,7 +15,6 @@ import re
 MNI = "MNI"
 TAL = "TAL"
 OTHER = "OTHER"
-UNKNOWN = "UNKNOWN"
 
 _RULES = (
     (
@@ -46,7 +46,8 @@ _RULES = (
     ),
 )
 
-_UNKNOWN = re.compile(
+# Strings that say no space was stated; they store as None, like a blank.
+_NOT_STATED = re.compile(
     r"^\s*(?:unknown(?:\s+space)?|not\s+(?:reported|stated|specified|applicable|available)|"
     r"n\.?\s*/?\s*a\.?|none(?:\s+reported)?|missing|null|unspecified|[\W_]+)\s*$",
     re.IGNORECASE,
@@ -54,14 +55,14 @@ _UNKNOWN = re.compile(
 
 
 def normalize_space(value):
-    """Fold a point's space to ``"MNI"``, ``"TAL"``, ``"OTHER"`` or ``"UNKNOWN"``.
+    """Fold a point's space to ``"MNI"``, ``"TAL"``, ``"OTHER"`` or None.
 
     - Missing or blank input returns None.
+    - "unknown", "not reported", "n.a.", "?" and the like return None.
     - A spelling of MNI or TAL ("MNI152 2mm", "Talairach & Tournoux 1988")
       returns that space.
     - A string naming both ("MNI converted to Talairach", "mni2tal", "tal2mni")
-      returns ``"UNKNOWN"``: which space the numbers are in is not decidable.
-    - "unknown", "not reported" and the like return ``"UNKNOWN"``.
+      returns None: which space the numbers are in is not decidable.
     - Anything else returns ``"OTHER"``, the value the frontend shows and writes
       back for any space it does not know.
     """
@@ -70,9 +71,9 @@ def normalize_space(value):
     text = str(value).strip()
     if not text:
         return None
-    if _UNKNOWN.match(text):
-        return UNKNOWN
+    if _NOT_STATED.match(text):
+        return None
     hits = [space for space, pattern in _RULES if pattern.search(text)]
     if MNI in hits and TAL in hits:
-        return UNKNOWN
+        return None
     return hits[0] if hits else OTHER

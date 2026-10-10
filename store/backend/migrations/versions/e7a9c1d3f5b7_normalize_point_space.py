@@ -1,8 +1,9 @@
-"""normalize points.space to MNI / TAL / OTHER / UNKNOWN
+"""normalize points.space to MNI / TAL / OTHER / NULL
 
 Rewrites existing values with a frozen copy of the normalize_space the
 Point.space validator applies on write, so legacy spellings such as 'Talairach' are TAL
-before a frontend save would turn them into OTHER. Blank becomes NULL.
+before a frontend save would turn them into OTHER. Blank, UNKNOWN and other
+"not stated" values become NULL.
 
 Revision ID: e7a9c1d3f5b7
 Revises: d5f7a9b1c3e5
@@ -26,7 +27,6 @@ depends_on = None
 MNI = "MNI"
 TAL = "TAL"
 OTHER = "OTHER"
-UNKNOWN = "UNKNOWN"
 
 _RULES = (
     (
@@ -58,7 +58,8 @@ _RULES = (
     ),
 )
 
-_UNKNOWN = re.compile(
+# Strings that say no space was stated; they store as None, like a blank.
+_NOT_STATED = re.compile(
     r"^\s*(?:unknown(?:\s+space)?|not\s+(?:reported|stated|specified|applicable|available)|"
     r"n\.?\s*/?\s*a\.?|none(?:\s+reported)?|missing|null|unspecified|[\W_]+)\s*$",
     re.IGNORECASE,
@@ -72,11 +73,11 @@ def _normalize_space(value):
     text = str(value).strip()
     if not text:
         return None
-    if _UNKNOWN.match(text):
-        return UNKNOWN
+    if _NOT_STATED.match(text):
+        return None
     hits = [space for space, pattern in _RULES if pattern.search(text)]
     if MNI in hits and TAL in hits:
-        return UNKNOWN
+        return None
     return hits[0] if hits else OTHER
 
 
