@@ -2,7 +2,8 @@
 
 Documents and claims for study_schema records: per-analysis extraction
 payloads, durable entity identity that survives re-extraction, and
-field-level claims with their evidence and votes.
+field-level claims with their evidence. No feedback or voting tables yet,
+and nothing here is exposed through the API.
 
 Additive. Nothing here alters studies, analyses, points or images; an
 extraction hangs off the existing coordinate skeleton.
@@ -84,7 +85,7 @@ def upgrade():
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("base_study_id", sa.Text(), nullable=True),
         sa.Column("entity_class", sa.String(), nullable=True),
-        sa.Column("natural_key", sa.String(), nullable=True),
+        sa.Column("entity_hash", sa.String(64), nullable=False),
         sa.Column("analysis_id", sa.Text(), nullable=True),
         sa.Column("table_id", sa.Text(), nullable=True),
         sa.Column("first_seen_config_id", sa.Text(), nullable=True),
@@ -95,27 +96,22 @@ def upgrade():
         sa.ForeignKeyConstraint(["first_seen_config_id"], ["pipeline_configs.id"]),
         sa.ForeignKeyConstraint(["last_seen_config_id"], ["pipeline_configs.id"]),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "base_study_id",
-            "entity_class",
-            "natural_key",
-            name="uq_study_entity__natural_key",
-        ),
+        sa.UniqueConstraint("entity_hash", name="uq_study_entity__hash"),
     )
     _index("study_entities", ["id", "created_at", "updated_at"])
     _index("study_entities", ["base_study_id", "entity_class"])
 
     op.create_table(
         "study_entity_aliases",
+        sa.Column("entity_hash", sa.String(64), nullable=False),
         sa.Column("entity_id", sa.Text(), nullable=False),
-        sa.Column("entity_class", sa.String(), nullable=False),
-        sa.Column("natural_key", sa.String(), nullable=False),
         sa.Column("reason", sa.String(), nullable=True),
         sa.Column("config_id", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(["entity_id"], ["study_entities.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["config_id"], ["pipeline_configs.id"]),
-        sa.PrimaryKeyConstraint("entity_id", "entity_class", "natural_key"),
+        sa.PrimaryKeyConstraint("entity_hash"),
     )
+    _index("study_entity_aliases", ["entity_id"])
 
     op.create_table(
         "extraction_entity_links",
@@ -191,26 +187,9 @@ def upgrade():
     )
     _index("field_claim_evidence", ["id", "created_at", "updated_at", "claim_id"])
 
-    op.create_table(
-        "field_votes",
-        sa.Column("id", sa.Text(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("claim_id", sa.Text(), nullable=True),
-        sa.Column("user_id", sa.Text(), nullable=True),
-        sa.Column("verdict", sa.String(), nullable=True),
-        sa.Column("why", sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(["claim_id"], ["field_claims.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["user_id"], ["users.external_id"]),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("claim_id", "user_id", name="uq_field_vote__claim_user"),
-    )
-    _index("field_votes", ["id", "created_at", "updated_at", "claim_id", "user_id"])
-
 
 def downgrade():
     for table in (
-        "field_votes",
         "field_claim_evidence",
         "field_claim_runs",
         "field_claims",

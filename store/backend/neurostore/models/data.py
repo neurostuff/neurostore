@@ -1,3 +1,5 @@
+import hashlib
+import json
 import re
 
 import shortuuid
@@ -1070,10 +1072,12 @@ class PipelineEmbedding(db.Model):
 # ---------------------------------------------------------------------------
 # study_schema extraction: the truth layer
 #
-# Documents and claims, written by ingest and read by review. Not the query
-# surface -- see store/backend/docs/study-schema-ingestion-design.md, which
-# these implement. Nothing here replaces the coordinate tables; an extraction
-# hangs off the studies/analyses/points skeleton rather than duplicating it.
+# Documents and claims, written by ingest. Internal for now: no API schema,
+# route or admin view reads these tables (tests/test_truth_layer.py holds that),
+# and there is no feedback or voting table yet. Not the query surface -- see
+# store/backend/docs/study-schema-ingestion-design.md, which these implement.
+# Nothing here replaces the coordinate tables; an extraction hangs off the
+# studies/analyses/tables/points skeleton rather than duplicating it.
 # ---------------------------------------------------------------------------
 
 
@@ -1126,32 +1130,85 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
     )
 
 
+#: Bump to change what an entity hash covers. Entities hashed under an older
+#: version keep their rows; the pipeline aliases them when it re-identifies one.
+ENTITY_HASH_VERSION = "study-entity/1"
+
+
+def study_entity_hash(base_study_id, entity_class, identity):
+    """The `StudyEntity.entity_hash` of one schema entity in one base study.
+
+    A full sha256 (64 hex characters) over the version, the base study, the
+    class and what identifies the entity within the study. Base study and class
+    are inside the hash, so a hash names one entity across the whole database,
+    and two papers' coordinate sets never collide even when their tables share
+    ids and layouts. `identity` is:
+
+    - Analysis, CoordinateSet: `analysis_identity(...)` -- where in the paper the
+      coordinate set was read, never its points, so a re-parse that reads the
+      same place reaches the same hash and a null contrast with no points still
+      has one;
+    - Study: '';
+    - every other class: its name as printed.
+    """
+    payload = json.dumps(
+        [ENTITY_HASH_VERSION, base_study_id, entity_class, identity],
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def analysis_identity(origin, table_id=None, cells=(), spans=()):
+    """Where a coordinate set was read: origin, table and every cell or span.
+
+    The same locator study_schema's ParsedAnalysis.key is derived from --
+    `<row>:<column_group>` per cell, or `<start_char>-<end_char>` per text or
+    figure span, deduplicated, sorted and comma-joined -- but kept whole rather
+    than truncated to twelve hex characters, so the hash covers every cell.
+    """
+    if origin == "table":
+        if not table_id or not cells:
+            raise ValueError("a table coordinate set needs its table id and cells")
+        located = ",".join(f"{r}:{g}" for r, g in sorted({(int(r), int(g)) for r, g in cells}))
+    elif origin in ("text", "figure"):
+        if not spans:
+            raise ValueError(f"a {origin} coordinate set needs its spans")
+        located = ",".join(f"{a}-{b}" for a, b in sorted({(int(a), int(b)) for a, b in spans}))
+    else:
+        raise ValueError(f"unknown origin {origin!r}")
+    return f"{origin}|{table_id or ''}|{located}"
+
+
 class StudyEntity(BaseMixin, db.Model):
     """Durable identity for one schema entity within one base study.
 
     Positions and per-run local_ids are reminted by every extraction, so a
     reviewer's judgement cannot hang off them. This is the foreign key claims
-    point at instead.
+    point at instead, and `entity_hash` is how a coordinate set is identified.
     """
 
     __tablename__ = "study_entities"
     __table_args__ = (
-        sa.UniqueConstraint(
-            "base_study_id", "entity_class", "natural_key", name="uq_study_entity__natural_key"
-        ),
+        sa.UniqueConstraint("entity_hash", name="uq_study_entity__hash"),
     )
 
     base_study_id = db.Column(
         db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True
     )
+    #: The study_schema class: Study, Group, Task, Condition, Acquisition,
+    #: Device, Preprocessing, ModelEstimation, ModelTerm, InferenceSettings,
+    #: Measure, Assessment, Region, Arm, Timepoint, Table, Analysis or
+    #: CoordinateSet -- every class with its own identity in a record.
     entity_class = db.Column(db.String, index=True)
-    #: name; '' for Study; for Analysis, the coordinate parse's key:
-    #: '<table_id>#<h>', 'text#<h>' or 'figure#<h>', where h hashes the cells or
-    #: text spans the analysis was read from (study_schema ParsedAnalysis.key).
-    natural_key = db.Column(db.String)
+    #: study_entity_hash(base_study_id, entity_class, identity).
+    entity_hash = db.Column(db.String(64), nullable=False)
     analysis_id = db.Column(
         db.Text, db.ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True
     )
+    #: The existing `tables` row an Analysis, CoordinateSet or Table entity was
+    #: read from, resolved through (study_id, t_id). Set for a coordinate set
+    #: with no points too, which has no `analyses` row to reach a table through.
     table_id = db.Column(
         db.Text, db.ForeignKey("tables.id", ondelete="SET NULL"), nullable=True
     )
@@ -1164,23 +1221,25 @@ class StudyEntity(BaseMixin, db.Model):
 
 
 class StudyEntityAlias(db.Model):
-    """A superseded natural key for an entity the pipeline re-identified.
+    """A hash an entity used to have, kept so claims made against it still resolve.
 
-    No user-facing writer: users cannot rename or merge entities. This exists
-    for the case the pipeline creates itself, where a re-parse reads the same
-    analysis from different cells and it acquires a new key. Reordering alone
-    never re-keys an analysis: keys hash cells, not list positions.
+    No user-facing writer: users cannot rename or merge entities. The pipeline
+    writes one when it re-identifies an entity under a new hash -- a re-parse
+    reads the same analysis from different cells, or an extractor renames a
+    group -- and `reason` says which, so a deliberate re-identification can be
+    told from a bug. Reordering alone never re-hashes an analysis: the hash
+    covers cells, not list positions.
     """
 
     __tablename__ = "study_entity_aliases"
 
+    entity_hash = db.Column(db.String(64), primary_key=True)
     entity_id = db.Column(
         db.Text,
         db.ForeignKey("study_entities.id", ondelete="CASCADE"),
-        primary_key=True,
+        index=True,
+        nullable=False,
     )
-    entity_class = db.Column(db.String, primary_key=True)
-    natural_key = db.Column(db.String, primary_key=True)
     #: 'cells_changed' | 'renamed_by_extractor'
     reason = db.Column(db.String)
     config_id = db.Column(
@@ -1304,24 +1363,6 @@ class FieldClaimEvidence(BaseMixin, db.Model):
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
     )
-
-
-class FieldVote(BaseMixin, db.Model):
-    """One person's verdict on one claim."""
-
-    __tablename__ = "field_votes"
-    __table_args__ = (
-        sa.UniqueConstraint("claim_id", "user_id", name="uq_field_vote__claim_user"),
-    )
-
-    claim_id = db.Column(
-        db.Text, db.ForeignKey("field_claims.id", ondelete="CASCADE"), index=True
-    )
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    #: ns-validate's FIELD_VERDICTS: correct | wrong_value | wrong_evidence |
-    #: wrong_both | should_be_not_reported | missed_value | uncertain
-    verdict = db.Column(db.String)
-    why = db.Column(db.Text, nullable=True)
 
 
 from neurostore.models import image_count_listeners  # noqa E402

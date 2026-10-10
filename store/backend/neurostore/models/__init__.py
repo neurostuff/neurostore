@@ -13,7 +13,6 @@ from neurostore.models.data import (
     FieldClaim,
     FieldClaimEvidence,
     FieldClaimRun,
-    FieldVote,
     Image,
     ImageValueSummary,
     Pipeline,
@@ -62,5 +61,4 @@ __all__ = [
     "FieldClaim",
     "FieldClaimRun",
     "FieldClaimEvidence",
-    "FieldVote",
 ]
