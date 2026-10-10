@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
+from neurostore.ingest.study_schema import HISTORY_SOURCE, STUDY_SOURCE, ingest_upload
 from neurostore.models import (
     Analysis,
     Annotation,
@@ -25,6 +26,8 @@ from neurostore.services.neurostore_studyset_releases import (
     STUDYSET_SOURCE_ID,
     build_neurostore_studyset_release,
 )
+
+from neurostore.tests import study_schema_fixtures as fx
 
 pytestmark = pytest.mark.anyio
 
@@ -475,3 +478,303 @@ async def test_latest_returns_404_without_monthly_release(
     resp = await auth_client.get("/api/neurostore-studyset-releases/latest")
 
     assert resp.status_code == 404
+
+
+def _release_base(session, name, **base_fields):
+    user = User.query.first()
+    if user is None:
+        user = User(name="release-user", external_id="release-user")
+        session.add(user)
+    base = BaseStudy(
+        name=name, level="group", public=True, is_active=True, user=user, **base_fields
+    )
+    session.add(base)
+    session.flush()
+    return base, user
+
+
+def _coordinate_study(base, user, name, **fields):
+    fields = {"public": True, **fields}
+    study = Study(
+        name=name, level="group", has_coordinates=True, base_study=base, user=user, **fields
+    )
+    analysis = Analysis(name=f"{name} analysis", study=study, user=user, order=0)
+    analysis.points = [Point(x=1, y=2, z=3, space="MNI", user=user)]
+    return study, analysis
+
+
+def _selected_study_ids():
+    return {
+        row["study_id"] for row in release_service.select_coordinate_studies()
+    }
+
+
+def test_release_keeps_null_only_studies_and_exports_their_outcome(
+    app, session, tmp_path
+):
+    app.config["FILE_DIR"] = tmp_path
+    base, user = _release_base(session, "Null Base", has_coordinates=False)
+    study = Study(
+        name="Null Study",
+        level="group",
+        public=True,
+        has_coordinates=False,
+        source=STUDY_SOURCE,
+        base_study=base,
+        user=user,
+    )
+    null = Analysis(
+        name="Risk > Loss",
+        study=study,
+        user=user,
+        order=0,
+        role="result",
+        outcome="no_significant_effect",
+        metadata_={"parse_id": "p0"},
+    )
+    seed = Analysis(name="Seed", study=study, user=user, order=1, role="anchor")
+    seed.points = [Point(x=20, y=-4, z=-18, space="MNI", user=user)]
+    # A study with no coordinates and no null analysis stays out.
+    empty_base, _ = _release_base(session, "Empty Base", has_coordinates=False)
+    empty = Study(
+        name="Empty Study",
+        level="group",
+        public=True,
+        has_coordinates=False,
+        base_study=empty_base,
+        user=user,
+    )
+    Analysis(name="Unread", study=empty, user=user, order=0)
+    # Nor does one whose only pointless analysis found something: not a null.
+    found_base, _ = _release_base(session, "Found Base", has_coordinates=False)
+    found = Study(
+        name="Found Study",
+        level="group",
+        public=True,
+        has_coordinates=False,
+        base_study=found_base,
+        user=user,
+    )
+    Analysis(name="Found", study=found, user=user, order=0, outcome="significant_effect")
+    session.add_all([study, empty, found])
+    session.flush()
+
+    manifest = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+
+    assert set(manifest["studies"]) == {base.id}
+    shard = release_service.serialize_study_shard(study.id)
+    # The anchor defines an analysis; only the result enters the studyset.
+    assert [a["id"] for a in shard["analyses"]] == [null.id]
+    assert shard["analyses"][0]["points"] == []
+    # NiMARE's null contract: no points and metadata.outcome (study_schema's value).
+    assert shard["analyses"][0]["metadata"] == {
+        "parse_id": "p0",
+        "outcome": "no_significant_effect",
+    }
+    annotation = Annotation.query.filter_by(source_id=ANNOTATION_SOURCE_ID).one()
+    assert {note.analysis_id for note in annotation.annotation_analyses} == {null.id}
+
+    # ...and it survives NiMARE's parquet conversion, which compose-runner loads.
+    archive = tmp_path / "neurostore-studyset-releases/nightly"
+    with tarfile.open(archive / "neurostore-studyset-nightly.tar.gz", mode="r:gz") as tar:
+        member = next(m for m in tar.getmembers() if m.name.endswith("/metadata.parquet"))
+        metadata_df = pd.read_parquet(BytesIO(tar.extractfile(member).read()))
+    assert metadata_df["outcome"].tolist() == ["no_significant_effect"]
+
+
+def test_release_metadata_is_unchanged_without_an_outcome(session):
+    base, user = _release_base(session, "Plain Base", has_coordinates=True)
+    study, analysis = _coordinate_study(base, user, "Plain")
+    session.add(study)
+    session.flush()
+
+    shard = release_service.serialize_study_shard(study.id)
+    assert shard["analyses"][0]["metadata"] is None
+
+
+def test_release_excludes_retracted_papers_unless_asked(app, session, tmp_path):
+    app.config["FILE_DIR"] = tmp_path
+    kept_base, user = _release_base(session, "Kept", has_coordinates=True)
+    kept, _ = _coordinate_study(kept_base, user, "Kept")
+    retracted_base, _ = _release_base(
+        session,
+        "Retracted",
+        has_coordinates=True,
+        is_retracted=True,
+        retraction_notice={"kind": "retraction", "pmid": "1"},
+    )
+    retracted, _ = _coordinate_study(retracted_base, user, "Retracted")
+    unchecked_base, _ = _release_base(session, "Unchecked", has_coordinates=True)
+    unchecked, _ = _coordinate_study(unchecked_base, user, "Unchecked")
+    session.add_all([kept, retracted, unchecked])
+    kept_base.is_retracted = False
+    session.flush()
+
+    assert _selected_study_ids() == {kept.id, unchecked.id}
+    assert {
+        row["study_id"]
+        for row in release_service.select_coordinate_studies(include_retracted=True)
+    } == {kept.id, retracted.id, unchecked.id}
+
+    default = build_neurostore_studyset_release(settings=app.config, nightly=True)
+    assert default["written"][0]["include_retracted"] is False
+    assert retracted_base.id not in default["written"][0]["studies"]
+    included = build_neurostore_studyset_release(
+        settings=app.config, nightly=True, include_retracted=True
+    )
+    assert included["written"][0]["include_retracted"] is True
+    assert retracted_base.id in included["written"][0]["studies"]
+
+
+def test_release_prefers_the_pipeline_study_over_a_fresher_version(session):
+    base, user = _release_base(session, "Versions", has_coordinates=True)
+    pipeline, _ = _coordinate_study(
+        base,
+        user,
+        "Pipeline",
+        source=STUDY_SOURCE,
+        created_at=_dt(2024, 1, 1),
+        updated_at=_dt(2024, 1, 1),
+    )
+    fresher, _ = _coordinate_study(
+        base, user, "Fresher", created_at=_dt(2025, 1, 1), updated_at=_dt(2025, 6, 1)
+    )
+    history, _ = _coordinate_study(
+        base, user, "History", source=HISTORY_SOURCE, public=False
+    )
+    session.add_all([pipeline, fresher, history])
+    session.flush()
+
+    assert _selected_study_ids() == {pipeline.id}
+
+    # Without a pipeline study, the freshest version wins, as before.
+    pipeline.public = False
+    session.flush()
+    assert _selected_study_ids() == {fresher.id}
+
+
+def _archive_outcomes(tmp_path):
+    archive = tmp_path / "neurostore-studyset-releases/nightly"
+    with tarfile.open(archive / "neurostore-studyset-nightly.tar.gz", mode="r:gz") as tar:
+        member = next(m for m in tar.getmembers() if m.name.endswith("/metadata.parquet"))
+        metadata_df = pd.read_parquet(BytesIO(tar.extractfile(member).read()))
+    return metadata_df.get("outcome", pd.Series(dtype=object)).dropna().tolist()
+
+
+def test_record_after_its_parse_rebuilds_the_cached_shard(app, session, tmp_path):
+    app.config["FILE_DIR"] = tmp_path
+    loss = fx.table_analysis("tbl1", [0], "Loss > Neutral", [fx.point((1, 2, 3))])
+    null = fx.table_analysis("tbl2", [0], "Risk > Loss", [])
+    parse = fx.parse([loss, null])
+    summary = ingest_upload({"coordinate_parse": parse})
+    base_id = summary["base_study_id"]
+    first = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+    assert base_id in first["studies"]
+    assert _archive_outcomes(tmp_path) == []
+
+    analysis = fx.record_analysis("a0", null["key"], null["name"])
+    analysis["outcome"] = fx.extracted("no_significant_effect")
+    ingest_upload(
+        {"parse_id": parse["parse_id"], "base_study_id": base_id, "record": fx.record([analysis])}
+    )
+    second = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+    assert second["changed_base_study_ids"] == [base_id]
+    assert _archive_outcomes(tmp_path) == ["no_significant_effect"]
+
+    # The same record again changes nothing, and the shard is reused.
+    ingest_upload(
+        {"parse_id": parse["parse_id"], "base_study_id": base_id, "record": fx.record([analysis])}
+    )
+    third = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+    assert third["changed_base_study_ids"] == []
+
+
+def test_anchor_points_alone_do_not_make_a_study_eligible(session):
+    roi = fx.table_analysis(
+        "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor"
+    )
+    summary = ingest_upload({"coordinate_parse": fx.parse([roi])})
+    pipeline = Study.query.filter_by(
+        base_study_id=summary["base_study_id"], source=STUDY_SOURCE
+    ).one()
+    assert pipeline.public and pipeline.has_coordinates
+    # An ROI-only paper is not an empty study in the studyset.
+    assert pipeline.id not in _selected_study_ids()
+
+    # A curated version with results is chosen over the anchor-only pipeline Study.
+    curated, _ = _coordinate_study(pipeline.base_study, pipeline.user, "Curated")
+    session.add(curated)
+    session.flush()
+    assert _selected_study_ids() == {curated.id}
+
+
+def test_a_null_outcome_on_an_anchor_does_not_qualify(session):
+    roi = fx.table_analysis(
+        "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor"
+    )
+    analysis = fx.record_analysis("a0", roi["key"], roi["name"])
+    analysis["outcome"] = fx.extracted("no_significant_effect")
+    summary = ingest_upload(
+        {"coordinate_parse": fx.parse([roi]), "record": fx.record([analysis])}
+    )
+    pipeline = Study.query.filter_by(
+        base_study_id=summary["base_study_id"], source=STUDY_SOURCE
+    ).one()
+    assert pipeline.analyses[0].outcome is None
+    assert pipeline.id not in _selected_study_ids()
+
+    # Nor does an anchor's outcome column written some other way; a result's still does.
+    base, user = _release_base(session, "Anchor Null Base", has_coordinates=False)
+    study = Study(name="Anchor Null", level="group", public=True, base_study=base, user=user)
+    anchor = Analysis(
+        name="Seed",
+        study=study,
+        user=user,
+        order=0,
+        role="anchor",
+        outcome="no_significant_effect",
+    )
+    session.add(study)
+    session.flush()
+    assert study.id not in _selected_study_ids()
+    anchor.role = "result"
+    session.flush()
+    assert study.id in _selected_study_ids()
+
+
+def test_a_release_leaves_out_role_other_analyses(app, session, tmp_path):
+    app.config["FILE_DIR"] = tmp_path
+    loss = fx.table_analysis("tbl1", [0], "Loss > Neutral", [fx.point((1, 2, 3))])
+    other = fx.table_analysis(
+        "tbl5", [0], "Peak voxels", [fx.point((7, 8, 9))], role="other"
+    )
+    with_result = ingest_upload({"coordinate_parse": fx.parse([loss, other])})
+    other_only = ingest_upload(
+        {
+            "coordinate_parse": fx.parse(
+                [fx.table_analysis("tbl6", [0], "Clusters", [fx.point((4, 4, 4))], role="other")],
+                pmid="87654321",
+            )
+        }
+    )
+
+    manifest = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+
+    # The 'other' analysis is stored on the study but not exported.
+    study = Study.query.get(with_result["study_id"])
+    assert {a.source_id: a.role for a in study.analyses}[other["key"]] == "other"
+    shard = release_service.serialize_study_shard(study.id)
+    assert [a["name"] for a in shard["analyses"]] == [loss["name"]]
+    # A paper whose only coordinates are 'other' is not in the release.
+    assert with_result["base_study_id"] in manifest["studies"]
+    assert other_only["base_study_id"] not in manifest["studies"]

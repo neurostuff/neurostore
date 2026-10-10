@@ -7,6 +7,7 @@ from neurostore.exceptions.base import NeuroStoreException
 from neurostore.ingest.study_schema import (
     ALIAS_CELLS_CHANGED,
     HISTORY_SOURCE,
+    OUTCOME_WITHHELD_REASON,
     STUDY_SOURCE,
     UNKNOWN_KEY_REASON,
     _point_rows,
@@ -14,6 +15,7 @@ from neurostore.ingest.study_schema import (
 )
 from neurostore.models import (
     Analysis,
+    BaseStudy,
     FieldClaim,
     PipelineAnalysisResult,
     PipelineConfig,
@@ -23,6 +25,7 @@ from neurostore.models import (
     StudyEntityAlias,
 )
 from neurostore.models.data import analysis_identity, study_entity_hash
+from neurostore.services.neurostore_studyset_releases import is_studyset_analysis
 from neurostore.tests import study_schema_fixtures as fx
 
 # Table 1 of one paper: rows 0-3 are one contrast with both signs, rows 4-7 two more.
@@ -621,3 +624,245 @@ def test_a_concurrent_upload_taking_the_run_id_is_refused_as_reused(session, mon
     assert error.value.status_code == 422
     assert "RUN_ID_REUSED" in str(error.value.__dict__)
     assert PipelineStudyResult.query.filter_by(run_id="run-1").count() == 1
+
+
+# ---------------------------------------------------------------------------
+# outcome, role and retraction columns
+# ---------------------------------------------------------------------------
+
+NULL = fx.table_analysis("tbl3", [0], "Risk > Loss", [])
+ROI = fx.table_analysis(
+    "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor", from_prior_study=True
+)
+_ANALYSES.update({a["key"]: a for a in (NULL, ROI)})
+
+
+def _outcome_record(*pairs):
+    analyses = []
+    for i, (parsed, outcome) in enumerate(pairs):
+        analysis = fx.record_analysis(f"a{i}", parsed["key"], parsed["name"])
+        if outcome is not None:
+            analysis["outcome"] = fx.extracted(outcome)
+        analyses.append(analysis)
+    return fx.record(analyses)
+
+
+def _by_key(study):
+    return {a.source_id: a for a in study.analyses}
+
+
+def test_parse_writes_role_and_from_prior_study(session):
+    other = fx.table_analysis("tbl5", [0], "Peak voxel", [fx.point((2, 4, 6))], role="other")
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, ROI, other])})
+
+    analyses = _by_key(_current(summary["base_study_id"]))
+    assert (analyses[LOSS["key"]].role, analyses[LOSS["key"]].from_prior_study) == (
+        "result",
+        None,
+    )
+    assert (analyses[ROI["key"]].role, analyses[ROI["key"]].from_prior_study) == (
+        "anchor",
+        True,
+    )
+    # Columns, not a second copy in metadata.
+    assert "role" not in analyses[ROI["key"]].metadata_
+    assert "from_prior_study" not in analyses[ROI["key"]].metadata_
+    assert Analysis.query.filter_by(role="anchor").one().source_id == ROI["key"]
+    # `other` coordinates are kept as analyses, but are not results.
+    assert analyses[other["key"]].role == "other"
+    assert analyses[other["key"]].outcome is None
+    assert not is_studyset_analysis(analyses[other["key"]])
+
+
+def test_record_writes_outcome(session):
+    parse = fx.parse([LOSS, NULL])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record(
+                (LOSS, "significant_effect"), (NULL, "no_significant_effect")
+            ),
+        }
+    )
+    analyses = _by_key(_current(summary["base_study_id"]))
+    assert analyses[LOSS["key"]].outcome == "significant_effect"
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+    assert analyses[NULL["key"]].points == []
+
+    # A later record that does not report it clears the analysis's own outcome.
+    ingest_upload(
+        {
+            "parse_id": parse["parse_id"],
+            "base_study_id": summary["base_study_id"],
+            "record": _outcome_record((LOSS, None), (NULL, "no_significant_effect")),
+        }
+    )
+    assert analyses[LOSS["key"]].outcome is None
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+
+    # A re-applied parse keeps the record's outcome: the parse does not carry one.
+    ingest_upload({"coordinate_parse": parse})
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+
+
+def test_parsed_paper_corrections_mark_retraction(session):
+    notice = {"kind": "retraction", "pmid": "99999999", "doi": None}
+    summary = ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": fx.parsed_paper(corrections=[{"kind": "erratum"}, notice]),
+        }
+    )
+    base = BaseStudy.query.get(summary["base_study_id"])
+    assert base.is_retracted is True
+    assert base.retraction_notice == notice
+
+    # A parsed paper whose corrections were not looked up leaves the status alone.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": fx.parsed_paper()})
+    assert base.is_retracted is True
+
+    ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": fx.parsed_paper(corrections=[{"kind": "erratum"}]),
+        }
+    )
+    assert (base.is_retracted, base.retraction_notice) == (False, None)
+
+
+def test_parse_without_parsed_paper_leaves_retraction_unknown(session):
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS])})
+    assert BaseStudy.query.get(summary["base_study_id"]).is_retracted is None
+
+
+def test_inverse_half_takes_the_original_halfs_outcome(session):
+    revision, original, inverse, merged = _revision()
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    entry = _contrast(original, gain="positive")
+    entry["outcome"] = fx.extracted("significant_effect")
+    summary = ingest_upload({"coordinate_parse": revision, "record": fx.record([entry])})
+
+    by_key = _by_key(_current(summary["base_study_id"]))
+    assert by_key[original["key"]].outcome == "significant_effect"
+    assert by_key[inverse["key"]].outcome == "significant_effect"
+    assert by_key[merged["key"]].outcome is None
+
+
+def test_a_derived_outcome_never_overrides_the_analysis_own(session):
+    revision, original, inverse, _ = _revision()
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    own = _contrast(inverse, local_id="a0")
+    own["outcome"] = fx.extracted("no_significant_effect")
+    orig = _contrast(original, local_id="a1")
+    orig["outcome"] = fx.extracted("significant_effect")
+    # The inverse half's own entry comes first; the original half's derived one follows.
+    summary = ingest_upload({"coordinate_parse": revision, "record": fx.record([own, orig])})
+    by_key = _by_key(_current(summary["base_study_id"]))
+    assert by_key[original["key"]].outcome == "significant_effect"
+    assert by_key[inverse["key"]].outcome == "no_significant_effect"
+
+    # A derived entry with no outcome adds nothing: the inverse half keeps its own.
+    ingest_upload(
+        {
+            "parse_id": revision["parse_id"],
+            "base_study_id": summary["base_study_id"],
+            "record": fx.record([_contrast(original, local_id="a1")]),
+        }
+    )
+    assert by_key[original["key"]].outcome is None
+    assert by_key[inverse["key"]].outcome == "no_significant_effect"
+
+
+def _outcome_claims(base_study_id, key):
+    return {
+        (c.value, c.extraction_status)
+        for c in _claims(base_study_id, key)
+        if c.field_path == "outcome"
+    }
+
+
+def test_an_anchor_outcome_is_a_claim_not_a_column(session):
+    parse = fx.parse([NULL, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record(
+                (NULL, "no_significant_effect"), (ROI, "no_significant_effect")
+            ),
+        }
+    )
+    base_id = summary["base_study_id"]
+    analyses = _by_key(_current(base_id))
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+    # An ROI was not tested in this study: no outcome, but the record's is kept.
+    assert analyses[ROI["key"]].outcome is None
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+    assert summary["record"]["outcomes_withheld"] == [
+        {
+            "key": ROI["key"],
+            "role": "anchor",
+            "outcome": "no_significant_effect",
+            "reason": OUTCOME_WITHHELD_REASON,
+        }
+    ]
+
+
+def test_a_role_change_applies_or_withdraws_the_claimed_outcome(session):
+    parse = fx.parse([LOSS, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record((LOSS, None), (ROI, "no_significant_effect")),
+        }
+    )
+    base_id = summary["base_study_id"]
+    roi = _by_key(_current(base_id))[ROI["key"]]
+    assert roi.outcome is None
+
+    # A later parse reads the same set as a result: the claimed outcome applies.
+    as_result = {**ROI, "role": "result", "from_prior_study": None}
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    assert (roi.role, roi.outcome) == ("result", "no_significant_effect")
+    # Re-applying it keeps the outcome rather than looking it up again.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    assert roi.outcome == "no_significant_effect"
+
+    # Back to an anchor (a stored parse cannot be replayed, so a new one): the column
+    # clears and the claim stays.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, {**ROI, "description": "ROI"}])})
+    assert (roi.role, roi.outcome) == ("anchor", None)
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+
+
+def test_a_role_change_applies_only_the_latest_records_outcome(session):
+    parse = fx.parse([LOSS, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record((LOSS, None), (ROI, "no_significant_effect")),
+        }
+    )
+    base_id = summary["base_study_id"]
+    # The same config re-run reports no outcome for the ROI. The first run's claim stays,
+    # still linked to that config, but it is not what the latest run says.
+    ingest_upload(
+        {"coordinate_parse": parse, "record": _outcome_record((LOSS, None), (ROI, None))}
+    )
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+
+    as_result = {**ROI, "role": "result", "from_prior_study": None}
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    roi = _by_key(_current(base_id))[ROI["key"]]
+    assert (roi.role, roi.outcome) == ("result", None)
+
+    # Back to an anchor; a later run reports an outcome again, and that one applies.
+    as_anchor = fx.parse([LOSS, {**ROI, "description": "ROI"}])
+    ingest_upload({"coordinate_parse": as_anchor})
+    ingest_upload(
+        {
+            "coordinate_parse": as_anchor,
+            "record": _outcome_record((LOSS, None), (ROI, "significant_effect")),
+        }
+    )
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, {**as_result, "description": "R"}])})
+    assert (roi.role, roi.outcome) == ("result", "significant_effect")

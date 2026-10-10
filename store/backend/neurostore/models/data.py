@@ -221,6 +221,12 @@ class BaseStudy(BaseMixin, db.Model):
         db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
     )
     superseded_by = db.Column(db.Text, db.ForeignKey("base_studies.id"), nullable=True)
+    # From the parsed paper's bibliography.corrections; null until a parsed paper with
+    # corrections looked up is ingested. A retracted paper is kept, and releases leave
+    # it out unless asked. Not indexed: the release filters on IS NOT TRUE, nearly every
+    # row, so a scan is what the planner uses.
+    is_retracted = db.Column(db.Boolean, nullable=True)
+    retraction_notice = db.Column(JSONB, nullable=True)
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
@@ -693,6 +699,11 @@ class Analysis(BaseMixin, db.Model):
     has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
+    # study_schema values: the extraction record's Analysis.outcome (AnalysisOutcome),
+    # and the coordinate parse's role (CoordinateRole) and from_prior_study.
+    outcome = db.Column(db.String, nullable=True, index=True)
+    role = db.Column(db.String, nullable=True, index=True)
+    from_prior_study = db.Column(db.Boolean, nullable=True)
     points = relationship(
         "Point",
         backref=backref("analysis", passive_deletes=True),

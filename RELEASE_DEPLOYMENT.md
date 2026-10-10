@@ -246,6 +246,35 @@ Service ordering notes:
 - Compose needs Redis before `compose_worker`; the API container depends on the
   worker in `compose/docker-compose.yml`.
 
+## Studyset Release Contents
+
+`build-neurostore-studyset-release` exports one Study per base study:
+
+- **Which studies.** A study enters when it has a result coordinate, or when it has
+  an analysis with outcome `no_significant_effect` (a null-only paper with no points
+  is kept). Anchor coordinates (ROIs, seeds) alone do not qualify.
+- **Retracted papers** (`base_studies.is_retracted` true) are left out unless the
+  build is run with `--include-retracted`; the manifest records `include_retracted`.
+  Papers whose retraction status is unknown (null) stay in.
+- **Anchors** (`analyses.role = 'anchor'`) are left out of the shards and the
+  annotation. Analyses with no role (every pre-pipeline analysis) are kept.
+- **Outcome.** An analysis with an outcome gets `metadata.outcome`; a null analysis
+  ships as `points: []` plus `metadata.outcome = "no_significant_effect"`.
+- **Version choice** (`release_version_order` in
+  `services/neurostore_studyset_releases.py`): the public pipeline Study
+  (`source = "study_schema"`) wins over any other version of the paper when it is
+  eligible; otherwise the freshest version wins. Whether a curated version should
+  win instead is an open decision; that function is the one place to change it.
+
+Cached study shards are rebuilt only when the selected Study changes. After
+deploying the outcome/role/retraction migration (`f1a3c5e7b9d2`), run one build with
+`--clear-cache` so shards written before it get `metadata.outcome` and drop anchors:
+
+```bash
+docker compose run --rm --no-deps store_release_worker \
+  manage build-neurostore-studyset-release --nightly --clear-cache
+```
+
 ## Post-Deploy Verification
 
 Check container state:

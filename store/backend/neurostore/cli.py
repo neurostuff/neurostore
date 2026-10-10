@@ -607,12 +607,19 @@ def check_base_study_metadata_outbox(max_pending, max_oldest_seconds):
 @click.option("--force-monthly/--no-force-monthly", default=False, show_default=True)
 @click.option("--version", "monthly_version", default=None)
 @click.option("--clear-cache/--no-clear-cache", default=False, show_default=True)
+@click.option(
+    "--include-retracted/--exclude-retracted",
+    default=False,
+    show_default=True,
+    help="Keep papers marked retracted in the release.",
+)
 def build_neurostore_studyset_release(
     nightly,
     monthly_if_due,
     force_monthly,
     monthly_version,
     clear_cache,
+    include_retracted,
 ):
     def _run(app, _db):
         from neurostore.services.neurostore_studyset_releases import (
@@ -626,6 +633,7 @@ def build_neurostore_studyset_release(
             force_monthly=force_monthly,
             version=monthly_version,
             clear_cache=clear_cache,
+            include_retracted=include_retracted,
         )
         if clear_cache:
             click.echo("Cleared shard cache.")
