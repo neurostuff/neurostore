@@ -18,12 +18,12 @@ def cells(*rows, column_group=0):
 
 
 def point(xyz, sign="positive", t=3.5, space=None):
-    return {
-        "coordinates": list(xyz),
-        "sign": sign,
-        "space": space,
-        "values": [{"kind": "t", "value": t if sign != "negative" else -t}],
-    }
+    """A point whose values give ``sign``; an unsigned one has a p value only."""
+    if sign == "unsigned":
+        values = [{"kind": "p", "value": 0.001}]
+    else:
+        values = [{"kind": "t", "value": t if sign != "negative" else -t}]
+    return {"coordinates": list(xyz), "space": space, "values": values}
 
 
 def table_analysis(table_id, rows, name, points, role="result", space="MNI", **extra):

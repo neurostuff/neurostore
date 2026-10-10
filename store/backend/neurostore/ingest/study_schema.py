@@ -27,6 +27,12 @@ copy naming its origin in ``carried_from``. A new original parse that reads an a
 from other cells (same table and name, new key) re-keys its entities instead, keeping the
 old key as a ``cells_changed`` alias so a record that read the older parse still resolves.
 Record keys that are positional rather than content keys are held, never made entities.
+
+Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
+refused (NOT_CURRENT). A record that read an older parse reports the keys that resolve to
+history as ``superseded`` (a FAILURE row), and its claims are carried through the revisions
+since. The sign of a contrast lives on its condition weights: the negative half of a sign
+split gets its positive half's conditions, negated.
 """
 
 import hashlib
@@ -38,6 +44,7 @@ import sqlalchemy as sa
 from jsonschema import validators
 from study_schema import keys as parse_keys
 from study_schema.jsonschema import load as load_json_schema
+from study_schema.statistics import point_side
 
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
@@ -49,7 +56,9 @@ from neurostore.exceptions.utils.error_helpers import (
 )
 from neurostore.models import (
     Analysis,
+    AnalysisConditions,
     BaseStudy,
+    Condition,
     ExtractionEntityLink,
     FieldClaim,
     FieldClaimEvidence,
@@ -93,6 +102,11 @@ _ANALYSIS_COLUMNS = {"key", "name", "description", "points"}
 
 # StudyEntityAlias.reason when a new parse reads the same analysis from other cells.
 ALIAS_CELLS_CHANGED = "cells_changed"
+SUPERSEDED_REASON = (
+    "the record read an older parse; a revision since replaced this key, and its claims "
+    "are carried to replaced_by"
+)
+DROPPED_REASON = "the record read an older parse that held this key; the current one does not"
 
 # A content key ends in 12 hex digits of its cells' or spans' hash (study_schema.keys).
 # pondie records still carry positional ``<table_id>#<ordinal>`` / ``text#<N>`` keys until
@@ -159,6 +173,25 @@ def ingest_upload(body, user=None):
         "parse_id": parse_id,
     }
     study = _current_study(base_study)
+    current_parse_id = study.source_id if study is not None else None
+
+    if (
+        parse is not None
+        and current_parse_id not in (None, parse_id)
+        and _stored_parse(base_study, parse_id) is not None
+    ):
+        # Only a new parse supersedes the current one; replaying an older one would undo
+        # the revisions made since.
+        abort_unprocessable(
+            "This parse is stored and is no longer the paper's current parse.",
+            [
+                make_field_error(
+                    "coordinate_parse/parse_id",
+                    {"parse_id": parse_id, "current": current_parse_id},
+                    code="NOT_CURRENT",
+                )
+            ],
+        )
 
     if parse is not None:
         study = study or _create_study(base_study, parsed_paper, user)
@@ -175,7 +208,7 @@ def ingest_upload(body, user=None):
                 [make_field_error("parse_id", parse_id, code="UNKNOWN_PARSE")],
             )
         summary["record"] = _ingest_record(
-            base_study, record, stored_parse, body.get("pipeline") or {}
+            base_study, study, record, stored_parse, body.get("pipeline") or {}, user
         )
 
     if study is not None:
@@ -307,6 +340,7 @@ def _resolve_base_study(body, parse, parsed_paper, create):
             abort_not_found("BaseStudy", base_study_id)
         return base_study
 
+    _lock_identifiers(identifiers)
     for field in ("doi", "pmid", "pmcid"):
         value = identifiers.get(field)
         if not value:
@@ -340,6 +374,23 @@ def _resolve_base_study(body, parse, parsed_paper, create):
     db.session.add(base_study)
     db.session.flush()
     return base_study
+
+
+def _lock_identifiers(identifiers):
+    """Serialize lookups of one paper until commit.
+
+    BaseStudy has no unique doi/pmid/pmcid, so two first uploads of a paper would each
+    create one. Locks are taken in one order, so uploads sharing identifiers cannot deadlock.
+    """
+    for key in sorted(
+        f"{field}:{identifiers[field]}"
+        for field in ("doi", "pmid", "pmcid")
+        if identifiers.get(field)
+    ):
+        db.session.execute(
+            sa.text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+            {"key": f"study_schema.base_study:{key}"},
+        )
 
 
 def _bibliography(parsed_paper):
@@ -616,9 +667,10 @@ def _analysis_metadata(parsed, parse_id):
         if key not in _ANALYSIS_COLUMNS and value is not None
     }
     metadata["parse_id"] = parse_id
-    # Point has no column for it; the facet projection reads the count from here.
+    # Points with no directional statistic, so no side of their own; derived from their
+    # values. The facet projection reads the count from here.
     metadata["unsigned_points"] = sum(
-        1 for point in parsed.get("points") or [] if point["sign"] == "unsigned"
+        1 for point in parsed.get("points") or [] if point_side(point.get("values")) is None
     )
     return metadata
 
@@ -830,6 +882,13 @@ def _carry_claims(base_study, study, revision):
 
 
 def _copy_claims(source, target):
+    """Copy ``source``'s claims onto ``target``; return (claims made, votes added).
+
+    A claim whose value ``target`` already holds is merged into that claim rather than
+    copied: its runs, evidence and votes are added where missing, so two sources that
+    collapse into one claim, or a vote cast after an earlier carry, keep everything.
+    ``carried_from`` names the first origin.
+    """
     existing = {
         (c.field_path, c.value_hash): c
         for c in FieldClaim.query.filter_by(entity_id=target.id)
@@ -838,48 +897,68 @@ def _copy_claims(source, target):
     for claim in FieldClaim.query.filter_by(entity_id=source.id).order_by(
         FieldClaim.created_at, FieldClaim.id
     ):
-        # Two copies of one value collapse into one claim (carried_from names the
-        # first); a copy already made by an earlier upload of this revision is skipped.
-        if (claim.field_path, claim.value_hash) in existing:
-            continue
-        copy = FieldClaim(
-            entity_id=target.id,
-            field_path=claim.field_path,
-            schema_version=claim.schema_version,
-            value=claim.value,
-            extraction_status=claim.extraction_status,
-            value_source=claim.value_source,
-            value_hash=claim.value_hash,
-            origin=claim.origin,
-            origin_user_id=claim.origin_user_id,
-            carried_from=claim.id,
-        )
-        db.session.add(copy)
-        db.session.flush()
-        existing[(claim.field_path, claim.value_hash)] = copy
-        copied += 1
-        for run in FieldClaimRun.query.filter_by(claim_id=claim.id):
-            db.session.add(FieldClaimRun(claim_id=copy.id, config_id=run.config_id))
-        for evidence in FieldClaimEvidence.query.filter_by(claim_id=claim.id):
-            db.session.add(
-                FieldClaimEvidence(
-                    claim_id=copy.id,
-                    status=evidence.status,
-                    source=evidence.source,
-                    spans=evidence.spans,
-                    origin=evidence.origin,
-                    origin_user_id=evidence.origin_user_id,
-                    config_id=evidence.config_id,
-                )
+        copy = existing.get((claim.field_path, claim.value_hash))
+        if copy is None:
+            copy = FieldClaim(
+                entity_id=target.id,
+                field_path=claim.field_path,
+                schema_version=claim.schema_version,
+                value=claim.value,
+                extraction_status=claim.extraction_status,
+                value_source=claim.value_source,
+                value_hash=claim.value_hash,
+                origin=claim.origin,
+                origin_user_id=claim.origin_user_id,
+                carried_from=claim.id,
             )
-        for vote in FieldVote.query.filter_by(claim_id=claim.id):
-            db.session.add(
-                FieldVote(
-                    claim_id=copy.id, user_id=vote.user_id, verdict=vote.verdict, why=vote.why
-                )
-            )
-            votes += 1
+            db.session.add(copy)
+            db.session.flush()
+            existing[(claim.field_path, claim.value_hash)] = copy
+            copied += 1
+        votes += _merge_claim(claim, copy)
     return copied, votes
+
+
+def _evidence_key(evidence):
+    return (evidence.status, evidence.source, _canonical(evidence.spans), evidence.config_id)
+
+
+def _merge_claim(claim, copy):
+    """Add ``claim``'s runs, evidence and votes to ``copy`` where it lacks them."""
+    runs = {r.config_id for r in FieldClaimRun.query.filter_by(claim_id=copy.id)}
+    for run in FieldClaimRun.query.filter_by(claim_id=claim.id):
+        if run.config_id not in runs:
+            db.session.add(FieldClaimRun(claim_id=copy.id, config_id=run.config_id))
+            runs.add(run.config_id)
+    held = {_evidence_key(e) for e in FieldClaimEvidence.query.filter_by(claim_id=copy.id)}
+    for evidence in FieldClaimEvidence.query.filter_by(claim_id=claim.id):
+        if _evidence_key(evidence) in held:
+            continue
+        held.add(_evidence_key(evidence))
+        db.session.add(
+            FieldClaimEvidence(
+                claim_id=copy.id,
+                status=evidence.status,
+                source=evidence.source,
+                spans=evidence.spans,
+                origin=evidence.origin,
+                origin_user_id=evidence.origin_user_id,
+                config_id=evidence.config_id,
+            )
+        )
+    voters = {v.user_id for v in FieldVote.query.filter_by(claim_id=copy.id)}
+    added = 0
+    for vote in FieldVote.query.filter_by(claim_id=claim.id).order_by(FieldVote.created_at):
+        # One vote per user per claim: a user who already voted on the target keeps it.
+        if vote.user_id in voters:
+            continue
+        voters.add(vote.user_id)
+        db.session.add(
+            FieldVote(claim_id=copy.id, user_id=vote.user_id, verdict=vote.verdict, why=vote.why)
+        )
+        added += 1
+    db.session.flush()
+    return added
 
 
 # ---------------------------------------------------------------------------
@@ -887,7 +966,7 @@ def _copy_claims(source, target):
 # ---------------------------------------------------------------------------
 
 
-def _ingest_record(base_study, record, parse, pipeline):
+def _ingest_record(base_study, study, record, parse, pipeline, user):
     metadata = record["extraction_metadata"]
     schema_version = load_json_schema("extraction-record").get("version")
     config = _get_config(
@@ -919,7 +998,11 @@ def _ingest_record(base_study, record, parse, pipeline):
     result.status = "SUCCESS"
     result.date_executed = executed
 
-    analyses = {"resolved": 0, "unresolved": [], "parked": []}
+    # A record that read an older parse: its keys the revisions since split or merged
+    # resolve to history, and its claims are carried on to their replacements.
+    revisions = _revisions_since(base_study, parse["parse_id"], study)
+    analyses = {"resolved": 0, "unresolved": [], "parked": [], "superseded": []}
+    conditions = {}
     for extracted in record.get("analyses") or []:
         key = (extracted.get("source_table_analysis") or {}).get("value")
         positional = bool(key) and not is_content_key(key)
@@ -938,12 +1021,30 @@ def _ingest_record(base_study, record, parse, pipeline):
             db.session.add(row)
         row.analysis_id = analysis.id if analysis is not None else None
         row.result_data = extracted
-        # A key that resolves to no stored analysis is held, never dropped: an ingest
+        superseded = analysis is not None and analysis.study_id != study.id
+        # A key that resolves to no current analysis is held, never dropped: an ingest
         # error on that analysis, not a quiet null.
-        row.status = "SUCCESS" if analysis is not None else "FAILURE"
+        row.status = "SUCCESS" if analysis is not None and not superseded else "FAILURE"
         row.date_executed = executed
-        if analysis is not None:
+        if superseded:
+            replaced_by = _replaced_by(revisions, analysis.source_id)
+            analyses["superseded"].append(
+                {
+                    "key": key,
+                    "replaced_by": replaced_by,
+                    "reason": SUPERSEDED_REASON if replaced_by else DROPPED_REASON,
+                }
+            )
+            current = {a.source_id: a for a in study.analyses}
+            for new_key in replaced_by:
+                if new_key in current:
+                    _want_conditions(conditions, current[new_key], extracted, derived=True)
+        elif analysis is not None:
             analyses["resolved"] += 1
+            _want_conditions(conditions, analysis, extracted, derived=False)
+            partner = _negative_half(study, analysis)
+            if partner is not None:
+                _want_conditions(conditions, partner, extracted, derived=True)
         elif positional:
             analyses["parked"].append({"key": key, "reason": POSITIONAL_KEY_REASON})
         else:
@@ -951,7 +1052,123 @@ def _ingest_record(base_study, record, parse, pipeline):
 
     claims = _ingest_claims(base_study, record, config, schema_version)
     db.session.flush()
-    return {"config_id": config.id, "analyses": analyses, "claims": claims}
+    carried = {"claims": 0, "votes": 0}
+    for revision in revisions:
+        for name, count in _carry_claims(base_study, study, revision).items():
+            carried[name] += count
+    for analysis, weights, _ in conditions.values():
+        _set_conditions(analysis, weights, user)
+    db.session.flush()
+    summary = {"config_id": config.id, "analyses": analyses, "claims": claims}
+    if revisions:
+        summary["carried"] = carried
+    return summary
+
+
+def _revisions_since(base_study, parse_id, study):
+    """The revisions from ``parse_id`` to the current parse, oldest first."""
+    chain = []
+    current = study.source_id if study is not None else None
+    while current is not None and current != parse_id:
+        stored = _stored_parse(base_study, current)
+        if stored is None or not stored.get("revision_of"):
+            # Reached through a re-parse, not revisions: no verdicts map the old keys.
+            return []
+        chain.append(stored)
+        current = stored["revision_of"]
+    return list(reversed(chain)) if current == parse_id else []
+
+
+def _replaced_by(revisions, key):
+    """The keys ``key`` became through the split and merge verdicts of ``revisions``."""
+    keys = [key]
+    for revision in revisions:
+        mapped = {
+            v["key"]: v["replaced_by"]
+            for v in revision.get("verdicts") or []
+            if v["verdict"] in ("split", "merge")
+        }
+        keys = [new for k in keys for new in mapped.get(k, [k])]
+    return sorted(set(keys)) if keys != [key] else []
+
+
+# ---------------------------------------------------------------------------
+# conditions: the sign of a contrast lives on its condition weights
+# ---------------------------------------------------------------------------
+
+
+def _split(analysis):
+    return (analysis.metadata_ or {}).get("split") or {}
+
+
+def _negative_half(study, analysis):
+    """The negative half of a sign split whose positive half is ``analysis``."""
+    split = _split(analysis)
+    if split.get("direction") != "positive":
+        return None
+    return next(
+        (
+            a
+            for a in study.analyses
+            if _split(a).get("group") == split.get("group")
+            and _split(a).get("direction") == "negative"
+        ),
+        None,
+    )
+
+
+def _cell_weights(extracted):
+    """(condition name, weight) per directional cell of a record analysis's effect."""
+    weights = {}
+    for cell in ((extracted.get("effect") or {}).get("cells")) or []:
+        direction = (cell.get("direction") or {}).get("value")
+        if direction not in ("positive", "negative"):
+            continue
+        # A slope names no level; it has no condition to weight.
+        name = (cell.get("label") or {}).get("value") or (cell.get("level") or {}).get("value")
+        if name:
+            weights.setdefault(name, 1.0 if direction == "positive" else -1.0)
+    return weights
+
+
+def _want_conditions(wanted, analysis, extracted, derived):
+    """Queue ``extracted``'s conditions for ``analysis``.
+
+    ``derived`` conditions come from another analysis's cells: the positive half of a
+    split, or a key a revision replaced. On a negative half they are negated, since the
+    negative half is the inverse contrast. An analysis's own record entry wins over them.
+    """
+    weights = _cell_weights(extracted)
+    if not weights or (derived and analysis.id in wanted and not wanted[analysis.id][2]):
+        return
+    if derived and _split(analysis).get("direction") == "negative":
+        weights = {name: -weight for name, weight in weights.items()}
+    wanted[analysis.id] = (analysis, weights, derived)
+
+
+def _set_conditions(analysis, weights, user):
+    by_name = {}
+    for name in weights:
+        condition = (
+            Condition.query.filter_by(name=name).order_by(Condition.created_at).first()
+        )
+        if condition is None:
+            condition = Condition(name=name, user=user)
+            db.session.add(condition)
+        by_name[name] = condition
+    db.session.flush()
+    held = {ac.condition_id: ac for ac in analysis.analysis_conditions}
+    wanted = {by_name[name].id: weight for name, weight in weights.items()}
+    for condition_id, link in held.items():
+        if condition_id not in wanted:
+            analysis.analysis_conditions.remove(link)
+    for condition_id, weight in wanted.items():
+        if condition_id in held:
+            held[condition_id].weight = weight
+        else:
+            analysis.analysis_conditions.append(
+                AnalysisConditions(condition_id=condition_id, weight=weight)
+            )
 
 
 def _ingest_claims(base_study, record, config, schema_version):

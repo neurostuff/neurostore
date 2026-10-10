@@ -1,6 +1,7 @@
 """The study_schema ingester: a parse, a parse with a record, a record, a revision."""
 
 import pytest
+import sqlalchemy as sa
 
 from neurostore.exceptions.base import NeuroStoreException
 from neurostore.ingest.study_schema import (
@@ -339,3 +340,145 @@ async def test_upload_endpoint_is_admin_only(admin_client, auth_client, session)
     body = response.json()
     assert body["kind"] == "parse"
     assert Study.query.get(body["study_id"]).source == STUDY_SOURCE
+
+
+def _defined(*pairs):
+    """A record whose analyses give each key the definition paired with it."""
+    analyses = []
+    for i, (parsed, definition) in enumerate(pairs):
+        analysis = fx.record_analysis(f"a{i}", parsed["key"], parsed["name"])
+        analysis["definition"] = fx.extracted(definition)
+        analyses.append(analysis)
+    return fx.record(analyses)
+
+
+def test_merge_keeps_votes_on_a_claim_that_collapses(session):
+    for name in ("first", "second"):
+        session.add(User(name=name, external_id=f"{name}-id"))
+    session.flush()
+    first = ingest_upload(
+        {"coordinate_parse": ORIGINAL, "record": _defined((LOSS, "same"), (RISK, "same"))}
+    )
+    base_study_id = first["base_study_id"]
+
+    def definition(key):
+        return next(c for c in _claims(base_study_id, key) if c.field_path == "definition")
+
+    risk = definition(RISK["key"])
+    session.add(FieldVote(claim_id=risk.id, user_id="first-id", verdict="down"))
+    session.flush()
+    revision, _, _, merged = _revision()
+    ingest_upload({"coordinate_parse": revision})
+
+    # Risk's definition collapses into Loss's copy, and brings its vote and runs with it.
+    target = definition(merged["key"])
+    assert target.carried_from == definition(LOSS["key"]).id
+    assert [(v.user_id, v.verdict) for v in FieldVote.query.filter_by(claim_id=target.id)] == [
+        ("first-id", "down")
+    ]
+
+    # A vote cast after the carry reaches the copy on re-upload, once.
+    session.add(FieldVote(claim_id=risk.id, user_id="second-id", verdict="up"))
+    session.flush()
+    for _ in range(2):
+        ingest_upload({"coordinate_parse": revision})
+    assert sorted(v.user_id for v in FieldVote.query.filter_by(claim_id=target.id)) == [
+        "first-id",
+        "second-id",
+    ]
+
+
+def test_replaying_a_superseded_parse_is_refused(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    revision, *_ = _revision()
+    ingest_upload({"coordinate_parse": revision})
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": ORIGINAL})
+    assert error.value.status_code == 422
+    assert "NOT_CURRENT" in str(error.value.to_payload())
+    assert _current(base_study_id).source_id == revision["parse_id"]
+    gains = Analysis.query.join(Study).filter(
+        Study.base_study_id == base_study_id, Analysis.source_id == GAIN["key"]
+    )
+    assert gains.count() == 1
+
+
+def test_record_of_a_revised_parse_is_superseded_and_carried(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    revision, positive, negative, _ = _revision()
+    ingest_upload({"coordinate_parse": revision})
+
+    summary = ingest_upload(
+        {
+            "record": _record(GAIN),
+            "parse_id": ORIGINAL["parse_id"],
+            "base_study_id": base_study_id,
+        }
+    )
+    analyses = summary["record"]["analyses"]
+    assert analyses["resolved"] == 0
+    assert analyses["superseded"][0]["key"] == GAIN["key"]
+    assert analyses["superseded"][0]["replaced_by"] == sorted(
+        [positive["key"], negative["key"]]
+    )
+    row = PipelineAnalysisResult.query.filter_by(source_table_analysis=GAIN["key"]).one()
+    assert row.status == "FAILURE"
+    gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
+    for half in (positive, negative):
+        assert {c.carried_from for c in _claims(base_study_id, half["key"])} == gain_claims
+
+
+def test_base_study_lookup_holds_an_advisory_lock(session):
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    locks = session.execute(
+        sa.text(
+            "SELECT count(*) FROM pg_locks "
+            "WHERE locktype = 'advisory' AND pid = pg_backend_pid()"
+        )
+    ).scalar()
+    # The parse names a pmid only: one lock, held until the upload's transaction ends.
+    assert locks == 1
+
+
+def _contrast(parsed, local_id="a0", **levels):
+    analysis = fx.record_analysis(local_id, parsed["key"], parsed["name"])
+    analysis["effect"]["cells"] = [
+        {
+            "term": "condition",
+            "level": fx.extracted(level),
+            "direction": fx.extracted(direction),
+        }
+        for level, direction in levels.items()
+    ]
+    return analysis
+
+
+def _weights(analysis):
+    return {ac.condition.name: ac.weight for ac in analysis.analysis_conditions}
+
+
+def test_negative_half_takes_the_conditions_negated(session):
+    revision, positive, negative, merged = _revision()
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    summary = ingest_upload(
+        {
+            "coordinate_parse": revision,
+            "record": fx.record([_contrast(positive, gain="positive", neutral="negative")]),
+        }
+    )
+    by_key = {a.source_id: a for a in _current(summary["base_study_id"]).analyses}
+    assert _weights(by_key[positive["key"]]) == {"gain": 1.0, "neutral": -1.0}
+    # Sign lives on the condition: the inverse contrast is the same conditions, negated.
+    assert _weights(by_key[negative["key"]]) == {"gain": -1.0, "neutral": 1.0}
+    assert _weights(by_key[merged["key"]]) == {}
+    assert by_key[negative["key"]].metadata_["split"]["direction"] == "negative"
+
+
+def test_unsigned_points_are_counted_from_values(session):
+    parsed = fx.table_analysis(
+        "tbl3", [0, 1], "Any effect", [fx.point((1, 1, 1)), fx.point((2, 2, 2), sign="unsigned")]
+    )
+    summary = ingest_upload({"coordinate_parse": fx.parse([parsed])})
+    (analysis,) = _current(summary["base_study_id"]).analyses
+    assert analysis.metadata_["unsigned_points"] == 1
