@@ -1197,6 +1197,9 @@ def analysis_identity(origin, table_id=None, cells=(), spans=(), *, name):
     characters, so the hash covers every cell. The name is part of it because
     two contrasts can be read from the same cells or the same sentence
     ("PO > Sil" and "PC > Sil"); `name` None is the empty name.
+
+    Returns ``[origin, table_id, locator, name]``, a list rather than one joined
+    string, so a `|` in a table id or a name cannot be read as a separator.
     """
     if origin == "table":
         located = cell_locator(cells)
@@ -1208,7 +1211,7 @@ def analysis_identity(origin, table_id=None, cells=(), spans=(), *, name):
             raise ValueError(f"a {origin} coordinate set needs its spans")
     else:
         raise ValueError(f"unknown origin {origin!r}")
-    return f"{origin}|{table_id or ''}|{located}|{normalize_name(name or '')}"
+    return [origin, table_id or "", located, normalize_name(name or "")]
 
 
 def entity_name_key(name):

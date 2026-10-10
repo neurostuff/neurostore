@@ -44,7 +44,7 @@ dependencies = [
     "sentry-sdk~=2.71",
     # study_schema.keys' cell and span locators and normalize_name, which entity
     # hashes cover. Pinned to neurostuff/study_schema#28; repin to main once it merges.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@1dd7d97bc81bcf280c98290b3bdaf1497fe3aa03",
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@df25f92e39bd845ca021a81e1d147241264f7951",
 ]
 
 [tool.setuptools.packages.find]

@@ -73,13 +73,13 @@ def test_the_hash_separates_papers_classes_and_cells():
 def test_the_hash_ignores_cell_order_and_repeats():
     a = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0), (4, 0)], name="PO > Sil")
     b = analysis_identity("table", "tbl2", cells=[(3, 0), (4, 0)], name="PO > Sil")
-    assert a == b == "table|tbl2|3:0,4:0|po > sil"
+    assert a == b == ["table", "tbl2", "3:0,4:0", "po>sil"]
 
 
 def test_text_and_figure_sets_hash_their_spans():
     spans = [(1288, 1300), (1200, 1288)]
     text = analysis_identity("text", spans=spans, name="PO > Sil")
-    assert text == "text||1200-1288,1288-1300|po > sil"
+    assert text == ["text", "", "1200-1288,1288-1300", "po>sil"]
     figure = analysis_identity("figure", spans=[(5, 9)], name="PO > Sil")
     assert figure != analysis_identity("text", spans=[(5, 9)], name="PO > Sil")
 
@@ -121,11 +121,11 @@ def test_the_locator_is_the_string_the_analysis_key_hashes():
     from study_schema.keys import span_key, table_key
 
     located = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0)], name="PO > Sil")
-    located = located.split("|", 2)[2]
+    located = "|".join(located[2:])
     assert table_key("tbl2", [(3, 0), (4, 0)], "PO > Sil") == (
         "tbl2#" + hashlib.sha1(located.encode()).hexdigest()[:12]
     )
-    located = analysis_identity("text", spans=[(5, 9)], name="PO > Sil").split("|", 2)[2]
+    located = "|".join(analysis_identity("text", spans=[(5, 9)], name="PO > Sil")[2:])
     assert span_key("text", [(5, 9)], "PO > Sil") == (
         "text#" + hashlib.sha1(located.encode()).hexdigest()[:12]
     )

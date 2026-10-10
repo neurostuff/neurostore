@@ -16,6 +16,7 @@ from neurostore.ingest.study_entities import (
     PARENT_REHASHED,
     RENAMED_BY_EXTRACTOR,
     VERSION_BUMPED,
+    StaleEntityHashes,
     record_entities,
     rehash_entities,
     rehash_entity,
@@ -268,7 +269,7 @@ def test_a_renamed_group_is_a_candidate_and_keeps_its_claims(base_study):
         {
             "class": "Group",
             "from": "controls",
-            "to": "healthy volunteers",
+            "to": "healthyvolunteers",
             "entity_id": controls.id,
             "candidate_id": volunteers.id,
         }
@@ -321,7 +322,7 @@ def test_renaming_a_task_with_two_conditions(base_study):
     again = _sync(base_study, renamed)
     assert again["created"] == 3
     candidates = [(c["from"], c["to"]) for c in again["rename_candidates"]]
-    assert candidates == [("n-back", "n-back task")]
+    assert candidates == [("n-back", "n-backtask")]
     assert all(_claims(condition) == 1 for condition in conditions)
     assert StudyEntity.query.filter_by(parent_id=task.id).count() == 2
 
@@ -334,7 +335,7 @@ def test_rehashing_a_task_carries_its_conditions(base_study):
     old_hash = condition.entity_hash
 
     record["tasks"][0]["name"] = {"value": "n-back task"}
-    identity = ["n-back task", 0]
+    identity = ["n-backtask", 0]
     new_hash = data.study_entity_hash(
         base_study.id, "Task", identity, _entity(first, "").entity_hash
     )
@@ -437,7 +438,9 @@ def test_a_name_differing_only_in_case_or_dash_is_the_same_entity(base_study):
     assert both[3] == ["coordinate_sets[1]"]
 
 
-def _stored(base_study, entity_class, identity, version, parent=None, analysis=None):
+def _stored(
+    base_study, entity_class, identity, version, parent=None, analysis=None, created_at=None
+):
     """An entity row as an earlier hash version wrote it."""
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(data, "ENTITY_HASH_VERSION", version)
@@ -451,6 +454,7 @@ def _stored(base_study, entity_class, identity, version, parent=None, analysis=N
         entity_hash=entity_hash,
         parent=parent,
         analysis_id=analysis.id if analysis else None,
+        created_at=created_at,
     )
     db.session.add(entity)
     db.session.commit()
@@ -465,20 +469,137 @@ def test_a_version_bump_gives_stored_coordinate_sets_their_name(base_study):
     po = _stored(base_study, "CoordinateSet", "text||1200-1288", old, analysis=po_row)
     pc = _stored(base_study, "Analysis", "text||1200-1288", old, analysis=pc_row)
     null = _stored(base_study, "CoordinateSet", "table|t1|0:0", old)
+    # A `|` in a table id stays in the table id.
+    piped = _stored(base_study, "CoordinateSet", "table|t|1|0:0", old, analysis=po_row)
     study = _stored(base_study, "Study", "", old)
     a = _stored(base_study, "Condition", ["2\u2013back", 0], old, parent=study)
     b = _stored(base_study, "Condition", ["2-back", 0], old, parent=study)
-    old_hashes = {e.id: e.entity_hash for e in (po, pc, null, study, a, b)}
+    old_hashes = {e.id: e.entity_hash for e in (po, pc, null, piped, study, a, b)}
 
-    assert rehash_entities() == 6
+    assert rehash_entities() == 7
     assert rehash_entities() == 0
-    for entity in (po, pc, null, a, b):
+    for entity in (po, pc, null, piped, a, b):
         db.session.refresh(entity)
-    assert po.identity == "text||1200-1288|po > sil"
-    assert pc.identity == "text||1200-1288|pc > sil"
-    assert null.identity == "table|t1|0:0|"
+    assert po.identity == ["text", "", "1200-1288", "po>sil"]
+    assert pc.identity == ["text", "", "1200-1288", "pc>sil"]
+    assert null.identity == ["table", "t1", "0:0", ""]
+    assert piped.identity == ["table", "t|1", "0:0", "po>sil"]
     assert sorted([a.identity, b.identity]) == [["2-back", 0], ["2-back", 1]]
     aliases = {x.entity_hash: x.entity_id for x in StudyEntityAlias.query}
     assert aliases == {h: entity_id for entity_id, h in old_hashes.items()}
     record = {"coordinate_sets": [_named("PO > Sil", spans=[(1200, 1288)])]}
     assert _entity(_sync(base_study, record), "coordinate_sets[0]").id == po.id
+
+
+def test_a_name_differing_only_in_spacing_is_the_same_entity(base_study):
+    # Two extractions of one sentence gave "PO > Sil" and "PO>Sil".
+    first = _sync(base_study, {"coordinate_sets": [_named("PO > Sil", spans=[(1200, 1288)])]})
+    again = _sync(base_study, {"coordinate_sets": [_named("PO>Sil", spans=[(1200, 1288)])]})
+    assert again["created"] == 0
+    assert _entity(again, "coordinate_sets[0]").id == _entity(first, "coordinate_sets[0]").id
+
+
+def test_a_renamed_coordinate_set_is_a_candidate_and_keeps_its_claims(base_study):
+    first = _sync(base_study, {"coordinate_sets": [_named("PO > Sil", spans=[(1200, 1288)])]})
+    old = _entity(first, "coordinate_sets[0]")
+    _claim(old, "statistic", "t")
+
+    again = _sync(base_study, {"coordinate_sets": [_named("PO vs silence", spans=[(1200, 1288)])]})
+    new = _entity(again, "coordinate_sets[0]")
+    assert again["created"] == 1 and new.id != old.id
+    assert again["rename_candidates"] == [
+        {
+            "class": "CoordinateSet",
+            "from": "po>sil",
+            "to": "povssilence",
+            "entity_id": old.id,
+            "candidate_id": new.id,
+        }
+    ]
+    link = StudyEntityCandidateLink.query.one()
+    assert (link.entity_id, link.candidate_id, link.reason) == (
+        old.id,
+        new.id,
+        RENAMED_BY_EXTRACTOR,
+    )
+    assert (_claims(old), _claims(new)) == (1, 0)
+
+
+def test_a_coordinate_set_elsewhere_or_of_another_class_is_not_a_candidate(base_study):
+    _sync(base_study, {"coordinate_sets": [_named("PO > Sil", spans=[(1200, 1288)])]})
+    moved = _sync(base_study, {"coordinate_sets": [_named("PO vs Sil", spans=[(1200, 1300)])]})
+    assert moved["rename_candidates"] == []
+    other = _sync(base_study, {"analyses": [_named("PO vs Sil", spans=[(1200, 1288)])]})
+    assert other["rename_candidates"] == []
+
+
+def test_an_unnamed_row_from_the_version_bump_is_a_candidate_for_the_named_one(base_study):
+    # Nothing set `analysis_id` before the name joined the identity, so the bump
+    # gives every stored coordinate set the empty name.
+    study = _stored(base_study, "Study", "", "study-entity/2")
+    null = _stored(base_study, "CoordinateSet", "table|t1|0:0", "study-entity/2")
+    _claim(null, "statistic", "t")
+    assert rehash_entities() == 2
+
+    result = _sync(base_study, {"coordinate_sets": [_named("PO > Sil", cells=[(0, 0)])]})
+    new = _entity(result, "coordinate_sets[0]")
+    assert result["created"] == 1 and _entity(result, "").id == study.id
+    assert [(c["entity_id"], c["candidate_id"]) for c in result["rename_candidates"]] == [
+        (null.id, new.id)
+    ]
+    assert (_claims(null), _claims(new)) == (1, 0)
+
+
+def test_ingesting_before_the_version_bump_rehash_is_refused(base_study):
+    _stored(base_study, "Study", "", "study-entity/2")
+    _stored(base_study, "CoordinateSet", "text||1200-1288", "study-entity/2")
+    record = {"coordinate_sets": [_named("PO > Sil", spans=[(1200, 1288)])]}
+    with pytest.raises(StaleEntityHashes, match="rehash_entities"):
+        sync_record_entities(base_study, record, _locate)
+    db.session.rollback()
+    assert _count(base_study) == 2
+    rehash_entities()
+    assert _sync(base_study, record)["created"] == 1
+
+
+def test_renormalizing_names_under_the_same_version_is_idempotent(base_study):
+    # The earlier sibling keeps ordinal 0 whatever order the rows are read in:
+    # the later one is inserted first.
+    version = data.ENTITY_HASH_VERSION
+    study = _stored(base_study, "Study", "", version)
+    later = _stored(
+        base_study, "Condition", ["2-back", 0], version, parent=study, created_at="2026-01-02"
+    )
+    earlier = _stored(
+        base_study, "Condition", ["2\u2013back", 0], version, parent=study, created_at="2026-01-01"
+    )
+    stale = ["text", "", "5-9", "po \u2013 sil"]
+    po = _stored(base_study, "CoordinateSet", stale, version, created_at="2026-01-01")
+    current = ["text", "", "5-9", "po-sil"]
+    taken = _stored(base_study, "CoordinateSet", current, version, created_at="2026-01-02")
+    hashes = {e.id: e.entity_hash for e in (earlier, later, po, taken)}
+
+    assert rehash_entities() == 2
+    assert rehash_entities() == 0
+    for entity in (earlier, later, po, taken):
+        db.session.refresh(entity)
+    assert (earlier.identity, later.identity) == (["2-back", 0], ["2-back", 1])
+    assert earlier.entity_hash == hashes[later.id]
+    # A located row that would take another's identity keeps its own, and its claims.
+    assert (po.identity, taken.identity) == (stale, current)
+    assert (po.entity_hash, taken.entity_hash) == (hashes[po.id], hashes[taken.id])
+    assert _no_alias_is_a_live_hash()
+
+
+def test_a_sibling_can_take_the_hash_another_still_holds(base_study):
+    # The earlier row takes the hash the later still holds; one UPDATE checked
+    # row by row raised IntegrityError on uq_study_entity__hash.
+    version = data.ENTITY_HASH_VERSION
+    study = _stored(base_study, "Study", "", version)
+    earlier = _stored(base_study, "Condition", ["2\u2013back", 0], version, parent=study)
+    later = _stored(base_study, "Condition", ["2-back", 0], version, parent=study)
+    assert rehash_entities() == 2
+    for entity in (earlier, later):
+        db.session.refresh(entity)
+    assert (earlier.identity, later.identity) == (["2-back", 0], ["2-back", 1])
+    assert rehash_entities() == 0 and _no_alias_is_a_live_hash()
