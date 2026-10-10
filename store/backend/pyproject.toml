@@ -42,6 +42,9 @@ dependencies = [
     "openai~=3.23",
     "tenacity~=9.1",
     "sentry-sdk~=2.71",
+    # study_schema PR #18 (neuroimaging-paper-parse 0.5.0): the shapes and keys the
+    # pipeline ingester reads. Repin to a release when #18 merges.
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@41b33254c89f4abab626922a078dd15393d3c866",
 ]
 
 [tool.setuptools.packages.find]
