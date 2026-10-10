@@ -17,6 +17,7 @@ from neurostore.models import (
     FieldClaim,
     PipelineAnalysisResult,
     PipelineConfig,
+    PipelineStudyResult,
     Study,
     StudyEntity,
     StudyEntityAlias,
@@ -536,3 +537,62 @@ def test_unsigned_points_are_counted_from_values(session):
     summary = ingest_upload({"coordinate_parse": fx.parse([parsed])})
     (analysis,) = _current(summary["base_study_id"]).analyses
     assert analysis.metadata_["unsigned_points"] == 1
+
+
+def test_a_later_parse_holding_a_set_aside_key_resolves_its_claims(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    unknown = fx.table_analysis("tbl9", [0], "Elsewhere", [fx.point((1, 1, 1))])
+    first = ingest_upload(
+        {
+            "record": _record(GAIN, unknown),
+            "parse_id": ORIGINAL["parse_id"],
+            "base_study_id": base_study_id,
+        }
+    )
+    assert first["record"]["claims"]["parked_entities"]
+
+    _ANALYSES[unknown["key"]] = unknown
+    reparse = fx.parse([GAIN, LOSS, RISK, SEED, unknown])
+    summary = ingest_upload({"coordinate_parse": reparse, "base_study_id": base_study_id})
+
+    assert summary["set_aside_resolved"] == [
+        {"config_id": first["record"]["config_id"], "keys": [unknown["key"]]}
+    ]
+    assert {c.field_path for c in _claims(base_study_id, unknown["key"])} >= {"name"}
+    row = PipelineAnalysisResult.query.filter_by(
+        base_study_id=base_study_id, source_table_analysis=unknown["key"]
+    ).one()
+    assert row.status == "SUCCESS" and row.analysis_id
+    # Uploading the same parse again has nothing left to resolve.
+    again = ingest_upload({"coordinate_parse": reparse, "base_study_id": base_study_id})
+    assert again["set_aside_resolved"] == []
+
+
+def test_replaying_a_run_id_returns_the_same_results_and_adds_none(session):
+    body = {"coordinate_parse": ORIGINAL, "record": _record(GAIN), "run_id": "run-1"}
+    first = ingest_upload(body)
+    counts = (
+        PipelineStudyResult.query.count(),
+        PipelineAnalysisResult.query.count(),
+        FieldClaim.query.count(),
+    )
+
+    again = ingest_upload(body)
+
+    assert {k: v["run_id"] for k, v in first["provenance"].items()} == {
+        "parse": "run-1",
+        "record": "run-1",
+    }
+    for part in ("parse", "record"):
+        assert again["provenance"][part]["result_id"] == first["provenance"][part]["result_id"]
+    assert again["record"]["claims"]["created"] == 0
+    assert (
+        PipelineStudyResult.query.count(),
+        PipelineAnalysisResult.query.count(),
+        FieldClaim.query.count(),
+    ) == counts
+
+    # The same run_id cannot store a different record for the paper.
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({**body, "record": _record(GAIN, LOSS)})
+    assert error.value.status_code == 422

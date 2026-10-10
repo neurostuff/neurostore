@@ -29,7 +29,14 @@ copy naming its origin in ``carried_from``. A new original parse that reads an a
 from other cells (same table and name, new key) re-hashes its entities instead, keeping the
 old hash as a ``cells_changed`` alias so a record that read the older parse still resolves.
 Record keys that are positional rather than content keys, or that no stored parse holds,
-are held, never made entities.
+are set aside (the record summary's ``parked`` and ``claims.parked_entities``), never made
+entities. A positional key stays set aside until a record names it by content; a key no
+parse held is resolved when a later parse holds it: each stored record naming it has its
+claims re-ingested onto the new entity (the parse upload's ``set_aside_resolved``).
+
+Every result an upload writes carries the caller's ``run_id``. Replaying a run (same
+run_id, same documents) returns the same results and adds none; the same run_id with a
+different document for the paper is refused (RUN_ID_REUSED).
 
 Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
 refused (NOT_CURRENT). A record that read an older parse reports the keys that resolve to
@@ -202,10 +209,15 @@ def ingest_upload(body, user=None):
     provenance = {}
     if parse is not None:
         study = study or _create_study(base_study, parsed_paper, user)
-        provenance["parse"] = _store_parse(base_study, parse)
+        held_before = _held_keys(base_study)
+        provenance["parse"] = _store_parse(base_study, parse, body.get("run_id"))
         summary["skeleton"] = _apply_parse(study, parse, parsed_paper, user)
         if kind == "revision":
             summary["carried"] = _carry_claims(base_study, study, parse)
+        db.session.flush()
+        summary["set_aside_resolved"] = _resolve_set_aside(
+            base_study, {a["key"] for a in parse["analyses"]} - held_before
+        )
 
     if record is not None:
         stored_parse = _stored_parse(base_study, parse_id)
@@ -215,7 +227,13 @@ def ingest_upload(body, user=None):
                 [make_field_error("parse_id", parse_id, code="UNKNOWN_PARSE")],
             )
         summary["record"], provenance["record"] = _ingest_record(
-            base_study, study, record, stored_parse, body.get("pipeline") or {}, user
+            base_study,
+            study,
+            record,
+            stored_parse,
+            body.get("pipeline") or {},
+            user,
+            body.get("run_id"),
         )
 
     if study is not None:
@@ -510,7 +528,7 @@ def _parse_version(header):
     }
 
 
-def _store_parse(base_study, parse):
+def _store_parse(base_study, parse, run_id=None):
     """Keep ``parse`` whole as a PARSE_PIPELINE result; return that result."""
     stored = _stored_parse_result(base_study, parse["parse_id"])
     if stored is not None:
@@ -525,9 +543,11 @@ def _store_parse(base_study, parse):
             "version": parse["header"]["schema_version"],
         },
     )
+    _check_run(config, base_study, run_id, parse)
     result = PipelineStudyResult(
         config_id=config.id,
         base_study_id=base_study.id,
+        run_id=run_id,
         result_data=parse,
         file_inputs=parse["header"].get("inputs"),
         status="SUCCESS",
@@ -536,6 +556,103 @@ def _store_parse(base_study, parse):
     db.session.add(result)
     db.session.flush()
     return result
+
+
+def _check_run(config, base_study, run_id, document):
+    """Refuse a run_id that already stored a different document for this config and paper.
+
+    The same document under the same run_id is a replay and goes through unchanged.
+    """
+    if run_id is None:
+        return
+    stored = PipelineStudyResult.query.filter_by(
+        config_id=config.id, base_study_id=base_study.id, run_id=run_id
+    ).first()
+    if stored is not None and stored.result_data != document:
+        abort_unprocessable(
+            "This run_id already stored a different document for the paper.",
+            [make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
+        )
+
+
+def _stored_parse_results(base_study):
+    return (
+        PipelineStudyResult.query.join(PipelineConfig)
+        .join(Pipeline)
+        .filter(
+            Pipeline.name == PARSE_PIPELINE,
+            PipelineStudyResult.base_study_id == base_study.id,
+        )
+        .all()
+    )
+
+
+def _held_keys(base_study):
+    """Every analysis key a stored parse of the paper holds."""
+    return {
+        analysis["key"]
+        for result in _stored_parse_results(base_study)
+        for analysis in (result.result_data or {}).get("analyses") or []
+    }
+
+
+def _record_keys(record):
+    """The content keys a record names for its parse-keyed entities."""
+    keys = set()
+    for value in record.values():
+        if not isinstance(value, list):
+            continue
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            for cls in PARSE_KEYED_CLASSES:
+                key = _record_key(cls, item)
+                if key and is_content_key(key):
+                    keys.add(key)
+    return keys
+
+
+def _resolve_set_aside(base_study, new_keys):
+    """Attach stored records' set-aside keys that a newly stored parse now holds.
+
+    A record key no stored parse held was set aside (parked, UNKNOWN_KEY_REASON) rather
+    than minted. When a later parse holds it, each stored record naming it has its claims
+    re-ingested, so they land on the new entity, and its analysis rows for those keys are
+    linked. Returns, per record config, the keys resolved.
+    """
+    if not new_keys:
+        return []
+    records = (
+        PipelineStudyResult.query.join(PipelineConfig)
+        .join(Pipeline)
+        .filter(
+            Pipeline.name != PARSE_PIPELINE,
+            PipelineStudyResult.base_study_id == base_study.id,
+        )
+        .all()
+    )
+    resolved = []
+    for result in records:
+        record = result.result_data or {}
+        keys = sorted(_record_keys(record) & new_keys)
+        if not keys:
+            continue
+        config = result.config
+        _ingest_claims(
+            base_study, record, config, (config.config_args or {}).get("schema_version")
+        )
+        for row in PipelineAnalysisResult.query.filter(
+            PipelineAnalysisResult.config_id == config.id,
+            PipelineAnalysisResult.base_study_id == base_study.id,
+            PipelineAnalysisResult.source_table_analysis.in_(keys),
+        ):
+            key = _current_key(base_study, row.source_table_analysis)
+            analysis = _analysis_for_key(base_study, key)
+            row.analysis_id = analysis.id if analysis is not None else None
+            row.status = "SUCCESS" if analysis is not None else "FAILURE"
+        resolved.append({"config_id": config.id, "keys": keys})
+    db.session.flush()
+    return resolved
 
 
 def _stored_parse_result(base_study, parse_id):
@@ -567,6 +684,7 @@ def _provenance(result):
     return {
         "result_id": result.id,
         "config_id": config.id,
+        "run_id": result.run_id,
         "pipeline": config.pipeline.name,
         "version": config.version,
         "commit": args.get("commit"),
@@ -786,6 +904,7 @@ def _alias_rekeyed(base_study, superseded, uploaded, existing):
         new = added.get(match)
         if new is None:
             continue
+        rehashed = False
         for entity_class in PARSE_KEYED_CLASSES:
             old_hash = _entity_hash(base_study, entity_class, old.metadata_)
             new_hash = _entity_hash(base_study, entity_class, new)
@@ -798,6 +917,9 @@ def _alias_rekeyed(base_study, superseded, uploaded, existing):
                     entity_hash=old_hash, entity_id=entity.id, reason=ALIAS_CELLS_CHANGED
                 )
             )
+            rehashed = True
+        if rehashed:
+            # One pair per analysis, however many of its entity classes moved.
             aliased.append({"from": old.source_id, "to": new["key"]})
     db.session.flush()
     return aliased
@@ -1018,7 +1140,7 @@ def _merge_claim(claim, copy):
 # ---------------------------------------------------------------------------
 
 
-def _ingest_record(base_study, study, record, parse, pipeline, user):
+def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None):
     metadata = record["extraction_metadata"]
     schema_version = load_json_schema("extraction-record").get("version")
     config_args = {
@@ -1043,12 +1165,14 @@ def _ingest_record(base_study, study, record, parse, pipeline, user):
         {"artifact_kind": "parsed_paper", "fingerprint": parse["text_sha256"]},
     ]
 
+    _check_run(config, base_study, run_id, record)
     result = PipelineStudyResult.query.filter_by(
         config_id=config.id, base_study_id=base_study.id
     ).first()
     if result is None:
         result = PipelineStudyResult(config_id=config.id, base_study_id=base_study.id)
         db.session.add(result)
+    result.run_id = run_id
     result.result_data = record
     result.file_inputs = inputs
     result.status = "SUCCESS"
