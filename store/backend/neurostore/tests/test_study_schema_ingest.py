@@ -749,28 +749,28 @@ def test_inverse_half_takes_the_original_halfs_outcome(session):
 
 
 def test_a_derived_outcome_never_overrides_the_analysis_own(session):
-    revision, positive, negative, _ = _revision()
+    revision, original, inverse, _ = _revision()
     ingest_upload({"coordinate_parse": ORIGINAL})
-    own = _contrast(negative, local_id="a0")
+    own = _contrast(inverse, local_id="a0")
     own["outcome"] = fx.extracted("no_significant_effect")
-    pos = _contrast(positive, local_id="a1")
-    pos["outcome"] = fx.extracted("significant_effect")
-    # The negative half's own entry comes first; the positive half's derived one follows.
-    summary = ingest_upload({"coordinate_parse": revision, "record": fx.record([own, pos])})
+    orig = _contrast(original, local_id="a1")
+    orig["outcome"] = fx.extracted("significant_effect")
+    # The inverse half's own entry comes first; the original half's derived one follows.
+    summary = ingest_upload({"coordinate_parse": revision, "record": fx.record([own, orig])})
     by_key = _by_key(_current(summary["base_study_id"]))
-    assert by_key[positive["key"]].outcome == "significant_effect"
-    assert by_key[negative["key"]].outcome == "no_significant_effect"
+    assert by_key[original["key"]].outcome == "significant_effect"
+    assert by_key[inverse["key"]].outcome == "no_significant_effect"
 
-    # A derived entry with no outcome adds nothing: the negative half keeps its own.
+    # A derived entry with no outcome adds nothing: the inverse half keeps its own.
     ingest_upload(
         {
             "parse_id": revision["parse_id"],
             "base_study_id": summary["base_study_id"],
-            "record": fx.record([_contrast(positive, local_id="a1")]),
+            "record": fx.record([_contrast(original, local_id="a1")]),
         }
     )
-    assert by_key[positive["key"]].outcome is None
-    assert by_key[negative["key"]].outcome == "no_significant_effect"
+    assert by_key[original["key"]].outcome is None
+    assert by_key[inverse["key"]].outcome == "no_significant_effect"
 
 
 def _outcome_claims(base_study_id, key):
