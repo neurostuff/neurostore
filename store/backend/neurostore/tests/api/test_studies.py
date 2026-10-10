@@ -228,9 +228,12 @@ async def test_put_study_with_missing_source_id_sets_null(
 
 
 async def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
-    study_entry = Study.query.first()
+    # Pinned by pmid: an unordered first() can return a study with several
+    # analyses, and positional assertions then read the wrong one.
+    study_entry = Study.query.order_by(Study.pmid).first()
     schema = StudySchema(context={"nested": True})
     study_data = schema.dump(study_entry)
+    split_analysis_name = study_data["analyses"][0]["name"]
     half_points = len(study_data["analyses"][0]["points"]) // 2
 
     first_analysis_points = study_data["analyses"][0]["points"][0:half_points]
@@ -252,9 +255,9 @@ async def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
     assert data["name"] == study_entry.name
     assert data["source_id"] == study_entry.id
     assert data["source"] == "neurostore"
-    assert data["analyses"][0]["points"][0]["coordinates"] == [0, 0, 0]
-    assert data["analyses"][1]["points"][0]["coordinates"] == [0, 0, 0]
-    assert "new analysis" in [a["name"] for a in data["analyses"]]
+    analyses = {analysis["name"]: analysis for analysis in data["analyses"]}
+    assert analyses[split_analysis_name]["points"][0]["coordinates"] == [0, 0, 0]
+    assert analyses["new analysis"]["points"][0]["coordinates"] == [0, 0, 0]
     assert data["pmid"] is None
     assert data["doi"] is None
 
