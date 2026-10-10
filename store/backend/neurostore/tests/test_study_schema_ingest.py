@@ -7,6 +7,7 @@ from neurostore.exceptions.base import NeuroStoreException
 from neurostore.ingest.study_schema import (
     ALIAS_CELLS_CHANGED,
     HISTORY_SOURCE,
+    OUTCOME_WITHHELD_REASON,
     STUDY_SOURCE,
     UNKNOWN_KEY_REASON,
     _point_rows,
@@ -763,3 +764,64 @@ def test_a_derived_outcome_never_overrides_the_analysis_own(session):
     )
     assert by_key[positive["key"]].outcome is None
     assert by_key[negative["key"]].outcome == "no_significant_effect"
+
+
+def _outcome_claims(base_study_id, key):
+    return {
+        (c.value, c.extraction_status)
+        for c in _claims(base_study_id, key)
+        if c.field_path == "outcome"
+    }
+
+
+def test_an_anchor_outcome_is_a_claim_not_a_column(session):
+    parse = fx.parse([NULL, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record(
+                (NULL, "no_significant_effect"), (ROI, "no_significant_effect")
+            ),
+        }
+    )
+    base_id = summary["base_study_id"]
+    analyses = _by_key(_current(base_id))
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+    # An ROI was not tested in this study: no outcome, but the record's is kept.
+    assert analyses[ROI["key"]].outcome is None
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+    assert summary["record"]["outcomes_withheld"] == [
+        {
+            "key": ROI["key"],
+            "role": "anchor",
+            "outcome": "no_significant_effect",
+            "reason": OUTCOME_WITHHELD_REASON,
+        }
+    ]
+
+
+def test_a_role_change_applies_or_withdraws_the_claimed_outcome(session):
+    parse = fx.parse([LOSS, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record((LOSS, None), (ROI, "no_significant_effect")),
+        }
+    )
+    base_id = summary["base_study_id"]
+    roi = _by_key(_current(base_id))[ROI["key"]]
+    assert roi.outcome is None
+
+    # A later parse reads the same set as a result: the claimed outcome applies.
+    as_result = {**ROI, "role": "result", "from_prior_study": None}
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    assert (roi.role, roi.outcome) == ("result", "no_significant_effect")
+    # Re-applying it keeps the outcome rather than looking it up again.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    assert roi.outcome == "no_significant_effect"
+
+    # Back to an anchor (a stored parse cannot be replayed, so a new one): the column
+    # clears and the claim stays.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, {**ROI, "description": "ROI"}])})
+    assert (roi.role, roi.outcome) == ("anchor", None)
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}

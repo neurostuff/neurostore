@@ -98,6 +98,14 @@ DEFAULT_RECORD_PIPELINE = "pondie"
 # stored parse document only (see the paper-parse schema's CoordinateRole).
 UPLOADED_ROLES = {"result", "anchor"}
 
+# Roles whose analyses have an outcome: only a result was tested in the study. None is an
+# analysis no parse has given a role yet.
+OUTCOME_ROLES = {"result", None}
+OUTCOME_WITHHELD_REASON = (
+    "the record reports an outcome for a coordinate set that is not a result; it is kept "
+    "as a claim and applied if the set's role becomes result"
+)
+
 # Entities a record names by parse key, hashed by the cells or spans behind that key, so a
 # split or merge moves their claims.
 PARSE_KEYED_CLASSES = ("Analysis", "CoordinateSet")
@@ -811,7 +819,12 @@ def _apply_parse(study, parse, parsed_paper, user):
         analysis.name = parsed["name"]
         analysis.description = parsed.get("description")
         analysis.order = order
+        was_result = analysis.id is not None and analysis.role in OUTCOME_ROLES
         analysis.role = parsed["role"]
+        if analysis.role not in OUTCOME_ROLES:
+            analysis.outcome = None
+        elif not was_result:
+            analysis.outcome = _claimed_outcome(study.base_study_id, parsed["key"])
         analysis.from_prior_study = parsed.get("from_prior_study")
         analysis.metadata_ = _analysis_metadata(parsed, parse["parse_id"])
         analysis.table = (
@@ -1298,12 +1311,27 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
     exported = _exported_state(study)
     for analysis, weights, _ in conditions.values():
         _set_conditions(analysis, weights, user)
+    withheld = []
     for analysis, outcome, _ in outcomes.values():
-        analysis.outcome = outcome
+        if analysis.role in OUTCOME_ROLES:
+            analysis.outcome = outcome
+            continue
+        analysis.outcome = None
+        if outcome is not None:
+            withheld.append(
+                {
+                    "key": analysis.source_id,
+                    "role": analysis.role,
+                    "outcome": outcome,
+                    "reason": OUTCOME_WITHHELD_REASON,
+                }
+            )
     db.session.flush()
     if _exported_state(study) != exported:
         _touch(study)
     summary = {"config_id": config.id, "analyses": analyses, "claims": claims}
+    if withheld:
+        summary["outcomes_withheld"] = withheld
     if revisions:
         summary["carried"] = carried
     return summary, result
@@ -1424,6 +1452,41 @@ def _want_outcome(wanted, analysis, extracted, derived):
     if derived and (value is None or (analysis.id in wanted and not wanted[analysis.id][2])):
         return
     wanted[analysis.id] = (analysis, value, derived)
+
+
+def _claimed_outcome(base_study_id, key):
+    """The outcome the newest record claimed for the analysis under ``key``, else None.
+
+    Applied when a parse makes an anchor (or other set) a result: the outcome a record
+    reported for it while it was not one was kept only as a claim.
+    """
+    claim = (
+        db.session.query(FieldClaim.value, FieldClaim.extraction_status)
+        .join(StudyEntity, StudyEntity.id == FieldClaim.entity_id)
+        .join(FieldClaimRun, FieldClaimRun.claim_id == FieldClaim.id)
+        .join(
+            PipelineStudyResult,
+            sa.and_(
+                PipelineStudyResult.config_id == FieldClaimRun.config_id,
+                PipelineStudyResult.base_study_id == StudyEntity.base_study_id,
+            ),
+        )
+        .filter(
+            StudyEntity.base_study_id == base_study_id,
+            StudyEntity.entity_class == "Analysis",
+            StudyEntity.natural_key == key,
+            FieldClaim.field_path == "outcome",
+            FieldClaim.origin == "extraction",
+        )
+        .order_by(
+            PipelineStudyResult.date_executed.desc().nulls_last(),
+            FieldClaim.created_at.desc(),
+        )
+        .first()
+    )
+    if claim is None or claim.extraction_status != "extracted":
+        return None
+    return claim.value
 
 
 def _set_conditions(analysis, weights, user):

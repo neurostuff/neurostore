@@ -274,6 +274,7 @@ def select_coordinate_studies(include_retracted=False):
         sa.select(Analysis.id)
         .where(Analysis.study_id == Study.id)
         .where(Analysis.outcome == AnalysisOutcome.no_significant_effect.value)
+        .where(IS_STUDYSET_ANALYSIS)
         .exists()
     )
     has_result_point = (

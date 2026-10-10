@@ -714,3 +714,37 @@ def test_anchor_points_alone_do_not_make_a_study_eligible(session):
     session.add(curated)
     session.flush()
     assert _selected_study_ids() == {curated.id}
+
+
+def test_a_null_outcome_on_an_anchor_does_not_qualify(session):
+    roi = fx.table_analysis(
+        "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor"
+    )
+    analysis = fx.record_analysis("a0", roi["key"], roi["name"])
+    analysis["outcome"] = fx.extracted("no_significant_effect")
+    summary = ingest_upload(
+        {"coordinate_parse": fx.parse([roi]), "record": fx.record([analysis])}
+    )
+    pipeline = Study.query.filter_by(
+        base_study_id=summary["base_study_id"], source=STUDY_SOURCE
+    ).one()
+    assert pipeline.analyses[0].outcome is None
+    assert pipeline.id not in _selected_study_ids()
+
+    # Nor does an anchor's outcome column written some other way; a result's still does.
+    base, user = _release_base(session, "Anchor Null Base", has_coordinates=False)
+    study = Study(name="Anchor Null", level="group", public=True, base_study=base, user=user)
+    anchor = Analysis(
+        name="Seed",
+        study=study,
+        user=user,
+        order=0,
+        role="anchor",
+        outcome="no_significant_effect",
+    )
+    session.add(study)
+    session.flush()
+    assert study.id not in _selected_study_ids()
+    anchor.role = "result"
+    session.flush()
+    assert study.id in _selected_study_ids()
