@@ -11,6 +11,7 @@ import json
 import logging
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert
@@ -363,13 +364,22 @@ def _rename_candidates(created, existing, claimed, chains=None):
     return pairs
 
 
+class Slot(NamedTuple):
+    """Where an entity sits: the read location (located classes) or the
+    parent id (siblings), and its ordinal (siblings only)."""
+
+    entity_class: str
+    scope: object
+    position: object = None
+
+
 def _slot(entity_class, identity, parent_id):
     if not isinstance(identity, list):
         return None
     if entity_class in LOCATED_CLASSES:
-        return (entity_class, *identity[:3])
+        return Slot(entity_class, tuple(identity[:3]))
     if parent_id is not None and identity[0] is not None:
-        return (entity_class, parent_id, identity[1])
+        return Slot(entity_class, parent_id, identity[1])
     return None
 
 
