@@ -15,6 +15,7 @@ const NiiVueVisualizer = ({
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const niivueRef = useRef<Niivue | null>(null);
+    const underlayLoadRef = useRef<Promise<void> | null>(null);
     const [softThreshold, setSoftThreshold] = useState(true);
     const [showNegatives, setShowNegatives] = useState(false);
     const [disableNegatives, setDisableNegatives] = useState(false);
@@ -101,6 +102,8 @@ const NiiVueVisualizer = ({
     };
 
     useEffect(() => {
+        let cancelled = false;
+
         const updateNiivue = async () => {
             if (!canvasRef.current) return;
 
@@ -115,17 +118,24 @@ const NiiVueVisualizer = ({
                 niivueRef.current.opts.isColorbar = true;
                 niivueRef.current.setSliceMM(false);
                 niivueRef.current.onLocationChange = handleChangeLocation;
-                await niivueRef.current.addVolumeFromUrl({
-                    // we can assume that maps will only be in MNI space
-                    url: 'https://neurovault.org/static/images/GenericMNI.nii.gz',
-                    colormap: 'gray',
-                    opacity: 1,
-                    colorbarVisible: false,
-                });
+                underlayLoadRef.current = niivueRef.current
+                    .addVolumeFromUrl({
+                        // we can assume that maps will only be in MNI space
+                        url: 'https://neurovault.org/static/images/GenericMNI.nii.gz',
+                        colormap: 'gray',
+                        opacity: 1,
+                        colorbarVisible: false,
+                    })
+                    .then(() => undefined);
             }
 
+            await underlayLoadRef.current;
+            if (cancelled) return;
+
             const niivue = niivueRef.current;
-            await niivueRef.current.addVolumeFromUrl({
+            if (!niivue) return;
+
+            const overlay = await niivue.addVolumeFromUrl({
                 url: file,
                 colormap: 'warm',
                 cal_min: 0, // default
@@ -135,8 +145,14 @@ const NiiVueVisualizer = ({
                 opacity: 1,
             });
 
-            const globalMax = niivue.volumes[1].global_max || 2.58;
-            const globalMin = niivue.volumes[1].global_min || 0;
+            // addVolumeFromUrl inserts the volume before it resolves, so a stale load has to be removed here
+            if (cancelled) {
+                niivue.removeVolume(overlay);
+                return;
+            }
+
+            const globalMax = overlay.global_max || 2.58;
+            const globalMin = overlay.global_min || 0;
             const largestAbsoluteValue = Math.max(Math.abs(globalMin), globalMax);
 
             updateCrosshairsInNiivue(showCrosshairs); // update crosshair settings in case they have been updated in other maps
@@ -168,8 +184,8 @@ const NiiVueVisualizer = ({
                 value: Math.round(startingValue * 100) / 100,
             });
 
-            niivue.volumes[1].cal_min = startingValue;
-            niivue.volumes[1].cal_max = maxOrThreshold;
+            overlay.cal_min = startingValue;
+            overlay.cal_max = maxOrThreshold;
 
             niivue.setInterpolation(true);
             niivue.updateGLVolume();
@@ -178,8 +194,11 @@ const NiiVueVisualizer = ({
         updateNiivue();
 
         return () => {
-            if (niivueRef.current && niivueRef.current.volumes[1]) {
-                niivueRef.current.removeVolume(niivueRef.current.volumes[1]);
+            cancelled = true;
+            const niivue = niivueRef.current;
+            const currentOverlay = niivue?.volumes[1];
+            if (niivue && currentOverlay) {
+                niivue.removeVolume(currentOverlay);
             }
         };
     }, [file, filename]);

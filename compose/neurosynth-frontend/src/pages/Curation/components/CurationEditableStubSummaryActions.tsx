@@ -1,9 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { ArrowCircleLeftOutlined, CheckCircleOutline } from '@mui/icons-material';
 import { Box, Button, Chip } from '@mui/material';
-import { useUserCanEdit } from 'hooks';
+import { useKeyboardShortcuts, useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import CurationPopupExclusionSelector from 'pages/Curation/components/CurationPopupExclusionSelector';
+import { getDefaultExclusionTag } from 'pages/Curation/components/CurationPopupExclusionSelector.helpers';
 import { ICurationStubStudy, ITag } from 'pages/Curation/Curation.types';
 import {
     useAddTagToStub,
@@ -17,14 +18,14 @@ import {
 import React, { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
-interface ICurationEditableStubSummaryHeader {
+interface ICurationEditableStubSummaryActions {
     type: 'excluded' | 'included' | 'default';
     columnIndex: number;
     stub: ICurationStubStudy;
     onMoveToNextStub: () => void;
 }
 
-const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableStubSummaryHeader) => {
+const CurationEditableStubSummaryActions = React.memo((props: ICurationEditableStubSummaryActions) => {
     const { user } = useAuth0();
     const canEdit = useUserCanEdit(user?.sub || undefined);
 
@@ -94,15 +95,33 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
         }
     };
 
+    const canCategorize = props.type === 'default' && canEdit && !exclusionTagSelectorIsOpen;
+    const canDemote = props.columnIndex !== 0 && props.type !== 'excluded' && canEdit && !exclusionTagSelectorIsOpen;
+
+    useKeyboardShortcuts({
+        a: (event) => {
+            if (event.repeat || !canCategorize) return;
+            handlePromote();
+        },
+        s: (event) => {
+            if (event.repeat || !canCategorize) return;
+            handleAddExclusion(getDefaultExclusionTag(prismaConfig.isPrisma, prismaPhase));
+        },
+        d: (event) => {
+            if (event.repeat || !canDemote) return;
+            handleDemoteStub();
+        },
+    });
+
     // const handleSaveForLater = () => {
     //     handleAddTag(defaultInfoTags.needsReview);
     //     props.onMoveToNextStub();
     // };
 
-    let categorizeHeader: React.ReactNode;
+    let categorizeActions: React.ReactNode;
     switch (props.type) {
         case 'excluded':
-            categorizeHeader = (
+            categorizeActions = (
                 <Chip
                     sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleRemoveExclusion}
@@ -114,7 +133,7 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
             );
             break;
         case 'included':
-            categorizeHeader = (
+            categorizeActions = (
                 <Chip
                     sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleDemoteStub}
@@ -126,7 +145,7 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
             );
             break;
         default:
-            categorizeHeader = (
+            categorizeActions = (
                 <Box sx={{ display: 'flex' }}>
                     <Button
                         onClick={handlePromote}
@@ -189,7 +208,7 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
     return (
         <Box sx={{ paddingBottom: '4px' }}>
             <Box sx={{ display: 'flex' }}>
-                <Box>{categorizeHeader}</Box>
+                <Box>{categorizeActions}</Box>
                 {/* <Box sx={{ marginLeft: 'auto' }}>
                     <NeurosynthPopper
                         open={tagSelectorIsOpen}
@@ -223,4 +242,4 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
     );
 });
 
-export default CurationEditableStubSummaryHeader;
+export default CurationEditableStubSummaryActions;

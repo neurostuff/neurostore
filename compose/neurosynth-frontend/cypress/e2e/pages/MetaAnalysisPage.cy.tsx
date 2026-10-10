@@ -97,7 +97,7 @@ describe(PAGE_NAME, () => {
         });
 
         it('should show correct tab labels when no results or jobs exist', () => {
-            expectMetaAnalysisTabs(['Run Meta-Analysis', 'Edit Specification', 'Cite Me', 'Settings']);
+            expectMetaAnalysisTabs(['Run Meta-Analysis', 'Edit Specification', 'Method & Citations', 'Settings']);
         });
 
         it('should allow specification editing when no results or jobs exist', () => {
@@ -149,7 +149,7 @@ describe(PAGE_NAME, () => {
             expectMetaAnalysisTabs([
                 'Run Meta-Analysis',
                 'View Specification',
-                'Cite Me',
+                'Method & Citations',
                 'Run Again',
                 'Settings',
             ]);
@@ -284,7 +284,7 @@ describe(PAGE_NAME, () => {
             expectMetaAnalysisTabs([
                 'Meta Analysis Results',
                 'View Specification',
-                'Cite Me',
+                'Method & Citations',
                 'Run Again',
                 'Settings',
             ]);
@@ -574,7 +574,7 @@ describe(PAGE_NAME, () => {
 
             cy.visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
-            expectMetaAnalysisTabs(['Meta Analysis Results', 'View Specification', 'Cite Me']);
+            expectMetaAnalysisTabs(['Meta Analysis Results', 'View Specification', 'Method & Citations']);
         });
     });
 
@@ -623,7 +623,7 @@ describe(PAGE_NAME, () => {
         });
     });
 
-    describe('Cite Me', () => {
+    describe('Method & Citations', () => {
         beforeEach(() => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisWithResult',
@@ -648,14 +648,14 @@ describe(PAGE_NAME, () => {
         it('should show the cite me component when tab is clicked', () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
-            cy.contains('[role="tab"]', 'Cite Me').click();
-            cy.contains('Copy citations in your preferred format:', { timeout: 20000 }).should('exist');
+            cy.contains('[role="tab"]', 'Method & Citations').click();
+            cy.contains('Platform citations:', { timeout: 20000 }).should('exist');
         });
 
         it('should show citation format dropdown and citation content after loading', () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
-            cy.contains('Cite Me').click();
+            cy.contains('Method & Citations').click();
             cy.get('[role="combobox"]', { timeout: 15000 }).should('exist');
             cy.contains('Neurosynth Compose').should('exist');
         });
@@ -663,7 +663,7 @@ describe(PAGE_NAME, () => {
         it('should allow selecting different citation formats from dropdown', () => {
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
-            cy.contains('Cite Me').click();
+            cy.contains('Method & Citations').click();
             cy.get('[role="combobox"]', { timeout: 15000 }).should('exist').click();
             cy.get('[role="option"]').contains('BibTeX').click();
             cy.contains('@').should('exist');
@@ -671,6 +671,28 @@ describe(PAGE_NAME, () => {
             cy.get('[role="combobox"]').click();
             cy.get('[role="option"]').contains('Vancouver').click();
             cy.contains('NiMARE').should('exist');
+        });
+
+        it('should show the compose-runner version and the methods with readable citations', () => {
+            cy.fixture('MetaAnalysis/resultSuccess').then((result) => {
+                result.cli_version = '0.6.6';
+                result.method_description =
+                    'An ALE meta-analysis was performed with NiMARE (RRID:SCR_017398; \\citealt{Salo2023}).';
+                result.method_references =
+                    '@article{Salo2023,\n  title = {NiMARE: Neuroimaging Meta-Analysis Research Environment},\n  author = {Salo, Taylor and Laird, Angela R},\n  journal = {Aperture Neuro},\n  year = {2023}\n}';
+                cy.intercept('GET', `**/api/meta-analysis-results/*`, result).as('resultFixture');
+            });
+
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            cy.contains('[role="tab"]', 'Method & Citations').click();
+            cy.contains('The latest meta-analysis was run with compose-runner 0.6.6').should('exist');
+            cy.contains('An ALE meta-analysis was performed with NiMARE (RRID:SCR_017398; Salo & Laird, 2023).', {
+                timeout: 15000,
+            }).should('exist');
+            cy.contains(
+                'Salo, T., & Laird, A. R. (2023). NiMARE: Neuroimaging Meta-Analysis Research Environment.'
+            ).should('exist');
         });
     });
 });

@@ -13,6 +13,9 @@ import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-qu
 import { AxiosError } from 'axios';
 import { HelmetProvider } from 'react-helmet-async';
 import { enqueueSnackbar } from 'notistack';
+import { installVitePreloadErrorHandler } from './helpers/vitePreloadError.helpers';
+
+installVitePreloadErrorHandler();
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions = 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';

@@ -75,7 +75,7 @@ function MetaAnalysisDetails() {
             >
                 <Tab value={0} label={hasResults || !editsAllowed ? 'Meta Analysis Results' : 'Run Meta-Analysis'} />
                 <Tab value={1} label={hasBeenRun || !editsAllowed ? 'View Specification' : 'Edit Specification'} />
-                <Tab value={2} label="Cite Me" />
+                <Tab value={2} label="Method & Citations" />
                 {editsAllowed && hasBeenRun && <Tab value={3} label="Run Again" />}
                 {canEdit && <Tab value={4} label="Settings" />}
             </Tabs>
@@ -127,7 +127,7 @@ function MetaAnalysisDetails() {
                         </Box>
                     </Box>
                 ) : tab === 2 ? (
-                    <CiteMe />
+                    <CiteMe metaAnalysis={metaAnalysis} />
                 ) : tab === 3 ? (
                     <MetaAnalysisInstructions
                         metaAnalysisId={metaAnalysisId || ''}

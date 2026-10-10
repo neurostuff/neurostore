@@ -1,7 +1,10 @@
+import { useQuery } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useGetMetaAnalysisResultById } from 'hooks';
 import { CitationFormat } from 'hooks/useCitationCopy.consts';
-import { vi } from 'vitest';
+import { mockMetaAnalysisResult } from 'testing/mockData';
+import { Mock, vi } from 'vitest';
 import CiteMe from './CiteMe';
 
 const mockUseCitationCopy = vi.fn();
@@ -9,6 +12,8 @@ const mockUseCitationCopy = vi.fn();
 vi.mock('hooks/useCitationCopy', () => ({
     useCitationCopy: () => mockUseCitationCopy(),
 }));
+vi.mock('hooks');
+vi.mock('@tanstack/react-query');
 
 const mockCitationPayload: Record<CitationFormat, string> = {
     apa: 'APA citation text',
@@ -24,6 +29,12 @@ describe('CiteMe', () => {
             isCitationLoading: false,
             citationPayload: mockCitationPayload,
         });
+        (useGetMetaAnalysisResultById as Mock).mockReturnValue({
+            isLoading: false,
+            isError: false,
+            data: mockMetaAnalysisResult(),
+        });
+        (useQuery as Mock).mockReturnValue({ isLoading: false, isError: false, data: undefined });
     });
 
     it('renders loading spinner when citations are loading', async () => {
@@ -32,34 +43,88 @@ describe('CiteMe', () => {
             citationPayload: undefined,
         });
 
-        render(<CiteMe />);
+        render(<CiteMe metaAnalysis={undefined} />);
 
         expect(screen.getByRole('progressbar')).toBeInTheDocument();
-        expect(screen.queryByText('Copy citations in your preferred format:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Platform citations:')).not.toBeInTheDocument();
     });
 
-    it('renders nothing when citation payload is null', async () => {
+    it('renders no citation formats when citation payload is null', async () => {
         mockUseCitationCopy.mockReturnValue({
             isCitationLoading: false,
             citationPayload: null,
         });
 
-        const { container } = render(<CiteMe />);
+        render(<CiteMe metaAnalysis={undefined} />);
 
-        expect(container.firstChild).toBeNull();
+        expect(screen.queryByText('Platform citations:')).not.toBeInTheDocument();
+        expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    });
+
+    it('does not render the methods section when the result has no methods or version', async () => {
+        render(<CiteMe metaAnalysis={undefined} />);
+
+        expect(screen.queryByText('Method')).not.toBeInTheDocument();
+    });
+
+    it('renders the compose-runner version and the methods with readable citations', async () => {
+        (useGetMetaAnalysisResultById as Mock).mockReturnValue({
+            isLoading: false,
+            isError: false,
+            data: {
+                ...mockMetaAnalysisResult(),
+                cli_version: '0.6.6',
+                method_description: 'An ALE meta-analysis was performed with NiMARE \\citep{Salo2023}.',
+                method_references: '@article{Salo2023, ...}',
+            },
+        });
+        (useQuery as Mock).mockReturnValue({
+            isLoading: false,
+            data: {
+                description: 'An ALE meta-analysis was performed with NiMARE (Salo et al., 2023).',
+                references: 'Salo, T. (2023). NiMARE. Aperture Neuro, 3.',
+            },
+        });
+
+        render(<CiteMe metaAnalysis={undefined} />);
+
+        expect(screen.getByText('The latest meta-analysis was run with compose-runner 0.6.6')).toBeInTheDocument();
+        expect(
+            screen.getByText('An ALE meta-analysis was performed with NiMARE (Salo et al., 2023).')
+        ).toBeInTheDocument();
+        expect(screen.getByText('References')).toBeInTheDocument();
+        expect(screen.getByText('Salo, T. (2023). NiMARE. Aperture Neuro, 3.')).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: 'Copy to clipboard' })).toHaveLength(3);
+    });
+
+    it('falls back to the raw method description when citations could not be formatted', async () => {
+        (useGetMetaAnalysisResultById as Mock).mockReturnValue({
+            isLoading: false,
+            isError: false,
+            data: {
+                ...mockMetaAnalysisResult(),
+                method_description: 'An ALE meta-analysis \\citep{Salo2023}.',
+            },
+        });
+        (useQuery as Mock).mockReturnValue({ isLoading: false, isError: true, data: undefined });
+
+        render(<CiteMe metaAnalysis={undefined} />);
+
+        expect(screen.getByText('An ALE meta-analysis \\citep{Salo2023}.')).toBeInTheDocument();
+        expect(screen.queryByText('References')).not.toBeInTheDocument();
     });
 
     it('renders heading, dropdown, and default APA citation when loaded', async () => {
-        render(<CiteMe />);
+        render(<CiteMe metaAnalysis={undefined} />);
 
-        expect(screen.getByText('Copy citations in your preferred format:')).toBeInTheDocument();
+        expect(screen.getByText('Platform citations:')).toBeInTheDocument();
         expect(screen.getByRole('combobox')).toBeInTheDocument();
         expect(screen.getByDisplayValue('apa')).toBeInTheDocument();
         expect(screen.getByText('APA citation text')).toBeInTheDocument();
     });
 
     it('shows all citation format options in dropdown with APA and BibTeX first', async () => {
-        render(<CiteMe />);
+        render(<CiteMe metaAnalysis={undefined} />);
 
         await userEvent.click(screen.getByRole('combobox'));
 
@@ -72,7 +137,7 @@ describe('CiteMe', () => {
     });
 
     it('updates displayed citation when selecting different format from dropdown', async () => {
-        render(<CiteMe />);
+        render(<CiteMe metaAnalysis={undefined} />);
 
         expect(screen.getByText('APA citation text')).toBeInTheDocument();
 

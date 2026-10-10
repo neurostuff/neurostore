@@ -11,6 +11,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
 
+from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
 from neurostore.models.migration_types import TSVector, VectorType
@@ -150,6 +151,9 @@ class AnnotationAnalysis(db.Model):
             ["study_id", "studyset_id"],
             ["studyset_studies.study_id", "studyset_studies.studyset_id"],
             ondelete="CASCADE",
+        ),
+        sa.Index(
+            "ix_annotation_analyses_study_id_studyset_id", "study_id", "studyset_id"
         ),
     )
     __mapper_args__ = {"confirm_deleted_rows": False}
@@ -837,6 +841,12 @@ class Point(BaseMixin, db.Model):
     cluster_size = db.Column(db.Float)
     cluster_measurement_unit = db.Column(db.String)
     subpeak = db.Column(db.Boolean)
+    # deactivation and is_seed hold existing data and remain settable through the
+    # API, but the extraction pipeline does not write them. It splits a set by
+    # the sign of its statistic and stores the negative half as its own analysis,
+    # the inverse contrast, so direction is a property of the analysis. A seed is
+    # the role of a coordinate set, kept on the analysis, not on its points.
+    # NiMARE reads neither column.
     deactivation = db.Column(db.Boolean, default=False, index=True)
     is_seed = db.Column(db.Boolean, default=False, nullable=False)
     order = db.Column(db.Integer)
@@ -849,6 +859,10 @@ class Point(BaseMixin, db.Model):
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("points", passive_deletes=True))
+
+    @validates("space")
+    def validate_space(self, key, value):
+        return normalize_space(value)
 
 
 class Image(BaseMixin, db.Model):

@@ -50,13 +50,10 @@ def mock_create_neurovault_collection():
     if not hasattr(set_collection_id, "counter"):
         set_collection_id.counter = itertools.count(10000)
     with patch(
-        "neurosynth_compose.resources.data_views.meta_analyses_view.create_neurovault_collection"
-    ) as mock_meta_view, patch(
         "neurosynth_compose.resources.resource_services.create_neurovault_collection"
     ) as mock_resource_service:
-        mock_meta_view.side_effect = set_collection_id
         mock_resource_service.side_effect = set_collection_id
-        yield mock_meta_view
+        yield mock_resource_service
 
 
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200

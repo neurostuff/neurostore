@@ -58,19 +58,19 @@ const useCuratorTableState = (
         if (allowRowSelection) newColumns.push(createColumn('select'));
         if (allowAIColumns) newColumns.push(createColumn('summary'));
 
+        const stateSelectedColumns = [...state.selectedColumns];
         if (state.firstTimeSeeingPage) {
             // set defaults
             if (allowAIColumns) {
-                newColumns.push(createColumn('fMRITasks.TaskName'));
-                newColumns.push(createColumn('group_name'));
-                newColumns.push(createColumn('diagnosis'));
+                ['fMRITasks.TaskName', 'group_name', 'diagnosis'].forEach((column) => {
+                    newColumns.push(createColumn(column));
+                    stateSelectedColumns.push(column);
+                });
             } else {
-                newColumns.push(createColumn('articleYear'));
-                newColumns.push(createColumn('title'));
-                newColumns.push(createColumn('journal'));
-                newColumns.push(createColumn('authors'));
-                newColumns.push(createColumn('pmid'));
-                newColumns.push(createColumn('doi'));
+                ['articleYear', 'title', 'journal', 'authors', 'pmid', 'doi'].forEach((column) => {
+                    newColumns.push(createColumn(column));
+                    stateSelectedColumns.push(column);
+                });
             }
         } else {
             COMBINED_CURATOR_TABLE_COLUMNS.forEach((column) => {
@@ -87,7 +87,7 @@ const useCuratorTableState = (
             projectId,
             {
                 firstTimeSeeingPage: false,
-                selectedColumns: state.selectedColumns,
+                selectedColumns: stateSelectedColumns,
             },
             allowAIColumns ? '' : 'identification'
         );

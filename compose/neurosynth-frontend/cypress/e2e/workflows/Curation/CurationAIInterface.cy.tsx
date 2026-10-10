@@ -31,6 +31,8 @@ describe('CurationAIInterface', () => {
         cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
         // Before Auth0 provides sub, InfoPopup uses key "-hide-info-popup"
         cy.addToLocalStorage('-hide-info-popup', 'true');
+        // Focus mode shows a first-visit shortcuts dialog keyed by user and project
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-abc123-seen-curation-focus-mode', 'true');
 
         // cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
     });

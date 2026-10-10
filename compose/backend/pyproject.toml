@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurosynth_compose"
-version = "0.23.0"
+version = "0.23.3"
 description = "neurosynth compose"
 authors = [
     { name="James Kent", email="jamesdkent21@gmail.com" }
@@ -30,8 +30,7 @@ dependencies = [
     "scipy~=1.9",
     "shortuuid~=1.0",
     "sqladmin~=0.23",
-    "sqlalchemy[asyncio]~=2.0.0",
-    "sqlalchemy-utils~=0.36",
+    "sqlalchemy[asyncio]>=2.0,<2.2",
     "starlette>=1.0.0,<2",
     "webargs~=8.7",
     "wrapt~=2.1",

@@ -841,7 +841,7 @@ def serialize_study_shards(study_ids, batch_size=STUDY_SHARD_BATCH_SIZE):
 def build_note_shard(
     annotation_id, study_id, base_id, rows, features_by_base, note_keys
 ):
-    note = note_for_base(base_id, features_by_base, note_keys)
+    note = note_for_base(base_id, features_by_base, ())
     notes = []
     for row in rows:
         notes.append(
@@ -1021,11 +1021,56 @@ def refresh_shards(
     )
 
 
+def metadata_text(value):
+    if isinstance(value, (dict, list)):
+        return orjson.dumps(value, option=orjson.OPT_SORT_KEYS).decode()
+    return str(value)
+
+
+def arrow_accepts(values):
+    import pyarrow as pa
+
+    try:
+        pa.array(values)
+    except (pa.ArrowInvalid, pa.ArrowTypeError):
+        return False
+    return True
+
+
+def harmonize_metadata_types(metadatas):
+    """Give each key one type, as pyarrow rejects mixed-type columns.
+
+    NiMARE 0.20 did this before writing parquet; 0.21 does not. A key pyarrow
+    cannot store becomes floats if its values are all numeric, else text (JSON
+    for nested values).
+    """
+    values_by_key = {}
+    for metadata in metadatas:
+        for key, value in metadata.items():
+            if value is not None:
+                values_by_key.setdefault(key, []).append(value)
+    for key, values in values_by_key.items():
+        if arrow_accepts(values):
+            continue
+        try:
+            [float(v) for v in values]
+            convert = float
+        except (TypeError, ValueError):
+            convert = metadata_text
+        for metadata in metadatas:
+            if metadata.get(key) is not None:
+                metadata[key] = convert(metadata[key])
+
+
 def build_studyset_dict(root, selected, studyset):
     studies = []
     for entry in selected:
         shard_path = root / "_cache" / "studies" / f"{entry['study_id']}.json"
         studies.append(orjson.loads(shard_path.read_bytes()))
+    harmonize_metadata_types([s["metadata"] for s in studies if s["metadata"]])
+    harmonize_metadata_types(
+        [a["metadata"] for s in studies for a in s["analyses"] if a["metadata"]]
+    )
     return {
         "id": studyset.id,
         "name": studyset.name,

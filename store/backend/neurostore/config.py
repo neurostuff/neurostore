@@ -75,7 +75,8 @@ class Config(object):
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("neurostore", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:"
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
     BASE_STUDY_FLAGS_ASYNC = os.environ.get(
         "BASE_STUDY_FLAGS_ASYNC", "true"
@@ -145,7 +146,7 @@ class ProductionConfig(Config):
     ENV = "production"
     DB_NAME = resolve_database_name("neurostore", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:"
+        f"postgresql+psycopg2://postgres:"
         f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -162,7 +163,7 @@ class StagingConfig(Config):
     ENV = "staging"
     DB_NAME = resolve_database_name("neurostore", "staging")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:"
+        f"postgresql+psycopg2://postgres:"
         f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -191,7 +192,8 @@ class DevelopmentConfig(Config):
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:"
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
 
@@ -210,7 +212,8 @@ class TestingConfig(Config):
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:"
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
     BASE_STUDY_FLAGS_ASYNC = False
     BASE_STUDY_METADATA_ASYNC = False
@@ -221,9 +224,10 @@ class DockerTestConfig(TestingConfig):
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:"
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
 
 class TravisConfig(TestingConfig):
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres@localhost/travis_ci_test"
+    SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres@localhost/travis_ci_test"

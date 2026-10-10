@@ -38,6 +38,7 @@ import useGetExtractionSummary from './useGetExtractionSummary';
 import useGetCurationSummary from './useGetCurationSummary';
 import useGetFullText from './external/useGetFullText';
 import useUserCanEdit from './useUserCanEdit';
+import useKeyboardShortcuts from './useKeyboardShortcuts';
 import useGetBaseStudyFlatById from './studies/useGetBaseStudyFlatById';
 import useGetBaseStudyInfoById from './studies/useGetBaseStudyInfoById';
 import useGetBaseStudyNestedById from './studies/useGetBaseStudyNestedById';
@@ -63,6 +64,7 @@ export {
     useMeasure,
     useGetFullText,
     useUserCanEdit,
+    useKeyboardShortcuts,
     useGetBaseStudyFlatById,
     useGetBaseStudyInfoById,
     useGetBaseStudyNestedById,
