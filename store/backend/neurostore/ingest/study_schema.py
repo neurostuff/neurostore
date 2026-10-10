@@ -55,6 +55,7 @@ from sqlalchemy.exc import IntegrityError
 from jsonschema import validators
 from study_schema import keys as parse_keys
 from study_schema.jsonschema import load as load_json_schema
+from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
 from neurostore.coordinate_spaces import normalize_space
@@ -110,7 +111,7 @@ DECLARED_KEYS = {
 }
 
 # Analysis fields the skeleton keeps as columns or points rather than in metadata.
-_ANALYSIS_COLUMNS = {"key", "name", "description", "points"}
+_ANALYSIS_COLUMNS = {"key", "name", "description", "points", "role", "from_prior_study"}
 
 # StudyEntityAlias.reason when a new parse reads the same analysis from other cells.
 ALIAS_CELLS_CHANGED = "cells_changed"
@@ -180,6 +181,7 @@ def ingest_upload(body, user=None):
     db.session.execute(
         sa.select(BaseStudy.id).where(BaseStudy.id == base_study.id).with_for_update()
     )
+    _set_retraction(base_study, parsed_paper)
 
     summary = {
         "kind": kind,
@@ -434,6 +436,18 @@ def _bibliography(parsed_paper):
         "authors": ", ".join(a for a in authors if a) or None,
     }
     return {k: v for k, v in fields.items() if v is not None}
+
+
+def _set_retraction(base_study, parsed_paper):
+    """Mark the paper retracted from its corrections; unknown until they are looked up."""
+    corrections = ((parsed_paper or {}).get("bibliography") or {}).get("corrections")
+    if corrections is None:
+        return
+    notice = next(
+        (c for c in corrections if c["kind"] == CorrectionKind.retraction.value), None
+    )
+    base_study.is_retracted = notice is not None
+    base_study.retraction_notice = notice
 
 
 def _current_study(base_study):
@@ -797,6 +811,8 @@ def _apply_parse(study, parse, parsed_paper, user):
         analysis.name = parsed["name"]
         analysis.description = parsed.get("description")
         analysis.order = order
+        analysis.role = parsed["role"]
+        analysis.from_prior_study = parsed.get("from_prior_study")
         analysis.metadata_ = _analysis_metadata(parsed, parse["parse_id"])
         analysis.table = (
             _table(study, tables, parsed["table_id"], paper_tables.get(parsed["table_id"]))
@@ -1222,6 +1238,7 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
     revisions = _revisions_since(base_study, parse["parse_id"], study)
     analyses = {"resolved": 0, "unresolved": [], "parked": [], "superseded": []}
     conditions = {}
+    outcomes = {}
     for extracted in record.get("analyses") or []:
         key = (extracted.get("source_table_analysis") or {}).get("value")
         positional = bool(key) and not is_content_key(key)
@@ -1258,12 +1275,15 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
             for new_key in replaced_by:
                 if new_key in current:
                     _want_conditions(conditions, current[new_key], extracted, derived=True)
+                    _want_outcome(outcomes, current[new_key], extracted, derived=True)
         elif analysis is not None:
             analyses["resolved"] += 1
             _want_conditions(conditions, analysis, extracted, derived=False)
+            _want_outcome(outcomes, analysis, extracted, derived=False)
             partner = _inverse_half(study, analysis)
             if partner is not None:
                 _want_conditions(conditions, partner, extracted, derived=True)
+                _want_outcome(outcomes, partner, extracted, derived=True)
         elif positional:
             analyses["parked"].append({"key": key, "reason": POSITIONAL_KEY_REASON})
         else:
@@ -1277,6 +1297,8 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
             carried[name] += count
     for analysis, weights, _ in conditions.values():
         _set_conditions(analysis, weights, user)
+    for analysis, outcome, _ in outcomes.values():
+        analysis.outcome = outcome
     db.session.flush()
     summary = {"config_id": config.id, "analyses": analyses, "claims": claims}
     if revisions:
@@ -1366,6 +1388,19 @@ def _want_conditions(wanted, analysis, extracted, derived):
     if derived and _split(analysis).get("half") == "inverse":
         weights = {name: -weight for name, weight in weights.items()}
     wanted[analysis.id] = (analysis, weights, derived)
+
+
+def _want_outcome(wanted, analysis, extracted, derived):
+    """Queue ``extracted``'s outcome for ``analysis``, by the same rule as conditions.
+
+    An analysis's own entry sets its outcome, to null when the record does not report it;
+    a derived one (the other half of a split, a key a revision replaced) only adds one.
+    """
+    outcome = extracted.get("outcome") or {}
+    value = outcome.get("value") if outcome.get("extraction_status") == "extracted" else None
+    if derived and (value is None or (analysis.id in wanted and not wanted[analysis.id][2])):
+        return
+    wanted[analysis.id] = (analysis, value, derived)
 
 
 def _set_conditions(analysis, weights, user):

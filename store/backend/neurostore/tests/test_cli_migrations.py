@@ -1,3 +1,4 @@
+import sqlalchemy as sa
 from click.testing import CliRunner
 
 from neurostore import service_migrations
@@ -52,3 +53,19 @@ def test_database_migrations_round_trip_at_head(db):
     service_migrations.downgrade("-1")
     service_migrations.upgrade("heads")
     service_migrations.current()
+
+
+def test_outcome_role_retraction_migration_round_trips(db):
+    def columns(table):
+        return {c["name"] for c in sa.inspect(db.engine).get_columns(table)}
+
+    added = {
+        "analyses": {"outcome", "role", "from_prior_study"},
+        "base_studies": {"is_retracted", "retraction_notice"},
+    }
+    service_migrations.upgrade("heads")
+    assert all(cols <= columns(table) for table, cols in added.items())
+    service_migrations.downgrade("28cdbfce7bfa")
+    assert all(not cols & columns(table) for table, cols in added.items())
+    service_migrations.upgrade("heads")
+    assert all(cols <= columns(table) for table, cols in added.items())

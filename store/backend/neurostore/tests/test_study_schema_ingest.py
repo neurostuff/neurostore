@@ -14,6 +14,7 @@ from neurostore.ingest.study_schema import (
 )
 from neurostore.models import (
     Analysis,
+    BaseStudy,
     FieldClaim,
     PipelineAnalysisResult,
     PipelineConfig,
@@ -621,3 +622,119 @@ def test_a_concurrent_upload_taking_the_run_id_is_refused_as_reused(session, mon
     assert error.value.status_code == 422
     assert "RUN_ID_REUSED" in str(error.value.__dict__)
     assert PipelineStudyResult.query.filter_by(run_id="run-1").count() == 1
+
+
+# ---------------------------------------------------------------------------
+# Outcome, role and retraction columns
+# ---------------------------------------------------------------------------
+
+NULL = fx.table_analysis("tbl3", [0], "Risk > Loss", [])
+ROI = fx.table_analysis(
+    "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor", from_prior_study=True
+)
+
+
+def _outcome_record(*pairs):
+    analyses = []
+    for i, (parsed, outcome) in enumerate(pairs):
+        analysis = fx.record_analysis(f"a{i}", parsed["key"], parsed["name"])
+        if outcome is not None:
+            analysis["outcome"] = fx.extracted(outcome)
+        analyses.append(analysis)
+    return fx.record(analyses)
+
+
+def _by_key(study):
+    return {a.source_id: a for a in study.analyses}
+
+
+def test_parse_writes_role_and_from_prior_study(session):
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, ROI])})
+
+    analyses = _by_key(_current(summary["base_study_id"]))
+    assert (analyses[LOSS["key"]].role, analyses[LOSS["key"]].from_prior_study) == (
+        "result",
+        None,
+    )
+    assert (analyses[ROI["key"]].role, analyses[ROI["key"]].from_prior_study) == (
+        "anchor",
+        True,
+    )
+    # Columns, not a second copy in metadata.
+    assert "role" not in analyses[ROI["key"]].metadata_
+    assert "from_prior_study" not in analyses[ROI["key"]].metadata_
+    assert Analysis.query.filter_by(role="anchor").one().source_id == ROI["key"]
+
+
+def test_record_writes_outcome(session):
+    parse = fx.parse([LOSS, NULL])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record(
+                (LOSS, "significant_effect"), (NULL, "no_significant_effect")
+            ),
+        }
+    )
+    analyses = _by_key(_current(summary["base_study_id"]))
+    assert analyses[LOSS["key"]].outcome == "significant_effect"
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+    assert analyses[NULL["key"]].points == []
+
+    # A later record that does not report it clears the analysis's own outcome.
+    ingest_upload(
+        {
+            "parse_id": parse["parse_id"],
+            "base_study_id": summary["base_study_id"],
+            "record": _outcome_record((LOSS, None), (NULL, "no_significant_effect")),
+        }
+    )
+    assert analyses[LOSS["key"]].outcome is None
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+
+    # A re-applied parse keeps the record's outcome: the parse does not carry one.
+    ingest_upload({"coordinate_parse": parse})
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+
+
+def test_parsed_paper_corrections_mark_retraction(session):
+    notice = {"kind": "retraction", "pmid": "99999999", "doi": None}
+    summary = ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": fx.parsed_paper(corrections=[{"kind": "erratum"}, notice]),
+        }
+    )
+    base = BaseStudy.query.get(summary["base_study_id"])
+    assert base.is_retracted is True
+    assert base.retraction_notice == notice
+
+    # A parsed paper whose corrections were not looked up leaves the status alone.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": fx.parsed_paper()})
+    assert base.is_retracted is True
+
+    ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": fx.parsed_paper(corrections=[{"kind": "erratum"}]),
+        }
+    )
+    assert (base.is_retracted, base.retraction_notice) == (False, None)
+
+
+def test_parse_without_parsed_paper_leaves_retraction_unknown(session):
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS])})
+    assert BaseStudy.query.get(summary["base_study_id"]).is_retracted is None
+
+
+def test_inverse_half_takes_the_original_halfs_outcome(session):
+    revision, original, inverse, merged = _revision()
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    entry = _contrast(original, gain="positive")
+    entry["outcome"] = fx.extracted("significant_effect")
+    summary = ingest_upload({"coordinate_parse": revision, "record": fx.record([entry])})
+
+    by_key = _by_key(_current(summary["base_study_id"]))
+    assert by_key[original["key"]].outcome == "significant_effect"
+    assert by_key[inverse["key"]].outcome == "significant_effect"
+    assert by_key[merged["key"]].outcome is None
