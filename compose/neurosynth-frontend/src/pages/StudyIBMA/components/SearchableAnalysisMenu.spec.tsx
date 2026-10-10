@@ -102,14 +102,15 @@ describe('SearchableAnalysisMenu', () => {
         expect(onSelectAnalysis).toHaveBeenCalledWith('analysis-2');
     });
 
-    it('labels the current analysis and does not call onSelectAnalysis when it is chosen', async () => {
+    it('marks the current analysis as selected and does not call onSelectAnalysis when it is chosen', async () => {
         const onSelectAnalysis = vi.fn();
         const onClose = vi.fn();
         renderMenu({ currentAnalysisId: 'analysis-1', onSelectAnalysis, onClose });
 
-        expect(screen.getByRole('menuitem', { name: 'Motor contrast (current analysis)' })).toBeInTheDocument();
+        const currentItem = screen.getByRole('menuitem', { name: 'Motor contrast' });
+        expect(currentItem).toHaveClass('Mui-selected');
 
-        await userEvent.click(screen.getByRole('menuitem', { name: 'Motor contrast (current analysis)' }));
+        await userEvent.click(currentItem);
 
         expect(onSelectAnalysis).not.toHaveBeenCalled();
         expect(onClose).toHaveBeenCalled();

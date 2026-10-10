@@ -8,7 +8,6 @@ Create Date: 2026-01-28 00:15:00.000000
 
 from alembic import op
 import sqlalchemy as sa  # noqa: F401
-import sqlalchemy_utils  # noqa: F401
 
 
 # revision identifiers, used by Alembic.

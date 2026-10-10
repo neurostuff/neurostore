@@ -26,6 +26,7 @@ import useGetAnnotationById from './annotations/useGetAnnotationById';
 import useDeleteAnnotation from './annotations/useDeleteAnnotation';
 import useCreateAnnotation from './annotations/useCreateAnnotation';
 import useCreateStudy from './studies/useCreateStudy';
+import useIngest from './studies/useIngest';
 import useCreateProject from './projects/useCreateProject';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
 import useGetStudysetNonNestedById from './studysets/useGetStudysetNonNestedById';
@@ -37,6 +38,7 @@ import useGetExtractionSummary from './useGetExtractionSummary';
 import useGetCurationSummary from './useGetCurationSummary';
 import useGetFullText from './external/useGetFullText';
 import useUserCanEdit from './useUserCanEdit';
+import useKeyboardShortcuts from './useKeyboardShortcuts';
 import useGetBaseStudyFlatById from './studies/useGetBaseStudyFlatById';
 import useGetBaseStudyInfoById from './studies/useGetBaseStudyInfoById';
 import useGetBaseStudyNestedById from './studies/useGetBaseStudyNestedById';
@@ -62,6 +64,7 @@ export {
     useMeasure,
     useGetFullText,
     useUserCanEdit,
+    useKeyboardShortcuts,
     useGetBaseStudyFlatById,
     useGetBaseStudyInfoById,
     useGetBaseStudyNestedById,
@@ -75,6 +78,7 @@ export {
     useGetStudyNonNestedById,
     useUpdateStudy,
     useCreateStudy,
+    useIngest,
     // META-ANALYSES
     useCreateAlgorithmSpecification,
     useGetMetaAnalysesByIds,

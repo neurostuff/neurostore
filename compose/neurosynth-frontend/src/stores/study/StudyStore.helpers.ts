@@ -1,3 +1,5 @@
+import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
+import { sortByOrder } from 'helpers/utils';
 import {
     AnalysisRequest,
     AnalysisReturn,
@@ -6,10 +8,9 @@ import {
     PointRequest,
     PointReturn,
     PointValue,
+    StudyReturn,
 } from 'neurostore-typescript-sdk';
 import { v4 as uuid } from 'uuid';
-import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
-import { StudyReturn } from 'neurostore-typescript-sdk';
 
 export interface MapOrSpaceType {
     value: string;
@@ -146,8 +147,8 @@ export const studyPointsToStorePoints = (
             },
         ];
     } else {
-        storePoints = ((points || []) as Array<PointReturn>)
-            .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, deactivation, ...args }) => {
+        storePoints = ((points || []) as Array<PointReturn>).map(
+            ({ entities, space, subpeak, cluster_size, values, kind, label_id, deactivation, ...args }) => {
                 const typedValues = values as Array<PointValue> | undefined;
                 if (!analysisSpace && !!space) {
                     analysisSpace = DefaultSpaceTypes[space] ? DefaultSpaceTypes[space] : DefaultSpaceTypes.OTHER;
@@ -174,10 +175,9 @@ export const studyPointsToStorePoints = (
                     z: (args.coordinates || [])[2],
                     isNew: false,
                 };
-            })
-            .sort((a, b) => {
-                return (a.order as number) - (b.order as number);
-            });
+            }
+        );
+        storePoints = sortByOrder(storePoints);
     }
 
     return {
@@ -219,15 +219,7 @@ export const studyAnalysesToStoreAnalyses = (
         };
     });
 
-    return (studyAnalyses || []).sort((a, b) => {
-        return (a.order as number) - (b.order as number);
-
-        // previously sorted by date: may want this again in the future
-        // const dateA = Date.parse(a.created_at || '');
-        // const dateB = Date.parse(b.created_at || '');
-        // if (isNaN(dateA) || isNaN(dateB)) return 0;
-        // return dateB - dateA;
-    });
+    return sortByOrder(studyAnalyses);
 };
 
 export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): AnalysisReturn[] => {

@@ -85,14 +85,7 @@ const useStudyStore = create<
                                 analyses: studyAnalysesToStoreAnalyses(
                                     studyRes.data.analyses as AnalysisReturn[],
                                     true
-                                ).sort((a, b) => {
-                                    if (!a.order || !b.order)
-                                        return (
-                                            new Date(a.created_at || '').valueOf() -
-                                            new Date(b.created_at || '').valueOf()
-                                        );
-                                    return a.order - b.order;
-                                }),
+                                ),
                                 metadata: metadataToArray(studyRes?.data?.metadata || {}),
                             },
                             // conditions: conditionsRes.data.results?.map((x) => ({

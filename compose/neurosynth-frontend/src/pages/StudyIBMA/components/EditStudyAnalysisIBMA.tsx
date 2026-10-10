@@ -5,7 +5,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import BrainMapDetailPanel from 'pages/StudyIBMA/components/BrainMapDetailPanel';
 import EditStudyAnalysisTable from 'pages/StudyIBMA/components/EditStudyAnalysisTable';
 import UncategorizedImagesColumn from 'pages/StudyIBMA/components/UncategorizedImagesColumn';
-import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
 
 const EditStudyAnalysisIBMA: React.FC = () => {
     const { table, tableMinWidth, uncategorized, noteKeys, isLoading } = useEditStudyAnalysisBoardState();
@@ -40,7 +39,7 @@ const EditStudyAnalysisIBMA: React.FC = () => {
             sx={{ display: 'flex', gap: 4, minWidth: 0, width: '100%', height: '100%' }}
         >
             {isLoading ? (
-                <Skeleton sx={{ transform: 'none', width: '400px', height: '100%' }} />
+                <Skeleton sx={{ transform: 'none', height: '100%' }} />
             ) : (
                 <UncategorizedImagesColumn
                     collapsed={uncategorizedCollapsed}
@@ -66,11 +65,19 @@ const EditStudyAnalysisIBMA: React.FC = () => {
                     sx={{
                         flex: '1 1 0',
                         minWidth: 250,
-                        maxHeight: STUDY_ANALYSIS_TABLE_MAX_HEIGHT,
+                        height: '100%',
+                        minHeight: '100%',
                         overflow: 'auto',
                     }}
                 >
-                    <BrainMapDetailPanel image={selectedImage} onClose={() => toggleImageSelection?.()} />
+                    <BrainMapDetailPanel
+                        image={selectedImage}
+                        onClose={() => toggleImageSelection?.()}
+                        onEditImage={(fields) => {
+                            if (!selectedImage.id) return;
+                            return updateImage?.(selectedImage.id, fields);
+                        }}
+                    />
                 </Paper>
             )}
         </Box>

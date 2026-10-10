@@ -379,7 +379,7 @@ describe(PAGE_NAME, () => {
         imageListItem('assigned_map.nii').find('[aria-label="Move image to analysis"]').click();
 
         cy.get('[role="menu"]').should('be.visible');
-        cy.contains('[role="menuitem"]', 'Analysis 1 (current analysis)').should('be.visible');
+        cy.contains('[role="menuitem"]', 'Analysis 1').should('have.class', 'Mui-selected');
         cy.contains('[role="menuitem"]', 'Analysis 2').click();
 
         cy.wait('@putImage')

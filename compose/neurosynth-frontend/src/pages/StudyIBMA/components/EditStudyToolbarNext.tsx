@@ -27,6 +27,8 @@ const largeToolbarButtonSx = {
     height: `${statusSizeHeight}px`,
     display: 'flex',
     flexDirection: 'column',
+    minWidth: 0,
+    px: { xs: 0.75, xl: 2.75 },
 } as const;
 
 const toolbarLabelSx = {
@@ -189,7 +191,7 @@ const EditStudyToolbarNext: React.FC = () => {
                 confirmText="Continue"
             />
 
-            <ButtonGroup color="info" size="large" variant="outlined">
+            <ButtonGroup color="info" size="large" variant="outlined" fullWidth>
                 <Tooltip title="Mark as unreviewed" placement="top">
                     <Button
                         onClick={() => handleUpdateExtractionStatus(EExtractionStatus.UNCATEGORIZED)}

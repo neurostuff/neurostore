@@ -1,14 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import API from 'api/api.config';
+import metaAnalysisQueries from 'hooks/metaAnalyses/metaAnalysisQueries';
 
 const useGetMetaAnalysisById = (metaAnalysisId: string | undefined) => {
-    const query = useQuery({
-        queryKey: ['meta-analyses', metaAnalysisId],
-        queryFn: () => API.NeurosynthServices.MetaAnalysisService.metaAnalysesIdGet(metaAnalysisId || '', false),
-        enabled: !!metaAnalysisId,
-        select: (data) => data.data
-    });
-    return query;
+    return useQuery(metaAnalysisQueries.byIdNonNested(metaAnalysisId));
 };
 
 export default useGetMetaAnalysisById;

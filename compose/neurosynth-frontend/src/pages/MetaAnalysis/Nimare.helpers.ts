@@ -17,6 +17,8 @@ export const NimareOutputs = [
     { key: 'tau2', label: 'type', description: 'Estimated between-study variance (IBMA only)' },
     { key: 'sigma2', label: 'type', description: 'Estimated within-study variance (IBMA only)' },
     { key: 'label', label: 'type', description: 'Label map' },
+    // IBMA degrees-of-freedom map. Kept after the statistical maps so it sorts last.
+    { key: 'dof', label: 'type', description: 'Degrees of freedom (IBMA only)' },
     // KVPs that describe the methods applied to generate the meta analysis
     {
         key: 'desc',
@@ -87,4 +89,43 @@ export const parseNimareFileName = (
             };
         }
     });
+};
+
+export const formatNimareMethodDescription = async (
+    methodDescription: string,
+    methodReferences: string | null | undefined
+): Promise<{ description: string; references: string }> => {
+    // @ts-expect-error citation-js packages do not provide first-party TS types
+    const citationCore = await import('@citation-js/core');
+    // @ts-expect-error citation-js packages do not provide first-party TS types
+    await import('@citation-js/plugin-bibtex');
+    // @ts-expect-error citation-js packages do not provide first-party TS types
+    await import('@citation-js/plugin-csl');
+
+    const apa = { template: 'apa', lang: 'en-US' } as const;
+    const cite = new citationCore.Cite(methodReferences || '');
+    const knownIds = new Set(cite.data.map((entry: { id: string }) => entry.id));
+
+    // APA citation() returns "(Author, year)"; strip the parens so each command can wrap differently.
+    // For example, formats "wager2007meta" => "Wager et al., 2007"
+    const formatKey = (key: string) => {
+        if (!knownIds.has(key)) return key;
+        return String(cite.format('citation', { ...apa, entry: key })).slice(1, -1);
+    };
+
+    // NiMARE: \citep{a,b} -> (A, 2020; B, 2021); \citealt{a} -> A, 2020; \cite{a} -> A (2020)
+    const description = methodDescription.replace(
+        /\\(citep|citealt|cite)\{([^}]+)\}/g,
+        (_match, command: string, rawKeys: string) => {
+            const parts = rawKeys.split(',').map((key) => formatKey(key.trim()));
+            if (command === 'citep') return `(${parts.join('; ')})`;
+            if (command === 'citealt') return parts.join('; ');
+            return parts.map((part) => part.replace(/, ([^,]+)$/, ' ($1)')).join('; ');
+        }
+    );
+
+    return {
+        description,
+        references: String(cite.format('bibliography', { format: 'text', ...apa })).trim(),
+    };
 };

@@ -9,9 +9,9 @@ import useGetMetaAnalysisJobsByMetaAnalysisId from '../hooks/useGetMetaAnalysisJ
 import EditSpecificationDialog from './EditSpecificationDialog';
 import MetaAnalysisDangerZone from './MetaAnalysisDangerZone';
 import MetaAnalysisExecution from './MetaAnalysisExecution';
-import MetaAnalysisStatusAlert from './MetaAnalysisStatusAlert';
 import DisplayMetaAnalysisSpecification from './DisplayMetaAnalysisSpecification';
 import MetaAnalysisInstructions from './MetaAnalysisInstructions';
+import MetaAnalysisSettingsForm from './MetaAnalysisSettingsForm';
 import CiteMe from './CiteMe';
 
 function MetaAnalysisDetails() {
@@ -36,15 +36,17 @@ function MetaAnalysisDetails() {
     const [tab, setTab] = useState(0);
     const [editSpecificationDialogIsOpen, setEditSpecificationDialogIsOpen] = useState(false);
 
+    const canEditMetaAnalysis = useUserCanEdit(metaAnalysis?.user || undefined);
+    const canEdit = editsAllowed || canEditMetaAnalysis;
     const hasResults = (metaAnalysis?.results?.length ?? 0) > 0;
     const hasJobs = (metaAnalysisJobs?.length ?? 0) > 0;
+    const hasBeenRun = hasResults || hasJobs;
 
     return (
         <StateHandlerComponent
             isLoading={metaAnalysisIsLoading || metaAnalysisJobsIsLoading}
             isError={metaAnalysisIsError || metaAnalysisJobsIsError}
         >
-            <MetaAnalysisStatusAlert metaAnalysis={metaAnalysis} metaAnalysisJobs={metaAnalysisJobs} />
             <Tabs
                 sx={{
                     mt: 2,
@@ -72,12 +74,10 @@ function MetaAnalysisDetails() {
                 onChange={(_, newValue) => setTab(newValue)}
             >
                 <Tab value={0} label={hasResults || !editsAllowed ? 'Meta Analysis Results' : 'Run Meta-Analysis'} />
-                <Tab
-                    value={1}
-                    label={hasResults || hasJobs || !editsAllowed ? 'View Specification' : 'Edit Specification'}
-                />
-                {editsAllowed && <Tab value={2} label={hasResults || hasJobs ? 'Run Again' : 'Settings'} />}
-                <Tab value={3} label="Cite Me" />
+                <Tab value={1} label={hasBeenRun || !editsAllowed ? 'View Specification' : 'Edit Specification'} />
+                <Tab value={2} label="Method & Citations" />
+                {editsAllowed && hasBeenRun && <Tab value={3} label="Run Again" />}
+                {canEdit && <Tab value={4} label="Settings" />}
             </Tabs>
             <Box mt={2}>
                 {tab === 0 ? (
@@ -102,7 +102,7 @@ function MetaAnalysisDetails() {
                                 metaAnalysisId={metaAnalysisId || ''}
                                 projectId={projectId || ''}
                             />
-                            {!hasResults && !hasJobs && (
+                            {!hasBeenRun && (
                                 <Box>
                                     <Button
                                         sx={{
@@ -127,20 +127,19 @@ function MetaAnalysisDetails() {
                         </Box>
                     </Box>
                 ) : tab === 2 ? (
-                    <Box>
-                        {hasResults || hasJobs ? (
-                            <MetaAnalysisInstructions
-                                metaAnalysisId={metaAnalysisId || ''}
-                                onSubmitMetaAnalysisJob={() => {
-                                    setTab(0);
-                                }}
-                            />
-                        ) : (
-                            <MetaAnalysisDangerZone metaAnalysisId={metaAnalysisId} />
-                        )}
-                    </Box>
+                    <CiteMe metaAnalysis={metaAnalysis} />
                 ) : tab === 3 ? (
-                    <CiteMe />
+                    <MetaAnalysisInstructions
+                        metaAnalysisId={metaAnalysisId || ''}
+                        onSubmitMetaAnalysisJob={() => {
+                            setTab(0);
+                        }}
+                    />
+                ) : tab === 4 ? (
+                    <Box sx={{ maxWidth: 720 }}>
+                        <MetaAnalysisSettingsForm />
+                        {!hasBeenRun && <MetaAnalysisDangerZone metaAnalysisId={metaAnalysisId} />}
+                    </Box>
                 ) : null}
             </Box>
         </StateHandlerComponent>

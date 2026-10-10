@@ -80,7 +80,8 @@ class Config:
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("compose", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
     PROPAGATE_EXCEPTIONS = True
 
@@ -94,6 +95,9 @@ class Config:
     NEUROVAULT_ACCESS_TOKEN = get_env_var("NEUROVAULT_ACCESS_TOKEN")
     NEUROVAULT_COLLECTION_NAME_MAX_LEN = 200
     NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX = 25
+    # Keep NeuroVault calls well below the nginx proxy_read_timeout (300s).
+    NEUROVAULT_REQUEST_TIMEOUT_SECONDS = 20
+    NEUROVAULT_COLLECTION_CREATE_DEADLINE_SECONDS = 60
     COMPOSE_RUNNER_SUBMIT_URL = get_env_var("COMPOSE_RUNNER_SUBMIT_URL")
     COMPOSE_RUNNER_STATUS_URL = get_env_var("COMPOSE_RUNNER_STATUS_URL")
     COMPOSE_RUNNER_LOGS_URL = get_env_var("COMPOSE_RUNNER_LOGS_URL")
@@ -134,7 +138,7 @@ class ProductionConfig(Config):
     ENV = "production"
     DB_NAME = resolve_database_name("compose", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"postgresql+psycopg2://postgres:{Config.POSTGRES_PASSWORD}"
         f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -151,7 +155,7 @@ class StagingConfig(Config):
     ENV = "staging"
     DB_NAME = resolve_database_name("compose", "staging")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"postgresql+psycopg2://postgres:{Config.POSTGRES_PASSWORD}"
         f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
@@ -175,7 +179,8 @@ class DevelopmentConfig(Config):
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
@@ -199,7 +204,8 @@ class TestingConfig(Config):
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
@@ -216,9 +222,10 @@ class DockerTestConfig(TestingConfig):
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql+psycopg2://postgres:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
 
 class TravisConfig(TestingConfig):
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres@localhost/travis_ci_test"
+    SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres@localhost/travis_ci_test"

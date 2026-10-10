@@ -58,21 +58,6 @@ const CurationStubListItem = React.memo((props: ICurationStubListItem) => {
                         {props.stub.journal}
                     </Typography>
                 </Box>
-                {/* <Box sx={{ display: 'flex', width: '100%' }}>
-                    {props.stub.tags.map((tag) => (
-                        <Chip
-                            key={tag.id}
-                            label={tag.label}
-                            size="small"
-                            sx={{
-                                margin: '3px',
-                                marginRight: '4px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                            }}
-                        />
-                    ))}
-                </Box> */}
             </ListItemButton>
         </ListItem>
     );
