@@ -20,13 +20,16 @@ non-public history Study for the version it came from (``source = HISTORY_SOURCE
 Every parse uploaded is also kept whole as a PipelineStudyResult of the PARSE_PIPELINE
 pipeline.
 
-Claims (field_claims) hang off StudyEntity rows keyed by natural key, so an analysis whose
-key survives a new version keeps its claims untouched. A revision's split and merge
-verdicts copy the claims, evidence, runs and votes on the old key to each replacement, each
+Claims (field_claims) hang off StudyEntity rows identified by ``entity_hash``
+(``study_entity_hash``); for an analysis or coordinate set the hash covers every cell or
+span it was read from, taken from a stored parse that holds its key. An analysis whose
+cells survive a new version keeps its claims untouched. A revision's split and merge
+verdicts copy the claims, evidence and runs on the old entity to each replacement, each
 copy naming its origin in ``carried_from``. A new original parse that reads an analysis
-from other cells (same table and name, new key) re-keys its entities instead, keeping the
-old key as a ``cells_changed`` alias so a record that read the older parse still resolves.
-Record keys that are positional rather than content keys are held, never made entities.
+from other cells (same table and name, new key) re-hashes its entities instead, keeping the
+old hash as a ``cells_changed`` alias so a record that read the older parse still resolves.
+Record keys that are positional rather than content keys, or that no stored parse holds,
+are held, never made entities.
 
 Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
 refused (NOT_CURRENT). A record that read an older parse reports the keys that resolve to
@@ -54,6 +57,7 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_unprocessable,
     abort_validation,
 )
+from neurostore.models.data import analysis_identity, study_entity_hash
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
@@ -63,7 +67,6 @@ from neurostore.models import (
     FieldClaim,
     FieldClaimEvidence,
     FieldClaimRun,
-    FieldVote,
     Pipeline,
     PipelineAnalysisResult,
     PipelineConfig,
@@ -86,7 +89,8 @@ DEFAULT_RECORD_PIPELINE = "pondie"
 # stored parse document only (see the paper-parse schema's CoordinateRole).
 UPLOADED_ROLES = {"result", "anchor"}
 
-# Entities whose natural key is a parse key, so a split or merge moves their claims.
+# Entities a record names by parse key, hashed by the cells or spans behind that key, so a
+# split or merge moves their claims.
 PARSE_KEYED_CLASSES = ("Analysis", "CoordinateSet")
 
 # The storage schema's unique_key_slots: the only nested lists a claim path may index.
@@ -110,12 +114,14 @@ DROPPED_REASON = "the record read an older parse that held this key; the current
 
 # A content key ends in 12 hex digits of its cells' or spans' hash (study_schema.keys).
 # pondie records still carry positional ``<table_id>#<ordinal>`` / ``text#<N>`` keys until
-# pondie moves to content keys; those are held, never minted into entities, since an ordinal re-addresses claims.
+# pondie moves to content keys; those are held, never minted into entities, since an
+# ordinal re-addresses claims.
 _CONTENT_KEY = re.compile(r"[^#]+#[0-9a-f]{12}")
 POSITIONAL_KEY_REASON = (
     "positional key: claims are keyed only by content keys (study_schema.keys), "
     "which pondie records carry once they are migrated"
 )
+UNKNOWN_KEY_REASON = "no stored parse of this paper holds the key, so it has no cells to hash"
 
 _MAX_REPORTED_ERRORS = 20
 
@@ -193,9 +199,10 @@ def ingest_upload(body, user=None):
             ],
         )
 
+    provenance = {}
     if parse is not None:
         study = study or _create_study(base_study, parsed_paper, user)
-        _store_parse(base_study, parse)
+        provenance["parse"] = _store_parse(base_study, parse)
         summary["skeleton"] = _apply_parse(study, parse, parsed_paper, user)
         if kind == "revision":
             summary["carried"] = _carry_claims(base_study, study, parse)
@@ -207,13 +214,14 @@ def ingest_upload(body, user=None):
                 "A record attaches to a stored parse; this one is not stored for the paper.",
                 [make_field_error("parse_id", parse_id, code="UNKNOWN_PARSE")],
             )
-        summary["record"] = _ingest_record(
+        summary["record"], provenance["record"] = _ingest_record(
             base_study, study, record, stored_parse, body.get("pipeline") or {}, user
         )
 
     if study is not None:
         summary["study_id"] = study.id
     db.session.flush()
+    summary["provenance"] = {name: _provenance(result) for name, result in provenance.items()}
     recompute_media_flags([base_study.id])
     return summary
 
@@ -503,8 +511,10 @@ def _parse_version(header):
 
 
 def _store_parse(base_study, parse):
-    if _stored_parse(base_study, parse["parse_id"]) is not None:
-        return
+    """Keep ``parse`` whole as a PARSE_PIPELINE result; return that result."""
+    stored = _stored_parse_result(base_study, parse["parse_id"])
+    if stored is not None:
+        return stored
     producer = _parse_version(parse["header"])
     config = _get_config(
         PARSE_PIPELINE,
@@ -515,21 +525,21 @@ def _store_parse(base_study, parse):
             "version": parse["header"]["schema_version"],
         },
     )
-    db.session.add(
-        PipelineStudyResult(
-            config_id=config.id,
-            base_study_id=base_study.id,
-            result_data=parse,
-            file_inputs=parse["header"].get("inputs"),
-            status="SUCCESS",
-            date_executed=parse["header"].get("created_at") or _now(),
-        )
+    result = PipelineStudyResult(
+        config_id=config.id,
+        base_study_id=base_study.id,
+        result_data=parse,
+        file_inputs=parse["header"].get("inputs"),
+        status="SUCCESS",
+        date_executed=parse["header"].get("created_at") or _now(),
     )
+    db.session.add(result)
     db.session.flush()
+    return result
 
 
-def _stored_parse(base_study, parse_id):
-    result = (
+def _stored_parse_result(base_study, parse_id):
+    return (
         PipelineStudyResult.query.join(PipelineConfig)
         .join(Pipeline)
         .filter(
@@ -539,7 +549,33 @@ def _stored_parse(base_study, parse_id):
         )
         .first()
     )
+
+
+def _stored_parse(base_study, parse_id):
+    result = _stored_parse_result(base_study, parse_id)
     return result.result_data if result is not None else None
+
+
+def _iso(value):
+    return value.isoformat() if isinstance(value, datetime) else value
+
+
+def _provenance(result):
+    """The run a stored result came from: pipeline, version, commit, schema and times."""
+    config = result.config
+    args = config.config_args or {}
+    return {
+        "result_id": result.id,
+        "config_id": config.id,
+        "pipeline": config.pipeline.name,
+        "version": config.version,
+        "commit": args.get("commit"),
+        "schema": config.schema,
+        "parse_version": args.get("parse_version") or args.get("producer"),
+        "date_executed": _iso(result.date_executed),
+        "created_at": _iso(result.created_at),
+        "updated_at": _iso(result.updated_at),
+    }
 
 
 def _now():
@@ -726,80 +762,113 @@ def _set_points(analysis, parsed, user):
 
 
 def _alias_rekeyed(base_study, superseded, uploaded, existing):
-    """Re-key the entities of analyses a new parse reads from other cells.
+    """Re-hash the entities of analyses a new parse reads from other cells.
 
     A dropped and an added analysis are the same one when they alone share a table and a
-    name. Its entities take the new key and keep the old one as an alias, so claims stay
+    name. Its entities take the new hash and keep the old one as an alias, so claims stay
     put rather than being copied. A revision says this with verdicts instead.
     """
 
     def by_name(pairs):
         groups = {}
-        for key, table_id, name in pairs:
-            groups.setdefault((table_id, name), []).append(key)
+        for item, table_id, name in pairs:
+            groups.setdefault((table_id, name), []).append(item)
         return {k: v[0] for k, v in groups.items() if len(v) == 1}
 
     dropped = by_name(
-        (a.source_id, a.table.t_id if a.table is not None else None, a.name)
-        for a in superseded
+        (a, a.table.t_id if a.table is not None else None, a.name) for a in superseded
     )
     added = by_name(
-        (a["key"], a.get("table_id"), a["name"])
-        for a in uploaded
-        if a["key"] not in existing
+        (a, a.get("table_id"), a["name"]) for a in uploaded if a["key"] not in existing
     )
     aliased = []
-    for match, old_key in dropped.items():
-        new_key = added.get(match)
-        if new_key is None:
+    for match, old in dropped.items():
+        new = added.get(match)
+        if new is None:
             continue
-        for entity in StudyEntity.query.filter(
-            StudyEntity.base_study_id == base_study.id,
-            StudyEntity.entity_class.in_(PARSE_KEYED_CLASSES),
-            StudyEntity.natural_key == old_key,
-        ):
-            if StudyEntity.query.filter_by(
-                base_study_id=base_study.id,
-                entity_class=entity.entity_class,
-                natural_key=new_key,
-            ).first():
+        for entity_class in PARSE_KEYED_CLASSES:
+            old_hash = _entity_hash(base_study, entity_class, old.metadata_)
+            new_hash = _entity_hash(base_study, entity_class, new)
+            entity = StudyEntity.query.filter_by(entity_hash=old_hash).first()
+            if entity is None or StudyEntity.query.filter_by(entity_hash=new_hash).first():
                 continue
-            entity.natural_key = new_key
+            entity.entity_hash = new_hash
             db.session.add(
                 StudyEntityAlias(
-                    entity_id=entity.id,
-                    entity_class=entity.entity_class,
-                    natural_key=old_key,
-                    reason=ALIAS_CELLS_CHANGED,
+                    entity_hash=old_hash, entity_id=entity.id, reason=ALIAS_CELLS_CHANGED
                 )
             )
-            aliased.append({"from": old_key, "to": new_key})
+            aliased.append({"from": old.source_id, "to": new["key"]})
     db.session.flush()
     return aliased
 
 
 def _link_entities(base_study, study):
-    """Point each Analysis entity at the current analysis under its key."""
-    by_key = {a.source_id: a.id for a in study.analyses}
-    for entity in StudyEntity.query.filter(
-        StudyEntity.base_study_id == base_study.id,
-        StudyEntity.entity_class == "Analysis",
-        StudyEntity.natural_key.in_(list(by_key)),
-    ):
-        entity.analysis_id = by_key[entity.natural_key]
+    """Point each Analysis entity at the current analysis read from its cells."""
+    by_hash = {
+        _entity_hash(base_study, "Analysis", a.metadata_): a.id for a in study.analyses
+    }
+    for entity in StudyEntity.query.filter(StudyEntity.entity_hash.in_(list(by_hash))):
+        entity.analysis_id = by_hash[entity.entity_hash]
+
+
+def _analysis_identity(parsed):
+    """``analysis_identity`` of a parse analysis (or the metadata stored from one)."""
+    return analysis_identity(
+        parsed["origin"],
+        parsed.get("table_id"),
+        cells=[(c["row"], c["column_group"]) for c in parsed.get("cells") or []],
+        spans=[(s["start_char"], s["end_char"]) for s in parsed.get("text_spans") or []],
+    )
+
+
+def _entity_hash(base_study, entity_class, parsed):
+    return study_entity_hash(base_study.id, entity_class, _analysis_identity(parsed))
+
+
+def _parsed_for_key(base_study, key):
+    """The analysis a stored parse of this paper holds under ``key``, or None.
+
+    A content key is a function of its cells, so any stored parse holding it agrees.
+    """
+    stored = (
+        PipelineStudyResult.query.join(PipelineConfig)
+        .join(Pipeline)
+        .filter(
+            Pipeline.name == PARSE_PIPELINE,
+            PipelineStudyResult.base_study_id == base_study.id,
+            PipelineStudyResult.result_data["analyses"].contains([{"key": key}]),
+        )
+        .first()
+    )
+    if stored is None:
+        return None
+    return next(a for a in stored.result_data["analyses"] if a["key"] == key)
+
+
+def _hash_for_key(base_study, entity_class, key):
+    """The entity hash of ``entity_class`` named by ``key`` in a record, or None.
+
+    A parse key's hash covers its cells or spans; every other class is hashed by its
+    name (Table by its table id; Study by '').
+    """
+    if entity_class not in PARSE_KEYED_CLASSES:
+        return study_entity_hash(base_study.id, entity_class, key)
+    parsed = _parsed_for_key(base_study, key)
+    return _entity_hash(base_study, entity_class, parsed) if parsed is not None else None
 
 
 def _current_key(base_study, key):
-    """``key``, or the key its analysis took when a later parse re-keyed it."""
+    """``key``, or the key its analysis took when a later parse re-read it from other cells."""
+    old_hash = _hash_for_key(base_study, "Analysis", key)
     renamed = (
-        db.session.query(StudyEntity.natural_key)
+        db.session.query(Analysis.source_id)
+        .join(StudyEntity, StudyEntity.analysis_id == Analysis.id)
         .join(StudyEntityAlias, StudyEntityAlias.entity_id == StudyEntity.id)
-        .filter(
-            StudyEntity.base_study_id == base_study.id,
-            StudyEntityAlias.entity_class == "Analysis",
-            StudyEntityAlias.natural_key == key,
-        )
+        .filter(StudyEntityAlias.entity_hash == old_hash)
         .scalar()
+        if old_hash is not None
+        else None
     )
     return renamed or key
 
@@ -826,28 +895,26 @@ def _analysis_for_key(base_study, key):
 # ---------------------------------------------------------------------------
 
 
-def _entity(base_study, entity_class, natural_key, config=None):
-    entity = StudyEntity.query.filter_by(
-        base_study_id=base_study.id, entity_class=entity_class, natural_key=natural_key
-    ).first()
+def _entity(base_study, entity_class, key, config=None):
+    """The entity ``key`` names, created if new; None when ``key`` cannot be hashed."""
+    entity_hash = _hash_for_key(base_study, entity_class, key)
+    if entity_hash is None:
+        return None
+    entity = StudyEntity.query.filter_by(entity_hash=entity_hash).first()
     if entity is None:
-        # A record that read an older parse may name a key since re-keyed.
+        # A record that read an older parse may name cells since re-read.
         entity = (
             StudyEntity.query.join(
                 StudyEntityAlias, StudyEntityAlias.entity_id == StudyEntity.id
             )
-            .filter(
-                StudyEntity.base_study_id == base_study.id,
-                StudyEntityAlias.entity_class == entity_class,
-                StudyEntityAlias.natural_key == natural_key,
-            )
+            .filter(StudyEntityAlias.entity_hash == entity_hash)
             .first()
         )
     if entity is None:
         entity = StudyEntity(
             base_study_id=base_study.id,
             entity_class=entity_class,
-            natural_key=natural_key,
+            entity_hash=entity_hash,
             first_seen_config_id=config.id if config is not None else None,
         )
         db.session.add(entity)
@@ -859,41 +926,38 @@ def _entity(base_study, entity_class, natural_key, config=None):
 def _carry_claims(base_study, study, revision):
     """Copy what is stored against each split or merged key to its replacements."""
     current = {a.source_id: a for a in study.analyses}
-    carried = {"claims": 0, "votes": 0}
+    carried = {"claims": 0}
     for verdict in revision.get("verdicts") or []:
         if verdict["verdict"] not in ("split", "merge"):
             continue
-        sources = StudyEntity.query.filter(
-            StudyEntity.base_study_id == base_study.id,
-            StudyEntity.entity_class.in_(PARSE_KEYED_CLASSES),
-            StudyEntity.natural_key == verdict["key"],
-        ).all()
-        for source in sources:
+        hashes = [
+            h
+            for h in (_hash_for_key(base_study, c, verdict["key"]) for c in PARSE_KEYED_CLASSES)
+            if h is not None
+        ]
+        for source in StudyEntity.query.filter(StudyEntity.entity_hash.in_(hashes)).all():
             for new_key in verdict["replaced_by"]:
                 target = _entity(base_study, source.entity_class, new_key)
                 if source.entity_class == "Analysis" and new_key in current:
                     target.analysis_id = current[new_key].id
                 db.session.flush()
-                claims, votes = _copy_claims(source, target)
-                carried["claims"] += claims
-                carried["votes"] += votes
+                carried["claims"] += _copy_claims(source, target)
     db.session.flush()
     return carried
 
 
 def _copy_claims(source, target):
-    """Copy ``source``'s claims onto ``target``; return (claims made, votes added).
+    """Copy ``source``'s claims onto ``target``; return how many claims were made.
 
     A claim whose value ``target`` already holds is merged into that claim rather than
-    copied: its runs, evidence and votes are added where missing, so two sources that
-    collapse into one claim, or a vote cast after an earlier carry, keep everything.
-    ``carried_from`` names the first origin.
+    copied: its runs and evidence are added where missing, so two sources that collapse
+    into one claim keep everything. ``carried_from`` names the first origin.
     """
     existing = {
         (c.field_path, c.value_hash): c
         for c in FieldClaim.query.filter_by(entity_id=target.id)
     }
-    copied = votes = 0
+    copied = 0
     for claim in FieldClaim.query.filter_by(entity_id=source.id).order_by(
         FieldClaim.created_at, FieldClaim.id
     ):
@@ -915,8 +979,8 @@ def _copy_claims(source, target):
             db.session.flush()
             existing[(claim.field_path, claim.value_hash)] = copy
             copied += 1
-        votes += _merge_claim(claim, copy)
-    return copied, votes
+        _merge_claim(claim, copy)
+    return copied
 
 
 def _evidence_key(evidence):
@@ -924,7 +988,7 @@ def _evidence_key(evidence):
 
 
 def _merge_claim(claim, copy):
-    """Add ``claim``'s runs, evidence and votes to ``copy`` where it lacks them."""
+    """Add ``claim``'s runs and evidence to ``copy`` where it lacks them."""
     runs = {r.config_id for r in FieldClaimRun.query.filter_by(claim_id=copy.id)}
     for run in FieldClaimRun.query.filter_by(claim_id=claim.id):
         if run.config_id not in runs:
@@ -946,19 +1010,7 @@ def _merge_claim(claim, copy):
                 config_id=evidence.config_id,
             )
         )
-    voters = {v.user_id for v in FieldVote.query.filter_by(claim_id=copy.id)}
-    added = 0
-    for vote in FieldVote.query.filter_by(claim_id=claim.id).order_by(FieldVote.created_at):
-        # One vote per user per claim: a user who already voted on the target keeps it.
-        if vote.user_id in voters:
-            continue
-        voters.add(vote.user_id)
-        db.session.add(
-            FieldVote(claim_id=copy.id, user_id=vote.user_id, verdict=vote.verdict, why=vote.why)
-        )
-        added += 1
     db.session.flush()
-    return added
 
 
 # ---------------------------------------------------------------------------
@@ -969,16 +1021,20 @@ def _merge_claim(claim, copy):
 def _ingest_record(base_study, study, record, parse, pipeline, user):
     metadata = record["extraction_metadata"]
     schema_version = load_json_schema("extraction-record").get("version")
+    config_args = {
+        "extractor_model": metadata["extractor_model"],
+        "schema_version": schema_version,
+        # PipelineConfig names the parse version beside the schema version; the
+        # paper's own parse_id is in the result's file_inputs.
+        "parse_version": _parse_version(parse["header"]),
+    }
+    if pipeline.get("commit"):
+        # The code that produced the record, so two builds of one version stay apart.
+        config_args["commit"] = pipeline["commit"]
     config = _get_config(
         pipeline.get("name") or DEFAULT_RECORD_PIPELINE,
-        metadata["extractor_version"],
-        {
-            "extractor_model": metadata["extractor_model"],
-            "schema_version": schema_version,
-            # PipelineConfig names the parse version beside the schema version; the
-            # paper's own parse_id is in the result's file_inputs.
-            "parse_version": _parse_version(parse["header"]),
-        },
+        pipeline.get("version") or metadata["extractor_version"],
+        config_args,
         schema={"name": "neuroimaging-study-extraction", "version": schema_version},
     )
     executed = metadata.get("extraction_date") or _now()
@@ -1052,7 +1108,7 @@ def _ingest_record(base_study, study, record, parse, pipeline, user):
 
     claims = _ingest_claims(base_study, record, config, schema_version)
     db.session.flush()
-    carried = {"claims": 0, "votes": 0}
+    carried = {"claims": 0}
     for revision in revisions:
         for name, count in _carry_claims(base_study, study, revision).items():
             carried[name] += count
@@ -1062,7 +1118,7 @@ def _ingest_record(base_study, study, record, parse, pipeline, user):
     summary = {"config_id": config.id, "analyses": analyses, "claims": claims}
     if revisions:
         summary["carried"] = carried
-    return summary
+    return summary, result
 
 
 def _revisions_since(base_study, parse_id, study):
@@ -1187,7 +1243,7 @@ def _ingest_claims(base_study, record, config, schema_version):
             continue
         cls = _list_item_class(defs["Study"]["properties"][attribute])
         for item in value:
-            key = _natural_key(cls, item)
+            key = _record_key(cls, item)
             if key is None:
                 unkeyed.append(f"{attribute}[local_id={item.get('local_id')}]")
             else:
@@ -1205,10 +1261,13 @@ def _ingest_claims(base_study, record, config, schema_version):
         "unkeyed_entities": unkeyed,
         "parked_entities": parked,
     }
-    for entity_class, natural_key, item, def_name in entities:
-        entity = _entity(base_study, entity_class, natural_key, config)
+    for entity_class, key, item, def_name in entities:
+        entity = _entity(base_study, entity_class, key, config)
+        if entity is None:
+            parked.append({"entity": f"{entity_class}[{key}]", "reason": UNKNOWN_KEY_REASON})
+            continue
         if entity_class == "Analysis":
-            analysis = _analysis_for_key(base_study, entity.natural_key)
+            analysis = _analysis_for_key(base_study, _current_key(base_study, key))
             entity.analysis_id = analysis.id if analysis is not None else None
         db.session.flush()
         if item.get("local_id"):
@@ -1233,14 +1292,14 @@ def _ingest_claims(base_study, record, config, schema_version):
         leaves, rejected = [], []
         _walk(defs, def_name, item, "", names, leaves, rejected, skip)
         counts["rejected_paths"].extend(
-            f"{entity_class}[{natural_key}].{path}" for path in rejected
+            f"{entity_class}[{key}].{path}" for path in rejected
         )
         _upsert_claims(entity, leaves, config, schema_version, counts)
     return counts
 
 
 def _local_id_names(record):
-    """Per-run local_ids mapped to the natural keys a claim path can use instead."""
+    """Per-run local_ids mapped to the names a claim path can use instead."""
     names = {}
     for value in record.values():
         if not isinstance(value, list):
@@ -1248,7 +1307,7 @@ def _local_id_names(record):
         for item in value:
             if not isinstance(item, dict) or "local_id" not in item:
                 continue
-            name = _natural_key(None, item)
+            name = _record_key(None, item)
             if name:
                 names[item["local_id"]] = name
             for term in item.get("terms") or []:
@@ -1258,7 +1317,7 @@ def _local_id_names(record):
     return names
 
 
-def _natural_key(cls, item):
+def _record_key(cls, item):
     if cls == "Analysis":
         return (item.get("source_table_analysis") or {}).get("value")
     if cls in ("CoordinateSet", "Table"):

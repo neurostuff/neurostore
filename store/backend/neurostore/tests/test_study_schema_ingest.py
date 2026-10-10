@@ -8,20 +8,20 @@ from neurostore.ingest.study_schema import (
     ALIAS_CELLS_CHANGED,
     HISTORY_SOURCE,
     STUDY_SOURCE,
+    UNKNOWN_KEY_REASON,
     _point_rows,
     ingest_upload,
 )
 from neurostore.models import (
     Analysis,
     FieldClaim,
-    FieldVote,
     PipelineAnalysisResult,
     PipelineConfig,
     Study,
     StudyEntity,
     StudyEntityAlias,
-    User,
 )
+from neurostore.models.data import analysis_identity, study_entity_hash
 from neurostore.tests import study_schema_fixtures as fx
 
 # Table 1 of one paper: rows 0-3 are one contrast with both signs, rows 4-7 two more.
@@ -30,7 +30,7 @@ GAIN = fx.table_analysis(
     [0, 1, 2, 3],
     "Gain > Neutral",
     [
-        fx.point((10, 20, 30), space="other"),
+        fx.point((10, 20, 30), space="OTHER"),
         fx.point((12, 22, 32)),
         fx.point((-10, 20, 30), sign="negative"),
         fx.point((-12, 22, 32), sign="negative"),
@@ -52,11 +52,28 @@ def _current(base_study_id):
     return Study.query.filter_by(base_study_id=base_study_id, source=STUDY_SOURCE).one()
 
 
+# Every fixture analysis by key, to hash the way the ingester must.
+_ANALYSES = {a["key"]: a for a in ORIGINAL["analyses"]}
+
+
+def _hash(base_study_id, key, entity_class="Analysis"):
+    """The entity hash of the fixture analysis under ``key``, from all its cells."""
+    parsed = _ANALYSES[key]
+    identity = analysis_identity(
+        parsed["origin"],
+        parsed.get("table_id"),
+        cells=[(c["row"], c["column_group"]) for c in parsed.get("cells") or []],
+        spans=[(s["start_char"], s["end_char"]) for s in parsed.get("text_spans") or []],
+    )
+    return study_entity_hash(base_study_id, entity_class, identity)
+
+
+def _entity(base_study_id, key):
+    return StudyEntity.query.filter_by(entity_hash=_hash(base_study_id, key)).one()
+
+
 def _claims(base_study_id, key):
-    entity = StudyEntity.query.filter_by(
-        base_study_id=base_study_id, entity_class="Analysis", natural_key=key
-    ).one()
-    return FieldClaim.query.filter_by(entity_id=entity.id).all()
+    return FieldClaim.query.filter_by(entity_id=_entity(base_study_id, key).id).all()
 
 
 def _revision():
@@ -98,6 +115,7 @@ def _revision():
             fx.verdict(SEED["key"], "accept", [SEED["key"]]),
         ],
     )
+    _ANALYSES.update({a["key"]: a for a in (positive, negative, merged)})
     return revision, positive, negative, merged
 
 
@@ -141,7 +159,8 @@ def test_parse_and_record_resolve_claims_to_analyses(session):
     ).all()
     assert {r.source_table_analysis for r in rows} == {GAIN["key"], LOSS["key"], RISK["key"]}
     assert all(r.status == "SUCCESS" and r.analysis_id for r in rows)
-    entity = StudyEntity.query.filter_by(natural_key=GAIN["key"]).one()
+    entity = _entity(summary["base_study_id"], GAIN["key"])
+    assert entity.entity_class == "Analysis"
     assert entity.analysis_id == next(
         a.id for a in _current(summary["base_study_id"]).analyses if a.source_id == GAIN["key"]
     )
@@ -155,6 +174,40 @@ def test_parse_and_record_resolve_claims_to_analyses(session):
 
 def db_config(config_id):
     return PipelineConfig.query.get(config_id)
+
+
+def test_upload_reports_the_provenance_of_each_run(session):
+    summary = ingest_upload(
+        {
+            "coordinate_parse": ORIGINAL,
+            "record": _record(GAIN),
+            "pipeline": {"name": "pondie", "version": "2.1.0", "commit": "abc1234"},
+        }
+    )
+
+    parse, record = summary["provenance"]["parse"], summary["provenance"]["record"]
+    assert parse["pipeline"] == "coordinate-parse"
+    assert parse["schema"]["name"] == "neuroimaging-paper-parse"
+    assert parse["parse_version"]["version"] == ORIGINAL["header"]["producer"]["version"]
+    assert (record["pipeline"], record["version"], record["commit"]) == (
+        "pondie",
+        "2.1.0",
+        "abc1234",
+    )
+    assert record["schema"]["name"] == "neuroimaging-study-extraction"
+    assert record["config_id"] == summary["record"]["config_id"]
+    assert record["created_at"] and record["date_executed"]
+    # Another build of the same version is a different config.
+    again = ingest_upload(
+        {
+            "record": _record(GAIN),
+            "parse_id": ORIGINAL["parse_id"],
+            "base_study_id": summary["base_study_id"],
+            "pipeline": {"name": "pondie", "version": "2.1.0", "commit": "def5678"},
+        }
+    )
+    assert again["provenance"]["record"]["config_id"] != record["config_id"]
+    assert "parse" not in again["provenance"]
 
 
 def test_record_attaches_later_to_the_stored_parse(session):
@@ -199,23 +252,17 @@ def test_positional_record_keys_are_parked_not_minted(session):
     assert "positional key" in parked[0]["reason"]
     assert summary["record"]["claims"]["parked_entities"]
     assert not StudyEntity.query.filter(
-        StudyEntity.natural_key.in_(["tbl1#2", "text#3"])
+        StudyEntity.entity_class.in_(["Analysis", "CoordinateSet"])
     ).count()
     # The study's own claims still land.
     assert StudyEntity.query.filter_by(entity_class="Study").count() == 1
 
 
 def test_revision_versions_analyses_and_carries_claims(session):
-    voter = User(name="voter", external_id="voter-id")
-    session.add(voter)
-    session.flush()
     first = ingest_upload(
         {"coordinate_parse": ORIGINAL, "record": _record(GAIN, LOSS, RISK)}
     )
     base_study_id = first["base_study_id"]
-    gain_claim = next(c for c in _claims(base_study_id, GAIN["key"]) if c.field_path == "name")
-    session.add(FieldVote(claim_id=gain_claim.id, user_id="voter-id", verdict="up"))
-    session.flush()
     old_ids = {a.source_id: a.id for a in _current(base_study_id).analyses}
 
     revision, positive, negative, merged = _revision()
@@ -246,10 +293,6 @@ def test_revision_versions_analyses_and_carries_claims(session):
     for half in (positive, negative):
         copies = _claims(base_study_id, half["key"])
         assert {c.carried_from for c in copies} == gain_claims
-        voted = next(c for c in copies if c.carried_from == gain_claim.id)
-        assert [v.user_id for v in FieldVote.query.filter_by(claim_id=voted.id)] == [
-            "voter-id"
-        ]
     # Merge: the merged analysis holds both originals' claims; differing names compete.
     merged_claims = _claims(base_study_id, merged["key"])
     origins = {c.carried_from for c in merged_claims}
@@ -260,15 +303,15 @@ def test_revision_versions_analyses_and_carries_claims(session):
         "Loss > Neutral",
         "Risk > Neutral",
     ]
-    assert summary["carried"]["votes"] == 2
-    entity = StudyEntity.query.filter_by(natural_key=positive["key"]).one()
+    assert summary["carried"]["claims"] == len(merged_claims) + 2 * len(gain_claims)
+    entity = _entity(base_study_id, positive["key"])
     assert entity.analysis_id == by_key[positive["key"]].id
 
     # Re-uploading the revision copies nothing twice; its record resolves to the revision.
     again = ingest_upload(
         {"coordinate_parse": revision, "record": _record(positive, negative, merged)}
     )
-    assert again["carried"] == {"claims": 0, "votes": 0}
+    assert again["carried"] == {"claims": 0}
     assert again["record"]["analyses"]["resolved"] == 3
 
 
@@ -299,7 +342,7 @@ def test_revision_must_cover_a_stored_parse(session):
     assert error.value.status_code == 422
 
 
-def test_reparse_reading_other_cells_aliases_the_key(session):
+def test_reparse_reading_other_cells_aliases_the_hash(session):
     base_study_id = ingest_upload(
         {"coordinate_parse": ORIGINAL, "record": _record(GAIN, LOSS, RISK)}
     )["base_study_id"]
@@ -309,10 +352,11 @@ def test_reparse_reading_other_cells_aliases_the_key(session):
     summary = ingest_upload({"coordinate_parse": reparse})
 
     assert summary["skeleton"]["aliased"] == [{"from": LOSS["key"], "to": wider["key"]}]
-    alias = StudyEntityAlias.query.filter_by(natural_key=LOSS["key"]).one()
+    _ANALYSES[wider["key"]] = wider
+    alias = StudyEntityAlias.query.get(_hash(base_study_id, LOSS["key"]))
     assert alias.reason == ALIAS_CELLS_CHANGED
     entity = StudyEntity.query.get(alias.entity_id)
-    assert entity.natural_key == wider["key"]
+    assert entity.entity_hash == _hash(base_study_id, wider["key"])
     assert entity.analysis_id == next(
         a.id for a in _current(base_study_id).analyses if a.source_id == wider["key"]
     )
@@ -353,40 +397,39 @@ def _defined(*pairs):
     return fx.record(analyses)
 
 
-def test_merge_keeps_votes_on_a_claim_that_collapses(session):
-    for name in ("first", "second"):
-        session.add(User(name=name, external_id=f"{name}-id"))
-    session.flush()
+def test_merge_collapses_an_equal_claim_into_one(session):
     first = ingest_upload(
         {"coordinate_parse": ORIGINAL, "record": _defined((LOSS, "same"), (RISK, "same"))}
     )
     base_study_id = first["base_study_id"]
 
-    def definition(key):
-        return next(c for c in _claims(base_study_id, key) if c.field_path == "definition")
+    def definitions(key):
+        return [c for c in _claims(base_study_id, key) if c.field_path == "definition"]
 
-    risk = definition(RISK["key"])
-    session.add(FieldVote(claim_id=risk.id, user_id="first-id", verdict="down"))
-    session.flush()
     revision, _, _, merged = _revision()
-    ingest_upload({"coordinate_parse": revision})
-
-    # Risk's definition collapses into Loss's copy, and brings its vote and runs with it.
-    target = definition(merged["key"])
-    assert target.carried_from == definition(LOSS["key"]).id
-    assert [(v.user_id, v.verdict) for v in FieldVote.query.filter_by(claim_id=target.id)] == [
-        ("first-id", "down")
-    ]
-
-    # A vote cast after the carry reaches the copy on re-upload, once.
-    session.add(FieldVote(claim_id=risk.id, user_id="second-id", verdict="up"))
-    session.flush()
     for _ in range(2):
         ingest_upload({"coordinate_parse": revision})
-    assert sorted(v.user_id for v in FieldVote.query.filter_by(claim_id=target.id)) == [
-        "first-id",
-        "second-id",
-    ]
+
+    # Risk's definition collapses into Loss's copy, once, however often the revision lands.
+    [target] = definitions(merged["key"])
+    assert target.carried_from == definitions(LOSS["key"])[0].id
+
+
+def test_a_key_no_stored_parse_holds_is_parked(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    unknown = fx.table_analysis("tbl9", [0], "Elsewhere", [fx.point((1, 1, 1))])
+
+    summary = ingest_upload(
+        {
+            "record": _record(GAIN, unknown),
+            "parse_id": ORIGINAL["parse_id"],
+            "base_study_id": base_study_id,
+        }
+    )
+
+    parked = summary["record"]["claims"]["parked_entities"]
+    assert parked == [{"entity": f"Analysis[{unknown['key']}]", "reason": UNKNOWN_KEY_REASON}]
+    assert _entity(base_study_id, GAIN["key"])
 
 
 def test_replaying_a_superseded_parse_is_refused(session):
