@@ -10,20 +10,21 @@ export default [
     ...teslint.configs.recommended,
     eslintCypress.configs.recommended,
     {
-        env: {
-            browser: true,
-            node: true,
-            es2022: true,
-        },
         languageOptions: {
-            globals: globals.browser,
+            ecmaVersion: 2022,
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+                ...globals.es2022,
+            },
         },
         plugins: {
             'react-hooks': eslintHooks,
             'react-refresh': eslintReactRefresh,
         },
         rules: {
-            ...eslintHooks.configs.recommended.rules,
+            'react-hooks/rules-of-hooks': 'error',
+            'react-hooks/exhaustive-deps': 'warn',
             'react-refresh/only-export-components': 'warn',
         },
     },
