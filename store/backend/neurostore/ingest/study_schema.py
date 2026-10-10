@@ -110,11 +110,11 @@ DROPPED_REASON = "the record read an older parse that held this key; the current
 
 # A content key ends in 12 hex digits of its cells' or spans' hash (study_schema.keys).
 # pondie records still carry positional ``<table_id>#<ordinal>`` / ``text#<N>`` keys until
-# M3; those are held, never minted into entities, since an ordinal re-addresses claims.
+# pondie moves to content keys; those are held, never minted into entities, since an ordinal re-addresses claims.
 _CONTENT_KEY = re.compile(r"[^#]+#[0-9a-f]{12}")
 POSITIONAL_KEY_REASON = (
     "positional key: claims are keyed only by content keys (study_schema.keys), "
-    "which pondie records carry from M3"
+    "which pondie records carry once they are migrated"
 )
 
 _MAX_REPORTED_ERRORS = 20
