@@ -2,6 +2,7 @@ import { Box, Button, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import GlossaryLink from 'components/GlossaryLink';
+import { notUndefinedOrNull } from 'helpers/utils';
 import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import {
@@ -24,6 +25,11 @@ const CreateMetaAnalysisSpecificationSelectionStep = (props: {
     const isMultiGroup = isMultiGroupAlgorithm(props.algorithm?.estimator);
 
     const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>(props.selection);
+    const showReferenceDatasetSelection =
+        isMultiGroup &&
+        (selectedValue.type === EPropertyType.BOOLEAN
+            ? !!selectedValue.selectionKey
+            : notUndefinedOrNull(selectedValue.selectionValue));
 
     const handleNavigate = (button: ENavigationButton) => {
         if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE) {
@@ -60,7 +66,7 @@ const CreateMetaAnalysisSpecificationSelectionStep = (props: {
                     annotationId={annotationId || ''}
                     algorithm={props.algorithm}
                 />
-                {isMultiGroup && (
+                {showReferenceDatasetSelection && (
                     <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                         onSelectValue={(newVal) => setSelectedValue(newVal)}
                         annotationId={annotationId}
