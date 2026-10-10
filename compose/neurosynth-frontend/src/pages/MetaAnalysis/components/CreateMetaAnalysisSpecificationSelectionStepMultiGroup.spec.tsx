@@ -7,6 +7,7 @@ import {
     IAnalysesSelection,
 } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
 import CreateMetaAnalysisSpecificationSelectionStepMultiGroup from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup';
+import { LARGE_ALE_SUBTRACTION_REFERENCE_STUDY_COUNT } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
 import { DEFAULT_REFERENCE_DATASETS } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
 import useInclusionColumnOptions from 'pages/MetaAnalysis/hooks/useInclusionColumnOptions';
 
@@ -128,6 +129,26 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
         );
 
         expect(screen.getByText(largeReferenceWarning, { exact: false })).toBeInTheDocument();
+    });
+
+    it('should not warn when ALE subtraction uses a custom reference below the study threshold', () => {
+        (useInclusionColumnOptions as Mock).mockReturnValue({
+            'small-group': LARGE_ALE_SUBTRACTION_REFERENCE_STUDY_COUNT - 1,
+        });
+
+        render(
+            <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
+                algorithm={{
+                    ...algorithmMock,
+                    estimator: { label: 'ALESubtraction', description: '' },
+                }}
+                annotationId="abc123"
+                selectedValue={{ ...selectedValueMock, referenceDataset: 'small-group' }}
+                onSelectValue={mockSelectValue}
+            />
+        );
+
+        expect(screen.queryByText(largeReferenceWarning, { exact: false })).not.toBeInTheDocument();
     });
 
     it('should not warn for MKDA chi-square against the neurostore reference dataset', () => {
