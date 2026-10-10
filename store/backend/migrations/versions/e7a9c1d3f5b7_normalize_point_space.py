@@ -1,17 +1,29 @@
-"""Coordinate space normalization for points.
+"""normalize points.space to MNI / TAL / OTHER / NULL
 
-NiMARE transforms between coordinate spaces only when a point's space is exactly
-``"MNI"`` or ``"TAL"``; any other spelling goes into a meta-analysis untransformed.
-Every space a point is written with is folded to ``MNI``, ``TAL`` or ``OTHER`` (a
-stated space that is neither), or to None when no space is stated. None is never
-defaulted to MNI.
+Rewrites existing values with a frozen copy of the normalize_space the
+Point.space validator applies on write, so legacy spellings such as 'Talairach' are TAL
+before a frontend save would turn them into OTHER. Blank, UNKNOWN and other
+"not stated" values become NULL.
 
-The family patterns are pondie's ``pondie.normalization.coordinate_space.RULES``,
-so a space pondie reads and the point neurostore stores agree.
+Revision ID: e7a9c1d3f5b7
+Revises: d5f7a9b1c3e5
+Create Date: 2026-10-09 00:00:00.000000
 """
 
 import re
 
+import sqlalchemy as sa
+from alembic import op
+
+
+# revision identifiers, used by Alembic.
+revision = "e7a9c1d3f5b7"
+down_revision = "d5f7a9b1c3e5"
+branch_labels = None
+depends_on = None
+
+# Copied rather than imported, so a later change to the module cannot change what
+# this migration did.
 MNI = "MNI"
 TAL = "TAL"
 OTHER = "OTHER"
@@ -54,18 +66,8 @@ _NOT_STATED = re.compile(
 )
 
 
-def normalize_space(value):
-    """Fold a point's space to ``"MNI"``, ``"TAL"``, ``"OTHER"`` or None.
-
-    - Missing or blank input returns None.
-    - "unknown", "not reported", "n.a.", "?" and the like return None.
-    - A spelling of MNI or TAL ("MNI152 2mm", "Talairach & Tournoux 1988")
-      returns that space.
-    - A string naming both ("MNI converted to Talairach", "mni2tal", "tal2mni")
-      returns None: which space the numbers are in is not decidable.
-    - Anything else returns ``"OTHER"``, the value the frontend shows and writes
-      back for any space it does not know.
-    """
+def _normalize_space(value):
+    """Frozen copy of neurostore.coordinate_spaces.normalize_space at this revision."""
     if value is None:
         return None
     text = str(value).strip()
@@ -77,3 +79,22 @@ def normalize_space(value):
     if MNI in hits and TAL in hits:
         return None
     return hits[0] if hits else OTHER
+
+
+def upgrade():
+    bind = op.get_bind()
+    spaces = bind.execute(
+        sa.text("SELECT DISTINCT space FROM points WHERE space IS NOT NULL")
+    ).scalars()
+    for old in list(spaces):
+        new = _normalize_space(old)
+        if new != old:
+            bind.execute(
+                sa.text("UPDATE points SET space = :new WHERE space = :old"),
+                {"new": new, "old": old},
+            )
+
+
+def downgrade():
+    # The original spellings are not kept, so there is nothing to restore.
+    pass
