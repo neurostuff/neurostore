@@ -1007,9 +1007,9 @@ def _frontend_analyses(study):
             "points": [
                 {
                     "id": point["id"],
-                    "x": point["x"],
-                    "y": point["y"],
-                    "z": point["z"],
+                    "x": point["coordinates"][0],
+                    "y": point["coordinates"][1],
+                    "z": point["coordinates"][2],
                     "space": point["space"],
                     "order": point_order,
                     "values": [
@@ -1076,6 +1076,19 @@ async def test_a_clone_on_edit_from_compose_keeps_roles_outcome_and_source(
     shipped = release_service.serialize_study_shard(clone.id)["analyses"]
     assert sorted(a["name"] for a in shipped) == ["added", "res"]
     assert _selected_study_ids() == {pipeline.id}
+
+    # Cloning the clone with the ids the client loaded from the pipeline Study still
+    # finds each analysis, through the clone's link to it.
+    resp = await auth_client.post(
+        f"/api/studies/?source_id={clone.id}", data={"analyses": _frontend_analyses(loaded)}
+    )
+    assert resp.status_code == 200, resp.json()
+    by_parent = {a.source_id: a.role for a in session.get(Study, resp.json()["id"]).analyses}
+    copies = {a.source_id: a.id for a in clone.analyses if a.source_id}
+    assert by_parent == {
+        copies[parsed["res"].id]: "result",
+        copies[parsed["anc"].id]: "anchor",
+    }
 
     # A field the request sets is kept as sent, even null.
     explicit["outcome"] = None
