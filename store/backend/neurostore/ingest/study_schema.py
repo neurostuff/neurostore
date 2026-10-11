@@ -59,6 +59,7 @@ from sqlalchemy.exc import IntegrityError
 from jsonschema import validators
 from study_schema import keys as parse_keys
 from study_schema.jsonschema import load as load_json_schema
+from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
 from neurostore.coordinate_spaces import normalize_space
@@ -77,7 +78,13 @@ from neurostore.ingest.study_entities import (
     rehash_entity,
     sync_record_entities,
 )
-from neurostore.models.data import analysis_identity, study_entity_hash
+from neurostore.models.data import (
+    HISTORY_SOURCE,
+    PIPELINE_STUDY_SOURCES,
+    STUDY_SOURCE,
+    analysis_identity,
+    study_entity_hash,
+)
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
@@ -101,13 +108,20 @@ from neurostore.models import (
 )
 from neurostore.services.has_media_flags import recompute_media_flags
 
-STUDY_SOURCE = "study_schema"
-HISTORY_SOURCE = "study_schema:superseded"
 PARSE_PIPELINE = "coordinate-parse"
 DEFAULT_RECORD_PIPELINE = "pondie"
 
 # Every analysis of a parse is stored whatever its role (result, anchor, localization,
-# reference, other), with the role in its metadata; a studyset release selects by role.
+# reference, other), in Analysis.role; a studyset release exports only results.
+
+# Roles whose analyses have an outcome: only a result was tested in the study. A pipeline
+# analysis with no role is not one: role is required, so a missing one is an unclassified
+# set, never a result.
+OUTCOME_ROLES = {"result"}
+OUTCOME_WITHHELD_REASON = (
+    "the record reports an outcome for a coordinate set that is not a result; it is kept "
+    "as a claim and applied if the set's role becomes result"
+)
 
 # Entities a record names by parse key, hashed by the cells or spans behind that key, so a
 # split or merge moves their claims.
@@ -122,7 +136,7 @@ DECLARED_KEYS = {
 }
 
 # Analysis fields the skeleton keeps as columns or points rather than in metadata.
-_ANALYSIS_COLUMNS = {"key", "name", "description", "points"}
+_ANALYSIS_COLUMNS = {"key", "name", "description", "points", "role", "from_prior_study"}
 
 SUPERSEDED_REASON = (
     "the record read an older parse; a revision since replaced this key, and its claims "
@@ -201,6 +215,7 @@ def ingest_upload(body, user=None):
         sa.select(BaseStudy.id).where(BaseStudy.id == base_study.id).with_for_update()
     )
     _check_entity_hashes(base_study)
+    _set_retraction(base_study, parsed_paper)
 
     summary = {
         "kind": kind,
@@ -484,6 +499,18 @@ def _bibliography(parsed_paper):
         "authors": ", ".join(a for a in authors if a) or None,
     }
     return {k: v for k, v in fields.items() if v is not None}
+
+
+def _set_retraction(base_study, parsed_paper):
+    """Mark the paper retracted from its corrections; unknown until they are looked up."""
+    corrections = ((parsed_paper or {}).get("bibliography") or {}).get("corrections")
+    if corrections is None:
+        return
+    notice = next(
+        (c for c in corrections if c["kind"] == CorrectionKind.retraction.value), None
+    )
+    base_study.is_retracted = notice is not None
+    base_study.retraction_notice = notice
 
 
 def _current_study(base_study):
@@ -839,6 +866,9 @@ def _apply_parse(study, parse, parsed_paper, user):
             counts.update(_alias_rekeyed(base_study, superseded, uploaded, existing))
         counts["orphaned_claims"] = _orphaned_claims(base_study, superseded, parse, counts)
 
+    relabelled = {
+        v["key"] for v in parse.get("verdicts") or [] if v["verdict"] == "relabel"
+    }
     for order, parsed in enumerate(uploaded):
         analysis = existing.get(parsed["key"])
         if analysis is None:
@@ -850,6 +880,27 @@ def _apply_parse(study, parse, parsed_paper, user):
         analysis.name = parsed["name"]
         analysis.description = parsed.get("description")
         analysis.order = order
+        role = parsed["role"]
+        if parsed["key"] in relabelled:
+            analysis.role_source = parse["parse_id"]
+        elif analysis.role_source is not None and role != analysis.role:
+            # A reviewer's relabel is a correction: no later parse's role replaces it.
+            counts.setdefault("relabels_kept", []).append(
+                {
+                    "key": parsed["key"],
+                    "role": analysis.role,
+                    "parse_role": role,
+                    "role_source": analysis.role_source,
+                }
+            )
+            role = analysis.role
+        was_result = analysis.id is not None and analysis.role in OUTCOME_ROLES
+        analysis.role = role
+        if analysis.role not in OUTCOME_ROLES:
+            analysis.outcome = None
+        elif not was_result:
+            analysis.outcome = _claimed_outcome(study.base_study_id, parsed["key"])
+        analysis.from_prior_study = parsed.get("from_prior_study")
         analysis.metadata_ = _analysis_metadata(parsed, parse["parse_id"])
         analysis.table = (
             _table(study, tables, parsed["table_id"], paper_tables.get(parsed["table_id"]))
@@ -1415,6 +1466,7 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
     revisions = _revisions_since(base_study, parse["parse_id"], study)
     analyses = {"resolved": 0, "unresolved": [], "parked": [], "superseded": []}
     conditions, conflicts = {}, []
+    outcomes = {}
     names = _local_id_names(record)
     for extracted in record.get("analyses") or []:
         key = (extracted.get("source_table_analysis") or {}).get("value")
@@ -1456,12 +1508,15 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
             for new_key in replaced_by:
                 if new_key in current:
                     _want_conditions(conditions, current[new_key], weights, True)
+                    _want_outcome(outcomes, current[new_key], extracted, derived=True)
         elif analysis is not None:
             analyses["resolved"] += 1
             _want_conditions(conditions, analysis, weights, False)
+            _want_outcome(outcomes, analysis, extracted, derived=False)
             partner = _inverse_half(study, analysis)
             if partner is not None:
                 _want_conditions(conditions, partner, weights, True)
+                _want_outcome(outcomes, partner, extracted, derived=True)
         elif positional:
             analyses["parked"].append({"key": key, "reason": POSITIONAL_KEY_REASON})
         else:
@@ -1473,18 +1528,58 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
     for revision in revisions:
         for name, count in _carry_claims(base_study, study, revision).items():
             carried[name] += count
+    exported = _exported_state(study)
     for analysis, weights, _ in conditions.values():
         _set_conditions(analysis, weights, user)
+    withheld = []
+    for analysis, outcome, _ in outcomes.values():
+        if analysis.role in OUTCOME_ROLES:
+            analysis.outcome = outcome
+            continue
+        analysis.outcome = None
+        if outcome is not None:
+            withheld.append(
+                {
+                    "key": analysis.source_id,
+                    "role": analysis.role,
+                    "outcome": outcome,
+                    "reason": OUTCOME_WITHHELD_REASON,
+                }
+            )
     db.session.flush()
+    if _exported_state(study) != exported:
+        _touch(study)
     summary = {
         "config_id": config.id,
         "analyses": analyses,
         "claims": claims,
         "condition_conflicts": conflicts,
     }
+    if withheld:
+        summary["outcomes_withheld"] = withheld
     if revisions:
         summary["carried"] = carried
     return summary, result
+
+
+def _exported_state(study):
+    """What a release exports from the record's writes: each analysis's outcome and conditions."""
+    return {
+        a.id: (a.outcome, {(ac.condition_id, ac.weight) for ac in a.analysis_conditions})
+        for a in study.analyses
+    }
+
+
+def _touch(study):
+    """Mark ``study`` changed, so a release rebuilds its cached shard.
+
+    Writes to its analyses alone leave the Study row's ``updated_at``, which the release
+    compares, as it was.
+    """
+    now = _now()
+    study.source_updated_at = now
+    study.updated_at = now
+    db.session.flush()
 
 
 def _revisions_since(base_study, parse_id, study):
@@ -1632,6 +1727,54 @@ def _want_conditions(wanted, analysis, weights, derived):
     if derived and _split(analysis).get("half") == "inverse":
         weights = {name: -weight for name, weight in weights.items()}
     wanted[analysis.id] = (analysis, weights, derived)
+
+
+def _want_outcome(wanted, analysis, extracted, derived):
+    """Queue ``extracted``'s outcome for ``analysis``, by the same rule as conditions.
+
+    An analysis's own entry sets its outcome, to null when the record does not report it;
+    a derived one (the other half of a split, a key a revision replaced) only adds one.
+    """
+    outcome = extracted.get("outcome") or {}
+    value = outcome.get("value") if outcome.get("extraction_status") == "extracted" else None
+    if derived and (value is None or (analysis.id in wanted and not wanted[analysis.id][2])):
+        return
+    wanted[analysis.id] = (analysis, value, derived)
+
+
+def _claimed_outcome(base_study_id, key):
+    """The outcome the latest record run reported for the analysis under ``key``, else None.
+
+    Applied when a parse makes an anchor (or other set) a result: the outcome a record
+    reported for it while it was not one was kept only as a claim. Only the latest run
+    counts, read from its stored record, because claims are linked to a config rather than
+    to one execution of it: a claim an earlier run made and the latest one dropped stays
+    linked and would otherwise be restored.
+    """
+    latest = (
+        PipelineStudyResult.query.join(
+            PipelineConfig, PipelineConfig.id == PipelineStudyResult.config_id
+        )
+        .filter(
+            PipelineStudyResult.base_study_id == base_study_id,
+            PipelineConfig.schema["name"].astext == "neuroimaging-study-extraction",
+        )
+        .order_by(
+            PipelineStudyResult.date_executed.desc().nulls_last(),
+            PipelineStudyResult.updated_at.desc().nulls_last(),
+            PipelineStudyResult.created_at.desc(),
+        )
+        .first()
+    )
+    if latest is None:
+        return None
+    for item in (latest.result_data or {}).get("analyses") or []:
+        if _record_key("Analysis", item) == key:
+            outcome = item.get("outcome") or {}
+            if outcome.get("extraction_status") == "extracted":
+                return outcome.get("value")
+            return None
+    return None
 
 
 def _set_conditions(analysis, weights, user):
@@ -1916,3 +2059,81 @@ def _upsert_claims(entity, leaves, config, schema_version, counts):
                     config_id=config.id,
                 )
             )
+
+
+NO_STORED_PARSE_REASON = "no stored coordinate parse of the paper holds the analysis's key"
+
+
+def backfill_roles(apply=False, base_study_id=None):
+    """Set ``Analysis.role`` from the stored coordinate parses, matched by key.
+
+    Only analyses with no role and a ``source_id`` are read; an analysis is matched to
+    the parse it was written from (its metadata's ``parse_id``), else to any stored parse
+    of its paper holding its key. A pipeline analysis left unmatched is reported; an
+    unmatched one of another version is a legacy analysis and only counted. Nothing is
+    written unless ``apply``.
+    """
+    parsed_bases = (
+        sa.select(PipelineStudyResult.base_study_id)
+        .join(PipelineConfig, PipelineConfig.id == PipelineStudyResult.config_id)
+        .join(Pipeline, Pipeline.id == PipelineConfig.pipeline_id)
+        .where(Pipeline.name == PARSE_PIPELINE)
+        .distinct()
+    )
+    candidates = (
+        db.session.query(Analysis, Study)
+        .join(Study, Study.id == Analysis.study_id)
+        .filter(Analysis.role.is_(None), Analysis.source_id.isnot(None))
+        .filter(Study.base_study_id.in_(parsed_bases))
+    )
+    if base_study_id is not None:
+        candidates = candidates.filter(Study.base_study_id == base_study_id)
+    summary = {"matched": {}, "unmatched": [], "legacy_unmatched": 0}
+    roles_by_base = {}
+    changed = set()
+    for analysis, study in candidates.order_by(Study.base_study_id, Analysis.id):
+        if study.base_study_id not in roles_by_base:
+            roles_by_base[study.base_study_id] = {
+                result.result_data.get("parse_id"): {
+                    a["key"]: a.get("role")
+                    for a in result.result_data.get("analyses") or []
+                }
+                for result in _stored_parse_results(study.base_study)
+            }
+        parses = roles_by_base[study.base_study_id]
+        own = parses.get((analysis.metadata_ or {}).get("parse_id")) or {}
+        role = own.get(analysis.source_id) or next(
+            (roles[analysis.source_id] for roles in parses.values()
+             if roles.get(analysis.source_id)),
+            None,
+        )
+        if role is None:
+            if study.source in PIPELINE_STUDY_SOURCES:
+                summary["unmatched"].append(
+                    {
+                        "analysis_id": analysis.id,
+                        "study_id": study.id,
+                        "key": analysis.source_id,
+                        "reason": NO_STORED_PARSE_REASON,
+                    }
+                )
+            else:
+                summary["legacy_unmatched"] += 1
+            continue
+        summary["matched"][role] = summary["matched"].get(role, 0) + 1
+        if not apply:
+            continue
+        analysis.role = role
+        # The column is the one copy; an older ingest kept the role in metadata.
+        if "role" in (analysis.metadata_ or {}):
+            analysis.metadata_ = {k: v for k, v in analysis.metadata_.items() if k != "role"}
+        if role in OUTCOME_ROLES and analysis.outcome is None:
+            analysis.outcome = _claimed_outcome(study.base_study_id, analysis.source_id)
+        changed.add(study)
+    if apply and changed:
+        db.session.flush()
+        for study in changed:
+            _touch(study)
+        recompute_media_flags(sorted({s.base_study_id for s in changed}))
+    summary["applied"] = bool(apply)
+    return summary

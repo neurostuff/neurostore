@@ -44,7 +44,7 @@ dependencies = [
     "sentry-sdk~=2.71",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read, pinned to study_schema main.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@106744d82c5f05a4b67530a8f1169b6e0efe1880",
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@38f014c9914363782dec82917459296c7668ef1e",
 ]
 
 [tool.setuptools.packages.find]

@@ -246,6 +246,40 @@ Service ordering notes:
 - Compose needs Redis before `compose_worker`; the API container depends on the
   worker in `compose/docker-compose.yml`.
 
+## Studyset Release Contents
+
+`build-neurostore-studyset-release` exports one Study per base study:
+
+- **Which studies.** A study enters when it has a result coordinate, or when it has
+  an analysis with outcome `no_significant_effect` (a null-only paper with no points
+  is kept). Anchor coordinates (ROIs, seeds) alone do not qualify.
+- **Retracted papers** (`base_studies.is_retracted` true) are left out unless the
+  build is run with `--include-retracted`; the manifest records `include_retracted`.
+  Papers whose retraction status is unknown (null) stay in.
+- **Results only.** Only result analyses are in the shards and the annotation:
+  `analyses.role = 'result'`, or no role on a version that is not the pipeline's
+  (`studies.source` not `study_schema`), which is every analysis from before roles.
+  Anchors, localizations, references, `other` sets, and pipeline analyses with no
+  role are left out.
+- **Outcome.** An analysis with an outcome gets `metadata.outcome`; a null analysis
+  ships as `points: []` plus `metadata.outcome = "no_significant_effect"`.
+- **Version choice** (`release_version_order` in
+  `services/neurostore_studyset_releases.py`): an eligible curated or user version
+  wins over the pipeline Study (`source = "study_schema"`), and among the rest the
+  freshest wins. The pipeline Study is still updated and stays reachable by id.
+
+Cached study shards are rebuilt only when the selected Study changes. After
+deploying the outcome/role/retraction migration (`f1a3c5e7b9d2`), run one build with
+`--clear-cache` so shards written before it get `metadata.outcome` and drop
+non-results. Then set the role of analyses uploaded before it from their stored parses:
+run `manage backfill-analysis-roles` (a dry run that lists unmatched analyses), then
+`manage backfill-analysis-roles --apply`, then build with `--clear-cache` again:
+
+```bash
+docker compose run --rm --no-deps store_release_worker \
+  manage build-neurostore-studyset-release --nightly --clear-cache
+```
+
 ## Post-Deploy Verification
 
 Check container state:

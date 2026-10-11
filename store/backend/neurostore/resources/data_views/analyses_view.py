@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import raiseload, selectinload
-from webargs import fields
+from study_schema.models.paper_parse import CoordinateRole
+from webargs import fields, validate
 
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
@@ -17,7 +18,7 @@ from neurostore.models import (
     Table,
     User,
 )
-from neurostore.models.data import StudysetStudy
+from neurostore.models.data import StudysetStudy, analysis_role_clause
 from neurostore.resources.base import DefaultObjectViewPolicy, ListView, ObjectView
 from neurostore.resources.data_views.common import (
     IMAGE_DETAIL_ARGS,
@@ -45,6 +46,9 @@ class AnalysesView(ObjectView, ListView):
         **LIST_NESTED_ARGS,
         **IMAGE_DETAIL_ARGS,
         "study": fields.String(load_default=None),
+        "role": fields.String(
+            load_default=None, validate=validate.OneOf([r.value for r in CoordinateRole])
+        ),
     }
     _o2m = {
         "images": "ImagesView",
@@ -71,6 +75,8 @@ class AnalysesView(ObjectView, ListView):
         study_id = args.get("study")
         if study_id:
             q = q.filter(Analysis.study_id == study_id)
+        if args.get("role"):
+            q = q.filter(analysis_role_clause(args["role"]))
         return q
 
     def get_affected_ids(self, ids):

@@ -9,6 +9,7 @@ from neurostore.map_types import (
     VARIANCE_MAP_CODES,
     Z_MAP_CODES,
 )
+from neurostore.models.data import result_analysis_clause
 from neurostore.models import (
     Analysis,
     BaseStudy,
@@ -86,15 +87,14 @@ def recompute_media_flags(base_study_ids):
     study_scope = Study.base_study_id.in_(base_study_ids)
 
     # Analysis flags from direct child rows. Only a paper's own results give it
-    # coordinates: an analysis whose metadata role (set by the study_schema ingester) is
-    # reference, localization, anchor or other keeps its points but not the flag.
+    # coordinates: any other analysis keeps its points but not the flag.
     analysis_points_exist = sa.and_(
         sa.exists(
             sa.select(sa.literal(1))
             .select_from(Point)
             .where(Point.analysis_id == Analysis.id)
         ),
-        sa.func.coalesce(Analysis.metadata_["role"].astext, "result") == "result",
+        result_analysis_clause(),
     )
     analysis_images_exist = sa.exists(
         sa.select(sa.literal(1))
