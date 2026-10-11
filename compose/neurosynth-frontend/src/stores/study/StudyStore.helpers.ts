@@ -222,20 +222,11 @@ export const studyAnalysesToStoreAnalyses = (
     return sortByOrder(studyAnalyses);
 };
 
-// Fields the API returns on an analysis that the SDK types do not declare yet.
-export interface IAnalysisClassification {
-    role?: string | null;
-    relabelled_by?: string | null;
-    outcome?: string | null;
-    from_prior_study?: boolean | null;
-    source_id?: string | null;
-}
-
 export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): AnalysisReturn[] => {
     // the backend API complains when we give an analysis ID that does not exist.
     // we therefore need to scrub the id from the analysis if it was newly created by us.
     // we also need to remove the readonly attributes and any attributes we added
-    const updatedAnalyses: (AnalysisRequest & IAnalysisClassification)[] = (analyses || []).map(
+    const updatedAnalyses: AnalysisRequest[] = (analyses || []).map(
         ({ isNew, conditions, points, pointSpace, pointStatistic, ...analysisArgs }, index) => {
             const scrubbedConditions: ConditionRequest[] = conditions.map(({ isNew, ...args }) => ({
                 name: args.name,
@@ -291,26 +282,11 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                 points: studyPoints,
                 id: isNew ? undefined : analysisArgs.id,
                 order: index + 1, // order is not 0 indexed in the BE
-                // Sent back so that saving, which clones a study the user does not own,
-                // keeps what each analysis is for and what it found.
-                ...classificationOf(analysisArgs as IAnalysisClassification),
             };
         }
     );
 
     return updatedAnalyses;
-};
-
-const classificationOf = ({
-    role,
-    relabelled_by,
-    outcome,
-    from_prior_study,
-    source_id,
-}: IAnalysisClassification): IAnalysisClassification => {
-    const fields: IAnalysisClassification = { role, relabelled_by, outcome, from_prior_study, source_id };
-    // A field the store never had is left out, so the API keeps the cloned value.
-    return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined));
 };
 
 export const getEmptyStudy = (): IStoreStudy => {
