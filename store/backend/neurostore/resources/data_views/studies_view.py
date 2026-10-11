@@ -3,7 +3,8 @@ import string
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import raiseload, selectinload
-from webargs import fields
+from study_schema.models.paper_parse import CoordinateRole
+from webargs import fields, validate
 
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
@@ -21,7 +22,7 @@ from neurostore.models import (
     Table,
     User,
 )
-from neurostore.models.data import StudysetStudy
+from neurostore.models.data import StudysetStudy, analysis_role_clause
 from neurostore.resources.base import DefaultObjectViewPolicy, ListView, ObjectView
 from neurostore.resources.data_views.cloning import (
     build_study_clone_payload,
@@ -129,6 +130,9 @@ class StudiesView(ObjectView, ListView):
     object_view_policy_cls = StudyObjectViewPolicy
     _view_fields = {
         "data_type": fields.String(load_default=None),
+        "role": fields.String(
+            load_default=None, validate=validate.OneOf([r.value for r in CoordinateRole])
+        ),
         "map_type": fields.String(load_default=None),
         "studyset_owner": fields.String(load_default=None),
         "level": fields.String(dump_default="group", load_default="group"),
@@ -267,6 +271,14 @@ class StudiesView(ObjectView, ListView):
                         self._model.has_coordinates.is_(True),
                     )
                 )
+        if args.get("role"):
+            # Studies with an analysis of that role.
+            q = q.filter(
+                select(Analysis.id)
+                .where(Analysis.study_id == self._model.id)
+                .where(analysis_role_clause(args["role"]))
+                .exists()
+            )
         q = apply_map_type_filter(q, self._model, args.get("map_type"))
         q = q.filter(self._model.level == args.get("level"))
         unique_col = args.get("unique")

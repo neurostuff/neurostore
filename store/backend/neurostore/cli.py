@@ -138,6 +138,63 @@ def rehash_entities_command(base_study_id, batch_size):
     _run_with_runtime(_run)
 
 
+@main.command("backfill-analysis-roles")
+@click.option(
+    "--dry-run/--apply",
+    default=True,
+    show_default=True,
+    help="report what would be set without writing",
+)
+@click.option(
+    "--base-study-id",
+    default=None,
+    help="only this base study (default: every base study with a stored parse)",
+)
+@click.option(
+    "--batch-size",
+    default=500,
+    show_default=True,
+    type=int,
+    help="base studies per batch; each applied batch commits",
+)
+def backfill_analysis_roles(dry_run, base_study_id, batch_size):
+    """Set the role of uploaded analyses from their stored coordinate parses, by key.
+
+    Clones take their parent analysis's role. Lists the pipeline analyses no stored
+    parse gives a role, and those whose stored parses disagree.
+    """
+
+    def _run(_app, db):
+        from neurostore.ingest.study_schema import backfill_roles
+
+        summary = backfill_roles(
+            apply=not dry_run, base_study_id=base_study_id, batch_size=batch_size
+        )
+        if not dry_run:
+            db.session.commit()
+        matched = ", ".join(f"{role}: {n}" for role, n in sorted(summary["matched"].items()))
+        by = ", ".join(f"{how}: {n}" for how, n in sorted(summary["matched_by"].items()))
+        click.echo(
+            f"{'would set' if dry_run else 'set'} {sum(summary['matched'].values())} roles "
+            f"({matched or 'none'}; from {by or 'none'})"
+            f"{' (dry run, nothing written)' if dry_run else ''}"
+        )
+        for item in summary["disagreements"]:
+            click.echo(
+                f"  analysis {item['analysis_id']} (key {item['key']}): stored parses "
+                f"disagree, newest first {item['roles']}; took {item['roles'][0]}"
+            )
+        click.echo(f"{summary['legacy_unmatched']} legacy analyses with no parse key")
+        click.echo(f"{len(summary['unmatched'])} pipeline analyses unmatched")
+        for item in summary["unmatched"]:
+            click.echo(
+                f"  unmatched analysis {item['analysis_id']} (study {item['study_id']}, "
+                f"key {item['key']}): {item['reason']}"
+            )
+
+    _run_with_runtime(_run)
+
+
 @main.command("repair-annotation-links")
 @click.option(
     "--dry-run/--apply",
@@ -630,12 +687,19 @@ def check_base_study_metadata_outbox(max_pending, max_oldest_seconds):
 @click.option("--force-monthly/--no-force-monthly", default=False, show_default=True)
 @click.option("--version", "monthly_version", default=None)
 @click.option("--clear-cache/--no-clear-cache", default=False, show_default=True)
+@click.option(
+    "--include-retracted/--exclude-retracted",
+    default=False,
+    show_default=True,
+    help="Keep papers marked retracted in the release.",
+)
 def build_neurostore_studyset_release(
     nightly,
     monthly_if_due,
     force_monthly,
     monthly_version,
     clear_cache,
+    include_retracted,
 ):
     def _run(app, _db):
         from neurostore.services.neurostore_studyset_releases import (
@@ -649,6 +713,7 @@ def build_neurostore_studyset_release(
             force_monthly=force_monthly,
             version=monthly_version,
             clear_cache=clear_cache,
+            include_retracted=include_retracted,
         )
         if clear_cache:
             click.echo("Cleared shard cache.")

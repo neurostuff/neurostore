@@ -1,3 +1,4 @@
+import sqlalchemy as sa
 from click.testing import CliRunner
 
 from neurostore import service_migrations
@@ -70,3 +71,64 @@ def test_rehash_entities_runs_the_rehash(monkeypatch):
     assert result.exit_code == 0, result.output
     assert "rehashed 3 entities" in result.output
     assert calls == [("abc", 500)]
+
+
+def test_outcome_role_retraction_migration_round_trips(db):
+    def columns(table):
+        return {c["name"] for c in sa.inspect(db.engine).get_columns(table)}
+
+    added = {
+        "analyses": {"outcome", "role", "relabelled_by", "from_prior_study"},
+        "base_studies": {"is_retracted", "retraction_notice"},
+    }
+    service_migrations.upgrade("heads")
+    assert all(cols <= columns(table) for table, cols in added.items())
+    service_migrations.downgrade("28cdbfce7bfa")
+    assert all(not cols & columns(table) for table, cols in added.items())
+    service_migrations.upgrade("heads")
+    assert all(cols <= columns(table) for table, cols in added.items())
+
+
+def test_backfill_analysis_roles_is_a_dry_run_unless_applied(monkeypatch):
+    from neurostore.ingest import study_schema
+
+    calls, commits = [], []
+
+    class _Session:
+        def commit(self):
+            commits.append(True)
+
+    class _Db:
+        session = _Session()
+
+    monkeypatch.setattr(cli, "_run_with_runtime", lambda callback: callback(None, _Db()))
+    monkeypatch.setattr(
+        study_schema,
+        "backfill_roles",
+        lambda apply, base_study_id, batch_size: calls.append((apply, batch_size))
+        or {
+            "matched": {"result": 2},
+            "matched_by": {"own_parse": 1, "other_parse": 1},
+            "unmatched": [
+                {"analysis_id": "a1", "study_id": "s1", "key": "k1", "reason": "why"}
+            ],
+            "legacy_unmatched": 0,
+            "disagreements": [
+                {"analysis_id": "a2", "key": "k2", "roles": ["result", "anchor"]}
+            ],
+            "applied": apply,
+        },
+    )
+
+    dry = CliRunner().invoke(main, ["backfill-analysis-roles"])
+    assert dry.exit_code == 0, dry.output
+    assert "would set 2 roles (result: 2; from other_parse: 1, own_parse: 1)" in dry.output
+    assert "unmatched analysis a1 (study s1, key k1): why" in dry.output
+    assert "analysis a2 (key k2): stored parses disagree" in dry.output
+    assert (calls, commits) == ([(False, 500)], [])
+
+    applied = CliRunner().invoke(
+        main, ["backfill-analysis-roles", "--apply", "--batch-size", "50"]
+    )
+    assert applied.exit_code == 0, applied.output
+    assert (calls, commits) == ([(False, 500), (True, 50)], [True])

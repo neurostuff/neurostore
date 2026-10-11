@@ -1,5 +1,7 @@
 """The study_schema ingester: a parse, a parse with a record, a record, a revision."""
 
+from datetime import datetime, timezone
+
 import pytest
 import sqlalchemy as sa
 
@@ -9,14 +11,19 @@ from neurostore.ingest.study_schema import (
     ALIAS_CONFLICT,
     BOTH_DIRECTIONS,
     HISTORY_SOURCE,
+    NO_STORED_PARSE_REASON,
     NO_SUCCESSOR,
     NOT_CARRIED,
     ORPHAN_REASONS,
+    OUTCOME_WITHHELD_REASON,
+    RELABEL_RENAMED_REASON,
+    RELABEL_REVISED_REASON,
     SHARED_NAME,
     STUDY_SOURCE,
     UNKNOWN_KEY_REASON,
     _cell_weights,
     _point_rows,
+    backfill_roles,
     ingest_upload,
 )
 from neurostore.models import (
@@ -33,7 +40,9 @@ from neurostore.models import (
     StudyEntityAlias,
     StudyEntityCandidateLink,
 )
-from neurostore.models.data import analysis_identity, study_entity_hash
+from neurostore.database import db
+from neurostore.models.data import analysis_identity, is_result_analysis, study_entity_hash
+from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests import study_schema_fixtures as fx
 
 # Table 1 of one paper: rows 0-3 are one contrast with both signs, rows 4-7 two more.
@@ -133,7 +142,7 @@ def test_parse_alone_stores_skeleton_keyed_by_cells(session):
     study = _current(summary["base_study_id"])
     assert study.source_id == ORIGINAL["parse_id"]
     # Every role is stored; the role is the analysis's.
-    assert {a.source_id: a.metadata_["role"] for a in study.analyses} == {
+    assert {a.source_id: a.role for a in study.analyses} == {
         GAIN["key"]: "result",
         LOSS["key"]: "result",
         RISK["key"]: "result",
@@ -740,7 +749,7 @@ def test_every_role_is_stored_as_an_analysis(session):
 
     assert summary["skeleton"]["created"] == len(roles)
     stored = _current(summary["base_study_id"]).analyses
-    assert sorted(a.metadata_["role"] for a in stored) == sorted(roles)
+    assert sorted(a.role for a in stored) == sorted(roles)
 
 
 def test_omitted_analyses_are_kept_with_the_parse(session):
@@ -1127,3 +1136,691 @@ def test_only_result_analyses_give_a_paper_coordinates(session):
     assert {a.name for a in study.analyses if a.has_coordinates} == {"Faces > Houses"}
     assert study.has_coordinates
     assert session.get(BaseStudy, summary["base_study_id"]).has_coordinates
+
+
+# ---------------------------------------------------------------------------
+# outcome, role and retraction columns
+# ---------------------------------------------------------------------------
+
+NULL = fx.table_analysis("tbl3", [0], "Risk > Loss", [])
+ROI = fx.table_analysis(
+    "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor", from_prior_study=True
+)
+_ANALYSES.update({a["key"]: a for a in (NULL, ROI)})
+
+
+def _outcome_record(*pairs):
+    analyses = []
+    for i, (parsed, outcome) in enumerate(pairs):
+        analysis = fx.record_analysis(f"a{i}", parsed["key"], parsed["name"])
+        if outcome is not None:
+            analysis["outcome"] = fx.extracted(outcome)
+        analyses.append(analysis)
+    return fx.record(analyses)
+
+
+def _by_key(study):
+    return {a.source_id: a for a in study.analyses}
+
+
+def test_parse_writes_role_and_from_prior_study(session):
+    other = fx.table_analysis("tbl5", [0], "Peak voxel", [fx.point((2, 4, 6))], role="other")
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, ROI, other])})
+
+    analyses = _by_key(_current(summary["base_study_id"]))
+    assert (analyses[LOSS["key"]].role, analyses[LOSS["key"]].from_prior_study) == (
+        "result",
+        None,
+    )
+    assert (analyses[ROI["key"]].role, analyses[ROI["key"]].from_prior_study) == (
+        "anchor",
+        True,
+    )
+    # Columns, not a second copy in metadata.
+    assert "role" not in analyses[ROI["key"]].metadata_
+    assert "from_prior_study" not in analyses[ROI["key"]].metadata_
+    assert Analysis.query.filter_by(role="anchor").one().source_id == ROI["key"]
+    # `other` coordinates are kept as analyses, but are not results.
+    assert analyses[other["key"]].role == "other"
+    assert analyses[other["key"]].outcome is None
+    assert not is_result_analysis(analyses[other["key"]])
+
+
+def test_record_writes_outcome(session):
+    parse = fx.parse([LOSS, NULL])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record(
+                (LOSS, "significant_effect"), (NULL, "no_significant_effect")
+            ),
+        }
+    )
+    analyses = _by_key(_current(summary["base_study_id"]))
+    assert analyses[LOSS["key"]].outcome == "significant_effect"
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+    assert analyses[NULL["key"]].points == []
+
+    # A later record that does not report it clears the analysis's own outcome.
+    ingest_upload(
+        {
+            "parse_id": parse["parse_id"],
+            "base_study_id": summary["base_study_id"],
+            "record": _outcome_record((LOSS, None), (NULL, "no_significant_effect")),
+        }
+    )
+    assert analyses[LOSS["key"]].outcome is None
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+
+    # A re-applied parse keeps the record's outcome: the parse does not carry one.
+    ingest_upload({"coordinate_parse": parse})
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+
+
+def test_parsed_paper_corrections_mark_retraction(session):
+    notice = {"kind": "retraction", "pmid": "99999999", "doi": None}
+    summary = ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": fx.parsed_paper(corrections=[{"kind": "erratum"}, notice]),
+        }
+    )
+    base = BaseStudy.query.get(summary["base_study_id"])
+    assert base.is_retracted is True
+    assert base.retraction_notice == notice
+
+    # A parsed paper whose corrections were not looked up leaves the status alone.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": fx.parsed_paper()})
+    assert base.is_retracted is True
+
+    ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": fx.parsed_paper(corrections=[{"kind": "erratum"}]),
+        }
+    )
+    assert (base.is_retracted, base.retraction_notice) == (False, None)
+
+
+def test_parse_without_parsed_paper_leaves_retraction_unknown(session):
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS])})
+    assert BaseStudy.query.get(summary["base_study_id"]).is_retracted is None
+
+
+def test_inverse_half_takes_the_original_halfs_outcome(session):
+    revision, original, inverse, merged = _revision()
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    entry = _contrast(original, gain="positive")
+    entry["outcome"] = fx.extracted("significant_effect")
+    summary = ingest_upload({"coordinate_parse": revision, "record": fx.record([entry])})
+
+    by_key = _by_key(_current(summary["base_study_id"]))
+    assert by_key[original["key"]].outcome == "significant_effect"
+    assert by_key[inverse["key"]].outcome == "significant_effect"
+    assert by_key[merged["key"]].outcome is None
+
+
+def test_a_derived_outcome_never_overrides_the_analysis_own(session):
+    revision, original, inverse, _ = _revision()
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    own = _contrast(inverse, local_id="a0")
+    own["outcome"] = fx.extracted("no_significant_effect")
+    orig = _contrast(original, local_id="a1")
+    orig["outcome"] = fx.extracted("significant_effect")
+    # The inverse half's own entry comes first; the original half's derived one follows.
+    summary = ingest_upload({"coordinate_parse": revision, "record": fx.record([own, orig])})
+    by_key = _by_key(_current(summary["base_study_id"]))
+    assert by_key[original["key"]].outcome == "significant_effect"
+    assert by_key[inverse["key"]].outcome == "no_significant_effect"
+
+    # A derived entry with no outcome adds nothing: the inverse half keeps its own.
+    ingest_upload(
+        {
+            "parse_id": revision["parse_id"],
+            "base_study_id": summary["base_study_id"],
+            "record": fx.record([_contrast(original, local_id="a1")]),
+        }
+    )
+    assert by_key[original["key"]].outcome is None
+    assert by_key[inverse["key"]].outcome == "no_significant_effect"
+
+
+def _outcome_claims(base_study_id, key):
+    return {
+        (c.value, c.extraction_status)
+        for c in _claims(base_study_id, key)
+        if c.field_path == "outcome"
+    }
+
+
+def test_an_anchor_outcome_is_a_claim_not_a_column(session):
+    parse = fx.parse([NULL, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record(
+                (NULL, "no_significant_effect"), (ROI, "no_significant_effect")
+            ),
+        }
+    )
+    base_id = summary["base_study_id"]
+    analyses = _by_key(_current(base_id))
+    assert analyses[NULL["key"]].outcome == "no_significant_effect"
+    # An ROI was not tested in this study: no outcome, but the record's is kept.
+    assert analyses[ROI["key"]].outcome is None
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+    assert summary["record"]["outcomes_withheld"] == [
+        {
+            "key": ROI["key"],
+            "role": "anchor",
+            "outcome": "no_significant_effect",
+            "reason": OUTCOME_WITHHELD_REASON,
+        }
+    ]
+
+
+def test_a_role_change_applies_or_withdraws_the_claimed_outcome(session):
+    parse = fx.parse([LOSS, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record((LOSS, None), (ROI, "no_significant_effect")),
+        }
+    )
+    base_id = summary["base_study_id"]
+    roi = _by_key(_current(base_id))[ROI["key"]]
+    assert roi.outcome is None
+
+    # A later parse reads the same set as a result: the claimed outcome applies.
+    as_result = {**ROI, "role": "result", "from_prior_study": None}
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    assert (roi.role, roi.outcome) == ("result", "no_significant_effect")
+    # Re-applying it keeps the outcome rather than looking it up again.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    assert roi.outcome == "no_significant_effect"
+
+    # Back to an anchor (a stored parse cannot be replayed, so a new one): the column
+    # clears and the claim stays.
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, {**ROI, "description": "ROI"}])})
+    assert (roi.role, roi.outcome) == ("anchor", None)
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+
+
+def test_a_role_change_applies_only_the_latest_records_outcome(session):
+    parse = fx.parse([LOSS, ROI])
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "record": _outcome_record((LOSS, None), (ROI, "no_significant_effect")),
+        }
+    )
+    base_id = summary["base_study_id"]
+    # The same config re-run reports no outcome for the ROI. The first run's claim stays,
+    # still linked to that config, but it is not what the latest run says.
+    ingest_upload(
+        {"coordinate_parse": parse, "record": _outcome_record((LOSS, None), (ROI, None))}
+    )
+    assert _outcome_claims(base_id, ROI["key"]) == {("no_significant_effect", "extracted")}
+
+    as_result = {**ROI, "role": "result", "from_prior_study": None}
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, as_result])})
+    roi = _by_key(_current(base_id))[ROI["key"]]
+    assert (roi.role, roi.outcome) == ("result", None)
+
+    # Back to an anchor; a later run reports an outcome again, and that one applies.
+    as_anchor = fx.parse([LOSS, {**ROI, "description": "ROI"}])
+    ingest_upload({"coordinate_parse": as_anchor})
+    ingest_upload(
+        {
+            "coordinate_parse": as_anchor,
+            "record": _outcome_record((LOSS, None), (ROI, "significant_effect")),
+        }
+    )
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, {**as_result, "description": "R"}])})
+    assert (roi.role, roi.outcome) == ("result", "significant_effect")
+
+
+# ---------------------------------------------------------------------------
+# reviewed relabels and the role backfill
+# ---------------------------------------------------------------------------
+
+PEAK = fx.table_analysis("tbl3", [0], "Peak > Baseline", [fx.point((8, 8, 8))])
+
+
+def test_a_relabel_wins_over_a_later_classifier_parse(session):
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = fx.parse(
+        [LOSS, {**PEAK, "role": "anchor"}],
+        revision_of=original["parse_id"],
+        verdicts=[
+            fx.verdict(LOSS["key"], "accept", [LOSS["key"]]),
+            fx.verdict(PEAK["key"], "relabel", [PEAK["key"]]),
+        ],
+    )
+    ingest_upload({"coordinate_parse": revision})
+    peak = _by_key(_current(base_study_id))[PEAK["key"]]
+    assert (peak.role, peak.relabelled_by) == ("anchor", revision["parse_id"])
+    assert _by_key(_current(base_study_id))[LOSS["key"]].relabelled_by is None
+
+    # The classifier runs again (a new parse, not a revision) and calls it a result.
+    rerun = fx.parse([LOSS, PEAK, RISK])
+    summary = ingest_upload({"coordinate_parse": rerun})
+
+    peak = _by_key(_current(base_study_id))[PEAK["key"]]
+    assert (peak.role, peak.relabelled_by) == ("anchor", revision["parse_id"])
+    assert summary["skeleton"]["relabels_kept"] == [
+        {
+            "key": PEAK["key"],
+            "role": "anchor",
+            "parse_role": "result",
+            "relabelled_by": revision["parse_id"],
+        }
+    ]
+    assert not is_result_analysis(peak)
+
+
+def _strip_roles(study):
+    """Make ``study``'s analyses look uploaded before the role column existed."""
+    for analysis in study.analyses:
+        analysis.metadata_ = {**analysis.metadata_, "role": analysis.role}
+        analysis.role = None
+    db.session.flush()
+
+
+def test_backfill_roles_dry_run_then_apply(session):
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, SEED], pmid="77777777")})
+    base_study_id = summary["base_study_id"]
+    study = _current(base_study_id)
+    _strip_roles(study)
+    stray = Analysis(name="Stray", study=study, source_id="no-such-key", user=study.user)
+    curated = Study(name="Curated", base_study_id=base_study_id, user=study.user)
+    legacy = Analysis(name="Legacy", study=curated, source_id="legacy-key", user=study.user)
+    db.session.add_all([stray, curated, legacy])
+    recompute_media_flags([base_study_id])
+    db.session.flush()
+    db.session.expire_all()
+    # An unclassified pipeline set gives the paper no coordinates.
+    assert not session.get(BaseStudy, base_study_id).has_coordinates
+
+    dry = backfill_roles(base_study_id=base_study_id)
+
+    expected_unmatched = [
+        {
+            "analysis_id": stray.id,
+            "study_id": study.id,
+            "key": "no-such-key",
+            "reason": NO_STORED_PARSE_REASON,
+        }
+    ]
+    assert dry == {
+        "matched": {"result": 1, "reference": 1},
+        "matched_by": {"own_parse": 2},
+        "unmatched": expected_unmatched,
+        "legacy_unmatched": 1,
+        "disagreements": [],
+        "applied": False,
+    }
+    assert {a.source_id: a.role for a in study.analyses} == {
+        LOSS["key"]: None,
+        SEED["key"]: None,
+        "no-such-key": None,
+    }
+
+    applied = backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert applied["matched"] == dry["matched"]
+    assert applied["unmatched"] == expected_unmatched
+    assert {a.source_id: a.role for a in study.analyses} == {
+        LOSS["key"]: "result",
+        SEED["key"]: "reference",
+        "no-such-key": None,
+    }
+    assert all("role" not in (a.metadata_ or {}) for a in study.analyses)
+    assert legacy.role is None
+    db.session.expire_all()
+    assert session.get(BaseStudy, base_study_id).has_coordinates
+    # Applied once, there is nothing left to set.
+    assert backfill_roles(base_study_id=base_study_id)["matched"] == {}
+
+
+def _as_before_roles(study, **metadata):
+    """``_strip_roles``, and no relabel record or outcome: columns an older ingest lacked."""
+    _strip_roles(study)
+    for analysis in study.analyses:
+        analysis.relabelled_by = None
+        analysis.outcome = None
+        analysis.metadata_ = {**analysis.metadata_, **metadata.get(analysis.source_id, {})}
+    db.session.flush()
+
+
+def _relabel_peak(base_study_id, original):
+    revision = fx.parse(
+        [LOSS, {**PEAK, "role": "anchor"}],
+        revision_of=original["parse_id"],
+        verdicts=[
+            fx.verdict(LOSS["key"], "accept", [LOSS["key"]]),
+            fx.verdict(PEAK["key"], "relabel", [PEAK["key"]]),
+        ],
+    )
+    ingest_upload({"coordinate_parse": revision})
+    return revision
+
+
+def test_backfill_records_a_relabel_so_a_classifier_rerun_keeps_it(session):
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = _relabel_peak(base_study_id, original)
+    _as_before_roles(_current(base_study_id))
+
+    summary = backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert summary["matched_by"] == {"relabel": 1, "own_parse": 1}
+    peak = _by_key(_current(base_study_id))[PEAK["key"]]
+    assert (peak.role, peak.relabelled_by) == ("anchor", revision["parse_id"])
+
+    rerun = ingest_upload({"coordinate_parse": fx.parse([LOSS, PEAK, RISK])})
+    peak = _by_key(_current(base_study_id))[PEAK["key"]]
+    assert (peak.role, peak.relabelled_by) == ("anchor", revision["parse_id"])
+    assert [k["key"] for k in rerun["skeleton"]["relabels_kept"]] == [PEAK["key"]]
+
+
+def test_backfill_prefers_a_relabel_over_a_later_classifier_parse(session):
+    # Before roles were columns, a classifier re-run overwrote the relabelled role.
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = _relabel_peak(base_study_id, original)
+    rerun = fx.parse([LOSS, PEAK, RISK])
+    ingest_upload({"coordinate_parse": rerun})
+    _as_before_roles(_current(base_study_id), **{PEAK["key"]: {"role": "result"}})
+    peak = _by_key(_current(base_study_id))[PEAK["key"]]
+    assert peak.metadata_["parse_id"] == rerun["parse_id"]
+
+    backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert (peak.role, peak.relabelled_by) == ("anchor", revision["parse_id"])
+
+
+def test_backfill_prefers_the_analysis_own_parse(session):
+    as_anchor = fx.parse([LOSS, {**PEAK, "role": "anchor"}])
+    base_study_id = ingest_upload({"coordinate_parse": as_anchor})["base_study_id"]
+    ingest_upload({"coordinate_parse": fx.parse([LOSS, PEAK])})
+    study = _current(base_study_id)
+    _as_before_roles(study)
+    peak = _by_key(study)[PEAK["key"]]
+    # Written from the older parse; the newer one calls the same key a result.
+    peak.metadata_ = {
+        **{k: v for k, v in peak.metadata_.items() if k != "role"},
+        "parse_id": as_anchor["parse_id"],
+    }
+    db.session.flush()
+
+    summary = backfill_roles(base_study_id=base_study_id)
+
+    assert summary["matched"] == {"result": 1, "anchor": 1}
+    assert summary["disagreements"] == []
+
+
+def test_backfill_falls_back_to_the_newest_parse_and_reports_disagreement(session):
+    as_anchor = fx.parse([LOSS, {**PEAK, "role": "anchor"}])
+    base_study_id = ingest_upload({"coordinate_parse": as_anchor})["base_study_id"]
+    newest = fx.parse([LOSS, PEAK])
+    ingest_upload({"coordinate_parse": newest})
+    study = _current(base_study_id)
+    _as_before_roles(study)
+    peak = _by_key(study)[PEAK["key"]]
+    peak.metadata_ = {"parse_id": "no-longer-stored"}
+    db.session.flush()
+
+    summary = backfill_roles(base_study_id=base_study_id)
+
+    assert summary["matched_by"] == {"own_parse": 1, "other_parse": 1}
+    assert summary["matched"] == {"result": 2}
+    assert summary["disagreements"] == [
+        {"analysis_id": peak.id, "key": PEAK["key"], "roles": ["result", "anchor"]}
+    ]
+
+
+def test_backfill_applies_the_claimed_outcome_and_rebuilds_the_shard(session):
+    summary = ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS, NULL]),
+            "record": _outcome_record((LOSS, None), (NULL, "no_significant_effect")),
+        }
+    )
+    base_study_id = summary["base_study_id"]
+    study = _current(base_study_id)
+    _as_before_roles(study)
+    study.updated_at = study.source_updated_at = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    db.session.commit()
+
+    backfill_roles(apply=True, base_study_id=base_study_id)
+
+    study = _current(base_study_id)
+    assert {a.source_id: a.outcome for a in study.analyses} == {
+        LOSS["key"]: None,
+        NULL["key"]: "no_significant_effect",
+    }
+    # Only the analyses changed; the Study is marked so a release rebuilds its shard.
+    assert study.updated_at > datetime(2020, 1, 2, tzinfo=timezone.utc)
+
+
+def test_backfill_gives_a_clone_its_parent_role(session):
+    summary = ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS, SEED, NULL]),
+            "record": _outcome_record((LOSS, None), (NULL, "no_significant_effect")),
+        }
+    )
+    base_study_id = summary["base_study_id"]
+    pipeline = _current(base_study_id)
+    by_key = _by_key(pipeline)
+    by_key[SEED["key"]].from_prior_study = None
+    _as_before_roles(pipeline, **{SEED["key"]: {"from_prior_study": True}})
+    # A parent that already has its role is read from the database, not this run.
+    by_key[LOSS["key"]].role = "result"
+    # Clones made before roles were copied: their source_id is the parent analysis.
+    clone = Study(name="Clone", base_study_id=base_study_id, source="neurostore")
+    of_clone = Study(name="Clone of clone", base_study_id=base_study_id, source="neurostore")
+    copies = {}
+    for key, parent in by_key.items():
+        copies[key] = Analysis(
+            name=parent.name, study=clone, source_id=parent.id, metadata_=parent.metadata_
+        )
+    db.session.add_all([clone, of_clone, *copies.values()])
+    db.session.flush()
+    second = Analysis(name="2nd", study=of_clone, source_id=copies[NULL["key"]].id)
+    db.session.add(second)
+    db.session.flush()
+
+    summary = backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert summary["matched_by"] == {"own_parse": 2, "parent": 4}
+    clone = db.session.get(Study, clone.id)
+    assert sorted(
+        (a.name, a.role, a.outcome, a.from_prior_study) for a in clone.analyses
+    ) == sorted(
+        [
+            (LOSS["name"], "result", None, None),
+            (SEED["name"], "reference", None, True),
+            (NULL["name"], "result", "no_significant_effect", None),
+        ]
+    )
+    second = db.session.get(Analysis, second.id)
+    assert (second.role, second.outcome) == ("result", "no_significant_effect")
+
+
+def test_a_rekeyed_relabel_moves_with_its_set_or_is_reported(session):
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = _relabel_peak(base_study_id, original)
+
+    # The classifier re-reads the set from one more cell: the same set, re-keyed.
+    wider = fx.table_analysis("tbl3", [0, 1], PEAK["name"], [fx.point((8, 8, 8))])
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, wider])})
+    moved = _by_key(_current(base_study_id))[wider["key"]]
+    assert (moved.role, moved.relabelled_by) == ("anchor", revision["parse_id"])
+    assert summary["skeleton"]["relabels_kept"] == [
+        {
+            "key": wider["key"],
+            "role": "anchor",
+            "parse_role": "result",
+            "relabelled_by": revision["parse_id"],
+            "from": PEAK["key"],
+        }
+    ]
+    assert "relabels_dropped" not in summary["skeleton"]
+
+    # Read under another name, it may be another contrast: reported, not carried.
+    renamed = fx.table_analysis("tbl3", [0, 1], "Peak vs Baseline", [fx.point((8, 8, 8))])
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, renamed])})
+    assert _by_key(_current(base_study_id))[renamed["key"]].relabelled_by is None
+    assert summary["skeleton"]["relabels_dropped"] == [
+        {
+            "key": wider["key"],
+            "role": "anchor",
+            "relabelled_by": revision["parse_id"],
+            "reason": RELABEL_RENAMED_REASON,
+            "renamed_to": renamed["key"],
+        }
+    ]
+
+
+def test_backfill_works_through_every_batch_and_commits_each(session, monkeypatch):
+    base_ids = []
+    for pmid in ("70000001", "70000002", "70000003"):
+        summary = ingest_upload({"coordinate_parse": fx.parse([LOSS], pmid=pmid)})
+        base_ids.append(summary["base_study_id"])
+        _strip_roles(_current(summary["base_study_id"]))
+    db.session.commit()
+    commit = db.session.commit
+    # What each commit made durable: the papers whose pipeline set has its role.
+    committed = []
+
+    def spy():
+        committed.append(
+            {
+                base_id
+                for base_id in base_ids
+                if _by_key(_current(base_id))[LOSS["key"]].role == "result"
+            }
+        )
+        commit()
+
+    monkeypatch.setattr(db.session, "commit", spy)
+
+    summary = backfill_roles(apply=True, batch_size=2)
+
+    assert summary["matched"] == {"result": 3}
+    # The batches follow the database's id order, which is not Python's under en_US.
+    ordered = list(
+        db.session.scalars(
+            sa.select(BaseStudy.id).where(BaseStudy.id.in_(base_ids)).order_by(BaseStudy.id)
+        )
+    )
+    # Two batches, each committed as it finishes, so its row locks end with it.
+    assert committed == [set(ordered[:2]), set(ordered)]
+
+
+def test_backfill_gives_a_clone_the_relabel_of_a_parent_already_set(session):
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = _relabel_peak(base_study_id, original)
+    peak = _by_key(_current(base_study_id))[PEAK["key"]]
+    assert (peak.role, peak.relabelled_by) == ("anchor", revision["parse_id"])
+    clone = Study(name="Clone", base_study_id=base_study_id, source="neurostore")
+    copy = Analysis(name=peak.name, study=clone, source_id=peak.id)
+    db.session.add_all([clone, copy])
+    db.session.flush()
+
+    summary = backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert summary["matched_by"] == {"parent": 1}
+    copy = db.session.get(Analysis, copy.id)
+    # Without the relabel record, a re-run of the clone's paper would not keep its role.
+    assert (copy.role, copy.relabelled_by) == ("anchor", revision["parse_id"])
+
+
+def test_backfill_gives_a_clone_the_relabel_of_a_parent_resolved_in_the_same_batch(session):
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = _relabel_peak(base_study_id, original)
+    _as_before_roles(_current(base_study_id))
+    peak = _by_key(_current(base_study_id))[PEAK["key"]]
+    assert (peak.role, peak.relabelled_by) == (None, None)
+    clone = Study(name="Clone", base_study_id=base_study_id, source="neurostore")
+    copy = Analysis(name=peak.name, study=clone, source_id=peak.id)
+    # A clone of that clone: its parent may sort after it by id.
+    grandcopy_study = Study(name="Clone 2", base_study_id=base_study_id, source="neurostore")
+    grandcopy = Analysis(name=peak.name, study=grandcopy_study, source_id=copy.id)
+    db.session.add_all([clone, copy, grandcopy_study, grandcopy])
+    db.session.flush()
+    grandcopy.source_id = copy.id
+
+    summary = backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert summary["matched_by"] == {"relabel": 1, "own_parse": 1, "parent": 2}
+    for analysis in (copy, grandcopy):
+        analysis = db.session.get(Analysis, analysis.id)
+        assert (analysis.role, analysis.relabelled_by) == ("anchor", revision["parse_id"])
+
+
+def test_backfill_takes_the_outcome_of_the_newest_record(session):
+    parse = fx.parse([LOSS, NULL])
+    base_study_id = ingest_upload({"coordinate_parse": parse})["base_study_id"]
+    # Uploaded newest first, so the order they arrive in cannot decide.
+    for version, date, outcome in (
+        ("2.0.0", "2026-01-01T00:00:00Z", "no_significant_effect"),
+        ("1.0.0", "2025-01-01T00:00:00Z", "significant_effect"),
+    ):
+        record = _outcome_record((LOSS, None), (NULL, outcome))
+        record["extraction_metadata"].update(extractor_version=version, extraction_date=date)
+        ingest_upload(
+            {"parse_id": parse["parse_id"], "base_study_id": base_study_id, "record": record}
+        )
+    _as_before_roles(_current(base_study_id))
+    db.session.commit()
+
+    backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert _by_key(_current(base_study_id))[NULL["key"]].outcome == "no_significant_effect"
+
+
+def test_backfill_takes_the_upload_role_before_another_parse(session):
+    base_study_id = ingest_upload({"coordinate_parse": fx.parse([LOSS])})["base_study_id"]
+    study = _current(base_study_id)
+    # Written from a parse that was never stored, with the role the upload gave it.
+    _as_before_roles(study, **{LOSS["key"]: {"parse_id": "not-stored", "role": "anchor"}})
+    db.session.flush()
+
+    summary = backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert summary["matched_by"] == {"upload": 1}
+    assert _by_key(_current(base_study_id))[LOSS["key"]].role == "anchor"
+
+
+def test_a_revision_that_splits_a_relabelled_set_reports_the_relabel(session):
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = _relabel_peak(base_study_id, original)
+    left = fx.table_analysis("tbl3", [0], "Peak > Baseline (left)", [fx.point((8, 8, 8))])
+    right = fx.table_analysis("tbl3", [1], "Peak > Baseline (right)", [fx.point((9, 9, 9))])
+    split = fx.parse(
+        [LOSS, left, right],
+        revision_of=revision["parse_id"],
+        verdicts=[
+            fx.verdict(LOSS["key"], "accept", [LOSS["key"]]),
+            fx.verdict(PEAK["key"], "split", [left["key"], right["key"]]),
+        ],
+    )
+
+    summary = ingest_upload({"coordinate_parse": split})
+
+    assert summary["skeleton"]["relabels_dropped"] == [
+        {
+            "key": PEAK["key"],
+            "role": "anchor",
+            "relabelled_by": revision["parse_id"],
+            "reason": RELABEL_REVISED_REASON,
+        }
+    ]

@@ -263,7 +263,54 @@ def _clone_analysis_payload(analysis):
         ],
         "name": analysis.name,
         "description": analysis.description,
+        # What the parent is for, and what it found: without them a clone of a pipeline
+        # Study reads every set, anchors too, as a result.
+        "role": analysis.role,
+        "relabelled_by": analysis.relabelled_by,
+        "outcome": analysis.outcome,
+        "from_prior_study": analysis.from_prior_study,
     }
+
+
+# What a client editing the analyses may not send back, but a clone must keep: without
+# them an edited clone of a pipeline Study reads every set, anchors too, as a result.
+INHERITED_ANALYSIS_FIELDS = (
+    "role",
+    "relabelled_by",
+    "outcome",
+    "from_prior_study",
+    "metadata_",
+)
+
+
+def _inherit_cloned_analyses(study, analyses):
+    """Link each analysis sent with a clone request to the one it was copied from.
+
+    An analysis is matched by its id, which is the source's analysis or the analysis
+    that one was cloned from. A match supplies ``source_id`` and the fields the request
+    leaves out; a field the request sets, even to null, is kept as sent.
+    """
+    by_id = {}
+    for analysis in study.analyses:
+        by_id.setdefault(analysis.id, analysis)
+    for analysis in study.analyses:
+        if analysis.source_id:
+            by_id.setdefault(analysis.source_id, analysis)
+
+    inherited = []
+    for payload in analyses or []:
+        origin = by_id.get(payload.get("id")) if isinstance(payload, dict) else None
+        if origin is None:
+            inherited.append(payload)
+            continue
+        payload = dict(payload)
+        payload["source_id"] = origin.id
+        for field in INHERITED_ANALYSIS_FIELDS:
+            if field not in payload:
+                value = getattr(origin, field)
+                payload[field] = deepcopy(value) if field == "metadata_" else value
+        inherited.append(payload)
+    return inherited
 
 
 def _normalize_analysis_clone_payload(payload):
@@ -353,6 +400,10 @@ def build_study_clone_payload(study, override_data=None):
         payload.pop("metadata_", None)
     if override_data:
         payload.update(override_data)
+        if "analyses" in override_data:
+            payload["analyses"] = _inherit_cloned_analyses(
+                study, override_data.get("analyses")
+            )
     payload["base_study"] = _normalize_link_reference(payload.get("base_study"))
     payload["analyses"] = [
         _normalize_analysis_clone_payload(analysis)

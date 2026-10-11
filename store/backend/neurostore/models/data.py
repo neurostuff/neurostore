@@ -222,6 +222,12 @@ class BaseStudy(BaseMixin, db.Model):
         db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
     )
     superseded_by = db.Column(db.Text, db.ForeignKey("base_studies.id"), nullable=True)
+    # From the parsed paper's bibliography.corrections; null until a parsed paper with
+    # corrections looked up is ingested. A retracted paper is kept, and releases leave
+    # it out unless asked. Not indexed: the release filters on IS NOT TRUE, nearly every
+    # row, so a scan is what the planner uses.
+    is_retracted = db.Column(db.Boolean, nullable=True)
+    retraction_notice = db.Column(JSONB, nullable=True)
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
@@ -666,6 +672,15 @@ class Analysis(BaseMixin, db.Model):
     has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
+    # study_schema values: the extraction record's Analysis.outcome (AnalysisOutcome),
+    # and the coordinate parse's role (CoordinateRole) and from_prior_study.
+    outcome = db.Column(db.String, nullable=True, index=True)
+    role = db.Column(db.String, nullable=True, index=True)
+    # The parse_id of the revision whose relabel verdict set ``role``; null while the role
+    # is the classifier's (named in ``metadata.role_source``, study_schema's field). A
+    # relabelled role is kept over later parses' roles.
+    relabelled_by = db.Column(db.String, nullable=True)
+    from_prior_study = db.Column(db.Boolean, nullable=True)
     points = relationship(
         "Point",
         backref=backref("analysis", passive_deletes=True),
@@ -1436,6 +1451,58 @@ class FieldClaimEvidence(BaseMixin, db.Model):
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
     )
+
+
+# Study.source of the study_schema ingester's versions of a paper: the current one and
+# the superseded history.
+STUDY_SOURCE = "study_schema"
+HISTORY_SOURCE = "study_schema:superseded"
+PIPELINE_STUDY_SOURCES = (STUDY_SOURCE, HISTORY_SOURCE)
+# The PipelineConfig schema name of a pondie extraction record (study_schema's record).
+RECORD_SCHEMA_NAME = "neuroimaging-study-extraction"
+RESULT_ROLE = "result"
+
+
+def is_result_analysis(analysis, study=None):
+    """Whether ``analysis`` is a result: the analyses releases export and coordinates count.
+
+    A role says so directly. With no role, only a set the study_schema ingester wrote to
+    a pipeline Study (its metadata has a ``parse_id``) is unclassified, never a result.
+    Every other analysis with no role reads as a result, as before roles existed: a
+    curator's, an older upload's, or one added through the API to a pipeline Study.
+    """
+    if analysis.role is not None:
+        return analysis.role == RESULT_ROLE
+    if "parse_id" not in (analysis.metadata_ or {}):
+        return True
+    study = study if study is not None else analysis.study
+    return study is None or study.source not in PIPELINE_STUDY_SOURCES
+
+
+def result_analysis_clause():
+    """``is_result_analysis`` as SQL on ``Analysis``."""
+    pipeline_study = aliased(Study)
+    in_pipeline_study = (
+        sa.select(pipeline_study.id)
+        .where(
+            pipeline_study.id == Analysis.study_id,
+            pipeline_study.source.in_(PIPELINE_STUDY_SOURCES),
+        )
+        .exists()
+    )
+    ingested = sa.func.coalesce(Analysis.metadata_.has_key("parse_id"), False)
+    # Never NULL: the flag recompute writes this into a NOT NULL column.
+    return sa.or_(
+        sa.func.coalesce(Analysis.role, "") == RESULT_ROLE,
+        sa.and_(Analysis.role.is_(None), ~sa.and_(ingested, in_pipeline_study)),
+    )
+
+
+def analysis_role_clause(role):
+    """SQL on ``Analysis``: it has ``role``, where ``result`` is ``is_result_analysis``."""
+    if role == RESULT_ROLE:
+        return result_analysis_clause()
+    return Analysis.role == role
 
 
 from neurostore.models import image_count_listeners  # noqa E402

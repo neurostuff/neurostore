@@ -81,17 +81,17 @@ def verdict(key, kind, replaced_by=None, reason="audited"):
 _defs = load("extraction-record")["$defs"]
 
 
-def _resolve(schema):
+def _resolve(schema, defs):
     while "$ref" in schema:
-        schema = _defs[schema["$ref"].rsplit("/", 1)[-1]]
+        schema = defs[schema["$ref"].rsplit("/", 1)[-1]]
     return schema
 
 
-def _minimal(schema):
-    schema = _resolve(schema)
+def _minimal(schema, defs=_defs):
+    schema = _resolve(schema, defs)
     if "anyOf" in schema:
         options = [o for o in schema["anyOf"] if o.get("type") != "null"]
-        return _minimal(options[0]) if options else None
+        return _minimal(options[0], defs) if options else None
     props = schema.get("properties", {})
     if "extraction_status" in props and "evidence" in props:
         return {"extraction_status": "not_reported", "evidence": {"status": "not_applicable"}}
@@ -100,9 +100,9 @@ def _minimal(schema):
     if "enum" in schema:
         return schema["enum"][0]
     if kind == "object" or props:
-        return {name: _minimal(props[name]) for name in schema.get("required", [])}
+        return {name: _minimal(props[name], defs) for name in schema.get("required", [])}
     if kind == "array":
-        return [_minimal(schema["items"]) for _ in range(schema.get("minItems", 0))]
+        return [_minimal(schema["items"], defs) for _ in range(schema.get("minItems", 0))]
     if kind == "string":
         return "x"
     if kind in ("integer", "number"):
@@ -142,4 +142,15 @@ def record(analyses, coordinate_sets=(), local_id="study-1"):
         document["coordinate_sets"] = [
             {"local_id": key, "role": extracted("result")} for key in coordinate_sets
         ]
+    return document
+
+
+def parsed_paper(pmid="12345678", corrections=None):
+    """A minimal parsed paper; ``corrections`` are its bibliography's notices."""
+    schema = load("parsed-paper")
+    document = _minimal(schema, schema["$defs"])
+    document["header"]["identifiers"] = {"pmid": pmid}
+    document["bibliography"] = {"title": "A paper"}
+    if corrections is not None:
+        document["bibliography"]["corrections"] = corrections
     return document

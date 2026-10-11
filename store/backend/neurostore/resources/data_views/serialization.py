@@ -154,6 +154,10 @@ def serialize_analysis_record(analysis, context=None):
         "name": analysis.name,
         "description": analysis.description,
         "source_id": analysis.source_id,
+        "role": analysis.role,
+        "relabelled_by": analysis.relabelled_by,
+        "outcome": analysis.outcome,
+        "from_prior_study": analysis.from_prior_study,
     }
 
 

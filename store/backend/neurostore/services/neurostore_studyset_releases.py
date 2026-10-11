@@ -13,6 +13,7 @@ from pathlib import Path
 import orjson
 import sqlalchemy as sa
 from sqlalchemy.orm import load_only, selectinload
+from study_schema.models.paper_parse import AnalysisOutcome
 
 from neurostore.database import db
 from neurostore.map_types import map_type_label
@@ -33,8 +34,17 @@ from neurostore.models import (
     Studyset,
     StudysetStudy,
 )
-from neurostore.models.data import generate_id
+from neurostore.models.data import (
+    RECORD_SCHEMA_NAME,
+    STUDY_SOURCE,
+    generate_id,
+    is_result_analysis,
+    result_analysis_clause,
+)
 from neurostore.schemas.pipeline import PipelineStudyResultSchema
+
+# Only results are analyses in a studyset; an anchor (ROI, seed) defines one.
+IS_STUDYSET_ANALYSIS = result_analysis_clause()
 
 STUDYSET_SOURCE_ID = "neurostore-studyset"
 ANNOTATION_SOURCE_ID = "neurostore-annotation"
@@ -240,10 +250,75 @@ def acquire_build_lock():
     return bool(locked)
 
 
-def select_coordinate_studies():
+def has_extraction_record_clause():
+    """SQL on ``Study``: its paper has a stored pondie extraction record."""
+    return (
+        sa.select(PipelineStudyResult.id)
+        .join(PipelineConfig, PipelineConfig.id == PipelineStudyResult.config_id)
+        .where(PipelineStudyResult.base_study_id == Study.base_study_id)
+        .where(PipelineConfig.schema["name"].astext == RECORD_SCHEMA_NAME)
+        .exists()
+    )
+
+
+def release_tier():
+    """A version's rank for the release; lower wins.
+
+    0: the pipeline's Study (study_schema) of a paper with a pondie extraction record,
+    which the record's conditions and outcomes are applied to; 1: the pipeline's Study
+    from a coordinate parse alone; 2: every other version, i.e. the automated imports
+    (Neurosynth, NeuroQuery, NeuroVault, ACE), clones and versions made through the API.
+    """
+    is_pipeline = Study.source == STUDY_SOURCE
+    return sa.case(
+        (sa.and_(is_pipeline, has_extraction_record_clause()), 0),
+        (is_pipeline, 1),
+        else_=2,
+    )
+
+
+def release_version_order(freshness):
+    """The order that picks a paper's version for the release; the first eligible wins.
+
+    By ``release_tier``, then the freshest, then the highest id. A pipeline Study that
+    loses stays reachable by id.
+    """
+    return (release_tier(), freshness.desc(), Study.id.desc())
+
+
+def select_coordinate_studies(include_retracted=False):
+    """One Study per base study, chosen by ``release_version_order``.
+
+    A study qualifies with a result coordinate, or with an analysis that found nothing (a
+    null analysis has no points and enters NiMARE as one); anchor points alone do not
+    qualify, since anchors never enter the studyset. Retracted papers are left out
+    unless ``include_retracted``.
+    """
     freshness = sa.func.greatest(
         sa.func.coalesce(Study.updated_at, Study.created_at),
         Study.created_at,
+    )
+    has_null_analysis = (
+        sa.select(Analysis.id)
+        .where(Analysis.study_id == Study.id)
+        .where(Analysis.outcome == AnalysisOutcome.no_significant_effect.value)
+        .where(IS_STUDYSET_ANALYSIS)
+        .exists()
+    )
+    has_result_point = (
+        sa.select(Point.id)
+        .join(Analysis, Point.analysis_id == Analysis.id)
+        .where(Analysis.study_id == Study.id)
+        .where(IS_STUDYSET_ANALYSIS)
+        .exists()
+    )
+    eligible = sa.or_(
+        sa.and_(
+            BaseStudy.has_coordinates.is_(True),
+            Study.has_coordinates.is_(True),
+            has_result_point,
+        ),
+        has_null_analysis,
     )
     ranked = (
         sa.select(
@@ -255,19 +330,20 @@ def select_coordinate_studies():
             sa.func.row_number()
             .over(
                 partition_by=Study.base_study_id,
-                order_by=(freshness.desc(), Study.id.desc()),
+                order_by=release_version_order(freshness),
             )
             .label("rank"),
         )
         .select_from(BaseStudy)
         .join(Study, Study.base_study_id == BaseStudy.id)
         .where(BaseStudy.is_active.is_(True))
-        .where(BaseStudy.has_coordinates.is_(True))
         .where(Study.public.is_(True))
-        .where(Study.has_coordinates.is_(True))
+        .where(eligible)
         .where(Study.level == "group")
-        .subquery()
     )
+    if not include_retracted:
+        ranked = ranked.where(BaseStudy.is_retracted.isnot(True))
+    ranked = ranked.subquery()
 
     rows = db.session.execute(
         sa.select(
@@ -475,6 +551,7 @@ def fetch_analysis_rows(study_ids):
         )
         .select_from(Analysis)
         .where(Analysis.study_id.in_(study_ids))
+        .where(IS_STUDYSET_ANALYSIS)
         .order_by(
             Analysis.study_id,
             Analysis.order.is_(None),
@@ -643,6 +720,17 @@ def serialize_image_for_nimads(image):
     )
 
 
+def analysis_metadata_for_nimads(analysis):
+    """The analysis's metadata, with ``outcome`` where it is known.
+
+    NiMARE reads a null analysis as one with no points and ``metadata.outcome`` set to
+    ``no_significant_effect``; zero points alone is not a null.
+    """
+    if analysis.outcome is None:
+        return analysis.metadata_
+    return {**(analysis.metadata_ or {}), "outcome": analysis.outcome}
+
+
 def serialize_analysis_for_nimads(analysis):
     analysis_conditions = sorted(
         analysis.analysis_conditions,
@@ -690,7 +778,7 @@ def serialize_analysis_for_nimads(analysis):
                 ],
             ),
             ("table_id", analysis.table_id),
-            ("metadata", analysis.metadata_),
+            ("metadata", analysis_metadata_for_nimads(analysis)),
         )
     )
 
@@ -718,7 +806,7 @@ def serialize_study_for_nimads(study):
                 [
                     serialize_analysis_for_nimads(analysis)
                     for analysis in sorted(
-                        study.analyses,
+                        (a for a in study.analyses if is_result_analysis(a, study)),
                         key=lambda analysis: order_sort_key(
                             analysis.order,
                             analysis.id,
@@ -750,6 +838,7 @@ def study_shard_loader_options():
             Study.authors,
             Study.year,
             Study.metadata_,
+            Study.source,
         ),
         selectinload(Study.analyses).options(
             load_only(
@@ -760,6 +849,8 @@ def study_shard_loader_options():
                 Analysis.description,
                 Analysis.metadata_,
                 Analysis.order,
+                Analysis.outcome,
+                Analysis.role,
             ),
             selectinload(Analysis.images).options(
                 load_only(
@@ -1235,6 +1326,7 @@ def build_neurostore_studyset_release(
     force_monthly=False,
     version=None,
     clear_cache=False,
+    include_retracted=False,
 ):
     if not nightly and not monthly_if_due and not force_monthly and not version:
         nightly = True
@@ -1249,7 +1341,7 @@ def build_neurostore_studyset_release(
         if clear_cache:
             clear_shard_cache(root)
         built_at = utcnow()
-        selected = select_coordinate_studies()
+        selected = select_coordinate_studies(include_retracted=include_retracted)
         studyset, annotation = ensure_canonical_records(built_at)
         sync_studyset_membership(studyset, selected)
         db.session.flush()
@@ -1285,6 +1377,7 @@ def build_neurostore_studyset_release(
             note_keys,
             note_keys_checksum,
         )
+        manifest["include_retracted"] = include_retracted
 
         written = []
         if nightly:
