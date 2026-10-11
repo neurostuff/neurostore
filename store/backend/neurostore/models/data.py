@@ -275,34 +275,6 @@ class BaseStudy(BaseMixin, db.Model):
     )
 
     @hybrid_property
-    def points_exist(self):
-        # Check if the points exist for the BaseStudy
-        query = db.session.query(
-            exists().where(
-                BaseStudy.id == self.id,
-                Study.base_study_id == BaseStudy.id,
-                Analysis.study_id == Study.id,
-                Point.analysis_id == Analysis.id,
-            )
-        )
-        return query.scalar()
-
-    @points_exist.expression
-    def points_exist(cls):
-        # SQL expression for the points_exist property
-        return exists().where(
-            cls.id == BaseStudy.id,
-            Study.base_study_id == BaseStudy.id,
-            Analysis.study_id == Study.id,
-            Point.analysis_id == Analysis.id,
-        )
-
-    @points_exist.setter
-    def points_exist(self, value):
-        # Update has_coordinates column based on the result of the points_exist property
-        self.has_coordinates = value
-
-    @hybrid_property
     def images_exist(self):
         # Check if the points exist for the BaseStudy
         query = db.session.query(
@@ -846,8 +818,8 @@ class Point(BaseMixin, db.Model):
     subpeak = db.Column(db.Boolean)
     # deactivation and is_seed hold existing data and remain settable through the
     # API, but the extraction pipeline does not write them. It splits a set by
-    # the sign of its statistic and stores the negative half as its own analysis,
-    # the inverse contrast, so direction is a property of the analysis. A seed is
+    # the sign of its statistic and stores the points with negative values as their
+    # own analysis, the inverse half, so direction is a property of the analysis. A seed is
     # the role of a coordinate set (study_schema ParsedAnalysis.role), not of its points.
     # NiMARE reads neither column.
     deactivation = db.Column(db.Boolean, default=False, index=True)
