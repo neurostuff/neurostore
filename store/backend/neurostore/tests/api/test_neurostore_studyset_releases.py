@@ -6,8 +6,10 @@ from io import BytesIO
 from datetime import datetime, timezone
 
 import pandas as pd
+import sqlalchemy as sa
 
 from neurostore.ingest.study_schema import HISTORY_SOURCE, STUDY_SOURCE, ingest_upload
+from neurostore.models.data import RECORD_SCHEMA_NAME
 from neurostore.models import (
     Analysis,
     Annotation,
@@ -629,37 +631,34 @@ def test_release_excludes_retracted_papers_unless_asked(app, session, tmp_path):
     assert retracted_base.id in included["written"][0]["studies"]
 
 
-def test_release_prefers_a_curated_version_over_the_pipeline_study(session):
+def test_release_prefers_the_pipeline_study_over_a_fresher_user_version(session):
     base, user = _release_base(session, "Versions", has_coordinates=True)
     pipeline, pipeline_analysis = _coordinate_study(
         base,
         user,
         "Pipeline",
         source=STUDY_SOURCE,
-        created_at=_dt(2025, 1, 1),
-        updated_at=_dt(2025, 6, 1),
+        created_at=_dt(2024, 1, 1),
+        updated_at=_dt(2024, 1, 1),
     )
     pipeline_analysis.role = "result"
-    curated, _ = _coordinate_study(
-        base, user, "Curated", created_at=_dt(2024, 1, 1), updated_at=_dt(2024, 1, 1)
+    by_user, _ = _coordinate_study(
+        base, user, "By user", created_at=_dt(2025, 1, 1), updated_at=_dt(2025, 6, 1)
     )
     history, _ = _coordinate_study(
         base, user, "History", source=HISTORY_SOURCE, public=False
     )
-    session.add_all([pipeline, curated, history])
+    session.add_all([pipeline, by_user, history])
     session.flush()
 
-    # The curated version wins though the pipeline's is fresher, with its own analyses.
-    assert _selected_study_ids() == {curated.id}
-    shard = release_service.serialize_study_shard(curated.id)
-    assert [a["name"] for a in shard["analyses"]] == ["Curated analysis"]
-    # The pipeline Study is left out of the release, not changed or hidden.
-    assert session.get(Study, pipeline.id).public
-
-    # Without a curated version, the pipeline's is released.
-    curated.public = False
-    session.flush()
     assert _selected_study_ids() == {pipeline.id}
+    shard = release_service.serialize_study_shard(pipeline.id)
+    assert [a["name"] for a in shard["analyses"]] == ["Pipeline analysis"]
+
+    # Without an eligible pipeline Study, the user's version is released.
+    pipeline.public = False
+    session.flush()
+    assert _selected_study_ids() == {by_user.id}
 
 
 def test_a_release_exports_only_result_role_analyses(session):
@@ -760,7 +759,7 @@ def test_anchor_points_alone_do_not_make_a_study_eligible(session):
     # An ROI-only paper is not an empty study in the studyset.
     assert pipeline.id not in _selected_study_ids()
 
-    # A curated version with results is chosen over the anchor-only pipeline Study.
+    # A user's version with results is chosen over the anchor-only pipeline Study.
     curated, _ = _coordinate_study(pipeline.base_study, pipeline.user, "Curated")
     session.add(curated)
     session.flush()
@@ -836,47 +835,98 @@ def _at(year):
     return {"created_at": _dt(year, 1, 1), "updated_at": _dt(year, 1, 1)}
 
 
-def test_release_ranks_curated_then_pipeline_then_automated(session):
+def _extraction_record(session, base, executed=None):
+    pipeline = Pipeline(name=f"pondie-{base.id}")
+    config = PipelineConfig(
+        pipeline=pipeline,
+        version="1.0.0",
+        config_hash=f"record-{base.id}",
+        schema={"name": RECORD_SCHEMA_NAME, "version": "1"},
+    )
+    result = PipelineStudyResult(
+        config=config,
+        base_study_id=base.id,
+        date_executed=executed or _dt(2020, 1, 1),
+        status="SUCCESS",
+        result_data={},
+    )
+    session.add_all([pipeline, config, result])
+    session.flush()
+    return result
+
+
+def _tiers(*studies):
+    rows = release_service.db.session.execute(
+        sa.select(Study.id, release_service.release_tier()).where(
+            Study.id.in_([s.id for s in studies])
+        )
+    )
+    tiers = dict(rows.all())
+    return [tiers[s.id] for s in studies]
+
+
+def test_release_ranks_pondie_then_pipeline_then_everything_else(session):
     base, user = _release_base(session, "Tiers", has_coordinates=True)
     # The fresher a version, the lower its tier: rank alone must decide.
-    curated, _ = _coordinate_study(
-        base, user, "Curated", source="neurostore", **_at(2020)
-    )
     pipeline, pipeline_analysis = _coordinate_study(
-        base, user, "Pipeline", source=STUDY_SOURCE, **_at(2022)
+        base, user, "Pipeline", source=STUDY_SOURCE, **_at(2020)
     )
     pipeline_analysis.role = "result"
+    clone, _ = _coordinate_study(base, user, "Clone", source="neurostore", **_at(2022))
+    by_user, _ = _coordinate_study(base, user, "By user", **_at(2023))
     neurosynth, _ = _coordinate_study(
         base, None, "Neurosynth", source="neurosynth", **_at(2024)
     )
     # An ACE import: no source and no owner.
     ace, _ = _coordinate_study(base, None, "ACE", **_at(2025))
-    session.add_all([curated, pipeline, neurosynth, ace])
+    other_base, _ = _release_base(session, "Other paper", has_coordinates=True)
+    with_record, record_analysis = _coordinate_study(
+        other_base, user, "With record", source=STUDY_SOURCE, **_at(2019)
+    )
+    record_analysis.role = "result"
+    session.add_all([pipeline, clone, by_user, neurosynth, ace, with_record])
+    session.flush()
+    _extraction_record(session, other_base)
+    # A record of another kind (a feature extractor's) is not a pondie record.
+    other_config = PipelineConfig(
+        pipeline=Pipeline(name="TaskExtractor-tiers"),
+        version="1.0.0",
+        config_hash="task-tiers",
+        schema={"name": "task-extraction"},
+    )
+    session.add_all(
+        [
+            other_config,
+            PipelineStudyResult(
+                config=other_config, base_study_id=base.id, status="SUCCESS", result_data={}
+            ),
+        ]
+    )
     session.flush()
 
-    assert _selected_study_ids() == {curated.id}
-    curated.public = False
-    session.flush()
-    assert _selected_study_ids() == {pipeline.id}
+    assert _tiers(with_record, pipeline, clone, by_user, neurosynth, ace) == [
+        0, 1, 2, 2, 2, 2,
+    ]
+    assert _selected_study_ids() == {pipeline.id, with_record.id}
+
+    # The paper's pondie record moves its pipeline Study up a tier.
+    _extraction_record(session, base)
+    assert _tiers(pipeline) == [0]
+    assert _selected_study_ids() == {pipeline.id, with_record.id}
+
+    # Without an eligible pipeline Study, the freshest other version wins, whatever it is.
     pipeline.public = False
     session.flush()
-    # Within the automated tier, the freshest wins.
-    assert _selected_study_ids() == {ace.id}
-
-    # A version a user made through the API (no source) is curated too.
-    by_user, _ = _coordinate_study(base, user, "By user", **_at(2019))
-    session.add(by_user)
+    assert _selected_study_ids() == {ace.id, with_record.id}
+    ace.public = False
+    neurosynth.public = False
     session.flush()
-    assert _selected_study_ids() == {by_user.id}
-
-    # Two curated versions: the fresher wins; equally fresh, the higher id.
-    curated.public = True
+    assert _selected_study_ids() == {by_user.id, with_record.id}
+    # Equally fresh, the higher id.
+    clone.updated_at = by_user.updated_at
+    clone.created_at = by_user.created_at
     session.flush()
-    assert _selected_study_ids() == {curated.id}
-    by_user.updated_at = curated.updated_at
-    by_user.created_at = curated.created_at
-    session.flush()
-    assert _selected_study_ids() == {max(curated.id, by_user.id)}
+    assert _selected_study_ids() == {max(clone.id, by_user.id), with_record.id}
 
 
 def test_an_analysis_added_to_the_pipeline_study_keeps_its_role(session):
@@ -924,13 +974,13 @@ async def test_a_clone_of_the_pipeline_study_keeps_roles_and_outcome(auth_client
     clone = session.get(Study, resp.json()["id"])
 
     assert sorted(
-        (a.name, a.role, a.role_source, a.outcome, a.from_prior_study) for a in clone.analyses
+        (a.name, a.role, a.relabelled_by, a.outcome, a.from_prior_study) for a in clone.analyses
     ) == [
         ("anc", "anchor", None, None, None),
         ("res", "result", None, "significant_effect", False),
     ]
-    # The clone is a curated version, and it releases only the result.
-    assert clone.id in _selected_study_ids()
+    # The pipeline Study, not the clone, is released; the clone's shard has only the result.
+    assert _selected_study_ids() == {pipeline.id}
     shard = release_service.serialize_study_shard(clone.id)
     assert [a["name"] for a in shard["analyses"]] == ["res"]
 
@@ -940,3 +990,138 @@ async def test_a_clone_of_the_pipeline_study_keeps_roles_and_outcome(auth_client
     ]
     resp = await auth_client.get(f"/api/analyses/?role=anchor&study={clone.id}")
     assert [a["name"] for a in resp.json()["results"]] == ["anc"]
+
+
+def _frontend_analyses(study):
+    """The analyses compose sends on save before it carried roles back."""
+    return [
+        {
+            "id": analysis["id"],
+            "name": analysis["name"],
+            "description": analysis["description"],
+            "study": analysis["study"],
+            "images": [],
+            "weights": [],
+            "conditions": [],
+            "order": order + 1,
+            "points": [
+                {
+                    "id": point["id"],
+                    "x": point["x"],
+                    "y": point["y"],
+                    "z": point["z"],
+                    "space": point["space"],
+                    "order": point_order,
+                    "values": [
+                        {"kind": v["kind"], "value": v["value"]} for v in point["values"]
+                    ],
+                }
+                for point_order, point in enumerate(analysis["points"])
+            ],
+        }
+        for order, analysis in enumerate(study["analyses"])
+    ]
+
+
+async def test_a_clone_on_edit_from_compose_keeps_roles_outcome_and_source(
+    auth_client, session
+):
+    res = fx.table_analysis("tbl1", [0], "res", [fx.point((1, 1, 1))], from_prior_study=False)
+    anc = fx.table_analysis("tbl2", [0], "anc", [fx.point((2, 2, 2))], role="anchor")
+    summary = ingest_upload({"coordinate_parse": fx.parse([res, anc], pmid="76543214")})
+    pipeline = session.get(Study, summary["study_id"])
+    parsed = {a.name: a for a in pipeline.analyses}
+    parsed["res"].outcome = "significant_effect"
+    parsed["anc"].relabelled_by = "revision-parse"
+    session.commit()
+
+    loaded = (await auth_client.get(f"/api/studies/{pipeline.id}?nested=true")).json()
+    analyses = _frontend_analyses(loaded)
+    # The user edits the anchor's name and sets the result's outcome to null on purpose.
+    next(a for a in analyses if a["name"] == "anc")["name"] = "anc (edited)"
+    added = {"name": "added", "points": [{"x": 5, "y": 5, "z": 5, "space": "MNI"}]}
+    explicit = next(a for a in analyses if a["name"] == "res")
+    body = {"name": "Edited title", "analyses": analyses + [added]}
+    resp = await auth_client.post(f"/api/studies/?source_id={pipeline.id}", data=body)
+    assert resp.status_code == 200, resp.json()
+    clone = session.get(Study, resp.json()["id"])
+
+    rows = sorted(
+        (
+            a.name,
+            a.role,
+            a.relabelled_by,
+            a.outcome,
+            a.from_prior_study,
+            a.source_id,
+            (a.metadata_ or {}).get("parse_id"),
+        )
+        for a in clone.analyses
+    )
+    parse_ids = {a.name: a.metadata_["parse_id"] for a in pipeline.analyses}
+    assert rows == [
+        ("added", None, None, None, None, None, None),
+        (
+            "anc (edited)",
+            "anchor",
+            "revision-parse",
+            None,
+            None,
+            parsed["anc"].id,
+            parse_ids["anc"],
+        ),
+        ("res", "result", None, "significant_effect", False, parsed["res"].id, parse_ids["res"]),
+    ]
+    # The anchor is not shipped as a result, from the clone or from the pipeline Study.
+    shipped = release_service.serialize_study_shard(clone.id)["analyses"]
+    assert sorted(a["name"] for a in shipped) == ["added", "res"]
+    assert _selected_study_ids() == {pipeline.id}
+
+    # A field the request sets is kept as sent, even null.
+    explicit["outcome"] = None
+    explicit["role"] = "other"
+    resp = await auth_client.post(
+        f"/api/studies/?source_id={pipeline.id}", data={"analyses": [explicit]}
+    )
+    assert resp.status_code == 200, resp.json()
+    [kept] = session.get(Study, resp.json()["id"]).analyses
+    assert (kept.role, kept.outcome, kept.from_prior_study, kept.source_id) == (
+        "other",
+        None,
+        False,
+        parsed["res"].id,
+    )
+
+
+def _shipped_points(study_id):
+    shard = release_service.serialize_study_shard(study_id)
+    return [
+        tuple(p["coordinates"]) for a in shard["analyses"] for p in a["points"]
+    ]
+
+
+async def test_a_clone_does_not_hold_back_a_pipeline_rerun(auth_client, session):
+    first = fx.table_analysis("tbl1", [0], "res", [fx.point((1, 1, 1))])
+    summary = ingest_upload({"coordinate_parse": fx.parse([first], pmid="76543215")})
+    pipeline = session.get(Study, summary["study_id"])
+    session.commit()
+
+    unedited = await auth_client.post(f"/api/studies/?source_id={pipeline.id}", data={})
+    assert unedited.status_code == 200
+    loaded = (await auth_client.get(f"/api/studies/{pipeline.id}?nested=true")).json()
+    analyses = _frontend_analyses(loaded)
+    analyses[0]["points"][0]["x"] = 4
+    edited = await auth_client.post(
+        f"/api/studies/?source_id={pipeline.id}", data={"analyses": analyses}
+    )
+    assert edited.status_code == 200
+    assert _shipped_points(edited.json()["id"]) == [(4, 1, 1)]
+    # Neither clone has a pondie record; the pipeline Study stays the released version.
+    assert _selected_study_ids() == {pipeline.id}
+
+    moved = fx.table_analysis("tbl1", [0], "res", [fx.point((9, 9, 9))])
+    rerun = ingest_upload({"coordinate_parse": fx.parse([moved], pmid="76543215")})
+    assert rerun["study_id"] == pipeline.id
+    assert _selected_study_ids() == {pipeline.id}
+    assert _shipped_points(pipeline.id) == [(9, 9, 9)]
+    assert _shipped_points(unedited.json()["id"]) == [(1, 1, 1)]

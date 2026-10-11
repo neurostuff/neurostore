@@ -676,9 +676,10 @@ class Analysis(BaseMixin, db.Model):
     # and the coordinate parse's role (CoordinateRole) and from_prior_study.
     outcome = db.Column(db.String, nullable=True, index=True)
     role = db.Column(db.String, nullable=True, index=True)
-    # The revision parse whose relabel verdict set ``role``; null while the role is the
-    # classifier's. A relabelled role is kept over later parses' roles.
-    role_source = db.Column(db.String, nullable=True)
+    # The parse_id of the revision whose relabel verdict set ``role``; null while the role
+    # is the classifier's (named in ``metadata.role_source``, study_schema's field). A
+    # relabelled role is kept over later parses' roles.
+    relabelled_by = db.Column(db.String, nullable=True)
     from_prior_study = db.Column(db.Boolean, nullable=True)
     points = relationship(
         "Point",
@@ -1457,6 +1458,8 @@ class FieldClaimEvidence(BaseMixin, db.Model):
 STUDY_SOURCE = "study_schema"
 HISTORY_SOURCE = "study_schema:superseded"
 PIPELINE_STUDY_SOURCES = (STUDY_SOURCE, HISTORY_SOURCE)
+# The PipelineConfig schema name of a pondie extraction record (study_schema's record).
+RECORD_SCHEMA_NAME = "neuroimaging-study-extraction"
 RESULT_ROLE = "result"
 
 

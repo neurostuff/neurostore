@@ -216,8 +216,15 @@ cd store
 docker compose stop store_nginx neurostore store_outbox_worker store_metadata_outbox_worker store_release_worker store-pghero store-grafana || true
 docker compose up -d store-pgsql17 store_redis
 docker compose run --rm --no-deps neurostore manage db upgrade --revision heads
+# One time, when deploying f1a3c5e7b9d2: set roles before workers recompute flags or
+# a release builds (see "Studyset Release Contents" below).
+docker compose run --rm --no-deps neurostore manage backfill-analysis-roles
+docker compose run --rm --no-deps neurostore manage backfill-analysis-roles --apply
 docker compose up -d --no-build neurostore store_outbox_worker store_metadata_outbox_worker store-pghero store-grafana
 docker compose exec -T store_redis redis-cli FLUSHDB
+# One time, with the backfill above: rebuild every cached shard.
+docker compose run --rm --no-deps store_release_worker \
+  manage build-neurostore-studyset-release --nightly --clear-cache
 docker compose up -d --no-build store_release_worker
 docker compose up -d --no-build store_nginx
 ```
@@ -268,21 +275,23 @@ Service ordering notes:
   ships as `points: []` plus `metadata.outcome = "no_significant_effect"`.
 - **Version choice** (`release_version_order` in
   `services/neurostore_studyset_releases.py`), by rank, then freshest, then id:
-  1. curated: a version with no source or source `neurostore` (created or cloned
-     through the API) that has an owner;
-  2. the pipeline Study (`source = "study_schema"`);
+  1. the pipeline Study (`source = "study_schema"`) of a paper with a stored pondie
+     extraction record (a `pipeline_study_results` row whose config's schema is
+     `neuroimaging-study-extraction`);
+  2. the pipeline Study of a paper with a coordinate parse alone;
   3. everything else: the automated Neurosynth, NeuroQuery and NeuroVault imports,
-     ACE imports (no source and no owner), and any other source.
+     ACE imports, clones (edited or not) and versions made through the API.
 
-  The pipeline Study is still updated when it loses, and stays reachable by id.
+  Edits made in a clone do not reach the release; a paper with a pipeline Study ships
+  it. A pipeline Study that loses is still updated, and stays reachable by id.
 
 Cached study shards are rebuilt only when the selected Study changes.
 
 When deploying the outcome/role/retraction migration (`f1a3c5e7b9d2`), set the roles
 before any release build runs. Until then the analyses an earlier ingest wrote to the
 pipeline Study have no role, so a build leaves those papers out and a flag recompute
-clears their `has_coordinates`. In the Store start sequence, run these after
-`manage db upgrade` and before starting `store_release_worker`:
+clears their `has_coordinates`. The Store start sequence above runs these after
+`manage db upgrade`, before the workers start:
 
 1. `manage backfill-analysis-roles`: a dry run. It prints the roles it would set and
    where each came from, the pipeline analyses no stored parse matches, and any whose
@@ -292,13 +301,7 @@ clears their `has_coordinates`. In the Store start sequence, run these after
 3. One build with `--clear-cache`, so shards written before the migration get
    `metadata.outcome` and drop non-results.
 
-```bash
-docker compose run --rm --no-deps neurostore manage backfill-analysis-roles
-docker compose run --rm --no-deps neurostore manage backfill-analysis-roles --apply
-docker compose run --rm --no-deps store_release_worker \
-  manage build-neurostore-studyset-release --nightly --clear-cache
-docker compose up -d --no-build store_release_worker
-```
+Read the dry run's output before `--apply`.
 
 ## Post-Deploy Verification
 

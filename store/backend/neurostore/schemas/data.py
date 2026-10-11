@@ -532,7 +532,7 @@ class AnalysisSchema(BaseDataSchema):
     description = fields.String(allow_none=True)
     source_id = fields.String(dump_only=True, allow_none=True)
     role = fields.String(allow_none=True)
-    role_source = fields.String(allow_none=True)
+    relabelled_by = fields.String(allow_none=True)
     outcome = fields.String(
         allow_none=True,
         validate=validate.OneOf([o.value for o in AnalysisOutcome]),

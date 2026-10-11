@@ -78,7 +78,7 @@ def test_outcome_role_retraction_migration_round_trips(db):
         return {c["name"] for c in sa.inspect(db.engine).get_columns(table)}
 
     added = {
-        "analyses": {"outcome", "role", "role_source", "from_prior_study"},
+        "analyses": {"outcome", "role", "relabelled_by", "from_prior_study"},
         "base_studies": {"is_retracted", "retraction_notice"},
     }
     service_migrations.upgrade("heads")

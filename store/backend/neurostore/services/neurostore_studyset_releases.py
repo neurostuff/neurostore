@@ -35,6 +35,7 @@ from neurostore.models import (
     StudysetStudy,
 )
 from neurostore.models.data import (
+    RECORD_SCHEMA_NAME,
     STUDY_SOURCE,
     generate_id,
     is_result_analysis,
@@ -249,32 +250,40 @@ def acquire_build_lock():
     return bool(locked)
 
 
-def curated_study_clause():
-    """SQL on ``Study``: a version a person made or edited through the API.
+def has_extraction_record_clause():
+    """SQL on ``Study``: its paper has a stored pondie extraction record."""
+    return (
+        sa.select(PipelineStudyResult.id)
+        .join(PipelineConfig, PipelineConfig.id == PipelineStudyResult.config_id)
+        .where(PipelineStudyResult.base_study_id == Study.base_study_id)
+        .where(PipelineConfig.schema["name"].astext == RECORD_SCHEMA_NAME)
+        .exists()
+    )
 
-    Created through the API (no source) or cloned there (``neurostore``), and owned by a
-    user. The bulk importers write no user: an ACE import also leaves the source empty.
+
+def release_tier():
+    """A version's rank for the release; lower wins.
+
+    0: the pipeline's Study (study_schema) of a paper with a pondie extraction record,
+    which the record's conditions and outcomes are applied to; 1: the pipeline's Study
+    from a coordinate parse alone; 2: every other version, i.e. the automated imports
+    (Neurosynth, NeuroQuery, NeuroVault, ACE), clones and versions made through the API.
     """
-    return sa.and_(
-        sa.or_(Study.source.is_(None), Study.source == "neurostore"),
-        Study.user_id.isnot(None),
+    is_pipeline = Study.source == STUDY_SOURCE
+    return sa.case(
+        (sa.and_(is_pipeline, has_extraction_record_clause()), 0),
+        (is_pipeline, 1),
+        else_=2,
     )
 
 
 def release_version_order(freshness):
     """The order that picks a paper's version for the release; the first eligible wins.
 
-    A curated version (``curated_study_clause``) ranks first, then the pipeline's Study
-    (study_schema), then every other version: the automated imports (Neurosynth,
-    NeuroQuery, NeuroVault, ACE) and any source not named here. A pipeline Study that
-    loses stays reachable by id. Within a rank, the freshest wins, then the highest id.
+    By ``release_tier``, then the freshest, then the highest id. A pipeline Study that
+    loses stays reachable by id.
     """
-    tier = sa.case(
-        (curated_study_clause(), 0),
-        (Study.source == STUDY_SOURCE, 1),
-        else_=2,
-    )
-    return (tier, freshness.desc(), Study.id.desc())
+    return (release_tier(), freshness.desc(), Study.id.desc())
 
 
 def select_coordinate_studies(include_retracted=False):

@@ -82,6 +82,7 @@ from neurostore.ingest.study_entities import (
 from neurostore.models.data import (
     HISTORY_SOURCE,
     PIPELINE_STUDY_SOURCES,
+    RECORD_SCHEMA_NAME,
     STUDY_SOURCE,
     analysis_identity,
     study_entity_hash,
@@ -871,7 +872,7 @@ def _apply_parse(study, parse, parsed_paper, user):
         carried = {
             new_key: existing[old_key]
             for old_key, new_key in same
-            if existing[old_key].role_source is not None
+            if existing[old_key].relabelled_by is not None
         }
         dropped = _relabels_dropped(superseded, carried, renamed, revision_of)
         if dropped:
@@ -895,20 +896,20 @@ def _apply_parse(study, parse, parsed_paper, user):
         analysis.order = order
         role = parsed["role"]
         kept_role = analysis.role
-        origin = carried.get(parsed["key"]) if analysis.role_source is None else None
+        origin = carried.get(parsed["key"]) if analysis.relabelled_by is None else None
         if origin is not None:
             # The same set as a relabelled one this parse re-keyed: the relabel moves with it.
-            analysis.role_source = origin.role_source
+            analysis.relabelled_by = origin.relabelled_by
             kept_role = origin.role
         if parsed["key"] in relabelled:
-            analysis.role_source = parse["parse_id"]
-        elif analysis.role_source is not None and role != kept_role:
+            analysis.relabelled_by = parse["parse_id"]
+        elif analysis.relabelled_by is not None and role != kept_role:
             # A reviewer's relabel is a correction: no later parse's role replaces it.
             kept = {
                 "key": parsed["key"],
                 "role": kept_role,
                 "parse_role": role,
-                "role_source": analysis.role_source,
+                "relabelled_by": analysis.relabelled_by,
             }
             if origin is not None:
                 kept["from"] = origin.source_id
@@ -1155,12 +1156,12 @@ def _relabels_dropped(superseded, carried, renamed, revision_of):
     carried_from = {analysis.source_id for analysis in carried.values()}
     dropped = []
     for analysis in superseded:
-        if analysis.role_source is None or analysis.source_id in carried_from:
+        if analysis.relabelled_by is None or analysis.source_id in carried_from:
             continue
         item = {
             "key": analysis.source_id,
             "role": analysis.role,
-            "role_source": analysis.role_source,
+            "relabelled_by": analysis.relabelled_by,
         }
         if revision_of:
             item["reason"] = RELABEL_REVISED_REASON
@@ -1798,9 +1799,6 @@ def _want_outcome(wanted, analysis, extracted, derived):
     wanted[analysis.id] = (analysis, value, derived)
 
 
-RECORD_SCHEMA_NAME = "neuroimaging-study-extraction"
-
-
 def _claimed_outcome(base_study_id, key):
     """The outcome the latest record run reported for the analysis under ``key``, else None.
 
@@ -2159,7 +2157,7 @@ def backfill_roles(apply=False, base_study_id=None, batch_size=BACKFILL_BATCH_SI
     the first of:
 
     1. the newest relabel: a revision's ``relabel`` verdict for the key, with that
-       revision's role for it; ``role_source`` records the revision, so no later parse
+       revision's role for it; ``relabelled_by`` records the revision, so no later parse
        replaces it;
     2. the role in the parse the analysis was written from (its metadata's ``parse_id``);
     3. the role the upload wrote in its metadata;
@@ -2168,7 +2166,7 @@ def backfill_roles(apply=False, base_study_id=None, batch_size=BACKFILL_BATCH_SI
 
     "Newest" orders stored parses by ``date_executed``, then ``created_at``, then id. An
     analysis of any other version whose ``source_id`` is an analysis (a clone) takes its
-    parent's role, ``role_source``, outcome and ``from_prior_study``, once the parent has
+    parent's role, ``relabelled_by``, outcome and ``from_prior_study``, once the parent has
     a role. A pipeline analysis left unmatched is reported; an unmatched one of another
     version is a legacy analysis and only counted.
 
@@ -2225,7 +2223,7 @@ def _parse_roles(base_study_ids):
 
 
 def _parse_role(analysis, paper):
-    """``(role, role_source, matched_by, other_roles)`` for a pipeline analysis, by key."""
+    """``(role, relabelled_by, matched_by, other_roles)`` for a pipeline analysis, by key."""
     key = analysis.source_id
     if key in paper["relabels"]:
         role, parse_id = paper["relabels"][key]
@@ -2257,7 +2255,7 @@ def _backfill_batch(base_study_ids, apply, summary):
         return
     papers = _parse_roles(base_study_ids)
     empty = {"parses": {}, "relabels": {}}
-    # Each resolved analysis's (role, role_source, outcome, from_prior_study); its
+    # Each resolved analysis's (role, relabelled_by, outcome, from_prior_study); its
     # outcome is filled in on apply.
     resolved = {}
     clones = []
@@ -2266,7 +2264,7 @@ def _backfill_batch(base_study_ids, apply, summary):
             clones.append((analysis, study))
             continue
         paper = papers.get(study.base_study_id, empty)
-        role, role_source, matched_by, roles = _parse_role(analysis, paper)
+        role, relabelled_by, matched_by, roles = _parse_role(analysis, paper)
         if role is None:
             summary["unmatched"].append(
                 {
@@ -2282,7 +2280,7 @@ def _backfill_batch(base_study_ids, apply, summary):
                 {"analysis_id": analysis.id, "key": analysis.source_id, "roles": roles}
             )
         prior = (analysis.metadata_ or {}).get("from_prior_study")
-        resolved[analysis.id] = (analysis, study, role, role_source, None, prior)
+        resolved[analysis.id] = (analysis, study, role, relabelled_by, None, prior)
         _count(summary, role, matched_by)
 
     # A clone's source_id is the analysis it was cloned from, which may itself be a clone.
@@ -2297,15 +2295,15 @@ def _backfill_batch(base_study_ids, apply, summary):
         waiting = []
         for analysis, study in pending:
             if analysis.source_id in resolved:
-                _, _, role, role_source, outcome, prior = resolved[analysis.source_id]
+                _, _, role, relabelled_by, outcome, prior = resolved[analysis.source_id]
             elif analysis.source_id in parents:
                 parent = parents[analysis.source_id]
-                role, role_source = parent.role, parent.role_source
+                role, relabelled_by = parent.role, parent.relabelled_by
                 outcome, prior = parent.outcome, parent.from_prior_study
             else:
                 waiting.append((analysis, study))
                 continue
-            resolved[analysis.id] = (analysis, study, role, role_source, outcome, prior)
+            resolved[analysis.id] = (analysis, study, role, relabelled_by, outcome, prior)
             _count(summary, role, "parent")
         if len(waiting) == len(pending):
             summary["legacy_unmatched"] += len(waiting)
@@ -2319,9 +2317,9 @@ def _backfill_batch(base_study_ids, apply, summary):
     )
     changed = set()
     # Parents before their clones: dict order is the order they were resolved in.
-    for analysis_id, (analysis, study, role, role_source, outcome, prior) in resolved.items():
+    for analysis_id, (analysis, study, role, relabelled_by, outcome, prior) in resolved.items():
         analysis.role = role
-        analysis.role_source = role_source
+        analysis.relabelled_by = relabelled_by
         if role in OUTCOME_ROLES and analysis.outcome is None:
             if study.source in PIPELINE_STUDY_SOURCES:
                 outcome = _record_outcome(records.get(study.base_study_id), analysis.source_id)
@@ -2336,7 +2334,7 @@ def _backfill_batch(base_study_ids, apply, summary):
             analysis.metadata_ = {
                 k: v for k, v in metadata.items() if k not in ("role", "from_prior_study")
             }
-        resolved[analysis_id] = (analysis, study, role, role_source, analysis.outcome, prior)
+        resolved[analysis_id] = (analysis, study, role, relabelled_by, analysis.outcome, prior)
         changed.add(study)
     db.session.flush()
     for study in changed:

@@ -1,4 +1,4 @@
-"""add analysis outcome, role, role_source, from_prior_study and base study retraction
+"""add analysis outcome, role, relabelled_by, from_prior_study and base study retraction
 
 Revision ID: f1a3c5e7b9d2
 Revises: 28cdbfce7bfa
@@ -21,7 +21,7 @@ depends_on = None
 def upgrade():
     op.add_column("analyses", sa.Column("outcome", sa.String(), nullable=True))
     op.add_column("analyses", sa.Column("role", sa.String(), nullable=True))
-    op.add_column("analyses", sa.Column("role_source", sa.String(), nullable=True))
+    op.add_column("analyses", sa.Column("relabelled_by", sa.String(), nullable=True))
     op.add_column("analyses", sa.Column("from_prior_study", sa.Boolean(), nullable=True))
     op.create_index("ix_analyses_outcome", "analyses", ["outcome"])
     op.create_index("ix_analyses_role", "analyses", ["role"])
@@ -38,6 +38,6 @@ def downgrade():
     op.drop_index("ix_analyses_role", table_name="analyses")
     op.drop_index("ix_analyses_outcome", table_name="analyses")
     op.drop_column("analyses", "from_prior_study")
-    op.drop_column("analyses", "role_source")
+    op.drop_column("analyses", "relabelled_by")
     op.drop_column("analyses", "role")
     op.drop_column("analyses", "outcome")
