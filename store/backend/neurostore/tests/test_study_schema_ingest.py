@@ -1699,11 +1699,11 @@ def test_backfill_works_through_every_batch_and_commits_each(session, monkeypatc
 
     def spy():
         committed.append(
-            sorted(
+            {
                 base_id
                 for base_id in base_ids
                 if _by_key(_current(base_id))[LOSS["key"]].role == "result"
-            )
+            }
         )
         commit()
 
@@ -1712,9 +1712,14 @@ def test_backfill_works_through_every_batch_and_commits_each(session, monkeypatc
     summary = backfill_roles(apply=True, batch_size=2)
 
     assert summary["matched"] == {"result": 3}
-    ordered = sorted(base_ids)
+    # The batches follow the database's id order, which is not Python's under en_US.
+    ordered = list(
+        db.session.scalars(
+            sa.select(BaseStudy.id).where(BaseStudy.id.in_(base_ids)).order_by(BaseStudy.id)
+        )
+    )
     # Two batches, each committed as it finishes, so its row locks end with it.
-    assert committed == [ordered[:2], ordered]
+    assert committed == [set(ordered[:2]), set(ordered)]
 
 
 def test_backfill_gives_a_clone_the_relabel_of_a_parent_already_set(session):
@@ -1734,6 +1739,30 @@ def test_backfill_gives_a_clone_the_relabel_of_a_parent_already_set(session):
     copy = db.session.get(Analysis, copy.id)
     # Without the relabel record, a re-run of the clone's paper would not keep its role.
     assert (copy.role, copy.relabelled_by) == ("anchor", revision["parse_id"])
+
+
+def test_backfill_gives_a_clone_the_relabel_of_a_parent_resolved_in_the_same_batch(session):
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = _relabel_peak(base_study_id, original)
+    _as_before_roles(_current(base_study_id))
+    peak = _by_key(_current(base_study_id))[PEAK["key"]]
+    assert (peak.role, peak.relabelled_by) == (None, None)
+    clone = Study(name="Clone", base_study_id=base_study_id, source="neurostore")
+    copy = Analysis(name=peak.name, study=clone, source_id=peak.id)
+    # A clone of that clone: its parent may sort after it by id.
+    grandcopy_study = Study(name="Clone 2", base_study_id=base_study_id, source="neurostore")
+    grandcopy = Analysis(name=peak.name, study=grandcopy_study, source_id=copy.id)
+    db.session.add_all([clone, copy, grandcopy_study, grandcopy])
+    db.session.flush()
+    grandcopy.source_id = copy.id
+
+    summary = backfill_roles(apply=True, base_study_id=base_study_id)
+
+    assert summary["matched_by"] == {"relabel": 1, "own_parse": 1, "parent": 2}
+    for analysis in (copy, grandcopy):
+        analysis = db.session.get(Analysis, analysis.id)
+        assert (analysis.role, analysis.relabelled_by) == ("anchor", revision["parse_id"])
 
 
 def test_backfill_takes_the_outcome_of_the_newest_record(session):

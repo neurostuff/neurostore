@@ -69,3 +69,27 @@ async def test_role_filter_on_the_studies_list(auth_client, session):
     anchor_ids = await ids("role=anchor&flat=true")
     assert pipeline_id in anchor_ids and curated_id not in anchor_ids
     assert {pipeline_id, curated_id} <= await ids("role=result&flat=true")
+
+
+async def test_a_nested_study_carries_what_each_analysis_is_for(auth_client, session):
+    pipeline_id, _ = _studies_with_roles(session, auth_client.username)
+    anchor = Analysis.query.filter_by(study_id=pipeline_id, name="Amygdala ROI").one()
+    anchor.relabelled_by = "parse-2"
+    anchor.outcome = "significant_effect"
+    anchor.from_prior_study = True
+    session.commit()
+
+    resp = await auth_client.get(f"/api/studies/{pipeline_id}?nested=true")
+
+    assert resp.status_code == 200, resp.text
+    by_name = {a["name"]: a for a in resp.json()["analyses"]}
+    assert {
+        k: by_name["Amygdala ROI"][k]
+        for k in ("role", "relabelled_by", "outcome", "from_prior_study")
+    } == {
+        "role": "anchor",
+        "relabelled_by": "parse-2",
+        "outcome": "significant_effect",
+        "from_prior_study": True,
+    }
+    assert by_name["Loss > Neutral"]["role"] == "result"

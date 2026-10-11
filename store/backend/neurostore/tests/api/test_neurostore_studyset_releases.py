@@ -926,7 +926,11 @@ def test_release_ranks_pondie_then_pipeline_then_everything_else(session):
     clone.updated_at = by_user.updated_at
     clone.created_at = by_user.created_at
     session.flush()
-    assert _selected_study_ids() == {max(clone.id, by_user.id), with_record.id}
+    # SQL breaks the tie in the database's collation, so ask it rather than Python.
+    higher = session.scalar(
+        sa.select(Study.id).where(Study.id.in_([clone.id, by_user.id])).order_by(Study.id.desc())
+    )
+    assert _selected_study_ids() == {higher, with_record.id}
 
 
 def test_an_analysis_added_to_the_pipeline_study_keeps_its_role(session):
