@@ -6,10 +6,12 @@ import sqlalchemy as sa
 from neurostore.exceptions.base import NeuroStoreException
 from neurostore.ingest.study_entities import CELLS_CHANGED
 from neurostore.ingest.study_schema import (
-    ALIAS_CONFLICT_REASON,
+    ALIAS_CONFLICT,
     BOTH_DIRECTIONS,
     HISTORY_SOURCE,
-    NO_SUCCESSOR_REASON,
+    NO_SUCCESSOR,
+    NOT_CARRIED,
+    ORPHAN_REASONS,
     SHARED_NAME,
     STUDY_SOURCE,
     UNKNOWN_KEY_REASON,
@@ -279,6 +281,8 @@ def test_revision_versions_analyses_and_carries_claims(session):
     summary = ingest_upload({"coordinate_parse": revision})
 
     assert summary["kind"] == "revision"
+    # Split and merged analyses had their claims copied on, so none stays behind.
+    assert summary["skeleton"]["orphaned_claims"] == []
     current = _current(base_study_id)
     assert current.source_id == revision["parse_id"]
     assert {a.source_id for a in current.analyses} == {
@@ -326,6 +330,59 @@ def test_revision_versions_analyses_and_carries_claims(session):
     )
     assert again["carried"] == {"claims": 0}
     assert again["record"]["analyses"]["resolved"] == 3
+
+
+def test_a_revision_that_omits_an_analysis_reports_its_claims_as_not_carried(session):
+    base_study_id = _ingested(ORIGINAL, GAIN)["base_study_id"]
+    claims = _claims(base_study_id, GAIN["key"])
+    revision = fx.parse(
+        [LOSS, SEED],
+        revision_of=ORIGINAL["parse_id"],
+        verdicts=[
+            fx.verdict(GAIN["key"], "omit"),
+            fx.verdict(LOSS["key"], "accept", [LOSS["key"]]),
+            fx.verdict(RISK["key"], "omit"),
+            fx.verdict(SEED["key"], "accept", [SEED["key"]]),
+        ],
+    )
+
+    summary = ingest_upload({"coordinate_parse": revision})
+
+    assert summary["skeleton"]["orphaned_claims"] == [
+        {
+            "key": GAIN["key"],
+            "class": "Analysis",
+            "entity_id": _entity(base_study_id, GAIN["key"]).id,
+            "claims": len(claims),
+            "reason": NOT_CARRIED,
+        }
+    ]
+
+
+def test_orphaned_claim_reasons_are_codes():
+    assert ORPHAN_REASONS == ("no_successor", "alias_conflict", "not_carried")
+
+
+@pytest.mark.parametrize("kind", ["accept", "relabel"])
+def test_a_verdict_keeping_a_key_the_revision_lacks_is_refused(session, kind):
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    revision = fx.parse(
+        [SEED],
+        revision_of=ORIGINAL["parse_id"],
+        verdicts=[
+            fx.verdict(GAIN["key"], kind, [GAIN["key"]]),
+            fx.verdict(LOSS["key"], "omit"),
+            fx.verdict(RISK["key"], "omit"),
+            fx.verdict(SEED["key"], "accept", [SEED["key"]]),
+        ],
+    )
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": revision})
+
+    assert error.value.status_code == 422
+    assert "VERDICT_KEY_NOT_IN_REVISION" in str(error.value.errors)
+    assert GAIN["key"] in str(error.value.errors)
 
 
 def _shared_duplicates(base_study_id):
@@ -814,7 +871,7 @@ def test_reparse_never_aliases_an_analysis_read_from_other_rows(session):
             "class": "Analysis",
             "entity_id": _entity(base_study_id, LOSS["key"]).id,
             "claims": len(claims),
-            "reason": NO_SUCCESSOR_REASON,
+            "reason": NO_SUCCESSOR,
         }
     ]
 
@@ -835,7 +892,8 @@ def test_reparse_renaming_at_the_same_cells_links_a_candidate(session):
     assert {(c["from"], c["to"]) for c in skeleton["rename_candidates"]} == {
         (LOSS["key"], renamed["key"])
     }
-    # The claims stay on the old entity; the link waits for a curator.
+    # The claims stay on the old entity, linked to the candidate, so none is reported lost.
+    assert skeleton["orphaned_claims"] == []
     assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
     _ANALYSES[renamed["key"]] = renamed
     link = StudyEntityCandidateLink.query.filter_by(
@@ -871,8 +929,8 @@ def test_two_old_analyses_overlapping_one_new_one_alias_neither(session):
     assert skeleton["aliased"] == []
     assert StudyEntityAlias.query.count() == 0
     assert {(o["key"], o["reason"]) for o in skeleton["orphaned_claims"]} == {
-        (first["key"], NO_SUCCESSOR_REASON),
-        (second["key"], NO_SUCCESSOR_REASON),
+        (first["key"], NO_SUCCESSOR),
+        (second["key"], NO_SUCCESSOR),
     }
     for parsed in (first, second):
         assert _claims(base_study_id, parsed["key"])
@@ -900,7 +958,7 @@ def test_reparse_onto_a_hash_another_entity_holds_is_a_conflict(session):
         (LOSS["key"], wider["key"], holder.id)
     ]
     assert [(o["key"], o["reason"]) for o in skeleton["orphaned_claims"]] == [
-        (LOSS["key"], ALIAS_CONFLICT_REASON)
+        (LOSS["key"], ALIAS_CONFLICT)
     ]
     assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
 
@@ -999,6 +1057,37 @@ def test_cells_sharing_label_and_level_are_named_by_term():
 
     assert weights == {"load: high": 1.0, "noise: high": -1.0}
     assert conflicts == []
+
+
+def test_cells_differing_only_by_label_each_keep_their_weight():
+    weights, conflicts = _cell_weights(
+        _effect(
+            ("g", "pat", "Patients", "positive"),
+            ("g", "pat", "Early patients", "positive"),
+            ("g", "con", "Controls", "negative"),
+        )
+    )
+
+    assert weights == {"Patients": 1.0, "Early patients": 1.0, "Controls": -1.0}
+    assert conflicts == []
+
+
+def test_a_label_equal_to_another_cells_level_keeps_both_cells():
+    weights, conflicts = _cell_weights(
+        _effect(("g", None, "P", "positive"), ("g", "P", "Q", "positive"))
+    )
+
+    assert weights == {"P": 1.0, "Q": 1.0}
+    assert conflicts == []
+
+
+def test_one_level_in_both_directions_under_two_labels_is_a_conflict():
+    weights, conflicts = _cell_weights(
+        _effect(("g", "pat", "Patients", "positive"), ("g", "pat", "Early", "negative"))
+    )
+
+    assert weights == {}
+    assert conflicts == [{"term": "g", "level": "pat", "reason": BOTH_DIRECTIONS}]
 
 
 def test_a_name_shared_across_tiers_is_a_conflict_not_an_overwrite():

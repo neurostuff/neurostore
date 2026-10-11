@@ -141,19 +141,11 @@ POSITIONAL_KEY_REASON = (
 )
 UNKNOWN_KEY_REASON = "no stored parse of this paper holds the key, so it has no cells to hash"
 
-# Why a superseded analysis's claims stayed on it (``skeleton.orphaned_claims``).
-NO_SUCCESSOR_REASON = (
-    "the new parse reads no analysis of this name from these cells or spans; the claims "
-    "stay on the history analysis"
-)
-ALIAS_CONFLICT_REASON = (
-    "its successor's hash belongs to another entity (alias_conflicts); the claims stay on "
-    "the history analysis"
-)
-NOT_CARRIED_REASON = (
-    "the revision's verdict is not a split or merge, so no claims are carried; they stay "
-    "on the history analysis"
-)
+# Why a superseded analysis's claims stayed on it (``skeleton.orphaned_claims[].reason``).
+NO_SUCCESSOR = "no_successor"
+ALIAS_CONFLICT = "alias_conflict"
+NOT_CARRIED = "not_carried"
+ORPHAN_REASONS = (NO_SUCCESSOR, ALIAS_CONFLICT, NOT_CARRIED)
 
 # Why a record analysis's cells set no conditions (``record.condition_conflicts``).
 BOTH_DIRECTIONS = "both_directions"
@@ -381,6 +373,14 @@ def _check_verdicts(revision, revised):
         unknown = [key for key in replaced_by if key not in keys]
         if verdict["verdict"] == "add" and verdict["key"] not in keys:
             unknown.append(verdict["key"])
+        if verdict["verdict"] in ("accept", "relabel") and verdict["key"] not in keys:
+            errors.append(
+                make_field_error(
+                    f"coordinate_parse/verdicts/{index}/key",
+                    [verdict["key"]],
+                    code="VERDICT_KEY_NOT_IN_REVISION",
+                )
+            )
         if verdict["verdict"] in ("split", "merge") and not replaced_by:
             errors.append(
                 make_field_error(
@@ -1080,11 +1080,11 @@ def _orphaned_claims(base_study, superseded, parse, moved):
         if key in linked or verdicts.get(key) in ("split", "merge"):
             continue
         if parse.get("revision_of"):
-            reason = NOT_CARRIED_REASON
+            reason = NOT_CARRIED
         elif key in conflicted:
-            reason = ALIAS_CONFLICT_REASON
+            reason = ALIAS_CONFLICT
         else:
-            reason = NO_SUCCESSOR_REASON
+            reason = NO_SUCCESSOR
         for entity_class in PARSE_KEYED_CLASSES:
             entity = _stored_entity(base_study, entity_class, analysis)
             if entity is None:
@@ -1548,7 +1548,8 @@ def _cell_weights(extracted, names=None):
     """Condition name -> weight for the directional cells of a record analysis's effect,
     and the cells the record gives both directions.
 
-    A cell is identified by its term and level. Its condition is named by its label, else
+    A cell is identified by its term, level and label, so two cells that differ only by
+    label each keep their weight. Its condition is named by its label, else
     its level. When two cells would share a name (an interaction whose cells are labelled
     by one factor's level, "Patients" once + and once -), each takes its level, and then
     its term's name as well, so every cell keeps its weight and the interaction does not
@@ -1557,7 +1558,7 @@ def _cell_weights(extracted, names=None):
     gets no weights, and the cells are returned as conflicts, each with its reason.
     """
     names = names or {}
-    cells, conflicts = {}, []
+    cells, directions, conflicts = {}, {}, []
     for cell in ((extracted.get("effect") or {}).get("cells")) or []:
         direction = _plain(cell.get("direction"))
         if direction not in ("positive", "negative"):
@@ -1567,11 +1568,12 @@ def _cell_weights(extracted, names=None):
         if not (level or label):
             continue
         weight = 1.0 if direction == "positive" else -1.0
-        identity = (term, level or label)
-        if identity in cells and cells[identity][1] != weight:
+        # The same place listed in both directions is a contradiction whatever its labels.
+        place = (term, level or label)
+        if directions.setdefault(place, weight) != weight:
             conflicts.append({"term": term, "level": level or label, "reason": BOTH_DIRECTIONS})
             continue
-        cells[identity] = (label or level, weight)
+        cells[(term, level, label)] = (label or level, weight)
     if conflicts:
         return {}, conflicts
 
@@ -1583,11 +1585,11 @@ def _cell_weights(extracted, names=None):
         return cell[0]
 
     def by_level(identity, cell):
-        return identity[1]
+        return identity[1] or identity[2]
 
     def by_term(identity, cell):
         term = names.get(identity[0], identity[0])
-        return f"{term}: {identity[1]}" if term else identity[1]
+        return f"{term}: {by_level(identity, cell)}" if term else by_level(identity, cell)
 
     shared_label, shared_level = collide(labelled), collide(by_level)
     named = {}
@@ -1602,7 +1604,12 @@ def _cell_weights(extracted, names=None):
     # from another; one condition would then carry two cells' weights.
     shared = Counter(named.values())
     conflicts = [
-        {"term": identity[0], "level": identity[1], "name": name, "reason": SHARED_NAME}
+        {
+            "term": identity[0],
+            "level": identity[1] or identity[2],
+            "name": name,
+            "reason": SHARED_NAME,
+        }
         for identity, name in named.items()
         if shared[name] > 1
     ]
