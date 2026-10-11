@@ -966,8 +966,8 @@ def test_an_analysis_added_to_the_pipeline_study_keeps_its_role(session):
 
 async def test_a_clone_of_the_pipeline_study_keeps_roles_and_outcome(auth_client, session):
     res = fx.table_analysis("tbl1", [0], "res", [fx.point((1, 1, 1))], from_prior_study=False)
-    anc = fx.table_analysis("tbl2", [0], "anc", [fx.point((2, 2, 2))], role="anchor")
-    summary = ingest_upload({"coordinate_parse": fx.parse([res, anc], pmid="76543213")})
+    anchor_set = fx.table_analysis("tbl2", [0], "anchor_set", [fx.point((2, 2, 2))], role="anchor")
+    summary = ingest_upload({"coordinate_parse": fx.parse([res, anchor_set], pmid="76543213")})
     pipeline = session.get(Study, summary["study_id"])
     parsed = {a.name: a for a in pipeline.analyses}
     parsed["res"].outcome = "significant_effect"
@@ -980,7 +980,7 @@ async def test_a_clone_of_the_pipeline_study_keeps_roles_and_outcome(auth_client
     assert sorted(
         (a.name, a.role, a.relabelled_by, a.outcome, a.from_prior_study) for a in clone.analyses
     ) == [
-        ("anc", "anchor", None, None, None),
+        ("anchor_set", "anchor", None, None, None),
         ("res", "result", None, "significant_effect", False),
     ]
     # The pipeline Study, not the clone, is released; the clone's shard has only the result.
@@ -993,7 +993,7 @@ async def test_a_clone_of_the_pipeline_study_keeps_roles_and_outcome(auth_client
         ("res", "result", "significant_effect")
     ]
     resp = await auth_client.get(f"/api/analyses/?role=anchor&study={clone.id}")
-    assert [a["name"] for a in resp.json()["results"]] == ["anc"]
+    assert [a["name"] for a in resp.json()["results"]] == ["anchor_set"]
 
 
 def _frontend_analyses(study):
@@ -1031,18 +1031,18 @@ async def test_a_clone_on_edit_from_compose_keeps_roles_outcome_and_source(
     auth_client, session
 ):
     res = fx.table_analysis("tbl1", [0], "res", [fx.point((1, 1, 1))], from_prior_study=False)
-    anc = fx.table_analysis("tbl2", [0], "anc", [fx.point((2, 2, 2))], role="anchor")
-    summary = ingest_upload({"coordinate_parse": fx.parse([res, anc], pmid="76543214")})
+    anchor_set = fx.table_analysis("tbl2", [0], "anchor_set", [fx.point((2, 2, 2))], role="anchor")
+    summary = ingest_upload({"coordinate_parse": fx.parse([res, anchor_set], pmid="76543214")})
     pipeline = session.get(Study, summary["study_id"])
     parsed = {a.name: a for a in pipeline.analyses}
     parsed["res"].outcome = "significant_effect"
-    parsed["anc"].relabelled_by = "revision-parse"
+    parsed["anchor_set"].relabelled_by = "revision-parse"
     session.commit()
 
     loaded = (await auth_client.get(f"/api/studies/{pipeline.id}?nested=true")).json()
     analyses = _frontend_analyses(loaded)
     # The user edits the anchor's name and sets the result's outcome to null on purpose.
-    next(a for a in analyses if a["name"] == "anc")["name"] = "anc (edited)"
+    next(a for a in analyses if a["name"] == "anchor_set")["name"] = "anchor_set (edited)"
     added = {"name": "added", "points": [{"x": 5, "y": 5, "z": 5, "space": "MNI"}]}
     explicit = next(a for a in analyses if a["name"] == "res")
     body = {"name": "Edited title", "analyses": analyses + [added]}
@@ -1066,13 +1066,13 @@ async def test_a_clone_on_edit_from_compose_keeps_roles_outcome_and_source(
     assert rows == [
         ("added", None, None, None, None, None, None),
         (
-            "anc (edited)",
+            "anchor_set (edited)",
             "anchor",
             "revision-parse",
             None,
             None,
-            parsed["anc"].id,
-            parse_ids["anc"],
+            parsed["anchor_set"].id,
+            parse_ids["anchor_set"],
         ),
         ("res", "result", None, "significant_effect", False, parsed["res"].id, parse_ids["res"]),
     ]
@@ -1091,7 +1091,7 @@ async def test_a_clone_on_edit_from_compose_keeps_roles_outcome_and_source(
     copies = {a.source_id: a.id for a in clone.analyses if a.source_id}
     assert by_parent == {
         copies[parsed["res"].id]: "result",
-        copies[parsed["anc"].id]: "anchor",
+        copies[parsed["anchor_set"].id]: "anchor",
     }
 
     # A field the request sets is kept as sent, even null.
