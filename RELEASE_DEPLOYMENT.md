@@ -257,27 +257,47 @@ Service ordering notes:
   build is run with `--include-retracted`; the manifest records `include_retracted`.
   Papers whose retraction status is unknown (null) stay in.
 - **Results only.** Only result analyses are in the shards and the annotation:
-  `analyses.role = 'result'`, or no role on a version that is not the pipeline's
-  (`studies.source` not `study_schema`), which is every analysis from before roles.
-  Anchors, localizations, references, `other` sets, and pipeline analyses with no
-  role are left out.
+  `analyses.role = 'result'`, or no role on any analysis other than an unclassified
+  pipeline set. An unclassified pipeline set is one the study_schema ingester wrote
+  (its metadata has a `parse_id`) to the pipeline Study (`studies.source` is
+  `study_schema`) with no role. Every analysis from before roles, a curator's, and one
+  added through the API to the pipeline Study without a role are therefore results.
+  Anchors, localizations, references, `other` sets, and unclassified pipeline sets are
+  left out.
 - **Outcome.** An analysis with an outcome gets `metadata.outcome`; a null analysis
   ships as `points: []` plus `metadata.outcome = "no_significant_effect"`.
 - **Version choice** (`release_version_order` in
-  `services/neurostore_studyset_releases.py`): an eligible curated or user version
-  wins over the pipeline Study (`source = "study_schema"`), and among the rest the
-  freshest wins. The pipeline Study is still updated and stays reachable by id.
+  `services/neurostore_studyset_releases.py`), by rank, then freshest, then id:
+  1. curated: a version with no source or source `neurostore` (created or cloned
+     through the API) that has an owner;
+  2. the pipeline Study (`source = "study_schema"`);
+  3. everything else: the automated Neurosynth, NeuroQuery and NeuroVault imports,
+     ACE imports (no source and no owner), and any other source.
 
-Cached study shards are rebuilt only when the selected Study changes. After
-deploying the outcome/role/retraction migration (`f1a3c5e7b9d2`), run one build with
-`--clear-cache` so shards written before it get `metadata.outcome` and drop
-non-results. Then set the role of analyses uploaded before it from their stored parses:
-run `manage backfill-analysis-roles` (a dry run that lists unmatched analyses), then
-`manage backfill-analysis-roles --apply`, then build with `--clear-cache` again:
+  The pipeline Study is still updated when it loses, and stays reachable by id.
+
+Cached study shards are rebuilt only when the selected Study changes.
+
+When deploying the outcome/role/retraction migration (`f1a3c5e7b9d2`), set the roles
+before any release build runs. Until then the analyses an earlier ingest wrote to the
+pipeline Study have no role, so a build leaves those papers out and a flag recompute
+clears their `has_coordinates`. In the Store start sequence, run these after
+`manage db upgrade` and before starting `store_release_worker`:
+
+1. `manage backfill-analysis-roles`: a dry run. It prints the roles it would set and
+   where each came from, the pipeline analyses no stored parse matches, and any whose
+   stored parses disagree.
+2. `manage backfill-analysis-roles --apply`. It works through `--batch-size` papers at
+   a time (default 500) and commits each batch.
+3. One build with `--clear-cache`, so shards written before the migration get
+   `metadata.outcome` and drop non-results.
 
 ```bash
+docker compose run --rm --no-deps neurostore manage backfill-analysis-roles
+docker compose run --rm --no-deps neurostore manage backfill-analysis-roles --apply
 docker compose run --rm --no-deps store_release_worker \
   manage build-neurostore-studyset-release --nightly --clear-cache
+docker compose up -d --no-build store_release_worker
 ```
 
 ## Post-Deploy Verification

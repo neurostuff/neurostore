@@ -105,23 +105,30 @@ def test_backfill_analysis_roles_is_a_dry_run_unless_applied(monkeypatch):
     monkeypatch.setattr(
         study_schema,
         "backfill_roles",
-        lambda apply, base_study_id: calls.append(apply)
+        lambda apply, base_study_id, batch_size: calls.append((apply, batch_size))
         or {
             "matched": {"result": 2},
+            "matched_by": {"own_parse": 1, "other_parse": 1},
             "unmatched": [
                 {"analysis_id": "a1", "study_id": "s1", "key": "k1", "reason": "why"}
             ],
             "legacy_unmatched": 0,
+            "disagreements": [
+                {"analysis_id": "a2", "key": "k2", "roles": ["result", "anchor"]}
+            ],
             "applied": apply,
         },
     )
 
     dry = CliRunner().invoke(main, ["backfill-analysis-roles"])
     assert dry.exit_code == 0, dry.output
-    assert "would set 2 roles (result: 2)" in dry.output
+    assert "would set 2 roles (result: 2; from other_parse: 1, own_parse: 1)" in dry.output
     assert "unmatched analysis a1 (study s1, key k1): why" in dry.output
-    assert (calls, commits) == ([False], [])
+    assert "analysis a2 (key k2): stored parses disagree" in dry.output
+    assert (calls, commits) == ([(False, 500)], [])
 
-    applied = CliRunner().invoke(main, ["backfill-analysis-roles", "--apply"])
+    applied = CliRunner().invoke(
+        main, ["backfill-analysis-roles", "--apply", "--batch-size", "50"]
+    )
     assert applied.exit_code == 0, applied.output
-    assert (calls, commits) == ([False, True], [True])
+    assert (calls, commits) == ([(False, 500), (True, 50)], [True])

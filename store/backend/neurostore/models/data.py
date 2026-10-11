@@ -1463,12 +1463,15 @@ RESULT_ROLE = "result"
 def is_result_analysis(analysis, study=None):
     """Whether ``analysis`` is a result: the analyses releases export and coordinates count.
 
-    A pipeline analysis is a result only with role ``result``; one with no role is an
-    unclassified set. An analysis of any other version with no role predates roles (a
-    curator's or an older upload's) and is read as a result, as it was before.
+    A role says so directly. With no role, only a set the study_schema ingester wrote to
+    a pipeline Study (its metadata has a ``parse_id``) is unclassified, never a result.
+    Every other analysis with no role reads as a result, as before roles existed: a
+    curator's, an older upload's, or one added through the API to a pipeline Study.
     """
     if analysis.role is not None:
         return analysis.role == RESULT_ROLE
+    if "parse_id" not in (analysis.metadata_ or {}):
+        return True
     study = study if study is not None else analysis.study
     return study is None or study.source not in PIPELINE_STUDY_SOURCES
 
@@ -1484,10 +1487,11 @@ def result_analysis_clause():
         )
         .exists()
     )
+    ingested = sa.func.coalesce(Analysis.metadata_.has_key("parse_id"), False)
     # Never NULL: the flag recompute writes this into a NOT NULL column.
     return sa.or_(
         sa.func.coalesce(Analysis.role, "") == RESULT_ROLE,
-        sa.and_(Analysis.role.is_(None), ~in_pipeline_study),
+        sa.and_(Analysis.role.is_(None), ~sa.and_(ingested, in_pipeline_study)),
     )
 
 

@@ -249,15 +249,32 @@ def acquire_build_lock():
     return bool(locked)
 
 
+def curated_study_clause():
+    """SQL on ``Study``: a version a person made or edited through the API.
+
+    Created through the API (no source) or cloned there (``neurostore``), and owned by a
+    user. The bulk importers write no user: an ACE import also leaves the source empty.
+    """
+    return sa.and_(
+        sa.or_(Study.source.is_(None), Study.source == "neurostore"),
+        Study.user_id.isnot(None),
+    )
+
+
 def release_version_order(freshness):
     """The order that picks a paper's version for the release; the first eligible wins.
 
-    A curator's or user's version wins over the pipeline's Study (study_schema), so its
-    analyses and points are released; the pipeline Study is then left out of the release
-    but stays reachable by id. Among the remaining versions, the freshest wins.
+    A curated version (``curated_study_clause``) ranks first, then the pipeline's Study
+    (study_schema), then every other version: the automated imports (Neurosynth,
+    NeuroQuery, NeuroVault, ACE) and any source not named here. A pipeline Study that
+    loses stays reachable by id. Within a rank, the freshest wins, then the highest id.
     """
-    curated_first = sa.case((Study.source == STUDY_SOURCE, 1), else_=0)
-    return (curated_first, freshness.desc(), Study.id.desc())
+    tier = sa.case(
+        (curated_study_clause(), 0),
+        (Study.source == STUDY_SOURCE, 1),
+        else_=2,
+    )
+    return (tier, freshness.desc(), Study.id.desc())
 
 
 def select_coordinate_studies(include_retracted=False):
@@ -694,10 +711,6 @@ def serialize_image_for_nimads(image):
     )
 
 
-def is_studyset_analysis(analysis, study=None):
-    return is_result_analysis(analysis, study)
-
-
 def analysis_metadata_for_nimads(analysis):
     """The analysis's metadata, with ``outcome`` where it is known.
 
@@ -784,7 +797,7 @@ def serialize_study_for_nimads(study):
                 [
                     serialize_analysis_for_nimads(analysis)
                     for analysis in sorted(
-                        (a for a in study.analyses if is_studyset_analysis(a, study)),
+                        (a for a in study.analyses if is_result_analysis(a, study)),
                         key=lambda analysis: order_sort_key(
                             analysis.order,
                             analysis.id,

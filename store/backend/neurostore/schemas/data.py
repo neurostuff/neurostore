@@ -9,9 +9,11 @@ from marshmallow import (
     post_load,
     pre_dump,
     pre_load,
+    validate,
     validates_schema,
 )
 from sqlalchemy import func
+from study_schema.models.paper_parse import AnalysisOutcome
 
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
@@ -529,6 +531,13 @@ class AnalysisSchema(BaseDataSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
     source_id = fields.String(dump_only=True, allow_none=True)
+    role = fields.String(allow_none=True)
+    role_source = fields.String(allow_none=True)
+    outcome = fields.String(
+        allow_none=True,
+        validate=validate.OneOf([o.value for o in AnalysisOutcome]),
+    )
+    from_prior_study = fields.Boolean(allow_none=True)
 
     @pre_load
     def load_values(self, data, **kwargs):

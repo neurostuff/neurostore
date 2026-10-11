@@ -263,6 +263,12 @@ def _clone_analysis_payload(analysis):
         ],
         "name": analysis.name,
         "description": analysis.description,
+        # What the parent is for, and what it found: without them a clone of a pipeline
+        # Study reads every set, anchors too, as a result.
+        "role": analysis.role,
+        "role_source": analysis.role_source,
+        "outcome": analysis.outcome,
+        "from_prior_study": analysis.from_prior_study,
     }
 
 
