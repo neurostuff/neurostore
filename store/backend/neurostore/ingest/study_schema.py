@@ -63,7 +63,7 @@ from study_schema.statistics import point_side
 
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
-from neurostore.exceptions.factories import make_field_error
+from neurostore.exceptions.factories import create_unprocessable_error, make_field_error
 from neurostore.exceptions.utils.error_helpers import (
     abort_not_found,
     abort_unprocessable,
@@ -623,10 +623,15 @@ def _check_run(config, base_study, run_id, document):
         config_id=config.id, base_study_id=base_study.id, run_id=run_id
     ).first()
     if stored is not None and stored.result_data != document:
-        abort_unprocessable(
-            "This run_id already stored a different document for the paper.",
-            [make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
-        )
+        raise _run_id_reused(run_id)
+
+
+def _run_id_reused(run_id):
+    """The 422 for a run_id that already stored a different document for this paper."""
+    return create_unprocessable_error(
+        detail="This run_id already stored a different document for the paper.",
+        field_errors=[make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
+    )
 
 
 def _write_run(write, config, base_study, run_id, document):
@@ -647,10 +652,7 @@ def _write_run(write, config, base_study, run_id, document):
             raise
         if stored.result_data == document:
             return stored
-        abort_unprocessable(
-            "This run_id already stored a different document for the paper.",
-            [make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
-        )
+        raise _run_id_reused(run_id)
 
 
 def _stored_parse_results(base_study):
