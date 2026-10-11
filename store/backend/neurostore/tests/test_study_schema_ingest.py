@@ -6,14 +6,21 @@ import sqlalchemy as sa
 from neurostore.exceptions.base import NeuroStoreException
 from neurostore.ingest.study_entities import CELLS_CHANGED
 from neurostore.ingest.study_schema import (
+    ALIAS_CONFLICT_REASON,
+    BOTH_DIRECTIONS,
     HISTORY_SOURCE,
+    NO_SUCCESSOR_REASON,
+    SHARED_NAME,
     STUDY_SOURCE,
     UNKNOWN_KEY_REASON,
+    _cell_weights,
     _point_rows,
     ingest_upload,
 )
 from neurostore.models import (
     Analysis,
+    AnalysisConditions,
+    BaseStudy,
     Condition,
     FieldClaim,
     PipelineAnalysisResult,
@@ -751,7 +758,10 @@ def test_a_cell_given_both_directions_sets_no_weights(session):
     gain = next(a for a in _current(base_study_id).analyses if a.source_id == GAIN["key"])
     assert _weights(gain) == {}
     assert summary["record"]["condition_conflicts"] == [
-        {"key": GAIN["key"], "cells": [{"term": "group", "level": "patients"}]}
+        {
+            "key": GAIN["key"],
+            "cells": [{"term": "group", "level": "patients", "reason": BOTH_DIRECTIONS}],
+        }
     ]
 
 
@@ -797,6 +807,16 @@ def test_reparse_never_aliases_an_analysis_read_from_other_rows(session):
     assert summary["skeleton"]["rename_candidates"] == []
     assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
     assert StudyEntityAlias.query.count() == 0
+    # The claims stay on the history analysis, and the summary says so.
+    assert summary["skeleton"]["orphaned_claims"] == [
+        {
+            "key": LOSS["key"],
+            "class": "Analysis",
+            "entity_id": _entity(base_study_id, LOSS["key"]).id,
+            "claims": len(claims),
+            "reason": NO_SUCCESSOR_REASON,
+        }
+    ]
 
 
 def test_reparse_renaming_at_the_same_cells_links_a_candidate(session):
@@ -837,3 +857,184 @@ def test_an_upload_is_refused_while_entity_hashes_are_stale(session):
         ingest_upload({"coordinate_parse": ORIGINAL, "record": _record(GAIN)})
     assert error.value.status_code == 422
     assert "STALE_ENTITY_HASHES" in str(error.value.errors)
+
+
+def test_two_old_analyses_overlapping_one_new_one_alias_neither(session):
+    first = fx.table_analysis("tbl1", [4, 5], "Loss > Neutral", LOSS["points"])
+    second = fx.table_analysis("tbl1", [6, 7], "Loss > Neutral", RISK["points"])
+    base_study_id = _ingested(fx.parse([first, second]), first, second)["base_study_id"]
+    both = fx.table_analysis("tbl1", [4, 5, 6, 7], "Loss > Neutral", LOSS["points"])
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([both])})
+
+    skeleton = summary["skeleton"]
+    assert skeleton["aliased"] == []
+    assert StudyEntityAlias.query.count() == 0
+    assert {(o["key"], o["reason"]) for o in skeleton["orphaned_claims"]} == {
+        (first["key"], NO_SUCCESSOR_REASON),
+        (second["key"], NO_SUCCESSOR_REASON),
+    }
+    for parsed in (first, second):
+        assert _claims(base_study_id, parsed["key"])
+
+
+def test_reparse_onto_a_hash_another_entity_holds_is_a_conflict(session):
+    base_study_id = _ingested(ORIGINAL, LOSS)["base_study_id"]
+    claims = {c.id for c in _claims(base_study_id, LOSS["key"])}
+    wider = fx.table_analysis("tbl1", [4, 5, 8], "Loss > Neutral", LOSS["points"])
+    _ANALYSES[wider["key"]] = wider
+    holder = StudyEntity(
+        base_study_id=base_study_id,
+        entity_class="Analysis",
+        entity_hash=_hash(base_study_id, wider["key"]),
+        identity=analysis_identity("table", "tbl1", cells=[(4, 0)], name="held"),
+    )
+    session.add(holder)
+    session.flush()
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, wider, RISK, SEED])})
+
+    skeleton = summary["skeleton"]
+    assert skeleton["aliased"] == []
+    assert [(c["from"], c["to"], c["holder_id"]) for c in skeleton["alias_conflicts"]] == [
+        (LOSS["key"], wider["key"], holder.id)
+    ]
+    assert [(o["key"], o["reason"]) for o in skeleton["orphaned_claims"]] == [
+        (LOSS["key"], ALIAS_CONFLICT_REASON)
+    ]
+    assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
+
+
+def test_reparse_with_overlapping_spans_at_another_place_is_no_rename(session):
+    # Spans 0-10 and 5-15 cover what 0-15 covers, but are another place to the record
+    # side's rename rule, so the parse side must not call them a rename either.
+    old = fx.text_analysis([(0, 10), (5, 15)], "Faces > Houses", [fx.point((1, 2, 3))])
+    base_study_id = _ingested(fx.parse([old], pmid="77777777"), old)["base_study_id"]
+    new = fx.text_analysis([(0, 15)], "Faces > Objects", [fx.point((1, 2, 3))])
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([new], pmid="77777777")})
+
+    assert summary["skeleton"]["rename_candidates"] == []
+    assert StudyEntityCandidateLink.query.count() == 0
+    assert [o["key"] for o in summary["skeleton"]["orphaned_claims"]] == [old["key"]]
+    assert _claims(base_study_id, old["key"])
+
+
+def test_a_curated_condition_of_the_same_paper_is_not_reused(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    curated = Study(name="curated", base_study_id=base_study_id)
+    curated_analysis = Analysis(study=curated, name="Control > Rest")
+    control = Condition(name="Control")
+    curated_analysis.analysis_conditions.append(
+        AnalysisConditions(condition=control, weight=1.0)
+    )
+    session.add(curated)
+    session.flush()
+
+    ingest_upload(
+        {
+            "record": fx.record([_contrast(GAIN, Control="positive", Rest="negative")]),
+            "parse_id": ORIGINAL["parse_id"],
+            "base_study_id": base_study_id,
+        }
+    )
+
+    gain = next(a for a in _current(base_study_id).analyses if a.source_id == GAIN["key"])
+    assert _weights(gain) == {"Control": 1.0, "Rest": -1.0}
+    assert control.id not in {ac.condition_id for ac in gain.analysis_conditions}
+
+
+def test_a_superseded_key_given_both_directions_is_a_conflict(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    revision, original, inverse, _ = _revision()
+    ingest_upload({"coordinate_parse": revision})
+    cells = [
+        ("condition", "gain", "Gain", "positive"),
+        ("condition", "gain", "Gain", "negative"),
+    ]
+
+    summary = ingest_upload(
+        {
+            "record": fx.record([_with_cells(GAIN, cells)]),
+            "parse_id": ORIGINAL["parse_id"],
+            "base_study_id": base_study_id,
+        }
+    )
+
+    assert summary["record"]["analyses"]["superseded"][0]["key"] == GAIN["key"]
+    assert summary["record"]["condition_conflicts"] == [
+        {
+            "key": GAIN["key"],
+            "cells": [{"term": "condition", "level": "gain", "reason": BOTH_DIRECTIONS}],
+        }
+    ]
+    by_key = {a.source_id: a for a in _current(base_study_id).analyses}
+    assert _weights(by_key[original["key"]]) == {}
+    assert _weights(by_key[inverse["key"]]) == {}
+
+
+def _effect(*cells):
+    return {
+        "effect": {
+            "cells": [
+                {
+                    "term": term,
+                    "level": fx.extracted(level),
+                    "label": fx.extracted(label),
+                    "direction": fx.extracted(direction),
+                }
+                for term, level, label, direction in cells
+            ]
+        }
+    }
+
+
+def test_cells_sharing_label_and_level_are_named_by_term():
+    weights, conflicts = _cell_weights(
+        _effect(
+            ("load", "high", "High", "positive"),
+            ("noise", "high", "High", "negative"),
+        )
+    )
+
+    assert weights == {"load: high": 1.0, "noise: high": -1.0}
+    assert conflicts == []
+
+
+def test_a_name_shared_across_tiers_is_a_conflict_not_an_overwrite():
+    # (g, pat) is named by its level, since "P" is shared; (t, x) by its label "pat".
+    weights, conflicts = _cell_weights(
+        _effect(
+            ("g", "pat", "P", "positive"),
+            ("g", "con", "P", "negative"),
+            ("t", "x", "pat", "negative"),
+        )
+    )
+
+    assert weights == {}
+    assert conflicts == [
+        {"term": "g", "level": "pat", "name": "pat", "reason": SHARED_NAME},
+        {"term": "t", "level": "x", "name": "pat", "reason": SHARED_NAME},
+    ]
+
+
+def test_only_result_analyses_give_a_paper_coordinates(session):
+    roles = ["reference", "localization", "anchor", "other"]
+    cited = [
+        fx.table_analysis("tbl3", [i], f"set {role}", [fx.point((i, i, i))], role=role)
+        for i, role in enumerate(roles)
+    ]
+    summary = ingest_upload({"coordinate_parse": fx.parse(cited, pmid="88888888")})
+    study = _current(summary["base_study_id"])
+
+    assert not any(a.has_coordinates for a in study.analyses)
+    assert not study.has_coordinates
+    assert not session.get(BaseStudy, summary["base_study_id"]).has_coordinates
+
+    result = fx.table_analysis("tbl3", [9], "Faces > Houses", [fx.point((9, 9, 9))])
+    summary = ingest_upload({"coordinate_parse": fx.parse([*cited, result], pmid="88888888")})
+    study = _current(summary["base_study_id"])
+
+    assert {a.name for a in study.analyses if a.has_coordinates} == {"Faces > Houses"}
+    assert study.has_coordinates
+    assert session.get(BaseStudy, summary["base_study_id"]).has_coordinates

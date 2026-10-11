@@ -85,11 +85,16 @@ def recompute_media_flags(base_study_ids):
     analysis_scope = _analysis_in_scope(base_study_ids)
     study_scope = Study.base_study_id.in_(base_study_ids)
 
-    # Analysis flags from direct child rows
-    analysis_points_exist = sa.exists(
-        sa.select(sa.literal(1))
-        .select_from(Point)
-        .where(Point.analysis_id == Analysis.id)
+    # Analysis flags from direct child rows. Only a paper's own results give it
+    # coordinates: an analysis whose metadata role (set by the study_schema ingester) is
+    # reference, localization, anchor or other keeps its points but not the flag.
+    analysis_points_exist = sa.and_(
+        sa.exists(
+            sa.select(sa.literal(1))
+            .select_from(Point)
+            .where(Point.analysis_id == Analysis.id)
+        ),
+        sa.func.coalesce(Analysis.metadata_["role"].astext, "result") == "result",
     )
     analysis_images_exist = sa.exists(
         sa.select(sa.literal(1))

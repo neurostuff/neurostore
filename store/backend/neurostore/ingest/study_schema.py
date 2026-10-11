@@ -73,6 +73,7 @@ from neurostore.ingest.study_entities import (
     CELLS_CHANGED,
     CHILD_LISTS,
     RENAMED_BY_EXTRACTOR,
+    _slot,
     rehash_entity,
     sync_record_entities,
 )
@@ -139,6 +140,24 @@ POSITIONAL_KEY_REASON = (
     "which pondie records carry once they are migrated"
 )
 UNKNOWN_KEY_REASON = "no stored parse of this paper holds the key, so it has no cells to hash"
+
+# Why a superseded analysis's claims stayed on it (``skeleton.orphaned_claims``).
+NO_SUCCESSOR_REASON = (
+    "the new parse reads no analysis of this name from these cells or spans; the claims "
+    "stay on the history analysis"
+)
+ALIAS_CONFLICT_REASON = (
+    "its successor's hash belongs to another entity (alias_conflicts); the claims stay on "
+    "the history analysis"
+)
+NOT_CARRIED_REASON = (
+    "the revision's verdict is not a split or merge, so no claims are carried; they stay "
+    "on the history analysis"
+)
+
+# Why a record analysis's cells set no conditions (``record.condition_conflicts``).
+BOTH_DIRECTIONS = "both_directions"
+SHARED_NAME = "shared_name"
 
 _MAX_REPORTED_ERRORS = 20
 
@@ -796,7 +815,7 @@ def _apply_parse(study, parse, parsed_paper, user):
     paper_tables = {
         t["table_id"]: t for t in (parsed_paper or {}).get("tables") or []
     }
-    counts = {"created": 0, "updated": 0, "superseded": 0}
+    counts = {"created": 0, "updated": 0, "superseded": 0, "orphaned_claims": []}
     # Text or figure analyses the producer read and left out, each with its reason; kept
     # in the study's metadata beside the table readings.
     counts["omitted_analyses"] = len(parse.get("omitted_analyses") or [])
@@ -816,6 +835,7 @@ def _apply_parse(study, parse, parsed_paper, user):
             counts["superseded"] += 1
         if not revision_of:
             counts.update(_alias_rekeyed(base_study, superseded, uploaded, existing))
+        counts["orphaned_claims"] = _orphaned_claims(base_study, superseded, parse, counts)
 
     for order, parsed in enumerate(uploaded):
         analysis = existing.get(parsed["key"])
@@ -971,7 +991,7 @@ def _alias_rekeyed(base_study, superseded, uploaded, existing):
         return a.place == b.place and a.name == b.name and bool(a.parts & b.parts)
 
     def same_place_other_name(a, b):
-        return a.place == b.place and a.parts == b.parts and a.name != b.name
+        return a.slot == b.slot and a.name != b.name
 
     result = {"aliased": [], "alias_conflicts": [], "rename_candidates": []}
     for old_key, new_key in unique_pairs(same_analysis):
@@ -1044,6 +1064,45 @@ def _alias_rekeyed(base_study, superseded, uploaded, existing):
     return result
 
 
+def _orphaned_claims(base_study, superseded, parse, moved):
+    """The entities with claims that a superseded analysis keeps, each with its reason.
+
+    An entity whose claims went on is left out: re-hashed onto its successor (its old
+    hash is then an alias, so no entity holds it), linked to a rename candidate, or
+    split or merged by the revision's verdict (its claims are copied on).
+    """
+    verdicts = {v["key"]: v["verdict"] for v in parse.get("verdicts") or []}
+    linked = {c["from"] for c in moved.get("rename_candidates") or []}
+    conflicted = {c["from"] for c in moved.get("alias_conflicts") or []}
+    orphaned = []
+    for analysis in superseded:
+        key = analysis.source_id
+        if key in linked or verdicts.get(key) in ("split", "merge"):
+            continue
+        if parse.get("revision_of"):
+            reason = NOT_CARRIED_REASON
+        elif key in conflicted:
+            reason = ALIAS_CONFLICT_REASON
+        else:
+            reason = NO_SUCCESSOR_REASON
+        for entity_class in PARSE_KEYED_CLASSES:
+            entity = _stored_entity(base_study, entity_class, analysis)
+            if entity is None:
+                continue
+            claims = FieldClaim.query.filter_by(entity_id=entity.id).count()
+            if claims:
+                orphaned.append(
+                    {
+                        "key": key,
+                        "class": entity_class,
+                        "entity_id": entity.id,
+                        "claims": claims,
+                        "reason": reason,
+                    }
+                )
+    return orphaned
+
+
 def _stored_entity(base_study, entity_class, analysis):
     """The entity of a stored Analysis row's cells and name, or None."""
     entity_hash = _entity_hash(base_study, entity_class, analysis.metadata_, analysis.name)
@@ -1051,15 +1110,18 @@ def _stored_entity(base_study, entity_class, analysis):
 
 
 class _Located(NamedTuple):
-    """Where an analysis was read: its table (or origin), its cells or spans as a set,
-    and its normalized name."""
+    """Where an analysis was read: its table (or origin), its record-time rename slot
+    (``study_entities._slot``, so parse and record agree on "the same place"), its cells
+    or covered character offsets as a set (for overlap), and its normalized name."""
 
     place: tuple
+    slot: tuple
     parts: frozenset
     name: str
 
 
 def _located(parsed, name=None):
+    identity = _analysis_identity(parsed, name)
     if parsed["origin"] == "table":
         parts = frozenset((c["row"], c["column_group"]) for c in parsed.get("cells") or [])
     else:
@@ -1069,11 +1131,7 @@ def _located(parsed, name=None):
             for s in parsed.get("text_spans") or []
             for offset in range(s["start_char"], s["end_char"])
         )
-    return _Located(
-        (parsed["origin"], parsed.get("table_id")),
-        parts,
-        parse_keys.normalize_name(parsed.get("name") or name or ""),
-    )
+    return _Located(tuple(identity[:2]), _slot("Analysis", identity, None), parts, identity[3])
 
 
 def _link_entities(base_study, study):
@@ -1379,6 +1437,10 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
         # error on that analysis, not a quiet null.
         row.status = "SUCCESS" if analysis is not None and not superseded else "FAILURE"
         row.date_executed = executed
+        # Conflicts are the record entry's, whichever analysis its key resolves to.
+        weights, conflicting = _cell_weights(extracted, names)
+        if conflicting:
+            conflicts.append({"key": key or extracted["local_id"], "cells": conflicting})
         if superseded:
             replaced_by = _replaced_by(revisions, analysis.source_id)
             analyses["superseded"].append(
@@ -1391,15 +1453,13 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
             current = {a.source_id: a for a in study.analyses}
             for new_key in replaced_by:
                 if new_key in current:
-                    _want_conditions(
-                        conditions, current[new_key], extracted, True, names
-                    )
+                    _want_conditions(conditions, current[new_key], weights, True)
         elif analysis is not None:
             analyses["resolved"] += 1
-            _want_conditions(conditions, analysis, extracted, False, names, conflicts)
+            _want_conditions(conditions, analysis, weights, False)
             partner = _inverse_half(study, analysis)
             if partner is not None:
-                _want_conditions(conditions, partner, extracted, True, names)
+                _want_conditions(conditions, partner, weights, True)
         elif positional:
             analyses["parked"].append({"key": key, "reason": POSITIONAL_KEY_REASON})
         else:
@@ -1492,8 +1552,9 @@ def _cell_weights(extracted, names=None):
     its level. When two cells would share a name (an interaction whose cells are labelled
     by one factor's level, "Patients" once + and once -), each takes its level, and then
     its term's name as well, so every cell keeps its weight and the interaction does not
-    collapse to a main effect. A cell listed with both directions is a contradiction:
-    the analysis gets no weights, and the cell is returned as a conflict.
+    collapse to a main effect. A cell listed with both directions, or two cells that still
+    share a name (one cell's label is another's level), is a contradiction: the analysis
+    gets no weights, and the cells are returned as conflicts, each with its reason.
     """
     names = names or {}
     cells, conflicts = {}, []
@@ -1508,7 +1569,7 @@ def _cell_weights(extracted, names=None):
         weight = 1.0 if direction == "positive" else -1.0
         identity = (term, level or label)
         if identity in cells and cells[identity][1] != weight:
-            conflicts.append({"term": term, "level": level or label})
+            conflicts.append({"term": term, "level": level or label, "reason": BOTH_DIRECTIONS})
             continue
         cells[identity] = (label or level, weight)
     if conflicts:
@@ -1529,30 +1590,34 @@ def _cell_weights(extracted, names=None):
         return f"{term}: {identity[1]}" if term else identity[1]
 
     shared_label, shared_level = collide(labelled), collide(by_level)
-    weights = {}
+    named = {}
     for identity, cell in cells.items():
         if not shared_label(identity, cell):
-            name = labelled(identity, cell)
+            named[identity] = labelled(identity, cell)
         elif not shared_level(identity, cell):
-            name = by_level(identity, cell)
+            named[identity] = by_level(identity, cell)
         else:
-            name = by_term(identity, cell)
-        weights[name] = cell[1]
-    return weights, []
+            named[identity] = by_term(identity, cell)
+    # Each tier is collision-free on its own, but a name from one tier can equal a name
+    # from another; one condition would then carry two cells' weights.
+    shared = Counter(named.values())
+    conflicts = [
+        {"term": identity[0], "level": identity[1], "name": name, "reason": SHARED_NAME}
+        for identity, name in named.items()
+        if shared[name] > 1
+    ]
+    if conflicts:
+        return {}, conflicts
+    return {named[identity]: cell[1] for identity, cell in cells.items()}, []
 
 
-def _want_conditions(wanted, analysis, extracted, derived, names=None, conflicts=None):
-    """Queue ``extracted``'s conditions for ``analysis``.
+def _want_conditions(wanted, analysis, weights, derived):
+    """Queue a record entry's condition ``weights`` (``_cell_weights``) for ``analysis``.
 
     ``derived`` conditions come from another analysis's cells: the original half of a
     split, or a key a revision replaced. On an inverse half they are negated, since the
     inverse half is the reversed contrast. An analysis's own record entry wins over them.
-    Cells the record gives both directions are added to ``conflicts`` (by analysis key),
-    and that analysis gets no conditions from this entry.
     """
-    weights, conflicting = _cell_weights(extracted, names)
-    if conflicting and conflicts is not None and not derived:
-        conflicts.append({"key": analysis.source_id, "cells": conflicting})
     if not weights or (derived and analysis.id in wanted and not wanted[analysis.id][2]):
         return
     if derived and _split(analysis).get("half") == "inverse":
@@ -1732,16 +1797,6 @@ def _refs(schema):
     for option in schema.get("anyOf", []):
         out.extend(_refs(option))
     return out
-
-
-def _list_item_class(schema):
-    for option in [schema, *schema.get("anyOf", [])]:
-        items = option.get("items")
-        if items:
-            refs = _refs(items)
-            if refs:
-                return refs[0]
-    return None
 
 
 def _is_extracted(defs, name):
