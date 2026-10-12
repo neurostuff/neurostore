@@ -367,15 +367,15 @@ def rehash_entities(base_study_id=None, batch_size=500):
     return moved
 
 
-def current_identity(entity_class, identity):
+def current_identity(identity):
     """``identity`` as the current rule writes it.
 
     Every sibling name is normalized again, so a change to `normalize_name`
     reaches stored rows. A sibling's ordinal is kept; `_rehash_batch` moves it
-    on if two siblings come to share a name. An Analysis or CoordinateSet keeps
-    its content key, which study_schema writes and the ingester checks.
+    on if two siblings come to share a name. A content key is a string that
+    study_schema writes and the ingester checks, so it is returned unchanged.
     """
-    if entity_class in CONTENT_KEYED_CLASSES or not isinstance(identity, list):
+    if not isinstance(identity, list):
         return identity
     return sibling_identity(identity[0], identity[1])
 
@@ -402,7 +402,7 @@ def _rehash_batch(base_study_ids):
         parent_id, parent_hash = stack.pop()
         taken = set()
         for row in children[parent_id]:
-            identity = current_identity(row.entity_class, row.identity)
+            identity = current_identity(row.identity)
             expected = study_entity_hash(
                 row.base_study_id, row.entity_class, identity, parent_hash
             )

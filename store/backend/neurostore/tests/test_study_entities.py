@@ -406,7 +406,7 @@ def test_a_name_that_comes_back_does_not_loop_or_duplicate(base_study):
 
 def test_ingesting_before_the_version_bump_rehash_is_refused(base_study):
     _stored(base_study, "Study", "", "study-entity/2")
-    _stored(base_study, "CoordinateSet", "text||1200-1288", "study-entity/2")
+    _stored(base_study, "CoordinateSet", _set("PO > Sil")["key"], "study-entity/2")
     record = {"coordinate_sets": [_set("PO > Sil")]}
     with pytest.raises(StaleEntityHashes, match="rehash_entities"):
         sync_record_entities(base_study, record, _locate)
@@ -427,21 +427,20 @@ def test_renormalizing_names_under_the_same_version_is_idempotent(base_study):
     earlier = _stored(
         base_study, "Condition", ["2\u2013back", 0], version, parent=study, created_at="2026-01-01"
     )
-    stale = ["text", "", "5-9", "po \u2013 sil"]
-    po = _stored(base_study, "CoordinateSet", stale, version, created_at="2026-01-01")
-    current = ["text", "", "5-9", "po-sil"]
-    taken = _stored(base_study, "CoordinateSet", current, version, created_at="2026-01-02")
-    hashes = {e.id: e.entity_hash for e in (earlier, later, po, taken)}
+    key = _set("PO \u2013 Sil")["key"]
+    po = _stored(base_study, "CoordinateSet", key, version, created_at="2026-01-01")
+    analysis = _stored(base_study, "Analysis", key, version, created_at="2026-01-02")
+    hashes = {e.id: e.entity_hash for e in (earlier, later, po, analysis)}
 
     assert rehash_entities() == 2
     assert rehash_entities() == 0
-    for entity in (earlier, later, po, taken):
+    for entity in (earlier, later, po, analysis):
         db.session.refresh(entity)
     assert (earlier.identity, later.identity) == (["2-back", 0], ["2-back", 1])
     assert earlier.entity_hash == hashes[later.id]
-    # A located row's identity is never re-derived, so it keeps its own, and its claims.
-    assert (po.identity, taken.identity) == (stale, current)
-    assert (po.entity_hash, taken.entity_hash) == (hashes[po.id], hashes[taken.id])
+    # A content key is stored as study_schema wrote it, so its row is not moved.
+    assert (po.identity, analysis.identity) == (key, key)
+    assert (po.entity_hash, analysis.entity_hash) == (hashes[po.id], hashes[analysis.id])
 
 
 def test_a_sibling_can_take_the_hash_another_still_holds(base_study):
