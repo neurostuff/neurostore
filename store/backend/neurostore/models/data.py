@@ -12,7 +12,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
-from study_schema.keys import cell_locator, normalize_name, span_locator
+from study_schema.keys import normalize_name
 
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
@@ -1160,11 +1160,11 @@ def study_entity_hash(base_study_id, entity_class, identity, parent_hash=None):
     the whole database, and two papers' coordinate sets never collide even when
     their tables share ids and layouts. `identity` is:
 
-    - Analysis, CoordinateSet: `analysis_identity(...)`, with no parent --
-      where in the paper the coordinate set was read and what it is called,
-      never its points, so a re-parse that reads the same place under the same
-      name reaches the same hash and a null contrast with no points still has
-      one;
+    - Analysis, CoordinateSet: the parse's content key (`ParsedAnalysis.key`,
+      `study_schema.keys.key_for`), with no parent -- what was extracted, its
+      name, space and points, never where it was read, so the same analysis
+      read from another table or sentence, or re-parsed unchanged, reaches the
+      same hash, and a renamed analysis or a changed point is a new one;
     - Study: '', with no parent;
     - every other class: `sibling_identity(...)`, under its parent's hash.
     """
@@ -1176,40 +1176,13 @@ def study_entity_hash(base_study_id, entity_class, identity, parent_hash=None):
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def analysis_identity(origin, table_id=None, cells=(), spans=(), *, name):
-    """Where a coordinate set was read and what it is called: origin, table,
-    every cell or span, and the normalized name.
-
-    The cells or spans are written by `study_schema.keys.cell_locator` /
-    `span_locator` and the name by `normalize_name`, the parts `ParsedAnalysis.key`
-    takes the sha1 of, but kept whole rather than truncated to twelve hex
-    characters, so the hash covers every cell. The name is part of it because
-    two contrasts can be read from the same cells or the same sentence
-    ("PO > Sil" and "PC > Sil"); `name` None is the empty name.
-
-    Returns ``[origin, table_id, locator, name]``, a list rather than one joined
-    string, so a `|` in a table id or a name cannot be read as a separator.
-    """
-    if origin == "table":
-        located = cell_locator(cells)
-        if not table_id or not located:
-            raise ValueError("a table coordinate set needs its table id and cells")
-    elif origin in ("text", "figure"):
-        located = span_locator(spans)
-        if not located:
-            raise ValueError(f"a {origin} coordinate set needs its spans")
-    else:
-        raise ValueError(f"unknown origin {origin!r}")
-    return [origin, table_id or "", located, normalize_name(name or "")]
-
-
 def entity_name_key(name):
     """`study_schema.keys.normalize_name(name)`; None for a missing or empty name."""
     return normalize_name(name) or None if isinstance(name, str) else None
 
 
 def sibling_identity(name, ordinal):
-    """The identity of an entity that is not read from cells or spans.
+    """The identity of an entity that is not an analysis or coordinate set.
 
     `[normalized name, ordinal]`, the ordinal counting earlier siblings of the
     same class and the same normalized name under the same parent. A class with
@@ -1226,8 +1199,8 @@ class StudyEntity(BaseMixin, db.Model):
     reviewer's judgement cannot hang off them. This is the foreign key claims
     point at instead, and `entity_hash` is how an entity is found again.
 
-    Analyses and coordinate sets are identified by the cells or spans they were
-    read from and their name. Every other entity is identified under its parent (the Study, or
+    Analyses and coordinate sets are identified by their content key: their
+    name, space and points. Every other entity is identified under its parent (the Study, or
     the Task of a Condition, the ModelEstimation of a ModelTerm) by its
     normalized name and its ordinal among same-named siblings, so two groups
     both called "patients" are two entities and "Healthy controls" re-extracted
@@ -1283,10 +1256,9 @@ class StudyEntityAlias(db.Model):
     """A hash an entity used to have, kept so claims made against it still resolve.
 
     No user-facing writer: users cannot rename or merge entities. The pipeline
-    writes one when it re-identifies an entity under a new hash
-    (`neurostore.ingest.study_entities.rehash_entity`), and `reason` says why,
-    so a deliberate re-identification can be told from a bug. An alias is never
-    also a live hash: an entity that takes a hash back drops it as an alias.
+    writes one when `neurostore.ingest.study_entities.rehash_entities` re-hashes
+    an entity in place, and `reason` says why, so a deliberate re-identification
+    can be told from a bug. An alias is never also a live hash.
     """
 
     __tablename__ = "study_entity_aliases"
@@ -1298,9 +1270,7 @@ class StudyEntityAlias(db.Model):
         index=True,
         nullable=False,
     )
-    #: 'cells_changed': a re-parse read the analysis from other cells;
-    #: 'parent_rehashed': its parent took a new hash;
-    #: 'version_bumped': ENTITY_HASH_VERSION changed.
+    #: 'version_bumped': ENTITY_HASH_VERSION or the hash rule changed.
     reason = db.Column(db.String)
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
