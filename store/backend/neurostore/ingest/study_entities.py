@@ -3,7 +3,7 @@
 `record_entities` says which entity each item of a record is (its class, its
 identity and its hash, see `StudyEntity`); `sync_record_entities` finds or
 creates those entities for a base study. `rehash_entities` re-hashes every
-entity after `ENTITY_HASH_VERSION` changes, keeping each old hash as an alias.
+entity after `ENTITY_HASH_VERSION` changes.
 """
 
 import json
@@ -54,14 +54,12 @@ ENTITY_CLASSES = frozenset(
 
 #: Identified by their content key (the parse's `ParsedAnalysis.key`), not
 #: under a parent.
-LOCATED_CLASSES = ("Analysis", "CoordinateSet")
+CONTENT_KEYED_CLASSES = ("Analysis", "CoordinateSet")
 
 #: The field that names an item, where it is not `name`. A Table is named by
 #: its printed number, an Acquisition by its modality.
 NAME_FIELDS = {"Table": "table_number", "Acquisition": "modality"}
 
-#: StudyEntityAlias.reason value.
-VERSION_BUMPED = "version_bumped"
 #: StudyEntityCandidateLink.reason value.
 RENAMED_BY_EXTRACTOR = "renamed_by_extractor"
 
@@ -98,7 +96,7 @@ def record_entities(base_study_id, record, locate=None):
     CoordinateSet item, its content key, or None when it has none.
 
     Returns ``(entities, unlocated, unidentified, duplicates)``: the
-    RecordEntity of each item; the paths of located-class items with no
+    RecordEntity of each item; the paths of content-keyed items with no
     content key; the paths of entity lists that are not lists and of their
     items that are not objects; and the paths of items whose hash an earlier
     item of the record already has (two items naming one content key). None
@@ -123,7 +121,7 @@ def record_entities(base_study_id, record, locate=None):
                 if not isinstance(item, dict):
                     unidentified.append(path)
                     continue
-                if entity_class in LOCATED_CLASSES:
+                if entity_class in CONTENT_KEYED_CLASSES:
                     identity = locate(entity_class, item) if locate else None
                     if identity is None:
                         unlocated.append(path)
@@ -342,7 +340,7 @@ class Slot(NamedTuple):
 
 
 def _slot(entity_class, identity, parent_id):
-    if entity_class in LOCATED_CLASSES or parent_id is None or identity[0] is None:
+    if parent_id is None or identity[0] is None:
         return None
     return Slot(entity_class, parent_id, identity[1])
 
@@ -350,12 +348,11 @@ def _slot(entity_class, identity, parent_id):
 def rehash_entities(base_study_id=None, batch_size=500):
     """Re-hash every entity (of one base study, if given) under the current version.
 
-    Run after a change to ENTITY_HASH_VERSION or the hash rule; each moved
-    entity keeps its old hash as a 'version_bumped' alias. Sibling identities are
-    re-derived first (see `current_identity`) and stored with the new hash. Works through
-    ``batch_size`` base studies at a time and commits after each batch, so an
-    interrupted run can simply be run again. Returns the number of entities
-    moved.
+    Run after a change to ENTITY_HASH_VERSION or the hash rule. Sibling
+    identities are re-derived first (see `current_identity`) and stored with the
+    new hash. Works through ``batch_size`` base studies at a time and commits
+    after each batch, so an interrupted run can simply be run again. Returns the
+    number of entities moved.
     """
     studies = sa.select(StudyEntity.base_study_id).distinct().order_by(
         StudyEntity.base_study_id
@@ -378,7 +375,7 @@ def current_identity(entity_class, identity):
     on if two siblings come to share a name. An Analysis or CoordinateSet keeps
     its content key, which study_schema writes and the ingester checks.
     """
-    if entity_class in LOCATED_CLASSES or not isinstance(identity, list):
+    if entity_class in CONTENT_KEYED_CLASSES or not isinstance(identity, list):
         return identity
     return sibling_identity(identity[0], identity[1])
 
@@ -399,7 +396,7 @@ def _rehash_batch(base_study_ids):
     children = defaultdict(list)
     for row in rows:
         children[row.parent_id].append(row)
-    ids, old_hashes, new_hashes, identities = [], [], [], []
+    ids, new_hashes, identities = [], [], []
     stack = [(None, None)]
     while stack:
         parent_id, parent_hash = stack.pop()
@@ -417,28 +414,12 @@ def _rehash_batch(base_study_ids):
             taken.add(expected)
             if expected != row.entity_hash:
                 ids.append(row.id)
-                old_hashes.append(row.entity_hash)
                 new_hashes.append(expected)
                 identities.append(json.dumps(identity))
             stack.append((row.id, expected))
     if not ids:
         return 0
-    # An old hash that another row now holds is not an alias.
-    live = set(new_hashes)
-    params = {
-        "ids": ids,
-        "new": new_hashes,
-        "identities": identities,
-        "alias_ids": [i for i, h in zip(ids, old_hashes) if h not in live],
-        "old": [h for h in old_hashes if h not in live],
-        "reason": VERSION_BUMPED,
-    }
-    db.session.execute(
-        sa.text(
-            "DELETE FROM study_entity_aliases WHERE entity_hash = ANY(CAST(:new AS text[]))"
-        ),
-        params,
-    )
+    params = {"ids": ids, "new": new_hashes, "identities": identities}
     # Through a placeholder first: a row may take the hash another row of the
     # batch still holds, and the unique constraint is checked row by row.
     db.session.execute(
@@ -455,16 +436,6 @@ def _rehash_batch(base_study_ids):
             "FROM unnest(CAST(:ids AS text[]), CAST(:new AS text[]), "
             "CAST(:identities AS text[])) AS m(id, new_hash, identity) "
             "WHERE e.id = m.id"
-        ),
-        params,
-    )
-    db.session.execute(
-        sa.text(
-            "INSERT INTO study_entity_aliases (entity_hash, entity_id, reason) "
-            "SELECT m.old_hash, m.id, :reason "
-            "FROM unnest(CAST(:old AS text[]), CAST(:alias_ids AS text[])) AS m(old_hash, id) "
-            "ON CONFLICT (entity_hash) DO UPDATE SET entity_id = excluded.entity_id, "
-            "reason = excluded.reason, config_id = NULL"
         ),
         params,
     )

@@ -13,7 +13,6 @@ from neurostore.ingest import study_entities
 from neurostore.ingest.study_entities import (
     ENTITY_CLASSES,
     RENAMED_BY_EXTRACTOR,
-    VERSION_BUMPED,
     StaleEntityHashes,
     record_entities,
     rehash_entities,
@@ -23,7 +22,6 @@ from neurostore.models import (
     BaseStudy,
     FieldClaim,
     StudyEntity,
-    StudyEntityAlias,
     StudyEntityCandidateLink,
 )
 from neurostore.models import data
@@ -75,11 +73,6 @@ def _count(base_study):
 
 def _claims(entity):
     return FieldClaim.query.filter_by(entity_id=entity.id).count()
-
-
-def _no_alias_is_a_live_hash():
-    live = {e.entity_hash for e in StudyEntity.query}
-    return not live & {a.entity_hash for a in StudyEntityAlias.query}
 
 
 def test_same_named_groups_stay_two_entities(base_study):
@@ -165,7 +158,7 @@ def test_a_version_bump_rehashes_without_stranding_claims(base_study, monkeypatc
     assert _count(base_study) == before and again["created"] == 0
     assert _entity(again, "groups[0]").id == group.id
     assert FieldClaim.query.filter_by(entity_id=group.id).count() == 1
-    assert db.session.get(StudyEntityAlias, old_hash).reason == VERSION_BUMPED
+    assert group.entity_hash != old_hash
 
 
 def test_a_version_bump_works_through_base_studies_in_batches(base_study, monkeypatch):
@@ -181,8 +174,9 @@ def test_a_version_bump_works_through_base_studies_in_batches(base_study, monkey
     assert rehash_entities(batch_size=2) == 12
     for study in (base_study, *others):
         assert _sync(study, record)["created"] == 0
-    aliases = {a.entity_hash: a.entity_id for a in StudyEntityAlias.query}
-    assert aliases == {old: entity_id for entity_id, old in hashes.items()}
+    moved = {e.id: e.entity_hash for e in StudyEntity.query}
+    assert moved.keys() == hashes.keys()
+    assert not set(moved.values()) & set(hashes.values())
     assert rehash_entities(others[0].id) == 0
 
 
@@ -251,7 +245,6 @@ def test_a_different_task_does_not_take_the_old_tasks_claims(base_study):
     assert (stroop.entity_hash, incongruent.entity_hash) == hashes
     assert _claims(stroop) == 1 and _claims(incongruent) == 1
     assert [(c["from"], c["to"]) for c in again["rename_candidates"]] == [("stroop", "flanker")]
-    assert StudyEntityAlias.query.count() == 0
 
 
 def test_renaming_a_task_with_two_conditions(base_study):
@@ -449,7 +442,6 @@ def test_renormalizing_names_under_the_same_version_is_idempotent(base_study):
     # A located row's identity is never re-derived, so it keeps its own, and its claims.
     assert (po.identity, taken.identity) == (stale, current)
     assert (po.entity_hash, taken.entity_hash) == (hashes[po.id], hashes[taken.id])
-    assert _no_alias_is_a_live_hash()
 
 
 def test_a_sibling_can_take_the_hash_another_still_holds(base_study):
@@ -463,4 +455,4 @@ def test_a_sibling_can_take_the_hash_another_still_holds(base_study):
     for entity in (earlier, later):
         db.session.refresh(entity)
     assert (earlier.identity, later.identity) == (["2-back", 0], ["2-back", 1])
-    assert rehash_entities() == 0 and _no_alias_is_a_live_hash()
+    assert rehash_entities() == 0

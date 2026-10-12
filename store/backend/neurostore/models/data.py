@@ -1145,7 +1145,7 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
 #: Bump to change what an entity hash covers. Every entity row stores what its
 #: hash was computed from (`identity`, `parent_id`), so after a bump
 #: `neurostore.ingest.study_entities.rehash_entities` recomputes the hashes in
-#: place and keeps the old ones as aliases; no claim moves. Any change to
+#: place; claims hang off the entity's id, so no claim moves. Any change to
 #: study_schema's `normalize_name` changes identities, so it needs a bump here
 #: too: the stale-hash guard at ingest only trips on a version change.
 ENTITY_HASH_VERSION = "study-entity/3"
@@ -1250,31 +1250,6 @@ class StudyEntity(BaseMixin, db.Model):
     )
 
     parent = relationship("StudyEntity", remote_side="StudyEntity.id")
-
-
-class StudyEntityAlias(db.Model):
-    """A hash an entity used to have, kept so claims made against it still resolve.
-
-    No user-facing writer: users cannot rename or merge entities. The pipeline
-    writes one when `neurostore.ingest.study_entities.rehash_entities` re-hashes
-    an entity in place, and `reason` says why, so a deliberate re-identification
-    can be told from a bug. An alias is never also a live hash.
-    """
-
-    __tablename__ = "study_entity_aliases"
-
-    entity_hash = db.Column(db.String(64), primary_key=True)
-    entity_id = db.Column(
-        db.Text,
-        db.ForeignKey("study_entities.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-    )
-    #: 'version_bumped': ENTITY_HASH_VERSION or the hash rule changed.
-    reason = db.Column(db.String)
-    config_id = db.Column(
-        db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True
-    )
 
 
 class StudyEntityCandidateLink(db.Model):

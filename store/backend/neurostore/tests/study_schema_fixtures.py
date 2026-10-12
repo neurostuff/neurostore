@@ -33,6 +33,14 @@ def _keyed(analysis):
     return analysis
 
 
+def spelled_key(canonical):
+    """The key coordinates.yaml spells out for ``canonical`` ([normalized name, space,
+    [[x, y, z, own space, [[kind, value], ...]], ...]], written as the rule writes it),
+    hashed here rather than by `keys.key_for`."""
+    payload = json.dumps(canonical, separators=(",", ":"), ensure_ascii=False)
+    return "analysis#" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
 def table_analysis(table_id, rows, name, points, role="result", space="MNI", **extra):
     return _keyed({
         "origin": "table",

@@ -68,7 +68,11 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_unprocessable,
     abort_validation,
 )
-from neurostore.ingest.study_entities import CHILD_LISTS, sync_record_entities
+from neurostore.ingest.study_entities import (
+    CHILD_LISTS,
+    CONTENT_KEYED_CLASSES,
+    sync_record_entities,
+)
 from neurostore.models.data import (
     HISTORY_SOURCE,
     PIPELINE_STUDY_SOURCES,
@@ -111,10 +115,6 @@ OUTCOME_WITHHELD_REASON = (
     "the record reports an outcome for a coordinate set that is not a result; it is kept "
     "as a claim and applied if the set's role becomes result"
 )
-
-# Entities a record names by parse key, hashed by that key, so a split or merge moves their
-# claims.
-PARSE_KEYED_CLASSES = ("Analysis", "CoordinateSet")
 
 # The storage schema's unique_key_slots: the only nested lists a claim path may index.
 DECLARED_KEYS = {
@@ -678,7 +678,7 @@ def _held_keys(base_study):
 
 
 def _record_keys(record):
-    """The content keys a record names for its parse-keyed entities."""
+    """The content keys a record names for its content-keyed entities."""
     keys = set()
     for value in record.values():
         if not isinstance(value, list):
@@ -686,7 +686,7 @@ def _record_keys(record):
         for item in value:
             if not isinstance(item, dict):
                 continue
-            for cls in PARSE_KEYED_CLASSES:
+            for cls in CONTENT_KEYED_CLASSES:
                 key = _record_key(cls, item)
                 if key and is_content_key(key):
                     keys.add(key)
@@ -1017,7 +1017,7 @@ def _orphaned_claims(base_study, superseded, parse):
         key = analysis.source_id
         if verdicts.get(key) in ("split", "merge"):
             continue
-        for entity_class in PARSE_KEYED_CLASSES:
+        for entity_class in CONTENT_KEYED_CLASSES:
             entity = _stored_entity(base_study, entity_class, analysis)
             if entity is None:
                 continue
@@ -1128,7 +1128,7 @@ def _carry_claims(base_study, study, revision):
             continue
         hashes = [
             h
-            for h in (_hash_for_key(base_study, c, verdict["key"]) for c in PARSE_KEYED_CLASSES)
+            for h in (_hash_for_key(base_study, c, verdict["key"]) for c in CONTENT_KEYED_CLASSES)
             if h is not None
         ]
         for source in StudyEntity.query.filter(StudyEntity.entity_hash.in_(hashes)).all():

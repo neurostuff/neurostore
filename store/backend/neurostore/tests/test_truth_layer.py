@@ -20,7 +20,6 @@ from neurostore.tests import study_schema_fixtures as fx
 TRUTH_LAYER = (
     data.PipelineAnalysisResult,
     data.StudyEntity,
-    data.StudyEntityAlias,
     data.StudyEntityCandidateLink,
     data.ExtractionEntityLink,
     data.FieldClaim,
