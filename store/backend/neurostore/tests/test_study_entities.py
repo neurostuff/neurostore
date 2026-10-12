@@ -413,7 +413,9 @@ def test_ingesting_before_the_version_bump_rehash_is_refused(base_study):
     db.session.rollback()
     assert _count(base_study) == 2
     rehash_entities()
-    assert _sync(base_study, record)["created"] == 1
+    # The stored set has the record's key, so once rehashed it is the one the sync finds.
+    assert _sync(base_study, record)["created"] == 0
+    assert _count(base_study) == 2
 
 
 def test_renormalizing_names_under_the_same_version_is_idempotent(base_study):
