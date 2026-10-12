@@ -36,7 +36,7 @@ dependencies = [
     "wrapt~=2.5",
     "openapi-spec-validator~=0.9",
     "scipy~=1.18",
-    "orjson~=3.12",
+    "orjson~=3.13",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.21.0",
     "openai~=3.23",
