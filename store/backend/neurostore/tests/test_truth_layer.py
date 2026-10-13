@@ -5,6 +5,8 @@ a route, an API schema, an admin view -- may read these tables. The tests fail t
 does, so exposing them is a decision rather than an accident.
 """
 
+import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -12,12 +14,12 @@ import pytest
 
 from neurostore import schemas
 from neurostore.models import data
-from neurostore.models.data import analysis_identity, study_entity_hash
+from neurostore.models.data import study_entity_hash
+from neurostore.tests import study_schema_fixtures as fx
 
 TRUTH_LAYER = (
     data.PipelineAnalysisResult,
     data.StudyEntity,
-    data.StudyEntityAlias,
     data.StudyEntityCandidateLink,
     data.ExtractionEntityLink,
     data.FieldClaim,
@@ -47,85 +49,43 @@ def test_no_route_or_component_names_the_truth_layer():
         assert not re.search(rf"\b{table}\b|\b{table.replace('_', '-')}\b", spec), table
 
 
+PO = fx.text_analysis([(5, 9)], "PO > Sil", [fx.point((-4, 50.5, 0), t=5.8)])
+
+
 def test_the_hash_is_a_full_sha256():
-    locator = analysis_identity("table", "tbl1", cells=[(0, 0)], name="PO > Sil")
-    value = study_entity_hash("bs1", "Analysis", locator)
+    value = study_entity_hash("bs1", "Analysis", PO["key"])
     assert re.fullmatch(r"[0-9a-f]{64}", value)
 
 
-def test_the_hash_separates_papers_classes_and_cells():
-    cells = analysis_identity("table", "tbl2", cells=[(3, 0), (4, 0)], name="PO > Sil")
-    base = study_entity_hash("bs1", "Analysis", cells)
-    assert base != study_entity_hash("bs2", "Analysis", cells)  # same table id, other paper
-    assert base != study_entity_hash("bs1", "CoordinateSet", cells)
-    assert base != study_entity_hash(
-        "bs1",
-        "Analysis",
-        analysis_identity("table", "tbl2", cells=[(3, 0), (4, 1)], name="PO > Sil"),
-    )
-    assert base != study_entity_hash(
-        "bs1",
-        "Analysis",
-        analysis_identity("table", "tbl3", cells=[(3, 0), (4, 0)], name="PO > Sil"),
-    )
+def test_the_hash_separates_papers_classes_and_keys():
+    base = study_entity_hash("bs1", "Analysis", PO["key"])
+    assert base != study_entity_hash("bs2", "Analysis", PO["key"])  # same analysis, other paper
+    assert base != study_entity_hash("bs1", "CoordinateSet", PO["key"])
+    moved = fx.text_analysis([(5, 9)], "PO > Sil", [fx.point((-4, 50.5, 2), t=5.8)])
+    assert base != study_entity_hash("bs1", "Analysis", moved["key"])
 
 
-def test_the_hash_ignores_cell_order_and_repeats():
-    a = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0), (4, 0)], name="PO > Sil")
-    b = analysis_identity("table", "tbl2", cells=[(3, 0), (4, 0)], name="PO > Sil")
-    assert a == b == ["table", "tbl2", "3:0,4:0", "po>sil"]
+def test_a_key_cannot_be_mistaken_for_a_name():
+    # The class is inside the hash, so a Group named like a key is still a Group.
+    as_group = study_entity_hash("bs1", "Group", PO["key"])
+    assert as_group != study_entity_hash("bs1", "Analysis", PO["key"])
 
 
-def test_text_and_figure_sets_hash_their_spans():
-    spans = [(1288, 1300), (1200, 1288)]
-    text = analysis_identity("text", spans=spans, name="PO > Sil")
-    assert text == ["text", "", "1200-1288,1288-1300", "po>sil"]
-    figure = analysis_identity("figure", spans=[(5, 9)], name="PO > Sil")
-    assert figure != analysis_identity("text", spans=[(5, 9)], name="PO > Sil")
-
-
-def test_a_set_with_nothing_to_locate_it_is_refused():
-    with pytest.raises(ValueError):
-        analysis_identity("table", "tbl1", cells=[], name="PO > Sil")
-    with pytest.raises(ValueError):
-        analysis_identity("text", spans=[], name="PO > Sil")
-    with pytest.raises(ValueError):
-        analysis_identity("prose", spans=[(0, 1)], name="PO > Sil")
-
-
-def test_a_name_cannot_be_mistaken_for_a_locator():
-    # The class is inside the hash, so a Group named like a locator is still a Group.
-    locator = analysis_identity("table", "tbl1", cells=[(0, 0)], name="PO > Sil")
-    as_group = study_entity_hash("bs1", "Group", locator)
-    assert as_group != study_entity_hash("bs1", "Analysis", locator)
-
-
-def test_the_hash_separates_names_read_from_the_same_place():
+def test_the_key_separates_names_given_the_same_points():
     # gx2zzUbbydf9 reads "PO > Sil" and "PC > Sil" from the same spans; one
     # identity for both merged two contrasts' claims onto one coordinate set.
-    for kwargs in ({"origin": "text", "spans": [(5, 9)]},
-                   {"origin": "table", "table_id": "tbl2", "cells": [(3, 0), (4, 0)]}):
-        po = analysis_identity(**kwargs, name="PO > Sil")
-        assert po != analysis_identity(**kwargs, name="PC > Sil")
-        # Case, dash and spacing are not a different contrast.
-        assert po == analysis_identity(**kwargs, name="po  >  SIL")
-        assert analysis_identity(**kwargs, name="PO - Sil") == analysis_identity(
-            **kwargs, name="po \u2013 sil"
-        )
+    points = PO["points"]
+    assert PO["key"] != fx.text_analysis([(5, 9)], "PC > Sil", points)["key"]
+    # Case, dash and spacing are not a different contrast.
+    for name in ("po  >  SIL", "PO>Sil"):
+        assert fx.text_analysis([(5, 9)], name, points)["key"] == PO["key"]
+    dashed = (fx.text_analysis([(5, 9)], n, points)["key"] for n in ("PO - Sil", "po \u2013 sil"))
+    assert len(set(dashed)) == 1
 
 
-def test_the_locator_is_the_string_the_analysis_key_hashes():
-    # One cell, span and name rule: study_schema.keys writes it for both the key and the hash.
-    import hashlib
-
-    from study_schema.keys import span_key, table_key
-
-    located = analysis_identity("table", "tbl2", cells=[(4, 0), (3, 0)], name="PO > Sil")
-    located = "|".join(located[2:])
-    assert table_key("tbl2", [(3, 0), (4, 0)], "PO > Sil") == (
-        "tbl2#" + hashlib.sha1(located.encode()).hexdigest()[:12]
-    )
-    located = "|".join(analysis_identity("text", spans=[(5, 9)], name="PO > Sil")[2:])
-    assert span_key("text", [(5, 9)], "PO > Sil") == (
-        "text#" + hashlib.sha1(located.encode()).hexdigest()[:12]
-    )
+def test_the_key_is_the_hash_coordinates_yaml_spells_out():
+    # ParsedAnalysis.key, written out by hand: the compact JSON of the normalized name,
+    # the space and each point's coordinates (0.01 mm), own space and values (6 digits).
+    canonical = ["po>sil", "MNI", [["-4.00", "50.50", "0.00", "", [["t", "5.8"]]]]]
+    payload = json.dumps(canonical, separators=(",", ":"), ensure_ascii=False)
+    assert PO["key"] == "analysis#" + hashlib.sha256(payload.encode()).hexdigest()[:16]
