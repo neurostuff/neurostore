@@ -25,7 +25,9 @@ logger = logging.getLogger(__name__)
 JOB_CACHE_PREFIX = "compose:jobs"
 USER_JOB_INDEX_PREFIX = "compose:user-jobs"
 META_ANALYSIS_JOB_INDEX_PREFIX = "compose:meta-analysis-jobs"
+STATUS_CACHE_PREFIX = "compose:job-status"
 JOB_CACHE_TTL_SECONDS = 60 * 60 * 24 * 3  # 3 days
+STATUS_CACHE_TTL_SECONDS = 15  # throttle Lambda status polls to at most 1 per 15 s
 LOG_TIME_PADDING_MS = 5 * 60 * 1000  # pad log queries by 5 minutes on each side
 
 # Step Functions execution statuses that will never change again.
@@ -109,6 +111,38 @@ def _store_job(job_id: str, payload: dict) -> None:
         raise
     except Exception as exc:  # noqa: BLE001
         raise JobStoreError("failed to cache job state") from exc
+
+
+def _status_cache_key(job_id: str) -> str:
+    return f"{STATUS_CACHE_PREFIX}:{job_id}"
+
+
+def _get_cached_status(client: Redis, job_id: str) -> Optional[dict]:
+    """Return the cached Lambda status response for *job_id*, or None on miss."""
+    try:
+        raw = client.get(_status_cache_key(job_id))
+    except Exception:  # noqa: BLE001
+        return None
+    if not raw:
+        return None
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return None
+
+
+def _set_cached_status(client: Redis, job_id: str, data: dict) -> None:
+    """Cache the Lambda status response for *job_id* with a short TTL."""
+    try:
+        client.setex(
+            _status_cache_key(job_id),
+            STATUS_CACHE_TTL_SECONDS,
+            json.dumps(data),
+        )
+    except Exception:  # noqa: BLE001
+        pass  # cache failures are non-fatal
 
 
 def _load_job(job_id: str) -> Optional[dict]:
@@ -292,7 +326,16 @@ def get_job_status(job_id: str):
     logs_url = config.get("COMPOSE_RUNNER_LOGS_URL")
 
     try:
-        status_response = call_lambda(status_url, {"job_id": job_id})
+        job_store_client = get_job_store()
+    except JobStoreError as exc:
+        _abort_with_job_store_error(exc)
+
+    try:
+        # Use a short-TTL cache so rapid polls don't each hit the Lambda.
+        status_response = _get_cached_status(job_store_client, job_id)
+        if status_response is None:
+            status_response = call_lambda(status_url, {"job_id": job_id})
+            _set_cached_status(job_store_client, job_id, status_response)
     except ComposeRunnerThrottledError as exc:
         # Transient throttling: return the last known state rather than a 502.
         logger.warning(
