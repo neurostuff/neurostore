@@ -58,7 +58,7 @@ dev = [
     "wheel~=0.48",
     "pytest~=9.1",
     "vcrpy~=8.3",
-    "pytest-recording~=0.13.4",
+    "pytest-recording~=0.14.0",
 ]
 
 [project.scripts]
