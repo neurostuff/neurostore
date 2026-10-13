@@ -1,5 +1,6 @@
 """The study_schema ingester: a parse, a parse with a record, a record, a revision."""
 
+import copy
 from datetime import datetime, timezone
 
 import pytest
@@ -246,6 +247,18 @@ def test_parse_and_record_resolve_claims_to_analyses(session):
 
 def db_config(config_id):
     return PipelineConfig.query.get(config_id)
+
+
+@pytest.mark.parametrize("version", ["paper_parse.6", "2026-10-11.nu-prose-v2"])
+def test_upload_keeps_a_producer_version_that_is_not_semver(session, version):
+    document = copy.deepcopy(ORIGINAL)
+    document["header"]["producer"]["version"] = version
+
+    summary = ingest_upload({"coordinate_parse": document})
+
+    stored = summary["provenance"]["parse"]
+    assert stored["version"] == version
+    assert db_config(stored["config_id"]).version == version
 
 
 def test_upload_reports_the_provenance_of_each_run(session):

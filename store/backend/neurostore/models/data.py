@@ -1,6 +1,5 @@
 import hashlib
 import json
-import re
 
 import shortuuid
 import sqlalchemy as sa
@@ -30,7 +29,6 @@ STATUS_ENUM = PGEnum(
     create_type=True,
 )
 
-SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
 IMAGE_VALUE_TYPE_CHECK_SQL = "value_type IS NULL OR value_type IN ({})".format(
     ", ".join(f"'{code}'" for code in MAP_TYPE_CODES)
 )
@@ -1014,8 +1012,8 @@ class PipelineConfig(BaseMixin, db.Model):
 
     @validates("version")
     def validate_version(self, key, value):
-        if not re.match(SEMVER_REGEX, value):
-            raise ValueError(f"Invalid version format: {value}")
+        if not value:
+            raise ValueError("A pipeline config needs a version")
         return value
 
 
