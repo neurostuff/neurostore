@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -24,8 +25,19 @@ logger = logging.getLogger(__name__)
 JOB_CACHE_PREFIX = "compose:jobs"
 USER_JOB_INDEX_PREFIX = "compose:user-jobs"
 META_ANALYSIS_JOB_INDEX_PREFIX = "compose:meta-analysis-jobs"
+STATUS_CACHE_PREFIX = "compose:job-status"
 JOB_CACHE_TTL_SECONDS = 60 * 60 * 24 * 3  # 3 days
+STATUS_CACHE_TTL_SECONDS = 15  # throttle Lambda status polls to at most 1 per 15 s
 LOG_TIME_PADDING_MS = 5 * 60 * 1000  # pad log queries by 5 minutes on each side
+
+# Step Functions execution statuses that will never change again.
+TERMINAL_STATUSES = frozenset({"SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"})
+
+# Transient compose runner responses (Lambda throttling / unavailability).
+RETRYABLE_STATUS_CODES = frozenset({429, 503})
+LAMBDA_MAX_RETRIES = 2
+LAMBDA_RETRY_BACKOFF_SECONDS = 0.5
+LAMBDA_MAX_RETRY_DELAY_SECONDS = 2.0
 
 
 class JobStoreError(RuntimeError):
@@ -34,6 +46,10 @@ class JobStoreError(RuntimeError):
 
 class ComposeRunnerError(RuntimeError):
     """Raised when the external compose runner call fails."""
+
+
+class ComposeRunnerThrottledError(ComposeRunnerError):
+    """Raised when the compose runner keeps returning a transient error."""
 
 
 def get_job_store() -> Redis:
@@ -97,6 +113,38 @@ def _store_job(job_id: str, payload: dict) -> None:
         raise JobStoreError("failed to cache job state") from exc
 
 
+def _status_cache_key(job_id: str) -> str:
+    return f"{STATUS_CACHE_PREFIX}:{job_id}"
+
+
+def _get_cached_status(client: Redis, job_id: str) -> Optional[dict]:
+    """Return the cached Lambda status response for *job_id*, or None on miss."""
+    try:
+        raw = client.get(_status_cache_key(job_id))
+    except Exception:  # noqa: BLE001
+        return None
+    if not raw:
+        return None
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return None
+
+
+def _set_cached_status(client: Redis, job_id: str, data: dict) -> None:
+    """Cache the Lambda status response for *job_id* with a short TTL."""
+    try:
+        client.setex(
+            _status_cache_key(job_id),
+            STATUS_CACHE_TTL_SECONDS,
+            json.dumps(data),
+        )
+    except Exception:  # noqa: BLE001
+        pass  # cache failures are non-fatal
+
+
 def _load_job(job_id: str) -> Optional[dict]:
     try:
         client = get_job_store()
@@ -113,14 +161,39 @@ def _load_job(job_id: str) -> Optional[dict]:
     return json.loads(cached)
 
 
+def _retry_delay(response, attempt: int) -> float:
+    """Return the delay before retrying, honoring Retry-After when present."""
+    retry_after = response.headers.get("Retry-After") if response is not None else None
+    if retry_after:
+        try:
+            return min(max(float(retry_after), 0.0), LAMBDA_MAX_RETRY_DELAY_SECONDS)
+        except ValueError:
+            pass
+    return min(
+        LAMBDA_RETRY_BACKOFF_SECONDS * (2**attempt), LAMBDA_MAX_RETRY_DELAY_SECONDS
+    )
+
+
 def call_lambda(url: Optional[str], payload: dict) -> dict:
     """Call an external AWS Lambda-style HTTPS endpoint."""
     if not url:
         raise ComposeRunnerError("compose runner url is not configured")
-    try:
-        response = requests.post(url, json=payload, timeout=30)
-    except requests.RequestException as exc:  # noqa: PERF203
-        raise ComposeRunnerError("compose runner request failed") from exc
+
+    attempt = 0
+    while True:
+        try:
+            response = requests.post(url, json=payload, timeout=30)
+        except requests.RequestException as exc:  # noqa: PERF203
+            raise ComposeRunnerError("compose runner request failed") from exc
+
+        if response.status_code not in RETRYABLE_STATUS_CODES:
+            break
+        if attempt >= LAMBDA_MAX_RETRIES:
+            raise ComposeRunnerThrottledError(
+                f"compose runner returned HTTP {response.status_code}"
+            )
+        time.sleep(_retry_delay(response, attempt))
+        attempt += 1
 
     if response.status_code >= 400:
         raise ComposeRunnerError(f"compose runner returned HTTP {response.status_code}")
@@ -243,36 +316,81 @@ def get_job_status(job_id: str):
     if cached_job is None:
         raise_http_error(404, "job not found")
 
+    # Finished executions never change; serve them from the cache instead of
+    # invoking the compose runner Lambdas on every poll.
+    if cached_job.get("status") in TERMINAL_STATUSES:
+        return make_json_response(cached_job)
+
     config = request.state.settings
     status_url = config.get("COMPOSE_RUNNER_STATUS_URL")
     logs_url = config.get("COMPOSE_RUNNER_LOGS_URL")
 
     try:
-        status_response = call_lambda(status_url, {"job_id": job_id})
-        logs_payload = {"events": []}
-        artifact_prefix = status_response.get("artifact_prefix") or cached_job.get(
-            "artifact_prefix"
+        job_store_client = get_job_store()
+    except JobStoreError as exc:
+        _abort_with_job_store_error(exc)
+
+    try:
+        # Use a short-TTL cache so rapid polls don't each hit the Lambda.
+        status_response = _get_cached_status(job_store_client, job_id)
+        if status_response is None:
+            status_response = call_lambda(status_url, {"job_id": job_id})
+            _set_cached_status(job_store_client, job_id, status_response)
+    except ComposeRunnerThrottledError as exc:
+        # Transient throttling: return the last known state rather than a 502.
+        logger.warning(
+            "Compose runner throttled; returning cached job state for %s: %s",
+            job_id,
+            exc,
         )
-        start_time_iso = status_response.get("start_time") or cached_job.get(
-            "start_time"
-        )
-        stop_time_iso = status_response.get("stop_time") or cached_job.get("stop_time")
-        if artifact_prefix:
-            logs_request = {"artifact_prefix": artifact_prefix}
-            start_ms = _iso_to_epoch_millis(start_time_iso)
-            stop_ms = _iso_to_epoch_millis(stop_time_iso)
-            if start_ms is not None:
-                logs_request["start_time"] = max(0, start_ms - LOG_TIME_PADDING_MS)
-            if stop_ms is not None:
-                logs_request["end_time"] = stop_ms + LOG_TIME_PADDING_MS
-            logs_payload = call_lambda(logs_url, logs_request)
+        stale_job = cached_job.copy()
+        stale_job["stale"] = True
+        return make_json_response(stale_job)
     except (ComposeRunnerError, Exception) as exc:  # noqa: BLE001
         _abort_with_runner_error(exc)
 
+    artifact_prefix = status_response.get("artifact_prefix") or cached_job.get(
+        "artifact_prefix"
+    )
+    start_time_iso = status_response.get("start_time") or cached_job.get("start_time")
+    stop_time_iso = status_response.get("stop_time") or cached_job.get("stop_time")
+
+    new_status = status_response.get("status", cached_job.get("status"))
+    logs = cached_job.get("logs") or []
+    logs_refreshed = True
+    if artifact_prefix:
+        logs_request = {"artifact_prefix": artifact_prefix}
+        start_ms = _iso_to_epoch_millis(start_time_iso)
+        stop_ms = _iso_to_epoch_millis(stop_time_iso)
+        if start_ms is not None:
+            logs_request["start_time"] = max(0, start_ms - LOG_TIME_PADDING_MS)
+        if stop_ms is not None:
+            logs_request["end_time"] = stop_ms + LOG_TIME_PADDING_MS
+        try:
+            logs_payload = call_lambda(logs_url, logs_request)
+            logs = [
+                {
+                    "timestamp": event.get("timestamp"),
+                    "message": event.get("message"),
+                }
+                for event in logs_payload.get("events", []) or []
+            ]
+        except ComposeRunnerThrottledError as exc:
+            # Keep the fresh status; reuse previously cached logs.
+            logger.warning(
+                "Compose runner log poller throttled for %s; reusing cached logs: %s",
+                job_id,
+                exc,
+            )
+            logs_refreshed = False
+        except (ComposeRunnerError, Exception) as exc:  # noqa: BLE001
+            _abort_with_runner_error(exc)
+
+    previous_status = cached_job.get("status")
     now = datetime.now(timezone.utc).isoformat()
     cached_job.update(
         {
-            "status": status_response.get("status", cached_job.get("status")),
+            "status": new_status,
             "artifact_prefix": artifact_prefix,
             "start_time": start_time_iso,
             "stop_time": stop_time_iso,
@@ -280,16 +398,22 @@ def get_job_status(job_id: str):
             "updated_at": now,
         }
     )
-    cached_job["logs"] = [
-        {
-            "timestamp": event.get("timestamp"),
-            "message": event.get("message"),
-        }
-        for event in logs_payload.get("events", []) or []
-    ]
+    cached_job["logs"] = logs
+
+    if not logs_refreshed:
+        cached_job["stale"] = True
+        stored_job = cached_job.copy()
+        stored_job.pop("stale", None)
+        if new_status in TERMINAL_STATUSES:
+            # Don't cache a terminal status with incomplete logs, otherwise the
+            # terminal short-circuit above would freeze the stale logs forever.
+            stored_job["status"] = previous_status
+    else:
+        cached_job.pop("stale", None)
+        stored_job = cached_job
 
     try:
-        _store_job(job_id, cached_job)
+        _store_job(job_id, stored_job)
     except JobStoreError as exc:
         _abort_with_job_store_error(exc)
 
