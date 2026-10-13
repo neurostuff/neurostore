@@ -1,14 +1,13 @@
 """The study_schema ingester: a parse, a parse with a record, a record, a revision."""
 
+import copy
 from datetime import datetime, timezone
 
 import pytest
 import sqlalchemy as sa
 
 from neurostore.exceptions.base import NeuroStoreException
-from neurostore.ingest.study_entities import CELLS_CHANGED
 from neurostore.ingest.study_schema import (
-    ALIAS_CONFLICT,
     BOTH_DIRECTIONS,
     HISTORY_SOURCE,
     NO_STORED_PARSE_REASON,
@@ -16,7 +15,8 @@ from neurostore.ingest.study_schema import (
     NOT_CARRIED,
     ORPHAN_REASONS,
     OUTCOME_WITHHELD_REASON,
-    RELABEL_RENAMED_REASON,
+    POSITIONAL_KEY_REASON,
+    RELABEL_GONE_REASON,
     RELABEL_REVISED_REASON,
     SHARED_NAME,
     STUDY_SOURCE,
@@ -37,11 +37,9 @@ from neurostore.models import (
     PipelineStudyResult,
     Study,
     StudyEntity,
-    StudyEntityAlias,
-    StudyEntityCandidateLink,
 )
 from neurostore.database import db
-from neurostore.models.data import analysis_identity, is_result_analysis, study_entity_hash
+from neurostore.models.data import is_result_analysis, study_entity_hash
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests import study_schema_fixtures as fx
 
@@ -73,21 +71,9 @@ def _current(base_study_id):
     return Study.query.filter_by(base_study_id=base_study_id, source=STUDY_SOURCE).one()
 
 
-# Every fixture analysis by key, to hash the way the ingester must.
-_ANALYSES = {a["key"]: a for a in ORIGINAL["analyses"]}
-
-
 def _hash(base_study_id, key, entity_class="Analysis"):
-    """The entity hash of the fixture analysis under ``key``, from all its cells."""
-    parsed = _ANALYSES[key]
-    identity = analysis_identity(
-        parsed["origin"],
-        parsed.get("table_id"),
-        cells=[(c["row"], c["column_group"]) for c in parsed.get("cells") or []],
-        spans=[(s["start_char"], s["end_char"]) for s in parsed.get("text_spans") or []],
-        name=parsed["name"],
-    )
-    return study_entity_hash(base_study_id, entity_class, identity)
+    """The entity hash of the analysis under ``key``: the content key is its identity."""
+    return study_entity_hash(base_study_id, entity_class, key)
 
 
 def _entity(base_study_id, key):
@@ -107,11 +93,12 @@ def _revision():
         GAIN["points"][:2],
         split={"half": "original", "rule": "sign_of_directional_statistic"},
     )
+    # The inverse half holds Gain's negative points, their t values negated to read positive.
     inverse = fx.table_analysis(
         "tbl1",
         [2, 3],
         "Neutral > Gain",
-        GAIN["points"][2:],
+        [fx.point((-10, 20, 30)), fx.point((-12, 22, 32))],
         split={
             "half": "inverse",
             "original_analysis": original["key"],
@@ -131,11 +118,10 @@ def _revision():
             fx.verdict(SEED["key"], "accept", [SEED["key"]]),
         ],
     )
-    _ANALYSES.update({a["key"]: a for a in (original, inverse, merged)})
     return revision, original, inverse, merged
 
 
-def test_parse_alone_stores_skeleton_keyed_by_cells(session):
+def test_parse_alone_stores_skeleton_keyed_by_content(session):
     summary = ingest_upload({"coordinate_parse": ORIGINAL})
 
     assert summary["kind"] == "parse"
@@ -166,6 +152,72 @@ def test_parse_with_a_wrong_key_is_refused(session):
     with pytest.raises(NeuroStoreException) as error:
         ingest_upload({"coordinate_parse": bad})
     assert error.value.status_code == 422
+    assert [(e.code, e.field) for e in error.value.errors] == [
+        ("KEY_MISMATCH", "coordinate_parse/analyses/0/key")
+    ]
+
+
+# e4rjcprumul5 lists "Children > Adults" with no points in tbl0015 and in tbl0020: one key.
+CHILDREN = fx.table_analysis("tbl0015", [0], "Children > Adults", [])
+CHILDREN_AGAIN = fx.table_analysis("tbl0020", [0], "Children > Adults", [])
+
+
+@pytest.mark.parametrize(
+    "first, second",
+    [
+        (CHILDREN, CHILDREN_AGAIN),
+        (LOSS, fx.text_analysis([(310, 402)], "Loss>Neutral", LOSS["points"])),
+    ],
+    ids=["no_points_two_tables", "table_and_sentence"],
+)
+def test_one_analysis_read_twice_in_one_parse_is_refused(session, first, second):
+    assert first["key"] == second["key"]
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": fx.parse([first, second])})
+    assert error.value.status_code == 422
+    assert [(e.code, e.field) for e in error.value.errors] == [
+        ("DUPLICATE_KEY", "coordinate_parse/analyses/1/key")
+    ]
+    assert not Analysis.query.count()
+
+
+def test_a_same_named_analysis_with_no_points_read_from_another_table_is_one_analysis(session):
+    base_study_id = ingest_upload({"coordinate_parse": fx.parse([CHILDREN])})["base_study_id"]
+    children = _by_key(_current(base_study_id))[CHILDREN["key"]]
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([CHILDREN_AGAIN])})
+
+    skeleton = summary["skeleton"]
+    assert (skeleton["created"], skeleton["updated"], skeleton["superseded"]) == (0, 1, 0)
+    again = _by_key(_current(base_study_id))[CHILDREN["key"]]
+    assert again.id == children.id and again.table.t_id == "tbl0020"
+
+
+@pytest.mark.parametrize(
+    "key, reason",
+    [
+        ("analysis#0123456789ab", POSITIONAL_KEY_REASON),
+        ("analysis#0123456789abcdef0", POSITIONAL_KEY_REASON),
+        ("analysis#0123456789ABCDEF", POSITIONAL_KEY_REASON),
+        ("xanalysis#0123456789abcdef", POSITIONAL_KEY_REASON),
+        ("analysis#0123456789abcdef\n", POSITIONAL_KEY_REASON),
+        # Well formed, so checked against the stored parses, which do not hold it.
+        ("analysis#0123456789abcdef", UNKNOWN_KEY_REASON),
+    ],
+    ids=["12_hex", "17_hex", "upper_case", "prefixed", "newline", "16_hex"],
+)
+def test_only_analysis_and_16_lower_hex_is_a_content_key(session, key, reason):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    record = fx.record([fx.record_analysis("a0", key, "Loss > Neutral")])
+
+    summary = ingest_upload(
+        {"record": record, "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id}
+    )
+
+    assert summary["record"]["claims"]["parked_entities"] == [
+        {"entity": f"Analysis[{key}]", "reason": reason}
+    ]
+    assert not StudyEntity.query.filter_by(entity_class="Analysis").count()
 
 
 def test_parse_and_record_resolve_claims_to_analyses(session):
@@ -195,6 +247,18 @@ def test_parse_and_record_resolve_claims_to_analyses(session):
 
 def db_config(config_id):
     return PipelineConfig.query.get(config_id)
+
+
+@pytest.mark.parametrize("version", ["paper_parse.6", "2026-10-11.nu-prose-v2"])
+def test_upload_keeps_a_producer_version_that_is_not_semver(session, version):
+    document = copy.deepcopy(ORIGINAL)
+    document["header"]["producer"]["version"] = version
+
+    summary = ingest_upload({"coordinate_parse": document})
+
+    stored = summary["provenance"]["parse"]
+    assert stored["version"] == version
+    assert db_config(stored["config_id"]).version == version
 
 
 def test_upload_reports_the_provenance_of_each_run(session):
@@ -277,6 +341,230 @@ def test_positional_record_keys_are_parked_not_minted(session):
     ).count()
     # The study's own claims still land.
     assert StudyEntity.query.filter_by(entity_class="Study").count() == 1
+
+
+def test_an_old_cell_key_in_a_record_is_parked_as_positional(session):
+    # A key minted from cells (``<table id>#<12 hex>``) no longer names an analysis.
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    record = fx.record([fx.record_analysis("a0", "tbl1#0123456789ab", "Loss > Neutral")])
+
+    summary = ingest_upload(
+        {"record": record, "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id}
+    )
+
+    assert summary["record"]["analyses"]["parked"] == [
+        {"key": "tbl1#0123456789ab", "reason": POSITIONAL_KEY_REASON}
+    ]
+    assert summary["record"]["claims"]["parked_entities"] == [
+        {"entity": "Analysis[tbl1#0123456789ab]", "reason": POSITIONAL_KEY_REASON}
+    ]
+    assert not StudyEntity.query.filter_by(entity_class="Analysis").count()
+
+
+def test_the_same_analysis_read_from_another_source_is_one_analysis(session):
+    # Loss > Neutral read again from the sentence restating the table, its name spaced
+    # differently: same name, space and points, so the same key, analysis and claims.
+    first = _ingested(ORIGINAL, LOSS, coordinate_sets=[LOSS["key"]])
+    base_study_id = first["base_study_id"]
+    loss = next(a for a in _current(base_study_id).analyses if a.source_id == LOSS["key"])
+    claims = {c.id for c in _claims(base_study_id, LOSS["key"])}
+    restated = fx.text_analysis([(310, 402)], "Loss>Neutral", LOSS["points"])
+    assert restated["key"] == LOSS["key"]
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, restated, RISK, SEED])})
+
+    skeleton = summary["skeleton"]
+    assert (skeleton["created"], skeleton["updated"], skeleton["superseded"]) == (0, 4, 0)
+    assert skeleton["orphaned_claims"] == []
+    again = next(a for a in _current(base_study_id).analyses if a.source_id == LOSS["key"])
+    assert again.id == loss.id and again.table is None
+    assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
+    assert _entity(base_study_id, LOSS["key"]).analysis_id == loss.id
+    # A record that read the table parse still resolves to it.
+    late = ingest_upload(
+        {"record": _record(LOSS), "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id}
+    )
+    assert late["record"]["analyses"]["resolved"] == 1
+    assert late["record"]["claims"]["entities"]["created"] == 0
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [fx.point((1, 2, 4)), fx.point((1, 2, 3), t=3.6), fx.point((1, 2, 3), space="TAL")],
+    ids=["coordinate", "value", "space"],
+)
+def test_a_changed_point_is_a_new_analysis(session, changed):
+    base_study_id = _ingested(ORIGINAL, LOSS)["base_study_id"]
+    loss = next(a for a in _current(base_study_id).analyses if a.source_id == LOSS["key"])
+    claims = {c.id for c in _claims(base_study_id, LOSS["key"])}
+    assert claims
+    reread = fx.table_analysis("tbl1", [4, 5], "Loss > Neutral", [changed])
+    assert reread["key"] != LOSS["key"]
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, reread, RISK, SEED])})
+
+    skeleton = summary["skeleton"]
+    assert (skeleton["created"], skeleton["superseded"]) == (1, 1)
+    current = {a.source_id: a for a in _current(base_study_id).analyses}
+    assert LOSS["key"] not in current and current[reread["key"]].id != loss.id
+    assert db.session.get(Analysis, loss.id).study.source == HISTORY_SOURCE
+    # The claims stay on the old analysis's entity, reported; the new analysis has none.
+    assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
+    assert skeleton["orphaned_claims"] == [
+        {
+            "key": LOSS["key"],
+            "class": "Analysis",
+            "entity_id": _entity(base_study_id, LOSS["key"]).id,
+            "claims": len(claims),
+            "reason": NO_SUCCESSOR,
+        }
+    ]
+    assert not StudyEntity.query.filter_by(entity_hash=_hash(base_study_id, reread["key"])).count()
+
+
+def test_a_changed_point_reports_the_coordinate_sets_claims_too(session):
+    base_study_id = _ingested(ORIGINAL, LOSS, coordinate_sets=[LOSS["key"]])["base_study_id"]
+    held = {
+        cls: StudyEntity.query.filter_by(entity_hash=_hash(base_study_id, LOSS["key"], cls)).one()
+        for cls in ("Analysis", "CoordinateSet")
+    }
+    counts = {cls: FieldClaim.query.filter_by(entity_id=e.id).count() for cls, e in held.items()}
+    assert all(counts.values())
+    moved = fx.table_analysis("tbl1", [4, 5], "Loss > Neutral", [fx.point((1, 2, 4))])
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, moved, RISK, SEED])})
+
+    assert sorted(summary["skeleton"]["orphaned_claims"], key=lambda o: o["class"]) == [
+        {
+            "key": LOSS["key"],
+            "class": cls,
+            "entity_id": held[cls].id,
+            "claims": counts[cls],
+            "reason": NO_SUCCESSOR,
+        }
+        for cls in ("Analysis", "CoordinateSet")
+    ]
+
+
+def test_a_key_that_comes_back_takes_its_entity_and_claims_to_the_new_row(session):
+    # Loss > Neutral's peak moves (t 3.5 at z 3, then z 4) and a later parse reads it
+    # at z 3 again: the old key, so the old entity and claims, on a new current row.
+    first = _ingested(ORIGINAL, LOSS, coordinate_sets=[LOSS["key"]])
+    base_study_id = first["base_study_id"]
+    original_row = _by_key(_current(base_study_id))[LOSS["key"]].id
+    claims = {c.id for c in _claims(base_study_id, LOSS["key"])}
+    moved = fx.table_analysis("tbl1", [4, 5], "Loss > Neutral", [fx.point((1, 2, 4))])
+    ingest_upload({"coordinate_parse": fx.parse([GAIN, moved, RISK, SEED])})
+
+    back = fx.parse([GAIN, LOSS, SEED])
+    summary = ingest_upload({"coordinate_parse": back})
+
+    assert summary["skeleton"]["created"] == 1
+    current = _by_key(_current(base_study_id))[LOSS["key"]]
+    assert current.id != original_row
+    assert db.session.get(Analysis, original_row).study.source == HISTORY_SOURCE
+    assert _entity(base_study_id, LOSS["key"]).analysis_id == current.id
+    assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
+    # A record naming the key now resolves to the current row, not its history copy.
+    ingest_upload(
+        {"record": _record(LOSS), "parse_id": back["parse_id"], "base_study_id": base_study_id}
+    )
+    assert PipelineAnalysisResult.query.filter_by(analysis_id=current.id).count() == 1
+
+
+def test_a_relabelled_set_whose_point_changes_reports_the_relabel_gone(session):
+    original = fx.parse([LOSS, PEAK])
+    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
+    revision = _relabel_peak(base_study_id, original)
+    moved = fx.table_analysis("tbl3", [0], "Peak > Baseline", [fx.point((8, 8, 9))])
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, moved])})
+
+    assert summary["skeleton"]["relabels_dropped"] == [
+        {
+            "key": PEAK["key"],
+            "role": "anchor",
+            "relabelled_by": revision["parse_id"],
+            "reason": RELABEL_GONE_REASON,
+        }
+    ]
+    peak = _by_key(_current(base_study_id))[moved["key"]]
+    assert (peak.role, peak.relabelled_by) == ("result", None)
+
+
+def test_a_respelled_name_keeps_the_row_and_stores_the_new_spelling(session):
+    base_study_id = _ingested(ORIGINAL, LOSS)["base_study_id"]
+    loss = _by_key(_current(base_study_id))[LOSS["key"]]
+    shouted = fx.table_analysis("tbl1", [4, 5], "LOSS>neutral", LOSS["points"])
+    assert shouted["key"] == LOSS["key"]
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, shouted, RISK, SEED])})
+
+    assert summary["skeleton"]["created"] == 0
+    again = _by_key(_current(base_study_id))[LOSS["key"]]
+    assert (again.id, again.name) == (loss.id, "LOSS>neutral")
+
+
+# One point at (1, 2, 3), t 3.5, written as coordinates.yaml spells it out.
+_LOSS_POINT = ["1.00", "2.00", "3.00", "", [["t", "3.5"]]]
+
+
+def test_the_analysis_space_is_part_of_the_key(session):
+    mni = fx.table_analysis("tbl1", [4, 5], "Loss > Neutral", [fx.point((1, 2, 3))])
+    tal = fx.table_analysis("tbl1", [8, 9], "Loss > Neutral", [fx.point((1, 2, 3))], space="TAL")
+    assert mni["key"] == fx.spelled_key(["loss>neutral", "MNI", [_LOSS_POINT]])
+    assert tal["key"] == fx.spelled_key(["loss>neutral", "TAL", [_LOSS_POINT]])
+
+    summary = _ingested(fx.parse([mni, tal]), mni, tal)
+
+    assert summary["skeleton"]["created"] == 2
+    base_study_id = summary["base_study_id"]
+    stored = _by_key(_current(base_study_id))
+    assert stored[mni["key"]].id != stored[tal["key"]].id
+    assert _entity(base_study_id, mni["key"]).id != _entity(base_study_id, tal["key"]).id
+
+
+def test_reordered_points_are_the_same_analysis(session):
+    points = [fx.point((4, 5, 6), t=4.1), fx.point((1, 2, 3))]
+    first = fx.table_analysis("tbl1", [4, 5], "Loss > Neutral", points)
+    reordered = fx.table_analysis("tbl1", [4, 5], "Loss > Neutral", points[::-1])
+    spelled = fx.spelled_key(
+        ["loss>neutral", "MNI", [_LOSS_POINT, ["4.00", "5.00", "6.00", "", [["t", "4.1"]]]]]
+    )
+    assert first["key"] == reordered["key"] == spelled
+    base_study_id = _ingested(fx.parse([first]), first)["base_study_id"]
+    row = _by_key(_current(base_study_id))[spelled].id
+    claims = {c.id for c in _claims(base_study_id, spelled)}
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([reordered])})
+
+    skeleton = summary["skeleton"]
+    assert (skeleton["created"], skeleton["updated"], skeleton["superseded"]) == (0, 1, 0)
+    assert _by_key(_current(base_study_id))[spelled].id == row
+    assert {c.id for c in _claims(base_study_id, spelled)} == claims
+
+
+def test_a_null_from_prior_study_and_a_null_anchor_kind_are_stored(session):
+    result = fx.table_analysis(
+        "tbl1", [4, 5], "Loss > Neutral", [fx.point((1, 2, 3))], from_prior_study=None
+    )
+    roi = fx.table_analysis(
+        "tbl4",
+        [0],
+        "Amygdala ROI",
+        [fx.point((20, -4, -18))],
+        role="anchor",
+        anchor_kind=None,
+        from_prior_study=None,
+    )
+
+    summary = ingest_upload({"coordinate_parse": fx.parse([result, roi])})
+
+    assert summary["skeleton"]["created"] == 2
+    stored = _by_key(_current(summary["base_study_id"]))
+    assert (stored[result["key"]].role, stored[result["key"]].from_prior_study) == ("result", None)
+    assert (stored[roi["key"]].role, stored[roi["key"]].from_prior_study) == ("anchor", None)
+    assert "anchor_kind" not in stored[roi["key"]].metadata_
 
 
 def test_revision_versions_analyses_and_carries_claims(session):
@@ -369,7 +657,7 @@ def test_a_revision_that_omits_an_analysis_reports_its_claims_as_not_carried(ses
 
 
 def test_orphaned_claim_reasons_are_codes():
-    assert ORPHAN_REASONS == ("no_successor", "alias_conflict", "not_carried")
+    assert ORPHAN_REASONS == ("no_successor", "not_carried")
 
 
 @pytest.mark.parametrize("kind", ["accept", "relabel"])
@@ -419,54 +707,6 @@ def test_revision_must_cover_a_stored_parse(session):
     with pytest.raises(NeuroStoreException) as error:
         ingest_upload({"coordinate_parse": incomplete})
     assert error.value.status_code == 422
-
-
-def test_reparse_reading_other_cells_aliases_the_hash(session):
-    base_study_id = ingest_upload(
-        {
-            "coordinate_parse": ORIGINAL,
-            "record": fx.record(
-                [
-                    fx.record_analysis(f"a{i}", p["key"], p["name"])
-                    for i, p in enumerate((GAIN, LOSS, RISK))
-                ],
-                coordinate_sets=[LOSS["key"]],
-            ),
-        }
-    )["base_study_id"]
-    assert (
-        StudyEntity.query.filter_by(
-            entity_hash=_hash(base_study_id, LOSS["key"], "CoordinateSet")
-        ).count()
-        == 1
-    )
-    wider = fx.table_analysis("tbl1", [4, 5, 8], "Loss > Neutral", LOSS["points"])
-    reparse = fx.parse([GAIN, wider, RISK, SEED])
-
-    summary = ingest_upload({"coordinate_parse": reparse})
-
-    # Analysis and coordinate-set entities both move, yet the pair is listed once.
-    assert summary["skeleton"]["aliased"] == [{"from": LOSS["key"], "to": wider["key"]}]
-    _ANALYSES[wider["key"]] = wider
-    alias = StudyEntityAlias.query.get(_hash(base_study_id, LOSS["key"]))
-    assert alias.reason == CELLS_CHANGED
-    entity = StudyEntity.query.get(alias.entity_id)
-    assert entity.entity_hash == _hash(base_study_id, wider["key"])
-    assert entity.analysis_id == next(
-        a.id for a in _current(base_study_id).analyses if a.source_id == wider["key"]
-    )
-
-    # A late record that read the old parse still lands on the re-keyed analysis.
-    late = ingest_upload(
-        {
-            "record": _record(LOSS),
-            "parse_id": ORIGINAL["parse_id"],
-            "base_study_id": base_study_id,
-        }
-    )
-    assert late["record"]["analyses"]["resolved"] == 1
-    row = PipelineAnalysisResult.query.filter_by(source_table_analysis=LOSS["key"]).first()
-    assert row.analysis_id == entity.analysis_id
 
 
 @pytest.mark.anyio
@@ -645,7 +885,6 @@ def test_a_later_parse_holding_a_set_aside_key_resolves_its_claims(session):
     )
     assert first["record"]["claims"]["parked_entities"]
 
-    _ANALYSES[unknown["key"]] = unknown
     reparse = fx.parse([GAIN, LOSS, RISK, SEED, unknown])
     summary = ingest_upload({"coordinate_parse": reparse, "base_study_id": base_study_id})
 
@@ -709,7 +948,6 @@ def test_a_concurrent_upload_taking_the_run_id_is_refused_as_reused(session, mon
 
 def _ingested(parse, *analyses, coordinate_sets=()):
     """Upload ``parse`` with a record naming each of ``analyses``; the base study id."""
-    _ANALYSES.update({a["key"]: a for a in parse["analyses"]})
     record = fx.record(
         [fx.record_analysis(f"a{i}", a["key"], a["name"]) for i, a in enumerate(analyses)],
         coordinate_sets=coordinate_sets,
@@ -848,71 +1086,6 @@ def test_a_condition_name_in_two_papers_is_two_conditions(session):
     assert not ids[0] & ids[1]
 
 
-def test_reparse_compares_normalized_names(session):
-    base_study_id = _ingested(ORIGINAL, LOSS)["base_study_id"]
-    wider = fx.table_analysis("tbl1", [4, 5, 8], "LOSS>Neutral", LOSS["points"])
-
-    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, wider, RISK, SEED])})
-
-    assert summary["skeleton"]["aliased"] == [{"from": LOSS["key"], "to": wider["key"]}]
-    _ANALYSES[wider["key"]] = wider
-    assert _entity(base_study_id, wider["key"]).id == (
-        StudyEntityAlias.query.get(_hash(base_study_id, LOSS["key"])).entity_id
-    )
-
-
-def test_reparse_never_aliases_an_analysis_read_from_other_rows(session):
-    # Same table and name, but rows of another task block: a different analysis.
-    base_study_id = _ingested(ORIGINAL, LOSS)["base_study_id"]
-    claims = {c.id for c in _claims(base_study_id, LOSS["key"])}
-    other_task = fx.table_analysis("tbl1", [9, 10], "Loss > Neutral", LOSS["points"])
-
-    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, other_task, RISK, SEED])})
-
-    assert summary["skeleton"]["aliased"] == []
-    assert summary["skeleton"]["rename_candidates"] == []
-    assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
-    assert StudyEntityAlias.query.count() == 0
-    # The claims stay on the history analysis, and the summary says so.
-    assert summary["skeleton"]["orphaned_claims"] == [
-        {
-            "key": LOSS["key"],
-            "class": "Analysis",
-            "entity_id": _entity(base_study_id, LOSS["key"]).id,
-            "claims": len(claims),
-            "reason": NO_SUCCESSOR,
-        }
-    ]
-
-
-def test_reparse_renaming_at_the_same_cells_links_a_candidate(session):
-    base_study_id = _ingested(ORIGINAL, LOSS, coordinate_sets=[LOSS["key"]])["base_study_id"]
-    claims = {c.id for c in _claims(base_study_id, LOSS["key"])}
-    renamed = fx.table_analysis("tbl1", [4, 5], "Loss > Baseline", LOSS["points"])
-
-    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, renamed, RISK, SEED])})
-
-    skeleton = summary["skeleton"]
-    assert skeleton["aliased"] == []
-    assert sorted(c["class"] for c in skeleton["rename_candidates"]) == [
-        "Analysis",
-        "CoordinateSet",
-    ]
-    assert {(c["from"], c["to"]) for c in skeleton["rename_candidates"]} == {
-        (LOSS["key"], renamed["key"])
-    }
-    # The claims stay on the old entity, linked to the candidate, so none is reported lost.
-    assert skeleton["orphaned_claims"] == []
-    assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
-    _ANALYSES[renamed["key"]] = renamed
-    link = StudyEntityCandidateLink.query.filter_by(
-        entity_id=_entity(base_study_id, LOSS["key"]).id
-    ).filter(StudyEntityCandidateLink.candidate_id == _entity(base_study_id, renamed["key"]).id)
-    assert link.count() == 1
-    candidate = _entity(base_study_id, renamed["key"])
-    assert not FieldClaim.query.filter_by(entity_id=candidate.id).count()
-
-
 def test_an_upload_is_refused_while_entity_hashes_are_stale(session):
     base_study_id = _ingested(ORIGINAL, GAIN)["base_study_id"]
     study_entity = StudyEntity.query.filter_by(
@@ -924,67 +1097,6 @@ def test_an_upload_is_refused_while_entity_hashes_are_stale(session):
         ingest_upload({"coordinate_parse": ORIGINAL, "record": _record(GAIN)})
     assert error.value.status_code == 422
     assert "STALE_ENTITY_HASHES" in str(error.value.errors)
-
-
-def test_two_old_analyses_overlapping_one_new_one_alias_neither(session):
-    first = fx.table_analysis("tbl1", [4, 5], "Loss > Neutral", LOSS["points"])
-    second = fx.table_analysis("tbl1", [6, 7], "Loss > Neutral", RISK["points"])
-    base_study_id = _ingested(fx.parse([first, second]), first, second)["base_study_id"]
-    both = fx.table_analysis("tbl1", [4, 5, 6, 7], "Loss > Neutral", LOSS["points"])
-
-    summary = ingest_upload({"coordinate_parse": fx.parse([both])})
-
-    skeleton = summary["skeleton"]
-    assert skeleton["aliased"] == []
-    assert StudyEntityAlias.query.count() == 0
-    assert {(o["key"], o["reason"]) for o in skeleton["orphaned_claims"]} == {
-        (first["key"], NO_SUCCESSOR),
-        (second["key"], NO_SUCCESSOR),
-    }
-    for parsed in (first, second):
-        assert _claims(base_study_id, parsed["key"])
-
-
-def test_reparse_onto_a_hash_another_entity_holds_is_a_conflict(session):
-    base_study_id = _ingested(ORIGINAL, LOSS)["base_study_id"]
-    claims = {c.id for c in _claims(base_study_id, LOSS["key"])}
-    wider = fx.table_analysis("tbl1", [4, 5, 8], "Loss > Neutral", LOSS["points"])
-    _ANALYSES[wider["key"]] = wider
-    holder = StudyEntity(
-        base_study_id=base_study_id,
-        entity_class="Analysis",
-        entity_hash=_hash(base_study_id, wider["key"]),
-        identity=analysis_identity("table", "tbl1", cells=[(4, 0)], name="held"),
-    )
-    session.add(holder)
-    session.flush()
-
-    summary = ingest_upload({"coordinate_parse": fx.parse([GAIN, wider, RISK, SEED])})
-
-    skeleton = summary["skeleton"]
-    assert skeleton["aliased"] == []
-    assert [(c["from"], c["to"], c["holder_id"]) for c in skeleton["alias_conflicts"]] == [
-        (LOSS["key"], wider["key"], holder.id)
-    ]
-    assert [(o["key"], o["reason"]) for o in skeleton["orphaned_claims"]] == [
-        (LOSS["key"], ALIAS_CONFLICT)
-    ]
-    assert {c.id for c in _claims(base_study_id, LOSS["key"])} == claims
-
-
-def test_reparse_with_overlapping_spans_at_another_place_is_no_rename(session):
-    # Spans 0-10 and 5-15 cover what 0-15 covers, but are another place to the record
-    # side's rename rule, so the parse side must not call them a rename either.
-    old = fx.text_analysis([(0, 10), (5, 15)], "Faces > Houses", [fx.point((1, 2, 3))])
-    base_study_id = _ingested(fx.parse([old], pmid="77777777"), old)["base_study_id"]
-    new = fx.text_analysis([(0, 15)], "Faces > Objects", [fx.point((1, 2, 3))])
-
-    summary = ingest_upload({"coordinate_parse": fx.parse([new], pmid="77777777")})
-
-    assert summary["skeleton"]["rename_candidates"] == []
-    assert StudyEntityCandidateLink.query.count() == 0
-    assert [o["key"] for o in summary["skeleton"]["orphaned_claims"]] == [old["key"]]
-    assert _claims(base_study_id, old["key"])
 
 
 def test_a_curated_condition_of_the_same_paper_is_not_reused(session):
@@ -1146,7 +1258,6 @@ NULL = fx.table_analysis("tbl3", [0], "Risk > Loss", [])
 ROI = fx.table_analysis(
     "tbl4", [0], "Amygdala ROI", [fx.point((20, -4, -18))], role="anchor", from_prior_study=True
 )
-_ANALYSES.update({a["key"]: a for a in (NULL, ROI)})
 
 
 def _outcome_record(*pairs):
@@ -1648,42 +1759,6 @@ def test_backfill_gives_a_clone_its_parent_role(session):
     )
     second = db.session.get(Analysis, second.id)
     assert (second.role, second.outcome) == ("result", "no_significant_effect")
-
-
-def test_a_rekeyed_relabel_moves_with_its_set_or_is_reported(session):
-    original = fx.parse([LOSS, PEAK])
-    base_study_id = ingest_upload({"coordinate_parse": original})["base_study_id"]
-    revision = _relabel_peak(base_study_id, original)
-
-    # The classifier re-reads the set from one more cell: the same set, re-keyed.
-    wider = fx.table_analysis("tbl3", [0, 1], PEAK["name"], [fx.point((8, 8, 8))])
-    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, wider])})
-    moved = _by_key(_current(base_study_id))[wider["key"]]
-    assert (moved.role, moved.relabelled_by) == ("anchor", revision["parse_id"])
-    assert summary["skeleton"]["relabels_kept"] == [
-        {
-            "key": wider["key"],
-            "role": "anchor",
-            "parse_role": "result",
-            "relabelled_by": revision["parse_id"],
-            "from": PEAK["key"],
-        }
-    ]
-    assert "relabels_dropped" not in summary["skeleton"]
-
-    # Read under another name, it may be another contrast: reported, not carried.
-    renamed = fx.table_analysis("tbl3", [0, 1], "Peak vs Baseline", [fx.point((8, 8, 8))])
-    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS, renamed])})
-    assert _by_key(_current(base_study_id))[renamed["key"]].relabelled_by is None
-    assert summary["skeleton"]["relabels_dropped"] == [
-        {
-            "key": wider["key"],
-            "role": "anchor",
-            "relabelled_by": revision["parse_id"],
-            "reason": RELABEL_RENAMED_REASON,
-            "renamed_to": renamed["key"],
-        }
-    ]
 
 
 def test_backfill_works_through_every_batch_and_commits_each(session, monkeypatch):

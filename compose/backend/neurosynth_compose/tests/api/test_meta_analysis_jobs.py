@@ -371,3 +371,166 @@ def test_list_jobs_returns_only_current_user_jobs(
         "arn:aws:states:us-east-1:execution:job2",
     }
     assert meta_ids == {"meta1", "meta2"}
+
+
+JOB_ID = "arn:aws:states:us-east-1:123456789012:execution:StateMachine:job"
+
+
+def _configure_runner_urls(app):
+    app.config.update(
+        {
+            "COMPOSE_RUNNER_STATUS_URL": "https://status.example",
+            "COMPOSE_RUNNER_LOGS_URL": "https://logs.example",
+        }
+    )
+
+
+def _store_running_job(username, **overrides):
+    payload = {
+        "job_id": JOB_ID,
+        "meta_analysis_id": "meta123",
+        "artifact_prefix": "job-prefix",
+        "status": "RUNNING",
+        "user_id": username,
+        "logs": [{"timestamp": 1, "message": "cached"}],
+    }
+    payload.update(overrides)
+    _store_job(payload)
+
+
+@pytest.mark.parametrize("status", ["SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"])
+def test_get_job_terminal_status_skips_lambda(
+    app, auth_client, fake_job_store, lambda_responses, user_data, status
+):
+    _configure_runner_urls(app)
+    _store_running_job(auth_client.username, status=status)
+
+    response = auth_client.get(f"/api/meta-analysis-jobs/{JOB_ID}")
+    assert response.status_code == 200
+    assert response.json["status"] == status
+    assert lambda_responses["calls"] == []
+
+
+def test_get_job_reuses_cached_status_response(
+    app, auth_client, fake_job_store, lambda_responses, user_data
+):
+    _configure_runner_urls(app)
+    _store_running_job(auth_client.username)
+    lambda_responses["set_response"](
+        "https://status.example", {"job_id": JOB_ID, "status": "RUNNING"}
+    )
+    lambda_responses["set_response"]("https://logs.example", {"events": []})
+
+    for _ in range(3):
+        response = auth_client.get(f"/api/meta-analysis-jobs/{JOB_ID}")
+        assert response.status_code == 200
+
+    status_calls = [
+        call
+        for call in lambda_responses["calls"]
+        if call["url"] == "https://status.example"
+    ]
+    assert len(status_calls) == 1
+    assert (
+        fake_job_store._ttl[f"compose:job-status:{JOB_ID}"]
+        == meta_analysis_jobs_resource.STATUS_CACHE_TTL_SECONDS
+    )
+
+
+def test_get_job_status_throttled_returns_stale_cached_job(
+    app, auth_client, fake_job_store, lambda_responses, user_data
+):
+    _configure_runner_urls(app)
+    _store_running_job(auth_client.username)
+    lambda_responses["set_response"](
+        "https://status.example",
+        meta_analysis_jobs_resource.ComposeRunnerThrottledError("HTTP 429"),
+    )
+
+    response = auth_client.get(f"/api/meta-analysis-jobs/{JOB_ID}")
+    assert response.status_code == 200
+    assert response.json["status"] == "RUNNING"
+    assert response.json["stale"] is True
+    assert response.json["logs"] == [{"timestamp": 1, "message": "cached"}]
+
+    cached = json.loads(fake_job_store.get(f"compose:jobs:{JOB_ID}").decode("utf-8"))
+    assert "stale" not in cached
+
+
+def test_get_job_logs_throttled_keeps_status_but_not_terminal(
+    app, auth_client, fake_job_store, lambda_responses, user_data
+):
+    _configure_runner_urls(app)
+    _store_running_job(auth_client.username)
+    lambda_responses["set_response"](
+        "https://status.example", {"job_id": JOB_ID, "status": "SUCCEEDED"}
+    )
+    lambda_responses["set_response"](
+        "https://logs.example",
+        meta_analysis_jobs_resource.ComposeRunnerThrottledError("HTTP 429"),
+    )
+
+    response = auth_client.get(f"/api/meta-analysis-jobs/{JOB_ID}")
+    assert response.status_code == 200
+    assert response.json["status"] == "SUCCEEDED"
+    assert response.json["stale"] is True
+    assert response.json["logs"] == [{"timestamp": 1, "message": "cached"}]
+
+    # The terminal status is not persisted until logs are refreshed, so the
+    # next poll fetches logs again instead of short-circuiting.
+    cached = json.loads(fake_job_store.get(f"compose:jobs:{JOB_ID}").decode("utf-8"))
+    assert cached["status"] == "RUNNING"
+
+    lambda_responses["set_response"](
+        "https://logs.example",
+        {"events": [{"timestamp": 2, "message": "workflow.success"}]},
+    )
+    response = auth_client.get(f"/api/meta-analysis-jobs/{JOB_ID}")
+    assert response.status_code == 200
+    assert "stale" not in response.json
+    assert response.json["logs"] == [{"timestamp": 2, "message": "workflow.success"}]
+
+    cached = json.loads(fake_job_store.get(f"compose:jobs:{JOB_ID}").decode("utf-8"))
+    assert cached["status"] == "SUCCEEDED"
+
+
+class _FakeResponse:
+    def __init__(self, status_code, payload=None, headers=None):
+        self.status_code = status_code
+        self._payload = payload or {}
+        self.headers = headers or {}
+
+    def json(self):
+        return self._payload
+
+
+def test_call_lambda_retries_throttled_responses(monkeypatch):
+    responses = [
+        _FakeResponse(429, headers={"Retry-After": "1"}),
+        _FakeResponse(503),
+        _FakeResponse(200, {"status": "RUNNING"}),
+    ]
+    sleeps = []
+    monkeypatch.setattr(
+        meta_analysis_jobs_resource.requests,
+        "post",
+        lambda *args, **kwargs: responses.pop(0),
+    )
+    monkeypatch.setattr(meta_analysis_jobs_resource.time, "sleep", sleeps.append)
+
+    result = meta_analysis_jobs_resource.call_lambda("https://status.example", {})
+
+    assert result == {"status": "RUNNING"}
+    assert sleeps == [1.0, 1.0]
+
+
+def test_call_lambda_raises_throttled_after_max_retries(monkeypatch):
+    monkeypatch.setattr(
+        meta_analysis_jobs_resource.requests,
+        "post",
+        lambda *args, **kwargs: _FakeResponse(429),
+    )
+    monkeypatch.setattr(meta_analysis_jobs_resource.time, "sleep", lambda _: None)
+
+    with pytest.raises(meta_analysis_jobs_resource.ComposeRunnerThrottledError):
+        meta_analysis_jobs_resource.call_lambda("https://status.example", {})

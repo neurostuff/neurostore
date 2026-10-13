@@ -2,8 +2,7 @@
 
 `record_entities` says which entity each item of a record is (its class, its
 identity and its hash, see `StudyEntity`); `sync_record_entities` finds or
-creates those entities for a base study. `rehash_entity` moves an entity to a
-new hash, keeping the old one as an alias, and `rehash_entities` re-hashes every
+creates those entities for a base study. `rehash_entities` re-hashes every
 entity after `ENTITY_HASH_VERSION` changes.
 """
 
@@ -14,14 +13,10 @@ from dataclasses import dataclass, field
 from typing import NamedTuple
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert
-from study_schema.keys import normalize_name
 
 from neurostore.database import db
 from neurostore.models.data import (
-    Analysis,
     StudyEntity,
-    StudyEntityAlias,
     StudyEntityCandidateLink,
     entity_name_key,
     sibling_identity,
@@ -57,17 +52,14 @@ ENTITY_CLASSES = frozenset(
     ["Study", *(cls for lists in CHILD_LISTS.values() for _, cls in lists)]
 )
 
-#: Identified by the cells or spans they were read from, not under a parent.
-LOCATED_CLASSES = ("Analysis", "CoordinateSet")
+#: Identified by their content key (the parse's `ParsedAnalysis.key`), not
+#: under a parent.
+CONTENT_KEYED_CLASSES = ("Analysis", "CoordinateSet")
 
 #: The field that names an item, where it is not `name`. A Table is named by
 #: its printed number, an Acquisition by its modality.
 NAME_FIELDS = {"Table": "table_number", "Acquisition": "modality"}
 
-#: StudyEntityAlias.reason values.
-CELLS_CHANGED = "cells_changed"
-PARENT_REHASHED = "parent_rehashed"
-VERSION_BUMPED = "version_bumped"
 #: StudyEntityCandidateLink.reason value.
 RENAMED_BY_EXTRACTOR = "renamed_by_extractor"
 
@@ -100,15 +92,15 @@ class RecordEntity:
 def record_entities(base_study_id, record, locate=None):
     """Every entity of ``record``, each parent before its children.
 
-    ``locate(entity_class, item)`` returns the `analysis_identity` of an
-    Analysis or CoordinateSet item, or None when its cells or spans are unknown.
+    ``locate(entity_class, item)`` returns the identity of an Analysis or
+    CoordinateSet item, its content key, or None when it has none.
 
     Returns ``(entities, unlocated, unidentified, duplicates)``: the
-    RecordEntity of each item; the paths of located-class items with no
-    locator; the paths of entity lists that are not lists and of their items
-    that are not objects; and the paths of items whose hash an earlier item of
-    the record already has (one analysis read twice from the same cells under
-    the same name). None of the last three is in ``entities``.
+    RecordEntity of each item; the paths of content-keyed items with no
+    content key; the paths of entity lists that are not lists and of their
+    items that are not objects; and the paths of items whose hash an earlier
+    item of the record already has (two items naming one content key). None
+    of the last three is in ``entities``.
     """
     study = RecordEntity("Study", "", record, "", study_entity_hash(base_study_id, "Study", ""))
     entities, unlocated, unidentified, duplicates = [study], [], [], []
@@ -129,7 +121,7 @@ def record_entities(base_study_id, record, locate=None):
                 if not isinstance(item, dict):
                     unidentified.append(path)
                     continue
-                if entity_class in LOCATED_CLASSES:
+                if entity_class in CONTENT_KEYED_CLASSES:
                     identity = locate(entity_class, item) if locate else None
                     if identity is None:
                         unlocated.append(path)
@@ -172,22 +164,19 @@ def record_entities(base_study_id, record, locate=None):
 def sync_record_entities(base_study, record, locate=None, config=None):
     """Find or create the entity of every item of ``record``; set each `.entity`.
 
-    An item reaches its entity by its hash or, failing that, by a hash the
-    entity used to have. Anything else is a new entity, and the entity the
-    record stopped naming keeps its claims. When a new item and an entity the
-    record no longer names are each the only one in their slot (see
-    `_rename_candidates`), the pair is recorded as a 'renamed_by_extractor'
-    StudyEntityCandidateLink for a curator to confirm.
+    An item reaches its entity by its hash. Anything else is a new entity,
+    and the entity the record stopped naming keeps its claims. When a new
+    item and an entity the record no longer names are each the only one in
+    their slot (see `_rename_candidates`), the pair is recorded as a
+    'renamed_by_extractor' StudyEntityCandidateLink for a curator to confirm.
 
     Raises StaleEntityHashes while the base study's entities are still at an
     older ENTITY_HASH_VERSION: an item would miss its entity and create a
     second one. Run `rehash_entities` first.
 
     Returns a dict: entities (RecordEntity list), created, matched,
-    rename_candidates ([{class, from, to, entity_id, candidate_id}]),
-    released_aliases (paths of new items whose hash was an alias of another
-    entity; the alias is dropped), and unlocated, unidentified and duplicates
-    (see record_entities).
+    rename_candidates ([{class, from, to, entity_id, candidate_id}]), and
+    unlocated, unidentified and duplicates (see record_entities).
     """
     entities, unlocated, unidentified, duplicates = record_entities(
         base_study.id, record, locate
@@ -210,15 +199,9 @@ def sync_record_entities(base_study, record, locate=None, config=None):
             "ENTITY_HASH_VERSION; run rehash_entities() before ingesting"
         )
     by_hash = {e.entity_hash: e for e in existing}
-    by_id = {e.id: e for e in existing}
-    aliases = dict(
-        db.session.query(StudyEntityAlias.entity_hash, StudyEntityAlias.entity_id)
-        .join(StudyEntity, StudyEntity.id == StudyEntityAlias.entity_id)
-        .filter(StudyEntity.base_study_id == base_study.id)
-    )
-    chains = _rename_chains(by_id)
+    chains = _rename_chains({e.id for e in existing})
     claimed = set()
-    result = {"created": 0, "matched": 0, "rename_candidates": [], "released_aliases": []}
+    result = {"created": 0, "matched": 0, "rename_candidates": []}
 
     def take(record_entity, entity):
         record_entity.entity = entity
@@ -226,30 +209,17 @@ def sync_record_entities(base_study, record, locate=None, config=None):
         if config is not None:
             entity.last_seen_config_id = config.id
 
-    def by_alias(entity_hash):
-        return by_id.get(aliases.get(entity_hash))
-
     for depth in sorted({e.depth for e in entities}):
-        pending = [e for e in entities if e.depth == depth]
-        # Live hashes first: an item that reaches an entity through an alias
-        # must not take the entity another item names by its live hash.
-        for lookup in (by_hash.get, by_alias):
-            unmatched = []
-            for record_entity in pending:
-                entity = lookup(record_entity.entity_hash)
-                if entity is not None and entity.id not in claimed:
-                    take(record_entity, entity)
-                    result["matched"] += 1
-                else:
-                    unmatched.append(record_entity)
-            pending = unmatched
+        pending = []
+        for record_entity in (e for e in entities if e.depth == depth):
+            entity = by_hash.get(record_entity.entity_hash)
+            if entity is not None:
+                take(record_entity, entity)
+                result["matched"] += 1
+            else:
+                pending.append(record_entity)
 
         for record_entity in pending:
-            if aliases.pop(record_entity.entity_hash, None) is not None:
-                StudyEntityAlias.query.filter_by(
-                    entity_hash=record_entity.entity_hash
-                ).delete()
-                result["released_aliases"].append(record_entity.path)
             entity = StudyEntity(
                 base_study_id=base_study.id,
                 entity_class=record_entity.entity_class,
@@ -276,8 +246,8 @@ def sync_record_entities(base_study, record, locate=None, config=None):
             result["rename_candidates"].append(
                 {
                     "class": old.entity_class,
-                    "from": _name(old.entity_class, old.identity),
-                    "to": _name(old.entity_class, record_entity.identity),
+                    "from": old.identity[0],
+                    "to": record_entity.identity[0],
                     "entity_id": old.id,
                     "candidate_id": record_entity.entity.id,
                 }
@@ -293,7 +263,7 @@ def sync_record_entities(base_study, record, locate=None, config=None):
     }
 
 
-def _rename_chains(by_id):
+def _rename_chains(entity_ids):
     """entity id -> (chain id, ids that link onward), over 'renamed_by_extractor' links.
 
     Entities joined by such links are one thing seen under several names.
@@ -302,7 +272,7 @@ def _rename_chains(by_id):
         db.session.query(StudyEntityCandidateLink.entity_id, StudyEntityCandidateLink.candidate_id)
         .filter(
             StudyEntityCandidateLink.reason == RENAMED_BY_EXTRACTOR,
-            StudyEntityCandidateLink.entity_id.in_(list(by_id)),
+            StudyEntityCandidateLink.entity_id.in_(list(entity_ids)),
         )
         .all()
     )
@@ -324,16 +294,13 @@ def _rename_candidates(created, existing, claimed, chains=None):
     """(new item, unclaimed old entity) pairs that are each alone in their slot.
 
     An entity under a parent is slotted by its class, parent and ordinal, and
-    only when both are named. An Analysis or CoordinateSet is slotted by its
-    class and where it was read (origin, table, cells or spans), whatever the
-    two names, so one read under a different name at the same place (or a row
-    that the version bump gave the empty name) becomes a candidate rather than
-    a silent split. Two contrasts at one place that are both read again are
-    both claimed by their hashes, so neither is a candidate.
+    only when both are named. An Analysis or CoordinateSet has no slot: its
+    content key is its name, space and points, so a renamed one is a new
+    entity, never a candidate.
 
     Old entities already joined by rename links (A renamed to B) count as one
     chain, and the new item links to the chain's newest member, so a third name
-    at the same place is a candidate too.
+    in the same slot is a candidate too.
     """
     chains = chains or {}
     slots = defaultdict(list)
@@ -365,73 +332,27 @@ def _rename_candidates(created, existing, claimed, chains=None):
 
 
 class Slot(NamedTuple):
-    """Where an entity sits: the read location (located classes) or the
-    parent id (siblings), and its ordinal (siblings only)."""
+    """Where a sibling sits: its class, its parent's id and its ordinal."""
 
     entity_class: str
-    scope: object
-    position: object = None
+    parent_id: str
+    ordinal: int
 
 
 def _slot(entity_class, identity, parent_id):
-    if not isinstance(identity, list):
+    if parent_id is None or identity[0] is None:
         return None
-    if entity_class in LOCATED_CLASSES:
-        return Slot(entity_class, tuple(identity[:3]))
-    if parent_id is not None and identity[0] is not None:
-        return Slot(entity_class, parent_id, identity[1])
-    return None
-
-
-def _name(entity_class, identity):
-    return identity[3] if entity_class in LOCATED_CLASSES else identity[0]
-
-
-def rehash_entity(entity, new_hash, reason, config=None, identity=None):
-    """Give ``entity`` ``new_hash``, keeping its old hash as an alias.
-
-    Idempotent and safe to repeat in any order (A to B, back to A, to B again):
-    the alias row is upserted, and a hash the entity takes back stops being an
-    alias. The entity's children are re-hashed under it ('parent_rehashed').
-    """
-    if identity is not None:
-        entity.identity = identity
-    if new_hash == entity.entity_hash:
-        return
-    _move_hash(entity, new_hash, reason, config)
-    for child in StudyEntity.query.filter_by(parent_id=entity.id).all():
-        rehash_entity(child, _expected_hash(child, new_hash), PARENT_REHASHED, config)
-
-
-def _move_hash(entity, new_hash, reason, config=None):
-    holder = StudyEntity.query.filter_by(entity_hash=new_hash).first()
-    if holder is not None and holder.id != entity.id:
-        raise ValueError(f"{new_hash} is already the hash of entity {holder.id}")
-    old_hash = entity.entity_hash
-    StudyEntityAlias.query.filter_by(entity_hash=new_hash).delete()
-    entity.entity_hash = new_hash
-    db.session.flush()
-    values = {
-        "entity_id": entity.id,
-        "reason": reason,
-        "config_id": config.id if config is not None else None,
-    }
-    db.session.execute(
-        insert(StudyEntityAlias)
-        .values(entity_hash=old_hash, **values)
-        .on_conflict_do_update(index_elements=["entity_hash"], set_=values)
-    )
+    return Slot(entity_class, parent_id, identity[1])
 
 
 def rehash_entities(base_study_id=None, batch_size=500):
     """Re-hash every entity (of one base study, if given) under the current version.
 
-    Run after a change to ENTITY_HASH_VERSION or the hash rule; each moved
-    entity keeps its old hash as a 'version_bumped' alias. Identities are
-    re-derived first (see `current_identity`) and stored with the new hash. Works through
-    ``batch_size`` base studies at a time and commits after each batch, so an
-    interrupted run can simply be run again. Returns the number of entities
-    moved.
+    Run after a change to ENTITY_HASH_VERSION or the hash rule. Sibling
+    identities are re-derived first (see `current_identity`) and stored with the
+    new hash. Works through ``batch_size`` base studies at a time and commits
+    after each batch, so an interrupted run can simply be run again. Returns the
+    number of entities moved.
     """
     studies = sa.select(StudyEntity.base_study_id).distinct().order_by(
         StudyEntity.base_study_id
@@ -446,27 +367,17 @@ def rehash_entities(base_study_id=None, batch_size=500):
     return moved
 
 
-def current_identity(entity_class, identity, analysis_name=None):
+def current_identity(identity):
     """``identity`` as the current rule writes it.
 
-    An Analysis or CoordinateSet identity written before the name was part of it
-    (the string ``origin|table|locator``) becomes ``[origin, table, locator,
-    name]``, the name that of its `analyses` row (``analysis_name``; the empty
-    name when it has none). Neither the origin nor the locator contains `|`, so
-    a `|` in the table id is kept in the table id. Every name, located or
-    sibling, is normalized again, so a change to `normalize_name` reaches stored
-    rows. A sibling's ordinal is kept; `_rehash_batch` moves it on if two
-    siblings come to share a name.
+    Every sibling name is normalized again, so a change to `normalize_name`
+    reaches stored rows. A sibling's ordinal is kept; `_rehash_batch` moves it
+    on if two siblings come to share a name. A content key is a string that
+    study_schema writes and the ingester checks, so it is returned unchanged.
     """
-    if entity_class in LOCATED_CLASSES:
-        if isinstance(identity, str):
-            origin, rest = identity.split("|", 1)
-            table_id, located = rest.rsplit("|", 1)
-            return [origin, table_id, located, entity_name_key(analysis_name) or ""]
-        return [*identity[:3], normalize_name(identity[3])]
-    if isinstance(identity, list):
-        return sibling_identity(identity[0], identity[1])
-    return identity
+    if not isinstance(identity, list):
+        return identity
+    return sibling_identity(identity[0], identity[1])
 
 
 def _rehash_batch(base_study_ids):
@@ -478,44 +389,23 @@ def _rehash_batch(base_study_ids):
             StudyEntity.entity_class,
             StudyEntity.identity,
             StudyEntity.entity_hash,
-            Analysis.name.label("analysis_name"),
         )
-        .outerjoin(Analysis, Analysis.id == StudyEntity.analysis_id)
         .where(StudyEntity.base_study_id.in_(base_study_ids))
         .order_by(StudyEntity.created_at, StudyEntity.id)
     ).all()
     children = defaultdict(list)
     for row in rows:
         children[row.parent_id].append(row)
-    ids, old_hashes, new_hashes, identities = [], [], [], []
+    ids, new_hashes, identities = [], [], []
     stack = [(None, None)]
     while stack:
         parent_id, parent_hash = stack.pop()
         taken = set()
-        current = [
-            (row, current_identity(row.entity_class, row.identity, row.analysis_name))
-            for row in children[parent_id]
-        ]
-        # A located row already in the current form keeps its identity before
-        # one that only now comes to it.
-        current.sort(key=lambda p: p[0].entity_class in LOCATED_CLASSES and p[1] != p[0].identity)
-        for row, identity in current:
+        for row in children[parent_id]:
+            identity = current_identity(row.identity)
             expected = study_entity_hash(
                 row.base_study_id, row.entity_class, identity, parent_hash
             )
-            if expected in taken and row.entity_class in LOCATED_CLASSES:
-                # Two located rows came to share a name at one place. Merging
-                # them would move claims, so this one keeps its identity.
-                logger.warning(
-                    "entity %s: %s is already another entity's; keeping %s",
-                    row.id,
-                    identity,
-                    row.identity,
-                )
-                identity = row.identity
-                expected = study_entity_hash(
-                    row.base_study_id, row.entity_class, identity, parent_hash
-                )
             while isinstance(identity, list) and expected in taken:
                 identity = [identity[0], identity[1] + 1]
                 expected = study_entity_hash(
@@ -524,28 +414,12 @@ def _rehash_batch(base_study_ids):
             taken.add(expected)
             if expected != row.entity_hash:
                 ids.append(row.id)
-                old_hashes.append(row.entity_hash)
                 new_hashes.append(expected)
                 identities.append(json.dumps(identity))
             stack.append((row.id, expected))
     if not ids:
         return 0
-    # An old hash that another row now holds is not an alias.
-    live = set(new_hashes)
-    params = {
-        "ids": ids,
-        "new": new_hashes,
-        "identities": identities,
-        "alias_ids": [i for i, h in zip(ids, old_hashes) if h not in live],
-        "old": [h for h in old_hashes if h not in live],
-        "reason": VERSION_BUMPED,
-    }
-    db.session.execute(
-        sa.text(
-            "DELETE FROM study_entity_aliases WHERE entity_hash = ANY(CAST(:new AS text[]))"
-        ),
-        params,
-    )
+    params = {"ids": ids, "new": new_hashes, "identities": identities}
     # Through a placeholder first: a row may take the hash another row of the
     # batch still holds, and the unique constraint is checked row by row.
     db.session.execute(
@@ -565,23 +439,7 @@ def _rehash_batch(base_study_ids):
         ),
         params,
     )
-    db.session.execute(
-        sa.text(
-            "INSERT INTO study_entity_aliases (entity_hash, entity_id, reason) "
-            "SELECT m.old_hash, m.id, :reason "
-            "FROM unnest(CAST(:old AS text[]), CAST(:alias_ids AS text[])) AS m(old_hash, id) "
-            "ON CONFLICT (entity_hash) DO UPDATE SET entity_id = excluded.entity_id, "
-            "reason = excluded.reason, config_id = NULL"
-        ),
-        params,
-    )
     return len(ids)
-
-
-def _expected_hash(entity, parent_hash):
-    return study_entity_hash(
-        entity.base_study_id, entity.entity_class, entity.identity, parent_hash
-    )
 
 
 def _get(obj, dotted):

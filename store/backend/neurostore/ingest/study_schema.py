@@ -10,7 +10,9 @@ One writer for what the pipeline hands neurostore, taking four kinds of upload:
 
 The shapes are study_schema's (neuroimaging-paper-parse and neuroimaging-study-extraction),
 validated against the JSON Schema that package ships. Analyses are keyed by the parse's
-cell keys (``ParsedAnalysis.key``), stored as ``Analysis.source_id``.
+content keys (``ParsedAnalysis.key``: the analysis's name, space and points), stored as
+``Analysis.source_id``, so the same analysis read from another table or sentence is the
+same analysis, and a renamed one or one with a changed point is a new one.
 
 Each base study has one pipeline-owned Study (``source = STUDY_SOURCE``) holding the
 current parse version; ``Study.source_id`` is that parse's ``parse_id``. When a new
@@ -21,15 +23,11 @@ Every parse uploaded is also kept whole as a PipelineStudyResult of the PARSE_PI
 pipeline.
 
 Claims (field_claims) hang off StudyEntity rows identified by ``entity_hash``
-(``study_entity_hash``); for an analysis or coordinate set the hash covers every cell or
-span it was read from, taken from a stored parse that holds its key. An analysis whose
-cells survive a new version keeps its claims untouched. A revision's split and merge
-verdicts copy the claims, evidence and runs on the old entity to each replacement, each
-copy naming its origin in ``carried_from``. A new original parse that reads an analysis
-from other, overlapping cells of the same table under the same normalized name re-hashes its
-entities instead, keeping the old hash as a ``cells_changed`` alias so a record that read the
-older parse still resolves. One read from the same cells under another name is linked to the
-old entity as a rename candidate; its claims are not moved.
+(``study_entity_hash``); for an analysis or coordinate set the hash covers its content key,
+once a stored parse holds that key. An analysis a new version extracts unchanged keeps its
+key and its claims untouched; one it drops keeps its claims on its history analysis
+(``orphaned_claims``). A revision's split and merge verdicts copy the claims, evidence and
+runs on the old entity to each replacement, each copy naming its origin in ``carried_from``.
 Record keys that are positional rather than content keys, or that no stored parse holds,
 are set aside (the record summary's ``parked`` and ``claims.parked_entities``), never made
 entities. A positional key stays set aside until a record names it by content; a key no
@@ -52,7 +50,6 @@ import json
 import re
 from collections import Counter
 from datetime import datetime, timezone
-from typing import NamedTuple
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import distinct_on
@@ -60,7 +57,7 @@ from sqlalchemy.exc import IntegrityError
 from jsonschema import validators
 from study_schema import keys as parse_keys
 from study_schema.jsonschema import load as load_json_schema
-from study_schema.models.paper_parse import CorrectionKind
+from study_schema.models.paper_parse import CorrectionKind, ParsedAnalysis
 from study_schema.statistics import point_side
 
 from neurostore.coordinate_spaces import normalize_space
@@ -72,11 +69,8 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
 )
 from neurostore.ingest.study_entities import (
-    CELLS_CHANGED,
     CHILD_LISTS,
-    RENAMED_BY_EXTRACTOR,
-    _slot,
-    rehash_entity,
+    CONTENT_KEYED_CLASSES,
     sync_record_entities,
 )
 from neurostore.models.data import (
@@ -84,7 +78,6 @@ from neurostore.models.data import (
     PIPELINE_STUDY_SOURCES,
     RECORD_SCHEMA_NAME,
     STUDY_SOURCE,
-    analysis_identity,
     study_entity_hash,
 )
 from neurostore.models import (
@@ -104,8 +97,6 @@ from neurostore.models import (
     PointValue,
     Study,
     StudyEntity,
-    StudyEntityAlias,
-    StudyEntityCandidateLink,
     Table,
 )
 from neurostore.services.has_media_flags import recompute_media_flags
@@ -125,10 +116,6 @@ OUTCOME_WITHHELD_REASON = (
     "as a claim and applied if the set's role becomes result"
 )
 
-# Entities a record names by parse key, hashed by the cells or spans behind that key, so a
-# split or merge moves their claims.
-PARSE_KEYED_CLASSES = ("Analysis", "CoordinateSet")
-
 # The storage schema's unique_key_slots: the only nested lists a claim path may index.
 DECLARED_KEYS = {
     "Cell": ("term", "level"),
@@ -146,22 +133,21 @@ SUPERSEDED_REASON = (
 )
 DROPPED_REASON = "the record read an older parse that held this key; the current one does not"
 
-# A content key ends in 12 hex digits of its cells' or spans' hash (study_schema.keys).
-# pondie records still carry positional ``<table_id>#<ordinal>`` / ``text#<N>`` keys until
-# pondie moves to content keys; those are held, never minted into entities, since an
-# ordinal re-addresses claims.
-_CONTENT_KEY = re.compile(r"[^#]+#[0-9a-f]{12}")
+# A content key is ``analysis#`` and 16 hex digits of its name, space and points' hash
+# (study_schema.keys). pondie records still carry positional ``<table_id>#<ordinal>`` /
+# ``text#<N>`` keys until pondie moves to content keys; those are held, never minted into
+# entities, since an ordinal re-addresses claims.
+_CONTENT_KEY = re.compile(r"analysis#[0-9a-f]{16}")
 POSITIONAL_KEY_REASON = (
     "positional key: claims are keyed only by content keys (study_schema.keys), "
     "which pondie records carry once they are migrated"
 )
-UNKNOWN_KEY_REASON = "no stored parse of this paper holds the key, so it has no cells to hash"
+UNKNOWN_KEY_REASON = "no stored parse of this paper holds the key, so no analysis has it"
 
 # Why a superseded analysis's claims stayed on it (``skeleton.orphaned_claims[].reason``).
 NO_SUCCESSOR = "no_successor"
-ALIAS_CONFLICT = "alias_conflict"
 NOT_CARRIED = "not_carried"
-ORPHAN_REASONS = (NO_SUCCESSOR, ALIAS_CONFLICT, NOT_CARRIED)
+ORPHAN_REASONS = (NO_SUCCESSOR, NOT_CARRIED)
 
 # Why a record analysis's cells set no conditions (``record.condition_conflicts``).
 BOTH_DIRECTIONS = "both_directions"
@@ -330,25 +316,11 @@ def _validate(name, document):
 
 
 def _expected_key(analysis):
-    if analysis["origin"] == "table":
-        if not analysis.get("table_id") or not analysis.get("cells"):
-            return None
-        return parse_keys.table_key(
-            analysis["table_id"],
-            ((c["row"], c["column_group"]) for c in analysis["cells"]),
-            analysis["name"],
-        )
-    if not analysis.get("text_spans"):
-        return None
-    return parse_keys.span_key(
-        analysis["origin"],
-        ((s["start_char"], s["end_char"]) for s in analysis["text_spans"]),
-        analysis["name"],
-    )
+    return parse_keys.key_for(ParsedAnalysis.model_validate(analysis))
 
 
 def _check_keys(parse):
-    """Every key is the one its cells or spans give, and no two analyses share one."""
+    """Every key is the one its name, space and points give, and no two analyses share one."""
     errors, seen = [], set()
     for index, analysis in enumerate(parse["analyses"]):
         expected = _expected_key(analysis)
@@ -371,7 +343,7 @@ def _check_keys(parse):
         seen.add(analysis["key"])
     if errors:
         abort_unprocessable(
-            "Analysis keys must be derived from their cells or spans.",
+            "Analysis keys must be derived from their name, space and points.",
             errors[:_MAX_REPORTED_ERRORS],
         )
 
@@ -706,7 +678,7 @@ def _held_keys(base_study):
 
 
 def _record_keys(record):
-    """The content keys a record names for its parse-keyed entities."""
+    """The content keys a record names for its content-keyed entities."""
     keys = set()
     for value in record.values():
         if not isinstance(value, list):
@@ -714,7 +686,7 @@ def _record_keys(record):
         for item in value:
             if not isinstance(item, dict):
                 continue
-            for cls in PARSE_KEYED_CLASSES:
+            for cls in CONTENT_KEYED_CLASSES:
                 key = _record_key(cls, item)
                 if key and is_content_key(key):
                     keys.add(key)
@@ -755,8 +727,7 @@ def _resolve_set_aside(base_study, new_keys):
             PipelineAnalysisResult.base_study_id == base_study.id,
             PipelineAnalysisResult.source_table_analysis.in_(keys),
         ):
-            key = _current_key(base_study, row.source_table_analysis)
-            analysis = _analysis_for_key(base_study, key)
+            analysis = _analysis_for_key(base_study, row.source_table_analysis)
             row.analysis_id = analysis.id if analysis is not None else None
             row.status = "SUCCESS" if analysis is not None else "FAILURE"
         resolved.append({"config_id": config.id, "keys": keys})
@@ -864,21 +835,10 @@ def _apply_parse(study, parse, parsed_paper, user):
                 )
             analysis.study = history
             counts["superseded"] += 1
-        same, renamed = [], {}
-        if not revision_of:
-            moved, same, renamed = _alias_rekeyed(base_study, superseded, uploaded, existing)
-            counts.update(moved)
-        counts["orphaned_claims"] = _orphaned_claims(base_study, superseded, parse, counts)
-        carried = {
-            new_key: existing[old_key]
-            for old_key, new_key in same
-            if existing[old_key].relabelled_by is not None
-        }
-        dropped = _relabels_dropped(superseded, carried, renamed, revision_of)
+        counts["orphaned_claims"] = _orphaned_claims(base_study, superseded, parse)
+        dropped = _relabels_dropped(superseded, revision_of)
         if dropped:
             counts["relabels_dropped"] = dropped
-    else:
-        carried = {}
 
     relabelled = {
         v["key"] for v in parse.get("verdicts") or [] if v["verdict"] == "relabel"
@@ -895,26 +855,19 @@ def _apply_parse(study, parse, parsed_paper, user):
         analysis.description = parsed.get("description")
         analysis.order = order
         role = parsed["role"]
-        kept_role = analysis.role
-        origin = carried.get(parsed["key"]) if analysis.relabelled_by is None else None
-        if origin is not None:
-            # The same set as a relabelled one this parse re-keyed: the relabel moves with it.
-            analysis.relabelled_by = origin.relabelled_by
-            kept_role = origin.role
         if parsed["key"] in relabelled:
             analysis.relabelled_by = parse["parse_id"]
-        elif analysis.relabelled_by is not None and role != kept_role:
+        elif analysis.relabelled_by is not None and role != analysis.role:
             # A reviewer's relabel is a correction: no later parse's role replaces it.
-            kept = {
-                "key": parsed["key"],
-                "role": kept_role,
-                "parse_role": role,
-                "relabelled_by": analysis.relabelled_by,
-            }
-            if origin is not None:
-                kept["from"] = origin.source_id
-            counts.setdefault("relabels_kept", []).append(kept)
-            role = kept_role
+            counts.setdefault("relabels_kept", []).append(
+                {
+                    "key": parsed["key"],
+                    "role": analysis.role,
+                    "parse_role": role,
+                    "relabelled_by": analysis.relabelled_by,
+                }
+            )
+            role = analysis.role
         was_result = analysis.id is not None and analysis.role in OUTCOME_ROLES
         analysis.role = role
         if analysis.role not in OUTCOME_ROLES:
@@ -1033,169 +986,38 @@ def _set_points(analysis, parsed, user):
         analysis.points.append(point)
 
 
-def _alias_rekeyed(base_study, superseded, uploaded, existing):
-    """Re-hash the entities of analyses a new parse reads from other cells.
-
-    A dropped and an added analysis are the same one when, within one table (or one
-    origin, for text and figures), they share a normalized name and at least one cell or
-    span, and each is the other's only such match. Its entities take the new hash and keep
-    the old one as an alias, so claims stay put rather than being copied. When the new hash
-    is already another entity's, the pair is reported under ``alias_conflicts`` and nothing
-    moves.
-
-    An added analysis read from exactly the cells or spans of a dropped one, under another
-    name, is a different contrast or a rename; which, a curator decides. Its entity is
-    linked to the old one as a 'renamed_by_extractor' candidate (``rename_candidates``) and
-    the old entity keeps its claims. A revision says all of this with verdicts instead.
-    """
-    added = [a for a in uploaded if a["key"] not in existing]
-    old = {a.source_id: (a, _located(a.metadata_, a.name)) for a in superseded}
-    new = {a["key"]: (a, _located(a)) for a in added}
-
-    def unique_pairs(match):
-        forward = {k: [n for n in new if match(old[k][1], new[n][1])] for k in old}
-        backward = {n: [k for k in old if n in forward[k]] for n in new}
-        return [
-            (k, found[0])
-            for k, found in forward.items()
-            if len(found) == 1 and len(backward[found[0]]) == 1
-        ]
-
-    def same_analysis(a, b):
-        return a.place == b.place and a.name == b.name and bool(a.parts & b.parts)
-
-    def same_place_other_name(a, b):
-        return a.slot == b.slot and a.name != b.name
-
-    result = {"aliased": [], "alias_conflicts": [], "rename_candidates": []}
-    same = unique_pairs(same_analysis)
-    for old_key, new_key in same:
-        analysis, parsed = old[old_key][0], new[new_key][0]
-        rehashed = False
-        for entity_class in PARSE_KEYED_CLASSES:
-            entity = _stored_entity(base_study, entity_class, analysis)
-            if entity is None:
-                continue
-            identity = _analysis_identity(parsed)
-            new_hash = study_entity_hash(base_study.id, entity_class, identity)
-            holder = StudyEntity.query.filter_by(entity_hash=new_hash).first()
-            if holder is not None and holder.id != entity.id:
-                result["alias_conflicts"].append(
-                    {
-                        "class": entity_class,
-                        "from": old_key,
-                        "to": new_key,
-                        "entity_id": entity.id,
-                        "holder_id": holder.id,
-                    }
-                )
-                continue
-            rehash_entity(entity, new_hash, CELLS_CHANGED, identity=identity)
-            rehashed = True
-        if rehashed:
-            # One pair per analysis, however many of its entity classes moved.
-            result["aliased"].append({"from": old_key, "to": new_key})
-    for old_key, new_key in unique_pairs(same_place_other_name):
-        analysis, parsed = old[old_key][0], new[new_key][0]
-        for entity_class in PARSE_KEYED_CLASSES:
-            entity = _stored_entity(base_study, entity_class, analysis)
-            if entity is None:
-                continue
-            identity = _analysis_identity(parsed)
-            new_hash = study_entity_hash(base_study.id, entity_class, identity)
-            if db.session.get(StudyEntityAlias, new_hash) is not None:
-                # The new name is a hash some entity used to have; the record that names
-                # it resolves there, so no candidate is guessed here.
-                continue
-            candidate = StudyEntity.query.filter_by(entity_hash=new_hash).first()
-            if candidate is None:
-                candidate = StudyEntity(
-                    base_study_id=base_study.id,
-                    entity_class=entity_class,
-                    entity_hash=new_hash,
-                    identity=identity,
-                )
-                db.session.add(candidate)
-                db.session.flush()
-            link = (entity.id, candidate.id, RENAMED_BY_EXTRACTOR)
-            if db.session.get(StudyEntityCandidateLink, link) is None:
-                db.session.add(
-                    StudyEntityCandidateLink(
-                        entity_id=entity.id,
-                        candidate_id=candidate.id,
-                        reason=RENAMED_BY_EXTRACTOR,
-                    )
-                )
-            result["rename_candidates"].append(
-                {
-                    "class": entity_class,
-                    "from": old_key,
-                    "to": new_key,
-                    "entity_id": entity.id,
-                    "candidate_id": candidate.id,
-                }
-            )
-    db.session.flush()
-    return result, same, dict(unique_pairs(same_place_other_name))
-
-
-RELABEL_RENAMED_REASON = (
-    "the new parse reads the set's cells under another name; whether it is the same set, "
-    "and keeps the relabelled role, is a curator's call"
-)
 RELABEL_REVISED_REASON = "the revision split or merged the set; its verdicts give the new sets"
 RELABEL_GONE_REASON = "no analysis of the new parse is the same set"
 
 
-def _relabels_dropped(superseded, carried, renamed, revision_of):
-    """The relabelled sets a parse superseded whose relabel no new analysis carries.
-
-    ``renamed`` maps a superseded key to the added key read from exactly its cells under
-    another name, which is reported beside it.
-    """
-    carried_from = {analysis.source_id for analysis in carried.values()}
-    dropped = []
-    for analysis in superseded:
-        if analysis.relabelled_by is None or analysis.source_id in carried_from:
-            continue
-        item = {
+def _relabels_dropped(superseded, revision_of):
+    """The relabelled sets a parse superseded; no new analysis carries their relabel."""
+    return [
+        {
             "key": analysis.source_id,
             "role": analysis.role,
             "relabelled_by": analysis.relabelled_by,
+            "reason": RELABEL_REVISED_REASON if revision_of else RELABEL_GONE_REASON,
         }
-        if revision_of:
-            item["reason"] = RELABEL_REVISED_REASON
-        elif analysis.source_id in renamed:
-            item["reason"] = RELABEL_RENAMED_REASON
-            item["renamed_to"] = renamed[analysis.source_id]
-        else:
-            item["reason"] = RELABEL_GONE_REASON
-        dropped.append(item)
-    return dropped
+        for analysis in superseded
+        if analysis.relabelled_by is not None
+    ]
 
 
-def _orphaned_claims(base_study, superseded, parse, moved):
+def _orphaned_claims(base_study, superseded, parse):
     """The entities with claims that a superseded analysis keeps, each with its reason.
 
-    An entity whose claims went on is left out: re-hashed onto its successor (its old
-    hash is then an alias, so no entity holds it), linked to a rename candidate, or
-    split or merged by the revision's verdict (its claims are copied on).
+    An entity the revision's verdict split or merged is left out: its claims are copied
+    on to the replacements.
     """
     verdicts = {v["key"]: v["verdict"] for v in parse.get("verdicts") or []}
-    linked = {c["from"] for c in moved.get("rename_candidates") or []}
-    conflicted = {c["from"] for c in moved.get("alias_conflicts") or []}
+    reason = NOT_CARRIED if parse.get("revision_of") else NO_SUCCESSOR
     orphaned = []
     for analysis in superseded:
         key = analysis.source_id
-        if key in linked or verdicts.get(key) in ("split", "merge"):
+        if verdicts.get(key) in ("split", "merge"):
             continue
-        if parse.get("revision_of"):
-            reason = NOT_CARRIED
-        elif key in conflicted:
-            reason = ALIAS_CONFLICT
-        else:
-            reason = NO_SUCCESSOR
-        for entity_class in PARSE_KEYED_CLASSES:
+        for entity_class in CONTENT_KEYED_CLASSES:
             entity = _stored_entity(base_study, entity_class, analysis)
             if entity is None:
                 continue
@@ -1214,71 +1036,26 @@ def _orphaned_claims(base_study, superseded, parse, moved):
 
 
 def _stored_entity(base_study, entity_class, analysis):
-    """The entity of a stored Analysis row's cells and name, or None."""
-    entity_hash = _entity_hash(base_study, entity_class, analysis.metadata_, analysis.name)
+    """The entity of a stored Analysis row's key, or None."""
+    entity_hash = study_entity_hash(base_study.id, entity_class, analysis.source_id)
     return StudyEntity.query.filter_by(entity_hash=entity_hash).first()
 
 
-class _Located(NamedTuple):
-    """Where an analysis was read: its table (or origin), its record-time rename slot
-    (``study_entities._slot``, so parse and record agree on "the same place"), its cells
-    or covered character offsets as a set (for overlap), and its normalized name."""
-
-    place: tuple
-    slot: tuple
-    parts: frozenset
-    name: str
-
-
-def _located(parsed, name=None):
-    identity = _analysis_identity(parsed, name)
-    if parsed["origin"] == "table":
-        parts = frozenset((c["row"], c["column_group"]) for c in parsed.get("cells") or [])
-    else:
-        # Character offsets covered by any span, so overlapping spans share members.
-        parts = frozenset(
-            offset
-            for s in parsed.get("text_spans") or []
-            for offset in range(s["start_char"], s["end_char"])
-        )
-    return _Located(tuple(identity[:2]), _slot("Analysis", identity, None), parts, identity[3])
-
-
 def _link_entities(base_study, study):
-    """Point each Analysis entity at the current analysis read from its cells."""
+    """Point each Analysis entity at the current analysis with its key."""
     by_hash = {
-        _entity_hash(base_study, "Analysis", a.metadata_, a.name): a.id for a in study.analyses
+        study_entity_hash(base_study.id, "Analysis", a.source_id): a.id for a in study.analyses
     }
     for entity in StudyEntity.query.filter(StudyEntity.entity_hash.in_(list(by_hash))):
         entity.analysis_id = by_hash[entity.entity_hash]
 
 
-def _analysis_identity(parsed, name=None):
-    """``analysis_identity`` of a parse analysis, or of the metadata stored from one.
-
-    The stored metadata holds no name (it is the Analysis row's column), so a caller
-    passes the row's ``name``; a parse analysis's own name wins.
-    """
-    return analysis_identity(
-        parsed["origin"],
-        parsed.get("table_id"),
-        cells=[(c["row"], c["column_group"]) for c in parsed.get("cells") or []],
-        spans=[(s["start_char"], s["end_char"]) for s in parsed.get("text_spans") or []],
-        name=parsed.get("name") or name,
-    )
-
-
-def _entity_hash(base_study, entity_class, parsed, name=None):
-    return study_entity_hash(base_study.id, entity_class, _analysis_identity(parsed, name))
-
-
-def _parsed_for_key(base_study, key):
-    """The analysis a stored parse of this paper holds under ``key``, or None.
-
-    A content key is a function of its cells, so any stored parse holding it agrees.
-    """
+def _identity_for_key(base_study, key):
+    """The identity of the Analysis or CoordinateSet entity a parse key names: the key
+    itself, once a stored parse of this paper holds it; None before."""
     stored = (
-        PipelineStudyResult.query.join(PipelineConfig)
+        db.session.query(PipelineStudyResult.id)
+        .join(PipelineConfig)
         .join(Pipeline)
         .filter(
             Pipeline.name == PARSE_PIPELINE,
@@ -1287,15 +1064,7 @@ def _parsed_for_key(base_study, key):
         )
         .first()
     )
-    if stored is None:
-        return None
-    return next(a for a in stored.result_data["analyses"] if a["key"] == key)
-
-
-def _identity_for_key(base_study, key):
-    """The ``analysis_identity`` behind a parse key, or None when no stored parse holds it."""
-    parsed = _parsed_for_key(base_study, key)
-    return _analysis_identity(parsed) if parsed is not None else None
+    return key if stored is not None else None
 
 
 def _hash_for_key(base_study, entity_class, key):
@@ -1304,21 +1073,6 @@ def _hash_for_key(base_study, entity_class, key):
     return (
         study_entity_hash(base_study.id, entity_class, identity) if identity is not None else None
     )
-
-
-def _current_key(base_study, key):
-    """``key``, or the key its analysis took when a later parse re-read it from other cells."""
-    old_hash = _hash_for_key(base_study, "Analysis", key)
-    renamed = (
-        db.session.query(Analysis.source_id)
-        .join(StudyEntity, StudyEntity.analysis_id == Analysis.id)
-        .join(StudyEntityAlias, StudyEntityAlias.entity_id == StudyEntity.id)
-        .filter(StudyEntityAlias.entity_hash == old_hash)
-        .scalar()
-        if old_hash is not None
-        else None
-    )
-    return renamed or key
 
 
 def _analysis_for_key(base_study, key):
@@ -1352,15 +1106,6 @@ def _entity(base_study, entity_class, key, config=None):
     entity_hash = study_entity_hash(base_study.id, entity_class, identity)
     entity = StudyEntity.query.filter_by(entity_hash=entity_hash).first()
     if entity is None:
-        # A record that read an older parse may name cells since re-read.
-        entity = (
-            StudyEntity.query.join(
-                StudyEntityAlias, StudyEntityAlias.entity_id == StudyEntity.id
-            )
-            .filter(StudyEntityAlias.entity_hash == entity_hash)
-            .first()
-        )
-    if entity is None:
         entity = StudyEntity(
             base_study_id=base_study.id,
             entity_class=entity_class,
@@ -1383,7 +1128,7 @@ def _carry_claims(base_study, study, revision):
             continue
         hashes = [
             h
-            for h in (_hash_for_key(base_study, c, verdict["key"]) for c in PARSE_KEYED_CLASSES)
+            for h in (_hash_for_key(base_study, c, verdict["key"]) for c in CONTENT_KEYED_CLASSES)
             if h is not None
         ]
         for source in StudyEntity.query.filter(StudyEntity.entity_hash.in_(hashes)).all():
@@ -1529,7 +1274,7 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
         key = (extracted.get("source_table_analysis") or {}).get("value")
         positional = bool(key) and not is_content_key(key)
         analysis = (
-            _analysis_for_key(base_study, _current_key(base_study, key))
+            _analysis_for_key(base_study, key)
             if key and not positional
             else None
         )
@@ -1916,7 +1661,6 @@ def _ingest_claims(base_study, record, config, schema_version):
                 "unidentified",
                 "duplicates",
                 "rename_candidates",
-                "released_aliases",
             )
         },
     }
@@ -1927,7 +1671,7 @@ def _ingest_claims(base_study, record, config, schema_version):
         def_names[record_entity.path] = def_name
         if record_entity.entity_class == "Analysis":
             key = _record_key("Analysis", item)
-            analysis = _analysis_for_key(base_study, _current_key(base_study, key))
+            analysis = _analysis_for_key(base_study, key)
             entity.analysis_id = analysis.id if analysis is not None else None
         if item.get("local_id"):
             link = db.session.get(

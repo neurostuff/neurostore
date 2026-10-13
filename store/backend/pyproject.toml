@@ -40,11 +40,11 @@ dependencies = [
     "pgvector~=0.5",
     "NiMARE[parquet]==0.21.0",
     "openai~=3.28",
-    "tenacity~=9.1",
+    "tenacity~=9.2",
     "sentry-sdk~=2.71",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read, pinned to study_schema main.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@38f014c9914363782dec82917459296c7668ef1e",
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@2cc7bec2a2c67c4ac7feb4e74a04f4e013e9329a",
 ]
 
 [tool.setuptools.packages.find]
@@ -58,7 +58,7 @@ dev = [
     "wheel~=0.48",
     "pytest~=9.1",
     "vcrpy~=8.3",
-    "pytest-recording~=0.13.4",
+    "pytest-recording~=0.14.0",
 ]
 
 [project.scripts]

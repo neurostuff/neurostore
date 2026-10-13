@@ -9,6 +9,7 @@ import json
 
 from study_schema import keys
 from study_schema.jsonschema import load
+from study_schema.models.paper_parse import ParsedAnalysis
 
 SCHEMA_VERSION = load("coordinate-parse")["version"]
 
@@ -26,9 +27,22 @@ def point(xyz, sign="positive", t=3.5, space=None):
     return {"coordinates": list(xyz), "space": space, "values": values}
 
 
+def _keyed(analysis):
+    """``analysis`` with the content key its name, space and points give."""
+    analysis["key"] = keys.key_for(ParsedAnalysis.model_validate({**analysis, "key": ""}))
+    return analysis
+
+
+def spelled_key(canonical):
+    """The key coordinates.yaml spells out for ``canonical`` ([normalized name, space,
+    [[x, y, z, own space, [[kind, value], ...]], ...]], written as the rule writes it),
+    hashed here rather than by `keys.key_for`."""
+    payload = json.dumps(canonical, separators=(",", ":"), ensure_ascii=False)
+    return "analysis#" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
 def table_analysis(table_id, rows, name, points, role="result", space="MNI", **extra):
-    return {
-        "key": keys.table_key(table_id, ((r, 0) for r in rows), name),
+    return _keyed({
         "origin": "table",
         "table_id": table_id,
         "cells": cells(*rows),
@@ -37,19 +51,18 @@ def table_analysis(table_id, rows, name, points, role="result", space="MNI", **e
         "role": role,
         "points": points,
         **extra,
-    }
+    })
 
 
 def text_analysis(spans, name, points=(), role="result", space="MNI"):
-    return {
-        "key": keys.span_key("text", spans, name),
+    return _keyed({
         "origin": "text",
         "text_spans": [{"start_char": s, "end_char": e} for s, e in spans],
         "name": name,
         "coordinate_space": space,
         "role": role,
         "points": list(points),
-    }
+    })
 
 
 def parse(analyses, pmid="12345678", revision_of=None, verdicts=None, producer="ingestion"):
