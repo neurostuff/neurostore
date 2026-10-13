@@ -27,6 +27,7 @@ USER_JOB_INDEX_PREFIX = "compose:user-jobs"
 META_ANALYSIS_JOB_INDEX_PREFIX = "compose:meta-analysis-jobs"
 JOB_CACHE_TTL_SECONDS = 60 * 60 * 24 * 3  # 3 days
 LOG_TIME_PADDING_MS = 5 * 60 * 1000  # pad log queries by 5 minutes on each side
+
 # Step Functions execution statuses that will never change again.
 TERMINAL_STATUSES = frozenset({"SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"})
 
@@ -37,17 +38,16 @@ LAMBDA_RETRY_BACKOFF_SECONDS = 0.5
 LAMBDA_MAX_RETRY_DELAY_SECONDS = 2.0
 
 
-
 class JobStoreError(RuntimeError):
     """Raised when the job cache cannot be accessed."""
 
 
 class ComposeRunnerError(RuntimeError):
+    """Raised when the external compose runner call fails."""
 
 
 class ComposeRunnerThrottledError(ComposeRunnerError):
     """Raised when the compose runner keeps returning a transient error."""
-    """Raised when the external compose runner call fails."""
 
 
 def get_job_store() -> Redis:
