@@ -69,6 +69,79 @@ async def test_admin_requires_the_configured_username_and_password(monkeypatch):
     assert "border-start" in dashboard.text
 
 
+def _admin_app(monkeypatch):
+    from neurostore.config import DockerTestConfig
+
+    monkeypatch.setattr(DockerTestConfig, "ADMIN_USERNAME", "operator")
+    monkeypatch.setattr(DockerTestConfig, "ADMIN_PASSWORD", "secret")
+    return create_asgi_app()
+
+
+async def _log_in(client):
+    await client.post("/admin/login", data={"username": "operator", "password": "secret"})
+
+
+async def test_admin_user_edit_form_offers_only_roles_among_relationships(
+    monkeypatch, session
+):
+    from neurostore.models import Role, User
+
+    role = Role(name="admin")
+    user = User(name="pondie-uploader", external_id="client@clients", roles=[role])
+    session.add_all([role, user])
+    session.commit()
+    user_id = user.id
+
+    async with _client(_admin_app(monkeypatch)) as client:
+        await _log_in(client)
+        edit = await client.get(f"/admin/user/edit/{user_id}")
+
+    assert edit.status_code == 200
+    assert 'name="roles"' in edit.text
+    # Each of these is a select of every row in its table: millions on a real database.
+    for relationship in ("studies", "analyses", "points", "point_values", "base_studies"):
+        assert f'name="{relationship}"' not in edit.text
+
+
+async def test_admin_user_edit_form_grants_a_role(monkeypatch, session):
+    from neurostore.models import Role, User
+
+    role = Role(name="admin")
+    user = User(name="pondie-uploader", external_id="client@clients")
+    session.add_all([role, user])
+    session.commit()
+    user_id, role_id = user.id, role.id
+
+    async with _client(_admin_app(monkeypatch)) as client:
+        await _log_in(client)
+        saved = await client.post(
+            f"/admin/user/edit/{user_id}",
+            data={"name": "pondie-uploader", "external_id": "client@clients", "roles": role_id},
+            follow_redirects=False,
+        )
+
+    session.expire_all()
+    assert saved.status_code == 302
+    assert [r.name for r in session.get(User, user_id).roles] == ["admin"]
+
+
+async def test_admin_role_details_page_renders_despite_its_dynamic_users(
+    monkeypatch, session
+):
+    from neurostore.models import Role, User
+
+    role = Role(name="admin")
+    session.add_all([role, User(name="someone", external_id="someone", roles=[role])])
+    session.commit()
+    role_id = role.id
+
+    async with _client(_admin_app(monkeypatch)) as client:
+        await _log_in(client)
+        details = await client.get(f"/admin/role/details/{role_id}")
+
+    assert details.status_code == 200
+
+
 async def test_app_serves_a_cached_resource_through_the_native_request_path(app, db):
     async with _client(app.asgi_app) as client:
         first = await client.get("/api/studies/?page=1&page_size=10")
