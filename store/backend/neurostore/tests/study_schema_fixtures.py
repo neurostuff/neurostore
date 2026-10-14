@@ -91,7 +91,7 @@ def verdict(key, kind, replaced_by=None, reason="audited"):
     return {"key": key, "verdict": kind, "replaced_by": replaced_by, "reason": reason}
 
 
-_defs = load("extraction-record")["$defs"]
+defs = load("extraction-record")["$defs"]
 
 
 def _resolve(schema, defs):
@@ -100,11 +100,11 @@ def _resolve(schema, defs):
     return schema
 
 
-def _minimal(schema, defs=_defs):
+def minimal(schema, defs=defs):
     schema = _resolve(schema, defs)
     if "anyOf" in schema:
         options = [o for o in schema["anyOf"] if o.get("type") != "null"]
-        return _minimal(options[0], defs) if options else None
+        return minimal(options[0], defs) if options else None
     props = schema.get("properties", {})
     if "extraction_status" in props and "evidence" in props:
         return {"extraction_status": "not_reported", "evidence": {"status": "not_applicable"}}
@@ -113,9 +113,9 @@ def _minimal(schema, defs=_defs):
     if "enum" in schema:
         return schema["enum"][0]
     if kind == "object" or props:
-        return {name: _minimal(props[name], defs) for name in schema.get("required", [])}
+        return {name: minimal(props[name], defs) for name in schema.get("required", [])}
     if kind == "array":
-        return [_minimal(schema["items"], defs) for _ in range(schema.get("minItems", 0))]
+        return [minimal(schema["items"], defs) for _ in range(schema.get("minItems", 0))]
     if kind == "string":
         return "x"
     if kind in ("integer", "number"):
@@ -134,7 +134,7 @@ def extracted(value):
 
 
 def record_analysis(local_id, key, name):
-    analysis = _minimal(_defs["Analysis"])
+    analysis = minimal(defs["Analysis"])
     analysis.update(
         local_id=local_id,
         name=extracted(name),
@@ -145,7 +145,7 @@ def record_analysis(local_id, key, name):
 
 
 def record(analyses, coordinate_sets=(), local_id="study-1"):
-    document = _minimal(load("extraction-record"))
+    document = minimal(load("extraction-record"))
     document.update(
         local_id=local_id,
         extraction_metadata={"extractor_model": "gpt-6.1-sol", "extractor_version": "1.0.0"},
@@ -161,7 +161,7 @@ def record(analyses, coordinate_sets=(), local_id="study-1"):
 def parsed_paper(pmid="12345678", corrections=None):
     """A minimal parsed paper; ``corrections`` are its bibliography's notices."""
     schema = load("parsed-paper")
-    document = _minimal(schema, schema["$defs"])
+    document = minimal(schema, schema["$defs"])
     document["header"]["identifiers"] = {"pmid": pmid}
     document["bibliography"] = {"title": "A paper"}
     if corrections is not None:

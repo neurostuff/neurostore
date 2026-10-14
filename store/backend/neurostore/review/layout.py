@@ -4,14 +4,11 @@ import hashlib
 import json
 import zipfile
 from dataclasses import dataclass
-from functools import cache
 from pathlib import Path, PurePosixPath
 
-from jsonschema import validators
 from pydantic import ValidationError
-from study_schema import keys
-from study_schema.jsonschema import load
-from study_schema.models.paper_parse import ParsedAnalysis
+
+from neurostore.study_schema_tools import expected_key, schema_errors
 
 
 class LayoutError(Exception):
@@ -109,19 +106,15 @@ def read_paper(root: Path | zipfile.Path, study_id: str) -> Paper:
     )
 
 
-@cache
-def _validator(name):
-    schema = load(name)
-    return validators.validator_for(schema)(schema)
-
-
 def _dotted(path):
     return ".".join(str(part) for part in path)
 
 
 def _schema_problems(label, name, document):
-    errors = sorted(_validator(name).iter_errors(document), key=lambda e: list(e.path))
-    return [f"{label} at {_dotted(e.path) or '(root)'}: {e.message}" for e in errors]
+    return [
+        f"{label} at {_dotted(e.path) or '(root)'}: {e.message}"
+        for e in schema_errors(name, document)
+    ]
 
 
 def _hash_problems(paper):
@@ -186,7 +179,7 @@ def _key_problems(coordinate_parse):
     problems = []
     for i, analysis in enumerate(coordinate_parse.get("analyses") or ()):
         try:
-            expected = keys.key_for(ParsedAnalysis.model_validate(analysis))
+            expected = expected_key(analysis)
         except ValidationError:
             continue
         key = analysis.get("key")

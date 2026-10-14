@@ -45,8 +45,6 @@ since. The sign of a contrast lives on its condition weights: the inverse half o
 split gets its original half's conditions, negated.
 """
 
-import hashlib
-import json
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -54,10 +52,8 @@ from datetime import datetime, timezone
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
-from jsonschema import validators
-from study_schema import keys as parse_keys
 from study_schema.jsonschema import load as load_json_schema
-from study_schema.models.paper_parse import CorrectionKind, ParsedAnalysis
+from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
 from neurostore.coordinate_spaces import normalize_space
@@ -68,11 +64,7 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_unprocessable,
     abort_validation,
 )
-from neurostore.ingest.study_entities import (
-    CHILD_LISTS,
-    CONTENT_KEYED_CLASSES,
-    sync_record_entities,
-)
+from neurostore.ingest.study_entities import CONTENT_KEYED_CLASSES, sync_record_entities
 from neurostore.models.data import (
     HISTORY_SOURCE,
     PIPELINE_STUDY_SOURCES,
@@ -100,6 +92,18 @@ from neurostore.models import (
     Table,
 )
 from neurostore.services.has_media_flags import recompute_media_flags
+from neurostore.study_schema_tools import (
+    CHILD_LISTS,
+    DECLARED_KEYS,
+    canonical,
+    class_of,
+    expected_key,
+    extracted_value,
+    is_extracted,
+    refs,
+    schema_errors,
+    sha256_of,
+)
 
 PARSE_PIPELINE = "coordinate-parse"
 DEFAULT_RECORD_PIPELINE = "pondie"
@@ -115,14 +119,6 @@ OUTCOME_WITHHELD_REASON = (
     "the record reports an outcome for a coordinate set that is not a result; it is kept "
     "as a claim and applied if the set's role becomes result"
 )
-
-# The storage schema's unique_key_slots: the only nested lists a claim path may index.
-DECLARED_KEYS = {
-    "Cell": ("term", "level"),
-    "AnalysisGroup": ("group",),
-    "ModelTerm": ("name",),
-    "FactorLevel": ("level",),
-}
 
 # Analysis fields the skeleton keeps as columns or points rather than in metadata.
 _ANALYSIS_COLUMNS = {"key", "name", "description", "points", "role", "from_prior_study"}
@@ -293,14 +289,8 @@ def _check_entity_hashes(base_study):
 # ---------------------------------------------------------------------------
 
 
-_validators = {}
-
-
 def _validate(name, document):
-    if name not in _validators:
-        schema = load_json_schema(name)
-        _validators[name] = validators.validator_for(schema)(schema)
-    errors = sorted(_validators[name].iter_errors(document), key=lambda e: list(e.path))
+    errors = schema_errors(name, document)
     if errors:
         abort_unprocessable(
             f"The {name} does not validate against study_schema.",
@@ -315,15 +305,11 @@ def _validate(name, document):
         )
 
 
-def _expected_key(analysis):
-    return parse_keys.key_for(ParsedAnalysis.model_validate(analysis))
-
-
 def _check_keys(parse):
     """Every key is the one its name, space and points give, and no two analyses share one."""
     errors, seen = [], set()
     for index, analysis in enumerate(parse["analyses"]):
-        expected = _expected_key(analysis)
+        expected = expected_key(analysis)
         if analysis["key"] != expected:
             errors.append(
                 make_field_error(
@@ -540,21 +526,13 @@ def _history_study(base_study, current, parse_id, superseded_by, user):
     return study
 
 
-def _canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
-
-
-def _hash(value):
-    return hashlib.sha256(_canonical(value).encode("utf-8")).hexdigest()
-
-
 def _get_config(pipeline_name, version, config_args, schema=None):
     pipeline = Pipeline.query.filter_by(name=pipeline_name).first()
     if pipeline is None:
         pipeline = Pipeline(name=pipeline_name)
         db.session.add(pipeline)
         db.session.flush()
-    config_hash = _hash(config_args)
+    config_hash = sha256_of(config_args)
     config = PipelineConfig.query.filter_by(
         pipeline_id=pipeline.id, version=version, config_hash=config_hash
     ).first()
@@ -1180,7 +1158,7 @@ def _copy_claims(source, target):
 
 
 def _evidence_key(evidence):
-    return (evidence.status, evidence.source, _canonical(evidence.spans), evidence.config_id)
+    return (evidence.status, evidence.source, canonical(evidence.spans), evidence.config_id)
 
 
 def _merge_claim(claim, copy):
@@ -1712,11 +1690,8 @@ def _def_name(defs, def_names, record_entity):
     dotted = record_entity.path[len(prefix):].rsplit("[", 1)[0]
     schema = {"$ref": f"#/$defs/{owner}"}
     for attribute in dotted.split("."):
-        schema = defs[_refs(schema)[0]]["properties"][attribute]
-    refs = _refs(schema.get("items", {}))
-    for option in schema.get("anyOf", []):
-        refs.extend(_refs(option.get("items", {})))
-    return _pick(defs, refs, record_entity.item) or record_entity.entity_class
+        schema = defs[refs(schema)[0]]["properties"][attribute]
+    return class_of(defs, schema, record_entity.item) or record_entity.entity_class
 
 
 def _local_id_names(record):
@@ -1749,35 +1724,8 @@ def _record_key(cls, item):
     return None
 
 
-def _refs(schema):
-    """The $defs names a property schema can hold."""
-    out = []
-    if "$ref" in schema:
-        out.append(schema["$ref"].rsplit("/", 1)[-1])
-    for option in schema.get("anyOf", []):
-        out.extend(_refs(option))
-    return out
-
-
-def _is_extracted(defs, name):
-    props = defs.get(name, {}).get("properties", {})
-    return "extraction_status" in props and "evidence" in props
-
-
-def _pick(defs, names, value):
-    """The class among ``names`` that ``value`` is an instance of."""
-    classes = [n for n in names if defs.get(n, {}).get("type") == "object"]
-    for name in classes:
-        props = defs[name].get("properties", {})
-        required = defs[name].get("required", [])
-        if all(r in value for r in required) and set(value) <= set(props):
-            return name
-    return classes[0] if classes else None
-
-
 def _key_value(value, names):
-    if isinstance(value, dict):
-        value = value.get("value")
+    value = extracted_value(value)
     return names.get(value, value)
 
 
@@ -1793,21 +1741,18 @@ def _walk(defs, name, obj, prefix, names, leaves, rejected, skip=()):
             continue
         schema = props[attribute]
         if isinstance(value, dict):
-            cls = _pick(defs, _refs(schema), value)
+            cls = class_of(defs, schema, value)
             if cls is None:
                 continue
-            if _is_extracted(defs, cls):
+            if is_extracted(defs, cls):
                 leaves.append((path, value))
             else:
                 _walk(defs, cls, value, f"{path}.", names, leaves, rejected, skip)
         elif isinstance(value, list) and value and all(isinstance(v, dict) for v in value):
-            item_refs = _refs(schema.get("items", {}))
-            for option in schema.get("anyOf", []):
-                item_refs.extend(_refs(option.get("items", {})))
             for item in value:
-                cls = _pick(defs, item_refs, item)
+                cls = class_of(defs, schema, item)
                 key_slots = DECLARED_KEYS.get(cls)
-                if cls is None or _is_extracted(defs, cls) or key_slots is None:
+                if cls is None or is_extracted(defs, cls) or key_slots is None:
                     # No declared key: an index would be positional, so the path is
                     # rejected rather than stored as a guess.
                     rejected.append(f"{path}[]")
@@ -1831,7 +1776,7 @@ def _upsert_claims(entity, leaves, config, schema_version, counts):
     }
     for path, leaf in leaves:
         value = leaf.get("value")
-        value_hash = _hash(value)
+        value_hash = sha256_of(value)
         claim = existing.get((path, value_hash))
         if claim is None:
             claim = FieldClaim(

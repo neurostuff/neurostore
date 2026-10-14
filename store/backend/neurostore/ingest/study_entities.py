@@ -22,31 +22,12 @@ from neurostore.models.data import (
     sibling_identity,
     study_entity_hash,
 )
-
-#: The lists of each class whose items are entities of their own, as
-#: (dotted path within the owner, class of its items). Every acquisition
-#: modality (MRI, EEG, ...) is an Acquisition.
-CHILD_LISTS = {
-    "Study": (
-        ("groups", "Group"),
-        ("tasks", "Task"),
-        ("assessments", "Assessment"),
-        ("regions", "Region"),
-        ("devices", "Device"),
-        ("acquisitions", "Acquisition"),
-        ("preprocessings", "Preprocessing"),
-        ("model_estimations", "ModelEstimation"),
-        ("inference_settings", "InferenceSettings"),
-        ("measures", "Measure"),
-        ("tables", "Table"),
-        ("analyses", "Analysis"),
-        ("coordinate_sets", "CoordinateSet"),
-        ("design.arms", "Arm"),
-        ("design.timepoints", "Timepoint"),
-    ),
-    "Task": (("conditions", "Condition"),),
-    "ModelEstimation": (("terms", "ModelTerm"),),
-}
+from neurostore.study_schema_tools import (
+    CHILD_LISTS,
+    entity_lists,
+    extracted_value,
+    item_path,
+)
 
 ENTITY_CLASSES = frozenset(
     ["Study", *(cls for lists in CHILD_LISTS.values() for _, cls in lists)]
@@ -106,57 +87,53 @@ def record_entities(base_study_id, record, locate=None):
     entities, unlocated, unidentified, duplicates = [study], [], [], []
     seen = {study.entity_hash}
 
-    def add_children(owner):
-        for attribute, entity_class in CHILD_LISTS.get(owner.entity_class, ()):
-            items = _get(owner.item, attribute)
-            list_path = f"{owner.path}.{attribute}" if owner.path else attribute
-            if items is None:
+    owners = {"": study}
+    for owner_path, list_path, entity_class, items in entity_lists(record):
+        owner = owners.get(owner_path)
+        if owner is None or items is None:
+            continue
+        if not isinstance(items, list):
+            unidentified.append(item_path(owner_path, list_path))
+            continue
+        ordinals = Counter()
+        for index, item in enumerate(items):
+            path = item_path(owner_path, list_path, index)
+            if not isinstance(item, dict):
+                unidentified.append(path)
                 continue
-            if not isinstance(items, list):
-                unidentified.append(list_path)
+            if entity_class in CONTENT_KEYED_CLASSES:
+                identity = locate(entity_class, item) if locate else None
+                if identity is None:
+                    unlocated.append(path)
+                    continue
+                child = RecordEntity(
+                    entity_class,
+                    path,
+                    item,
+                    identity,
+                    study_entity_hash(base_study_id, entity_class, identity),
+                )
+            else:
+                name = entity_name_key(
+                    extracted_value(item.get(NAME_FIELDS.get(entity_class, "name")))
+                )
+                identity = sibling_identity(name, ordinals[name])
+                ordinals[name] += 1
+                child = RecordEntity(
+                    entity_class,
+                    path,
+                    item,
+                    identity,
+                    study_entity_hash(base_study_id, entity_class, identity, owner.entity_hash),
+                    owner,
+                )
+            if child.entity_hash in seen:
+                duplicates.append(path)
                 continue
-            ordinals = Counter()
-            for index, item in enumerate(items):
-                path = f"{list_path}[{index}]"
-                if not isinstance(item, dict):
-                    unidentified.append(path)
-                    continue
-                if entity_class in CONTENT_KEYED_CLASSES:
-                    identity = locate(entity_class, item) if locate else None
-                    if identity is None:
-                        unlocated.append(path)
-                        continue
-                    child = RecordEntity(
-                        entity_class,
-                        path,
-                        item,
-                        identity,
-                        study_entity_hash(base_study_id, entity_class, identity),
-                    )
-                else:
-                    name = entity_name_key(
-                        _value(item.get(NAME_FIELDS.get(entity_class, "name")))
-                    )
-                    identity = sibling_identity(name, ordinals[name])
-                    ordinals[name] += 1
-                    child = RecordEntity(
-                        entity_class,
-                        path,
-                        item,
-                        identity,
-                        study_entity_hash(
-                            base_study_id, entity_class, identity, owner.entity_hash
-                        ),
-                        owner,
-                    )
-                if child.entity_hash in seen:
-                    duplicates.append(path)
-                    continue
-                seen.add(child.entity_hash)
-                entities.append(child)
-                add_children(child)
+            seen.add(child.entity_hash)
+            entities.append(child)
+            owners[path] = child
 
-    add_children(study)
     entities.sort(key=lambda e: e.depth)
     return entities, unlocated, unidentified, duplicates
 
@@ -440,16 +417,3 @@ def _rehash_batch(base_study_ids):
         params,
     )
     return len(ids)
-
-
-def _get(obj, dotted):
-    for part in dotted.split("."):
-        if not isinstance(obj, dict):
-            return None
-        obj = obj.get(part)
-    return obj
-
-
-def _value(extracted):
-    """The value of an ExtractedValue (or a bare value)."""
-    return extracted.get("value") if isinstance(extracted, dict) else extracted
