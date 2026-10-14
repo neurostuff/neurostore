@@ -1,0 +1,184 @@
+[
+  {
+    "name": "golden-positional-nested-slot",
+    "ops": [
+      {
+        "client_op_id": "golden-positional-nested-slot-1",
+        "type": "set_evidence",
+        "target": {
+          "kind": "slot",
+          "entity": "an_1",
+          "path": "groups[#0].n"
+        },
+        "evidence": {
+          "status": "present",
+          "sets": [
+            {
+              "spans": [
+                {
+                  "start_char": 0,
+                  "end_char": 15
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "expect": "ok"
+  },
+  {
+    "name": "golden-dotted-slot",
+    "ops": [
+      {
+        "client_op_id": "golden-dotted-slot-1",
+        "type": "set_evidence",
+        "target": {
+          "kind": "slot",
+          "entity": "study",
+          "path": "design.description"
+        },
+        "evidence": {
+          "status": "present",
+          "sets": [
+            {
+              "spans": [
+                {
+                  "start_char": 62,
+                  "end_char": 73
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "expect": "ok"
+  },
+  {
+    "name": "golden-study-slot",
+    "ops": [
+      {
+        "client_op_id": "golden-study-slot-1",
+        "type": "set_evidence",
+        "target": {
+          "kind": "slot",
+          "entity": "study",
+          "path": "description"
+        },
+        "evidence": {
+          "status": "present",
+          "sets": [
+            {
+              "spans": [
+                {
+                  "start_char": 38,
+                  "end_char": 61
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "expect": "ok"
+  },
+  {
+    "name": "golden-e-keeps-model-quote",
+    "ops": [
+      {
+        "client_op_id": "golden-e-keeps-model-quote-1",
+        "type": "set_evidence",
+        "target": {
+          "kind": "slot",
+          "entity": "grp_a",
+          "path": "age_mean"
+        },
+        "evidence": {
+          "status": "present",
+          "sets": [
+            {
+              "source": "model_quote",
+              "spans": [
+                {
+                  "start_char": 75,
+                  "end_char": 115
+                },
+                {
+                  "start_char": 104,
+                  "end_char": 114
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "expect": "ok"
+  },
+  {
+    "name": "golden-shift-e-new-set",
+    "ops": [
+      {
+        "client_op_id": "golden-shift-e-new-set-1",
+        "type": "set_evidence",
+        "target": {
+          "kind": "slot",
+          "entity": "grp_a",
+          "path": "age_mean"
+        },
+        "evidence": {
+          "status": "present",
+          "sets": [
+            {
+              "source": "model_quote",
+              "spans": [
+                {
+                  "start_char": 75,
+                  "end_char": 115
+                }
+              ]
+            },
+            {
+              "spans": [
+                {
+                  "start_char": 89,
+                  "end_char": 99
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "expect": "ok"
+  },
+  {
+    "name": "golden-not-reported-refused",
+    "ops": [
+      {
+        "client_op_id": "golden-not-reported-refused-1",
+        "type": "set_evidence",
+        "target": {
+          "kind": "slot",
+          "entity": "grp_b",
+          "path": "age_mean"
+        },
+        "evidence": {
+          "status": "present",
+          "sets": [
+            {
+              "spans": [
+                {
+                  "start_char": 20,
+                  "end_char": 28
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "expect": "set a value first"
+  }
+]
