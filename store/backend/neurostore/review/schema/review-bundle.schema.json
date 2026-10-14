@@ -5,7 +5,7 @@
   "description": "Everything the review app needs to open one paper for one reviewer.",
   "version": "1",
   "type": "object",
-  "required": ["source", "text", "parsed_paper", "coordinate_parse", "record", "coordinate_revision", "review", "ops", "hidden", "reviewers"],
+  "required": ["source", "text", "parsed_paper", "coordinate_parse", "record", "coordinate_revision", "review", "ops", "entities", "hidden", "reviewers"],
   "additionalProperties": false,
   "properties": {
     "source": {
@@ -52,13 +52,29 @@
               "description": "Target key -> evidence a reviewer set on an entity or a relationship.",
               "type": "object",
               "propertyNames": {"$ref": "#/$defs/TargetKey"},
-              "additionalProperties": {"$ref": "review-ops.schema.json#/$defs/Evidence"}
+              "additionalProperties": {"$ref": "#/$defs/Annotation"}
             }
           }
         }
       ]
     },
     "ops": {"type": "array", "items": {"$ref": "#/$defs/StoredOp"}},
+    "entities": {
+      "description": "The record's entity index (review.entities.index_rows), in record order.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["local_id", "entity_class", "schema_class", "parent", "list_path"],
+        "additionalProperties": false,
+        "properties": {
+          "local_id": {"type": "string"},
+          "entity_class": {"type": "string"},
+          "schema_class": {"type": "string"},
+          "parent": {"type": ["string", "null"]},
+          "list_path": {"type": ["string", "null"]}
+        }
+      }
+    },
     "hidden": {
       "description": "Local ids hidden by default: non-coordinate analyses and the entities only they reach.",
       "type": "object",
@@ -91,6 +107,41 @@
       "pattern": "^(slot:[^:]+:.+|entity:[^:]+|relationship:[^:]+:[^:]+:[^:]+|coordinate_analysis:analysis#[0-9a-f]{16}|paper)$",
       "description": "A target written as one string: its kind, then its fields, colon-separated: slot:<entity>:<path>, entity:<entity>, relationship:<entity>:<path>:<target_entity>, coordinate_analysis:<analysis_key>, paper.",
       "type": "string"
+    },
+    "Annotation": {
+      "description": "An entity's or relationship's evidence with each span's text filled from the paper.",
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["present", "not_found", "not_applicable"]},
+        "sets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["spans"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"anyOf": [{"enum": ["model_quote", "retriever", "literal_match", "repair_pass"]}, {"type": "null"}]},
+              "spans": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["start_char", "end_char", "text"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "start_char": {"type": "integer", "minimum": 0},
+                    "end_char": {"type": "integer", "minimum": 1},
+                    "text": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "unlocated_quotes": {"type": ["integer", "null"], "minimum": 1}
+      }
     },
     "Provenance": {
       "type": "object",

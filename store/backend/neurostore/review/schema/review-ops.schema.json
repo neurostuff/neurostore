@@ -102,9 +102,13 @@
             "type": "object",
             "required": ["spans"],
             "additionalProperties": false,
-            "properties": {"spans": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Span"}}}
+            "properties": {
+              "source": {"anyOf": [{"enum": ["model_quote", "retriever", "literal_match", "repair_pass"]}, {"type": "null"}]},
+              "spans": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Span"}}
+            }
           }
-        }
+        },
+        "unlocated_quotes": {"type": ["integer", "null"], "minimum": 1}
       }
     },
     "OpBase": {

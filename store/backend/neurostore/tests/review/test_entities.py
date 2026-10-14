@@ -50,3 +50,21 @@ def test_an_item_without_a_local_id_is_an_error():
     del record["groups"][0]["local_id"]
     with pytest.raises(ReviewError, match="has no local_id"):
         entities.index(record)
+
+
+def test_index_rows_give_each_entity_of_the_index_in_record_order():
+    rows = entities.index_rows(records.build())
+    assert [row["local_id"] for row in rows] == list(entities.index(records.build()))
+    assert rows[0] == {
+        "local_id": "study", "entity_class": "Study", "schema_class": "Study",
+        "parent": None, "list_path": None,
+    }
+    assert {
+        "local_id": "acq_1", "entity_class": "Acquisition", "schema_class": "MRI",
+        "parent": "study", "list_path": "acquisitions",
+    } in rows
+    assert {
+        "local_id": "cnd_1", "entity_class": "Condition", "schema_class": "Condition",
+        "parent": "tsk_1", "list_path": "conditions",
+    } in rows
+    assert {"local_id", "entity_class", "schema_class", "parent", "list_path"} == set(rows[1])

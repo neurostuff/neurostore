@@ -196,6 +196,10 @@ class _Applier:
         if target["kind"] == "slot":
             item = self._entity(target["entity"]).item
             wrapper = _wrapper_at(item, target, allow_absent=False)
+            if evidence["status"] == "present" and wrapper.get("extraction_status") != "extracted":
+                raise ReviewError(
+                    f"{target['path']}: evidence needs an extracted value; set a value first"
+                )
             before = copy.deepcopy(wrapper.get("evidence"))
             wrapper["evidence"] = evidence
         else:
@@ -325,8 +329,8 @@ class _Applier:
                         f"span {start}-{end} is outside the paper's {len(self.text)} characters"
                     )
                 spans.append({"start_char": start, "end_char": end, "text": self.text[start:end]})
-            filled.append({"spans": spans})
-        return {"status": evidence["status"], **({"sets": filled} if filled else {})}
+            filled.append({**_without(evidence_set, "spans"), "spans": spans})
+        return {**_without(evidence, "sets"), **({"sets": filled} if filled else {})}
 
     def _relationship(self, target, must_exist=False):
         """``(row, owner, linked ids)`` of a relationship target's reference slot."""
@@ -435,7 +439,12 @@ def _op_evidence(evidence):
     if evidence is None:
         return dict(NO_EVIDENCE)
     sets = [
-        {"spans": [{"start_char": s["start_char"], "end_char": s["end_char"]} for s in e["spans"]]}
+        {**_without(e, "spans"),
+         "spans": [{"start_char": s["start_char"], "end_char": s["end_char"]} for s in e["spans"]]}
         for e in evidence.get("sets") or ()
     ]
-    return {"status": evidence["status"], **({"sets": sets} if sets else {})}
+    return {**_without(evidence, "sets"), **({"sets": sets} if sets else {})}
+
+
+def _without(mapping, *keys):
+    return {k: v for k, v in mapping.items() if k not in keys}

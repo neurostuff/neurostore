@@ -225,6 +225,71 @@ def test_set_evidence_on_a_slot_fills_span_text_from_the_paper():
     assert _validates(after.record)
 
 
+AGE_SPAN = (AGE_START, AGE_START + len(AGE))
+
+
+def sourced(source, *spans):
+    return {"source": source,
+            "spans": [{"start_char": s, "end_char": e} for s, e in spans]}
+
+
+def test_adding_a_span_keeps_the_source_of_the_set_it_is_added_to():
+    review, _ = apply(state(), op("set_evidence", target=slot("grp_a", "age_mean"),
+                                  evidence={"status": "present",
+                                            "sets": [sourced("model_quote", AGE_SPAN)]}))
+    after, _ = apply(review, op("set_evidence", target=slot("grp_a", "age_mean"),
+                                evidence={"status": "present",
+                                          "sets": [sourced("model_quote", AGE_SPAN, (0, 6))]}))
+    assert after.record["groups"][0]["age_mean"]["evidence"] == {
+        "status": "present",
+        "sets": [{
+            "source": "model_quote",
+            "spans": [
+                {"start_char": AGE_START, "end_char": AGE_START + len(AGE), "text": AGE},
+                {"start_char": 0, "end_char": 6, "text": "Twenty"},
+            ],
+        }],
+    }
+    assert _validates(after.record)
+
+
+def test_a_set_sent_without_a_source_is_stored_without_one():
+    after, _ = apply(state(), op("set_evidence", target=slot("grp_a", "age_mean"),
+                                 evidence=evidence([AGE_SPAN])))
+    assert "source" not in after.record["groups"][0]["age_mean"]["evidence"]["sets"][0]
+
+
+def test_unlocated_quotes_on_the_evidence_are_kept():
+    after, _ = apply(state(), op("set_evidence", target=slot("grp_a", "age_mean"),
+                                 evidence={"status": "not_found", "unlocated_quotes": 2}))
+    assert after.record["groups"][0]["age_mean"]["evidence"] == {
+        "status": "not_found", "unlocated_quotes": 2,
+    }
+    assert _validates(after.record)
+
+
+def test_present_evidence_needs_an_extracted_value():
+    errors = errors_of(
+        state(),
+        op("set_value", target=slot("grp_a", "age_mean"),
+           value={"extraction_status": "not_reported"}),
+        op("set_evidence", target=slot("grp_a", "age_mean"), evidence=evidence([(0, 6)])),
+    )
+    assert errors == ["op 1: age_mean: evidence needs an extracted value; set a value first"]
+
+
+@pytest.mark.parametrize("status", ["not_found", "not_applicable"])
+def test_evidence_without_spans_is_allowed_on_a_slot_that_is_not_extracted(status):
+    after, _ = apply(
+        state(),
+        op("set_value", target=slot("grp_a", "age_mean"),
+           value={"extraction_status": "not_reported"}),
+        op("set_evidence", target=slot("grp_a", "age_mean"), evidence={"status": status}),
+    )
+    assert after.record["groups"][0]["age_mean"]["evidence"] == {"status": status}
+    assert _validates(after.record)
+
+
 @pytest.mark.parametrize(
     "bad, message",
     [
@@ -731,6 +796,13 @@ SET_VALUE_WITH_SOURCE = op("set_value", target=slot("grp_a", "age_mean"),
         ([], op("delete_entity", target=entity("grp_b"))),
         ([], op("delete_entity", target=entity("grp_a"))),
         ([], op("delete_entity", target=entity("tsk_1"))),
+        ([op("set_evidence", target=slot("grp_a", "age_mean"),
+             evidence={"status": "present", "sets": [sourced("model_quote", AGE_SPAN)]})],
+         op("set_evidence", target=slot("grp_a", "age_mean"),
+            evidence={"status": "present", "sets": [sourced("retriever", (0, 6))]})),
+        ([op("set_evidence", target=slot("grp_a", "age_mean"),
+             evidence={"status": "not_found", "unlocated_quotes": 2})],
+         op("set_evidence", target=slot("grp_a", "age_mean"), evidence=evidence([(0, 6)]))),
         ([SET_VALUE_WITH_SOURCE],
          op("set_value", target=slot("grp_a", "age_mean"),
             value={"extraction_status": "extracted", "value": 40.0})),

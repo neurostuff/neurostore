@@ -58,3 +58,38 @@ def build():
         },
     )
     return copy.deepcopy(record)
+
+
+def coordinate_parse():
+    return fx.parse([
+        fx.table_analysis("t1", [1], "patients > controls", [fx.point((10, 20, 30))]),
+        fx.table_analysis("t1", [2], "controls > patients", [fx.point((-4, 2, 8), "negative")]),
+        fx.table_analysis("t2", [1], "seed", [fx.point((0, 0, 0))], role="anchor"),
+    ])
+
+
+AGE = "Patients were 34.2 years old on average."
+
+
+def golden():
+    """build() with the shapes the golden bundle must carry: a study-level slot, a dotted
+    slot, a not_reported slot and a set with its source."""
+    record = build()
+    start = TEXT.index(AGE)
+    record["description"] = fx.extracted("Two groups, one session.")
+    record["design"]["description"] = fx.extracted("Two groups tested in one session.")
+    record["groups"][0]["age_mean"] = {
+        "extraction_status": "extracted",
+        "value": 34.2,
+        "value_source": "reported",
+        "evidence": {"status": "present", "sets": [{
+            "source": "model_quote",
+            "spans": [{"start_char": start, "end_char": start + len(AGE), "text": AGE}],
+        }]},
+    }
+    record["groups"][1]["age_mean"] = {
+        "extraction_status": "not_reported",
+        "unreported_reason": "ambiguous",
+        "evidence": {"status": "not_applicable"},
+    }
+    return record

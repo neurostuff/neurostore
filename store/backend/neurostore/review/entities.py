@@ -55,3 +55,17 @@ def index(record):
             entities[local_id] = child
             owners[item_path(owner_path, list_path, position)] = child
     return entities
+
+
+def index_rows(record):
+    """The bundle's entity index: one row per entity of index(record), in record order."""
+    return [
+        {
+            "local_id": e.local_id,
+            "entity_class": e.entity_class,
+            "schema_class": e.schema_class,
+            "parent": e.parent,
+            "list_path": e.list_path,
+        }
+        for e in index(record).values()
+    ]
