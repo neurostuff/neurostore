@@ -7,6 +7,7 @@ import re
 from types import new_class
 from typing import Mapping
 
+import sqlalchemy as sa
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 
@@ -114,8 +115,20 @@ def _model_search_columns(model):
     ]
 
 
+# The relationships a model's details and edit pages show. sqladmin fills an edit form's
+# relationship field with every row of the related table (User.points alone is millions),
+# eager-loads a details page's, and cannot load a dynamic one (Role.users) at all.
+_SHOWN_RELATIONSHIPS = {"User": ("roles",)}
+
+
+def _hidden_relationships(model):
+    shown = _SHOWN_RELATIONSHIPS.get(model.__name__, ())
+    return [r.key for r in sa.inspect(model).relationships if r.key not in shown]
+
+
 def _model_view(model, category):
     name, name_plural = _model_names(model)
+    hidden = _hidden_relationships(model)
     attributes = {
         "model": model,
         "name": name,
@@ -127,6 +140,8 @@ def _model_view(model, category):
         "column_list": _model_columns(model),
         "column_searchable_list": _model_search_columns(model),
         "column_sortable_list": _model_columns(model),
+        "column_details_exclude_list": hidden,
+        "form_excluded_columns": hidden,
     }
     return new_class(
         f"{model.__name__}AdminView",
