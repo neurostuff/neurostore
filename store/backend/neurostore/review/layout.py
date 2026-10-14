@@ -1,0 +1,259 @@
+"""Read and write study_schema's file layout, for one paper or a directory or zip of many."""
+
+import hashlib
+import json
+import zipfile
+from dataclasses import dataclass
+from functools import cache
+from pathlib import Path, PurePosixPath
+
+from jsonschema import validators
+from pydantic import ValidationError
+from study_schema import keys
+from study_schema.jsonschema import load
+from study_schema.models.paper_parse import ParsedAnalysis
+
+
+class LayoutError(Exception):
+    def __init__(self, problems):
+        super().__init__("; ".join(problems))
+        self.problems = list(problems)
+
+
+@dataclass(frozen=True)
+class Paper:
+    study_id: str
+    parsed_paper: dict
+    coordinate_parse: dict
+    record: dict
+    text: str
+    raw: dict[str, bytes]
+
+
+def _record_path(study_id):
+    return f"run/records/{study_id}.extraction.json"
+
+
+def _document_paths(study_id):
+    """The paper's JSON documents, relative to the layout root, keyed by Paper field name."""
+    return {
+        "parsed_paper": f"corpus/{study_id}/parse/parsed_paper.json",
+        "coordinate_parse": f"corpus/{study_id}/parse/coordinate_parse.json",
+        "record": _record_path(study_id),
+    }
+
+
+def _text_path(study_id, parsed_paper):
+    return f"corpus/{study_id}/{PurePosixPath(parsed_paper['text_path'])}"
+
+
+def _escapes_paper(text_path):
+    path = PurePosixPath(text_path)
+    return path.is_absolute() or ".." in path.parts
+
+
+def _revision_path(study_id):
+    return f"run/revisions/{study_id}.coordinate_parse.json"
+
+
+def _ops_path(study_id):
+    return f"review/{study_id}.ops.jsonl"
+
+
+def _read(root, relatives):
+    missing = [relative for relative in relatives if not (root / relative).is_file()]
+    if missing:
+        raise LayoutError([f"missing {relative}" for relative in missing])
+    return {relative: (root / relative).read_bytes() for relative in relatives}
+
+
+def _parse_documents(paths, raw):
+    documents, problems = {}, []
+    for name, relative in paths.items():
+        try:
+            documents[name] = json.loads(raw[relative])
+        except ValueError as error:
+            problems.append(f"{relative} is not JSON: {error}")
+            continue
+        if not isinstance(documents[name], dict):
+            problems.append(f"{relative} is not a JSON object")
+    if problems:
+        raise LayoutError(problems)
+    text_path = documents["parsed_paper"].get("text_path")
+    if not isinstance(text_path, str):
+        raise LayoutError([f"{paths['parsed_paper']} has no text_path"])
+    if _escapes_paper(text_path):
+        raise LayoutError(
+            [f"{paths['parsed_paper']} text_path {text_path!r} is absolute or contains '..'"]
+        )
+    return documents
+
+
+def read_paper(root: Path | zipfile.Path, study_id: str) -> Paper:
+    paths = _document_paths(study_id)
+    raw = _read(root, list(paths.values()))
+    documents = _parse_documents(paths, raw)
+    text_path = _text_path(study_id, documents["parsed_paper"])
+    raw.update(_read(root, [text_path]))
+    try:
+        text = raw[text_path].decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise LayoutError([f"{text_path} is not UTF-8 text: {error}"]) from error
+    return Paper(
+        study_id=study_id,
+        parsed_paper=documents["parsed_paper"],
+        coordinate_parse=documents["coordinate_parse"],
+        record=documents["record"],
+        text=text,
+        raw=raw,
+    )
+
+
+@cache
+def _validator(name):
+    schema = load(name)
+    return validators.validator_for(schema)(schema)
+
+
+def _dotted(path):
+    return ".".join(str(part) for part in path)
+
+
+def _schema_problems(label, name, document):
+    errors = sorted(_validator(name).iter_errors(document), key=lambda e: list(e.path))
+    return [f"{label} at {_dotted(e.path) or '(root)'}: {e.message}" for e in errors]
+
+
+def _hash_problems(paper):
+    text_path = _text_path(paper.study_id, paper.parsed_paper)
+    actual = hashlib.sha256(paper.raw[text_path]).hexdigest()
+    declared = {
+        "parsed_paper text_sha256": paper.parsed_paper.get("text_sha256"),
+        "coordinate_parse text_sha256": paper.coordinate_parse.get("text_sha256"),
+    }
+    source_text_hash = (paper.record.get("extraction_metadata") or {}).get("source_text_hash")
+    if source_text_hash is not None:
+        declared["record extraction_metadata.source_text_hash"] = source_text_hash
+    return [
+        f"{field} {value} != sha256 of {text_path} {actual}"
+        for field, value in declared.items()
+        if value != actual
+    ]
+
+
+def _nodes(value, path=()):
+    yield path, value
+    if isinstance(value, dict):
+        children = value.items()
+    elif isinstance(value, list):
+        children = enumerate(value)
+    else:
+        return
+    for key, child in children:
+        yield from _nodes(child, (*path, key))
+
+
+def _is_span_path(path):
+    """Whether path ends in ...evidence.sets.<i>.spans.<j>, the shape of an evidence span."""
+    return (
+        len(path) >= 5
+        and path[-5:-3] == ("evidence", "sets")
+        and path[-2] == "spans"
+        and isinstance(path[-3], int)
+        and isinstance(path[-1], int)
+    )
+
+
+def _span_problems(record, text):
+    problems = []
+    for path, span in _nodes(record):
+        if not (_is_span_path(path) and isinstance(span, dict)):
+            continue
+        start, end, quote = span.get("start_char"), span.get("end_char"), span.get("text")
+        if not (isinstance(start, int) and isinstance(end, int) and isinstance(quote, str)):
+            continue
+        where = f"record {_dotted(path)}"
+        if not 0 <= start < end <= len(text):
+            problems.append(
+                f"{where}: span [{start}, {end}) is not within the text of {len(text)} characters"
+            )
+        elif text[start:end] != quote:
+            problems.append(f"{where}: text[{start}:{end}] is {text[start:end]!r}, not {quote!r}")
+    return problems
+
+
+def _key_problems(coordinate_parse):
+    problems = []
+    for i, analysis in enumerate(coordinate_parse.get("analyses") or ()):
+        try:
+            expected = keys.key_for(ParsedAnalysis.model_validate(analysis))
+        except ValidationError:
+            continue
+        key = analysis.get("key")
+        if key != expected:
+            problems.append(f"coordinate_parse analyses.{i}.key {key} != {expected}")
+    return problems
+
+
+def check_paper(paper: Paper) -> list[str]:
+    return [
+        *_schema_problems("parsed_paper", "parsed-paper", paper.parsed_paper),
+        *_schema_problems("coordinate_parse", "coordinate-parse", paper.coordinate_parse),
+        *_schema_problems("record", "extraction-record", paper.record),
+        *_hash_problems(paper),
+        *_span_problems(paper.record, paper.text),
+        *_key_problems(paper.coordinate_parse),
+    ]
+
+
+def _layout_root(source, root):
+    if (root / "corpus").is_dir():
+        return root
+    tops = [child for child in root.iterdir() if (child / "corpus").is_dir()]
+    if len(tops) != 1:
+        raise LayoutError(
+            [f"{source} has no corpus/ at its root or under exactly one top folder"]
+        )
+    return tops[0]
+
+
+def _read_papers(root):
+    study_ids = sorted(
+        child.name
+        for child in (root / "corpus").iterdir()
+        if child.is_dir() and (root / _record_path(child.name)).is_file()
+    )
+    return [read_paper(root, study_id) for study_id in study_ids]
+
+
+def read_layout(source: Path) -> list[Paper]:
+    if source.is_dir():
+        if not (source / "corpus").is_dir():
+            raise LayoutError([f"{source} has no corpus/ at its root"])
+        return _read_papers(source)
+    if not zipfile.is_zipfile(source):
+        raise LayoutError([f"{source} is neither a layout directory nor a zip"])
+    with zipfile.ZipFile(source) as archive:
+        return _read_papers(_layout_root(source, zipfile.Path(archive)))
+
+
+def _dumped(document):
+    return (json.dumps(document, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def write_export(
+    out: Path, paper: Paper, record: dict, coordinate_revision: dict | None, ops: list[dict]
+) -> None:
+    study_id = paper.study_id
+    files = dict(paper.raw)
+    if record != paper.record:
+        files[_record_path(study_id)] = _dumped(record)
+    if coordinate_revision is not None:
+        files[_revision_path(study_id)] = _dumped(coordinate_revision)
+    files[_ops_path(study_id)] = "".join(
+        json.dumps(op, ensure_ascii=False) + "\n" for op in ops
+    ).encode("utf-8")
+    for relative, data in files.items():
+        path = out / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
