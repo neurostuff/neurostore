@@ -214,8 +214,20 @@ class BaseStudy(BaseMixin, db.Model):
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    #: Legacy; fulltexts holds the reviewed text (see the PRD).
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
+    fulltext_id = db.Column(
+        db.Text,
+        db.ForeignKey(
+            "fulltexts.id",
+            name="fk_base_studies_fulltext_id",
+            ondelete="SET NULL",
+            use_alter=True,
+        ),
+        nullable=True,
+    )
+    fulltext = relationship("Fulltext", foreign_keys=[fulltext_id], lazy="raise", viewonly=True)
     is_active = db.Column(
         db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
     )
@@ -1448,8 +1460,10 @@ def analysis_role_clause(role):
     return Analysis.role == role
 
 
+from neurostore.models import fulltext_listeners  # noqa E402
 from neurostore.models import image_count_listeners  # noqa E402
 from neurostore.models import point_count_listeners  # noqa E402
 
+del fulltext_listeners
 del image_count_listeners
 del point_count_listeners
