@@ -1,0 +1,60 @@
+"""A small synthetic extraction record and paper text for the review core's tests."""
+
+import copy
+
+from neurostore.tests import study_schema_fixtures as fx
+
+TEXT = (
+    "Twenty patients and eighteen controls performed a Stroop task during fMRI. "
+    "Patients were 34.2 years old on average. Images were acquired on a 3T scanner."
+)
+
+
+def item(cls, local_id, **fields):
+    entity = fx.minimal(fx.defs[cls])
+    entity.update(local_id=local_id, **fields)
+    return entity
+
+
+def build():
+    analysis = item(
+        "Analysis",
+        "an_1",
+        name=fx.extracted("patients > controls"),
+        measure="msr_1",
+        model_estimation="mdl_1",
+        groups=[{"group": "grp_a", "n": fx.extracted(20)}],
+        tasks=["tsk_1"],
+        acquisitions=["acq_1"],
+    )
+    analysis["effect"]["cells"] = [
+        {"term": "trm_1", "level": fx.extracted("patients"), "direction": fx.extracted("positive")}
+    ]
+    record = fx.record([analysis])
+    record.update(
+        groups=[
+            item("Group", "grp_a", name=fx.extracted("patients"), age_mean=fx.extracted(34.2)),
+            item("Group", "grp_b", name=fx.extracted("controls")),
+        ],
+        tasks=[
+            item(
+                "Task",
+                "tsk_1",
+                name=fx.extracted("Stroop"),
+                conditions=[item("Condition", "cnd_1"), item("Condition", "cnd_2")],
+            )
+        ],
+        assessments=[item("Assessment", "asm_1")],
+        regions=[item("Region", "reg_1")],
+        devices=[item("Device", "dev_1")],
+        acquisitions=[item("MRI", "acq_1", device="dev_1")],
+        model_estimations=[
+            item("ModelEstimation", "mdl_1", terms=[item("ModelTerm", "trm_1")])
+        ],
+        measures=[item("Measure", "msr_1")],
+        design={
+            "arms": [item("Arm", "arm_1")],
+            "timepoints": [item("Timepoint", "tp_1")],
+        },
+    )
+    return copy.deepcopy(record)

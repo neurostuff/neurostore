@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neurostore.org/schemas/review-ops/1",
+  "title": "ReviewOpBatch",
+  "description": "One batch of a reviewer's edits to one paper's extraction, applied in order.",
+  "version": "1",
+  "type": "object",
+  "required": ["ops"],
+  "additionalProperties": false,
+  "properties": {
+    "ops": {"type": "array", "minItems": 1, "maxItems": 500, "items": {"$ref": "#/$defs/Op"}}
+  },
+  "$defs": {
+    "LocalId": {
+      "description": "An entity's local_id in the record, or \"study\" for the record's root Study.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "FieldPath": {
+      "description": "A path below an entity: dotted attributes, each optionally selecting one list item by slot values (groups[group=grp_x].n) or by position (sex_distribution[#0].count).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\[(#[0-9]+|[A-Za-z_][A-Za-z0-9_]*=[^\\]]*(,[A-Za-z_][A-Za-z0-9_]*=[^\\]]*)*)\\])?(\\.[A-Za-z_][A-Za-z0-9_]*(\\[(#[0-9]+|[A-Za-z_][A-Za-z0-9_]*=[^\\]]*(,[A-Za-z_][A-Za-z0-9_]*=[^\\]]*)*)\\])?)*$"
+    },
+    "SlotTarget": {
+      "type": "object",
+      "required": ["kind", "entity", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "slot"},
+        "entity": {"$ref": "#/$defs/LocalId"},
+        "path": {"$ref": "#/$defs/FieldPath"}
+      }
+    },
+    "EntityTarget": {
+      "type": "object",
+      "required": ["kind", "entity"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "entity"},
+        "entity": {"$ref": "#/$defs/LocalId"}
+      }
+    },
+    "RelationshipTarget": {
+      "description": "One reference from an entity to another: the reference slot at path on entity, pointing at target_entity.",
+      "type": "object",
+      "required": ["kind", "entity", "path", "target_entity"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "relationship"},
+        "entity": {"$ref": "#/$defs/LocalId"},
+        "path": {"$ref": "#/$defs/FieldPath"},
+        "target_entity": {"$ref": "#/$defs/LocalId"}
+      }
+    },
+    "CoordinateTarget": {
+      "type": "object",
+      "required": ["kind", "analysis_key"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "coordinate_analysis"},
+        "analysis_key": {"type": "string", "pattern": "^analysis#[0-9a-f]{16}$"}
+      }
+    },
+    "PaperTarget": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {"kind": {"const": "paper"}}
+    },
+    "AnyTarget": {
+      "oneOf": [
+        {"$ref": "#/$defs/SlotTarget"},
+        {"$ref": "#/$defs/EntityTarget"},
+        {"$ref": "#/$defs/RelationshipTarget"},
+        {"$ref": "#/$defs/CoordinateTarget"},
+        {"$ref": "#/$defs/PaperTarget"}
+      ]
+    },
+    "Span": {
+      "description": "A half-open character range of the paper's text. The server fills text from the paper; a client never sends it.",
+      "type": "object",
+      "required": ["start_char", "end_char"],
+      "additionalProperties": false,
+      "properties": {
+        "start_char": {"type": "integer", "minimum": 0},
+        "end_char": {"type": "integer", "minimum": 1}
+      }
+    },
+    "Evidence": {
+      "description": "An evidence record: sets are alternatives; the spans of one set support the value together.",
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["present", "not_found", "not_applicable"]},
+        "sets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["spans"],
+            "additionalProperties": false,
+            "properties": {"spans": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Span"}}}
+          }
+        }
+      }
+    },
+    "OpBase": {
+      "type": "object",
+      "required": ["client_op_id", "type"],
+      "properties": {
+        "client_op_id": {
+          "description": "Client-minted op id, unique within a review.",
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 64
+        },
+        "note": {"type": ["string", "null"], "maxLength": 10000}
+      }
+    },
+    "VerdictOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target", "verdict"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "verdict"},
+        "target": {"$ref": "#/$defs/AnyTarget"},
+        "verdict": {"enum": ["accept", "reject"]},
+        "reason": {"enum": ["wrong_value", "not_in_text", "wrong_entity", "duplicate", "other"]}
+      },
+      "additionalProperties": false,
+      "if": {"properties": {"verdict": {"const": "reject"}}},
+      "then": {"required": ["reason"]}
+    },
+    "SetValueOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target", "value"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "set_value"},
+        "target": {"$ref": "#/$defs/SlotTarget"},
+        "value": {
+          "type": "object",
+          "required": ["extraction_status"],
+          "additionalProperties": false,
+          "properties": {
+            "extraction_status": {"enum": ["extracted", "not_reported"]},
+            "value": true,
+            "value_source": {"enum": ["reported", "generated"]},
+            "unreported_reason": {"enum": ["ambiguous", "outside_text", "cited_elsewhere", "undetermined"]}
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SetEvidenceOp": {
+      "description": "On a slot the evidence is written into the record; on an entity or a relationship it is kept in the review only.",
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target", "evidence"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "set_evidence"},
+        "target": {
+          "oneOf": [
+            {"$ref": "#/$defs/SlotTarget"},
+            {"$ref": "#/$defs/EntityTarget"},
+            {"$ref": "#/$defs/RelationshipTarget"}
+          ]
+        },
+        "evidence": {"$ref": "#/$defs/Evidence"}
+      },
+      "additionalProperties": false
+    },
+    "CreateEntityOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "parent", "list", "entity"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "create_entity"},
+        "parent": {"$ref": "#/$defs/LocalId"},
+        "list": {
+          "description": "The entity list on parent the new entity joins (groups on the study, conditions on a task).",
+          "$ref": "#/$defs/FieldPath"
+        },
+        "index": {"description": "Position in the list; appended when absent.", "type": "integer", "minimum": 0},
+        "entity": {
+          "description": "The new entity as the extraction schema shapes it; a missing local_id is minted by the server.",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeleteEntityOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "delete_entity"},
+        "target": {"$ref": "#/$defs/EntityTarget"}
+      },
+      "additionalProperties": false
+    },
+    "LinkOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"enum": ["link", "unlink"]},
+        "target": {"$ref": "#/$defs/RelationshipTarget"},
+        "index": {"description": "Position in the list; appended when absent.", "type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "CoordinateOp": {
+      "description": "An edit of the coordinate parse, saved as a revision with the coordinate parse schema's verdicts.",
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target", "action"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "coordinate"},
+        "target": {"$ref": "#/$defs/CoordinateTarget"},
+        "action": {
+          "description": "accept, relabel (needs role) and omit are applied; the other actions are rejected.",
+          "enum": ["accept", "relabel", "split", "merge", "omit", "add", "edit_points"]
+        },
+        "role": {"enum": ["result", "anchor", "localization", "reference", "other"]},
+        "payload": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "NoteOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target", "note"],
+      "properties": {
+        "client_op_id": true,
+        "note": {"type": "string", "minLength": 1, "maxLength": 10000},
+        "type": {"const": "note"},
+        "target": {"$ref": "#/$defs/AnyTarget"}
+      },
+      "additionalProperties": false
+    },
+    "Op": {
+      "oneOf": [
+        {"$ref": "#/$defs/VerdictOp"},
+        {"$ref": "#/$defs/SetValueOp"},
+        {"$ref": "#/$defs/SetEvidenceOp"},
+        {"$ref": "#/$defs/CreateEntityOp"},
+        {"$ref": "#/$defs/DeleteEntityOp"},
+        {"$ref": "#/$defs/LinkOp"},
+        {"$ref": "#/$defs/CoordinateOp"},
+        {"$ref": "#/$defs/NoteOp"}
+      ]
+    }
+  }
+}
