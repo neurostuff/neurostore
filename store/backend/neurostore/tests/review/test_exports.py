@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import pytest
 import sqlalchemy as sa
 from click.testing import CliRunner
+from jsonschema import Draft202012Validator
 
 from neurostore import cli
 from neurostore.database import db
@@ -163,9 +164,16 @@ def test_an_unedited_review_exports_its_documents_and_an_empty_ops_file(
     assert not (tmp_path / "out" / "run" / "revisions").exists()
 
 
-def test_an_edited_review_exports_its_record_marked_as_a_review_version(
-    session, reviewers, tmp_path
-):
+def wrapper_of(root, paper_id=PAPER_ID):
+    return json.loads((root / f"run/provenance/{paper_id}.json").read_text("utf-8"))
+
+
+def provenance_errors(document):
+    schema = json.loads(exports.PROVENANCE_SCHEMA.read_text("utf-8"))
+    return [error.message for error in Draft202012Validator(schema).iter_errors(document)]
+
+
+def test_an_edited_review_exports_its_record_untouched(session, reviewers, tmp_path):
     _, source_id = load(session, tmp_path / "in")
     review_id = edit(session, source_id, REVIEWER, set_name("a1", "Faces versus houses"))
 
@@ -173,13 +181,53 @@ def test_an_edited_review_exports_its_record_marked_as_a_review_version(
 
     review = service.get_review(session, review_id)
     record = json.loads((tmp_path / "out" / f"run/records/{PAPER_ID}.extraction.json").read_text())
-    metadata = record.pop("extraction_metadata")
-    expected = {k: v for k, v in review["record"].items() if k != "extraction_metadata"}
-    assert record == expected
+    assert record == review["record"]
     assert record["analyses"][0]["name"]["value"] == "Faces versus houses"
-    assert metadata["repaired_by"] == f"neurostore-review/{review_id}"
-    assert metadata["extraction_date"] == review["ops"][-1]["created_at"][:10]
-    assert schema_errors("extraction-record", {**record, "extraction_metadata": metadata}) == []
+    assert "repaired_by" not in record["extraction_metadata"]
+    assert "extraction_date" not in record["extraction_metadata"]
+
+
+def test_an_edited_review_writes_a_wrapper_beside_its_record(session, reviewers, tmp_path):
+    _, source_id = load(session, tmp_path / "in")
+    review_id = edit(session, source_id, REVIEWER, set_name("a1", "Faces versus houses"))
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    review = service.get_review(session, review_id)
+    source = session.get(ReviewSource, source_id)
+    wrapper = wrapper_of(tmp_path / "out")
+    assert provenance_errors(wrapper) == []
+    assert wrapper == {
+        "record_path": f"run/records/{PAPER_ID}.extraction.json",
+        "source": {
+            "kind": "review",
+            "review_id": review_id,
+            "user_id": REVIEWER,
+            "state": "in_progress",
+        },
+        "derived_from": {"source_id": source_id, "record_sha256": source.record_sha256},
+        "edited": True,
+        "last_edit_at": review["ops"][-1]["created_at"],
+        "producer": {"name": "neurostore-review", "version": 1},
+    }
+
+
+def test_an_unedited_review_writes_a_wrapper_that_says_so(session, reviewers, tmp_path):
+    _, source_id = load(session, tmp_path / "in")
+    review_id = edit(session, source_id, REVIEWER)
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    wrapper = wrapper_of(tmp_path / "out")
+    assert provenance_errors(wrapper) == []
+    assert wrapper["source"] == {
+        "kind": "review",
+        "review_id": review_id,
+        "user_id": REVIEWER,
+        "state": "in_progress",
+    }
+    assert wrapper["edited"] is False
+    assert wrapper["last_edit_at"] is None
 
 
 def test_a_review_that_only_omits_a_coordinate_exports_the_loaded_record(
@@ -192,10 +240,10 @@ def test_a_review_that_only_omits_a_coordinate_exports_the_loaded_record(
 
     record = json.loads((tmp_path / "out" / f"run/records/{PAPER_ID}.extraction.json").read_text())
     assert record == json.loads(files["run/records/s1.extraction.json"])
-    assert "repaired_by" not in record["extraction_metadata"]
+    assert wrapper_of(tmp_path / "out")["edited"] is False
 
 
-def test_the_extraction_date_of_a_marked_record_is_the_day_of_the_last_op(
+def test_the_last_edit_of_a_wrapper_is_the_time_of_the_last_op(
     session, reviewers, tmp_path
 ):
     _, source_id = load(session, tmp_path / "in")
@@ -209,8 +257,7 @@ def test_the_extraction_date_of_a_marked_record_is_the_day_of_the_last_op(
 
     exports.export_review(session, review_id, tmp_path / "out")
 
-    record = json.loads((tmp_path / "out" / f"run/records/{PAPER_ID}.extraction.json").read_text())
-    assert record["extraction_metadata"]["extraction_date"] == "2026-10-03"
+    assert wrapper_of(tmp_path / "out")["last_edit_at"] == "2026-10-03T18:00:00+00:00"
 
 
 def test_the_ops_file_holds_the_ops_in_seq_order(session, reviewers, tmp_path):
@@ -260,6 +307,7 @@ def test_reimporting_an_edited_export_loads_a_new_source(session, reviewers, tmp
     exported = json.loads(
         (tmp_path / "out" / f"run/records/{PAPER_ID}.extraction.json").read_text()
     )
+    assert exported == service.get_review(session, review_id)["record"]
     assert session.get(ReviewSource, loaded["source_id"]).record == exported
 
 
@@ -278,7 +326,7 @@ def test_two_reviewers_of_one_source_get_two_trees(session, reviewers, tmp_path)
         assert record["analyses"][0]["name"]["value"] == value
 
 
-def test_each_reviewer_tree_holds_its_marked_record_its_revision_and_its_ops(
+def test_each_reviewer_tree_holds_its_record_its_wrapper_its_revision_and_its_ops(
     session, reviewers, tmp_path
 ):
     _, source_id = load(session, tmp_path / "in")
@@ -294,9 +342,11 @@ def test_each_reviewer_tree_holds_its_marked_record_its_revision_and_its_ops(
     for user_id, review in reviews.items():
         root = tmp_path / "out" / user_id
         record = json.loads((root / f"run/records/{PAPER_ID}.extraction.json").read_text())
-        marker = f"neurostore-review/{review['id']}"
-        assert record["extraction_metadata"]["repaired_by"] == marker
-        assert record["analyses"][0]["name"] == review["record"]["analyses"][0]["name"]
+        assert record == review["record"]
+        wrapper = wrapper_of(root)
+        assert provenance_errors(wrapper) == []
+        assert wrapper["source"]["review_id"] == review["id"]
+        assert wrapper["source"]["user_id"] == user_id
         lines = (root / f"review/{PAPER_ID}.ops.jsonl").read_text("utf-8").splitlines()
         seqs = [json.loads(line)["seq"] for line in lines]
         assert seqs == [op["seq"] for op in review["ops"]]
@@ -306,6 +356,31 @@ def test_each_reviewer_tree_holds_its_marked_record_its_revision_and_its_ops(
     )
     assert revision == reviews[REVIEWER]["coordinate_revision"]
     assert not (tmp_path / "out" / OTHER / "run" / "revisions").exists()
+
+
+def test_an_unreviewed_source_exports_a_wrapper_naming_the_source(
+    session, reviewers, tmp_path
+):
+    _, source_id = load(session, tmp_path / "in")
+    source = session.get(ReviewSource, source_id)
+
+    exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
+
+    wrapper = wrapper_of(tmp_path / "out" / exports.SOURCE_DIR)
+    assert provenance_errors(wrapper) == []
+    assert wrapper == {
+        "record_path": f"run/records/{PAPER_ID}.extraction.json",
+        "source": {
+            "kind": "source",
+            "source_id": source_id,
+            "origin": source.origin,
+            "run_id": None,
+        },
+        "derived_from": {"source_id": source_id, "record_sha256": source.record_sha256},
+        "edited": False,
+        "last_edit_at": None,
+        "producer": {"name": "neurostore-review", "version": 1},
+    }
 
 
 def reviewed_papers(session, tmp_path):

@@ -1,0 +1,2797 @@
+[
+  {
+    "name": "fresh batch",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-accept-a",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_a"
+                },
+                "verdict": "accept"
+              },
+              {
+                "client_op_id": "scenario-name-b",
+                "type": "set_value",
+                "target": {
+                  "kind": "slot",
+                  "entity": "grp_b",
+                  "path": "name"
+                },
+                "value": {
+                  "extraction_status": "extracted",
+                  "value": "healthy controls",
+                  "value_source": "reported"
+                }
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "ops": [
+              {
+                "seq": 1,
+                "op": {
+                  "client_op_id": "scenario-accept-a",
+                  "type": "verdict",
+                  "target": {
+                    "kind": "entity",
+                    "entity": "grp_a"
+                  },
+                  "verdict": "accept"
+                },
+                "before": null,
+                "after": {
+                  "state": "verified",
+                  "user_id": "user1-id",
+                  "at": "<iso>"
+                },
+                "user_id": "user1-id",
+                "created_at": "<iso>"
+              },
+              {
+                "seq": 2,
+                "op": {
+                  "client_op_id": "scenario-name-b",
+                  "type": "set_value",
+                  "target": {
+                    "kind": "slot",
+                    "entity": "grp_b",
+                    "path": "name"
+                  },
+                  "value": {
+                    "extraction_status": "extracted",
+                    "value": "healthy controls",
+                    "value_source": "reported"
+                  }
+                },
+                "before": {
+                  "value": "controls",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted"
+                },
+                "after": {
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted",
+                  "value": "healthy controls",
+                  "value_source": "reported"
+                },
+                "user_id": "user1-id",
+                "created_at": "<iso>"
+              }
+            ],
+            "last_seq": 2,
+            "record": {
+              "tasks": [
+                {
+                  "name": {
+                    "value": "Stroop",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "tsk_1",
+                  "conditions": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_1"
+                    },
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_2"
+                    }
+                  ]
+                }
+              ],
+              "design": {
+                "arms": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "arm_kind": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "arm_1"
+                  }
+                ],
+                "timepoints": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "tp_1",
+                    "relation_to_intervention": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    }
+                  }
+                ],
+                "description": {
+                  "value": "Two groups tested in one session.",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted"
+                }
+              },
+              "groups": [
+                {
+                  "name": {
+                    "value": "patients",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "value": 34.2,
+                    "evidence": {
+                      "sets": [
+                        {
+                          "spans": [
+                            {
+                              "text": "Patients were 34.2 years old on average.",
+                              "end_char": 115,
+                              "start_char": 75
+                            }
+                          ],
+                          "source": "model_quote"
+                        }
+                      ],
+                      "status": "present"
+                    },
+                    "value_source": "reported",
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "grp_a"
+                },
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted",
+                    "value": "healthy controls",
+                    "value_source": "reported"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported",
+                    "unreported_reason": "ambiguous"
+                  },
+                  "local_id": "grp_b"
+                }
+              ],
+              "devices": [
+                {
+                  "local_id": "dev_1"
+                }
+              ],
+              "regions": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "reg_1",
+                  "definition_method": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "analyses": [
+                {
+                  "name": {
+                    "value": "patients > controls",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "tasks": [
+                    "tsk_1"
+                  ],
+                  "effect": {
+                    "cells": [
+                      {
+                        "term": "trm_1",
+                        "level": {
+                          "value": "patients",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        },
+                        "direction": {
+                          "value": "positive",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        }
+                      }
+                    ],
+                    "statistic": {
+                      "family": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      }
+                    }
+                  },
+                  "groups": [
+                    {
+                      "n": {
+                        "value": 20,
+                        "evidence": {
+                          "status": "not_found"
+                        },
+                        "extraction_status": "extracted"
+                      },
+                      "group": "grp_a"
+                    }
+                  ],
+                  "details": {
+                    "details_type": "MassUnivariateDetails"
+                  },
+                  "measure": "msr_1",
+                  "local_id": "an_1",
+                  "definition": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisitions": [
+                    "acq_1"
+                  ],
+                  "spatial_scope": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_estimation": "mdl_1",
+                  "prespecification": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "source_table_analysis": {
+                    "value": "analysis#12d544dad3a9b2df",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  }
+                }
+              ],
+              "local_id": "study-1",
+              "measures": [
+                {
+                  "type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "msr_1"
+                }
+              ],
+              "assessments": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "asm_1"
+                }
+              ],
+              "description": {
+                "value": "Two groups, one session.",
+                "evidence": {
+                  "status": "not_found"
+                },
+                "extraction_status": "extracted"
+              },
+              "acquisitions": [
+                {
+                  "device": "dev_1",
+                  "local_id": "acq_1",
+                  "modality": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisition_type": "MRI"
+                }
+              ],
+              "model_estimations": [
+                {
+                  "stage": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "terms": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "type": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "trm_1"
+                    }
+                  ],
+                  "local_id": "mdl_1",
+                  "model_type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "extraction_metadata": {
+                "extractor_model": "gpt-6.1-sol",
+                "extractor_version": "1.0.0"
+              }
+            },
+            "coordinate_revision": null,
+            "provenance": {
+              "entity:grp_a": {
+                "state": "verified",
+                "user_id": "user1-id",
+                "at": "<iso>"
+              },
+              "slot:grp_b:name": {
+                "state": "edited",
+                "user_id": "user1-id",
+                "at": "<iso>"
+              }
+            },
+            "annotations": {},
+            "hidden": {
+              "analyses": [],
+              "entities": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "full replay",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-accept-a",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_a"
+                },
+                "verdict": "accept"
+              },
+              {
+                "client_op_id": "scenario-name-b",
+                "type": "set_value",
+                "target": {
+                  "kind": "slot",
+                  "entity": "grp_b",
+                  "path": "name"
+                },
+                "value": {
+                  "extraction_status": "extracted",
+                  "value": "healthy controls",
+                  "value_source": "reported"
+                }
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "ops": [
+              {
+                "seq": 1,
+                "op": {
+                  "client_op_id": "scenario-accept-a",
+                  "type": "verdict",
+                  "target": {
+                    "kind": "entity",
+                    "entity": "grp_a"
+                  },
+                  "verdict": "accept"
+                },
+                "before": null,
+                "after": {
+                  "state": "verified",
+                  "user_id": "user1-id",
+                  "at": "<iso>"
+                },
+                "user_id": "user1-id",
+                "created_at": "<iso>"
+              },
+              {
+                "seq": 2,
+                "op": {
+                  "client_op_id": "scenario-name-b",
+                  "type": "set_value",
+                  "target": {
+                    "kind": "slot",
+                    "entity": "grp_b",
+                    "path": "name"
+                  },
+                  "value": {
+                    "extraction_status": "extracted",
+                    "value": "healthy controls",
+                    "value_source": "reported"
+                  }
+                },
+                "before": {
+                  "value": "controls",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted"
+                },
+                "after": {
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted",
+                  "value": "healthy controls",
+                  "value_source": "reported"
+                },
+                "user_id": "user1-id",
+                "created_at": "<iso>"
+              }
+            ],
+            "last_seq": 2,
+            "record": {
+              "tasks": [
+                {
+                  "name": {
+                    "value": "Stroop",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "tsk_1",
+                  "conditions": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_1"
+                    },
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_2"
+                    }
+                  ]
+                }
+              ],
+              "design": {
+                "arms": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "arm_kind": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "arm_1"
+                  }
+                ],
+                "timepoints": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "tp_1",
+                    "relation_to_intervention": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    }
+                  }
+                ],
+                "description": {
+                  "value": "Two groups tested in one session.",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted"
+                }
+              },
+              "groups": [
+                {
+                  "name": {
+                    "value": "patients",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "value": 34.2,
+                    "evidence": {
+                      "sets": [
+                        {
+                          "spans": [
+                            {
+                              "text": "Patients were 34.2 years old on average.",
+                              "end_char": 115,
+                              "start_char": 75
+                            }
+                          ],
+                          "source": "model_quote"
+                        }
+                      ],
+                      "status": "present"
+                    },
+                    "value_source": "reported",
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "grp_a"
+                },
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted",
+                    "value": "healthy controls",
+                    "value_source": "reported"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported",
+                    "unreported_reason": "ambiguous"
+                  },
+                  "local_id": "grp_b"
+                }
+              ],
+              "devices": [
+                {
+                  "local_id": "dev_1"
+                }
+              ],
+              "regions": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "reg_1",
+                  "definition_method": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "analyses": [
+                {
+                  "name": {
+                    "value": "patients > controls",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "tasks": [
+                    "tsk_1"
+                  ],
+                  "effect": {
+                    "cells": [
+                      {
+                        "term": "trm_1",
+                        "level": {
+                          "value": "patients",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        },
+                        "direction": {
+                          "value": "positive",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        }
+                      }
+                    ],
+                    "statistic": {
+                      "family": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      }
+                    }
+                  },
+                  "groups": [
+                    {
+                      "n": {
+                        "value": 20,
+                        "evidence": {
+                          "status": "not_found"
+                        },
+                        "extraction_status": "extracted"
+                      },
+                      "group": "grp_a"
+                    }
+                  ],
+                  "details": {
+                    "details_type": "MassUnivariateDetails"
+                  },
+                  "measure": "msr_1",
+                  "local_id": "an_1",
+                  "definition": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisitions": [
+                    "acq_1"
+                  ],
+                  "spatial_scope": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_estimation": "mdl_1",
+                  "prespecification": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "source_table_analysis": {
+                    "value": "analysis#12d544dad3a9b2df",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  }
+                }
+              ],
+              "local_id": "study-1",
+              "measures": [
+                {
+                  "type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "msr_1"
+                }
+              ],
+              "assessments": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "asm_1"
+                }
+              ],
+              "description": {
+                "value": "Two groups, one session.",
+                "evidence": {
+                  "status": "not_found"
+                },
+                "extraction_status": "extracted"
+              },
+              "acquisitions": [
+                {
+                  "device": "dev_1",
+                  "local_id": "acq_1",
+                  "modality": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisition_type": "MRI"
+                }
+              ],
+              "model_estimations": [
+                {
+                  "stage": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "terms": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "type": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "trm_1"
+                    }
+                  ],
+                  "local_id": "mdl_1",
+                  "model_type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "extraction_metadata": {
+                "extractor_model": "gpt-6.1-sol",
+                "extractor_version": "1.0.0"
+              }
+            },
+            "coordinate_revision": null,
+            "provenance": {
+              "entity:grp_a": {
+                "state": "verified",
+                "user_id": "user1-id",
+                "at": "<iso>"
+              },
+              "slot:grp_b:name": {
+                "state": "edited",
+                "user_id": "user1-id",
+                "at": "<iso>"
+              }
+            },
+            "annotations": {},
+            "hidden": {
+              "analyses": [],
+              "entities": []
+            }
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-accept-a",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_a"
+                },
+                "verdict": "accept"
+              },
+              {
+                "client_op_id": "scenario-name-b",
+                "type": "set_value",
+                "target": {
+                  "kind": "slot",
+                  "entity": "grp_b",
+                  "path": "name"
+                },
+                "value": {
+                  "extraction_status": "extracted",
+                  "value": "healthy controls",
+                  "value_source": "reported"
+                }
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "ops": [
+              {
+                "seq": 1,
+                "op": {
+                  "type": "verdict",
+                  "target": {
+                    "kind": "entity",
+                    "entity": "grp_a"
+                  },
+                  "verdict": "accept",
+                  "client_op_id": "scenario-accept-a"
+                },
+                "before": null,
+                "after": {
+                  "at": "<iso>",
+                  "state": "verified",
+                  "user_id": "user1-id"
+                },
+                "user_id": "user1-id",
+                "created_at": "<iso>"
+              },
+              {
+                "seq": 2,
+                "op": {
+                  "type": "set_value",
+                  "value": {
+                    "value": "healthy controls",
+                    "value_source": "reported",
+                    "extraction_status": "extracted"
+                  },
+                  "target": {
+                    "kind": "slot",
+                    "path": "name",
+                    "entity": "grp_b"
+                  },
+                  "client_op_id": "scenario-name-b"
+                },
+                "before": {
+                  "value": "controls",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted"
+                },
+                "after": {
+                  "value": "healthy controls",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "value_source": "reported",
+                  "extraction_status": "extracted"
+                },
+                "user_id": "user1-id",
+                "created_at": "<iso>"
+              }
+            ],
+            "last_seq": 2,
+            "record": {
+              "tasks": [
+                {
+                  "name": {
+                    "value": "Stroop",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "tsk_1",
+                  "conditions": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_1"
+                    },
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_2"
+                    }
+                  ]
+                }
+              ],
+              "design": {
+                "arms": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "arm_kind": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "arm_1"
+                  }
+                ],
+                "timepoints": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "tp_1",
+                    "relation_to_intervention": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    }
+                  }
+                ],
+                "description": {
+                  "value": "Two groups tested in one session.",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted"
+                }
+              },
+              "groups": [
+                {
+                  "name": {
+                    "value": "patients",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "value": 34.2,
+                    "evidence": {
+                      "sets": [
+                        {
+                          "spans": [
+                            {
+                              "text": "Patients were 34.2 years old on average.",
+                              "end_char": 115,
+                              "start_char": 75
+                            }
+                          ],
+                          "source": "model_quote"
+                        }
+                      ],
+                      "status": "present"
+                    },
+                    "value_source": "reported",
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "grp_a"
+                },
+                {
+                  "name": {
+                    "value": "healthy controls",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "value_source": "reported",
+                    "extraction_status": "extracted"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported",
+                    "unreported_reason": "ambiguous"
+                  },
+                  "local_id": "grp_b"
+                }
+              ],
+              "devices": [
+                {
+                  "local_id": "dev_1"
+                }
+              ],
+              "regions": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "reg_1",
+                  "definition_method": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "analyses": [
+                {
+                  "name": {
+                    "value": "patients > controls",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "tasks": [
+                    "tsk_1"
+                  ],
+                  "effect": {
+                    "cells": [
+                      {
+                        "term": "trm_1",
+                        "level": {
+                          "value": "patients",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        },
+                        "direction": {
+                          "value": "positive",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        }
+                      }
+                    ],
+                    "statistic": {
+                      "family": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      }
+                    }
+                  },
+                  "groups": [
+                    {
+                      "n": {
+                        "value": 20,
+                        "evidence": {
+                          "status": "not_found"
+                        },
+                        "extraction_status": "extracted"
+                      },
+                      "group": "grp_a"
+                    }
+                  ],
+                  "details": {
+                    "details_type": "MassUnivariateDetails"
+                  },
+                  "measure": "msr_1",
+                  "local_id": "an_1",
+                  "definition": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisitions": [
+                    "acq_1"
+                  ],
+                  "spatial_scope": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_estimation": "mdl_1",
+                  "prespecification": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "source_table_analysis": {
+                    "value": "analysis#12d544dad3a9b2df",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  }
+                }
+              ],
+              "local_id": "study-1",
+              "measures": [
+                {
+                  "type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "msr_1"
+                }
+              ],
+              "assessments": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "asm_1"
+                }
+              ],
+              "description": {
+                "value": "Two groups, one session.",
+                "evidence": {
+                  "status": "not_found"
+                },
+                "extraction_status": "extracted"
+              },
+              "acquisitions": [
+                {
+                  "device": "dev_1",
+                  "local_id": "acq_1",
+                  "modality": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisition_type": "MRI"
+                }
+              ],
+              "model_estimations": [
+                {
+                  "stage": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "terms": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "type": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "trm_1"
+                    }
+                  ],
+                  "local_id": "mdl_1",
+                  "model_type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "extraction_metadata": {
+                "extractor_model": "gpt-6.1-sol",
+                "extractor_version": "1.0.0"
+              }
+            },
+            "coordinate_revision": null,
+            "provenance": {
+              "entity:grp_a": {
+                "at": "<iso>",
+                "state": "verified",
+                "user_id": "user1-id"
+              },
+              "slot:grp_b:name": {
+                "at": "<iso>",
+                "state": "edited",
+                "user_id": "user1-id"
+              }
+            },
+            "annotations": {},
+            "hidden": {
+              "analyses": [],
+              "entities": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "partial replay",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-accept-a",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_a"
+                },
+                "verdict": "accept"
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "ops": [
+              {
+                "seq": 1,
+                "op": {
+                  "client_op_id": "scenario-accept-a",
+                  "type": "verdict",
+                  "target": {
+                    "kind": "entity",
+                    "entity": "grp_a"
+                  },
+                  "verdict": "accept"
+                },
+                "before": null,
+                "after": {
+                  "state": "verified",
+                  "user_id": "user1-id",
+                  "at": "<iso>"
+                },
+                "user_id": "user1-id",
+                "created_at": "<iso>"
+              }
+            ],
+            "last_seq": 1,
+            "record": {
+              "tasks": [
+                {
+                  "name": {
+                    "value": "Stroop",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "tsk_1",
+                  "conditions": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_1"
+                    },
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_2"
+                    }
+                  ]
+                }
+              ],
+              "design": {
+                "arms": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "arm_kind": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "arm_1"
+                  }
+                ],
+                "timepoints": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "tp_1",
+                    "relation_to_intervention": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    }
+                  }
+                ],
+                "description": {
+                  "value": "Two groups tested in one session.",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted"
+                }
+              },
+              "groups": [
+                {
+                  "name": {
+                    "value": "patients",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "value": 34.2,
+                    "evidence": {
+                      "sets": [
+                        {
+                          "spans": [
+                            {
+                              "text": "Patients were 34.2 years old on average.",
+                              "end_char": 115,
+                              "start_char": 75
+                            }
+                          ],
+                          "source": "model_quote"
+                        }
+                      ],
+                      "status": "present"
+                    },
+                    "value_source": "reported",
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "grp_a"
+                },
+                {
+                  "name": {
+                    "value": "controls",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported",
+                    "unreported_reason": "ambiguous"
+                  },
+                  "local_id": "grp_b"
+                }
+              ],
+              "devices": [
+                {
+                  "local_id": "dev_1"
+                }
+              ],
+              "regions": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "reg_1",
+                  "definition_method": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "analyses": [
+                {
+                  "name": {
+                    "value": "patients > controls",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "tasks": [
+                    "tsk_1"
+                  ],
+                  "effect": {
+                    "cells": [
+                      {
+                        "term": "trm_1",
+                        "level": {
+                          "value": "patients",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        },
+                        "direction": {
+                          "value": "positive",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        }
+                      }
+                    ],
+                    "statistic": {
+                      "family": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      }
+                    }
+                  },
+                  "groups": [
+                    {
+                      "n": {
+                        "value": 20,
+                        "evidence": {
+                          "status": "not_found"
+                        },
+                        "extraction_status": "extracted"
+                      },
+                      "group": "grp_a"
+                    }
+                  ],
+                  "details": {
+                    "details_type": "MassUnivariateDetails"
+                  },
+                  "measure": "msr_1",
+                  "local_id": "an_1",
+                  "definition": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisitions": [
+                    "acq_1"
+                  ],
+                  "spatial_scope": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_estimation": "mdl_1",
+                  "prespecification": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "source_table_analysis": {
+                    "value": "analysis#12d544dad3a9b2df",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  }
+                }
+              ],
+              "local_id": "study-1",
+              "measures": [
+                {
+                  "type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "msr_1"
+                }
+              ],
+              "assessments": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "asm_1"
+                }
+              ],
+              "description": {
+                "value": "Two groups, one session.",
+                "evidence": {
+                  "status": "not_found"
+                },
+                "extraction_status": "extracted"
+              },
+              "acquisitions": [
+                {
+                  "device": "dev_1",
+                  "local_id": "acq_1",
+                  "modality": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisition_type": "MRI"
+                }
+              ],
+              "model_estimations": [
+                {
+                  "stage": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "terms": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "type": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "trm_1"
+                    }
+                  ],
+                  "local_id": "mdl_1",
+                  "model_type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "extraction_metadata": {
+                "extractor_model": "gpt-6.1-sol",
+                "extractor_version": "1.0.0"
+              }
+            },
+            "coordinate_revision": null,
+            "provenance": {
+              "entity:grp_a": {
+                "state": "verified",
+                "user_id": "user1-id",
+                "at": "<iso>"
+              }
+            },
+            "annotations": {},
+            "hidden": {
+              "analyses": [],
+              "entities": []
+            }
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 1,
+            "ops": [
+              {
+                "client_op_id": "scenario-accept-a",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_a"
+                },
+                "verdict": "accept"
+              },
+              {
+                "client_op_id": "scenario-name-b",
+                "type": "set_value",
+                "target": {
+                  "kind": "slot",
+                  "entity": "grp_b",
+                  "path": "name"
+                },
+                "value": {
+                  "extraction_status": "extracted",
+                  "value": "healthy controls",
+                  "value_source": "reported"
+                }
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 409,
+          "body": {
+            "status": 409,
+            "title": "Conflict",
+            "detail": "Some of the batch's ops are stored and some are not.",
+            "type": "about:blank",
+            "timestamp": "<iso>",
+            "request_id": "<request_id>"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "stale expected_last_seq behind",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-accept-a",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_a"
+                },
+                "verdict": "accept"
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "ops": [
+              {
+                "seq": 1,
+                "op": {
+                  "client_op_id": "scenario-accept-a",
+                  "type": "verdict",
+                  "target": {
+                    "kind": "entity",
+                    "entity": "grp_a"
+                  },
+                  "verdict": "accept"
+                },
+                "before": null,
+                "after": {
+                  "state": "verified",
+                  "user_id": "user1-id",
+                  "at": "<iso>"
+                },
+                "user_id": "user1-id",
+                "created_at": "<iso>"
+              }
+            ],
+            "last_seq": 1,
+            "record": {
+              "tasks": [
+                {
+                  "name": {
+                    "value": "Stroop",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "tsk_1",
+                  "conditions": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_1"
+                    },
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "cnd_2"
+                    }
+                  ]
+                }
+              ],
+              "design": {
+                "arms": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "arm_kind": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "arm_1"
+                  }
+                ],
+                "timepoints": [
+                  {
+                    "name": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    },
+                    "local_id": "tp_1",
+                    "relation_to_intervention": {
+                      "evidence": {
+                        "status": "not_applicable"
+                      },
+                      "extraction_status": "not_reported"
+                    }
+                  }
+                ],
+                "description": {
+                  "value": "Two groups tested in one session.",
+                  "evidence": {
+                    "status": "not_found"
+                  },
+                  "extraction_status": "extracted"
+                }
+              },
+              "groups": [
+                {
+                  "name": {
+                    "value": "patients",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "value": 34.2,
+                    "evidence": {
+                      "sets": [
+                        {
+                          "spans": [
+                            {
+                              "text": "Patients were 34.2 years old on average.",
+                              "end_char": 115,
+                              "start_char": 75
+                            }
+                          ],
+                          "source": "model_quote"
+                        }
+                      ],
+                      "status": "present"
+                    },
+                    "value_source": "reported",
+                    "extraction_status": "extracted"
+                  },
+                  "local_id": "grp_a"
+                },
+                {
+                  "name": {
+                    "value": "controls",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "species": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "age_mean": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported",
+                    "unreported_reason": "ambiguous"
+                  },
+                  "local_id": "grp_b"
+                }
+              ],
+              "devices": [
+                {
+                  "local_id": "dev_1"
+                }
+              ],
+              "regions": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "reg_1",
+                  "definition_method": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "analyses": [
+                {
+                  "name": {
+                    "value": "patients > controls",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  },
+                  "tasks": [
+                    "tsk_1"
+                  ],
+                  "effect": {
+                    "cells": [
+                      {
+                        "term": "trm_1",
+                        "level": {
+                          "value": "patients",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        },
+                        "direction": {
+                          "value": "positive",
+                          "evidence": {
+                            "status": "not_found"
+                          },
+                          "extraction_status": "extracted"
+                        }
+                      }
+                    ],
+                    "statistic": {
+                      "family": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      }
+                    }
+                  },
+                  "groups": [
+                    {
+                      "n": {
+                        "value": 20,
+                        "evidence": {
+                          "status": "not_found"
+                        },
+                        "extraction_status": "extracted"
+                      },
+                      "group": "grp_a"
+                    }
+                  ],
+                  "details": {
+                    "details_type": "MassUnivariateDetails"
+                  },
+                  "measure": "msr_1",
+                  "local_id": "an_1",
+                  "definition": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisitions": [
+                    "acq_1"
+                  ],
+                  "spatial_scope": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_estimation": "mdl_1",
+                  "prespecification": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "source_table_analysis": {
+                    "value": "analysis#12d544dad3a9b2df",
+                    "evidence": {
+                      "status": "not_found"
+                    },
+                    "extraction_status": "extracted"
+                  }
+                }
+              ],
+              "local_id": "study-1",
+              "measures": [
+                {
+                  "type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "msr_1"
+                }
+              ],
+              "assessments": [
+                {
+                  "name": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "local_id": "asm_1"
+                }
+              ],
+              "description": {
+                "value": "Two groups, one session.",
+                "evidence": {
+                  "status": "not_found"
+                },
+                "extraction_status": "extracted"
+              },
+              "acquisitions": [
+                {
+                  "device": "dev_1",
+                  "local_id": "acq_1",
+                  "modality": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "acquisition_type": "MRI"
+                }
+              ],
+              "model_estimations": [
+                {
+                  "stage": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "terms": [
+                    {
+                      "name": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "type": {
+                        "evidence": {
+                          "status": "not_applicable"
+                        },
+                        "extraction_status": "not_reported"
+                      },
+                      "local_id": "trm_1"
+                    }
+                  ],
+                  "local_id": "mdl_1",
+                  "model_type": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  },
+                  "model_family": {
+                    "evidence": {
+                      "status": "not_applicable"
+                    },
+                    "extraction_status": "not_reported"
+                  }
+                }
+              ],
+              "extraction_metadata": {
+                "extractor_model": "gpt-6.1-sol",
+                "extractor_version": "1.0.0"
+              }
+            },
+            "coordinate_revision": null,
+            "provenance": {
+              "entity:grp_a": {
+                "state": "verified",
+                "user_id": "user1-id",
+                "at": "<iso>"
+              }
+            },
+            "annotations": {},
+            "hidden": {
+              "analyses": [],
+              "entities": []
+            }
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-name-b",
+                "type": "set_value",
+                "target": {
+                  "kind": "slot",
+                  "entity": "grp_b",
+                  "path": "name"
+                },
+                "value": {
+                  "extraction_status": "extracted",
+                  "value": "healthy controls",
+                  "value_source": "reported"
+                }
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 409,
+          "body": {
+            "status": 409,
+            "title": "Conflict",
+            "detail": "The review has changed since the batch was made.",
+            "type": "about:blank",
+            "timestamp": "<iso>",
+            "request_id": "<request_id>",
+            "last_seq": 1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "stale expected_last_seq ahead",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 5,
+            "ops": [
+              {
+                "client_op_id": "scenario-name-b",
+                "type": "set_value",
+                "target": {
+                  "kind": "slot",
+                  "entity": "grp_b",
+                  "path": "name"
+                },
+                "value": {
+                  "extraction_status": "extracted",
+                  "value": "healthy controls",
+                  "value_source": "reported"
+                }
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 409,
+          "body": {
+            "status": 409,
+            "title": "Conflict",
+            "detail": "The review has changed since the batch was made.",
+            "type": "about:blank",
+            "timestamp": "<iso>",
+            "request_id": "<request_id>",
+            "last_seq": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "batch on a submitted review",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "PATCH",
+          "path": "/api/review/reviews/<review_id>",
+          "body": {
+            "state": "submitted"
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "submitted",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": "<iso>"
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-accept-a",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_a"
+                },
+                "verdict": "accept"
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 409,
+          "body": {
+            "status": 409,
+            "title": "Conflict",
+            "detail": "The review is submitted; only in_progress takes ops.",
+            "type": "about:blank",
+            "timestamp": "<iso>",
+            "request_id": "<request_id>"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "refused batch with two failing ops",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-refused-entity",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_nope"
+                },
+                "verdict": "accept"
+              },
+              {
+                "client_op_id": "scenario-refused-span",
+                "type": "set_evidence",
+                "target": {
+                  "kind": "slot",
+                  "entity": "grp_a",
+                  "path": "age_mean"
+                },
+                "evidence": {
+                  "status": "present",
+                  "sets": [
+                    {
+                      "spans": [
+                        {
+                          "start_char": 0,
+                          "end_char": 100000
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 422,
+          "body": {
+            "status": 422,
+            "title": "Unprocessable Entity",
+            "detail": "ops 0, 1 cannot be applied",
+            "type": "about:blank",
+            "errors": [
+              {
+                "field": "ops/0",
+                "code": "REJECTED",
+                "message": "no entity has local_id 'grp_nope'",
+                "context": {
+                  "op_index": 0,
+                  "client_op_id": "scenario-refused-entity"
+                }
+              },
+              {
+                "field": "ops/1",
+                "code": "REJECTED",
+                "message": "span 0-100000 is outside the paper's 153 characters",
+                "context": {
+                  "op_index": 1,
+                  "client_op_id": "scenario-refused-span"
+                }
+              }
+            ],
+            "timestamp": "<iso>",
+            "request_id": "<request_id>"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "submit, reopen and submit again",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "PATCH",
+          "path": "/api/review/reviews/<review_id>",
+          "body": {
+            "state": "submitted"
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "submitted",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": "<iso>"
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "PATCH",
+          "path": "/api/review/reviews/<review_id>",
+          "body": {
+            "state": "in_progress"
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": "<iso>"
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "PATCH",
+          "path": "/api/review/reviews/<review_id>",
+          "body": {
+            "state": "submitted"
+          }
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "submitted",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": "<iso>"
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "PATCH",
+          "path": "/api/review/reviews/<review_id>",
+          "body": {
+            "state": "submitted"
+          }
+        },
+        "response": {
+          "status": 409,
+          "body": {
+            "status": 409,
+            "title": "Conflict",
+            "detail": "A review cannot go from submitted to submitted.",
+            "type": "about:blank",
+            "timestamp": "<iso>",
+            "request_id": "<request_id>"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "reference by a non-admin",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "PATCH",
+          "path": "/api/review/reviews/<review_id>",
+          "body": {
+            "state": "reference"
+          }
+        },
+        "response": {
+          "status": 403,
+          "body": {
+            "status": 403,
+            "title": "Forbidden",
+            "detail": "Only an admin can mark the reference review.",
+            "type": "about:blank",
+            "timestamp": "<iso>",
+            "request_id": "<request_id>"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "batch by a non-owner",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-accept-a",
+                "type": "verdict",
+                "target": {
+                  "kind": "entity",
+                  "entity": "grp_a"
+                },
+                "verdict": "accept"
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 403,
+          "body": {
+            "status": 403,
+            "title": "Forbidden",
+            "detail": "Only the review's owner can edit it.",
+            "type": "about:blank",
+            "timestamp": "<iso>",
+            "request_id": "<request_id>"
+          }
+        }
+      }
+    ]
+  }
+]

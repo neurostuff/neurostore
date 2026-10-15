@@ -20,6 +20,7 @@ dependencies = [
     "uvicorn-worker~=0.4",
     "ipython~=9.17",
     "itsdangerous~=2.2",
+    "jsonschema~=4.26",
     "marshmallow~=4.3",
     "numpy<3.0.0",
     "pandas~=3.0",

@@ -20,6 +20,18 @@ VALUE_FIELDS = ("extraction_status", "value", "value_source", "unreported_reason
 NO_EVIDENCE = {"status": "not_applicable"}
 
 
+class OpError(ReviewError):
+    """A refused batch; ``failures`` holds (op index or None, problem) for each problem."""
+
+    def __init__(self, message, failures):
+        super().__init__(message, [_prefixed(index, problem) for index, problem in failures])
+        self.failures = failures
+
+
+def _prefixed(index, problem):
+    return problem if index is None else f"op {index}: {problem}"
+
+
 @dataclass
 class ReviewState:
     record: dict
@@ -40,15 +52,19 @@ def apply_batch(state, batch, *, text, user_id, at):
     """
     _check_batch(batch)
     ops = batch["ops"]
-    applied = _apply(state, ops, text, user_id, at)
-    if _document_errors(applied[0]):
+    after, stored, failures = _apply(state, ops, text, user_id, at)
+    if failures:
+        indexes = sorted({index for index, _ in failures})
+        named = ", ".join(str(index) for index in indexes)
+        verb = "op" if len(indexes) == 1 else "ops"
+        raise OpError(f"{verb} {named} cannot be applied", failures)
+    if _document_errors(after):
         index = _first_invalid_op(state, ops, text, user_id, at)
         problems = _document_errors(_apply(state, ops[: index + 1], text, user_id, at)[0])
-        raise ReviewError(
-            f"op {index} leaves an invalid document",
-            [f"op {index}: {problem}" for problem in problems],
+        raise OpError(
+            f"op {index} leaves an invalid document", [(index, problem) for problem in problems]
         )
-    return applied
+    return after, stored
 
 
 @cache
@@ -69,13 +85,15 @@ def _op_validator():
 
 
 def _check_batch(batch):
-    errors = [f"batch: {error.message}" for error in _batch_validator().iter_errors(batch)]
+    failures = [
+        (None, f"batch: {error.message}") for error in _batch_validator().iter_errors(batch)
+    ]
     for index, item in enumerate(batch.get("ops") or ()):
         error = best_match(_op_validator().iter_errors(item))
         if error is not None:
-            errors.append(f"op {index}: {error.message}")
-    if errors:
-        raise ReviewError("the batch does not validate against review-ops", errors)
+            failures.append((index, error.message))
+    if failures:
+        raise OpError("the batch does not validate against review-ops", failures)
 
 
 def _document_errors(state):
@@ -92,26 +110,29 @@ def _document_errors(state):
 
 
 def _apply(state, ops, text, user_id, at):
+    """``(state, stored ops, failures)``: each op that applies, in order, on the ops before it.
+    An op that cannot apply is left out and named in ``failures`` as (index, problem).
+    """
     state = copy.deepcopy(state)
-    applier = _Applier(state, text, user_id, at)
-    stored = []
+    stored, failures = [], []
     for index, op in enumerate(ops):
+        trial = copy.deepcopy(state)
         try:
-            before, after = applier.apply(op)
+            before, after = _Applier(trial, text, user_id, at).apply(op)
         except ReviewError as error:
-            raise ReviewError(
-                f"op {index} cannot be applied", [f"op {index}: {p}" for p in error.problems]
-            ) from error
-        state.last_seq += 1
+            failures.extend((index, problem) for problem in error.problems)
+            continue
+        trial.last_seq += 1
         stored.append({
-            "seq": state.last_seq,
+            "seq": trial.last_seq,
             "op": copy.deepcopy(op),
             "before": before,
             "after": after,
             "user_id": user_id,
             "created_at": at,
         })
-    return state, stored
+        state = trial
+    return state, stored, failures
 
 
 def _first_invalid_op(state, ops, text, user_id, at):

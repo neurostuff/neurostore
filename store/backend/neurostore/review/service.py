@@ -7,17 +7,16 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import joinedload
 
-from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import (
     abort_conflict,
     abort_not_found,
     abort_permission,
     abort_unprocessable,
 )
+from neurostore.exceptions.utils.errors import ErrorDetail
 from neurostore.models import Fulltext, Review, ReviewOp, ReviewSource, User
-from neurostore.review import ReviewError
 from neurostore.review.bundle import bundle, hidden, source_summary
-from neurostore.review.ops import ReviewState, apply_batch
+from neurostore.review.ops import OpError, ReviewState, apply_batch
 
 #: Provenance states that count as a change in the paper list.
 CHANGED_STATES = ("edited", "added", "removed")
@@ -170,13 +169,9 @@ def post_ops(session, review_id, user_id, body):
             user_id=user_id,
             at=_iso(now),
         )
-    except ReviewError as error:
+    except OpError as error:
         abort_unprocessable(
-            str(error),
-            [
-                make_field_error("ops", problem, code="REJECTED")
-                for problem in error.problems
-            ],
+            str(error), [_refusal(ops, index, problem) for index, problem in error.failures]
         )
     inserted = [
         ReviewOp(
@@ -305,6 +300,18 @@ def _state(review, source):
         provenance=review.provenance,
         annotations=review.annotations,
         last_seq=review.last_seq,
+    )
+
+
+def _refusal(ops, index, problem):
+    """The 422 error of one refused op, or of the batch as a whole when ``index`` is None."""
+    if index is None:
+        return ErrorDetail(field="ops", code="REJECTED", message=problem)
+    return ErrorDetail(
+        field=f"ops/{index}",
+        code="REJECTED",
+        message=problem,
+        context={"op_index": index, "client_op_id": ops[index].get("client_op_id")},
     )
 
 

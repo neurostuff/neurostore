@@ -465,15 +465,59 @@ async def test_only_the_owner_posts_ops(clients, source):
 
 async def test_an_op_the_core_refuses_is_unprocessable(clients, source, session):
     review = await start(clients, source)
+    refused = accept("grp_nope")
     response = await clients[REVIEWER].post(
-        f"/api/review/reviews/{review['id']}/ops", data=batch(0, accept("grp_nope"))
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, refused)
     )
     assert response.status_code == 422
     assert response.json()["title"] == "Unprocessable Entity"
     [error] = response.json()["errors"]
-    assert "grp_nope" in error["context"]["provided"]
+    assert error["field"] == "ops/0"
+    assert error["context"] == {"op_index": 0, "client_op_id": refused["client_op_id"]}
+    assert "grp_nope" in error["message"]
     session.expire_all()
     assert session.get(Review, review["id"]).last_seq == 0
+
+
+async def test_every_op_the_core_refuses_is_named_by_its_index(clients, source, session):
+    review = await start(clients, source)
+    refused = [
+        accept("grp_nope"),
+        op(
+            "set_evidence",
+            target={"kind": "slot", "entity": "grp_a", "path": "age_mean"},
+            evidence={"status": "present", "sets": [
+                {"spans": [{"start_char": 0, "end_char": 100000}]}
+            ]},
+        ),
+    ]
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops",
+        data=batch(0, *refused, accept("grp_a")),
+    )
+    assert response.status_code == 422
+    errors = response.json()["errors"]
+    assert [error["field"] for error in errors] == ["ops/0", "ops/1"]
+    assert [error["context"] for error in errors] == [
+        {"op_index": 0, "client_op_id": refused[0]["client_op_id"]},
+        {"op_index": 1, "client_op_id": refused[1]["client_op_id"]},
+    ]
+    assert "outside the paper" in errors[1]["message"]
+    session.expire_all()
+    assert session.get(Review, review["id"]).last_seq == 0
+
+
+async def test_an_op_that_does_not_validate_is_named_by_its_index(clients, source):
+    review = await start(clients, source)
+    malformed = {"client_op_id": "malformed-1", "type": "no_such_type"}
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, accept("grp_a"), malformed)
+    )
+    assert response.status_code == 422
+    [error] = response.json()["errors"]
+    assert error["field"] == "ops/1"
+    assert error["context"]["op_index"] == 1
+    assert error["context"]["client_op_id"] == "malformed-1"
 
 
 async def test_an_expected_last_seq_ahead_of_the_review_is_refused(clients, source, session):

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neurostore.org/schemas/record-provenance/1",
+  "title": "RecordProvenance",
+  "description": "Where an exported extraction record came from: a review or a loaded source. Written beside each exported record as run/provenance/<id>.json.",
+  "version": "1",
+  "type": "object",
+  "required": ["record_path", "source", "derived_from", "edited", "last_edit_at", "producer"],
+  "additionalProperties": false,
+  "properties": {
+    "record_path": {
+      "type": "string",
+      "description": "The record's path, relative to the layout root that holds this document."
+    },
+    "source": {"$ref": "#/$defs/Source"},
+    "derived_from": {
+      "type": "object",
+      "required": ["source_id", "record_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "record_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "edited": {
+      "type": "boolean",
+      "description": "Whether the review's record differs from the record it derives from."
+    },
+    "last_edit_at": {
+      "description": "When the review's last op was applied; null when the record is not edited.",
+      "anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]
+    },
+    "producer": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "neurostore-review"},
+        "version": {"const": 1}
+      }
+    }
+  },
+  "$defs": {
+    "Source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "review_id", "user_id", "state"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {"const": "review"},
+            "review_id": {"type": "string", "minLength": 1},
+            "user_id": {"type": "string", "minLength": 1},
+            "state": {"enum": ["in_progress", "submitted", "reference"]}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source_id", "origin", "run_id"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {"const": "source"},
+            "source_id": {"type": "string", "minLength": 1},
+            "origin": {"type": "string", "minLength": 1},
+            "run_id": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}]}
+          }
+        }
+      ]
+    }
+  }
+}
