@@ -75,6 +75,9 @@ def golden():
     """build() with the shapes the golden bundle must carry: a study-level slot, a dotted
     slot, a not_reported slot and a set with its source."""
     record = build()
+    record["analyses"][0]["source_table_analysis"] = fx.extracted(
+        coordinate_parse()["analyses"][0]["key"]
+    )
     start = TEXT.index(AGE)
     record["description"] = fx.extracted("Two groups, one session.")
     record["design"]["description"] = fx.extracted("Two groups tested in one session.")

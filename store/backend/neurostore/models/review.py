@@ -68,6 +68,12 @@ class Review(BaseMixin, db.Model):
     __table_args__ = (
         sa.CheckConstraint(state.in_(REVIEW_STATES), name="ck_reviews_state"),
         sa.UniqueConstraint("source_id", "user_id", name="uq_reviews_source_user"),
+        sa.Index(
+            "uq_reviews_one_reference_per_source",
+            "source_id",
+            unique=True,
+            postgresql_where=sa.text("state = 'reference'"),
+        ),
     )
 
     source = relationship(ReviewSource)

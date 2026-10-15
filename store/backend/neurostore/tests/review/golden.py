@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 from neurostore.review import ReviewError, entities, paths
+from neurostore.review.bundle import bundle
 from neurostore.review.ops import ReviewState, apply_batch
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review import records
@@ -32,8 +33,8 @@ REVIEW_OPS = [
 def build_bundle():
     base = ReviewState(record=records.golden(), coordinate_parse=records.coordinate_parse())
     state, stored = apply_batch(base, {"ops": REVIEW_OPS}, text=records.TEXT, user_id=USER, at=AT)
-    return {
-        "source": {
+    document = bundle(
+        source={
             "id": "golden-1",
             "base_study_id": "golden-base-1",
             "label": "Golden synthetic paper",
@@ -41,30 +42,20 @@ def build_bundle():
             "text_sha256": hashlib.sha256(records.TEXT.encode("utf-8")).hexdigest(),
             "schema_versions": {"paper_parse": "0.6.0", "extraction": "0.5.0"},
         },
-        "text": records.TEXT,
-        "parsed_paper": fx.parsed_paper(),
-        "coordinate_parse": state.coordinate_parse,
-        "record": state.record,
-        "coordinate_revision": None,
-        "review": {
-            "id": "golden-review-1",
-            "user_id": USER,
-            "state": "in_progress",
-            "last_seq": state.last_seq,
-            "provenance": state.provenance,
-            "annotations": state.annotations,
-        },
-        "ops": stored,
-        "entities": entities.index_rows(state.record),
-        "hidden": {"analyses": [], "entities": []},
-        "reviewers": [{
+        text=records.TEXT,
+        parsed_paper=fx.parsed_paper(),
+        state=state,
+        review={"id": "golden-review-1", "user_id": USER, "state": "in_progress"},
+        ops=stored,
+        reviewers=[{
             "user_id": USER,
             "name": None,
             "state": "in_progress",
             "op_count": len(stored),
             "last_edit_at": AT,
         }],
-    }
+    )
+    return document
 
 
 def render(bundle):

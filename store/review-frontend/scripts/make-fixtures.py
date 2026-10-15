@@ -2,10 +2,12 @@
 
     python scripts/make-fixtures.py <layout dir> <out dir> [<paper id>...]
 
-It imports the backend's entity index, so run it in the backend container, from store/:
+It imports the backend's entity index and hidden rule, so run it in the backend container,
+from store/:
 
     docker compose run --rm --no-deps -v <layout dir>:/layout:ro neurostore \
-        python /store/review-frontend/scripts/make-fixtures.py /layout /store/review-frontend/fixtures
+        python /store/review-frontend/scripts/make-fixtures.py \
+        /layout /store/review-frontend/fixtures
 
 The layout's paths are the ones store/backend/neurostore/review/layout.py reads. Each paper
 (every record in the layout when no id is given) becomes <out>/<id>.bundle.json, and
@@ -17,25 +19,13 @@ import hashlib
 import json
 from pathlib import Path
 
+from neurostore.review.bundle import hidden
 from neurostore.review.entities import index_rows
 
 
 def read_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
-
-
-def slot_value(slot):
-    return slot.get("value") if isinstance(slot, dict) else slot
-
-
-def hidden_analyses(record, coordinate_parse):
-    keys = {analysis.get("key") for analysis in coordinate_parse.get("analyses", [])}
-    return [
-        analysis["local_id"]
-        for analysis in record.get("analyses", [])
-        if slot_value(analysis.get("source_table_analysis")) not in keys
-    ]
 
 
 def make_bundle(layout, paper_id):
@@ -49,7 +39,9 @@ def make_bundle(layout, paper_id):
     return {
         "source": {
             "id": paper_id,
-            "base_study_id": header.get("identifiers", {}).get("neurostore_base_study_id") or paper_id,
+            "base_study_id": (
+                header.get("identifiers", {}).get("neurostore_base_study_id") or paper_id
+            ),
             "label": parsed_paper.get("bibliography", {}).get("title") or paper_id,
             "origin": "upload",
             "text_sha256": hashlib.sha256(raw).hexdigest(),
@@ -66,7 +58,7 @@ def make_bundle(layout, paper_id):
         "review": None,
         "ops": [],
         "entities": index_rows(record),
-        "hidden": {"analyses": hidden_analyses(record, coordinate_parse), "entities": []},
+        "hidden": hidden(record, coordinate_parse),
         "reviewers": [],
     }
 
@@ -76,7 +68,8 @@ def write_index(out):
     for path in sorted(out.glob("*.bundle.json")):
         source = read_json(path)["source"]
         entries.append({"id": source["id"], "label": source["label"]})
-    (out / "index.json").write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
+    text = json.dumps(entries, indent=2, ensure_ascii=False)
+    (out / "index.json").write_text(text, encoding="utf-8")
 
 
 def main(argv=None):

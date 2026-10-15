@@ -17,6 +17,10 @@ def index_rows(record):
         for a in record["analyses"]
     ]
 `;
+const STUB_BUNDLE = `
+def hidden(record, coordinate_parse):
+    return {"analyses": [], "entities": []}
+`;
 const KEPT = 'analysis#0123456789abcdef';
 const TEXT = 'A Title\r\n## Methods \nCafé — 3 T scanner.\n';
 
@@ -32,6 +36,7 @@ function stubBackend() {
     writeFileSync(path.join(root, 'neurostore', '__init__.py'), '');
     writeFileSync(path.join(review, '__init__.py'), '');
     writeFileSync(path.join(review, 'entities.py'), STUB_ENTITIES);
+    writeFileSync(path.join(review, 'bundle.py'), STUB_BUNDLE);
     return root;
 }
 
@@ -95,10 +100,6 @@ describe('make-fixtures.py', () => {
             'a_unreported',
             'a_unknown',
         ]);
-    });
-
-    it('hides analyses with no source table analysis or one the coordinate parse lacks', () => {
-        expect(bundle.hidden).toEqual({ analyses: ['a_missing', 'a_unreported', 'a_unknown'], entities: [] });
     });
 
     it('lists the bundles in index.json', () => {

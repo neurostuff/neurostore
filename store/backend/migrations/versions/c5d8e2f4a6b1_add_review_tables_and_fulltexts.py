@@ -103,6 +103,13 @@ def upgrade():
     )
     _index_base_columns("reviews")
     _index("reviews", ["user_id"])
+    op.create_index(
+        "uq_reviews_one_reference_per_source",
+        "reviews",
+        ["source_id"],
+        unique=True,
+        postgresql_where=sa.text("state = 'reference'"),
+    )
 
     op.create_table(
         "review_ops",
@@ -151,6 +158,7 @@ def upgrade():
 def downgrade():
     op.execute("DELETE FROM roles_users WHERE role_id = 'admin-reviewer'")
     op.execute("DELETE FROM roles WHERE id = 'admin-reviewer'")
+    op.drop_index("uq_reviews_one_reference_per_source", table_name="reviews")
     for table in ("review_assignments", "review_ops", "reviews", "review_sources"):
         op.drop_table(table)
     op.drop_constraint("fk_base_studies_fulltext_id", "base_studies", type_="foreignkey")

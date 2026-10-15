@@ -116,7 +116,7 @@ async def neurostore_exception_handler(request: Request, exc: NeuroStoreExceptio
         exc=exc,
     )
     err = _build_error_response_from_payload(payload, default_exc=exc)
-    body = err.to_dict()
+    body = {**err.to_dict(), **getattr(exc, "extra", {})}
     return _json_response(
         body, err.status, headers=_with_request_id(None, err.request_id)
     )

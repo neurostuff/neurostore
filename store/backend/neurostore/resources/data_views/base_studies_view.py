@@ -1,9 +1,11 @@
 from connexion import request
 from marshmallow import fields as marshmallow_fields
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, raiseload, selectinload
 from webargs import fields
 
 from neurostore.database import db
+from neurostore.exceptions.utils.error_helpers import abort_conflict
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
@@ -35,6 +37,7 @@ from neurostore.resources.data_views.common import (
     apply_map_type_filter,
 )
 from neurostore.resources.utils import view_maker
+from neurostore.review.service import review_source_count
 from neurostore.schemas.data import BaseDataSchema, StringOrNested, StudySchema
 
 
@@ -231,3 +234,16 @@ class BaseStudiesView(ObjectView, ListView):
         return BaseStudyBulkPostResponseSchema(context={"info": True}, many=True).dump(
             response_records
         )
+
+    def delete(self, id):
+        try:
+            return super().delete(id)
+        except IntegrityError:
+            db.session.rollback()
+            # review_sources' fulltext FK is RESTRICT; report it as 409.
+            count = review_source_count(db.session, id)
+            if not count:
+                raise
+            abort_conflict(
+                "The base study has papers loaded for review.", under_review=count
+            )

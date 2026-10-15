@@ -226,7 +226,14 @@
         ],
         "acquisitions": [
           "acq_1"
-        ]
+        ],
+        "source_table_analysis": {
+          "value": "analysis#12d544dad3a9b2df",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        }
       }
     ],
     "groups": [

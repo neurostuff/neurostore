@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+import yaml
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
@@ -21,7 +22,6 @@ from neurostore.models import (
     ReviewOp,
     ReviewSource,
     Role,
-    User,
 )
 from neurostore.models.fulltext import refresh_fulltext_pointer
 
@@ -34,10 +34,10 @@ T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 
 @pytest.fixture
-def paper(session):
-    user = User(name="reviewer", external_id="reviewer-1")
+def paper(session, make_user):
+    user = make_user("reviewer-1")
     base_study = BaseStudy(name="A paper", level="group")
-    session.add_all([user, base_study])
+    session.add(base_study)
     session.commit()
     return base_study, user
 
@@ -271,23 +271,15 @@ def test_the_pointer_can_be_recomputed(session, paper):
     assert pointer(session, base_study) == best.id
 
 
-def test_listing_base_studies_never_reads_text(session, paper):
+def test_listing_base_studies_never_reads_text(session, paper, statements):
     add_text(session, paper[0], "pmc", "The full text.")
     session.expunge_all()
-    statements = []
-
-    def record(conn, cursor, statement, *args):
-        statements.append(statement)
-
-    sa.event.listen(session.bind, "before_cursor_execute", record)
-    try:
+    with statements() as seen:
         listed = session.scalars(sa.select(BaseStudy)).all()
         with pytest.raises(sa.exc.InvalidRequestError):
             listed[0].fulltext
-    finally:
-        sa.event.remove(session.bind, "before_cursor_execute", record)
-    assert statements
-    assert not any("fulltexts" in s for s in statements)
+    assert seen
+    assert not any("fulltexts" in s for s in seen)
 
     session.expunge_all()
     loaded = session.scalars(
@@ -367,6 +359,16 @@ def test_one_review_per_source_and_user(session, review):
     refused(session, Review(source_id=review.source_id, user_id=review.user_id, record={}))
 
 
+def test_one_reference_review_per_source(session, review, make_user):
+    lead = make_user("lead-1")
+    review.state = "reference"
+    session.commit()
+    refused(
+        session,
+        Review(source_id=review.source_id, user_id=lead.external_id, state="reference", record={}),
+    )
+
+
 def test_an_ops_seq_and_client_id_are_unique_within_a_review(session, review):
     def op(seq, client_op_id):
         return ReviewOp(
@@ -386,7 +388,7 @@ def test_an_ops_seq_and_client_id_are_unique_within_a_review(session, review):
     session.commit()
 
 
-def test_an_ops_seq_and_client_id_are_unique_per_review(session, review):
+def test_an_ops_seq_and_client_id_are_unique_per_review(session, review, make_user):
     def op(review_id, seq, client_op_id):
         return ReviewOp(
             review_id=review_id,
@@ -396,9 +398,7 @@ def test_an_ops_seq_and_client_id_are_unique_per_review(session, review):
             after={"value": 1},
         )
 
-    other_user = User(name="other", external_id="reviewer-2")
-    session.add(other_user)
-    session.commit()
+    other_user = make_user("reviewer-2")
     other = Review(source_id=review.source_id, user_id=other_user.external_id, record={})
     session.add(other)
     session.commit()
@@ -444,11 +444,9 @@ def test_deleting_a_review_row_deletes_its_ops(session, review):
     assert op_count(session) == 0
 
 
-def test_a_paper_is_assigned_to_a_user_once(session, paper):
+def test_a_paper_is_assigned_to_a_user_once(session, paper, make_user):
     base_study, user = paper
-    admin = User(name="admin", external_id="admin-1")
-    session.add(admin)
-    session.commit()
+    admin = make_user("admin-1")
 
     def assignment():
         return ReviewAssignment(
@@ -553,11 +551,42 @@ def test_base_study_schema_does_not_serialize_its_fulltext():
 
 
 @pytest.mark.skipif(not OPENAPI.is_file(), reason="openapi submodule not checked out")
-def test_no_route_or_component_names_the_review_tables():
-    spec = OPENAPI.read_text(encoding="utf-8")
+def _refs(node):
+    if isinstance(node, dict):
+        if isinstance(node.get("$ref"), str):
+            yield node["$ref"].rsplit("/", 1)[-1]
+        for value in node.values():
+            yield from _refs(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from _refs(value)
+
+
+def test_only_review_routes_name_the_review_tables():
+    spec = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
+    components = spec["components"]["schemas"]
+    public = {p: item for p, item in spec["paths"].items() if not p.startswith("/review/")}
+    reached, todo = set(), list(_refs(public))
+    while todo:
+        name = todo.pop()
+        if name in components and name not in reached:
+            reached.add(name)
+            todo.extend(_refs(components[name]))
+    text = yaml.safe_dump([public, [components[name] for name in sorted(reached)]])
     for model in REVIEW_TABLES:
         table = model.__tablename__
-        assert not re.search(rf"\b{table}\b|\b{table.replace('_', '-')}\b", spec), table
+        assert not re.search(rf"\b{table}\b|\b{table.replace('_', '-')}\b", text), table
+
+
+def test_every_review_route_needs_a_token():
+    spec = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
+    routes = {p: item for p, item in spec["paths"].items() if p.startswith("/review/")}
+    assert routes
+    for path, item in routes.items():
+        for method, operation in item.items():
+            if method in {"get", "put", "post", "patch", "delete"}:
+                assert operation["security"] == [{"JSON-Web-Token": []}], (path, method)
+                assert operation["tags"] == ["review"], (path, method)
 
 
 def test_no_admin_view_reads_the_review_tables(app):
