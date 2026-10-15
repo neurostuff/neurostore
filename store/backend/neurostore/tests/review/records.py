@@ -125,7 +125,7 @@ def subclasses():
     EEG, a PET and a bare EEG holding only its required keys beside the MRI."""
     record = golden()
     record["analyses"][0]["details"] = fx.minimal(fx.defs["ConnectivityDetails"])
-    eeg = item("EEG", "acq_2", eeg_channel_count=64)
-    pet = item("PET", "acq_3", tracer_name="FDG")
+    eeg = item("EEG", "acq_2", eeg_channel_count=fx.extracted(64))
+    pet = item("PET", "acq_3", tracer_name=fx.extracted("FDG"))
     record["acquisitions"].extend([eeg, pet, item("EEG", "acq_4")])
     return record

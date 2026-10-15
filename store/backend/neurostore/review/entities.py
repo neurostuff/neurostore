@@ -21,11 +21,13 @@ class Entity:
     #: The dotted path of the list on the parent; None for the study.
     list_path: str | None
     item: dict
+    #: The keys and list indexes that reach the item from the record; () for the study.
+    location: tuple = ()
 
 
 def index(record):
     """local_id -> Entity for the root Study ("study") and every entity below it."""
-    entities = {STUDY: Entity(STUDY, "Study", "Study", None, None, record)}
+    entities = {STUDY: Entity(STUDY, "Study", "Study", None, None, record, ())}
     owners = {"": entities[STUDY]}
     for owner_path, list_path, entity_class, items in entity_lists(record):
         if not isinstance(items, list):
@@ -33,6 +35,7 @@ def index(record):
         owner = owners[owner_path]
         holder, owner_class = owner.item, owner.schema_class
         *nesting, attribute = list_path.split(".")
+        steps = (*owner.location, *list_path.split("."))
         for step in nesting:
             owner_class = class_of(owner_class, step, holder.get(step)) or step
             holder = holder.get(step) or {}
@@ -51,6 +54,7 @@ def index(record):
                 owner.local_id,
                 list_path,
                 item,
+                (*steps, position),
             )
             entities[local_id] = child
             owners[item_path(owner_path, list_path, position)] = child

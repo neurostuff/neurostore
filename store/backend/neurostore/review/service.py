@@ -18,6 +18,7 @@ from neurostore.models import Fulltext, Review, ReviewOp, ReviewSource, User
 from neurostore.review.bundle import bundle, hidden, source_summary
 from neurostore.review.entities import index_rows
 from neurostore.review.ops import OpError, ReviewState, apply_batch
+from neurostore.review.validation import document_problems
 
 #: Provenance states that count as a change in the paper list.
 CHANGED_STATES = ("edited", "added", "removed")
@@ -97,8 +98,15 @@ def get_bundle(session, source_id, user_id):
 
 
 def start_review(session, source_id, user_id):
-    """``(review summary, created)``: the reviewer's review of the source, started if new."""
+    """``(review summary, created)``: the reviewer's review of the source, started if new.
+
+    Raises:
+        ConflictError (409) with each problem of the source's documents, code source_invalid,
+        when a new review would start from documents that no longer validate.
+    """
     source = _get_or_404(session, ReviewSource, source_id, "review source")
+    if _review_of(session, source_id, user_id) is None:
+        _check_source(source)
     inserted_id = session.scalar(
         insert(Review)
         .values(
@@ -114,6 +122,20 @@ def start_review(session, source_id, user_id):
         .returning(Review.id)
     )
     return summary(_review_of(session, source_id, user_id)), inserted_id is not None
+
+
+def _check_source(source):
+    problems = document_problems("extraction-record", source.record)
+    if source.coordinate_parse is not None:
+        problems += document_problems("coordinate-parse", source.coordinate_parse)
+    if problems:
+        abort_conflict(
+            "The source no longer validates against study_schema; re-import the source.",
+            errors=[
+                ErrorDetail(code="source_invalid", message=problem).to_dict()
+                for problem in problems
+            ],
+        )
 
 
 def get_review(session, review_id):

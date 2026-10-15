@@ -74,6 +74,23 @@ def get(obj, path):
     return obj
 
 
+def location(obj, path):
+    """The keys and list indexes that reach ``path`` below ``obj``, each selector as the index
+    of the item it picks; an absent attribute is a key all the same."""
+    steps = []
+    for attribute, selector in parse(path):
+        if obj is not None and not isinstance(obj, dict):
+            raise ReviewError(f"field path {path!r} goes through a non-object")
+        value = None if obj is None else obj.get(attribute)
+        steps.append(attribute)
+        if selector is not None:
+            position = _position(value, selector, path)
+            steps.append(position)
+            value = value[position]
+        obj = value
+    return tuple(steps)
+
+
 def set_path(obj, path, value):
     """Set the value at ``path`` below ``obj``, creating absent objects along the way."""
     steps = parse(path)
@@ -90,8 +107,13 @@ def set_path(obj, path, value):
         obj[attribute] = value
         return
     items = obj.get(attribute)
-    item = _select(items, selector, path)
-    items[next(i for i, candidate in enumerate(items) if candidate is item)] = value
+    items[_position(items, selector, path)] = value
+
+
+def _position(items, selector, path):
+    """The index in ``items`` of the item ``selector`` picks."""
+    chosen = _select(items, selector, path)
+    return next(i for i, item in enumerate(items) if item is chosen)
 
 
 def _select(items, selector, path):

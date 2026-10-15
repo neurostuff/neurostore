@@ -16,6 +16,7 @@ from study_schema.jsonschema import load
 
 from neurostore.review import ReviewError
 from neurostore.review.lists import indexed, splice
+from neurostore.review.validation import where
 from neurostore.study_schema_tools import expected_key, sha256_of
 
 PRODUCER = {"name": "neurostore-review", "version": "1"}
@@ -369,9 +370,8 @@ def _content_key(analysis):
     """The key ``analysis`` gives, once it validates as a ParsedAnalysis."""
     error = next(iter(_analysis_validator().iter_errors(analysis)), None)
     if error is not None:
-        where = "/".join(str(p) for p in error.absolute_path)
         raise ReviewError(
-            f"the analysis does not validate against coordinate-parse at /{where}: "
+            f"the analysis does not validate against coordinate-parse at /{where(error)}: "
             f"{error.message}"
         )
     return expected_key(analysis)

@@ -54,6 +54,17 @@ def schema_errors(name, document):
     return sorted(_validator(name).iter_errors(document), key=lambda e: list(e.path))
 
 
+def schema(name):
+    """The schema of study_schema's ``name`` document, as study_schema loads it."""
+    return _validator(name).schema
+
+
+def subschema_errors(name, subschema, instance):
+    """The errors of ``instance`` against ``subschema``, a part of study_schema's ``name``
+    schema whose $refs resolve within it."""
+    return _validator(name).evolve(schema=subschema).iter_errors(instance)
+
+
 def expected_key(analysis):
     """The content key a coordinate-parse analysis's name, space and points give."""
     return keys.key_for(ParsedAnalysis.model_validate(analysis))

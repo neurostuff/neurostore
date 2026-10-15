@@ -1991,7 +1991,13 @@
               "status": "not_applicable"
             }
           },
-          "eeg_channel_count": 64
+          "eeg_channel_count": {
+            "value": 64,
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          }
         },
         {
           "local_id": "acq_3",
@@ -2002,7 +2008,13 @@
               "status": "not_applicable"
             }
           },
-          "tracer_name": "FDG"
+          "tracer_name": {
+            "value": "FDG",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          }
         },
         {
           "local_id": "acq_4",
@@ -2270,6 +2282,11 @@
         "class": "ExtractedModality"
       },
       {
+        "entity": "acq_2",
+        "path": "eeg_channel_count",
+        "class": "ExtractedInteger"
+      },
+      {
         "entity": "acq_3",
         "path": "",
         "class": "PET"
@@ -2278,6 +2295,11 @@
         "entity": "acq_3",
         "path": "modality",
         "class": "ExtractedModality"
+      },
+      {
+        "entity": "acq_3",
+        "path": "tracer_name",
+        "class": "ExtractedString"
       },
       {
         "entity": "acq_4",
@@ -2532,9 +2554,19 @@
         "class": "ExtractedModality"
       },
       {
+        "entity": "acq_2",
+        "path": "eeg_channel_count",
+        "class": "ExtractedInteger"
+      },
+      {
         "entity": "acq_3",
         "path": "modality",
         "class": "ExtractedModality"
+      },
+      {
+        "entity": "acq_3",
+        "path": "tracer_name",
+        "class": "ExtractedString"
       },
       {
         "entity": "acq_4",

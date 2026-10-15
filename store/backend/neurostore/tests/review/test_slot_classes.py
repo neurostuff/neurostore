@@ -9,7 +9,7 @@ import json
 import os
 
 from neurostore.review import defs, entities, paths
-from neurostore.study_schema_tools import CHILD_LISTS, DECLARED_KEYS
+from neurostore.study_schema_tools import CHILD_LISTS, DECLARED_KEYS, schema_errors
 from neurostore.tests.review import golden, records
 
 GOLDEN = golden.ROOT / "review-frontend/src/test/golden/slot-classes.json"
@@ -100,6 +100,10 @@ def test_a_subclass_is_picked_over_the_first_branch_of_its_any_of():
     assert _class(document, "acq_1", "") == "MRI"
     assert _class(document, "acq_2", "") == "EEG"
     assert _class(document, "acq_3", "") == "PET"
+
+
+def test_the_subclasses_record_validates_against_the_extraction_schema():
+    assert schema_errors("extraction-record", records.subclasses()) == []
 
 
 def test_a_bare_subclass_with_only_its_required_keys_resolves_to_its_own_class():

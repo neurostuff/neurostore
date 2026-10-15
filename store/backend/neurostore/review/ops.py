@@ -12,15 +12,18 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import best_match
 
 from neurostore.review import (
-    ReviewError, coordinates, entities, lists, paths, record_follow, references,
+    ReviewError, coordinates, entities, lists, paths, record_follow, references, validation,
 )
-from neurostore.study_schema_tools import CHILD_LISTS, schema_errors
+from neurostore.study_schema_tools import CHILD_LISTS
 
 OPS_SCHEMA = Path(__file__).parent / "schema" / "review-ops.schema.json"
 #: The fields of an ExtractedValue a set_value op writes, as a group.
 VALUE_FIELDS = ("extraction_status", "value", "value_source", "unreported_reason")
 #: Evidence that clears an entity's or a relationship's annotation.
 NO_EVIDENCE = {"status": "not_applicable"}
+#: How apply_batch finds the problems of the documents ops leave: "incremental" validates the
+#: parts the ops changed, "full" the whole documents. Tests switch it.
+VALIDATION = "incremental"
 
 
 class OpError(ReviewError):
@@ -50,20 +53,22 @@ class ReviewState:
 def apply_batch(state, batch, *, text, user_id, at):
     """``(new state, stored ops)`` for ``batch`` applied in order to a copy of ``state``.
 
+    ``state``'s documents must validate, as those of every state a batch leaves do; only the
+    parts of them the batch changes are validated.
+
     Raises:
         ReviewError naming each failing op; the input state is never changed.
     """
     _check_batch(batch)
     ops = batch["ops"]
-    after, stored, failures = _apply(state, ops, text, user_id, at)
+    after, stored, failures, changed = _apply(state, ops, text, user_id, at)
     if failures:
         indexes = sorted({index for index, _ in failures})
         named = ", ".join(str(index) for index in indexes)
         verb = "op" if len(indexes) == 1 else "ops"
         raise OpError(f"{verb} {named} cannot be applied", failures)
-    if _document_errors(after):
-        index = _first_invalid_op(state, ops, text, user_id, at)
-        problems = _document_errors(_apply(state, ops[: index + 1], text, user_id, at)[0])
+    if _problems(after, changed, state.coordinate_revision):
+        index, problems = _first_invalid_op(state, ops, text, user_id, at)
         raise OpError(
             f"op {index} leaves an invalid document", [(index, problem) for problem in problems]
         )
@@ -107,28 +112,35 @@ def _check_batch(batch):
         kind = item.get("type") if isinstance(item, dict) else None
         error = best_match(_op_validator(_op_definitions().get(kind, "Op")).iter_errors(item))
         if error is not None:
-            where = "/".join(str(part) for part in error.absolute_path)
-            failures.append((index, f"{where}: {error.message}" if where else error.message))
+            path = validation.where(error)
+            failures.append((index, f"{path}: {error.message}" if path else error.message))
     if failures:
         raise OpError("the batch does not validate against review-ops", failures)
 
 
 def _document_errors(state):
-    problems = []
-    documents = [("extraction-record", state.record)]
+    problems = validation.document_problems("extraction-record", state.record)
     if state.coordinate_revision is not None:
-        documents.append(("coordinate-parse", state.coordinate_revision))
-    for name, document in documents:
-        for error in schema_errors(name, document):
-            error = best_match([error])
-            where = "/".join(str(part) for part in error.absolute_path)
-            problems.append(f"{name} /{where}: {error.message}")
+        problems += validation.document_problems("coordinate-parse", state.coordinate_revision)
     return problems
 
 
+def _problems(state, changed, revision_before):
+    """The problems of ``state``'s documents after ops that replaced the coordinate revision
+    ``revision_before`` and made ``changed``, a (changes, entity index) pair, to its record; the
+    documents before them validated."""
+    if VALIDATION == "full":
+        return _document_errors(state)
+    changes, index = changed
+    return validation.record_problems(index, changes) + validation.replaced_problems(
+        "coordinate-parse", revision_before, state.coordinate_revision
+    )
+
+
 def _apply(state, ops, text, user_id, at):
-    """``(state, stored ops, failures)``: each op that applies, in order, on the ops before it.
-    An op that cannot apply is left out and named in ``failures`` as (index, problem).
+    """``(state, stored ops, failures, changed)``: each op that applies, in order, on the ops
+    before it. An op that cannot apply is left out and named in ``failures`` as (index,
+    problem); ``changed`` is then None.
     """
     work = _copy_state(state)
     applier = _Applier(work, text, user_id, at)
@@ -150,7 +162,7 @@ def _apply(state, ops, text, user_id, at):
             "user_id": user_id,
             "created_at": at,
         })
-    return work, stored, failures
+    return work, stored, failures, None if failures else applier.take_changes()
 
 
 def _replayed(state, ops, text, user_id, at):
@@ -176,18 +188,22 @@ def _copy_state(state):
 
 
 def _first_invalid_op(state, ops, text, user_id, at):
-    """The index of the first op after which the document is invalid."""
+    """``(index, problems)`` of the first op after which the documents are invalid."""
     applier = _Applier(_copy_state(state), text, user_id, at)
     for index, op in enumerate(ops):
+        revision = applier.state.coordinate_revision
+        applier.take_changes()
         applier.apply(op)
-        if _document_errors(applier.state):
-            return index
+        problems = _problems(applier.state, applier.take_changes(), revision)
+        if problems:
+            return index, problems
 
 
 class _Applier:
     def __init__(self, state, text, user_id, at):
         self.state, self.text, self.user_id, self.at = state, text, user_id, at
         self.index = entities.index(state.record)
+        self.changes = validation.RecordChanges()
         self.handlers = {
             "verdict": self.apply_verdict,
             "coordinate": self.apply_coordinate,
@@ -202,6 +218,12 @@ class _Applier:
 
     def apply(self, op):
         return self.handlers[op["type"]](op)
+
+    def take_changes(self):
+        """``(changes, index)``: the record changes made since the last take, and the entity
+        index of the record they are made to."""
+        changes, self.changes = self.changes, validation.RecordChanges()
+        return changes, self.index
 
     def apply_verdict(self, op):
         target = op["target"]
@@ -237,6 +259,9 @@ class _Applier:
         record_after = self._analysis_items()
         before["entities"] = lists.indexed(record_before, record_after, "entity")
         after["entities"] = lists.indexed(record_after, record_before, "entity")
+        self.changes.membership(entities.STUDY, "analyses")
+        for entry in after["entities"]:
+            self.changes.part(entry["entity"]["local_id"])
         for key, state in record_follow.marks(record_before, record_after):
             self._mark(key, state)
         return before, after
@@ -256,6 +281,7 @@ class _Applier:
 
     def apply_set_value(self, op):
         target = op["target"]
+        self._note_slot_change(target)
         item = self._entity(target["entity"]).item
         before = _wrapper_at(item, target, allow_absent=True)
         wrapper = {k: v for k, v in (before or {}).items() if k not in VALUE_FIELDS}
@@ -273,6 +299,7 @@ class _Applier:
         target, evidence = op["target"], self._filled(op["evidence"])
         key = target_key(target)
         if target["kind"] == "slot":
+            self._note_slot_change(target)
             item = self._entity(target["entity"]).item
             wrapper = _wrapper_at(item, target, allow_absent=False)
             if evidence["status"] == "present" and wrapper.get("extraction_status") != "extracted":
@@ -292,6 +319,7 @@ class _Applier:
     def apply_link(self, op):
         target = op["target"]
         row, owner, ids = self._relationship(target)
+        self._note_slot_change(target)
         linked = self.index[target["target_entity"]]
         if row["target"] not in (linked.entity_class, linked.schema_class):
             raise ReviewError(
@@ -318,6 +346,7 @@ class _Applier:
     def apply_unlink(self, op):
         target = op["target"]
         row, owner, ids = self._relationship(target, must_exist=True)
+        self._note_slot_change(target)
         before = copy.deepcopy(owner.get(row["slot"]))
         remaining = [i for i in ids if i != target["target_entity"]]
         if remaining:
@@ -341,6 +370,8 @@ class _Applier:
         if index > len(siblings):
             raise ReviewError(f"index {index} is past the end of {op['list']!r}")
         paths.set_path(parent.item, op["list"], [*siblings[:index], item, *siblings[index:]])
+        self.changes.membership(parent.local_id, op["list"])
+        self.changes.part(item["local_id"])
         self.index = entities.index(self.state.record)
         self._mark(f"entity:{item['local_id']}", "added")
         return None, {"parent": parent.local_id, "list": op["list"], "entity": copy.deepcopy(item)}
@@ -354,6 +385,7 @@ class _Applier:
         position = next(i for i, item in enumerate(siblings) if item is doomed.item)
         removed = {local_id, *self._descendants(local_id)}
         del siblings[position]
+        self.changes.membership(doomed.parent, doomed.list_path)
         self.index = entities.index(self.state.record)
         dangling = [
             ref for ref in references.references_in(self.index) if ref["target_entity"] in removed
@@ -371,6 +403,16 @@ class _Applier:
         if local_id not in self.index:
             raise ReviewError(f"no entity has local_id {local_id!r}")
         return self.index[local_id]
+
+    def _note_slot_change(self, target):
+        """Note the part of a slot or relationship ``target``'s entity at the target's path as
+        changed: the whole entity while the path does not resolve."""
+        entity = self._entity(target["entity"])
+        try:
+            below = paths.location(entity.item, target["path"])
+        except ReviewError:
+            below = ()
+        self.changes.part(entity.local_id, below)
 
     def _mark(self, key, state):
         self.state.provenance[key] = {"state": state, "user_id": self.user_id, "at": self.at}

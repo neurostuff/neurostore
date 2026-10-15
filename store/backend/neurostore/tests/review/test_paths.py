@@ -127,3 +127,22 @@ def test_set_changes_only_the_selected_item():
     paths.set_path(analysis, "groups[group=grp_y].n", {"value": 3})
     assert analysis["groups"][0]["n"] == {"value": 20}
     assert analysis["groups"][1]["n"] == {"value": 3}
+
+
+@pytest.mark.parametrize(
+    "obj, path, expected",
+    [
+        (_analysis(), "groups[group=grp_y].n", ("groups", 1, "n")),
+        (_analysis(), "cells[term=trm_1,level=low].direction", ("cells", 1, "direction")),
+        (_group(), "sex_distribution[#1].count", ("sex_distribution", 1, "count")),
+        (_analysis(), "model.terms[#0].unit", ("model", "terms", 0, "unit")),
+        (_group(), "design.description", ("design", "description")),
+    ],
+)
+def test_location_resolves_each_selector_to_the_index_it_picks(obj, path, expected):
+    assert paths.location(obj, path) == expected
+
+
+def test_location_through_a_missing_item_raises():
+    with pytest.raises(ReviewError, match="no item match the selector"):
+        paths.location(_analysis(), "groups[group=grp_z].n")

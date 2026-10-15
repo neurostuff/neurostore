@@ -660,9 +660,12 @@ def test_stored_ops_and_provenance_record_the_user_who_applied_them():
 
 
 def test_a_batch_leaving_an_invalid_coordinate_revision_is_rejected():
-    review = ReviewState(record=records.build(), coordinate_revision={})
-    errors = errors_of(review, SET_N)
-    assert any(e.startswith("op 0: coordinate-parse /") for e in errors)
+    parse = {**_parse(), "tables": "not a list"}
+    review = ReviewState(record=records.build(), coordinate_parse=parse)
+    errors = errors_of(review, coordinate(review, 0, "accept"))
+    assert errors == [
+        "op 0: coordinate-parse /tables: 'not a list' is not of type 'array', 'null'"
+    ]
 
 
 def test_a_verdict_or_note_changes_no_document():

@@ -900,3 +900,18 @@ def test_a_top_level_entity_stays_shown_when_only_its_child_is_reached_through_h
     hidden = review_bundle.hidden(record, records.coordinate_parse(), None)
     assert "mdl_1" not in hidden["entities"]
     assert "trm_1" not in hidden["entities"]
+
+
+async def test_starting_a_review_refuses_a_source_whose_record_no_longer_validates(
+    clients, session
+):
+    record = records.golden()
+    record["regions"][0]["bogus_slot"] = 1
+    source = add_source(session, record=record)
+    response = await clients[REVIEWER].put(f"/api/review/sources/{source.id}/review")
+    assert response.status_code == 409
+    body = response.json()
+    assert "re-import the source" in body["detail"]
+    assert [error["code"] for error in body["errors"]] == ["source_invalid"]
+    assert "extraction-record /regions/0: Additional properties" in body["errors"][0]["message"]
+    assert session.scalar(sa.select(Review).where(Review.source_id == source.id)) is None
