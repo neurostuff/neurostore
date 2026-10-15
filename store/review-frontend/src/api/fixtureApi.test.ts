@@ -1,4 +1,6 @@
-import { makeBundle } from '../test/bundles';
+import type { Op } from '../contract/generated/review-ops';
+import { ev, makeBundle } from '../test/bundles';
+import { validateBundle } from '../test/schemas';
 import { fixtureApi } from './fixtureApi';
 
 function serve(files: Record<string, unknown>) {
@@ -22,5 +24,57 @@ describe('fixtureApi', () => {
         serve({ '/review/fixtures/P1.bundle.json': bundle });
         expect(await fixtureApi('/review/').getBundle('P1')).toEqual(bundle);
         await expect(fixtureApi('/review/').getBundle('P2')).rejects.toThrow('P2.bundle.json: 404');
+    });
+});
+
+describe('fixtureApi reviews, kept in memory so the prototype saves offline', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    const op = (id: string, start: number): Op => ({
+        client_op_id: id,
+        type: 'set_evidence',
+        target: { kind: 'slot', entity: 'study', path: 'description' },
+        evidence: { status: 'present', sets: [{ spans: [{ start_char: start, end_char: start + 4 }] }] },
+    });
+
+    async function started() {
+        const bundle = makeBundle({ description: ev('A study') }, 'some text here');
+        serve({ '/review/fixtures/P1.bundle.json': bundle });
+        const api = fixtureApi('/review/');
+        const review = await api.startReview('P1');
+        return { api, review };
+    }
+
+    it('starts the review once and puts it in the bundle', async () => {
+        const { api, review } = await started();
+        expect(review).toMatchObject({ source_id: 'P1', state: 'in_progress', last_seq: 0 });
+        expect(await api.startReview('P1')).toEqual(review);
+        expect((await api.getBundle('P1')).review).toMatchObject({ id: review.id, last_seq: 0 });
+    });
+
+    it('applies each batch and bumps last_seq, whatever the batch says it was made against', async () => {
+        const { api, review } = await started();
+        expect(await api.postOps(review.id, 0, [op('op-aaaaaaaa', 0)])).toMatchObject({
+            last_seq: 1,
+            ops: [{ seq: 1, op: { client_op_id: 'op-aaaaaaaa' } }],
+        });
+        expect(await api.postOps(review.id, 0, [op('op-bbbbbbbb', 5)])).toMatchObject({ last_seq: 2 });
+        const bundle = await api.getBundle('P1');
+        expect(bundle.ops).toHaveLength(2);
+        expect(bundle.record).toMatchObject({ description: { evidence: { status: 'present' } } });
+    });
+
+    it('keeps the bundle it serves valid against the bundle schema', async () => {
+        const { api } = await started();
+        await api.postOps((await api.getBundle('P1')).review!.id, 0, [op('op-aaaaaaaa', 0)]);
+        validateBundle((await api.getBundle('P1')) as object);
+        expect(validateBundle.errors ?? []).toEqual([]);
+    });
+
+    it('sets the state the review is in', async () => {
+        const { api, review } = await started();
+        expect(await api.setState(review.id, 'submitted')).toMatchObject({ state: 'submitted' });
+        expect((await api.getBundle('P1')).review).toMatchObject({ state: 'submitted' });
+        expect(await api.setState(review.id, 'in_progress')).toMatchObject({ state: 'in_progress' });
     });
 });

@@ -220,6 +220,16 @@ describe('adding evidence', () => {
         expect(order()).toEqual(['species', 'sex', 'name', 'description']);
     });
 
+    it('refuses a pending op by its client_op_id, whichever copy of it the refusal carries', () => {
+        const store = setup();
+        store.getState().focusSlot('slot:grp_a:name');
+        store.getState().addEvidence([120, 130], 'first');
+        const [op] = store.getState().pending;
+        store.getState().refuse([{ op: { ...op }, message: 'too long' }]);
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().notices).toEqual([expect.objectContaining({ kind: 'refused', message: 'too long' })]);
+    });
+
     it('refuses evidence on a slot that is not extracted', () => {
         const store = setup();
         store.getState().focusSlot('slot:grp_a:species');

@@ -96,3 +96,11 @@ def golden():
         "evidence": {"status": "not_applicable"},
     }
     return record
+
+
+def hidden_reach():
+    """golden() plus a non-coordinate analysis that reaches reg_1, so reg_1 stays hidden until
+    a link from the shown analysis an_1 reaches it."""
+    record = golden()
+    record["analyses"].append(item("Analysis", "an_2", regions=["reg_1"]))
+    return record

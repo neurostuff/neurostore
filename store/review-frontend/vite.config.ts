@@ -1,9 +1,10 @@
 import { createReadStream, existsSync } from 'node:fs';
 import path from 'node:path';
-import { defineConfig, type Plugin } from 'vitest/config';
+import { configDefaults, defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const fixturesDir = path.resolve(__dirname, 'fixtures');
+const TIMED = 'src/review/performance.test.tsx';
 
 function serveFixtures(): Plugin {
     const middleware = (req: { url?: string }, res: NodeJS.WritableStream & { statusCode: number; setHeader: (k: string, v: string) => void }, next: () => void) => {
@@ -28,5 +29,12 @@ export default defineConfig({
         globals: true,
         environment: 'jsdom',
         setupFiles: 'src/test/setup.ts',
+        projects: [
+            {
+                extends: true,
+                test: { name: 'unit', exclude: [...configDefaults.exclude, TIMED], sequence: { groupOrder: 0 } },
+            },
+            { extends: true, test: { name: 'timed', include: [TIMED], sequence: { groupOrder: 1 } } },
+        ],
     },
 });

@@ -212,3 +212,13 @@ export function withSlotsSorted(index: RecordIndex, id: string): RecordIndex {
     const slots = byDoubt(entity.slots);
     return slots.every((s, i) => s === entity.slots[i]) ? index : replaceEntity(index, { ...entity, slots });
 }
+
+export function withSlotOrderOf(index: RecordIndex, previous: RecordIndex, id: string): RecordIndex {
+    const entity = index.entity(id);
+    const order = previous.entity(id)?.slots.map((s) => s.key);
+    if (!entity || !order) return index;
+    const rank = new Map(order.map((key, i) => [key, i]));
+    const at = (key: string) => rank.get(key) ?? order.length;
+    const slots = [...entity.slots].sort((a, b) => at(a.key) - at(b.key));
+    return replaceEntity(index, { ...entity, slots });
+}

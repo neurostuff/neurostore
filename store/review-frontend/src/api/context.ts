@@ -26,5 +26,14 @@ export function usePapers() {
 
 export function useBundle(id: string) {
     const api = useApi();
-    return useQuery({ queryKey: ['bundle', id], queryFn: () => api.getBundle(id) });
+    return useQuery({
+        queryKey: ['bundle', id],
+        gcTime: 0, // drop the bundle once its page is gone
+        queryFn: async () => {
+            const bundle = await api.getBundle(id);
+            if (bundle.review) return bundle;
+            await api.startReview(id); // the first open of a paper starts the caller's review
+            return api.getBundle(id);
+        },
+    });
 }

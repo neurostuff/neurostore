@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { ReviewApi } from './api/reviewApi';
+import { ApiError, type ReviewApi } from './api/reviewApi';
 import { App, AppRoutes } from './App';
 import { ev, makeBundle } from './test/bundles';
 import { theme } from './theme';
@@ -25,9 +25,12 @@ const api: ReviewApi = {
         if (!(id in bundles)) throw new Error(`no bundle ${id}`);
         return bundles[id as keyof typeof bundles];
     },
+    startReview: async (id) => ({ id: `R-${id}`, source_id: id, user_id: 'me', state: 'in_progress', last_seq: 0 }),
+    postOps: () => Promise.reject(new Error('no saving in these tests')),
+    setState: () => Promise.reject(new Error('no saving in these tests')),
 };
 
-function renderAt(path: string) {
+function renderAt(path: string, routesApi: ReviewApi = api) {
     return render(
         <ThemeProvider theme={theme}>
             <MemoryRouter
@@ -35,7 +38,7 @@ function renderAt(path: string) {
                 initialEntries={[path]}
                 future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
             >
-                <AppRoutes api={api} />
+                <AppRoutes api={routesApi} />
             </MemoryRouter>
         </ThemeProvider>
     );
@@ -71,12 +74,31 @@ describe('routes', () => {
     });
 });
 
+describe('a 403 from the API', () => {
+    const forbidden = () => Promise.reject(new ApiError(403, { detail: 'Only an admin-reviewer can use /review.' }));
+
+    it.each([
+        ['listing the papers', '/review', { ...api, listPapers: forbidden }],
+        ['opening a paper', '/review/papers/P1', { ...api, getBundle: forbidden }],
+    ])('when %s shows the role message and nothing else', async (_, path, routesApi) => {
+        const { container } = renderAt(path, routesApi);
+        expect(await screen.findByText('You need the admin-reviewer role')).toBeInTheDocument();
+        expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(container).toHaveTextContent(/^You need the admin-reviewer role$/);
+    });
+});
+
 describe('App', () => {
     afterEach(() => window.history.replaceState(null, '', '/'));
 
     it('routes the browser’s URL under the app’s /review/ base', async () => {
         window.history.replaceState(null, '', '/review/papers/P1');
-        render(<App api={api} />);
+        render(
+            <ThemeProvider theme={theme}>
+                <App api={api} />
+            </ThemeProvider>
+        );
         expect(await screen.findByText('Text of the first paper.')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('link', { name: 'neurostore review' }));
         expect(window.location.pathname).toBe('/review');

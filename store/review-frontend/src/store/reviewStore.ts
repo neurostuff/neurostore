@@ -1,17 +1,19 @@
 import { createStore } from 'zustand';
+import type { OpResult, ReviewLifecycle } from '../api/reviewApi';
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
 import type { Evidence, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
 import { applyOp } from '../model/applyOp';
-import type { Json } from '../model/paths';
+import { entityPath, getIn, parsePath, type Json } from '../model/paths';
 import {
     buildRecordIndex,
     withSlotFrom,
+    withSlotOrderOf,
     withSlotsSorted,
     type RecordIndex,
     type SlotNode,
     type SpanPair,
 } from '../model/record';
-import { entityKey } from '../model/targetKey';
+import { entityKey, targetKey } from '../model/targetKey';
 import { STEPS, type StepId } from '../review/steps';
 
 export type EvidenceMode = 'first' | 'new';
@@ -26,12 +28,31 @@ export interface Reveal {
     seq: number;
 }
 
+export type SaveStatus = 'idle' | 'saving' | 'offline' | 'closed' | 'signin' | 'failed';
+
+export interface Notice {
+    kind: 'conflict' | 'refused';
+    slot: string;
+    message: string;
+}
+
+export type EvidenceIntent = { kind: 'add_span'; slot: string; set_index: number | 'new'; span: Span };
+
+export interface Refusal {
+    op: Op;
+    message: string;
+}
+
 export interface ReviewState {
     bundle: ReviewBundle;
     record: Json;
     index: RecordIndex;
     ops: StoredOp[];
     pending: Op[];
+    intents: Record<string, EvidenceIntent>;
+    save: SaveStatus;
+    saveMessage: string;
+    notices: Notice[];
     focus: Focus;
     focusedSpans: SpanPair[];
     evidenceCursor: number;
@@ -50,6 +71,12 @@ export interface ReviewState {
     setStep(step: StepId): void;
     toggleOutline(open?: boolean): void;
     toggleHelp(open?: boolean): void;
+    setSave(save: SaveStatus, message?: string): void;
+    confirm(result: OpResult, sent: Op[]): void;
+    rebase(fresh: ReviewBundle): void;
+    refuse(refusals: Refusal[]): void;
+    setLifecycle(state: ReviewLifecycle): void;
+    dismissNotices(): void;
 }
 
 export type ReviewStore = ReturnType<typeof createReviewStore>;
@@ -72,17 +99,24 @@ function inReadingOrder(spans: Span[]): EvidenceSet['spans'] {
     return unique.sort((a, b) => a.start_char - b.start_char || a.end_char - b.end_char) as EvidenceSet['spans'];
 }
 
-function withSpan(evidence: Evidence | undefined, span: SpanPair, mode: EvidenceMode): Evidence {
+function withSpan(evidence: Evidence | undefined, span: Span, setIndex: number | 'new'): Evidence {
     const sets = (evidence?.sets ?? []).map(withoutText);
-    if (mode === 'new' || sets.length === 0) {
-        return { ...evidence, status: 'present', sets: [...sets, { spans: [toSpan(span)] }] };
+    if (setIndex === 'new' || setIndex >= sets.length) {
+        return { ...evidence, status: 'present', sets: [...sets, { spans: [span] }] };
     }
-    const [first, ...rest] = sets;
     return {
         ...evidence,
         status: 'present',
-        sets: [{ ...first, spans: inReadingOrder([...first.spans, toSpan(span)]) }, ...rest],
+        sets: sets.map((set, i) => (i === setIndex ? { ...set, spans: inReadingOrder([...set.spans, span]) } : set)),
     };
+}
+
+/** The set_evidence op an intent makes on top of `record`; other ops pass through. */
+function carried(record: Json, op: Op, intent: EvidenceIntent | undefined): Op {
+    if (!intent || op.type !== 'set_evidence' || op.target.kind !== 'slot') return op;
+    const steps = [...(entityPath(record, op.target.entity) ?? []), ...parsePath(op.target.path)];
+    const wrapper = getIn(record, steps) as { evidence?: Evidence } | undefined;
+    return { ...op, evidence: withSpan(wrapper?.evidence, intent.span, intent.set_index) };
 }
 
 function spansOf(index: RecordIndex, focus: Focus): SpanPair[] {
@@ -96,6 +130,37 @@ export const selectCanAddEvidence = (s: Pick<ReviewState, 'index' | 'focus'>): b
     const slot = selectFocusedSlot(s);
     return slot?.kind === 'value' && slot.value?.extraction_status === 'extracted';
 };
+
+export function selectSaveLabel({
+    save,
+    saveMessage,
+    pending,
+}: Pick<ReviewState, 'save' | 'saveMessage' | 'pending'>): string {
+    if (save === 'failed') return saveMessage;
+    if (save === 'signin') return 'sign in to save';
+    if (save === 'saving' || save === 'offline') return save;
+    return pending.length ? `${pending.length} unsaved` : 'saved';
+}
+
+const slotLabel = (op: Op) => {
+    if (!('target' in op)) return op.type;
+    return op.target.kind === 'slot' ? `${op.target.entity} ${op.target.path}` : targetKey(op.target);
+};
+
+function replay(base: Json, ops: Op[]) {
+    let record = base;
+    const pending: Op[] = [];
+    const notices: Notice[] = [];
+    for (const op of ops) {
+        try {
+            record = applyOp(record, op);
+            pending.push(op);
+        } catch (error) {
+            notices.push({ kind: 'conflict', slot: slotLabel(op), message: (error as Error).message });
+        }
+    }
+    return { record, pending, notices };
+}
 
 export function createReviewStore(bundle: ReviewBundle) {
     const record = bundle.record as Json;
@@ -115,12 +180,52 @@ export function createReviewStore(bundle: ReviewBundle) {
             set({ focus, index: next, focusedSpans, evidenceCursor: 0, reveal: revealed(focusedSpans[0], reveal) });
         };
 
+        const withDocuments = (
+            next: ReviewBundle,
+            pending: Op[],
+            notices: Notice[] = [],
+            touched: string[] | null = null
+        ) => {
+            const state = get();
+            const replayed = replay(next.record as Json, pending);
+            const intents = Object.fromEntries(
+                replayed.pending
+                    .filter((op) => op.client_op_id in state.intents)
+                    .map((op) => [op.client_op_id, state.intents[op.client_op_id]])
+            );
+            const sameHidden = JSON.stringify(next.hidden) === JSON.stringify(state.bundle.hidden);
+            const index =
+                touched && sameHidden
+                    ? touched.reduce((view, key) => withSlotFrom(view, replayed.record, key), state.index)
+                    : withSlotOrderOf(
+                          buildRecordIndex({ ...next, record: replayed.record }),
+                          state.index,
+                          state.focus.entity
+                      );
+            const focusedSpans = spansOf(index, state.focus);
+            set({
+                bundle: next,
+                ops: next.ops,
+                record: replayed.record,
+                pending: replayed.pending,
+                intents,
+                index,
+                focusedSpans,
+                evidenceCursor: clamp(state.evidenceCursor, Math.max(focusedSpans.length - 1, 0)),
+                notices: [...state.notices, ...notices, ...replayed.notices],
+            });
+        };
+
         return {
             bundle,
             record,
             index: initialIndex,
             ops: bundle.ops,
             pending: [],
+            intents: {},
+            save: 'idle',
+            saveMessage: '',
+            notices: [],
             focus: initial,
             focusedSpans: spansOf(initialIndex, initial),
             evidenceCursor: 0,
@@ -166,11 +271,17 @@ export function createReviewStore(bundle: ReviewBundle) {
                 const state = get();
                 const slot = selectFocusedSlot(state);
                 if (!slot || !selectCanAddEvidence(state)) return false;
+                const intent: EvidenceIntent = {
+                    kind: 'add_span',
+                    slot: slot.key,
+                    set_index: mode === 'new' ? 'new' : 0,
+                    span: toSpan(span),
+                };
                 const op: SetEvidenceOp = {
                     client_op_id: crypto.randomUUID(),
                     type: 'set_evidence',
                     target: { kind: 'slot', entity: slot.entity, path: slot.path },
-                    evidence: withSpan(slot.value?.evidence, span, mode),
+                    evidence: withSpan(slot.value?.evidence, intent.span, intent.set_index),
                 };
                 const record = applyOp(state.record, op);
                 const index = withSlotFrom(state.index, record, slot.key);
@@ -179,6 +290,7 @@ export function createReviewStore(bundle: ReviewBundle) {
                     record,
                     index,
                     pending: [...state.pending, op],
+                    intents: { ...state.intents, [op.client_op_id]: intent },
                     focusedSpans,
                     evidenceCursor: Math.max(
                         focusedSpans.findIndex(([s, e]) => s === span[0] && e === span[1]),
@@ -190,6 +302,59 @@ export function createReviewStore(bundle: ReviewBundle) {
             setStep: (step) => set({ step }),
             toggleOutline: (open) => set((s) => ({ outlineOpen: open ?? !s.outlineOpen })),
             toggleHelp: (open) => set((s) => ({ helpOpen: open ?? !s.helpOpen })),
+            setSave: (save, message = '') => set({ save, saveMessage: message }),
+            confirm: (result, sent) => {
+                const { bundle: current, ops, pending } = get();
+                const sentIds = new Set(sent.map((op) => op.client_op_id));
+                const seqs = new Set(ops.map((s) => s.seq));
+                const review = current.review && {
+                    ...current.review,
+                    last_seq: result.last_seq,
+                    provenance: result.provenance,
+                    annotations: result.annotations,
+                };
+                const rest = pending.filter((op) => !sentIds.has(op.client_op_id));
+                withDocuments(
+                    {
+                        ...current,
+                        record: result.record,
+                        coordinate_revision: result.coordinate_revision,
+                        hidden: result.hidden,
+                        review,
+                        ops: [...ops, ...result.ops.filter((s) => !seqs.has(s.seq))],
+                    },
+                    rest,
+                    [],
+                    [...sent, ...rest].flatMap((op) => ('target' in op ? [targetKey(op.target)] : []))
+                );
+            },
+            rebase: (fresh) => {
+                const stored = new Set(fresh.ops.map((s) => s.op.client_op_id));
+                const { pending, intents } = get();
+                let record = fresh.record as Json;
+                const rebased = pending
+                    .filter((op) => !stored.has(op.client_op_id))
+                    .map((op) => {
+                        const next = carried(record, op, intents[op.client_op_id]);
+                        record = replay(record, [next]).record;
+                        return next;
+                    });
+                withDocuments(fresh, rebased);
+            },
+            refuse: (refusals) => {
+                const refused = new Set(refusals.map((r) => r.op.client_op_id));
+                withDocuments(
+                    get().bundle,
+                    get().pending.filter((op) => !refused.has(op.client_op_id)),
+                    refusals.map(({ op, message }) => ({ kind: 'refused', slot: slotLabel(op), message }))
+                );
+            },
+            setLifecycle: (state) => {
+                const { bundle: current } = get();
+                if (!current.review) return;
+                set({ bundle: { ...current, review: { ...current.review, state } } });
+            },
+            dismissNotices: () => set({ notices: [] }),
         };
     });
 }

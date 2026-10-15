@@ -1,6 +1,7 @@
-import { Alert, Box, CircularProgress } from '@mui/material';
+import { Alert } from '@mui/material';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { Loading } from '../Loading';
 
 export function WhenLoaded<T>({ query, children }: { query: UseQueryResult<T>; children: (value: T) => ReactNode }) {
     if (query.isSuccess) return children(query.data);
@@ -10,9 +11,5 @@ export function WhenLoaded<T>({ query, children }: { query: UseQueryResult<T>; c
                 {query.error.message}
             </Alert>
         );
-    return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
-            <CircularProgress aria-label="loading" />
-        </Box>
-    );
+    return <Loading />;
 }

@@ -2,7 +2,7 @@ import { AppBar, Chip, Toolbar, Typography } from '@mui/material';
 import { Brand } from '../Brand';
 import { targetKey } from '../model/targetKey';
 import { useReviewStore } from '../store/context';
-import type { ReviewState } from '../store/reviewStore';
+import { selectSaveLabel, type ReviewState } from '../store/reviewStore';
 
 const STATES = { in_progress: 'in progress', submitted: 'submitted', reference: 'reference' } as const;
 
@@ -18,6 +18,7 @@ export function ReviewAppBar() {
     const label = useReviewStore((s) => s.bundle.source.label);
     const state = useReviewStore((s) => (s.bundle.review ? STATES[s.bundle.review.state] : 'new review'));
     const progress = useReviewStore(selectProgress);
+    const saved = useReviewStore(selectSaveLabel);
     return (
         <AppBar position="static" elevation={0}>
             <Toolbar variant="dense" sx={{ gap: 2 }}>
@@ -35,6 +36,9 @@ export function ReviewAppBar() {
                 />
                 <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
                     {progress}
+                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }} aria-label={`save state: ${saved}`}>
+                    {saved}
                 </Typography>
             </Toolbar>
         </AppBar>
