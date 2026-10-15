@@ -23,6 +23,10 @@ export interface OpResult {
      * The hidden set of the new record, as in the bundle.
      */
     hidden: {};
+    /**
+     * The entity index of the new record, as in the bundle.
+     */
+    entities?: {}[];
 }
 
 export interface ErrorBody {

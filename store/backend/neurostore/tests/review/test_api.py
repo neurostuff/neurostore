@@ -455,6 +455,23 @@ async def test_the_op_result_carries_the_hidden_set_of_the_new_record(clients, s
     assert result["hidden"] == review_bundle.hidden(result["record"], source.coordinate_parse)
 
 
+async def test_the_op_result_carries_the_entity_index_of_the_new_record(clients, source):
+    review = await start(clients, source)
+    created = op(
+        "create_entity",
+        parent="study",
+        list="groups",
+        entity=records.item("Group", "grp_new", name=fx.extracted("new group")),
+    )
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, created)
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert result["entities"] == entities.index_rows(result["record"])
+    assert "grp_new" in [row["local_id"] for row in result["entities"]]
+
+
 async def test_only_the_owner_posts_ops(clients, source):
     review = await start(clients, source)
     response = await clients[OTHER].post(

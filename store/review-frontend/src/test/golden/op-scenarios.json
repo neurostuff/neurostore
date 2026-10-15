@@ -2043,7 +2043,128 @@
               "entities": [
                 "reg_1"
               ]
-            }
+            },
+            "entities": [
+              {
+                "local_id": "study",
+                "entity_class": "Study",
+                "schema_class": "Study",
+                "parent": null,
+                "list_path": null
+              },
+              {
+                "local_id": "grp_a",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "grp_b",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "tsk_1",
+                "entity_class": "Task",
+                "schema_class": "Task",
+                "parent": "study",
+                "list_path": "tasks"
+              },
+              {
+                "local_id": "cnd_1",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "cnd_2",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "asm_1",
+                "entity_class": "Assessment",
+                "schema_class": "Assessment",
+                "parent": "study",
+                "list_path": "assessments"
+              },
+              {
+                "local_id": "reg_1",
+                "entity_class": "Region",
+                "schema_class": "Region",
+                "parent": "study",
+                "list_path": "regions"
+              },
+              {
+                "local_id": "dev_1",
+                "entity_class": "Device",
+                "schema_class": "Device",
+                "parent": "study",
+                "list_path": "devices"
+              },
+              {
+                "local_id": "acq_1",
+                "entity_class": "Acquisition",
+                "schema_class": "MRI",
+                "parent": "study",
+                "list_path": "acquisitions"
+              },
+              {
+                "local_id": "mdl_1",
+                "entity_class": "ModelEstimation",
+                "schema_class": "ModelEstimation",
+                "parent": "study",
+                "list_path": "model_estimations"
+              },
+              {
+                "local_id": "trm_1",
+                "entity_class": "ModelTerm",
+                "schema_class": "ModelTerm",
+                "parent": "mdl_1",
+                "list_path": "terms"
+              },
+              {
+                "local_id": "msr_1",
+                "entity_class": "Measure",
+                "schema_class": "Measure",
+                "parent": "study",
+                "list_path": "measures"
+              },
+              {
+                "local_id": "an_1",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "an_2",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "arm_1",
+                "entity_class": "Arm",
+                "schema_class": "Arm",
+                "parent": "study",
+                "list_path": "design.arms"
+              },
+              {
+                "local_id": "tp_1",
+                "entity_class": "Timepoint",
+                "schema_class": "Timepoint",
+                "parent": "study",
+                "list_path": "design.timepoints"
+              }
+            ]
           }
         }
       }
@@ -2575,7 +2696,128 @@
               "entities": [
                 "reg_1"
               ]
-            }
+            },
+            "entities": [
+              {
+                "local_id": "study",
+                "entity_class": "Study",
+                "schema_class": "Study",
+                "parent": null,
+                "list_path": null
+              },
+              {
+                "local_id": "grp_a",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "grp_b",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "tsk_1",
+                "entity_class": "Task",
+                "schema_class": "Task",
+                "parent": "study",
+                "list_path": "tasks"
+              },
+              {
+                "local_id": "cnd_1",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "cnd_2",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "asm_1",
+                "entity_class": "Assessment",
+                "schema_class": "Assessment",
+                "parent": "study",
+                "list_path": "assessments"
+              },
+              {
+                "local_id": "reg_1",
+                "entity_class": "Region",
+                "schema_class": "Region",
+                "parent": "study",
+                "list_path": "regions"
+              },
+              {
+                "local_id": "dev_1",
+                "entity_class": "Device",
+                "schema_class": "Device",
+                "parent": "study",
+                "list_path": "devices"
+              },
+              {
+                "local_id": "acq_1",
+                "entity_class": "Acquisition",
+                "schema_class": "MRI",
+                "parent": "study",
+                "list_path": "acquisitions"
+              },
+              {
+                "local_id": "mdl_1",
+                "entity_class": "ModelEstimation",
+                "schema_class": "ModelEstimation",
+                "parent": "study",
+                "list_path": "model_estimations"
+              },
+              {
+                "local_id": "trm_1",
+                "entity_class": "ModelTerm",
+                "schema_class": "ModelTerm",
+                "parent": "mdl_1",
+                "list_path": "terms"
+              },
+              {
+                "local_id": "msr_1",
+                "entity_class": "Measure",
+                "schema_class": "Measure",
+                "parent": "study",
+                "list_path": "measures"
+              },
+              {
+                "local_id": "an_1",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "an_2",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "arm_1",
+                "entity_class": "Arm",
+                "schema_class": "Arm",
+                "parent": "study",
+                "list_path": "design.arms"
+              },
+              {
+                "local_id": "tp_1",
+                "entity_class": "Timepoint",
+                "schema_class": "Timepoint",
+                "parent": "study",
+                "list_path": "design.timepoints"
+              }
+            ]
           }
         }
       },
@@ -3083,7 +3325,128 @@
               "entities": [
                 "reg_1"
               ]
-            }
+            },
+            "entities": [
+              {
+                "local_id": "study",
+                "entity_class": "Study",
+                "schema_class": "Study",
+                "parent": null,
+                "list_path": null
+              },
+              {
+                "local_id": "grp_a",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "grp_b",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "tsk_1",
+                "entity_class": "Task",
+                "schema_class": "Task",
+                "parent": "study",
+                "list_path": "tasks"
+              },
+              {
+                "local_id": "cnd_1",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "cnd_2",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "asm_1",
+                "entity_class": "Assessment",
+                "schema_class": "Assessment",
+                "parent": "study",
+                "list_path": "assessments"
+              },
+              {
+                "local_id": "reg_1",
+                "entity_class": "Region",
+                "schema_class": "Region",
+                "parent": "study",
+                "list_path": "regions"
+              },
+              {
+                "local_id": "dev_1",
+                "entity_class": "Device",
+                "schema_class": "Device",
+                "parent": "study",
+                "list_path": "devices"
+              },
+              {
+                "local_id": "acq_1",
+                "entity_class": "Acquisition",
+                "schema_class": "MRI",
+                "parent": "study",
+                "list_path": "acquisitions"
+              },
+              {
+                "local_id": "mdl_1",
+                "entity_class": "ModelEstimation",
+                "schema_class": "ModelEstimation",
+                "parent": "study",
+                "list_path": "model_estimations"
+              },
+              {
+                "local_id": "trm_1",
+                "entity_class": "ModelTerm",
+                "schema_class": "ModelTerm",
+                "parent": "mdl_1",
+                "list_path": "terms"
+              },
+              {
+                "local_id": "msr_1",
+                "entity_class": "Measure",
+                "schema_class": "Measure",
+                "parent": "study",
+                "list_path": "measures"
+              },
+              {
+                "local_id": "an_1",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "an_2",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "arm_1",
+                "entity_class": "Arm",
+                "schema_class": "Arm",
+                "parent": "study",
+                "list_path": "design.arms"
+              },
+              {
+                "local_id": "tp_1",
+                "entity_class": "Timepoint",
+                "schema_class": "Timepoint",
+                "parent": "study",
+                "list_path": "design.timepoints"
+              }
+            ]
           }
         }
       }
@@ -3561,7 +3924,128 @@
               "entities": [
                 "reg_1"
               ]
-            }
+            },
+            "entities": [
+              {
+                "local_id": "study",
+                "entity_class": "Study",
+                "schema_class": "Study",
+                "parent": null,
+                "list_path": null
+              },
+              {
+                "local_id": "grp_a",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "grp_b",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "tsk_1",
+                "entity_class": "Task",
+                "schema_class": "Task",
+                "parent": "study",
+                "list_path": "tasks"
+              },
+              {
+                "local_id": "cnd_1",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "cnd_2",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "asm_1",
+                "entity_class": "Assessment",
+                "schema_class": "Assessment",
+                "parent": "study",
+                "list_path": "assessments"
+              },
+              {
+                "local_id": "reg_1",
+                "entity_class": "Region",
+                "schema_class": "Region",
+                "parent": "study",
+                "list_path": "regions"
+              },
+              {
+                "local_id": "dev_1",
+                "entity_class": "Device",
+                "schema_class": "Device",
+                "parent": "study",
+                "list_path": "devices"
+              },
+              {
+                "local_id": "acq_1",
+                "entity_class": "Acquisition",
+                "schema_class": "MRI",
+                "parent": "study",
+                "list_path": "acquisitions"
+              },
+              {
+                "local_id": "mdl_1",
+                "entity_class": "ModelEstimation",
+                "schema_class": "ModelEstimation",
+                "parent": "study",
+                "list_path": "model_estimations"
+              },
+              {
+                "local_id": "trm_1",
+                "entity_class": "ModelTerm",
+                "schema_class": "ModelTerm",
+                "parent": "mdl_1",
+                "list_path": "terms"
+              },
+              {
+                "local_id": "msr_1",
+                "entity_class": "Measure",
+                "schema_class": "Measure",
+                "parent": "study",
+                "list_path": "measures"
+              },
+              {
+                "local_id": "an_1",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "an_2",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "arm_1",
+                "entity_class": "Arm",
+                "schema_class": "Arm",
+                "parent": "study",
+                "list_path": "design.arms"
+              },
+              {
+                "local_id": "tp_1",
+                "entity_class": "Timepoint",
+                "schema_class": "Timepoint",
+                "parent": "study",
+                "list_path": "design.timepoints"
+              }
+            ]
           }
         }
       },
@@ -4084,7 +4568,128 @@
               "entities": [
                 "reg_1"
               ]
-            }
+            },
+            "entities": [
+              {
+                "local_id": "study",
+                "entity_class": "Study",
+                "schema_class": "Study",
+                "parent": null,
+                "list_path": null
+              },
+              {
+                "local_id": "grp_a",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "grp_b",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "tsk_1",
+                "entity_class": "Task",
+                "schema_class": "Task",
+                "parent": "study",
+                "list_path": "tasks"
+              },
+              {
+                "local_id": "cnd_1",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "cnd_2",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "asm_1",
+                "entity_class": "Assessment",
+                "schema_class": "Assessment",
+                "parent": "study",
+                "list_path": "assessments"
+              },
+              {
+                "local_id": "reg_1",
+                "entity_class": "Region",
+                "schema_class": "Region",
+                "parent": "study",
+                "list_path": "regions"
+              },
+              {
+                "local_id": "dev_1",
+                "entity_class": "Device",
+                "schema_class": "Device",
+                "parent": "study",
+                "list_path": "devices"
+              },
+              {
+                "local_id": "acq_1",
+                "entity_class": "Acquisition",
+                "schema_class": "MRI",
+                "parent": "study",
+                "list_path": "acquisitions"
+              },
+              {
+                "local_id": "mdl_1",
+                "entity_class": "ModelEstimation",
+                "schema_class": "ModelEstimation",
+                "parent": "study",
+                "list_path": "model_estimations"
+              },
+              {
+                "local_id": "trm_1",
+                "entity_class": "ModelTerm",
+                "schema_class": "ModelTerm",
+                "parent": "mdl_1",
+                "list_path": "terms"
+              },
+              {
+                "local_id": "msr_1",
+                "entity_class": "Measure",
+                "schema_class": "Measure",
+                "parent": "study",
+                "list_path": "measures"
+              },
+              {
+                "local_id": "an_1",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "an_2",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "arm_1",
+                "entity_class": "Arm",
+                "schema_class": "Arm",
+                "parent": "study",
+                "list_path": "design.arms"
+              },
+              {
+                "local_id": "tp_1",
+                "entity_class": "Timepoint",
+                "schema_class": "Timepoint",
+                "parent": "study",
+                "list_path": "design.timepoints"
+              }
+            ]
           }
         }
       },
@@ -5357,7 +5962,128 @@
                 "an_2"
               ],
               "entities": []
-            }
+            },
+            "entities": [
+              {
+                "local_id": "study",
+                "entity_class": "Study",
+                "schema_class": "Study",
+                "parent": null,
+                "list_path": null
+              },
+              {
+                "local_id": "grp_a",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "grp_b",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "tsk_1",
+                "entity_class": "Task",
+                "schema_class": "Task",
+                "parent": "study",
+                "list_path": "tasks"
+              },
+              {
+                "local_id": "cnd_1",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "cnd_2",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "asm_1",
+                "entity_class": "Assessment",
+                "schema_class": "Assessment",
+                "parent": "study",
+                "list_path": "assessments"
+              },
+              {
+                "local_id": "reg_1",
+                "entity_class": "Region",
+                "schema_class": "Region",
+                "parent": "study",
+                "list_path": "regions"
+              },
+              {
+                "local_id": "dev_1",
+                "entity_class": "Device",
+                "schema_class": "Device",
+                "parent": "study",
+                "list_path": "devices"
+              },
+              {
+                "local_id": "acq_1",
+                "entity_class": "Acquisition",
+                "schema_class": "MRI",
+                "parent": "study",
+                "list_path": "acquisitions"
+              },
+              {
+                "local_id": "mdl_1",
+                "entity_class": "ModelEstimation",
+                "schema_class": "ModelEstimation",
+                "parent": "study",
+                "list_path": "model_estimations"
+              },
+              {
+                "local_id": "trm_1",
+                "entity_class": "ModelTerm",
+                "schema_class": "ModelTerm",
+                "parent": "mdl_1",
+                "list_path": "terms"
+              },
+              {
+                "local_id": "msr_1",
+                "entity_class": "Measure",
+                "schema_class": "Measure",
+                "parent": "study",
+                "list_path": "measures"
+              },
+              {
+                "local_id": "an_1",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "an_2",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "arm_1",
+                "entity_class": "Arm",
+                "schema_class": "Arm",
+                "parent": "study",
+                "list_path": "design.arms"
+              },
+              {
+                "local_id": "tp_1",
+                "entity_class": "Timepoint",
+                "schema_class": "Timepoint",
+                "parent": "study",
+                "list_path": "design.timepoints"
+              }
+            ]
           }
         }
       }
@@ -5970,7 +6696,128 @@
               "entities": [
                 "reg_1"
               ]
-            }
+            },
+            "entities": [
+              {
+                "local_id": "study",
+                "entity_class": "Study",
+                "schema_class": "Study",
+                "parent": null,
+                "list_path": null
+              },
+              {
+                "local_id": "grp_a",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "grp_b",
+                "entity_class": "Group",
+                "schema_class": "Group",
+                "parent": "study",
+                "list_path": "groups"
+              },
+              {
+                "local_id": "tsk_1",
+                "entity_class": "Task",
+                "schema_class": "Task",
+                "parent": "study",
+                "list_path": "tasks"
+              },
+              {
+                "local_id": "cnd_1",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "cnd_2",
+                "entity_class": "Condition",
+                "schema_class": "Condition",
+                "parent": "tsk_1",
+                "list_path": "conditions"
+              },
+              {
+                "local_id": "asm_1",
+                "entity_class": "Assessment",
+                "schema_class": "Assessment",
+                "parent": "study",
+                "list_path": "assessments"
+              },
+              {
+                "local_id": "reg_1",
+                "entity_class": "Region",
+                "schema_class": "Region",
+                "parent": "study",
+                "list_path": "regions"
+              },
+              {
+                "local_id": "dev_1",
+                "entity_class": "Device",
+                "schema_class": "Device",
+                "parent": "study",
+                "list_path": "devices"
+              },
+              {
+                "local_id": "acq_1",
+                "entity_class": "Acquisition",
+                "schema_class": "MRI",
+                "parent": "study",
+                "list_path": "acquisitions"
+              },
+              {
+                "local_id": "mdl_1",
+                "entity_class": "ModelEstimation",
+                "schema_class": "ModelEstimation",
+                "parent": "study",
+                "list_path": "model_estimations"
+              },
+              {
+                "local_id": "trm_1",
+                "entity_class": "ModelTerm",
+                "schema_class": "ModelTerm",
+                "parent": "mdl_1",
+                "list_path": "terms"
+              },
+              {
+                "local_id": "msr_1",
+                "entity_class": "Measure",
+                "schema_class": "Measure",
+                "parent": "study",
+                "list_path": "measures"
+              },
+              {
+                "local_id": "an_1",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "an_2",
+                "entity_class": "Analysis",
+                "schema_class": "Analysis",
+                "parent": "study",
+                "list_path": "analyses"
+              },
+              {
+                "local_id": "arm_1",
+                "entity_class": "Arm",
+                "schema_class": "Arm",
+                "parent": "study",
+                "list_path": "design.arms"
+              },
+              {
+                "local_id": "tp_1",
+                "entity_class": "Timepoint",
+                "schema_class": "Timepoint",
+                "parent": "study",
+                "list_path": "design.timepoints"
+              }
+            ]
           }
         }
       }

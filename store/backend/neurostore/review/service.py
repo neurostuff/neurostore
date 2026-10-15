@@ -16,6 +16,7 @@ from neurostore.exceptions.utils.error_helpers import (
 from neurostore.exceptions.utils.errors import ErrorDetail
 from neurostore.models import Fulltext, Review, ReviewOp, ReviewSource, User
 from neurostore.review.bundle import bundle, hidden, source_summary
+from neurostore.review.entities import index_rows
 from neurostore.review.ops import OpError, ReviewState, apply_batch
 
 #: Provenance states that count as a change in the paper list.
@@ -391,6 +392,7 @@ def _op_result(review, ops, coordinate_parse):
         "provenance": review.provenance,
         "annotations": review.annotations,
         "hidden": hidden(review.record, coordinate_parse),
+        "entities": index_rows(review.record),
     }
 
 
