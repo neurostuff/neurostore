@@ -25,7 +25,7 @@ class Paper:
     coordinate_parse: dict
     record: dict
     text: str
-    raw: dict[str, bytes]
+    raw: dict[str, bytes] | None = None
 
 
 def _record_path(study_id):
@@ -87,6 +87,16 @@ def _parse_documents(paths, raw):
     return documents
 
 
+def paper_from_documents(study_id, parsed_paper, coordinate_parse, record, text) -> Paper:
+    return Paper(
+        study_id=study_id,
+        parsed_paper=parsed_paper,
+        coordinate_parse=coordinate_parse,
+        record=record,
+        text=text,
+    )
+
+
 def read_paper(root: Path | zipfile.Path, study_id: str) -> Paper:
     paths = _document_paths(study_id)
     raw = _read(root, list(paths.values()))
@@ -120,7 +130,7 @@ def _schema_problems(label, name, document):
 
 def _hash_problems(paper):
     text_path = _text_path(paper.study_id, paper.parsed_paper)
-    actual = hashlib.sha256(paper.raw[text_path]).hexdigest()
+    actual = hashlib.sha256(paper.text.encode("utf-8")).hexdigest()
     declared = {
         "parsed_paper text_sha256": paper.parsed_paper.get("text_sha256"),
         "coordinate_parse text_sha256": paper.coordinate_parse.get("text_sha256"),
@@ -244,18 +254,25 @@ def _dumped(document):
 
 
 def write_export(
-    out: Path, paper: Paper, record: dict, coordinate_revision: dict | None, ops: list[dict]
-) -> None:
+    out: Path, paper: Paper, record: dict, coordinate_revision: dict | None, ops: list[dict] | None
+) -> str:
+    """Write one paper's layout under ``out``; returns the record's path."""
     study_id = paper.study_id
-    files = dict(paper.raw)
-    if record != paper.record:
-        files[_record_path(study_id)] = _dumped(record)
+    paths = _document_paths(study_id)
+    files = {
+        paths["parsed_paper"]: _dumped(paper.parsed_paper),
+        paths["coordinate_parse"]: _dumped(paper.coordinate_parse),
+        paths["record"]: _dumped(record),
+        _text_path(study_id, paper.parsed_paper): paper.text.encode("utf-8"),
+    }
     if coordinate_revision is not None:
         files[_revision_path(study_id)] = _dumped(coordinate_revision)
-    files[_ops_path(study_id)] = "".join(
-        json.dumps(op, ensure_ascii=False) + "\n" for op in ops
-    ).encode("utf-8")
+    if ops is not None:
+        files[_ops_path(study_id)] = "".join(
+            json.dumps(op, ensure_ascii=False) + "\n" for op in ops
+        ).encode("utf-8")
     for relative, data in files.items():
         path = out / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
+    return paths["record"]

@@ -30,7 +30,10 @@ TOKENS = {
     "newuser-id": encode({"sub": "newuser-id"}, "789", algorithm="HS256"),
 }
 
-TEXT = "Participants viewed faces. The amygdala responded at 20, -4, -18 (t = 3.5)."
+TEXT = (
+    "Participants viewed faces – µV ±2, p ≥ .05. "
+    "The amygdala responded at 20, -4, -18 (t = 3.5)."
+)
 OPENAPI = Path(schemas.__file__).resolve().parents[1] / "openapi" / "neurostore-openapi.yml"
 
 
@@ -57,17 +60,32 @@ def dump(document):
     return (json.dumps(document, indent=2) + "\n").encode("utf-8")
 
 
-def write_layout(root, study_id, paper=None, coordinate_parse=None, extraction=None):
+def reversed_keys(value):
+    if isinstance(value, dict):
+        return {key: reversed_keys(value[key]) for key in reversed(list(value))}
+    if isinstance(value, list):
+        return [reversed_keys(item) for item in value]
+    return value
+
+
+def dump_unusual(document):
+    """The document with its keys in reverse order, indented by three spaces, no final newline."""
+    return json.dumps(reversed_keys(document), indent=3).encode("utf-8")
+
+
+def write_layout(
+    root, study_id, paper=None, coordinate_parse=None, extraction=None, dumps=dump
+):
     """Write one paper's files under ``root`` and return them keyed by layout path."""
     defaults = documents(study_id)
     paper = paper or defaults[0]
     coordinate_parse = coordinate_parse or defaults[1]
     extraction = extraction or defaults[2]
     files = {
-        f"corpus/{study_id}/parse/parsed_paper.json": dump(paper),
-        f"corpus/{study_id}/parse/coordinate_parse.json": dump(coordinate_parse),
+        f"corpus/{study_id}/parse/parsed_paper.json": dumps(paper),
+        f"corpus/{study_id}/parse/coordinate_parse.json": dumps(coordinate_parse),
         f"corpus/{study_id}/{paper['text_path']}": TEXT.encode("utf-8"),
-        f"run/records/{study_id}.extraction.json": dump(extraction),
+        f"run/records/{study_id}.extraction.json": dumps(extraction),
     }
     for relative, data in files.items():
         path = root / relative
@@ -104,13 +122,36 @@ def resolved(node):
     return node
 
 
-def assert_matches_spec(response, path, method):
-    documented = spec()["paths"][path][method]["responses"][str(response.status_code)]
+def _documented(path, method, status):
+    """The spec's response for ``status``, with a $ref to components/responses followed."""
+    documented = spec()["paths"][path][method]["responses"][str(status)]
     if "$ref" in documented:
         documented = spec()["components"]["responses"][documented["$ref"].rsplit("/", 1)[-1]]
+    return documented
+
+
+def assert_matches_spec(response, path, method):
+    """The status is documented and, when the spec describes its body, the body validates."""
+    documented = _documented(path, method, response.status_code)
+    if "content" not in documented:
+        return
     schema = documented["content"]["application/json"]
     errors = [
         error.message
         for error in Draft202012Validator(resolved(schema["schema"])).iter_errors(response.json())
     ]
     assert errors == [], (method, path, response.status_code, errors)
+
+
+def assert_binary_matches_spec(response, path, method):
+    """The status, content type and headers of a binary response are the spec's."""
+    documented = _documented(path, method, response.status_code)
+    content_types = list(documented.get("content", {}))
+    assert response.headers["content-type"].split(";")[0] in content_types, (
+        method,
+        path,
+        response.status_code,
+        response.headers["content-type"],
+    )
+    for name in documented.get("headers", {}):
+        assert name.lower() in response.headers, (method, path, name)

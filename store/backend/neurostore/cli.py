@@ -8,6 +8,8 @@ from types import SimpleNamespace
 import click
 from sqlalchemy.exc import OperationalError
 
+from neurostore.models.review import REVIEW_STATES
+from neurostore.review import ReviewError
 from neurostore.scripts.transfer_ownership import (
     OwnershipTransferError,
     transfer_user_ownership,
@@ -165,6 +167,49 @@ def review_import_command(path, user_id, run_id):
     click.echo(json.dumps(report, indent=2))
     if report["failed"]:
         raise SystemExit(1)
+
+
+@main.command("review-export")
+@click.argument("out", type=click.Path(path_type=Path))
+@click.option("--source-id", "source_ids", multiple=True, help="only this review source")
+@click.option("--base-study-id", "base_study_ids", multiple=True, help="only this base study")
+@click.option("--user-id", "user_ids", multiple=True, help="only this reviewer's reviews")
+@click.option(
+    "--state",
+    "states",
+    multiple=True,
+    type=click.Choice(REVIEW_STATES),
+    help="only reviews in this state",
+)
+@click.option(
+    "--include-unreviewed",
+    is_flag=True,
+    help="also export the sources with no review, as loaded, under _source/",
+)
+def review_export_command(out, source_ids, base_study_ids, user_ids, states, include_unreviewed):
+    """Write reviews as study_schema layout trees under OUT, one tree per reviewer.
+
+    Prints the manifest as JSON.
+    """
+
+    def _run(_app, db):
+        from neurostore.review.exports import export_bulk
+
+        return export_bulk(
+            db.session,
+            out,
+            source_ids=list(source_ids),
+            base_study_ids=list(base_study_ids),
+            user_ids=list(user_ids),
+            states=list(states),
+            include_unreviewed=include_unreviewed,
+        )
+
+    try:
+        manifest = _run_with_runtime(_run)
+    except ReviewError as error:
+        raise click.UsageError(str(error)) from error
+    click.echo(json.dumps(manifest, indent=2))
 
 
 @main.command("backfill-analysis-roles")

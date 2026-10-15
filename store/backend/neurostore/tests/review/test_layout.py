@@ -17,6 +17,7 @@ from neurostore.tests.review.layouts import (
     TEXT,
     documents,
     dump,
+    dump_unusual,
     write_layout,
     zip_layout,
 )
@@ -413,6 +414,10 @@ def test_read_layout_source_that_is_not_a_layout_raises_layout_error(tmp_path, m
     assert [p for p in raised.value.problems if str(source) in p]
 
 
+def _indented(document):
+    return (json.dumps(document, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
+
+
 def exported_files(out):
     return {
         path.relative_to(out).as_posix(): path.read_bytes()
@@ -421,13 +426,44 @@ def exported_files(out):
     }
 
 
-def test_write_export_writes_unchanged_documents_as_imported_bytes(tmp_path):
-    files = write_layout(tmp_path / "in", "s1")
+def test_write_export_writes_every_document_as_indented_json_and_the_text_as_read(tmp_path):
+    write_layout(tmp_path / "in", "s1", dumps=dump_unusual)
     paper = read_paper(tmp_path / "in", "s1")
 
-    write_export(tmp_path / "out", paper, copy.deepcopy(paper.record), None, [])
+    write_export(tmp_path / "out", paper, paper.record, None, [])
 
-    assert exported_files(tmp_path / "out") == {**files, "review/s1.ops.jsonl": b""}
+    out = exported_files(tmp_path / "out")
+    assert set(out) == {
+        "corpus/s1/parse/parsed_paper.json",
+        "corpus/s1/parse/coordinate_parse.json",
+        "corpus/s1/text/paper.txt",
+        "run/records/s1.extraction.json",
+        "review/s1.ops.jsonl",
+    }
+    assert out["corpus/s1/parse/parsed_paper.json"] == _indented(paper.parsed_paper)
+    assert out["corpus/s1/parse/coordinate_parse.json"] == _indented(paper.coordinate_parse)
+    assert out["run/records/s1.extraction.json"] == _indented(paper.record)
+    assert out["corpus/s1/text/paper.txt"] == TEXT.encode("utf-8")
+    assert out["review/s1.ops.jsonl"] == b""
+
+
+def test_write_export_returns_the_path_of_the_record(tmp_path):
+    write_layout(tmp_path / "in", "s1")
+    paper = read_paper(tmp_path / "in", "s1")
+
+    returned = write_export(tmp_path / "out", paper, paper.record, None, [])
+
+    assert returned == "run/records/s1.extraction.json"
+
+
+def test_write_export_writes_no_ops_file_when_there_are_no_ops_to_write(tmp_path):
+    write_layout(tmp_path / "in", "s1")
+    paper = read_paper(tmp_path / "in", "s1")
+
+    write_export(tmp_path / "out", paper, paper.record, None, None)
+
+    assert not (tmp_path / "out" / "review").exists()
+    assert not (tmp_path / "out" / "run" / "revisions").exists()
 
 
 def test_write_export_writes_changed_record_revision_and_ops(tmp_path):
@@ -456,4 +492,9 @@ def test_reading_back_an_unchanged_export_gives_the_same_paper(tmp_path):
     write_export(tmp_path / "out", paper, copy.deepcopy(paper.record), None, [])
 
     [exported] = read_layout(tmp_path / "out")
-    assert exported == paper
+    assert (exported.parsed_paper, exported.coordinate_parse, exported.record, exported.text) == (
+        paper.parsed_paper,
+        paper.coordinate_parse,
+        paper.record,
+        paper.text,
+    )

@@ -2,7 +2,10 @@
 
 import shutil
 import tempfile
+import zipfile
 from pathlib import Path
+
+from connexion.lifecycle import ConnexionResponse
 
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
@@ -11,7 +14,7 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_too_large,
     abort_unprocessable,
 )
-from neurostore.review import imports, service
+from neurostore.review import ReviewError, exports, imports, service
 from neurostore.review.layout import LayoutError
 from neurostore.resources.utils import get_current_user, is_user_admin, user_has_role
 
@@ -44,6 +47,29 @@ def _size(upload):
 def _spool(upload, destination):
     with destination.open("wb") as copy:
         shutil.copyfileobj(upload.file, copy)
+
+
+def _zipped(write, filename):
+    """The zip of the layout ``write(root)`` writes, as an attachment named ``filename``.
+
+    The whole zip is built in memory before the response is sent.
+    """
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory) / "layout"
+        write(root)
+        with tempfile.TemporaryFile() as archive:
+            with zipfile.ZipFile(archive, "w") as zipped:
+                for path in sorted(root.rglob("*")):
+                    if path.is_file():
+                        zipped.write(path, path.relative_to(root).as_posix())
+            archive.seek(0)
+            data = archive.read()
+    return ConnexionResponse(
+        body=data,
+        status_code=200,
+        content_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def _commit(write):
@@ -104,6 +130,26 @@ class ReviewOpsView:
         return _commit(
             lambda: service.post_ops(db.session, id, user.external_id, body)
         )
+
+
+class ReviewExportView:
+    def get(self, id):
+        _reviewer()
+        return _zipped(
+            lambda root: exports.export_review(db.session, id, root), f"review-{id}.zip"
+        )
+
+
+class ReviewExportsView:
+    def post(self, body=None):
+        _reviewer()
+        try:
+            return _zipped(
+                lambda root: exports.export_bulk(db.session, root, **(body or {})),
+                "review-exports.zip",
+            )
+        except ReviewError as error:
+            abort_unprocessable(str(error))
 
 
 class ReviewImportsView:

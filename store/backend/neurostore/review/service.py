@@ -76,7 +76,7 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
 
 def get_bundle(session, source_id, user_id):
     """The bundle of ``source_id`` for the reviewer ``user_id``."""
-    source = _source(session, source_id)
+    source = get_source(session, source_id)
     review = _review_of(session, source_id, user_id)
     if review is None:
         state = ReviewState(record=source.record, coordinate_parse=source.coordinate_parse)
@@ -141,7 +141,7 @@ def post_ops(session, review_id, user_id, body):
     review = _locked(session, review_id)
     if review.user_id != user_id:
         abort_permission("Only the review's owner can edit it.")
-    source = _source(session, review.source_id)
+    source = get_source(session, review.source_id)
     ops = body["ops"]
     client_op_ids = {op.get("client_op_id") for op in ops}
     stored = session.scalars(
@@ -266,7 +266,7 @@ def _review_of(session, source_id, user_id):
     )
 
 
-def _source(session, source_id):
+def get_source(session, source_id):
     source = session.scalar(
         sa.select(ReviewSource)
         .options(joinedload(ReviewSource.fulltext))
