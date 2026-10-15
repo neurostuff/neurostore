@@ -83,7 +83,6 @@ def _import_paper(session, paper, *, user_id, run_id):
         parsed_paper=paper.parsed_paper,
         coordinate_parse=paper.coordinate_parse,
         record=paper.record,
-        origin="upload",
         label=paper.parsed_paper["bibliography"]["title"],
         schema_versions=_schema_versions(paper),
         record_sha256=digest,

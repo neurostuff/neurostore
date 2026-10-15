@@ -12,7 +12,7 @@ from neurostore.models import Fulltext, Review, ReviewSource
 from neurostore.review import ReviewError, service
 from neurostore.review.layout import _dumped, paper_from_documents, write_export
 
-SOURCE_DIR = "_source"
+UNREVIEWED_DIR = "unreviewed"
 BATCH_SIZE = 100
 PROVENANCE_DIR = "run/provenance"
 PROVENANCE_SCHEMA = Path(__file__).parent / "schema" / "record-provenance.schema.json"
@@ -39,7 +39,7 @@ def export_bulk(
     include_unreviewed=False,
 ):
     """Write one layout tree per reviewer under ``out``, and each source with no review as
-    loaded under ``_source/`` when ``include_unreviewed``; returns the manifest.
+    loaded under ``unreviewed/`` when ``include_unreviewed``; returns the manifest.
 
     An empty filter list means no filter.
     """
@@ -62,8 +62,8 @@ def export_bulk(
             session.expunge(source)
     if include_unreviewed:
         for source in _unreviewed(session, source_ids, base_study_ids):
-            path = _write_review(out / SOURCE_DIR, source, None, taken[SOURCE_DIR])
-            manifest.append(_entry(f"{SOURCE_DIR}/{path}", source.id))
+            path = _write_review(out / UNREVIEWED_DIR, source, None, taken[UNREVIEWED_DIR])
+            manifest.append(_entry(f"{UNREVIEWED_DIR}/{path}", source.id))
             session.expunge(source)
     return manifest
 

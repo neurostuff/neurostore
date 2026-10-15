@@ -25,7 +25,7 @@
     },
     "AnalysisVerdict": {
       "additionalProperties": false,
-      "description": "pondie's verdict on one analysis of the parse a revision revises, reached while extracting the whole record. The verdict overrides the original's proposal, grouping and role alike.\nWhat a verdict does to what is stored against the analysis -- claims, their evidence, and users' votes on them:\n- accept, relabel: nothing moves. The key is unchanged, so everything stored against\n  it applies to the revision as it stands.\n- split: everything is copied to each analysis in `replaced_by`. - merge: everything stored against each merged analysis is copied to the one\n  analysis they merge into. Two copies of the same field with the same value become\n  one claim; with different values they stay competing claims, resolved like any\n  other.\n- omit: nothing is copied. - add: nothing to copy; the analysis is new.\nEvery copy records the key and parse it was copied from, so a reviewer can tell a copied claim from one made against the revision. The revised parse and everything stored against it are kept, unchanged, as history: superseded rather than deleted, and left out of projections and studysets.",
+      "description": "pondie's verdict on one analysis of the parse a revision revises, reached while extracting the whole record. The verdict overrides the original's proposal, grouping and role alike.\nWhat a verdict does to what is stored against the analysis -- claims, their evidence, and users' votes on them:\n- accept, relabel: nothing moves. The key is unchanged, so everything stored against\n  it applies to the revision as it stands.\n- edit: everything is copied to the one analysis in `replaced_by`, whose points are\n  the corrected ones.\n- split: everything is copied to each analysis in `replaced_by`. - merge: everything stored against each merged analysis is copied to the one\n  analysis they merge into. Two copies of the same field with the same value become\n  one claim; with different values they stay competing claims, resolved like any\n  other.\n- omit: nothing is copied. - add: nothing to copy; the analysis is new.\nEvery copy records the key and parse it was copied from, so a reviewer can tell a copied claim from one made against the revision. The revised parse and everything stored against it are kept, unchanged, as history: superseded rather than deleted, and left out of projections and studysets.",
       "properties": {
         "evidence": {
           "description": "The sentences of the paper the verdict rests on.",
@@ -45,7 +45,7 @@
           "type": "string"
         },
         "replaced_by": {
-          "description": "The keys in this revision that take the analysis's place: itself for accept and relabel, the replacements for split and merge, none for omit.",
+          "description": "The keys in this revision that take the analysis's place: itself for accept and relabel, the one corrected analysis for edit, the replacements for split and merge, none for omit.",
           "items": {
             "type": "string"
           },
@@ -187,6 +187,7 @@
       "enum": [
         "accept",
         "relabel",
+        "edit",
         "split",
         "merge",
         "omit",
@@ -359,7 +360,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Reference"
         },
         "text_span": {
           "$ref": "#/$defs/TextSpan",

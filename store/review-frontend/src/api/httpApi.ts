@@ -1,11 +1,18 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
-import { ApiError, type OpResult, type PaperSummary, type ReviewApi, type ReviewSummary } from './reviewApi';
+import {
+    ApiError,
+    type OpResult,
+    type PaperSummary,
+    type ReviewApi,
+    type ReviewerProgress,
+    type ReviewSummary,
+} from './reviewApi';
 
 const PAGE_SIZE = 100;
 
 interface SourcePage {
     metadata: { total_count: number };
-    results: { id: string; label: string | null }[];
+    results: { id: string; label: string | null; total: number; reviews: ReviewerProgress[] }[];
 }
 
 export function httpApi(
@@ -39,7 +46,9 @@ export function httpApi(
                     'GET',
                     `/review/sources/?page=${page}&page_size=${PAGE_SIZE}`
                 );
-                papers.push(...results.map((s) => ({ id: s.id, label: s.label ?? s.id })));
+                papers.push(
+                    ...results.map((s) => ({ id: s.id, label: s.label ?? s.id, total: s.total, reviews: s.reviews }))
+                );
                 if (results.length === 0 || papers.length >= metadata.total_count) return papers;
             }
         },

@@ -423,6 +423,15 @@ describe('links and entities', () => {
         expect(within(screen.getByRole('region', { name: 'Patients' })).getByText('deleting…')).toBeInTheDocument();
     });
 
+    it('closes the delete dialog on confirm, before the server answers', () => {
+        const { state, pending } = setup();
+        act(() => state().focusEntity('grp_a'));
+        press('Backspace', { shiftKey: true }, document.body);
+        fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(pending()).toHaveLength(1);
+    });
+
     it('says when nothing links to the entity being deleted', () => {
         const { state } = setup();
         act(() => state().focusEntity('grp_b'));

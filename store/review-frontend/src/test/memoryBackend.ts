@@ -5,6 +5,7 @@ import type { CoordinateParse } from '../model/coordinates';
 import { codePointPaper } from '../model/offsets';
 import type { Json } from '../model/paths';
 import { ApiError, type OpResult, refusedOp, type ReviewLifecycle, type ReviewSummary } from '../api/reviewApi';
+import { walkClasses } from './golden/schemaWalk';
 
 interface Review extends ReviewSummary {
     created_at: string;
@@ -13,6 +14,17 @@ interface Review extends ReviewSummary {
     provenance: NonNullable<ReviewBundle['review']>['provenance'];
     annotations: NonNullable<ReviewBundle['review']>['annotations'];
     ops: StoredOp[];
+}
+
+const REVIEWED_STATES = new Set(['verified', 'edited', 'added', 'removed']);
+
+/** The provenance keys of the targets a reviewer can judge in a source, as the backend's _judgeable gives them. */
+export function judgeableKeys(record: unknown, parse: unknown): Set<string> {
+    const values = walkClasses(record as Json).wrappers.map((wrapper) => `slot:${wrapper.entity}:${wrapper.path}`);
+    const analyses = ((parse as { analyses?: { key: string }[] } | null)?.analyses ?? []).map(
+        (analysis) => `coordinate_analysis:${analysis.key}`
+    );
+    return new Set([...values, ...analyses]);
 }
 
 export interface OpBatch {
@@ -95,10 +107,11 @@ export function memoryBackend(
         },
 
         /** The reviews of a source as the source list shows them. */
-        reviewSummaries(sourceId: string) {
+        reviewSummaries(sourceId: string, judgeable: Set<string>) {
             const r = reviewOf(sourceId);
             if (!r) return [];
-            const states = Object.values(r.provenance as Record<string, { state: string }>).map((p) => p.state);
+            const provenance = r.provenance as Record<string, { state: string }>;
+            const states = Object.values(provenance).map((p) => p.state);
             return [
                 {
                     user_id: r.user_id,
@@ -108,6 +121,7 @@ export function memoryBackend(
                     updated_at: null,
                     edited: states.filter((state) => state === 'edited').length,
                     verified: states.filter((state) => state === 'verified').length,
+                    reviewed: [...judgeable].filter((key) => REVIEWED_STATES.has(provenance[key]?.state)).length,
                 },
             ];
         },

@@ -40,6 +40,7 @@
                 "label": "Another paper",
                 "origin": "upload",
                 "created_at": "<iso>",
+                "total": 38,
                 "reviews": []
               }
             ]
@@ -65,6 +66,7 @@
                 "label": "Golden synthetic paper",
                 "origin": "upload",
                 "created_at": "<iso>",
+                "total": 38,
                 "reviews": [
                   {
                     "user_id": "user1-id",
@@ -73,7 +75,8 @@
                     "last_seq": 0,
                     "updated_at": null,
                     "edited": 0,
-                    "verified": 0
+                    "verified": 0,
+                    "reviewed": 0
                   }
                 ]
               }

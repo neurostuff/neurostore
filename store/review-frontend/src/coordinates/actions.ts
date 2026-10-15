@@ -7,6 +7,7 @@ import {
     type CoordinateAnalysis,
     type CoordinatePoint,
 } from '../model/coordinates';
+import { randomUUID } from '../model/uuid';
 import type { Panel, PanelKind, ReviewState } from '../store/reviewStore';
 
 type State = Pick<ReviewState, 'bundle' | 'coordinates' | 'merging' | 'pending'>;
@@ -35,7 +36,7 @@ export function pendingKeys(s: Pick<State, 'pending'>): Set<string> {
     );
 }
 
-const coordinateOp = (op: NewOp) => ({ client_op_id: crypto.randomUUID(), type: 'coordinate', ...op }) as Op;
+const coordinateOp = (op: NewOp) => ({ client_op_id: randomUUID(), type: 'coordinate', ...op }) as Op;
 const send = (s: Pick<ReviewState, 'emitBatch'>, op: NewOp) => s.emitBatch([coordinateOp(op)]);
 
 /** Emits the ops `build` makes from the focused analysis, as one batch; false when there is none or a coordinate op is pending. */

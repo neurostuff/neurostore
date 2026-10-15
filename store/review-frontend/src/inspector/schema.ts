@@ -1,4 +1,4 @@
-import referenceManifest from '../../../backend/neurostore/review/schema/references.json';
+import { REFERENCE_SLOTS } from '../contract/references';
 import extractionSchema from '../contract/extraction-record.runtime.schema.json';
 import { isObject, parsePath } from '../model/paths';
 import { isReferenceSlot } from '../model/record';
@@ -327,7 +327,7 @@ export function parseScalar(spec: Scalar, raw: string): Parsed {
     }
 }
 
-/** The class a reference slot links to, from references.json, by the rule record.ts gives the slot. */
+/** The class a reference slot links to, from the extraction-record x-reference annotations, by the rule record.ts gives the slot. */
 export function referenceTarget(row: { entity_class: string; schema_class: string }, path: string): string | undefined {
     const steps = parsePath(path);
     const attribute = steps.filter((step): step is string => typeof step === 'string').at(-1);
@@ -335,6 +335,5 @@ export function referenceTarget(row: { entity_class: string; schema_class: strin
     const nested = steps.length > 1;
     if (!isReferenceSlot(row, nested, attribute)) return undefined;
     const owners = [row.schema_class, row.entity_class];
-    return referenceManifest.references.find((r) => r.slot === attribute && (nested || owners.includes(r.class)))
-        ?.target;
+    return REFERENCE_SLOTS.find((r) => r.slot === attribute && (nested || owners.includes(r.class)))?.target;
 }

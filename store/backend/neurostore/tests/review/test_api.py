@@ -2,6 +2,7 @@
 
 import copy
 import itertools
+import json
 import threading
 import time
 from unittest import mock
@@ -12,10 +13,17 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from neurostore.exceptions.base import ConflictError
-from neurostore.models import BaseStudy, Fulltext, Review, ReviewOp, ReviewSource
+from neurostore.models import (
+    BaseStudy,
+    Fulltext,
+    PipelineConfig,
+    Review,
+    ReviewOp,
+    ReviewSource,
+)
 from neurostore.resources.base import ObjectView
 from neurostore.review import bundle as review_bundle
-from neurostore.review import entities, service
+from neurostore.review import entities, exports, service
 from neurostore.review.bundle import validator
 from neurostore.study_schema_tools import sha256_of
 from neurostore.tests import study_schema_fixtures as fx
@@ -63,7 +71,6 @@ def add_source(
         parsed_paper=fx.parsed_paper(),
         coordinate_parse=records.coordinate_parse(),
         record=record,
-        origin="upload",
         label=label,
         schema_versions={"paper_parse": "0.6.0", "extraction": "0.5.0"},
         record_sha256=sha256_of({"label": label, "record": record}),
@@ -158,6 +165,26 @@ async def test_every_route_needs_the_admin_reviewer_role(clients, source, sessio
 # listing sources
 
 
+async def test_a_pipeline_run_source_is_listed_and_exported_as_one(clients, session, tmp_path):
+    config = PipelineConfig()
+    session.add(config)
+    session.commit()
+    source = add_source(session)
+    source.pipeline_config_id = config.id
+    source.run_id = "run-1"
+    session.commit()
+
+    response = await clients[REVIEWER].get("/api/review/sources/")
+    [row] = response.json()["results"]
+    assert row["origin"] == "pipeline_run"
+
+    exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
+    [provenance] = (tmp_path / "out" / exports.UNREVIEWED_DIR / "run/provenance").glob("*.json")
+    wrapper = json.loads(provenance.read_text("utf-8"))
+    assert wrapper["source"]["origin"] == "pipeline_run"
+    assert wrapper["source"]["run_id"] == "run-1"
+
+
 async def test_the_source_list_carries_each_reviewers_progress(clients, source, session):
     add_review(session, source, OTHER, state="submitted", provenance={
         "entity:grp_a": {"state": "verified", "user_id": OTHER, "at": "2026-10-14T12:00:00Z"},
@@ -186,6 +213,58 @@ async def test_the_source_list_carries_each_reviewers_progress(clients, source, 
         "last_seq": 0,
         "edited": 3,
         "verified": 2,
+        "reviewed": 1,
+    }
+
+
+async def test_the_source_list_gives_each_source_its_judgeable_total(clients, session):
+    record = {
+        "local_id": "study-1",
+        "name": fx.extracted("A study"),
+        "analyses": [
+            {
+                "local_id": "a_1",
+                "name": fx.extracted("one"),
+                "definition": fx.extracted("def"),
+                "source_table_analysis": fx.extracted("t1"),
+                "measure": None,
+            }
+        ],
+    }
+    full = add_source(session, label="Judged paper", record=record)
+    full.coordinate_parse = fx.parse([
+        fx.table_analysis("t1", [1], "patients > controls", [fx.point((10, 20, 30))]),
+        fx.table_analysis("t2", [2], "controls > patients", [fx.point((1, 2, 3))]),
+    ])
+    empty = add_source(session, label="Empty paper", record={"local_id": "study-2"})
+    empty.coordinate_parse = fx.parse([])
+    session.commit()
+    response = await clients[REVIEWER].get("/api/review/sources/")
+    totals = {row["id"]: row["total"] for row in response.json()["results"]}
+    assert totals == {full.id: 5, empty.id: 0}
+
+
+async def test_the_source_list_counts_the_judgeable_targets_a_review_has_reviewed(
+    clients, source, session
+):
+    add_review(session, source, OTHER, state="submitted", provenance={
+        "slot:grp_a:name": {"state": "verified", "user_id": OTHER, "at": "2026-10-14T12:00:00Z"},
+        "slot:grp_b:name": {"state": "edited", "user_id": OTHER, "at": "2026-10-14T12:00:00Z"},
+        "entity:new_1": {"state": "added", "user_id": OTHER, "at": "2026-10-14T12:00:00Z"},
+        "slot:new_1:name": {"state": "verified", "user_id": OTHER, "at": "2026-10-14T12:00:00Z"},
+    })
+    response = await clients[REVIEWER].get("/api/review/sources/")
+    [row] = response.json()["results"]
+    assert row["total"] == 38
+    [progress] = row["reviews"]
+    assert {k: v for k, v in progress.items() if k != "updated_at"} == {
+        "user_id": OTHER,
+        "user_name": f"name of {OTHER}",
+        "state": "submitted",
+        "last_seq": 0,
+        "edited": 2,
+        "verified": 2,
+        "reviewed": 2,
     }
 
 

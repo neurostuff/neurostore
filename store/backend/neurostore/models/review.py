@@ -1,12 +1,12 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from neurostore.database import db
 from neurostore.models.data import BaseMixin
 from neurostore.models.fulltext import Fulltext
 
-REVIEW_SOURCE_ORIGINS = ("upload", "pipeline_run")
 REVIEW_STATES = ("in_progress", "submitted", "reference")
 
 
@@ -22,7 +22,6 @@ class ReviewSource(BaseMixin, db.Model):
     parsed_paper = db.Column(JSONB)
     coordinate_parse = db.Column(JSONB)
     record = db.Column(JSONB, nullable=False)
-    origin = db.Column(db.Text, nullable=False)
     pipeline_config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True, index=True
     )
@@ -34,13 +33,24 @@ class ReviewSource(BaseMixin, db.Model):
     loaded_by_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
 
     __table_args__ = (
-        sa.CheckConstraint(origin.in_(REVIEW_SOURCE_ORIGINS), name="ck_review_sources_origin"),
         sa.UniqueConstraint(
             "fulltext_id", "record_sha256", name="uq_review_sources_fulltext_record"
         ),
     )
 
     fulltext = relationship(Fulltext)
+
+    @hybrid_property
+    def origin(self):
+        """``pipeline_run`` when the source names a pipeline config and a run, else ``upload``."""
+        if self.pipeline_config_id is not None and self.run_id is not None:
+            return "pipeline_run"
+        return "upload"
+
+    @origin.expression
+    def origin(cls):
+        named = sa.and_(cls.pipeline_config_id.is_not(None), cls.run_id.is_not(None))
+        return sa.case((named, "pipeline_run"), else_="upload")
 
 
 class Review(BaseMixin, db.Model):

@@ -184,7 +184,7 @@ def review_import_command(path, user_id, run_id):
 @click.option(
     "--include-unreviewed",
     is_flag=True,
-    help="also export the sources with no review, as loaded, under _source/",
+    help="also export the sources with no review, as loaded, under unreviewed/",
 )
 def review_export_command(out, source_ids, base_study_ids, user_ids, states, include_unreviewed):
     """Write reviews as study_schema layout trees under OUT, one tree per reviewer.

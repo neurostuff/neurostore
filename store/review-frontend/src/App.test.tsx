@@ -18,8 +18,8 @@ const bundles = {
 
 const api: ReviewApi = {
     listPapers: async () => [
-        { id: 'P1', label: 'First paper' },
-        { id: 'P2', label: 'Second paper' },
+        { id: 'P1', label: 'First paper', total: 0 },
+        { id: 'P2', label: 'Second paper', total: 0 },
     ],
     getBundle: async (id) => {
         if (!(id in bundles)) throw new Error(`no bundle ${id}`);

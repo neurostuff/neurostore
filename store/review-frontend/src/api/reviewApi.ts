@@ -8,9 +8,20 @@ export type OpResult = Omit<GeneratedOpResult, 'hidden'> & { hidden: ReviewBundl
 
 export const ROLE_MESSAGE = 'You need the admin-reviewer role';
 
+export interface ReviewerProgress {
+    user_id: string;
+    user_name: string | null;
+    state: ReviewLifecycle;
+    edited: number;
+    verified: number;
+    reviewed: number;
+}
+
 export interface PaperSummary {
     id: string;
     label: string;
+    total: number;
+    reviews?: ReviewerProgress[];
 }
 
 export type ReviewLifecycle = NonNullable<ReviewBundle['review']>['state'];

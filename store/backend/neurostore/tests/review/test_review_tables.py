@@ -17,6 +17,7 @@ from neurostore.admin import init_admin
 from neurostore.models import (
     BaseStudy,
     Fulltext,
+    PipelineConfig,
     Review,
     ReviewAssignment,
     ReviewOp,
@@ -27,6 +28,7 @@ from neurostore.models.fulltext import refresh_fulltext_pointer
 
 REVIEW_TABLES = (Fulltext, ReviewSource, Review, ReviewOp, ReviewAssignment)
 PREVIOUS_REVISION = "a7d3e9c1b5f2"
+BEFORE_DROP = "c5d8e2f4a6b1"
 OPENAPI = (
     Path(schemas.__file__).resolve().parents[1] / "openapi" / "neurostore-openapi.yml"
 )
@@ -68,7 +70,6 @@ def make_source(paper_, fulltext, **overrides):
         parsed_paper={"id": "p"},
         coordinate_parse={"analyses": []},
         record={"study": {}},
-        origin="upload",
         label="first upload",
         schema_versions={"record": "1"},
         record_sha256="a" * 64,
@@ -101,7 +102,10 @@ def review(session, paper):
 
 @pytest.mark.parametrize(
     "source, tier",
-    [("pubget", 1), ("pmc", 1), ("europepmc", 1), ("elsevier", 1), ("ace", 2), ("pdf", 3)],
+    [
+        ("pubget", 1), ("pmc", 1), ("europepmc", 1), ("elsevier", 1), ("springer", 1),
+        ("ace", 2), ("pdf", 3),
+    ],
 )
 def test_the_tier_comes_from_the_source(source, tier):
     assert Fulltext(source=source).tier == tier
@@ -121,18 +125,17 @@ def test_a_caller_cannot_set_the_tier():
     assert fulltext.tier == 3
 
 
-def test_hash_and_length_come_from_the_text():
+def test_the_hash_comes_from_the_text():
     fulltext = Fulltext(source="ace", text="Résumé")
     assert fulltext.sha256 == hashlib.sha256("Résumé".encode()).hexdigest()
-    assert fulltext.length == 6
 
 
 def test_the_database_refuses_a_tier_outside_one_to_three(session, paper):
     with pytest.raises(IntegrityError):
         session.execute(
             sa.text(
-                "INSERT INTO fulltexts (id, base_study_id, source, tier, sha256, text, length)"
-                " VALUES ('ft', :bs, 'pmc', 4, 'h', 't', 1)"
+                "INSERT INTO fulltexts (id, base_study_id, source, tier, sha256, text)"
+                " VALUES ('ft', :bs, 'pmc', 4, 'h', 't')"
             ),
             {"bs": paper[0].id},
         )
@@ -168,7 +171,7 @@ def test_fulltexts_schema_and_base_study_pointer(session):
     columns = {c["name"] for c in inspector.get_columns("fulltexts")}
     assert columns >= {
         "id", "base_study_id", "source", "source_version", "tier", "sha256", "text",
-        "length", "created_at",
+        "created_at",
     }
     indexed = [i["column_names"] for i in inspector.get_indexes("fulltexts")]
     assert ["base_study_id", "tier", "created_at"] in indexed
@@ -302,11 +305,28 @@ def test_a_source_points_at_an_existing_fulltext(session, paper):
     refused(session, source)
 
 
-def test_a_source_origin_is_upload_or_pipeline_run(session, paper):
+def test_a_source_is_a_pipeline_run_only_when_it_names_a_config_and_a_run(session, paper):
     fulltext = add_text(session, paper[0], "pmc", "Text.")
-    refused(session, make_source(paper, fulltext, origin="email"))
-    session.add(make_source(paper, fulltext, origin="pipeline_run", run_id="run-1"))
+    config = PipelineConfig()
+    session.add(config)
     session.commit()
+    session.add_all([
+        make_source(paper, fulltext, record_sha256="1" * 64),
+        make_source(paper, fulltext, record_sha256="2" * 64, run_id="run-1"),
+        make_source(paper, fulltext, record_sha256="3" * 64, pipeline_config_id=config.id),
+        make_source(
+            paper, fulltext, record_sha256="4" * 64, pipeline_config_id=config.id, run_id="run-1"
+        ),
+    ])
+    session.commit()
+    origins = session.scalars(
+        sa.select(ReviewSource.origin).order_by(ReviewSource.record_sha256)
+    ).all()
+    assert origins == ["upload", "upload", "upload", "pipeline_run"]
+    assert ReviewSource(pipeline_config_id="cfg", run_id="run-1").origin == "pipeline_run"
+    assert ReviewSource(pipeline_config_id="cfg").origin == "upload"
+    assert ReviewSource(run_id="run-1").origin == "upload"
+    assert ReviewSource().origin == "upload"
 
 
 def test_a_record_is_loaded_once_per_paper(session, paper):
@@ -533,6 +553,56 @@ def test_the_migration_seeds_the_role_and_downgrade_removes_everything(session, 
     with session.bind.connect() as conn:
         roles = conn.execute(sa.text("SELECT id, name FROM roles")).all()
     assert ("admin-reviewer", "admin-reviewer") in [tuple(role) for role in roles]
+
+
+def test_the_migration_drops_fulltext_length_and_source_origin(session):
+    inspector = sa.inspect(session.bind)
+    assert "length" not in {c["name"] for c in inspector.get_columns("fulltexts")}
+    assert "origin" not in {c["name"] for c in inspector.get_columns("review_sources")}
+
+
+def test_the_downgrade_before_the_drop_restores_length_and_origin(session, paper):
+    base_study = paper[0]
+    fulltext = add_text(session, base_study, "pmc", "Some text.")
+    config = PipelineConfig()
+    session.add(config)
+    session.commit()
+    session.add_all([
+        make_source(paper, fulltext, record_sha256="1" * 64),
+        make_source(paper, fulltext, record_sha256="2" * 64, pipeline_config_id=config.id),
+        make_source(
+            paper, fulltext, record_sha256="3" * 64, pipeline_config_id=config.id, run_id="run-1"
+        ),
+    ])
+    session.commit()
+    fulltext_id = fulltext.id
+    session.remove()
+    try:
+        service_migrations.downgrade(BEFORE_DROP)
+        inspector = sa.inspect(session.bind)
+        assert "length" in {c["name"] for c in inspector.get_columns("fulltexts")}
+        assert "origin" in {c["name"] for c in inspector.get_columns("review_sources")}
+        with session.bind.connect() as conn:
+            length, char_length = conn.execute(
+                sa.text("SELECT length, char_length(text) FROM fulltexts WHERE id = :id"),
+                {"id": fulltext_id},
+            ).one()
+            origins = conn.scalars(
+                sa.text("SELECT origin FROM review_sources ORDER BY record_sha256")
+            ).all()
+        assert length == char_length == len("Some text.")
+        assert origins == ["upload", "upload", "pipeline_run"]
+        with pytest.raises(IntegrityError, match="ck_review_sources_origin"):
+            with session.bind.begin() as conn:
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO review_sources (id, fulltext_id, record, record_sha256,"
+                        " origin) VALUES ('email-source', :fulltext, '{}', :sha, 'email')"
+                    ),
+                    {"fulltext": fulltext_id, "sha": "9" * 64},
+                )
+    finally:
+        service_migrations.upgrade("heads")
 
 
 # Staying out of the public API

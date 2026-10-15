@@ -162,7 +162,7 @@ describe('buildRecordIndex', () => {
         ]);
     });
 
-    it('marks reference slots from references.json, including inherited and nested classes', () => {
+    it('marks reference slots from the extraction-record x-reference annotations, including inherited and nested classes', () => {
         const refs = (key: string) => {
             const slot = index.slot(key);
             return slot && [slot.kind, slot.references];

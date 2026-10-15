@@ -15,8 +15,8 @@ describe('fixtureApi', () => {
     afterEach(() => vi.unstubAllGlobals());
 
     it('lists the papers in fixtures/index.json under the app’s base', async () => {
-        serve({ '/review/fixtures/index.json': [{ id: 'P1', label: 'A paper' }] });
-        expect(await fixtureApi('/review/').listPapers()).toEqual([{ id: 'P1', label: 'A paper' }]);
+        serve({ '/review/fixtures/index.json': [{ id: 'P1', label: 'A paper', total: 4 }] });
+        expect(await fixtureApi('/review/').listPapers()).toEqual([{ id: 'P1', label: 'A paper', total: 4 }]);
     });
 
     it('loads a paper’s bundle and fails clearly when it is missing', async () => {

@@ -92,7 +92,7 @@ describe('Root', () => {
             'fetch',
             vi.fn(async (url: string) =>
                 url === '/review/fixtures/index.json'
-                    ? new Response(JSON.stringify([{ id: 'F1', label: 'A fixture' }]))
+                    ? new Response(JSON.stringify([{ id: 'F1', label: 'A fixture', total: 0 }]))
                     : new Response('missing', { status: 404 })
             )
         );

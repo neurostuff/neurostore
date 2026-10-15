@@ -17,14 +17,14 @@ def extraction_version():
     return load("extraction-record")["version"]
 
 
-def attribute_schema(cls, attribute):
+def _attribute_schema(cls, attribute):
     """The property schema of ``attribute`` on ``cls``, or None when it has none."""
     return extraction_defs().get(cls, {}).get("properties", {}).get(attribute)
 
 
 def class_of(cls, attribute, value):
     """The schema class of ``value`` held in ``attribute`` of ``cls``; None when none matches."""
-    schema = attribute_schema(cls, attribute)
+    schema = _attribute_schema(cls, attribute)
     if schema is None or not isinstance(value, dict):
         return None
     return study_schema_tools.class_of(extraction_defs(), schema, value)

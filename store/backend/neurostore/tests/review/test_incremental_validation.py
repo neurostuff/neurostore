@@ -143,7 +143,7 @@ class _Ops:
         return _analysis(self.rng.choice(self.analyses)["key"])
 
     def relationship(self, entity):
-        rows = [r for r in references.manifest()
+        rows = [r for r in references.reference_slots()
                 if r["class"] in (entity.entity_class, entity.schema_class)]
         path = self.rng.choice(rows)["slot"] if rows else "regions"
         target = self.entity().local_id

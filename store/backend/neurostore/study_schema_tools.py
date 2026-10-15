@@ -6,7 +6,7 @@ from functools import cache
 
 from jsonschema import validators
 from study_schema import keys
-from study_schema.jsonschema import load
+from study_schema.jsonschema import load, unique_keys
 from study_schema.models.paper_parse import ParsedAnalysis
 
 #: The lists of each class whose items are entities of their own, as
@@ -34,13 +34,9 @@ CHILD_LISTS = {
     "ModelEstimation": (("terms", "ModelTerm"),),
 }
 
-#: The storage schema's unique_key_slots: the only nested lists a claim path may index.
-DECLARED_KEYS = {
-    "Cell": ("term", "level"),
-    "AnalysisGroup": ("group",),
-    "ModelTerm": ("name",),
-    "FactorLevel": ("level",),
-}
+#: The slots of each storage class's first unique key, which selectors use: the only nested
+#: lists a claim path may index.
+DECLARED_KEYS = {cls: slots[0] for cls, slots in unique_keys("storage-study").items()}
 
 
 @cache

@@ -1,42 +1,26 @@
-"""The reference slots of the extraction schema (schema/references.json) and the
+"""The reference slots of the extraction schema (study_schema's extraction-record) and the
 references a record holds through them."""
 
-import json
 from functools import cache
-from pathlib import Path
+
+from study_schema import jsonschema
 
 from neurostore.review import ReviewError, paths
-from neurostore.review.defs import attribute_schema, class_of, is_extracted
+from neurostore.review.defs import class_of, is_extracted
 from neurostore.study_schema_tools import CHILD_LISTS, DECLARED_KEYS
-
-MANIFEST = Path(__file__).parent / "schema" / "references.json"
 
 
 @cache
 def _rows():
-    return tuple(json.loads(MANIFEST.read_text("utf-8"))["references"])
+    return tuple(
+        {"class": row.cls, "slot": row.slot, "target": row.target, "multivalued": row.multivalued}
+        for row in jsonschema.references("extraction-record")
+    )
 
 
-def manifest():
+def reference_slots():
+    """Every reference row of the extraction schema, as a fresh dict each."""
     return [dict(row) for row in _rows()]
-
-
-def check_manifest():
-    """``Class.slot`` of every row whose slot is not a local_id slot of the extraction schema."""
-    failing = []
-    for row in manifest():
-        schema = attribute_schema(row["class"], row["slot"])
-        if schema is None or not _holds_ids(schema, row["multivalued"]):
-            failing.append(f"{row['class']}.{row['slot']}")
-    return failing
-
-
-def _holds_ids(schema, multivalued):
-    kinds = schema.get("type")
-    kinds = set(kinds) if isinstance(kinds, list) else {kinds}
-    if multivalued:
-        return "array" in kinds and schema.get("items", {}).get("type") == "string"
-    return "string" in kinds and "$ref" not in schema and "anyOf" not in schema
 
 
 @cache
@@ -45,7 +29,7 @@ def _by_slot():
 
 
 def reference_slot(cls, attribute):
-    """The manifest row of ``attribute`` on ``cls``, or None when it is not a reference."""
+    """The reference row of ``attribute`` on ``cls``, or None when it is not a reference."""
     return _by_slot().get((cls, attribute))
 
 

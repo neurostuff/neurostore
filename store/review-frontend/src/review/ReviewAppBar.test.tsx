@@ -1,5 +1,9 @@
 import { act, fireEvent, screen } from '@testing-library/react';
+import type { ReviewApi } from '../api/reviewApi';
+import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
+import { createOpClient } from '../store/opClient';
+import { theme } from '../theme';
 import { ev, makeBundle } from '../test/bundles';
 import { renderWithStore } from '../test/render';
 import { ReviewAppBar } from './ReviewAppBar';
@@ -19,6 +23,40 @@ describe('the save indicator', () => {
         expect(indicator()).toHaveTextContent('saving');
         act(() => store.setState({ save: 'offline' }));
         expect(indicator()).toHaveTextContent('offline');
+    });
+});
+
+describe('a refused save', () => {
+    it('shows the error in red', () => {
+        const { store } = renderWithStore(<ReviewAppBar />, bundle);
+        act(() =>
+            store.setState({
+                blocked: { clientOpIds: [], problems: ['the batch leaves an invalid document'] },
+                saveMessage: 'the batch leaves an invalid document',
+            })
+        );
+        const indicator = screen.getByLabelText(/^save state/);
+        expect(indicator).toHaveTextContent('the batch leaves an invalid document');
+        expect(indicator).toHaveStyle({ color: theme.palette.error.main });
+    });
+});
+
+describe('a save that needs a sign-in', () => {
+    it('shows the sign-in prompt for the code Auth0 reports', async () => {
+        const signedOut = makeBundle({ description: ev('A study', [[0, 4]]) }, 'Text of the paper.', {
+            review: { id: 'R1', state: 'in_progress', last_seq: 0 } as unknown as ReviewBundle['review'],
+        });
+        const { store } = renderWithStore(<ReviewAppBar />, signedOut);
+        const api = {
+            postOps: async () => {
+                throw Object.assign(new Error('Login required'), { error: 'login_required' });
+            },
+        } as unknown as ReviewApi;
+        const client = createOpClient(store, api);
+        act(() => store.setState({ pending: [op] }));
+        await act(() => client.flush());
+        expect(screen.getByLabelText(/^save state/)).toHaveTextContent('sign in to save');
+        client.stop();
     });
 });
 

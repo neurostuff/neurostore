@@ -1,6 +1,6 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Evidence } from '../contract/generated/review-ops';
-import referenceManifest from '../../../backend/neurostore/review/schema/references.json';
+import { REFERENCE_SLOTS } from '../contract/references';
 import { entityPath, getIn, isObject, parsePath, ROOT_ENTITY, type Json } from './paths';
 import { slotKey } from './targetKey';
 
@@ -47,8 +47,8 @@ export interface RecordIndex {
 
 type EntityRow = ReviewBundle['entities'][number];
 
-const classSlots = new Set(referenceManifest.references.map((r) => `${r.class}.${r.slot}`));
-const slotNames = new Set(referenceManifest.references.map((r) => r.slot));
+const classSlots = new Set(REFERENCE_SLOTS.map((r) => `${r.class}.${r.slot}`));
+const slotNames = new Set(REFERENCE_SLOTS.map((r) => r.slot));
 const DOUBT_RANK: Record<Doubt, number> = { not_found: 0, generated: 1, ambiguous: 2, other: 3 };
 const NAME_SLOTS = ['name', 'label', 'caption', 'source_label'];
 const SKIPPED = new Set(['local_id', 'extraction_metadata']);
@@ -90,7 +90,7 @@ function referencesIn(value: unknown): string[] | null {
     return null;
 }
 
-/** Whether `attribute` of the entity `row` is a reference slot: nested slots by name, top-level ones by class (references.json). */
+/** Whether `attribute` of the entity `row` is a reference slot: nested slots by name, top-level ones by class (the extraction-record x-reference annotations). */
 export function isReferenceSlot(
     row: Pick<EntityRow, 'entity_class' | 'schema_class'>,
     nested: boolean,
@@ -117,9 +117,9 @@ function slotsOf(row: EntityRow, item: Json): SlotNode[] {
         for (const [attribute, value] of Object.entries(obj)) {
             if (SKIPPED.has(attribute)) continue;
             const path = prefix ? `${prefix}.${attribute}` : attribute;
-            const references = isReferenceSlot(row, prefix !== '', attribute) ? referencesIn(value) : null;
-            if (references) {
-                slots.push(slotNode(row.local_id, path, { kind: 'reference', references }));
+            const targets = isReferenceSlot(row, prefix !== '', attribute) ? referencesIn(value) : null;
+            if (targets) {
+                slots.push(slotNode(row.local_id, path, { kind: 'reference', references: targets }));
                 continue;
             }
             const children = Array.isArray(value)

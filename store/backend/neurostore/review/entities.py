@@ -2,9 +2,9 @@
 
 from dataclasses import dataclass
 
-from neurostore.review import ReviewError
-from neurostore.review.defs import class_of
-from neurostore.study_schema_tools import entity_lists, item_path
+from neurostore.review import ReviewError, paths
+from neurostore.review.defs import class_of, is_extracted
+from neurostore.study_schema_tools import CHILD_LISTS, DECLARED_KEYS, entity_lists, item_path
 
 STUDY = "study"
 
@@ -83,3 +83,55 @@ def table_key(analysis):
     if slot.get("extraction_status") == "not_reported":
         return None
     return slot.get("value")
+
+
+def walk(record):
+    """{"classes": [{entity, path, class}], "wrappers": [{entity, path, class}]} for the
+    record's entities and every object below them, in record order.
+
+    An entity's own list children are entities of their own, so they are not walked
+    under it. A value wrapper is listed as an object and is not walked below.
+    """
+    classes, wrappers = [], []
+    for local_id, entity in index(record).items():
+        classes.append({"entity": local_id, "path": "", "class": entity.schema_class})
+        skip = {path for path, _ in CHILD_LISTS.get(entity.entity_class, ())}
+        _walk(entity.schema_class, entity.item, (), local_id, skip, classes, wrappers)
+    return {"classes": classes, "wrappers": wrappers}
+
+
+def _walk(cls, obj, steps, local_id, skip, classes, wrappers):
+    for attribute, value in obj.items():
+        here = (*steps, (attribute, None))
+        if value is None or ".".join(a for a, _ in here) in skip:
+            continue
+        if isinstance(value, dict):
+            inner = class_of(cls, attribute, value)
+            if inner is None:
+                continue
+            _found(local_id, here, inner, classes, wrappers)
+            if not is_extracted(inner):
+                _walk(inner, value, here, local_id, skip, classes, wrappers)
+        elif isinstance(value, list):
+            for position, item in enumerate(value):
+                if not isinstance(item, dict):
+                    continue
+                inner = class_of(cls, attribute, item)
+                if inner is None:
+                    continue
+                slots = DECLARED_KEYS.get(inner)
+                selector = (
+                    tuple((s, paths.key_value(item.get(s))) for s in slots)
+                    if slots else position
+                )
+                step = (*steps, (attribute, selector))
+                _found(local_id, step, inner, classes, wrappers)
+                if not is_extracted(inner):
+                    _walk(inner, item, step, local_id, skip, classes, wrappers)
+
+
+def _found(local_id, steps, cls, classes, wrappers):
+    row = {"entity": local_id, "path": paths.format_path(steps), "class": cls}
+    classes.append(row)
+    if is_extracted(cls):
+        wrappers.append(row)

@@ -22,7 +22,11 @@ function serve(handler: Handler) {
 
 describe('httpApi', () => {
     it('lists every page of /review/sources/', async () => {
-        const sources = Array.from({ length: 150 }, (_, i) => ({ id: `S${i}`, label: i === 3 ? null : `Paper ${i}` }));
+        const sources = Array.from({ length: 150 }, (_, i) => ({
+            id: `S${i}`,
+            label: i === 3 ? null : `Paper ${i}`,
+            total: 10 + i,
+        }));
         const { api, requests } = serve(({ url }) => {
             const params = new URL(url).searchParams;
             const page = Number(params.get('page'));
@@ -34,8 +38,8 @@ describe('httpApi', () => {
         });
         const papers = await api.listPapers();
         expect(papers).toHaveLength(150);
-        expect(papers[0]).toEqual({ id: 'S0', label: 'Paper 0' });
-        expect(papers[3]).toEqual({ id: 'S3', label: 'S3' });
+        expect(papers[0]).toEqual({ id: 'S0', label: 'Paper 0', total: 10 });
+        expect(papers[3]).toEqual({ id: 'S3', label: 'S3', total: 13 });
         expect(requests.map((r) => r.path)).toEqual(['/api/review/sources/', '/api/review/sources/']);
         expect(requests.flatMap((r) => r.problems)).toEqual([]);
     });

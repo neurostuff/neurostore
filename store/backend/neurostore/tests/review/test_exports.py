@@ -117,7 +117,7 @@ def tree(user_id, study_id):
 
 
 def as_loaded(study_id):
-    return f"{exports.SOURCE_DIR}/run/records/art-{study_id}.extraction.json"
+    return f"{exports.UNREVIEWED_DIR}/run/records/art-{study_id}.extraction.json"
 
 
 @pytest.fixture
@@ -133,9 +133,9 @@ def test_the_round_trip_gives_back_every_source_file_as_loaded(
 
     exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
 
-    assert_as_loaded(tmp_path / "out" / "_source", files)
-    assert not (tmp_path / "out" / "_source" / "review").exists()
-    assert not (tmp_path / "out" / "_source" / "run" / "revisions").exists()
+    assert_as_loaded(tmp_path / "out" / "unreviewed", files)
+    assert not (tmp_path / "out" / "unreviewed" / "review").exists()
+    assert not (tmp_path / "out" / "unreviewed" / "run" / "revisions").exists()
 
 
 def test_a_paper_without_an_article_id_exports_under_its_base_study_id(
@@ -150,9 +150,9 @@ def test_a_paper_without_an_article_id_exports_under_its_base_study_id(
 
     manifest = exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
 
-    root = tmp_path / "out" / "_source"
+    root = tmp_path / "out" / "unreviewed"
     assert [entry["path"] for entry in manifest] == [
-        f"_source/run/records/{base_study_id}.extraction.json"
+        f"unreviewed/run/records/{base_study_id}.extraction.json"
     ]
     assert (root / f"corpus/{base_study_id}/text/paper.txt").read_bytes() == TEXT.encode("utf-8")
     record = json.loads((root / f"run/records/{base_study_id}.extraction.json").read_text())
@@ -338,8 +338,8 @@ def test_split_and_added_analyses_export_as_the_derived_revision_beside_untouche
     assert json.loads((root / parse_path).read_text()) == json.loads(
         files["corpus/s1/parse/coordinate_parse.json"]
     )
-    assert_as_loaded(tmp_path / "out" / exports.SOURCE_DIR, untouched, "art-s2", "s2")
-    assert not (tmp_path / "out" / exports.SOURCE_DIR / "run" / "revisions").exists()
+    assert_as_loaded(tmp_path / "out" / exports.UNREVIEWED_DIR, untouched, "art-s2", "s2")
+    assert not (tmp_path / "out" / exports.UNREVIEWED_DIR / "run" / "revisions").exists()
 
 
 def test_the_pair_a_bulk_export_writes_ingests_with_no_orphaned_claims(
@@ -450,14 +450,14 @@ def test_an_unreviewed_source_exports_a_wrapper_naming_the_source(
 
     exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
 
-    wrapper = wrapper_of(tmp_path / "out" / exports.SOURCE_DIR)
+    wrapper = wrapper_of(tmp_path / "out" / exports.UNREVIEWED_DIR)
     assert provenance_errors(wrapper) == []
     assert wrapper == {
         "record_path": f"run/records/{PAPER_ID}.extraction.json",
         "source": {
             "kind": "source",
             "source_id": source_id,
-            "origin": source.origin,
+            "origin": "upload",
             "run_id": None,
         },
         "derived_from": {"source_id": source_id, "record_sha256": source.record_sha256},
@@ -559,7 +559,7 @@ def test_include_unreviewed_with_empty_filter_lists_is_allowed(session, reviewer
     )
 
     assert [entry["path"] for entry in manifest] == [
-        f"_source/run/records/{PAPER_ID}.extraction.json"
+        f"unreviewed/run/records/{PAPER_ID}.extraction.json"
     ]
 
 
@@ -703,14 +703,14 @@ async def test_the_bulk_export_route_round_trip_reads_back_and_reimports(
     zipfile.ZipFile(io.BytesIO(response.content)).extractall(extracted)
     trees = {
         name: read_layout(extracted / name)
-        for name in (REVIEWER, OTHER, exports.SOURCE_DIR)
+        for name in (REVIEWER, OTHER, exports.UNREVIEWED_DIR)
     }
     assert [paper.study_id for paper in trees[REVIEWER]] == [PAPER_ID, "art-s2"]
     assert [paper.study_id for paper in trees[OTHER]] == [PAPER_ID]
-    assert [paper.study_id for paper in trees[exports.SOURCE_DIR]] == ["art-s3"]
+    assert [paper.study_id for paper in trees[exports.UNREVIEWED_DIR]] == ["art-s3"]
 
     as_loaded_report = imports.import_layout(
-        session, extracted / exports.SOURCE_DIR, user_id=REVIEWER
+        session, extracted / exports.UNREVIEWED_DIR, user_id=REVIEWER
     )
     session.commit()
     assert as_loaded_report["loaded"] == []
@@ -905,9 +905,9 @@ def test_two_sources_of_one_paper_as_loaded_both_keep_their_record(
 
     assert len({entry["path"] for entry in manifest}) == 2
     assert (
-        tmp_path / "out" / f"_source/run/records/{PAPER_ID}~{second_id}.extraction.json"
+        tmp_path / "out" / f"unreviewed/run/records/{PAPER_ID}~{second_id}.extraction.json"
     ).is_file()
-    assert (tmp_path / "out" / f"_source/run/records/{PAPER_ID}.extraction.json").is_file()
+    assert (tmp_path / "out" / f"unreviewed/run/records/{PAPER_ID}.extraction.json").is_file()
 
 
 def test_the_export_issues_the_same_statements_for_one_source_as_for_four(

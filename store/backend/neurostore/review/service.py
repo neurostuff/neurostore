@@ -16,12 +16,14 @@ from neurostore.exceptions.utils.error_helpers import (
 from neurostore.exceptions.utils.errors import ErrorDetail
 from neurostore.models import Fulltext, Review, ReviewOp, ReviewSource, User
 from neurostore.review.bundle import bundle, hidden, source_summary
-from neurostore.review.entities import index_rows
+from neurostore.review.entities import index_rows, walk
 from neurostore.review.ops import OpError, ReviewState, apply_batch
 from neurostore.review.validation import document_problems
 
 #: Provenance states that count as a change in the paper list.
 CHANGED_STATES = ("edited", "added", "removed")
+#: Provenance states that count as reviewed: a value verified or changed by the reviewer.
+REVIEWED_STATES = ("verified", *CHANGED_STATES)
 #: The state changes a review's owner may make.
 OWNER_TRANSITIONS = {("in_progress", "submitted"), ("submitted", "in_progress")}
 
@@ -34,6 +36,8 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
         ReviewSource.label,
         ReviewSource.origin,
         ReviewSource.created_at,
+        ReviewSource.record,
+        ReviewSource.coordinate_parse,
     ).join(Fulltext, ReviewSource.fulltext_id == Fulltext.id)
     if base_study_id is not None:
         query = query.where(Fulltext.base_study_id == base_study_id)
@@ -47,6 +51,7 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
         .limit(page_size)
         .offset((page - 1) * page_size)
     ).all()
+    judgeable = {row.id: _judgeable(row.record, row.coordinate_parse) for row in rows}
     progress = defaultdict(list)
     for review in _review_rows(session, [row.id for row in rows]):
         states = [entry.get("state") for entry in review.provenance.values()]
@@ -58,6 +63,10 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
             "updated_at": _iso(review.updated_at),
             "edited": sum(state in CHANGED_STATES for state in states),
             "verified": states.count("verified"),
+            "reviewed": sum(
+                review.provenance.get(key, {}).get("state") in REVIEWED_STATES
+                for key in judgeable[review.source_id]
+            ),
         })
     return {
         "metadata": {"total_count": total},
@@ -68,11 +77,25 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
                 "label": row.label,
                 "origin": row.origin,
                 "created_at": _iso(row.created_at),
+                "total": len(judgeable[row.id]),
                 "reviews": progress[row.id],
             }
             for row in rows
         ],
     }
+
+
+def _judgeable(record, parse):
+    """The provenance keys of the targets a reviewer can judge in a source: each extracted value
+    of its record's entities, and each analysis of its coordinate parse."""
+    values = {
+        f"slot:{wrapper['entity']}:{wrapper['path']}" for wrapper in walk(record)["wrappers"]
+    }
+    analyses = {
+        f"coordinate_analysis:{analysis['key']}"
+        for analysis in (parse or {}).get("analyses") or []
+    }
+    return values | analyses
 
 
 def get_bundle(session, source_id, user_id):

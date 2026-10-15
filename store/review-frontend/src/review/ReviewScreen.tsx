@@ -6,6 +6,7 @@ import { useReviewStore, useReviewStoreApi } from '../store/context';
 import type { ReviewState } from '../store/reviewStore';
 import { TextPane } from '../text/TextPane';
 import { OutlineRail } from './OutlineRail';
+import { BlockedSave } from './BlockedSave';
 import { ReviewAppBar } from './ReviewAppBar';
 import { SaveNotices } from './SaveNotices';
 import { ShortcutHelp } from './ShortcutHelp';
@@ -25,6 +26,7 @@ export function ReviewScreen() {
             <ReviewAppBar />
             <StepBar />
             {submitting && <SubmitStep />}
+            <BlockedSave />
             <SaveNotices />
             <Box sx={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
                 <OutlineRail />

@@ -1,14 +1,17 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op, SetEvidenceOp } from '../contract/generated/review-ops';
 import { ApiError } from '../api/reviewApi';
 import { httpApi } from '../api/httpApi';
-import { ev, makeBundle } from '../test/bundles';
+import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { fakeFetch, json } from '../test/fakeFetch';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
 import { API_BASE } from '../test/spec';
 import { acceptCard } from '../inspector/actions';
+import { movePoints } from '../coordinates/actions';
+import { createSibling } from '../inspector/actions';
 import { createOpClient, type OpClient } from './opClient';
 import { createReviewStore, selectSaveLabel, type ReviewStore } from './reviewStore';
 import { mintLocalId } from '../model/mint';
@@ -52,6 +55,17 @@ const evidenceOp = (id: string, path: string, words: string): SetEvidenceOp => (
     target: { kind: 'slot', entity: 'study', path },
     evidence: { status: 'present', sets: [{ spans: [{ start_char: at(words)[0], end_char: at(words)[1] }] }] },
 });
+
+const unnamedRefusal = () =>
+    json(
+        {
+            status: 422,
+            title: 'Unprocessable Entity',
+            detail: 'the batch leaves an invalid document',
+            errors: [{ field: 'ops', code: 'REJECTED', message: 'the batch is too large' }],
+        },
+        422
+    );
 
 function deferred<T>() {
     let resolve!: (value: T) => void;
@@ -166,6 +180,43 @@ describe('the save loop', () => {
         await client.settled();
         expect(posts(server)).toMatchObject([{ keepalive: true }]);
         expect(store.getState().pending).toEqual([]);
+    });
+
+    it('while hidden, sends batches under 60 KB, each emitBatch group whole', async () => {
+        const { store, client } = await open();
+        const id = (i: number) => `${'op-'.repeat(15)}${String(i).padStart(4, '0')}`;
+        const singles = (from: number, count: number) =>
+            Array.from({ length: count }, (_, i) => evidenceOp(id(from + i), 'description', i % 2 ? 'Stroop' : 'fMRI'));
+        const group = [evidenceOp(id(900), 'description', 'Stroop'), evidenceOp(id(901), 'description', 'fMRI')];
+        store.setState({ pending: singles(0, 400) });
+        store.getState().emitBatch(group);
+        store.setState({ pending: [...store.getState().pending, ...singles(400, 400)] });
+        setVisibility('hidden');
+        await client.settled();
+        const sent = posts(server);
+        expect(sent.length).toBeGreaterThan(2);
+        for (const request of sent) {
+            expect(request.keepalive).toBe(true);
+            expect(new TextEncoder().encode(JSON.stringify(request.body)).length).toBeLessThan(60 * 1024);
+        }
+        const [carrying] = sent.filter((r) => (r.body as { ops: Op[] }).ops.some((op) => op.client_op_id === id(900)));
+        expect((carrying.body as { ops: Op[] }).ops.map((op) => op.client_op_id)).toEqual(
+            expect.arrayContaining([id(900), id(901)])
+        );
+        expect(sentIds(server).flat()).toHaveLength(802);
+        expect(store.getState().pending).toEqual([]);
+    });
+
+    it('while hidden, sends a group over 60 KB alone in a request without keepalive', async () => {
+        const { store, client } = await open();
+        const big = Array.from({ length: 400 }, (_, i) =>
+            evidenceOp(`${'op-'.repeat(15)}${String(i).padStart(4, '0')}`, 'description', i % 2 ? 'Stroop' : 'fMRI')
+        );
+        store.getState().emitBatch(big);
+        setVisibility('hidden');
+        await client.settled();
+        expect(posts(server)).toMatchObject([{ keepalive: false }]);
+        expect(sentIds(server)[0]).toHaveLength(400);
     });
 
     it('flushes at once on blur and when stopped by navigation', async () => {
@@ -502,7 +553,7 @@ describe('a 422', () => {
         ]);
     });
 
-    it('keeps every op pending and stops with a failed save when the 422 names no op', async () => {
+    it('blocks saving, keeping every op pending, when the 422 names no op', async () => {
         const { store, client } = await open();
         edit(store, 'description', 'Twenty patients');
         edit(store, 'design.description', 'during fMRI');
@@ -522,7 +573,40 @@ describe('a 422', () => {
         expect(store.getState().pending).toHaveLength(2);
         expect(store.getState().notices).toEqual([]);
         expect(store.getState().save).toBe('failed');
+        expect(store.getState().blocked).toEqual({
+            clientOpIds: store.getState().pending.map((op) => op.client_op_id),
+            problems: ['the batch is too large'],
+        });
         expect(selectSaveLabel(store.getState())).toBe('the batch leaves an invalid document');
+        edit(store, 'description', 'Stroop task');
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(posts(server)).toHaveLength(1);
+    });
+
+    it('undoes the refused batch, rebuilding from the confirmed record, then resumes saving the rest', async () => {
+        const { store, client } = await open();
+        edit(store, 'description', 'Twenty patients');
+        server.intercept(() =>
+            json(
+                {
+                    status: 422,
+                    title: 'Unprocessable Entity',
+                    detail: 'the batch leaves an invalid document',
+                    errors: [{ field: 'ops', code: 'REJECTED', message: 'extraction-record /description: too long' }],
+                },
+                422
+            )
+        );
+        await client.flush();
+        edit(store, 'design.description', 'during fMRI');
+        expect(evidenceAt(store, 'description')).toMatchObject({ status: 'present' });
+        await client.undoBlocked();
+        expect(store.getState().save).toBe('idle');
+        expect(store.getState().blocked).toBeNull();
+        expect(evidenceAt(store, 'description')).toEqual({ status: 'not_found' });
+        expect(sentIds(server).at(-1)).toHaveLength(1);
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().bundle.review?.last_seq).toBe(1);
     });
     it('does not resend a refused batch after a lost response, once the 422 has refused it', async () => {
         const { store, client } = await open();
@@ -560,6 +644,116 @@ describe('a 422', () => {
         expect(store.getState().notices).toEqual([
             { kind: 'refused', slot: 'study design.description', message: 'extraction-record /design: too long' },
         ]);
+    });
+
+    it('keeps an edit made after the block when undoing, and drops it when discarding', async () => {
+        const { store, client } = await open();
+        edit(store, 'description', 'Twenty patients');
+        server.intercept(() => unnamedRefusal());
+        await client.flush();
+        edit(store, 'design.description', 'during fMRI');
+        const later = store.getState().pending.at(-1)!;
+        await client.undoBlocked();
+        expect(sentIds(server).at(-1)).toEqual([later.client_op_id]);
+        expect(store.getState().pending).toEqual([]);
+        expect(evidenceAt(store, 'design')).toMatchObject({ status: 'present' });
+
+        server.intercept(() => unnamedRefusal());
+        edit(store, 'description', 'Stroop task');
+        await client.flush();
+        edit(store, 'design.description', 'during fMRI');
+        client.discardPending();
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().blocked).toBeNull();
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(posts(server)).toHaveLength(3);
+    });
+
+    it('rolls the record back to the confirmed one at once when the refused edit is undone', async () => {
+        const { store, client } = await open();
+        edit(store, 'description', 'Twenty patients');
+        server.intercept(() => unnamedRefusal());
+        await client.flush();
+        await client.undoBlocked();
+        expect(posts(server)).toHaveLength(1);
+        expect(evidenceAt(store, 'description')).toEqual({ status: 'not_found' });
+    });
+
+    it('rolls the record back and clears the block when the pending edits are discarded', async () => {
+        const { store, client } = await open();
+        edit(store, 'description', 'Twenty patients');
+        edit(store, 'design.description', 'during fMRI');
+        server.intercept(() => unnamedRefusal());
+        await client.flush();
+        client.discardPending();
+        expect(evidenceAt(store, 'description')).toEqual({ status: 'not_found' });
+        expect(evidenceAt(store, 'design')).toEqual({ status: 'not_found' });
+        expect(store.getState().blocked).toBeNull();
+        expect(store.getState().save).toBe('idle');
+        expect(selectSaveLabel(store.getState())).toBe('saved');
+    });
+
+    it('does not change the review state while blocked', async () => {
+        const { store, client } = await open();
+        edit(store, 'description', 'Twenty patients');
+        server.intercept(() => unnamedRefusal());
+        await client.flush();
+        await client.changeState('submitted');
+        expect(server.requests.filter((r) => r.method === 'PATCH')).toEqual([]);
+        expect(store.getState().bundle.review?.state).toBe('in_progress');
+    });
+
+    it('forgets the group of ops once they are saved', async () => {
+        const { store, client } = await open();
+        store
+            .getState()
+            .emitBatch([
+                evidenceOp('group-a-op', 'description', 'Twenty'),
+                evidenceOp('group-b-op', 'description', 'Stroop'),
+            ]);
+        await client.flush();
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().groupOf).toEqual({});
+    });
+
+    it('forgets the group of ops once they are discarded', async () => {
+        const { store, client } = await open();
+        store
+            .getState()
+            .emitBatch([
+                evidenceOp('group-a-op', 'description', 'Twenty'),
+                evidenceOp('group-b-op', 'description', 'Stroop'),
+            ]);
+        client.discardPending();
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().groupOf).toEqual({});
+    });
+
+    it('while hidden, cuts before a two-op group that would straddle 60 KB, and sends the group whole', async () => {
+        const { store, client } = await open();
+        const bulky = (op: Op): Op => ({ ...op, note: 'x'.repeat(9000) });
+        const singles = Array.from({ length: 5 }, (_, i) => bulky(evidenceOp(`op-single-${i}`, 'description', 'fMRI')));
+        const group = [
+            bulky(evidenceOp('op-first', 'description', 'Stroop')),
+            bulky(evidenceOp('op-second', 'description', 'Twenty')),
+        ];
+        store.setState({ pending: singles });
+        store.getState().emitBatch(group);
+        setVisibility('hidden');
+        await client.settled();
+        expect(sentIds(server)).toEqual([singles.map((op) => op.client_op_id), group.map((op) => op.client_op_id)]);
+        expect(posts(server).map((r) => r.keepalive)).toEqual([true, true]);
+    });
+
+    it('while hidden, keeps the ops of a coordinate move together in one keepalive batch', async () => {
+        server = fakeServer([coordinateBundle({ source: source.source })]);
+        const { store, client } = await open();
+        store.getState().focusAnalysis(FACES.key, 0);
+        expect(movePoints(store.getState(), HOUSES.key)).toBe(true);
+        setVisibility('hidden');
+        await client.settled();
+        expect(posts(server)[0]).toMatchObject({ keepalive: true });
+        expect(sentIds(server)[0]).toHaveLength(2);
     });
 });
 
@@ -620,6 +814,25 @@ describe('a network error', () => {
         expect(store.getState().save).toBe('signin');
         expect(store.getState().pending).toHaveLength(1);
     });
+
+    it.each(['login_required', 'consent_required', 'missing_refresh_token', 'interaction_required'])(
+        'asks to sign in again for %s, keeping the ops pending',
+        async (code) => {
+            const { store } = await open();
+            const api = server.api();
+            const failing = createOpClient(store, {
+                ...api,
+                postOps: async () => {
+                    throw Object.assign(new Error('Sign in again'), { error: code });
+                },
+            });
+            clients.push(failing);
+            edit(store, 'description', 'Twenty patients');
+            await failing.flush();
+            expect(store.getState().save).toBe('signin');
+            expect(store.getState().pending).toHaveLength(1);
+        }
+    );
 
     it('stops at a 403 with the role message, and at a 404 saying the review is gone', async () => {
         const { store, client } = await open();
@@ -802,6 +1015,33 @@ describe('an op the server applies', () => {
             'set_evidence',
             'create_entity',
         ]);
+    });
+});
+
+describe('a browser outside a secure context, with getRandomValues only', () => {
+    it('sends v4 UUIDs, and a create_entity with the local_id the core mints', async () => {
+        const native = globalThis.crypto;
+        vi.stubGlobal('crypto', { getRandomValues: native.getRandomValues.bind(native) });
+        const groups = makeBundle({ groups: [{ local_id: 'grp_a', name: ev('Patients') }] }, TEXT, {
+            source: { ...makeBundle({}, '').source, id: 'S1', label: 'A paper' },
+            entities: entityRows(row('grp_a', 'Group', 'groups')),
+        });
+        server = fakeServer([groups]);
+        const { store, client } = await open();
+        store.getState().focusSlot(slotKey('grp_a', 'name'));
+        expect(store.getState().addEvidence(at('Twenty'), 'new')).toBe(true);
+        store.getState().focusEntity('grp_a');
+        expect(createSibling(store.getState(), 'Group')).toBe(true);
+        const created = store.getState().pending.find((op) => op.type === 'create_entity')!;
+        await store.getState().minted(created.client_op_id);
+        await vi.advanceTimersByTimeAsync(1000);
+        await client.settled();
+        const V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+        expect(sentIds(server).flat()).toContain(created.client_op_id);
+        for (const id of sentIds(server).flat()) expect(id).toMatch(V4);
+        const sent = (posts(server)[0].body as { ops: Op[] }).ops.find((op) => op.type === 'create_entity')!;
+        const minted = `rv_${createHash('sha256').update(created.client_op_id).digest('hex').slice(0, 12)}`;
+        expect((sent.entity as { local_id: string }).local_id).toBe(minted);
     });
 });
 

@@ -2,7 +2,6 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import referenceManifest from '../../../backend/neurostore/review/schema/references.json';
 import { sha256Of, stripDescriptions, syncSchemas } from '../../scripts/sync-schemas.mjs';
 
 const commitFile = path.join(__dirname, 'study-schema.commit');
@@ -27,9 +26,9 @@ const COPIES = [
     { name: 'coordinate-parse', id: 'https://neurostuff.org/schemas/neuroimaging-paper-parse' },
 ];
 
-it('the schema copies come from the study_schema commit references.json is generated from', () => {
+it('the schema copies come from study_schema commit c60f05f', () => {
     const commit = existsSync(commitFile) ? readFileSync(commitFile, 'utf8').trim() : '';
-    expect(commit).toBe(referenceManifest.study_schema_commit);
+    expect(commit).toBe('c60f05f25c48655622086f27ce85958188b79b6b');
 });
 
 describe.each(COPIES)('the $name schema copy', ({ name, id }) => {

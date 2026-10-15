@@ -13,6 +13,7 @@ FULLTEXT_SOURCE_TIERS = {
     "pmc": 1,
     "europepmc": 1,
     "elsevier": 1,
+    "springer": 1,
     "ace": 2,
     "pdf": 3,
 }
@@ -31,7 +32,6 @@ class Fulltext(BaseMixin, db.Model):
     _tier = db.Column("tier", db.SmallInteger, nullable=False)
     sha256 = db.Column(db.String(64), nullable=False)
     text = db.Column(db.Text, nullable=False)
-    length = db.Column(db.Integer, nullable=False)
 
     __table_args__ = (
         sa.CheckConstraint(
@@ -58,7 +58,6 @@ class Fulltext(BaseMixin, db.Model):
     @validates("text")
     def _set_hash(self, key, text):
         self.sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
-        self.length = len(text)
         return text
 
 

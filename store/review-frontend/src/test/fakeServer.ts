@@ -1,6 +1,6 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { httpApi } from '../api/httpApi';
-import { memoryBackend, type OpBatch } from './memoryBackend';
+import { judgeableKeys, memoryBackend, type OpBatch } from './memoryBackend';
 import { ApiError, type ReviewLifecycle } from '../api/reviewApi';
 import { fakeFetch, json, type SentRequest } from './fakeFetch';
 import { API_BASE } from './spec';
@@ -33,14 +33,18 @@ export function fakeServer(bundles: ReviewBundle[], { userId = 'me' }: { userId?
             const size = Number(params.get('page_size') ?? bundles.length);
             return json({
                 metadata: { total_count: bundles.length },
-                results: bundles.slice((page - 1) * size, page * size).map(({ source }) => ({
-                    id: source.id,
-                    base_study_id: source.base_study_id,
-                    label: source.label,
-                    origin: source.origin,
-                    created_at: new Date().toISOString(),
-                    reviews: backend.reviewSummaries(source.id),
-                })),
+                results: bundles.slice((page - 1) * size, page * size).map(({ source, record, coordinate_parse }) => {
+                    const judgeable = judgeableKeys(record, coordinate_parse);
+                    return {
+                        id: source.id,
+                        base_study_id: source.base_study_id,
+                        label: source.label,
+                        origin: source.origin,
+                        created_at: new Date().toISOString(),
+                        total: judgeable.size,
+                        reviews: backend.reviewSummaries(source.id, judgeable),
+                    };
+                }),
             });
         }
         if ((m = route(request, /^\/review\/sources\/([^/]+)\/bundle$/, 'GET')))

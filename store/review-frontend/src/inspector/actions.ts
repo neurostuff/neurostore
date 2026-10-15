@@ -2,6 +2,7 @@ import type { AnyTarget, Op, SetValueOp, VerdictOp } from '../contract/generated
 import { entityPath, getIn, ROOT_ENTITY } from '../model/paths';
 import type { SlotNode } from '../model/record';
 import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } from '../model/targetKey';
+import { randomUUID } from '../model/uuid';
 import type { Panel, PanelKind, ReviewState } from '../store/reviewStore';
 import {
     EXTRACTION_SCHEMA,
@@ -28,7 +29,7 @@ type Emitting = State & Pick<ReviewState, 'emit'>;
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 type NewOp = DistributiveOmit<Op, 'client_op_id'>;
 
-const send = (s: Pick<ReviewState, 'emit'>, op: NewOp) => s.emit({ client_op_id: crypto.randomUUID(), ...op } as Op);
+const send = (s: Pick<ReviewState, 'emit'>, op: NewOp) => s.emit({ client_op_id: randomUUID(), ...op } as Op);
 
 /** The reference slot and target of a link's focus key on `entity`. */
 function linkAt(s: Pick<State, 'index'>, entity: string, key: string) {

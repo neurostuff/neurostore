@@ -350,7 +350,8 @@ SCENARIOS = {
 
 
 #: Scenarios played on records.linked_analyses(), where an_1 and an_2 read the parse's first
-#: two analyses; the others play on records.hidden_reach().
+#: two analyses; the paged list plays on records.golden(), the record of the front end's test
+#: server; the others play on records.hidden_reach().
 COORDINATE_RECORD = {name for name in SCENARIOS if name.startswith("coordinate")} - {
     "coordinate accept"
 } | {"the bundle of the linked-analyses record"}
@@ -376,7 +377,12 @@ def _mask_field(key, value, ids):
 
 
 async def _play(clients, session, steps, name=None):
-    record = records.linked_analyses() if name in COORDINATE_RECORD else records.hidden_reach()
+    if name in COORDINATE_RECORD:
+        record = records.linked_analyses()
+    elif name == "sources, paged":
+        record = records.golden()
+    else:
+        record = records.hidden_reach()
     source = add_source(session, record=record)
     other = add_source(session, label="Another paper")
     ids = {

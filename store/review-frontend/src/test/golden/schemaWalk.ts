@@ -15,7 +15,7 @@ export interface Walked {
 const ROOT = 'study';
 const STUDY = 'Study';
 
-/** The key slots a list item of each class is selected by, as the backend's DECLARED_KEYS gives them. */
+/** The key slots a list item of each class is selected by: the storage-study schema's x-unique-keys (the extraction schema has none). */
 const KEYED_BY: Record<string, string[]> = {
     Cell: ['term', 'level'],
     AnalysisGroup: ['group'],

@@ -20,6 +20,7 @@ import {
 } from '../model/coordinates';
 import { spansToUtf16, utf16Paper } from '../model/offsets';
 import { mintLocalId } from '../model/mint';
+import { randomUUID } from '../model/uuid';
 import { entityPath, getIn, readPath, type Json } from '../model/paths';
 import {
     buildRecordIndex,
@@ -84,6 +85,12 @@ export interface Panel {
 
 export type SaveStatus = 'idle' | 'saving' | 'offline' | 'closed' | 'signin' | 'failed';
 
+/** A save the server refused without naming an op: its batch, and what the server said. */
+export interface Blocked {
+    clientOpIds: string[];
+    problems: string[];
+}
+
 export interface Notice {
     kind: 'conflict' | 'refused' | 'dangling' | 'split';
     slot: string;
@@ -105,7 +112,10 @@ export interface ReviewState {
     index: RecordIndex;
     ops: StoredOp[];
     pending: Op[];
+    /** The client_op_id that opens the emitBatch group each pending op came in, keyed by op. */
+    groupOf: Record<string, string>;
     intents: Record<string, EvidenceIntent>;
+    blocked: Blocked | null;
     save: SaveStatus;
     saveMessage: string;
     notices: Notice[];
@@ -152,6 +162,12 @@ export interface ReviewState {
     openPanel(kind: PanelKind): void;
     closePanel(): void;
     setSave(save: SaveStatus, message?: string): void;
+    /** Stops saving on a refused batch; its ops stay pending until the reviewer discards or undoes them. */
+    block(batch: Op[], message: string, problems: string[]): void;
+    /** Drops every pending op, rebuilding the record from the confirmed one. */
+    discardPending(): void;
+    /** Drops the pending ops of the refused batch, rebuilding the record from the confirmed one. */
+    undoBlocked(): void;
     confirm(result: OpResult, sent: Op[]): void;
     rebase(fresh: ReviewBundle): void;
     refuse(refusals: Refusal[]): void;
@@ -219,12 +235,15 @@ export const selectCanAddEvidence = (s: Pick<ReviewState, 'index' | 'focus'>): b
     return slot?.kind === 'value' && slot.value?.extraction_status === 'extracted';
 };
 
+export const selectIsBlocked = (s: Pick<ReviewState, 'blocked'>): boolean => s.blocked != null;
+
 export function selectSaveLabel({
     save,
     saveMessage,
     pending,
-}: Pick<ReviewState, 'save' | 'saveMessage' | 'pending'>): string {
-    if (save === 'failed') return saveMessage;
+    blocked,
+}: Pick<ReviewState, 'save' | 'saveMessage' | 'pending' | 'blocked'>): string {
+    if (save === 'failed' || blocked != null) return saveMessage;
     if (save === 'signin') return 'sign in to save';
     if (save === 'saving' || save === 'offline') return save;
     return pending.length ? `${pending.length} unsaved` : 'saved';
@@ -418,11 +437,17 @@ export function createReviewStore(
                     ? touched.reduce((view, key) => withSlotFrom(view, record, key), state.index)
                     : rebuiltIndex(next, record, state.index, state.focus);
             const focusedSpans = spansNow(next, index, state.focus, state.coordinates);
+            const groupOf = Object.fromEntries(
+                replayed.pending
+                    .filter((op) => op.client_op_id in state.groupOf)
+                    .map((op) => [op.client_op_id, state.groupOf[op.client_op_id]])
+            );
             set({
                 bundle: next,
                 ops: next.ops,
                 ...replayed.documents,
                 pending: replayed.pending,
+                groupOf,
                 intents,
                 index,
                 focusedSpans,
@@ -488,7 +513,9 @@ export function createReviewStore(
             index: initialIndex,
             ops: bundle.ops,
             pending: [],
+            groupOf: {},
             intents: {},
+            blocked: null,
             save: 'idle',
             saveMessage: '',
             notices: [],
@@ -607,7 +634,7 @@ export function createReviewStore(
                     span: toSpan(span),
                 };
                 const op: SetEvidenceOp = {
-                    client_op_id: crypto.randomUUID(),
+                    client_op_id: randomUUID(),
                     type: 'set_evidence',
                     target: slotTarget(slot.entity, slot.path),
                     evidence: withSpan(slot.value?.evidence, intent.span, intent.set_index),
@@ -639,6 +666,26 @@ export function createReviewStore(
             },
             closePanel: () => set({ panel: null }),
             setSave: (save, message = '') => set({ save, saveMessage: message }),
+            block: (batch, message, problems) =>
+                set({
+                    save: 'failed',
+                    saveMessage: message,
+                    blocked: { clientOpIds: batch.map((op) => op.client_op_id), problems },
+                }),
+            discardPending: () => {
+                withDocuments(get().bundle, []);
+                set({ save: 'idle', saveMessage: '', blocked: null });
+            },
+            undoBlocked: () => {
+                const { blocked, bundle, pending } = get();
+                if (!blocked) return;
+                const refused = new Set(blocked.clientOpIds);
+                withDocuments(
+                    bundle,
+                    pending.filter((op) => !refused.has(op.client_op_id))
+                );
+                set({ save: 'idle', saveMessage: '', blocked: null });
+            },
             confirm: (result, sent) => {
                 const { bundle: current, ops, pending } = get();
                 const before = currentAnalyses(current);
@@ -729,7 +776,11 @@ export function createReviewStore(
             },
             emitBatch: (ops) => {
                 if (ops.length === 0) return false;
-                set({ pending: [...get().pending, ...ops] });
+                const group = ops[0].client_op_id;
+                set({
+                    pending: [...get().pending, ...ops],
+                    groupOf: { ...get().groupOf, ...Object.fromEntries(ops.map((op) => [op.client_op_id, group])) },
+                });
                 return true;
             },
         };

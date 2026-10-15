@@ -38,7 +38,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Device"
         },
         "local_id": {
           "type": "string"
@@ -79,7 +80,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Acquisition"
         },
         "assessments": {
           "description": "Assessments whose measurements were used in or selected the sample for this analysis.",
@@ -89,7 +91,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Assessment"
         },
         "coordinate_space": {
           "anyOf": [
@@ -110,7 +113,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         },
         "definition": {
           "$ref": "#/$defs/ExtractedString",
@@ -161,7 +165,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "InferenceSettings"
         },
         "interpretations": {
           "anyOf": [
@@ -179,18 +184,21 @@
         },
         "measure": {
           "description": "The scientific quantity of the map, by identifier, independent of the statistic used to test it. Analyses of one quantity reference one record; an analysis of a different quantity takes its own. Required: a paper vague about what it measured still takes a record, with `source_label` as given and `extraction_status: not_reported` elsewhere.",
-          "type": "string"
+          "type": "string",
+          "x-reference": "Measure"
         },
         "mirror_of": {
           "description": "Present only on an analysis the builder derived by reversing another one, and naming the analysis it reverses.\nA results table with both signs in one column reports one contrast read two ways. The paper's prose describes one direction, so only that half is extracted and the other is rebuilt arithmetically -- same cells, directions flipped. This slot is what says so. Without it the two halves look like independent findings, and a meta-analysis that counts both counts one sample twice.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Analysis"
         },
         "model_estimation": {
           "description": "The model this analysis's contrast was taken from: its family, estimator, stage, software, and the terms it was specified with. What was selected out of those terms is `effect`. Required: a paper that describes a contrast and never names an estimator still takes a record, with the terms it does state and `extraction_status: not_reported` elsewhere. Analyses sharing one design reference one record; an analysis specified or estimated differently takes its own.",
-          "type": "string"
+          "type": "string",
+          "x-reference": "ModelEstimation"
         },
         "model_representation_notes": {
           "anyOf": [
@@ -230,7 +238,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         },
         "source_table_analysis": {
           "anyOf": [
@@ -255,7 +264,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Table"
         },
         "tasks": {
           "description": "The participant paradigms that contextualize this analysis. An analysis can span paradigms, as a cross-task conjunction or a localizer-plus-main-task analysis does.\nA resting-state analysis names its Task here like any other: the resting-state protocol is a paradigm, and a Task record exists for it. What leaves this empty is an analysis with no paradigm at all -- morphometry, diffusion, a static PET scan -- which is linked through `acquisitions` instead.",
@@ -265,7 +275,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Task"
         }
       },
       "required": [
@@ -307,7 +318,8 @@
       "properties": {
         "group": {
           "description": "The cohort this entry refers to, by identifier. The cohort's own properties are on the Group record.",
-          "type": "string"
+          "type": "string",
+          "x-reference": "Group"
         },
         "n": {
           "anyOf": [
@@ -599,7 +611,8 @@
         },
         "term": {
           "description": "The model term this cell belongs to, by identifier. It must be one of the terms of the ModelEstimation the containing Analysis references, or of a stage that model reaches through `inputs_from` -- a group contrast of a first-level condition, or of a seed's time series, is a cell on that stage's term rather than on a copy of it.",
-          "type": "string"
+          "type": "string",
+          "x-reference": "ModelTerm"
         }
       },
       "required": [
@@ -825,7 +838,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         },
         "target_regions": {
           "description": "Target regions, by identifier. Empty for a seed-to-whole-brain analysis.",
@@ -835,7 +849,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         }
       },
       "required": [
@@ -854,14 +869,16 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         },
         "target_region": {
           "description": "Target region of the edge, by identifier.",
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         }
       },
       "title": "ConnectivityEdge",
@@ -903,7 +920,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Analysis"
         },
         "anchor_kind": {
           "anyOf": [
@@ -939,7 +957,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         },
         "result_kind": {
           "anyOf": [
@@ -979,7 +998,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Condition"
         },
         "label": {
           "$ref": "#/$defs/ExtractedString",
@@ -1171,7 +1191,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Device"
         },
         "eeg_channel_count": {
           "anyOf": [
@@ -4382,7 +4403,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Device"
         },
         "local_id": {
           "type": "string"
@@ -4500,7 +4522,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Arm"
         },
         "conditions": {
           "description": "The conditions carrying this level, by identifier.",
@@ -4510,7 +4533,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Condition"
         },
         "groups": {
           "description": "The participant cohorts carrying this level, by identifier.",
@@ -4520,7 +4544,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Group"
         },
         "level": {
           "$ref": "#/$defs/ExtractedString",
@@ -4545,7 +4570,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         },
         "timepoints": {
           "description": "The occasions carrying this level, by identifier. A factor whose levels are baseline, week 6 or follow-up ranges over occasions and fills this: left empty, the level stands on its label alone and no query can tell which scan preceded the intervention.",
@@ -4555,7 +4581,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Timepoint"
         }
       },
       "required": [
@@ -4683,7 +4710,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Arm"
         },
         "clinical_characteristics": {
           "anyOf": [
@@ -4726,7 +4754,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Assessment"
         },
         "diagnostic_system": {
           "anyOf": [
@@ -5041,7 +5070,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         },
         "correction_scope": {
           "anyOf": [
@@ -5282,7 +5312,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Assessment"
         },
         "second_block_detail": {
           "anyOf": [
@@ -5387,7 +5418,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Device"
         },
         "echo_time_seconds": {
           "anyOf": [
@@ -5605,7 +5637,8 @@
       "properties": {
         "mediator": {
           "description": "The intervening term, by identifier. It must be a term of the ModelEstimation the containing Analysis names, or of a stage that model reaches through `inputs_from`.",
-          "type": "string"
+          "type": "string",
+          "x-reference": "ModelTerm"
         },
         "path": {
           "$ref": "#/$defs/ExtractedEffectPath",
@@ -5670,7 +5703,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "ModelEstimation"
         },
         "local_id": {
           "description": "Stable identifier used by Analysis foreign-key references.",
@@ -5703,7 +5737,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Preprocessing"
         },
         "software": {
           "anyOf": [
@@ -5772,7 +5807,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Assessment"
         },
         "functional_form": {
           "anyOf": [
@@ -5793,7 +5829,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "ModelTerm"
         },
         "levels": {
           "description": "The levels of a categorical term, and for each the entities carrying it. This is the whole of what a factor is: its level vocabulary, and which cohort, condition, occasion, or arm occupies each cell. Record a level the source names even when no reported contrast uses it -- a three-level factor contrasted at two levels is still a three-level factor. Empty for a continuous term.",
@@ -5818,7 +5855,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Region"
         },
         "source_definition": {
           "anyOf": [
@@ -5990,7 +6028,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Device"
         },
         "local_id": {
           "type": "string"
@@ -6062,7 +6101,8 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "Device"
         },
         "image_units": {
           "anyOf": [
@@ -7087,7 +7127,8 @@
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "x-reference": "Acquisition"
         },
         "conditions": {
           "description": "The conditions this task was made of. These are the different states/modes of the task.",

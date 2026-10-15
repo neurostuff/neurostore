@@ -2,13 +2,59 @@ import { ApiError, ROLE_MESSAGE, type ReviewApi, type ReviewLifecycle } from '..
 import type { Op } from '../contract/generated/review-ops';
 import { isLocalOp } from '../model/applyOp';
 import { spansToCodePoints } from '../model/offsets';
-import type { Refusal, ReviewStore } from './reviewStore';
+import { selectIsBlocked, type Refusal, type ReviewStore } from './reviewStore';
 
 export const MAX_BATCH = 500;
 export const DEBOUNCE_MS = 1000;
 export const MAX_BACKOFF_MS = 30_000;
+/** Browsers refuse a keepalive body over 64 KiB; a hidden-page flush stays under this. */
+export const KEEPALIVE_LIMIT = 60 * 1024;
 
-const SIGN_IN_CODES = ['login_required', 'consent_required', 'missing_refresh_token'];
+const SIGN_IN_CODES = ['login_required', 'consent_required', 'missing_refresh_token', 'interaction_required'];
+
+const bytesOf = (ops: Op[]) => new TextEncoder().encode(JSON.stringify(ops)).length;
+
+/** The pending ops cut into groups: the ops of one emitBatch together, any other op alone. */
+function groupsOf(pending: Op[], groupOf: Record<string, string>): Op[][] {
+    const groups: Op[][] = [];
+    let previous: string | undefined;
+    for (const op of pending) {
+        const group = groupOf[op.client_op_id] ?? op.client_op_id;
+        const last = groups.at(-1);
+        if (last && group === previous) last.push(op);
+        else groups.push([op]);
+        previous = group;
+    }
+    return groups;
+}
+
+/** A batch of ops, as the store holds them (`batch`) and as the server takes them (`sent`), with the bytes `sent` takes. */
+interface Batch {
+    batch: Op[];
+    sent: Op[];
+    size: number;
+}
+
+function measured(text: string, batch: Op[]): Batch {
+    const sent = spansToCodePoints(text, batch);
+    return { batch, sent, size: bytesOf(sent) };
+}
+
+/** The leading whole groups to send: at most MAX_BATCH ops, and when hidden under KEEPALIVE_LIMIT bytes. */
+function nextBatch(pending: Op[], groupOf: Record<string, string>, text: string, hidden: boolean): Batch {
+    const next: Batch = { batch: [], sent: [], size: 0 };
+    for (const group of groupsOf(pending, groupOf)) {
+        const converted = spansToCodePoints(text, group);
+        const groupSize = bytesOf(converted);
+        const overBatch = next.batch.length + group.length > MAX_BATCH;
+        const overKeepalive = hidden && next.size + groupSize >= KEEPALIVE_LIMIT;
+        if (next.batch.length > 0 && (overBatch || overKeepalive)) break;
+        next.batch.push(...group);
+        next.sent.push(...converted);
+        next.size += groupSize;
+    }
+    return next;
+}
 
 function refusals(error: ApiError, batch: Op[]): Refusal[] {
     return (error.body.errors ?? []).flatMap(({ context, message }) => {
@@ -72,7 +118,8 @@ export function createOpClient(store: ReviewStore, api: ReviewApi) {
         if (error instanceof ApiError && error.status === 422) {
             const named = refusals(error, batch);
             if (named.length === 0) {
-                state().setSave('failed', error.message);
+                const problems = (error.body.errors ?? []).map(({ message }) => message);
+                state().block(batch, error.message, problems.length ? problems : [error.message]);
                 return false;
             }
             state().refuse(named);
@@ -99,19 +146,17 @@ export function createOpClient(store: ReviewStore, api: ReviewApi) {
         try {
             for (;;) {
                 const { save, pending, bundle } = state();
-                if (save === 'closed' || backoff || !bundle.review) return;
-                const batch = unansweredBatch ?? pending.slice(0, MAX_BATCH);
+                if (save === 'closed' || selectIsBlocked(state()) || backoff || !bundle.review) return;
+                const hidden = document.visibilityState === 'hidden';
+                const { batch, sent, size } = unansweredBatch
+                    ? measured(bundle.text, unansweredBatch)
+                    : nextBatch(pending, state().groupOf, bundle.text, hidden);
                 if (batch.length === 0) return;
                 state().setSave('saving');
                 try {
-                    const result = await api.postOps(
-                        bundle.review.id,
-                        bundle.review.last_seq,
-                        spansToCodePoints(bundle.text, batch),
-                        {
-                            keepalive: document.visibilityState === 'hidden',
-                        }
-                    );
+                    const result = await api.postOps(bundle.review.id, bundle.review.last_seq, sent, {
+                        keepalive: hidden && size < KEEPALIVE_LIMIT,
+                    });
                     unansweredBatch = null;
                     failures = 0;
                     state().confirm(result, batch);
@@ -171,12 +216,22 @@ export function createOpClient(store: ReviewStore, api: ReviewApi) {
         /** Saves what is pending, then moves the review to `next`. */
         async changeState(next: ReviewLifecycle) {
             await flush();
+            if (selectIsBlocked(state())) return;
             const { review } = state().bundle;
             if (!review) return;
             const summary = await api.setState(review.id, next);
             state().setLifecycle(summary.state);
             state().setSave(summary.state === 'in_progress' ? 'idle' : 'closed');
             if (summary.state === 'in_progress') void flush();
+        },
+        /** Drops every pending edit, rebuilding the record from the confirmed one. */
+        discardPending() {
+            state().discardPending();
+        },
+        /** Drops the refused batch's edits, rebuilds the record from the confirmed one, and saves what is left. */
+        undoBlocked(): Promise<void> {
+            state().undoBlocked();
+            return flush();
         },
         /** Resolves when the batches now going out have been answered. */
         settled: () => running ?? Promise.resolve(),
