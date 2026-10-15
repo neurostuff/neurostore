@@ -1,9 +1,21 @@
 """The /review API, open only to admin-reviewers."""
 
+import shutil
+import tempfile
+from pathlib import Path
+
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import abort_permission
-from neurostore.review import service
+from neurostore.exceptions.factories import make_field_error
+from neurostore.exceptions.utils.error_helpers import (
+    abort_permission,
+    abort_too_large,
+    abort_unprocessable,
+)
+from neurostore.review import imports, service
+from neurostore.review.layout import LayoutError
 from neurostore.resources.utils import get_current_user, is_user_admin, user_has_role
+
+MAX_IMPORT_BYTES = 200 * 1024 * 1024
 
 
 def _reviewer():
@@ -11,6 +23,27 @@ def _reviewer():
     if not user_has_role(user, "admin-reviewer"):
         abort_permission("Only an admin-reviewer can use /review.")
     return user
+
+
+def _lead_reviewer():
+    user = _reviewer()
+    if not is_user_admin(user):
+        abort_permission("Only a lead reviewer (admin-reviewer and admin) can load papers.")
+    return user
+
+
+def _size(upload):
+    if upload.size is not None:
+        return upload.size
+    upload.file.seek(0, 2)
+    size = upload.file.tell()
+    upload.file.seek(0)
+    return size
+
+
+def _spool(upload, destination):
+    with destination.open("wb") as copy:
+        shutil.copyfileobj(upload.file, copy)
 
 
 def _commit(write):
@@ -71,3 +104,25 @@ class ReviewOpsView:
         return _commit(
             lambda: service.post_ops(db.session, id, user.external_id, body)
         )
+
+
+class ReviewImportsView:
+    def post(self, file):
+        user = _lead_reviewer()
+        if _size(file) > MAX_IMPORT_BYTES:
+            abort_too_large(f"The file is over {MAX_IMPORT_BYTES} bytes.")
+        with tempfile.TemporaryDirectory() as directory:
+            layout = Path(directory) / "layout.zip"
+            _spool(file, layout)
+            try:
+                return _commit(
+                    lambda: imports.import_layout(db.session, layout, user_id=user.external_id)
+                )
+            except LayoutError as error:
+                abort_unprocessable(
+                    "The file is not a study_schema layout.",
+                    [
+                        make_field_error("file", problem, code="INVALID_LAYOUT")
+                        for problem in error.problems
+                    ],
+                )

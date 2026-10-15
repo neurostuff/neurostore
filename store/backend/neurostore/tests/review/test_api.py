@@ -4,19 +4,13 @@ import copy
 import itertools
 import threading
 import time
-from functools import cache
-from pathlib import Path
 from unittest import mock
 
 import pytest
 import sqlalchemy as sa
-import yaml
-from jose.jwt import encode
-from jsonschema import Draft202012Validator
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from neurostore import schemas
 from neurostore.exceptions.base import ConflictError
 from neurostore.models import BaseStudy, Fulltext, Review, ReviewOp, ReviewSource
 from neurostore.resources.base import ObjectView
@@ -25,21 +19,11 @@ from neurostore.review import entities, service
 from neurostore.review.bundle import validator
 from neurostore.study_schema_tools import sha256_of
 from neurostore.tests import study_schema_fixtures as fx
-from neurostore.tests.request_utils import AsyncClient
 from neurostore.tests.review import records
+from neurostore.tests.review.layouts import LEAD, OTHER, REVIEWER, assert_matches_spec
 
 pytestmark = pytest.mark.anyio
 
-OPENAPI = Path(schemas.__file__).resolve().parents[1] / "openapi" / "neurostore-openapi.yml"
-REVIEWER = "user1-id"
-OTHER = "user2-id"
-LEAD = "admin-user-id"
-TOKENS = {
-    REVIEWER: encode({"sub": REVIEWER}, "abc", algorithm="HS256"),
-    OTHER: encode({"sub": OTHER}, "123", algorithm="HS256"),
-    LEAD: encode({"sub": LEAD}, "admin123", algorithm="HS256"),
-    "newuser-id": encode({"sub": "newuser-id"}, "789", algorithm="HS256"),
-}
 _ids = itertools.count()
 
 
@@ -119,21 +103,6 @@ def wait_until_blocked(engine, timeout=10):
                 return True
         time.sleep(0.01)
     return False
-
-
-@pytest.fixture
-async def clients(app, session, make_user, mock_auth):
-    make_user(REVIEWER, "admin-reviewer")
-    make_user(OTHER, "admin-reviewer")
-    make_user(LEAD, "admin", "admin-reviewer")
-    made = {
-        user_id: AsyncClient(token=token, asgi_app=app.asgi_app, username=user_id)
-        for user_id, token in TOKENS.items()
-    }
-    made[None] = AsyncClient(token=None, asgi_app=app.asgi_app)
-    yield made
-    for client in made.values():
-        await client.aclose()
 
 
 @pytest.fixture
@@ -693,36 +662,6 @@ async def test_an_unknown_review_is_not_found(clients):
 
 
 # the response contract
-
-
-@cache
-def spec():
-    return yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
-
-
-def resolved(node):
-    """``node`` with each $ref inlined from components/schemas and OpenAPI 3.0's nullable
-    turned into a JSON Schema null branch."""
-    if isinstance(node, dict):
-        if "$ref" in node:
-            return resolved(spec()["components"]["schemas"][node["$ref"].rsplit("/", 1)[-1]])
-        inlined = {key: resolved(value) for key, value in node.items()}
-        if inlined.pop("nullable", False):
-            return {"anyOf": [inlined, {"type": "null"}]}
-        return inlined
-    if isinstance(node, list):
-        return [resolved(item) for item in node]
-    return node
-
-
-def assert_matches_spec(response, path, method):
-    operation = spec()["paths"][path][method]
-    schema = operation["responses"][str(response.status_code)]["content"]["application/json"]
-    errors = [
-        error.message
-        for error in Draft202012Validator(resolved(schema["schema"])).iter_errors(response.json())
-    ]
-    assert errors == [], (method, path, response.status_code, errors)
 
 
 async def test_the_responses_match_the_spec(clients, source, session):

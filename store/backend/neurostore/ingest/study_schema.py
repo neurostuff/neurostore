@@ -56,6 +56,7 @@ from study_schema.jsonschema import load as load_json_schema
 from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
+from neurostore.base_studies import find_base_study
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore.exceptions.factories import create_unprocessable_error, make_field_error
@@ -393,18 +394,9 @@ def _resolve_base_study(body, parse, parsed_paper, create):
         return base_study
 
     _lock_identifiers(identifiers)
-    for field in ("doi", "pmid", "pmcid"):
-        value = identifiers.get(field)
-        if not value:
-            continue
-        base_study = (
-            BaseStudy.query.filter(getattr(BaseStudy, field) == value)
-            .filter(BaseStudy.is_active.is_(True))
-            .order_by(BaseStudy.created_at)
-            .first()
-        )
-        if base_study is not None:
-            return base_study
+    base_study = find_base_study(db.session, identifiers)
+    if base_study is not None:
+        return base_study
 
     if not create:
         abort_validation(

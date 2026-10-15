@@ -1,6 +1,8 @@
 """Service CLI for NeuroStore."""
 
+import json
 import time
+from pathlib import Path
 from types import SimpleNamespace
 
 import click
@@ -136,6 +138,33 @@ def rehash_entities_command(base_study_id, batch_size):
         click.echo(f"rehashed {moved} entities")
 
     _run_with_runtime(_run)
+
+
+@main.command("review-import")
+@click.argument("path", type=click.Path(exists=True, path_type=Path))
+@click.option("--user-id", default=None, help="the reviewer who loads the papers")
+@click.option("--run-id", default=None, help="the pipeline run the records came from")
+def review_import_command(path, user_id, run_id):
+    """Load the papers of a study_schema layout directory or zip for review.
+
+    Prints the report as JSON and exits 1 if any paper failed.
+    """
+
+    def _run(_app, db):
+        from neurostore.review.imports import import_layout
+        from neurostore.review.layout import LayoutError
+
+        try:
+            report = import_layout(db.session, path, user_id=user_id, run_id=run_id)
+        except LayoutError as error:
+            raise click.ClickException(str(error)) from error
+        db.session.commit()
+        return report
+
+    report = _run_with_runtime(_run)
+    click.echo(json.dumps(report, indent=2))
+    if report["failed"]:
+        raise SystemExit(1)
 
 
 @main.command("backfill-analysis-roles")

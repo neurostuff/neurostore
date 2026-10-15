@@ -1,4 +1,5 @@
-"""Helpers the /review tests share: a user factory and a recorder of the SQL a block runs."""
+"""Helpers the /review tests share: API clients, a user factory and a recorder of the SQL a
+block runs."""
 
 from contextlib import contextmanager
 
@@ -6,6 +7,23 @@ import pytest
 import sqlalchemy as sa
 
 from neurostore.models import Role, User
+from neurostore.tests.request_utils import AsyncClient
+from neurostore.tests.review.layouts import LEAD, OTHER, REVIEWER, TOKENS
+
+
+@pytest.fixture
+async def clients(app, session, make_user, mock_auth):
+    make_user(REVIEWER, "admin-reviewer")
+    make_user(OTHER, "admin-reviewer")
+    make_user(LEAD, "admin", "admin-reviewer")
+    made = {
+        user_id: AsyncClient(token=token, asgi_app=app.asgi_app, username=user_id)
+        for user_id, token in TOKENS.items()
+    }
+    made[None] = AsyncClient(token=None, asgi_app=app.asgi_app)
+    yield made
+    for client in made.values():
+        await client.aclose()
 
 
 @pytest.fixture

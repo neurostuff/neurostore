@@ -3,6 +3,7 @@
 import hashlib
 import json
 import zipfile
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
@@ -210,24 +211,32 @@ def _layout_root(source, root):
     return tops[0]
 
 
-def _read_papers(root):
-    study_ids = sorted(
+@contextmanager
+def open_layout(source: Path):
+    """The root folder of a layout directory or zip, open for the block."""
+    if source.is_dir():
+        if not (source / "corpus").is_dir():
+            raise LayoutError([f"{source} has no corpus/ at its root"])
+        yield source
+    elif zipfile.is_zipfile(source):
+        with zipfile.ZipFile(source) as archive:
+            yield _layout_root(source, zipfile.Path(archive))
+    else:
+        raise LayoutError([f"{source} is neither a layout directory nor a zip"])
+
+
+def study_ids(root) -> list[str]:
+    """The ids of the papers under ``root`` that have a record, sorted."""
+    return sorted(
         child.name
         for child in (root / "corpus").iterdir()
         if child.is_dir() and (root / _record_path(child.name)).is_file()
     )
-    return [read_paper(root, study_id) for study_id in study_ids]
 
 
 def read_layout(source: Path) -> list[Paper]:
-    if source.is_dir():
-        if not (source / "corpus").is_dir():
-            raise LayoutError([f"{source} has no corpus/ at its root"])
-        return _read_papers(source)
-    if not zipfile.is_zipfile(source):
-        raise LayoutError([f"{source} is neither a layout directory nor a zip"])
-    with zipfile.ZipFile(source) as archive:
-        return _read_papers(_layout_root(source, zipfile.Path(archive)))
+    with open_layout(source) as root:
+        return [read_paper(root, study_id) for study_id in study_ids(root)]
 
 
 def _dumped(document):

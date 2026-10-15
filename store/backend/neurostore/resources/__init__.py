@@ -11,6 +11,7 @@ from neurostore.resources.pipeline import (
 )
 from neurostore.resources.review import (
     ReviewBundlesView,
+    ReviewImportsView,
     ReviewOpsView,
     ReviewSourcesView,
     ReviewsView,
@@ -33,6 +34,7 @@ __all__ = [
     "SourceReviewsView",
     "ReviewsView",
     "ReviewOpsView",
+    "ReviewImportsView",
 ]
 
 

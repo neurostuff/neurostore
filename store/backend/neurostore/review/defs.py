@@ -12,6 +12,11 @@ def extraction_defs():
     return load("extraction-record")["$defs"]
 
 
+@cache
+def extraction_version():
+    return load("extraction-record")["version"]
+
+
 def attribute_schema(cls, attribute):
     """The property schema of ``attribute`` on ``cls``, or None when it has none."""
     return extraction_defs().get(cls, {}).get("properties", {}).get(attribute)

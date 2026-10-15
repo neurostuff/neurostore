@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from neurostore.exceptions.base import ConflictError
+from neurostore.exceptions.base import ConflictError, PayloadTooLargeError
 from neurostore.exceptions.factories import (
     create_authentication_error,
     create_internal_server_error,
@@ -47,6 +47,13 @@ def abort_conflict(detail: str, **extra) -> None:
     409 error helper; the extra keyword arguments become top-level keys of the payload.
     """
     raise ConflictError(detail, **extra)
+
+
+def abort_too_large(detail: str) -> None:
+    """
+    413 error helper.
+    """
+    raise PayloadTooLargeError(detail)
 
 
 def abort_unprocessable(

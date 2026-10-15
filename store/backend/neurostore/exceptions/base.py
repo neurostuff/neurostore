@@ -9,6 +9,7 @@ HTTP_STATUS_TITLES = {
     403: "Forbidden",
     404: "Not Found",
     409: "Conflict",
+    413: "Payload Too Large",
     422: "Unprocessable Entity",
     500: "Internal Server Error",
 }
@@ -134,6 +135,13 @@ class NotFoundError(NeuroStoreException):
         self, detail: str = "Resource not found", instance: Optional[str] = None
     ):
         super().__init__(404, detail, instance=instance)
+
+
+class PayloadTooLargeError(NeuroStoreException):
+    def __init__(
+        self, detail: str = "The payload is too large", instance: Optional[str] = None
+    ):
+        super().__init__(413, detail, instance=instance)
 
 
 class UnprocessableEntityError(NeuroStoreException):

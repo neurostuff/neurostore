@@ -1,8 +1,6 @@
 import copy
 import dataclasses
-import hashlib
 import json
-import zipfile
 
 import pytest
 
@@ -14,58 +12,15 @@ from neurostore.review.layout import (
     read_paper,
     write_export,
 )
-from neurostore.tests.study_schema_fixtures import (
-    parse,
-    parsed_paper,
-    point,
-    record,
-    extracted,
-    record_analysis,
-    table_analysis,
+from neurostore.tests.review.layouts import (
+    DIGEST,
+    TEXT,
+    documents,
+    dump,
+    write_layout,
+    zip_layout,
 )
-
-TEXT = "Participants viewed faces. The amygdala responded at 20, -4, -18 (t = 3.5)."
-
-
-def sha256(data):
-    return hashlib.sha256(data).hexdigest()
-
-
-DIGEST = sha256(TEXT.encode("utf-8"))
-
-
-def documents(study_id):
-    """A consistent parsed paper, coordinate parse and record for ``TEXT``."""
-    paper = parsed_paper(pmid=study_id)
-    paper.update(text_path="text/paper.txt", text_sha256=DIGEST)
-    analysis = table_analysis("t1", [1], "Faces > Houses", [point((20, -4, -18))])
-    coordinate_parse = parse([analysis], pmid=study_id)
-    coordinate_parse["text_sha256"] = DIGEST
-    extraction = record([record_analysis("a1", analysis["key"], "Faces > Houses")])
-    extraction["extraction_metadata"]["source_text_hash"] = DIGEST
-    return paper, coordinate_parse, extraction
-
-
-def dump(document):
-    return (json.dumps(document, indent=2) + "\n").encode("utf-8")
-
-
-def write_layout(root, study_id, paper=None, coordinate_parse=None, extraction=None):
-    defaults = documents(study_id)
-    paper = paper or defaults[0]
-    coordinate_parse = coordinate_parse or defaults[1]
-    extraction = extraction or defaults[2]
-    files = {
-        f"corpus/{study_id}/parse/parsed_paper.json": dump(paper),
-        f"corpus/{study_id}/parse/coordinate_parse.json": dump(coordinate_parse),
-        f"corpus/{study_id}/{paper['text_path']}": TEXT.encode("utf-8"),
-        f"run/records/{study_id}.extraction.json": dump(extraction),
-    }
-    for relative, data in files.items():
-        path = root / relative
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
-    return files
+from neurostore.tests.study_schema_fixtures import extracted
 
 
 def test_read_paper_returns_documents_text_and_raw_bytes(tmp_path):
@@ -180,11 +135,10 @@ def test_read_paper_refuses_a_text_path_outside_the_paper(tmp_path, text_path):
 @pytest.mark.parametrize("text_path", ["../../secret.txt", "/secret.txt"])
 def test_read_layout_refuses_a_zip_whose_text_path_leaves_the_paper(tmp_path, text_path):
     files = write_layout(tmp_path / "tree", "s1")
-    write_parsed_paper(tmp_path / "tree", "s1", text_path=text_path)
-    archive = tmp_path / "layout.zip"
-    with zipfile.ZipFile(archive, "w") as zipped:
-        for relative in files:
-            zipped.writestr(relative, (tmp_path / "tree" / relative).read_bytes())
+    files["corpus/s1/parse/parsed_paper.json"] = dump(
+        {**documents("s1")[0], "text_path": text_path}
+    )
+    archive = zip_layout(files, tmp_path / "layout.zip")
 
     with pytest.raises(LayoutError) as raised:
         read_layout(archive)
@@ -414,10 +368,7 @@ def test_read_layout_reads_each_paper_with_a_record_in_id_order(tmp_path):
 @pytest.mark.parametrize("top", ["", "bundle/"])
 def test_read_layout_reads_a_zip_at_its_root_or_under_one_folder(tmp_path, top):
     files = {**write_layout(tmp_path / "tree", "s1"), **write_layout(tmp_path / "tree", "s2")}
-    archive = tmp_path / "layout.zip"
-    with zipfile.ZipFile(archive, "w") as zipped:
-        for relative, data in files.items():
-            zipped.writestr(top + relative, data)
+    archive = zip_layout(files, tmp_path / "layout.zip", prefix=top)
 
     papers = read_layout(archive)
 
@@ -427,11 +378,9 @@ def test_read_layout_reads_a_zip_at_its_root_or_under_one_folder(tmp_path, top):
 
 def test_read_layout_skips_macos_metadata_beside_the_top_folder(tmp_path):
     files = write_layout(tmp_path / "tree", "s1")
-    archive = tmp_path / "layout.zip"
-    with zipfile.ZipFile(archive, "w") as zipped:
-        for relative, data in files.items():
-            zipped.writestr("bundle/" + relative, data)
-            zipped.writestr("__MACOSX/bundle/" + relative, b"")
+    archived = {f"bundle/{relative}": data for relative, data in files.items()}
+    archived.update({f"__MACOSX/bundle/{relative}": b"" for relative in files})
+    archive = zip_layout(archived, tmp_path / "layout.zip")
 
     assert read_layout(archive) == read_layout(tmp_path / "tree")
 
@@ -439,11 +388,10 @@ def test_read_layout_skips_macos_metadata_beside_the_top_folder(tmp_path):
 @pytest.mark.parametrize("prefixes", [["a/inner/"], ["a/", "b/"]])
 def test_read_layout_zip_without_one_corpus_raises_layout_error(tmp_path, prefixes):
     files = write_layout(tmp_path / "tree", "s1")
-    archive = tmp_path / "layout.zip"
-    with zipfile.ZipFile(archive, "w") as zipped:
-        for prefix in prefixes:
-            for relative, data in files.items():
-                zipped.writestr(prefix + relative, data)
+    archive = zip_layout(
+        {prefix + relative: data for prefix in prefixes for relative, data in files.items()},
+        tmp_path / "layout.zip",
+    )
 
     with pytest.raises(LayoutError) as raised:
         read_layout(archive)
