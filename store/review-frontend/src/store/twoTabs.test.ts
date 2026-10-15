@@ -86,8 +86,16 @@ describe('two tabs saving to one review', () => {
         expect(spans.description?.evidence?.sets).toEqual([
             {
                 spans: [
-                    { start_char: at('Twenty patients')[0], end_char: at('Twenty patients')[1] },
-                    { start_char: at('eighteen controls')[0], end_char: at('eighteen controls')[1] },
+                    {
+                        start_char: at('Twenty patients')[0],
+                        end_char: at('Twenty patients')[1],
+                        text: 'Twenty patients',
+                    },
+                    {
+                        start_char: at('eighteen controls')[0],
+                        end_char: at('eighteen controls')[1],
+                        text: 'eighteen controls',
+                    },
                 ],
             },
         ]);

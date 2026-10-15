@@ -1,5 +1,7 @@
 import { ApiError, ROLE_MESSAGE, type ReviewApi, type ReviewLifecycle } from '../api/reviewApi';
 import type { Op } from '../contract/generated/review-ops';
+import { isLocalOp } from '../model/applyOp';
+import { spansToCodePoints } from '../model/offsets';
 import type { Refusal, ReviewStore } from './reviewStore';
 
 export const MAX_BATCH = 500;
@@ -102,9 +104,14 @@ export function createOpClient(store: ReviewStore, api: ReviewApi) {
                 if (batch.length === 0) return;
                 state().setSave('saving');
                 try {
-                    const result = await api.postOps(bundle.review.id, bundle.review.last_seq, batch, {
-                        keepalive: document.visibilityState === 'hidden',
-                    });
+                    const result = await api.postOps(
+                        bundle.review.id,
+                        bundle.review.last_seq,
+                        spansToCodePoints(bundle.text, batch),
+                        {
+                            keepalive: document.visibilityState === 'hidden',
+                        }
+                    );
                     unansweredBatch = null;
                     failures = 0;
                     state().confirm(result, batch);
@@ -141,7 +148,8 @@ export function createOpClient(store: ReviewStore, api: ReviewApi) {
                 const last = next.pending.at(-1);
                 if (!last || previous.pending.some((op) => op.client_op_id === last.client_op_id)) return;
                 clearTimeout(debounce);
-                debounce = setTimeout(flushNow, DEBOUNCE_MS);
+                if (isLocalOp(last)) debounce = setTimeout(flushNow, DEBOUNCE_MS);
+                else void state().minted(last.client_op_id).then(flushNow);
             });
             window.addEventListener('blur', flushNow);
             window.addEventListener('beforeunload', onBeforeUnload);

@@ -1,8 +1,10 @@
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
-import { applyOp } from '../model/applyOp';
+import { applyBatch, OpRefused, type Documents } from '../model/applyOp';
+import type { CoordinateParse } from '../model/coordinates';
+import { codePointPaper } from '../model/offsets';
 import type { Json } from '../model/paths';
-import { ApiError, type OpResult, type ReviewLifecycle, type ReviewSummary } from '../api/reviewApi';
+import { ApiError, type OpResult, refusedOp, type ReviewLifecycle, type ReviewSummary } from '../api/reviewApi';
 
 interface Review extends ReviewSummary {
     created_at: string;
@@ -26,7 +28,6 @@ const conflict = (detail: string, extra: { last_seq?: number } = {}) =>
 interface MemoryOptions {
     userId?: string;
     now?: () => string;
-    apply?: (record: Json, op: Op) => Json;
     userName?: (userId: string) => string;
 }
 
@@ -36,7 +37,6 @@ export function memoryBackend(
     {
         userId = 'me',
         now = () => new Date().toISOString(),
-        apply = applyOp,
         userName = (id: string) => `name of ${id}`,
     }: MemoryOptions = {}
 ) {
@@ -76,6 +76,7 @@ export function memoryBackend(
             provenance: r.provenance,
             annotations: r.annotations,
             hidden: sources.get(r.source_id)!.hidden,
+            entities: sources.get(r.source_id)!.entities,
         };
     }
 
@@ -142,26 +143,25 @@ export function memoryBackend(
             if (r.state !== 'in_progress') throw conflict(`The review is ${r.state}; only in_progress takes ops.`);
             if (batch.expected_last_seq !== r.last_seq)
                 throw conflict('The review has changed since the batch was made.', { last_seq: r.last_seq });
-            let record = r.record;
-            batch.ops.forEach((op, index) => {
-                try {
-                    record = apply(record, op);
-                } catch (error) {
-                    throw new ApiError(422, {
-                        title: 'Unprocessable Entity',
-                        detail: `op ${index} cannot be applied`,
-                        errors: [
-                            {
-                                field: `ops/${index}`,
-                                code: 'REJECTED',
-                                message: (error as Error).message,
-                                context: { op_index: index, client_op_id: op.client_op_id },
-                            },
-                        ],
-                    });
-                }
-            });
+            const { text, coordinate_parse, entities } = sources.get(r.source_id)!;
             const at = now();
+            let documents: Documents;
+            try {
+                documents = applyBatch(
+                    { record: r.record, provenance: r.provenance, annotations: r.annotations },
+                    batch.ops,
+                    {
+                        text: codePointPaper(text),
+                        userId,
+                        at,
+                        coordinateParse: coordinate_parse as CoordinateParse,
+                        entities,
+                    }
+                );
+            } catch (error) {
+                if (error instanceof OpRefused) throw refusedOp(error.index, error.clientOpId, error.message);
+                throw error;
+            }
             const applied = batch.ops.map((op, index): StoredOp => ({
                 seq: r.last_seq + index + 1,
                 op,
@@ -170,7 +170,7 @@ export function memoryBackend(
                 user_id: userId,
                 created_at: at,
             }));
-            Object.assign(r, { record, last_seq: r.last_seq + applied.length, ops: [...r.ops, ...applied] });
+            Object.assign(r, { ...documents, last_seq: r.last_seq + applied.length, ops: [...r.ops, ...applied] });
             return result(r, applied);
         },
 

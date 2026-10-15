@@ -6,6 +6,7 @@ front end's test server must reproduce. Regenerate it with:
 UPDATE_GOLDEN=1 python -m pytest neurostore/tests/review/test_op_scenarios.py
 """
 
+import hashlib
 import json
 import os
 
@@ -70,6 +71,34 @@ COORDINATE_ACCEPT = {
                "analysis_key": records.coordinate_parse()["analyses"][0]["key"]},
     "action": "accept",
 }
+
+
+def minted(client_op_id):
+    """The local_id the front end mints for a create_entity, and the server for one without."""
+    return "rv_" + hashlib.sha256(client_op_id.encode("utf-8")).hexdigest()[:12]
+
+
+CREATE_WITH_LOCAL_ID = {
+    "client_op_id": "scenario-create-entity-a",
+    "type": "create_entity",
+    "parent": "study",
+    "list": "groups",
+    "entity": records.item("Group", minted("scenario-create-entity-a")),
+}
+SET_ON_CREATED = {
+    "client_op_id": "scenario-set-created-a",
+    "type": "set_value",
+    "target": {"kind": "slot", "entity": minted("scenario-create-entity-a"), "path": "name"},
+    "value": {"extraction_status": "extracted", "value": "healthy siblings",
+              "value_source": "reported"},
+}
+CREATE_MINTED = {
+    "client_op_id": "scenario-create-entity-b",
+    "type": "create_entity",
+    "parent": "study",
+    "list": "groups",
+    "entity": {k: v for k, v in records.item("Group", "x").items() if k != "local_id"},
+}
 MANY_OPS = [{"client_op_id": f"scenario-many-{n}"} for n in range(501)]
 STRANGER = "newuser-id"
 SOURCES = "/api/review/sources/"
@@ -131,6 +160,15 @@ SCENARIOS = {
     "coordinate accept": [
         START,
         (REVIEWER, "post", OPS, batch(0, COORDINATE_ACCEPT), 200),
+    ],
+    "create an entity with a client local id, then set a value on it": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, CREATE_WITH_LOCAL_ID), 200),
+        (REVIEWER, "post", OPS, batch(1, SET_ON_CREATED), 200),
+    ],
+    "create an entity the server mints an id for": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, CREATE_MINTED), 200),
     ],
     "batch on a submitted review": [
         START,
@@ -261,3 +299,9 @@ async def test_a_link_that_reaches_a_hidden_entity_changes_the_hidden_set(client
 async def test_a_coordinate_op_returns_a_revision(clients, session):
     steps = await _play(clients, session, SCENARIOS["coordinate accept"])
     assert steps[-1]["response"]["body"]["coordinate_revision"] is not None
+
+
+async def test_a_created_entity_without_a_local_id_gets_the_minted_id(clients, session):
+    steps = await _play(clients, session, SCENARIOS["create an entity the server mints an id for"])
+    created = steps[-1]["response"]["body"]["ops"][0]["after"]["entity"]["local_id"]
+    assert created == minted("scenario-create-entity-b")

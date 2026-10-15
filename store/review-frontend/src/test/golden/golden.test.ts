@@ -1,12 +1,17 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ReviewBundle } from '../../contract/generated/review-bundle';
-import type { Op } from '../../contract/generated/review-ops';
+import type { Evidence, Op } from '../../contract/generated/review-ops';
+import { applyBatch, type Documents } from '../../model/applyOp';
+import type { CoordinateParse } from '../../model/coordinates';
+import { codePointPaper } from '../../model/offsets';
+import type { Json } from '../../model/paths';
 import { slotKey } from '../../model/targetKey';
 import { createReviewStore, type EvidenceMode, type ReviewStore } from '../../store/reviewStore';
 import { validateOpBatch } from '../schemas';
 
-interface Entry {
+/** One batch on the golden bundle: the documents after it, or the refusal it meets. */
+interface Entry extends Partial<Documents> {
     name: string;
     ops: Op[];
     expect: string;
@@ -17,6 +22,25 @@ const OPS = path.resolve(__dirname, 'ops.json');
 const bundle: ReviewBundle = JSON.parse(readFileSync(BUNDLE, 'utf8'));
 const at = (words: string): [number, number] => [bundle.text.indexOf(words), bundle.text.indexOf(words) + words.length];
 const span = (words: string) => ({ start_char: at(words)[0], end_char: at(words)[1] });
+/** The time golden.py applies each batch at. */
+const AT = '2026-10-14T12:00:00Z';
+const documents = (): Documents => ({
+    record: bundle.record as Json,
+    provenance: bundle.review!.provenance,
+    annotations: bundle.review!.annotations,
+});
+
+function applied(ops: Op[]): Documents {
+    return applyBatch(documents(), ops, {
+        text: codePointPaper(bundle.text),
+        userId: bundle.review!.user_id,
+        at: AT,
+        coordinateParse: bundle.coordinate_parse as CoordinateParse,
+        entities: bundle.entities,
+    });
+}
+
+const after = ({ record, provenance, annotations }: Documents) => ({ record, provenance, annotations });
 
 function emitted(name: string, drive: (store: ReviewStore) => void): Entry {
     let minted = 0;
@@ -24,10 +48,42 @@ function emitted(name: string, drive: (store: ReviewStore) => void): Entry {
         minted += 1;
         return `${name}-${minted}` as ReturnType<typeof crypto.randomUUID>;
     });
-    const store = createReviewStore(bundle);
+    const store = createReviewStore(bundle, { now: () => AT });
     drive(store);
-    return { name, ops: store.getState().pending, expect: 'ok' };
+    return { name, ops: store.getState().pending, expect: 'ok', ...after(store.getState()) };
 }
+
+const numbered = (name: string, ops: object[]) =>
+    ops.map((op, i) => ({ client_op_id: `${name}-${i + 1}`, ...op }) as Op);
+
+const local = (name: string, ...ops: object[]): Entry => {
+    const batch = numbered(name, ops);
+    return { name, ops: batch, expect: 'ok', ...after(applied(batch)) };
+};
+
+const refused = (name: string, message: string, ...ops: object[]): Entry => ({
+    name,
+    ops: numbered(name, ops),
+    expect: message,
+});
+
+const slot = (entity: string, path: string) => ({ kind: 'slot', entity, path });
+const entity = (id: string) => ({ kind: 'entity', entity: id });
+const link = (path: string, target_entity: string) => ({ kind: 'relationship', entity: 'an_1', path, target_entity });
+const setValue = (target: object, value: object) => ({ type: 'set_value', target, value });
+const setEvidence = (target: object, evidence: Evidence) => ({ type: 'set_evidence', target, evidence });
+const present = (...spans: { start_char: number; end_char: number }[]): Evidence => ({
+    status: 'present',
+    sets: [{ spans: spans as [(typeof spans)[0]] }],
+});
+const verdict = (target: object, verdict: 'accept' | 'reject', reason?: string) => ({
+    type: 'verdict',
+    target,
+    verdict,
+    ...(reason ? { reason } : {}),
+});
+const note = (target: object, text: string) => ({ type: 'note', target, note: text });
+const reported = (value: unknown) => ({ extraction_status: 'extracted', value, value_source: 'reported' });
 
 const addTo = (entity: string, path: string, words: string, mode: EvidenceMode) => (store: ReviewStore) => {
     store.getState().focusSlot(slotKey(entity, path));
@@ -41,18 +97,95 @@ function entries(): Entry[] {
         emitted('golden-study-slot', addTo('study', 'description', 'performed a Stroop task', 'first')),
         emitted('golden-e-keeps-model-quote', addTo('grp_a', 'age_mean', 'on average', 'first')),
         emitted('golden-shift-e-new-set', addTo('grp_a', 'age_mean', '34.2 years', 'new')),
-        {
-            name: 'golden-not-reported-refused',
-            ops: [
-                {
-                    client_op_id: 'golden-not-reported-refused-1',
-                    type: 'set_evidence',
-                    target: { kind: 'slot', entity: 'grp_b', path: 'age_mean' },
-                    evidence: { status: 'present', sets: [{ spans: [{ start_char: 20, end_char: 28 }] }] },
-                },
-            ],
-            expect: 'set a value first',
-        },
+        refused(
+            'golden-not-reported-refused',
+            'set a value first',
+            setEvidence(slot('grp_b', 'age_mean'), present({ start_char: 20, end_char: 28 }))
+        ),
+        local('golden-set-value-keeps-evidence', setValue(slot('grp_a', 'age_mean'), reported(35))),
+        local(
+            'golden-set-value-not-reported',
+            setValue(slot('grp_a', 'age_mean'), {
+                extraction_status: 'not_reported',
+                unreported_reason: 'outside_text',
+            })
+        ),
+        local('golden-set-value-not-applicable-to-not-found', setValue(slot('grp_b', 'age_mean'), reported(30))),
+        local('golden-set-value-absent-slot', setValue(slot('grp_b', 'age_standard_deviation'), reported(4.1))),
+        local(
+            'golden-set-value-not-reported-drops-value',
+            setValue(slot('grp_a', 'age_mean'), {
+                extraction_status: 'not_reported',
+                unreported_reason: 'outside_text',
+                value: 35,
+            })
+        ),
+        refused(
+            'golden-set-value-refused-not-a-value',
+            "'groups[#0]' on 'an_1' is not an extracted value",
+            setValue(slot('an_1', 'groups[#0]'), reported(1))
+        ),
+        refused(
+            'golden-set-value-refused-no-item',
+            "field path 'groups[#4].n': no item at position 4",
+            setValue(slot('an_1', 'groups[#4].n'), reported(1))
+        ),
+        local('golden-entity-evidence', setEvidence(entity('grp_a'), present(span('Twenty patients')))),
+        local('golden-entity-evidence-cleared', setEvidence(entity('grp_b'), { status: 'not_applicable' })),
+        local(
+            'golden-entity-evidence-keeps-unlocated-quotes',
+            setEvidence(entity('grp_b'), { status: 'not_applicable', unlocated_quotes: 2 })
+        ),
+        local('golden-not-reported-not-found', setEvidence(slot('grp_b', 'age_mean'), { status: 'not_found' })),
+        local(
+            'golden-not-reported-not-applicable',
+            setEvidence(slot('grp_b', 'age_mean'), { status: 'not_applicable' })
+        ),
+        local('golden-span-ends-at-text-end', setEvidence(slot('study', 'description'), present(span('3T scanner.')))),
+        local('golden-relationship-evidence', setEvidence(link('tasks', 'tsk_1'), present(span('a Stroop task')))),
+        refused(
+            'golden-span-outside-refused',
+            `span 140-200 is outside the paper's ${bundle.text.length} characters`,
+            setEvidence(slot('grp_a', 'age_mean'), present({ start_char: 140, end_char: 200 }))
+        ),
+        refused(
+            'golden-span-empty-refused',
+            'span start_char 10 is not before end_char 10',
+            setEvidence(slot('grp_a', 'age_mean'), present({ start_char: 10, end_char: 10 }))
+        ),
+        refused(
+            'golden-relationship-evidence-refused',
+            "'an_1' tasks does not reference 'grp_a'",
+            setEvidence(link('tasks', 'grp_a'), present(span('Twenty patients')))
+        ),
+        refused(
+            'golden-relationship-unknown-target',
+            "no entity has local_id 'nope'",
+            setEvidence(link('tasks', 'nope'), present(span('a Stroop task')))
+        ),
+        local('golden-accept-unchecked', verdict(slot('an_1', 'name'), 'accept')),
+        local('golden-accept-edited-entity', verdict(entity('grp_b'), 'accept')),
+        local('golden-reject-edited-entity', verdict(entity('grp_b'), 'reject', 'wrong_entity')),
+        local(
+            'golden-reject-after-set-value',
+            setValue(slot('grp_a', 'age_mean'), reported(36)),
+            verdict(slot('grp_a', 'age_mean'), 'reject', 'wrong_entity')
+        ),
+        local(
+            'golden-accept-after-edit',
+            setValue(slot('grp_a', 'name'), reported('cases')),
+            verdict(slot('grp_a', 'name'), 'accept')
+        ),
+        local('golden-reject-with-reason', verdict(entity('grp_a'), 'reject', 'wrong_entity')),
+        local('golden-accept-relationship', verdict(link('measure', 'msr_1'), 'accept')),
+        refused('golden-verdict-refused', "no entity has local_id 'grp_x'", verdict(entity('grp_x'), 'accept')),
+        local('golden-note-paper', note({ kind: 'paper' }, 'the tables are in the supplement')),
+        local('golden-note-slot', note(slot('grp_a', 'age_mean'), 'check the table')),
+        refused(
+            'golden-note-refused',
+            "field path 'name.value.x' goes through a non-object",
+            note(slot('grp_a', 'name.value.x'), 'x')
+        ),
     ];
 }
 
@@ -64,6 +197,27 @@ describe('the golden op file the backend replays', () => {
         if (process.env.UPDATE_GOLDEN) writeFileSync(OPS, rendered);
         expect(existsSync(OPS)).toBe(true);
         expect(readFileSync(OPS, 'utf8')).toBe(rendered);
+    });
+
+    it('records what applyOp gives for each batch: the documents after it, or the refusal it meets', () => {
+        const recorded: Entry[] = JSON.parse(readFileSync(OPS, 'utf8'));
+        expect(recorded.map((entry) => entry.name)).toEqual(golden.map((entry) => entry.name));
+        for (const entry of recorded) {
+            if (entry.expect === 'ok') {
+                expect(after(applied(entry.ops)), entry.name).toEqual(after(entry as Documents));
+            } else {
+                expect(() => applied(entry.ops), entry.name).toThrow(entry.expect);
+            }
+        }
+    });
+
+    it('covers each op type applied locally, with a refusal for each', () => {
+        const types = (ok: boolean) =>
+            new Set(golden.filter((e) => (e.expect === 'ok') === ok).flatMap((e) => e.ops.map((op) => op.type)));
+        for (const type of ['set_value', 'set_evidence', 'verdict', 'note']) {
+            expect(types(true), type).toContain(type);
+            expect(types(false), type).toContain(type);
+        }
     });
 
     it('sends only ops the op schema accepts', () => {

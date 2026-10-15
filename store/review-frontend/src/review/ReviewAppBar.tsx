@@ -1,6 +1,5 @@
 import { AppBar, Chip, Toolbar, Typography } from '@mui/material';
 import { Brand } from '../Brand';
-import { targetKey } from '../model/targetKey';
 import { useReviewStore } from '../store/context';
 import { selectSaveLabel, type ReviewState } from '../store/reviewStore';
 
@@ -8,9 +7,7 @@ const STATES = { in_progress: 'in progress', submitted: 'submitted', reference: 
 
 function selectProgress(s: ReviewState): string {
     const slots = s.index.visible.flatMap((e) => e.slots);
-    const provenance = s.bundle.review?.provenance ?? {};
-    const touched = new Set(s.pending.flatMap((op) => ('target' in op ? [targetKey(op.target)] : [])));
-    const reviewed = slots.filter((slot) => slot.key in provenance || touched.has(slot.key)).length;
+    const reviewed = slots.filter((slot) => slot.key in s.provenance).length;
     return `${reviewed} of ${slots.length} reviewed`;
 }
 

@@ -1,4 +1,7 @@
-import type { StoredOp } from '../contract/generated/review-bundle';
+import { createHash } from 'node:crypto';
+import type { OpResult } from '../api/reviewApi';
+import type { Provenance, ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
+import type { Op } from '../contract/generated/review-ops';
 import { validateOpBatch } from '../test/schemas';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
 import { createReviewStore } from './reviewStore';
@@ -245,5 +248,217 @@ describe('adding evidence', () => {
         expect(store.getState().pending[0]).toMatchObject({
             target: { kind: 'slot', entity: 'study', path: 'description' },
         });
+    });
+});
+
+describe('emitting ops', () => {
+    const review = {
+        id: 'r1',
+        user_id: 'u1',
+        state: 'in_progress',
+        last_seq: 0,
+        provenance: {},
+        annotations: {},
+    } as const;
+    const open = (overrides: Partial<ReviewBundle> = {}) =>
+        createReviewStore(makeBundle(record, TEXT, { entities, review: { ...review }, ...overrides }), {
+            now: () => 'now',
+        });
+    const mark = (state: Provenance['state']) => ({ state, user_id: 'u1', at: 'now' });
+    const setName = (entity: string, value: string): Op => ({
+        client_op_id: `name-${entity}`,
+        type: 'set_value',
+        target: { kind: 'slot', entity, path: 'name' },
+        value: { extraction_status: 'extracted', value },
+    });
+    const createGroup: Op = {
+        client_op_id: 'create-0001',
+        type: 'create_entity',
+        parent: 'study',
+        list: 'groups',
+        entity: { name: ev('Siblings') },
+    };
+    const minted = (clientOpId: string) => `rv_${createHash('sha256').update(clientOpId).digest('hex').slice(0, 12)}`;
+    const groupsOf = (store: ReturnType<typeof open>) =>
+        store.getState().record.groups as { name: { value: string } }[];
+
+    it('applies a set_value at once, with its provenance, and keeps it pending', async () => {
+        const store = open();
+        expect(await store.getState().emit(setName('grp_b', 'Siblings'))).toBe(true);
+        const state = store.getState();
+        expect(groupsOf(store)[1].name).toEqual({
+            extraction_status: 'extracted',
+            value: 'Siblings',
+            evidence: ev('Controls', [[60, 68]]).evidence,
+        });
+        expect(state.provenance).toEqual({ 'slot:grp_b:name': mark('edited') });
+        expect(state.index.slot('slot:grp_b:name')?.value?.value).toBe('Siblings');
+        expect(state.pending).toEqual([setName('grp_b', 'Siblings')]);
+    });
+
+    it('shows a slot a set_value creates', async () => {
+        const store = open();
+        expect(store.getState().index.slot('slot:grp_b:species')).toBeUndefined();
+        await store.getState().emit({
+            client_op_id: 'species-1',
+            type: 'set_value',
+            target: { kind: 'slot', entity: 'grp_b', path: 'species' },
+            value: { extraction_status: 'extracted', value: 'human' },
+        });
+        expect(store.getState().index.slot('slot:grp_b:species')?.value).toMatchObject({ value: 'human' });
+    });
+
+    it('applies a verdict and entity evidence to the provenance and annotations, leaving the record', async () => {
+        const store = open();
+        const before = store.getState().record;
+        await store.getState().emit({
+            client_op_id: 'v-1',
+            type: 'verdict',
+            target: { kind: 'entity', entity: 'grp_a' },
+            verdict: 'reject',
+            reason: 'duplicate',
+        });
+        await store.getState().emit({
+            client_op_id: 'e-1',
+            type: 'set_evidence',
+            target: { kind: 'entity', entity: 'grp_b' },
+            evidence: { status: 'present', sets: [{ spans: [{ start_char: 1, end_char: 3 }] }] },
+        });
+        const state = store.getState();
+        expect(state.record).toBe(before);
+        expect(state.provenance).toEqual({ 'entity:grp_a': mark('removed'), 'entity:grp_b': mark('edited') });
+        expect(state.annotations).toEqual({
+            'entity:grp_b': { status: 'present', sets: [{ spans: [{ start_char: 1, end_char: 3, text: 'xx' }] }] },
+        });
+    });
+
+    it('refuses an op the core refuses: nothing pending, and a notice naming its target', async () => {
+        const store = open();
+        expect(await store.getState().emit(setName('grp_x', 'Nobody'))).toBe(false);
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().notices).toEqual([
+            { kind: 'refused', slot: 'grp_x name', message: "no entity has local_id 'grp_x'" },
+        ]);
+    });
+
+    it('holds a create_entity pending unapplied, with a local_id minted from its client_op_id', async () => {
+        const store = open();
+        const before = store.getState().record;
+        expect(store.getState().emit(createGroup)).toBe(true);
+        expect(store.getState().record).toBe(before);
+        expect(store.getState().pending).toEqual([createGroup]);
+        await store.getState().minted('create-0001');
+        expect(store.getState().record).toBe(before);
+        expect(store.getState().pending).toEqual([
+            { ...createGroup, entity: { local_id: minted('create-0001'), name: ev('Siblings') } },
+        ]);
+    });
+
+    it('mints a local_id clear of the entities it knows, as the core does', async () => {
+        const store = open({ entities: [...entities, row(minted('create-0001'), 'Group', 'groups')] });
+        store.getState().emit(createGroup);
+        await store.getState().minted('create-0001');
+        expect(store.getState().pending[0]).toMatchObject({ entity: { local_id: `${minted('create-0001')}_2` } });
+    });
+
+    it('holds the ops emitted after a pending structural op, in the order they were emitted', async () => {
+        const store = open();
+        const before = store.getState().record;
+        const creating = store.getState().emit(createGroup);
+        const naming = store.getState().emit(setName('grp_a', 'Cases'));
+        expect(await creating).toBe(true);
+        expect(await naming).toBe(true);
+        expect(store.getState().pending.map((op) => op.client_op_id)).toEqual(['create-0001', 'name-grp_a']);
+        expect(store.getState().record).toBe(before);
+        expect(store.getState().provenance).toEqual({});
+    });
+
+    it('keeps a pending structural op and the ops held behind it, in order and unapplied', () => {
+        const store = createReviewStore(makeBundle(record, TEXT, { entities, review: { ...review } }), {
+            now: () => 'now',
+        });
+        store.getState().emit(setName('grp_b', 'Siblings'));
+        store.getState().emit(createGroup);
+        store.getState().emit(setName('grp_a', 'Cases'));
+        store.getState().rebase(makeBundle(record, TEXT, { entities, review: { ...review, last_seq: 1 } }));
+        expect(store.getState().pending.map((op) => op.client_op_id)).toEqual([
+            'name-grp_b',
+            'create-0001',
+            'name-grp_a',
+        ]);
+        expect(store.getState().pending[2]).toEqual(setName('grp_a', 'Cases'));
+    });
+
+    it('a rebase leaves the set_value held behind a pending create unapplied, with the create still first', async () => {
+        const store = open();
+        store.getState().emit(createGroup);
+        await store.getState().emit(setName('grp_a', 'Cases'));
+        const fresh = makeBundle(record, TEXT, { entities, review: { ...review, last_seq: 1 } });
+        store.getState().rebase(fresh);
+        expect(store.getState().pending.map((op) => op.client_op_id)).toEqual(['create-0001', 'name-grp_a']);
+        expect(store.getState().record).toEqual(fresh.record);
+        expect(store.getState().provenance).toEqual({});
+        expect(groupsOf(store)[0].name.value).toBe('Patients');
+    });
+
+    it('mints a local_id clear of the pending creates’ ids, as the core would after them', async () => {
+        const store = open();
+        store.getState().emit({
+            ...createGroup,
+            client_op_id: 'create-0002',
+            entity: { local_id: minted('create-0001'), name: ev('Earlier') },
+        });
+        store.getState().emit(createGroup);
+        await store.getState().minted('create-0001');
+        expect(store.getState().pending[1]).toMatchObject({ entity: { local_id: `${minted('create-0001')}_2` } });
+    });
+
+    it('takes the documents, hidden set and entity index from the structural op’s result, then applies the held ops', async () => {
+        const store = open();
+        await store.getState().emit(createGroup);
+        const [created] = store.getState().pending;
+        const id = minted('create-0001');
+        await store.getState().emit(setName(id, 'Cousins'));
+        const result: OpResult = {
+            ops: [{ seq: 1, op: created, before: {}, after: {}, user_id: 'u1', created_at: 'then' }],
+            last_seq: 1,
+            record: { ...record, groups: [...record.groups, { local_id: id, name: ev('Siblings') }] },
+            coordinate_revision: null,
+            provenance: { [`entity:${id}`]: { state: 'added', user_id: 'u1', at: 'then' } },
+            annotations: {},
+            hidden: { analyses: ['a_hidden'], entities: [id] },
+            entities: [...entities, row(id, 'Group', 'groups')],
+        };
+        store.getState().confirm(result, [created]);
+        const state = store.getState();
+        expect(state.bundle.entities).toEqual(result.entities);
+        expect(state.bundle.hidden).toEqual(result.hidden);
+        expect(state.index.entity(id)).toMatchObject({ entityClass: 'Group', hidden: true, name: 'Cousins' });
+        expect(groupsOf(store)[2].name.value).toBe('Cousins');
+        expect(state.provenance).toEqual({ ...result.provenance, [`slot:${id}:name`]: mark('edited') });
+        expect(state.pending.map((op) => op.client_op_id)).toEqual([`name-${id}`]);
+    });
+});
+
+describe('offsets outside the Basic Multilingual Plane', () => {
+    const WIDE = 'Den 𝛼 cohort: 😀 twenty patients.';
+    const utf16 = (words: string): [number, number] => [WIDE.indexOf(words), WIDE.indexOf(words) + words.length];
+    const codePoints = (words: string): [number, number] => {
+        const start = [...WIDE.slice(0, WIDE.indexOf(words))].length;
+        return [start, start + [...words].length];
+    };
+
+    it('reads the bundle’s spans as UTF-16 units, so each span covers the characters it names', () => {
+        const bundle = makeBundle({ description: ev('A study', [codePoints('twenty')]) }, WIDE);
+        const store = createReviewStore(bundle);
+        expect(store.getState().index.slot('slot:study:description')?.spans).toEqual([utf16('twenty')]);
+        expect(WIDE.slice(...utf16('twenty'))).toBe('twenty');
+    });
+
+    it('keeps an added span at the characters the reviewer picked', () => {
+        const store = createReviewStore(makeBundle({ description: ev('A study') }, WIDE));
+        store.getState().focusSlot('slot:study:description');
+        expect(store.getState().addEvidence(utf16('twenty'), 'new')).toBe(true);
+        expect(store.getState().index.slot('slot:study:description')?.spans).toEqual([utf16('twenty')]);
     });
 });

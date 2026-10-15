@@ -1,8 +1,9 @@
 """The synthetic review bundle the front end's tests open, and the op batches replayed on it.
 
 Run ``python -m neurostore.tests.review.golden`` from store/backend to rewrite bundle.json.
-ops.json is a list of {"name", "ops": [op, ...], "expect": "ok" | "<error substring>"}.
-Each entry is one batch, applied on its own to the bundle's state.
+ops.json is a list of {"name", "ops": [op, ...], "expect": "ok" | "<error substring>"}; an
+"ok" entry also holds the "record", "provenance" and "annotations" the front end's applyOp
+left. Each entry is one batch, applied on its own to the bundle's state.
 """
 
 import hashlib
@@ -20,6 +21,7 @@ BUNDLE = ROOT / "review-frontend/src/test/golden/bundle.json"
 OPS = BUNDLE.with_name("ops.json")
 AT = "2026-10-14T12:00:00Z"
 USER = "golden-reviewer"
+DOCUMENTS = ("record", "provenance", "annotations")
 REVIEW_OPS = [
     {"client_op_id": "golden-0001", "type": "verdict",
      "target": {"kind": "entity", "entity": "grp_a"}, "verdict": "accept"},
@@ -75,7 +77,7 @@ def check_entry(bundle, entry):
     )
     name, expect = entry["name"], entry["expect"]
     try:
-        _, stored = apply_batch(
+        after, stored = apply_batch(
             state, {"ops": entry["ops"]}, text=bundle["text"], user_id=review["user_id"], at=AT
         )
     except ReviewError as error:
@@ -83,6 +85,11 @@ def check_entry(bundle, entry):
         assert expect != "ok" and expect in problems, f"{name}: {problems}"
         return
     assert expect == "ok", f"{name}: applied, but expected an error containing {expect!r}"
+    for document in DOCUMENTS:
+        assert document in entry, f"{name}: the entry records no {document}"
+        assert getattr(after, document) == entry[document], (
+            f"{name}: the {document} after the batch is not the one the front end recorded"
+        )
     index = entities.index(state.record)
     checked = set()
     for stored_op in stored:

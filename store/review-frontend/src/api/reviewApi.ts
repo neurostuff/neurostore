@@ -27,6 +27,21 @@ export class ApiError extends Error {
     }
 }
 
+/** The 422 the server answers for the op at `index` of a batch that it cannot apply. */
+export const refusedOp = (index: number, clientOpId: string, message: string) =>
+    new ApiError(422, {
+        title: 'Unprocessable Entity',
+        detail: `op ${index} cannot be applied`,
+        errors: [
+            {
+                field: `ops/${index}`,
+                code: 'REJECTED',
+                message,
+                context: { op_index: index, client_op_id: clientOpId },
+            },
+        ],
+    });
+
 export interface SendOptions {
     keepalive?: boolean;
 }

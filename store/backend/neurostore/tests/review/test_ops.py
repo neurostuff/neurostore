@@ -172,6 +172,17 @@ def test_set_value_on_an_unreported_or_absent_slot_extracts_it_with_no_evidence_
     assert _validates(after.record)
 
 
+def test_set_value_treats_null_evidence_as_absent():
+    review = state()
+    review.record["groups"][0]["age_mean"]["evidence"] = None
+    after, _ = apply(review, op("set_value", target=slot("grp_a", "age_mean"),
+                                value={"extraction_status": "extracted", "value": 35.0}))
+    assert after.record["groups"][0]["age_mean"] == {
+        "extraction_status": "extracted", "value": 35.0, "evidence": {"status": "not_found"}
+    }
+    assert _validates(after.record)
+
+
 def test_a_value_the_extraction_schema_rejects_rejects_the_batch():
     errors = errors_of(
         state(),

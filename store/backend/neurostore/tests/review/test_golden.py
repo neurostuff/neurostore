@@ -44,27 +44,73 @@ def test_the_record_has_the_shapes_the_front_end_tests_need():
     assert [evidence_set.get("source") for evidence_set in sets] == ["model_quote"]
 
 
-def test_a_batch_expected_to_fail_fails_the_check_when_it_applies_cleanly():
-    entry = {
-        "name": "applies",
-        "ops": [{"client_op_id": "golden-op-01", "type": "note",
-                 "target": {"kind": "paper"}, "note": "a note"}],
-        "expect": "outside",
+def _entry(bundle, op, expect="ok", **documents):
+    review = bundle["review"]
+    return {
+        "name": op["client_op_id"],
+        "ops": [op],
+        "expect": expect,
+        "record": bundle["record"],
+        "provenance": review["provenance"],
+        "annotations": review["annotations"],
+        **documents,
     }
+
+
+NOTE = {"client_op_id": "golden-op-note", "type": "note",
+        "target": {"kind": "paper"}, "note": "a note"}
+SPAN_OUTSIDE = {"client_op_id": "golden-op-span", "type": "set_evidence",
+                "target": {"kind": "slot", "entity": "grp_a", "path": "age_mean"},
+                "evidence": {"status": "present", "sets": [
+                    {"spans": [{"start_char": 0, "end_char": 100000}]}]}}
+
+
+def test_a_batch_expected_to_fail_fails_the_check_when_it_applies_cleanly():
+    bundle = golden.build_bundle()
     with pytest.raises(AssertionError):
-        golden.check_entry(golden.build_bundle(), entry)
+        golden.check_entry(bundle, _entry(bundle, NOTE, "outside"))
 
 
 def test_a_batch_failing_with_its_expected_error_passes_the_check():
-    entry = {
-        "name": "outside",
-        "ops": [{"client_op_id": "golden-op-02", "type": "set_evidence",
-                 "target": {"kind": "slot", "entity": "grp_a", "path": "age_mean"},
-                 "evidence": {"status": "present", "sets": [
-                     {"spans": [{"start_char": 0, "end_char": 100000}]}]}}],
-        "expect": "outside the paper",
-    }
-    golden.check_entry(golden.build_bundle(), entry)
+    bundle = golden.build_bundle()
+    golden.check_entry(bundle, _entry(bundle, SPAN_OUTSIDE, "outside the paper"))
+
+
+def test_a_refusal_with_another_message_than_the_cores_fails_the_check():
+    bundle = golden.build_bundle()
+    with pytest.raises(AssertionError, match="outside"):
+        golden.check_entry(bundle, _entry(bundle, SPAN_OUTSIDE, "no such entity"))
+
+
+def test_a_batch_leaving_other_documents_than_the_front_end_recorded_fails_the_check():
+    bundle = golden.build_bundle()
+    op = {"client_op_id": "golden-op-03", "type": "set_value",
+          "target": {"kind": "slot", "entity": "grp_a", "path": "age_mean"},
+          "value": {"extraction_status": "extracted", "value": 35}}
+    with pytest.raises(AssertionError, match="record"):
+        golden.check_entry(bundle, _entry(bundle, op))
+
+
+def test_a_batch_leaving_other_provenance_than_the_front_end_recorded_fails_the_check():
+    bundle = golden.build_bundle()
+    with pytest.raises(AssertionError, match="provenance"):
+        golden.check_entry(bundle, _entry(bundle, NOTE, provenance={}))
+
+
+def test_a_batch_leaving_other_annotations_than_the_front_end_recorded_fails_the_check():
+    bundle = golden.build_bundle()
+    with pytest.raises(AssertionError, match="annotations"):
+        golden.check_entry(bundle, _entry(bundle, NOTE, annotations={}))
+
+
+@pytest.mark.parametrize("document", ["record", "provenance", "annotations"])
+def test_an_applied_batch_must_record_each_document(document):
+    bundle = golden.build_bundle()
+    entry = _entry(bundle, NOTE)
+    golden.check_entry(bundle, entry)
+    del entry[document]
+    with pytest.raises(AssertionError, match=f"records no {document}"):
+        golden.check_entry(bundle, entry)
 
 
 @pytest.mark.skipif(

@@ -1,11 +1,26 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op, SetEvidenceOp } from '../contract/generated/review-ops';
 import { ApiError } from '../api/reviewApi';
+import { httpApi } from '../api/httpApi';
 import { ev, makeBundle } from '../test/bundles';
-import { json } from '../test/fakeFetch';
+import { fakeFetch, json } from '../test/fakeFetch';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
+import { API_BASE } from '../test/spec';
 import { createOpClient, type OpClient } from './opClient';
 import { createReviewStore, selectSaveLabel, type ReviewStore } from './reviewStore';
+import { mintLocalId } from '../model/mint';
 import { slotKey } from '../model/targetKey';
+
+interface RecordedStep {
+    request: { method: string; path: string; body: unknown };
+    response: { status: number; body: unknown };
+}
+const SCENARIOS: { name: string; steps: RecordedStep[] }[] = JSON.parse(
+    readFileSync(path.resolve(__dirname, '../test/golden/op-scenarios.json'), 'utf8')
+);
+const GOLDEN: ReviewBundle = JSON.parse(readFileSync(path.resolve(__dirname, '../test/golden/bundle.json'), 'utf8'));
 
 const TEXT = 'Twenty patients performed a Stroop task during fMRI scanning.';
 const at = (words: string): [number, number] => [TEXT.indexOf(words), TEXT.indexOf(words) + words.length];
@@ -222,10 +237,11 @@ describe('a 200', () => {
         expect(state.bundle.review?.provenance).toHaveProperty([slotKey('study', 'description')]);
         expect(state.bundle.hidden.analyses).toEqual(['an_x']);
         expect(evidenceAt(store, 'description')).toMatchObject({ status: 'present' });
-        expect(evidenceAt(store, 'design')).toEqual(later.type === 'set_evidence' && later.evidence);
-        expect(state.index.slot(slotKey('study', 'design.description'))?.value?.evidence).toEqual(
-            later.type === 'set_evidence' && later.evidence
-        );
+        const laterSpan = { start_char: at('during fMRI')[0], end_char: at('during fMRI')[1], text: 'during fMRI' };
+        const laterEvidence = { status: 'present', sets: [{ spans: [laterSpan] }] };
+        expect(later).toMatchObject({ evidence: { sets: [{ spans: [{ start_char: laterSpan.start_char }] }] } });
+        expect(evidenceAt(store, 'design')).toEqual(laterEvidence);
+        expect(state.index.slot(slotKey('study', 'design.description'))?.value?.evidence).toEqual(laterEvidence);
         await vi.advanceTimersByTimeAsync(1000);
         await client.settled();
         expect(sentIds(server)[1]).toEqual([later.client_op_id]);
@@ -312,6 +328,37 @@ describe('a 409', () => {
         const fresh = await server.backend.getBundle('S1');
         expect(store.getState().record).toEqual(fresh.record);
         expect(store.getState().ops).toEqual(fresh.ops);
+    });
+
+    it('with last_seq keeps a create_entity and the set_value behind it pending, in order, the set_value unapplied', async () => {
+        const { store, client, review } = await open();
+        server.backend.postOps(review.id, {
+            expected_last_seq: 0,
+            ops: [evidenceOp('tab2-0001', 'description', 'Stroop')],
+        });
+        await store.getState().emit({
+            client_op_id: 'create-1',
+            type: 'create_entity',
+            parent: 'study',
+            list: 'groups',
+            entity: { local_id: 'grp_new' },
+        });
+        await store.getState().emit({
+            client_op_id: 'set-1',
+            type: 'set_value',
+            target: { kind: 'slot', entity: 'study', path: 'design.description' },
+            value: { extraction_status: 'extracted', value: 'Changed', value_source: 'reported' },
+        });
+        await client.settled();
+        expect(server.requests.map((r) => `${r.method} ${r.path}`)).toEqual([
+            'POST /api/review/reviews/review-1/ops',
+            'GET /api/review/sources/S1/bundle',
+        ]);
+        expect(store.getState().pending.map((op) => op.client_op_id)).toEqual(['create-1', 'set-1']);
+        const fresh = await server.backend.getBundle('S1');
+        expect(store.getState().record).toEqual(fresh.record);
+        expect(store.getState().provenance).toEqual(fresh.review!.provenance);
+        expect(store.getState().notices).toEqual([]);
     });
 
     it('drops a pending op that no longer applies, names its slot, and resends the rest', async () => {
@@ -665,5 +712,156 @@ describe('a refetch and a 400', () => {
         expect(posts(server)).toHaveLength(1);
         expect(store.getState().pending).toHaveLength(1);
         expect(selectSaveLabel(store.getState())).toBe("[] should be non-empty - 'ops'");
+    });
+});
+
+describe('an op the server applies', () => {
+    it('goes out at once and stays pending, unapplied, until its result brings the record and entity index', async () => {
+        const { store, client } = await open();
+        const reply = deferred<void>();
+        const id = 'grp_new';
+        server.intercept(async (request) => {
+            await reply.promise;
+            const [created] = (request.body as { ops: Op[] }).ops;
+            const bundle = await server.backend.getBundle('S1');
+            const at = '2026-10-15T00:00:00Z';
+            return json({
+                ops: [{ seq: 1, op: created, before: null, after: {}, user_id: 'me', created_at: at }],
+                last_seq: 1,
+                record: { ...bundle.record, groups: [{ local_id: id }] },
+                coordinate_revision: null,
+                provenance: { [`entity:${id}`]: { state: 'added', user_id: 'me', at } },
+                annotations: {},
+                hidden: bundle.hidden,
+                entities: [
+                    ...bundle.entities,
+                    {
+                        local_id: id,
+                        entity_class: 'Group',
+                        schema_class: 'Group',
+                        parent: 'study',
+                        list_path: 'groups',
+                    },
+                ],
+            });
+        });
+        const before = store.getState().record;
+        await store.getState().emit({
+            client_op_id: 'create-1',
+            type: 'create_entity',
+            parent: 'study',
+            list: 'groups',
+            entity: { local_id: id },
+        });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(sentIds(server)).toEqual([['create-1']]);
+        expect(store.getState().pending.map((op) => op.client_op_id)).toEqual(['create-1']);
+        expect(store.getState().record).toBe(before);
+        expect(store.getState().index.entity(id)).toBeUndefined();
+        reply.resolve();
+        await client.settled();
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().record).toMatchObject({ groups: [{ local_id: id }] });
+        expect(store.getState().provenance).toHaveProperty([`entity:${id}`]);
+        expect(store.getState().index.entity(id)).toMatchObject({ entityClass: 'Group' });
+    });
+
+    it('flushes at once when a create_entity is emitted while a local op is still debouncing', async () => {
+        const { store } = await open();
+        edit(store, 'description', 'Twenty patients');
+        expect(posts(server)).toHaveLength(0);
+        await store.getState().emit({
+            client_op_id: 'create-1',
+            type: 'create_entity',
+            parent: 'study',
+            list: 'groups',
+            entity: { local_id: 'grp_new' },
+        });
+        await vi.advanceTimersByTimeAsync(0);
+        expect((posts(server)[0].body as { ops: Op[] }).ops.map((op) => op.type)).toEqual([
+            'set_evidence',
+            'create_entity',
+        ]);
+    });
+});
+
+describe('an op the server applies, as the recorded server answered it', () => {
+    const [created, edited] = SCENARIOS.find(
+        (scenario) => scenario.name === 'create an entity with a client local id, then set a value on it'
+    )!.steps.filter((step) => step.request.method === 'POST');
+    const CREATED_ID = 'rv_1530318ddf94';
+    const SERVER_MINTED_ID = 'rv_20feae62f38c';
+
+    it('takes its local_id from the client_op_id as the core does, and the server mints the same as recorded', async () => {
+        expect(await mintLocalId('scenario-create-entity-a', new Set())).toBe(CREATED_ID);
+        const minting = SCENARIOS.find((scenario) => scenario.name === 'create an entity the server mints an id for')!;
+        const [answered] = minting.steps.filter((step) => step.request.method === 'POST');
+        const [{ after }] = (answered.response.body as { ops: { after: { entity: { local_id: string } } }[] }).ops;
+        expect(after.entity.local_id).toBe(SERVER_MINTED_ID);
+        expect(await mintLocalId('scenario-create-entity-b', new Set())).toBe(SERVER_MINTED_ID);
+    });
+
+    it('sends the create alone, holds the set_value on its new id until the answer, then sends it as recorded', async () => {
+        const release = deferred<void>();
+        let posted = 0;
+        const replay = fakeFetch(async () => {
+            const reply = [created, edited][posted++].response;
+            if (posted === 1) await release.promise;
+            return json(reply.body, reply.status);
+        });
+        const store = createReviewStore({ ...GOLDEN, review: { ...GOLDEN.review!, last_seq: 0 } });
+        const client = createOpClient(
+            store,
+            httpApi(API_BASE, async () => 'token-1', replay.fetch)
+        );
+        client.start();
+        clients.push(client);
+        const createOp: Op = {
+            client_op_id: 'scenario-create-entity-a',
+            type: 'create_entity',
+            parent: 'study',
+            list: 'groups',
+            entity: {
+                name: { extraction_status: 'not_reported', evidence: { status: 'not_applicable' } },
+                species: { extraction_status: 'not_reported', evidence: { status: 'not_applicable' } },
+            },
+        } as Op;
+        const [setOp] = (edited.request.body as { ops: Op[] }).ops;
+
+        await store.getState().emit(createOp);
+        await store.getState().minted('scenario-create-entity-a');
+        await vi.advanceTimersByTimeAsync(0);
+        expect(replay.requests.map((r) => r.body)).toEqual([created.request.body]);
+        const held = store.getState().record;
+        await store.getState().emit(setOp);
+        expect(store.getState().pending.map((op) => op.client_op_id)).toEqual([
+            'scenario-create-entity-a',
+            'scenario-set-created-a',
+        ]);
+        expect(store.getState().record).toBe(held);
+        expect(store.getState().provenance).toEqual(GOLDEN.review!.provenance);
+
+        release.resolve();
+        await vi.advanceTimersByTimeAsync(1000);
+        await client.settled();
+        expect(replay.requests.map((r) => r.body)).toEqual([created.request.body, edited.request.body]);
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().index.entity(CREATED_ID)).toMatchObject({ entityClass: 'Group' });
+    });
+});
+
+describe('offsets outside the Basic Multilingual Plane', () => {
+    const WIDE = 'Den 𝛼 cohort: 😀 twenty patients.';
+
+    it('sends each span in code points, as the contract counts them', async () => {
+        server = fakeServer([makeBundle({ description: ev('A study') }, WIDE, { source: source.source })]);
+        const { store, client } = await open();
+        const start = WIDE.indexOf('twenty');
+        store.getState().focusSlot(slotKey('study', 'description'));
+        expect(store.getState().addEvidence([start, start + 6], 'new')).toBe(true);
+        await vi.advanceTimersByTimeAsync(1000);
+        await client.settled();
+        const [op] = (posts(server)[0].body as { ops: SetEvidenceOp[] }).ops;
+        expect(op.evidence).toMatchObject({ sets: [{ spans: [{ start_char: 16, end_char: 22 }] }] });
     });
 });

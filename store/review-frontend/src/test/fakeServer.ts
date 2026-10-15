@@ -1,7 +1,4 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
-import type { Op } from '../contract/generated/review-ops';
-import { applyOp } from '../model/applyOp';
-import { entityPath, getIn, parsePath, setIn, type Json } from '../model/paths';
 import { httpApi } from '../api/httpApi';
 import { memoryBackend, type OpBatch } from './memoryBackend';
 import { ApiError, type ReviewLifecycle } from '../api/reviewApi';
@@ -10,15 +7,6 @@ import { API_BASE } from './spec';
 
 /** Answers a request ahead of the server: a Response, a thrown error, or undefined to let it through. */
 export type Interceptor = (request: SentRequest) => Response | undefined | Promise<Response | undefined>;
-
-/** applyOp, plus set_value so a second tab can take a slot's value away. */
-function apply(record: Json, op: Op): Json {
-    if (op.type !== 'set_value') return applyOp(record, op);
-    const steps = [...(entityPath(record, op.target.entity) ?? []), ...parsePath(op.target.path)];
-    const wrapper = getIn(record, steps) as Json;
-    const evidence = op.value.extraction_status === 'extracted' ? wrapper.evidence : { status: 'not_applicable' };
-    return setIn(record, steps, { ...op.value, evidence });
-}
 
 const route = (request: SentRequest, pattern: RegExp, method: string) =>
     request.method === method ? request.path.slice(new URL(API_BASE).pathname.length).match(pattern) : null;
@@ -33,7 +21,7 @@ export function fakeServer(bundles: ReviewBundle[], { userId = 'me' }: { userId?
                 throw new ApiError(404, { title: 'Not Found', detail: `Record ${id} not found in review source` });
             return bundle;
         },
-        { apply, userId }
+        { userId }
     );
     const interceptors: Interceptor[] = [];
 

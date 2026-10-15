@@ -121,6 +121,10 @@ const GAPS: Record<string, string> = {
     'stale expected_last_seq behind': 'verdict ops are not applied by the test server',
     'link reaches a hidden entity': 'link ops and the hidden set are not modelled by the test server',
     'coordinate accept': 'coordinate ops and coordinate_revision are not modelled by the test server',
+    'create an entity with a client local id, then set a value on it':
+        'structural ops are applied by the server only (D49), not by the test server',
+    'create an entity the server mints an id for':
+        'structural ops are applied by the server only (D49), not by the test server',
     'refused batch with two failing ops': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 fails after op 0 would apply': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 leaves an invalid document': 'the 422 message is the backend’s, not the test server’s',

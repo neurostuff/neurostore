@@ -52,6 +52,29 @@ describe('fixtureApi reviews, kept in memory so the prototype saves offline', ()
         expect((await api.getBundle('P1')).review).toMatchObject({ id: review.id, last_seq: 0 });
     });
 
+    it('refuses a structural op, which only the server applies, naming its op and leaving the review as it was', async () => {
+        const { api, review } = await started();
+        const create: Op = {
+            client_op_id: 'op-cccccccc',
+            type: 'create_entity',
+            parent: 'study',
+            list: 'groups',
+            entity: { name: ev('Siblings') },
+        };
+        await expect(api.postOps(review.id, 0, [op('op-aaaaaaaa', 0), create])).rejects.toMatchObject({
+            status: 422,
+            body: {
+                errors: [
+                    {
+                        message: 'structural edits need the server',
+                        context: { op_index: 1, client_op_id: 'op-cccccccc' },
+                    },
+                ],
+            },
+        });
+        expect((await api.getBundle('P1')).review).toMatchObject({ last_seq: 0 });
+    });
+
     it('applies each batch and bumps last_seq, whatever the batch says it was made against', async () => {
         const { api, review } = await started();
         expect(await api.postOps(review.id, 0, [op('op-aaaaaaaa', 0)])).toMatchObject({
@@ -62,6 +85,32 @@ describe('fixtureApi reviews, kept in memory so the prototype saves offline', ()
         const bundle = await api.getBundle('P1');
         expect(bundle.ops).toHaveLength(2);
         expect(bundle.record).toMatchObject({ description: { evidence: { status: 'present' } } });
+    });
+
+    it('keeps the provenance each batch makes, in its answer and in the bundle', async () => {
+        const { api, review } = await started();
+        const result = await api.postOps(review.id, 0, [op('op-aaaaaaaa', 0)]);
+        expect(result.provenance).toEqual({
+            'slot:study:description': { state: 'edited', user_id: 'me', at: expect.any(String) },
+        });
+        expect(result.entities).toEqual((await api.getBundle('P1')).entities);
+        expect((await api.getBundle('P1')).review?.provenance).toEqual(result.provenance);
+    });
+
+    it('refuses with a 422 naming the op one it cannot apply, as the server would', async () => {
+        const { api, review } = await started();
+        const create: Op = {
+            client_op_id: 'op-cccccccc',
+            type: 'create_entity',
+            parent: 'study',
+            list: 'groups',
+            entity: {},
+        };
+        await expect(api.postOps(review.id, 0, [op('op-aaaaaaaa', 0), create])).rejects.toMatchObject({
+            status: 422,
+            body: { errors: [{ message: expect.any(String), context: { op_index: 1, client_op_id: 'op-cccccccc' } }] },
+        });
+        expect((await api.getBundle('P1')).review).toMatchObject({ last_seq: 0 });
     });
 
     it('keeps the bundle it serves valid against the bundle schema', async () => {

@@ -1,9 +1,19 @@
 import { createStore } from 'zustand';
 import type { OpResult, ReviewLifecycle } from '../api/reviewApi';
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
-import type { Evidence, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
-import { applyOp } from '../model/applyOp';
-import { entityPath, getIn, parsePath, type Json } from '../model/paths';
+import type { CreateEntityOp, Evidence, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
+import {
+    applyBatch,
+    isLocalOp,
+    type AnnotationMap,
+    type Documents,
+    type Paper,
+    type ProvenanceMap,
+} from '../model/applyOp';
+import type { CoordinateParse } from '../model/coordinates';
+import { spansToUtf16, utf16Paper } from '../model/offsets';
+import { mintLocalId } from '../model/mint';
+import { entityPath, getIn, readPath, type Json } from '../model/paths';
 import {
     buildRecordIndex,
     withSlotFrom,
@@ -46,6 +56,8 @@ export interface Refusal {
 export interface ReviewState {
     bundle: ReviewBundle;
     record: Json;
+    provenance: ProvenanceMap;
+    annotations: AnnotationMap;
     index: RecordIndex;
     ops: StoredOp[];
     pending: Op[];
@@ -68,6 +80,8 @@ export interface ReviewState {
     stepEvidence(delta: 1 | -1): void;
     setSelection(selection: SpanPair | null): void;
     addEvidence(span: SpanPair, mode: EvidenceMode): boolean;
+    /** Resolves once the local_id of a pending create_entity op is minted. */
+    minted(clientOpId: string): Promise<void>;
     setStep(step: StepId): void;
     toggleOutline(open?: boolean): void;
     toggleHelp(open?: boolean): void;
@@ -77,6 +91,8 @@ export interface ReviewState {
     refuse(refusals: Refusal[]): void;
     setLifecycle(state: ReviewLifecycle): void;
     dismissNotices(): void;
+    /** Puts an op in pending: applied at once when it is local, held unapplied when the server applies it. */
+    emit(op: Op): boolean;
 }
 
 export type ReviewStore = ReturnType<typeof createReviewStore>;
@@ -114,8 +130,8 @@ function withSpan(evidence: Evidence | undefined, span: Span, setIndex: number |
 /** The set_evidence op an intent makes on top of `record`; other ops pass through. */
 function carried(record: Json, op: Op, intent: EvidenceIntent | undefined): Op {
     if (!intent || op.type !== 'set_evidence' || op.target.kind !== 'slot') return op;
-    const steps = [...(entityPath(record, op.target.entity) ?? []), ...parsePath(op.target.path)];
-    const wrapper = getIn(record, steps) as { evidence?: Evidence } | undefined;
+    const item = getIn(record, entityPath(record, op.target.entity) ?? []);
+    const wrapper = readPath(item, op.target.path) as { evidence?: Evidence } | undefined;
     return { ...op, evidence: withSpan(wrapper?.evidence, intent.span, intent.set_index) };
 }
 
@@ -147,23 +163,79 @@ const slotLabel = (op: Op) => {
     return op.target.kind === 'slot' ? `${op.target.entity} ${op.target.path}` : targetKey(op.target);
 };
 
-function replay(base: Json, ops: Op[]) {
-    let record = base;
+const documentsOf = (bundle: ReviewBundle): Documents => ({
+    record: bundle.record as Json,
+    provenance: bundle.review?.provenance ?? {},
+    annotations: bundle.review?.annotations ?? {},
+});
+
+/** The bundle with its span offsets in UTF-16 code units, as the DOM counts them. */
+const toDomBundle = (bundle: ReviewBundle): ReviewBundle => {
+    const { text } = bundle;
+    return {
+        ...bundle,
+        record: spansToUtf16(text, bundle.record),
+        coordinate_parse: spansToUtf16(text, bundle.coordinate_parse),
+        review: bundle.review && { ...bundle.review, annotations: spansToUtf16(text, bundle.review.annotations) },
+    };
+};
+
+const paperOf = (bundle: ReviewBundle, at: string): Paper => ({
+    text: utf16Paper(bundle.text),
+    userId: bundle.review?.user_id ?? '',
+    at,
+    coordinateParse: bundle.coordinate_parse as CoordinateParse,
+    entities: bundle.entities,
+});
+
+/** Whether `op` waits for the server: it is one the server applies, or one is pending before it. */
+const waits = (before: Op[], op: Op) => !isLocalOp(op) || before.some((p) => !isLocalOp(p));
+
+/**
+ * The ops kept pending, in order, with the documents after the ones applied: an op that waits is kept
+ * unapplied, and one the core refuses is dropped with a notice of `kind`. `carry` may rewrite an op
+ * before it is applied.
+ */
+function replay(
+    bundle: ReviewBundle,
+    base: Documents,
+    ops: Op[],
+    at: string,
+    kind: Notice['kind'],
+    carry: (record: Json, op: Op) => Op = (_, op) => op
+) {
+    let documents = base;
     const pending: Op[] = [];
     const notices: Notice[] = [];
     for (const op of ops) {
-        try {
-            record = applyOp(record, op);
+        if (waits(pending, op)) {
             pending.push(op);
+            continue;
+        }
+        const sent = carry(documents.record, op);
+        try {
+            documents = applyBatch(documents, [sent], paperOf(bundle, at));
+            pending.push(sent);
         } catch (error) {
-            notices.push({ kind: 'conflict', slot: slotLabel(op), message: (error as Error).message });
+            notices.push({ kind, slot: slotLabel(op), message: (error as Error).message });
         }
     }
-    return { record, pending, notices };
+    return { documents, pending, notices };
 }
 
-export function createReviewStore(bundle: ReviewBundle) {
-    const record = bundle.record as Json;
+function rebuiltIndex(bundle: ReviewBundle, record: Json, previous: RecordIndex, focus: Focus) {
+    return withSlotOrderOf(buildRecordIndex({ ...bundle, record }), previous, focus.entity);
+}
+
+export interface ReviewStoreOptions {
+    now?: () => string;
+}
+
+export function createReviewStore(
+    loaded: ReviewBundle,
+    { now = () => new Date().toISOString() }: ReviewStoreOptions = {}
+) {
+    const bundle = toDomBundle(loaded);
     const initialIndex = buildRecordIndex(bundle);
     const first = initialIndex.visible[0] ?? initialIndex.entities[0];
     const initial: Focus = { entity: first?.id ?? '', key: first ? entityKey(first.id) : '' };
@@ -184,29 +256,29 @@ export function createReviewStore(bundle: ReviewBundle) {
             next: ReviewBundle,
             pending: Op[],
             notices: Notice[] = [],
-            touched: string[] | null = null
+            touched: string[] | null = null,
+            carry?: (record: Json, op: Op) => Op
         ) => {
             const state = get();
-            const replayed = replay(next.record as Json, pending);
+            const replayed = replay(next, documentsOf(next), pending, now(), 'conflict', carry);
+            const { record } = replayed.documents;
             const intents = Object.fromEntries(
                 replayed.pending
                     .filter((op) => op.client_op_id in state.intents)
                     .map((op) => [op.client_op_id, state.intents[op.client_op_id]])
             );
-            const sameHidden = JSON.stringify(next.hidden) === JSON.stringify(state.bundle.hidden);
+            const sameView =
+                JSON.stringify(next.hidden) === JSON.stringify(state.bundle.hidden) &&
+                JSON.stringify(next.entities) === JSON.stringify(state.bundle.entities);
             const index =
-                touched && sameHidden
-                    ? touched.reduce((view, key) => withSlotFrom(view, replayed.record, key), state.index)
-                    : withSlotOrderOf(
-                          buildRecordIndex({ ...next, record: replayed.record }),
-                          state.index,
-                          state.focus.entity
-                      );
+                touched && sameView
+                    ? touched.reduce((view, key) => withSlotFrom(view, record, key), state.index)
+                    : rebuiltIndex(next, record, state.index, state.focus);
             const focusedSpans = spansOf(index, state.focus);
             set({
                 bundle: next,
                 ops: next.ops,
-                record: replayed.record,
+                ...replayed.documents,
                 pending: replayed.pending,
                 intents,
                 index,
@@ -216,9 +288,60 @@ export function createReviewStore(bundle: ReviewBundle) {
             });
         };
 
+        /** Puts `op` in pending, applied at once unless it waits for the server; false when the core refuses it. */
+        const push = (op: Op, extra?: (state: ReviewState) => Partial<ReviewState>): boolean => {
+            const state = get();
+            if (waits(state.pending, op)) {
+                set({ pending: [...state.pending, op] });
+            } else {
+                const replayed = replay(state.bundle, state, [op], now(), 'refused');
+                if (replayed.notices.length > 0) {
+                    set({ notices: [...state.notices, ...replayed.notices] });
+                    return false;
+                }
+                const { documents } = replayed;
+                const key = 'target' in op ? targetKey(op.target) : '';
+                const index =
+                    key.startsWith('slot:') && !state.index.slot(key)
+                        ? rebuiltIndex(state.bundle, documents.record, state.index, state.focus)
+                        : withSlotFrom(state.index, documents.record, key);
+                set({
+                    ...documents,
+                    index,
+                    focusedSpans: spansOf(index, state.focus),
+                    pending: [...state.pending, op],
+                });
+            }
+            if (extra) set(extra(get()));
+            return true;
+        };
+
+        const mints = new Map<string, Promise<void>>();
+
+        /** Fills in the local_id a create_entity op mints from its client_op_id, once the digest resolves. */
+        const mintInto = (op: CreateEntityOp) => {
+            const { bundle: current, pending } = get();
+            const taken = new Set([
+                ...current.entities.map((e) => e.local_id),
+                ...pending.flatMap((p) => (p.type === 'create_entity' ? [(p.entity as Json).local_id as string] : [])),
+            ]);
+            mints.set(
+                op.client_op_id,
+                mintLocalId(op.client_op_id, taken).then((localId) =>
+                    set((s) => ({
+                        pending: s.pending.map((p) =>
+                            p.type === 'create_entity' && p.client_op_id === op.client_op_id
+                                ? { ...p, entity: { local_id: localId, ...p.entity } }
+                                : p
+                        ),
+                    }))
+                )
+            );
+        };
+
         return {
             bundle,
-            record,
+            ...documentsOf(bundle),
             index: initialIndex,
             ops: bundle.ops,
             pending: [],
@@ -283,22 +406,15 @@ export function createReviewStore(bundle: ReviewBundle) {
                     target: { kind: 'slot', entity: slot.entity, path: slot.path },
                     evidence: withSpan(slot.value?.evidence, intent.span, intent.set_index),
                 };
-                const record = applyOp(state.record, op);
-                const index = withSlotFrom(state.index, record, slot.key);
-                const focusedSpans = spansOf(index, state.focus);
-                set({
-                    record,
-                    index,
-                    pending: [...state.pending, op],
-                    intents: { ...state.intents, [op.client_op_id]: intent },
-                    focusedSpans,
+                return push(op, (s) => ({
+                    intents: { ...s.intents, [op.client_op_id]: intent },
                     evidenceCursor: Math.max(
-                        focusedSpans.findIndex(([s, e]) => s === span[0] && e === span[1]),
+                        s.focusedSpans.findIndex(([start, end]) => start === span[0] && end === span[1]),
                         0
                     ),
-                });
-                return true;
+                }));
             },
+            minted: (clientOpId) => mints.get(clientOpId) ?? Promise.resolve(),
             setStep: (step) => set({ step }),
             toggleOutline: (open) => set((s) => ({ outlineOpen: open ?? !s.outlineOpen })),
             toggleHelp: (open) => set((s) => ({ helpOpen: open ?? !s.helpOpen })),
@@ -307,39 +423,40 @@ export function createReviewStore(bundle: ReviewBundle) {
                 const { bundle: current, ops, pending } = get();
                 const sentIds = new Set(sent.map((op) => op.client_op_id));
                 const seqs = new Set(ops.map((s) => s.seq));
+                const dom = spansToUtf16(current.text, { record: result.record, annotations: result.annotations });
                 const review = current.review && {
                     ...current.review,
                     last_seq: result.last_seq,
                     provenance: result.provenance,
-                    annotations: result.annotations,
+                    annotations: dom.annotations,
                 };
                 const rest = pending.filter((op) => !sentIds.has(op.client_op_id));
+                const touched = [...sent, ...rest].flatMap((op) => ('target' in op ? [targetKey(op.target)] : []));
                 withDocuments(
                     {
                         ...current,
-                        record: result.record,
+                        record: dom.record,
                         coordinate_revision: result.coordinate_revision,
                         hidden: result.hidden,
+                        entities: (result.entities as ReviewBundle['entities'] | undefined) ?? current.entities,
                         review,
                         ops: [...ops, ...result.ops.filter((s) => !seqs.has(s.seq))],
                     },
                     rest,
                     [],
-                    [...sent, ...rest].flatMap((op) => ('target' in op ? [targetKey(op.target)] : []))
+                    sent.every(isLocalOp) ? touched : null
                 );
             },
             rebase: (fresh) => {
                 const stored = new Set(fresh.ops.map((s) => s.op.client_op_id));
                 const { pending, intents } = get();
-                let record = fresh.record as Json;
-                const rebased = pending
-                    .filter((op) => !stored.has(op.client_op_id))
-                    .map((op) => {
-                        const next = carried(record, op, intents[op.client_op_id]);
-                        record = replay(record, [next]).record;
-                        return next;
-                    });
-                withDocuments(fresh, rebased);
+                withDocuments(
+                    toDomBundle(fresh),
+                    pending.filter((op) => !stored.has(op.client_op_id)),
+                    [],
+                    null,
+                    (record, op) => carried(record, op, intents[op.client_op_id])
+                );
             },
             refuse: (refusals) => {
                 const refused = new Set(refusals.map((r) => r.op.client_op_id));
@@ -355,6 +472,10 @@ export function createReviewStore(bundle: ReviewBundle) {
                 set({ bundle: { ...current, review: { ...current.review, state } } });
             },
             dismissNotices: () => set({ notices: [] }),
+            emit: (op) => {
+                if (op.type === 'create_entity' && !(op.entity as Json).local_id) mintInto(op);
+                return push(op);
+            },
         };
     });
 }

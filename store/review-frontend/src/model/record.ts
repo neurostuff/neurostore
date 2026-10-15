@@ -90,7 +90,8 @@ function referencesIn(value: unknown): string[] | null {
     return null;
 }
 
-function isReferenceSlot(row: EntityRow, nested: boolean, attribute: string) {
+/** Whether `attribute` of the entity `row` is a reference slot: nested slots by name, top-level ones by class (references.json). */
+export function isReferenceSlot(row: EntityRow, nested: boolean, attribute: string) {
     if (nested) return slotNames.has(attribute);
     return classSlots.has(`${row.schema_class}.${attribute}`) || classSlots.has(`${row.entity_class}.${attribute}`);
 }

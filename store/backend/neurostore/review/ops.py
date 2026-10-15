@@ -205,7 +205,7 @@ class _Applier:
         if wrapper["extraction_status"] == "not_reported":
             wrapper.pop("value", None)
             wrapper["evidence"] = dict(NO_EVIDENCE)
-        elif wrapper.get("evidence", {}).get("status", "not_applicable") == "not_applicable":
+        elif (wrapper.get("evidence") or {}).get("status", "not_applicable") == "not_applicable":
             wrapper["evidence"] = {"status": "not_found"}
         paths.set_path(item, target["path"], wrapper)
         self._mark(target_key(target), "edited")
