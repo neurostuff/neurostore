@@ -128,6 +128,34 @@ def class_of(defs, schema, value):
     return pick(defs, names, value)
 
 
+def minimal(defs, schema, string=""):
+    """The least value ``schema`` allows: each ExtractedValue not_reported, each object its
+    required properties, each list its fewest items, each string ``string``."""
+    while "$ref" in schema:
+        schema = defs[schema["$ref"].rsplit("/", 1)[-1]]
+    if "anyOf" in schema:
+        options = [o for o in schema["anyOf"] if o.get("type") != "null"]
+        return minimal(defs, options[0], string) if options else None
+    props = schema.get("properties", {})
+    if "extraction_status" in props and "evidence" in props:
+        return {"extraction_status": "not_reported", "evidence": {"status": "not_applicable"}}
+    kind = schema.get("type")
+    kind = [k for k in kind if k != "null"][0] if isinstance(kind, list) else kind
+    if "enum" in schema:
+        return schema["enum"][0]
+    if kind == "object" or props:
+        return {name: minimal(defs, props[name], string) for name in schema.get("required", [])}
+    if kind == "array":
+        return [minimal(defs, schema["items"], string) for _ in range(schema.get("minItems", 0))]
+    if kind == "string":
+        return string
+    if kind in ("integer", "number"):
+        return schema.get("minimum", 1)
+    if kind == "boolean":
+        return False
+    return None
+
+
 def extracted_value(wrapper):
     """The value of an ExtractedValue (or a bare value)."""
     return wrapper.get("value") if isinstance(wrapper, dict) else wrapper

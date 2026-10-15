@@ -7,16 +7,18 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const contractDir = path.resolve(here, '../src/contract');
-const SCHEMA = 'extraction-record.schema.json';
-const RUNTIME = 'extraction-record.runtime.schema.json';
+const SCHEMAS = ['extraction-record', 'coordinate-parse'];
 const DIGEST = 'study-schema.sha256';
 const IN_CHECKOUT = ['src', 'study_schema', 'jsonschema'];
 
-function schemaIn(source) {
-    for (const candidate of [path.join(source, ...IN_CHECKOUT, SCHEMA), path.join(source, SCHEMA)]) {
+const fullName = (name) => `${name}.schema.json`;
+const runtimeName = (name) => `${name}.runtime.schema.json`;
+
+function schemaIn(source, file) {
+    for (const candidate of [path.join(source, ...IN_CHECKOUT, file), path.join(source, file)]) {
         if (existsSync(candidate)) return candidate;
     }
-    throw new Error(`no ${SCHEMA} in ${source} or its ${IN_CHECKOUT.join('/')}`);
+    throw new Error(`no ${file} in ${source} or its ${IN_CHECKOUT.join('/')}`);
 }
 
 function commitOf(source, given) {
@@ -47,19 +49,21 @@ export function stripDescriptions(value) {
 
 export const sha256Of = (text) => createHash('sha256').update(text).digest('hex');
 
-/** Writes the runtime copy and the digest of the full copy in `dir`, from the full copy already there. */
+/** Writes each schema's runtime copy, and the digests of the full copies as `sha256sum` lists them, in `dir`. */
 export function deriveCopies(dir) {
-    const full = readFileSync(path.join(dir, SCHEMA), 'utf8');
-    writeFileSync(path.join(dir, RUNTIME), `${JSON.stringify(stripDescriptions(JSON.parse(full)))}\n`);
-    writeFileSync(path.join(dir, DIGEST), `${sha256Of(full)}\n`);
+    const digests = SCHEMAS.map((name) => {
+        const full = readFileSync(path.join(dir, fullName(name)), 'utf8');
+        writeFileSync(path.join(dir, runtimeName(name)), `${JSON.stringify(stripDescriptions(JSON.parse(full)))}\n`);
+        return `${sha256Of(full)}  ${fullName(name)}\n`;
+    });
+    writeFileSync(path.join(dir, DIGEST), digests.join(''));
 }
 
-export function syncSchemas(source, commit) {
-    const schema = schemaIn(source);
+export function syncSchemas(source, commit, into = contractDir) {
     const pinned = commitOf(source, commit);
-    copyFileSync(schema, path.join(contractDir, SCHEMA));
-    deriveCopies(contractDir);
-    writeFileSync(path.join(contractDir, 'study-schema.commit'), `${pinned}\n`);
+    for (const name of SCHEMAS) copyFileSync(schemaIn(source, fullName(name)), path.join(into, fullName(name)));
+    deriveCopies(into);
+    writeFileSync(path.join(into, 'study-schema.commit'), `${pinned}\n`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

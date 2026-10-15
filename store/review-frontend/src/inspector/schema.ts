@@ -35,8 +35,10 @@ const EMPTY = 'enter a value, or set the status to not reported';
 const NUMBER_BOUNDS = ['minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum'] as const;
 const TEXT_BOUNDS = ['minLength', 'maxLength'] as const;
 
-const asSchema = (value: unknown): Schema | undefined =>
+export const asSchema = (value: unknown): Schema | undefined =>
     typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Schema) : undefined;
+
+export const textOf = (value: unknown) => (value === null || value === undefined ? '' : String(value));
 
 const defOf = (root: Schema, name: string): Schema | undefined => asSchema(asSchema(root.$defs)?.[name]);
 
@@ -53,7 +55,7 @@ export function refsOf(schema: Schema): string[] {
 }
 
 /** The branches a schema allows, refs followed and null left out. */
-function branchesOf(root: Schema, schema: Schema): Schema[] {
+export function branchesOf(root: Schema, schema: Schema): Schema[] {
     const target = typeof schema.$ref === 'string' ? defOf(root, schema.$ref.split('/').pop() ?? '') : undefined;
     const resolvedSchema = target ?? schema;
     if (Array.isArray(resolvedSchema.anyOf)) {
@@ -223,7 +225,8 @@ const bounds = <K extends string>(schema: Schema, keys: readonly K[]) =>
         [P in K]?: number;
     };
 
-function scalarOf(root: Schema, schema: Schema): Scalar | undefined {
+/** The scalar editor a schema calls for; undefined when it is not a scalar. */
+export function scalarOf(root: Schema, schema: Schema): Scalar | undefined {
     const typed = branchesOf(root, schema).filter((b) => !Array.isArray(b.enum));
     const options = enumOf(root, schema);
     if (options.length) return { kind: 'enum', options, open: typed.some((b) => typesOf(b).includes('string')) };

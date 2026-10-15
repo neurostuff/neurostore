@@ -3,7 +3,18 @@ import type { Provenance } from '../contract/generated/review-bundle';
 import type { SlotNode } from '../model/record';
 
 export type Shape =
-    'ring' | 'dashed' | 'triangle' | 'diamond' | 'bar' | 'circle' | 'square' | 'check' | 'pencil' | 'cross' | 'plus';
+    | 'ring'
+    | 'dashed'
+    | 'triangle'
+    | 'diamond'
+    | 'bar'
+    | 'circle'
+    | 'square'
+    | 'check'
+    | 'pencil'
+    | 'cross'
+    | 'plus'
+    | 'dot';
 
 export interface SlotStatus {
     label: string;
@@ -23,6 +34,7 @@ export const STATUSES = {
     edited: { label: 'edited', shape: 'pencil', color: (p) => p.primary.main },
     rejected: { label: 'rejected', shape: 'cross', color: (p) => darken(p.error.main, 0.3) },
     added: { label: 'added', shape: 'plus', color: (p) => p.primary.main },
+    unchecked: { label: 'unchecked', shape: 'dot', color: (p) => darken(p.muted.main, 0.4) },
 } satisfies Record<string, SlotStatus>;
 
 export type StatusId = keyof typeof STATUSES;
@@ -34,8 +46,9 @@ const REVIEWED: Record<Provenance['state'], StatusId> = {
     added: 'added',
 };
 
-/** The status a reviewer's decision gives, from the provenance state of its target. */
-export const reviewedStatus = (state: Provenance['state']): StatusId => REVIEWED[state];
+/** A target's review status, from the provenance state of its target; unchecked until a person has looked at it. */
+export const reviewStatus = (state: Provenance['state'] | undefined): StatusId =>
+    state ? REVIEWED[state] : 'unchecked';
 
 export function statusOf(slot: SlotNode): StatusId {
     if (slot.kind === 'reference') return 'reference';

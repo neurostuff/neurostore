@@ -731,8 +731,16 @@ def test_coordinate_ops_write_a_revision_with_a_verdict_per_original_analysis():
         (keys[0], "result"), (keys[1], "localization"),
     ]
     assert _parse_errors(revision) == []
-    assert stored[0]["before"] is None
-    assert stored[0]["after"]["verdict"] == "relabel"
+    assert stored[0]["before"] == {
+        "analyses": [{"index": 1, "analysis": original["analyses"][1]}],
+        "reasons": {keys[1]: None},
+        "entities": [],
+    }
+    assert stored[0]["after"] == {
+        "analyses": [{"index": 1, "analysis": revision["analyses"][1]}],
+        "reasons": {keys[1]: "reviewer relabel"},
+        "entities": [],
+    }
     assert _states(after) == {
         f"coordinate_analysis:{keys[1]}": "edited", f"coordinate_analysis:{keys[2]}": "removed",
     }
@@ -741,7 +749,8 @@ def test_coordinate_ops_write_a_revision_with_a_verdict_per_original_analysis():
 def test_a_coordinate_op_note_becomes_the_verdict_reason():
     review = ReviewState(record=records.build(), coordinate_parse=_parse())
     after, stored = apply(review, coordinate(review, 2, "omit", note="a seed, not a result"))
-    assert stored[0]["after"]["reason"] == "a seed, not a result"
+    key = review.coordinate_parse["analyses"][2]["key"]
+    assert stored[0]["after"]["reasons"] == {key: "a seed, not a result"}
     assert after.coordinate_revision["verdicts"][2]["reason"] == "a seed, not a result"
 
 
@@ -754,21 +763,36 @@ def test_a_later_coordinate_op_updates_the_revision():
         "omit", "accept", "accept",
     ]
     assert [a["key"] for a in after.coordinate_revision["analyses"]] == keys[1:]
-    assert stored[0]["before"]["verdict"] == "omit"
+    assert stored[0]["before"] == {
+        "analyses": [], "reasons": {keys[2]: "reviewer omit"}, "entities": [],
+    }
     assert _states(after)[f"coordinate_analysis:{keys[2]}"] == "verified"
     assert _parse_errors(after.coordinate_revision) == []
 
 
 @pytest.mark.parametrize("action", ["split", "merge", "add", "edit_points"])
-def test_coordinate_actions_beyond_accept_relabel_and_omit_are_not_supported(action):
+def test_coordinate_actions_that_change_analyses_need_a_payload(action):
     review = ReviewState(record=records.build(), coordinate_parse=_parse())
     errors = errors_of(review, coordinate(review, 0, action))
-    assert f"coordinate action {action!r} is not yet supported" in errors[0]
+    assert "'payload' is a required property" in errors[0]
+
+
+def test_a_relabel_without_a_role_is_refused_by_the_ops_schema():
+    review = ReviewState(record=records.build(), coordinate_parse=_parse())
+    errors = errors_of(review, coordinate(review, 0, "relabel"))
+    assert "'role' is a required property" in errors[0]
+
+
+@pytest.mark.parametrize("coordinates", [[1, 2], [1, 2, 3, 4], ["x", 2, 3]])
+def test_an_edit_point_that_is_not_three_numbers_is_refused_by_the_ops_schema(coordinates):
+    review = ReviewState(record=records.build(), coordinate_parse=_parse())
+    point = {"coordinates": coordinates, "space": None, "values": [{"kind": "t", "value": 3.0}]}
+    errors = errors_of(review, coordinate(review, 0, "edit_points", payload={"points": [point]}))
+    assert errors[0].startswith("op 0: payload/points/0/coordinates")
 
 
 def test_coordinate_op_errors():
     review = ReviewState(record=records.build(), coordinate_parse=_parse())
-    assert "relabel needs a role" in errors_of(review, coordinate(review, 0, "relabel"))[0]
     unknown = {"kind": "coordinate_analysis", "analysis_key": "analysis#" + "0" * 16}
     assert "has no analysis" in errors_of(
         review, op("coordinate", target=unknown, action="accept")

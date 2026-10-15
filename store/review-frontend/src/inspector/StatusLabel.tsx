@@ -15,6 +15,7 @@ const SHAPES: Record<Shape, ReactElement> = {
     pencil: <polygon points="0.5,9.5 1.5,6.5 7,1 9,3 3.5,8.5" fill="currentColor" />,
     cross: <path d="M1,1 L9,9 M9,1 L1,9" stroke="currentColor" strokeWidth="2.5" />,
     plus: <path d="M5,0.5 V9.5 M0.5,5 H9.5" stroke="currentColor" strokeWidth="2.5" />,
+    dot: <circle cx="5" cy="5" r="2" fill="currentColor" />,
 };
 
 export function StatusLabel({ id }: { id: StatusId }) {

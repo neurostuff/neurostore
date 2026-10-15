@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from neurostore.review import entities, references
+from neurostore.review import coordinates, entities, references
 from neurostore.review.ops import OPS_SCHEMA
 
 
@@ -40,7 +40,7 @@ def bundle(*, source, text, parsed_paper, state, review, ops, reviewers):
         },
         "ops": ops,
         "entities": entities.index_rows(state.record),
-        "hidden": hidden(state.record, state.coordinate_parse, index),
+        "hidden": hidden(state.record, state.coordinate_parse, state.coordinate_revision, index),
         "reviewers": reviewers,
     }
 
@@ -57,20 +57,21 @@ def source_summary(source):
     }
 
 
-def hidden(record, coordinate_parse, index=None):
+def hidden(record, parse, revision, index=None):
     """The local ids hidden by default: non-coordinate analyses and what only they reach.
 
     An analysis is non-coordinate when its source_table_analysis is missing, not reported, or
-    a key the coordinate parse lacks. An entity is hidden when those analyses reach it (by
-    reference or as a descendant) and no shown entity does; a shown entity's ancestors are
-    shown.
+    a key ``coordinate_parse`` (the reviewer's revision, once there is one) lacks. An entity
+    is hidden when those analyses reach it (by reference or as a descendant) and no shown
+    entity does; a shown entity's ancestors are shown.
     """
     index = entities.index(record) if index is None else index
-    keys = {a.get("key") for a in (coordinate_parse or {}).get("analyses", [])} - {None}
+    keys = {a.get("key") for a in (coordinates.current(parse, revision) or {}).get("analyses", [])}
+    keys -= {None}
     analyses = {
         e.local_id
         for e in index.values()
-        if e.entity_class == "Analysis" and _table_key(e.item) not in keys
+        if e.entity_class == "Analysis" and entities.table_key(e.item) not in keys
     }
     targets = defaultdict(set)
     for reference in references.references_in(index):
@@ -117,12 +118,3 @@ def _shown_from_roots(index, roots, analyses, targets, children):
         if index[local_id].parent is not None:
             stack.append(index[local_id].parent)
     return seen
-
-
-def _table_key(analysis):
-    slot = analysis.get("source_table_analysis")
-    if not isinstance(slot, dict):
-        return slot
-    if slot.get("extraction_status") == "not_reported":
-        return None
-    return slot.get("value")

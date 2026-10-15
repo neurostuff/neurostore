@@ -10,7 +10,14 @@ import {
     type Paper,
     type ProvenanceMap,
 } from '../model/applyOp';
-import type { CoordinateParse } from '../model/coordinates';
+import {
+    currentAnalyses,
+    entitiesNaming,
+    guidedOrder,
+    keepUnchanged,
+    type CoordinateAnalysis,
+    type CoordinateParse,
+} from '../model/coordinates';
 import { spansToUtf16, utf16Paper } from '../model/offsets';
 import { mintLocalId } from '../model/mint';
 import { entityPath, getIn, readPath, type Json } from '../model/paths';
@@ -24,6 +31,8 @@ import {
     type SpanPair,
 } from '../model/record';
 import { entityKey, relationshipKey, slotTarget, targetKey } from '../model/targetKey';
+import { addAnalysisPanel, coordinatePanelFor, focusedAnalysis } from '../coordinates/actions';
+import { clamp, coordinateSpans, firstAnalysis, nextFocus } from '../coordinates/focus';
 import { panelFor } from '../inspector/actions';
 import { declaredAttributes, EXTRACTION_SCHEMA, type DeclaredAttribute } from '../inspector/schema';
 import { STEPS, type StepId } from '../review/steps';
@@ -37,24 +46,46 @@ export interface Focus {
     slot?: string;
 }
 
+/** The focused coordinate analysis, by its key in the revision, its focused point and the points selected in it. */
+export interface CoordinateFocus {
+    analysis: string;
+    point: number | null;
+    selected: number[];
+}
+
 export interface Reveal {
     span: SpanPair;
     seq: number;
 }
 
-export type PanelKind = 'edit' | 'not_reported' | 'reject' | 'note' | 'link' | 'delete' | 'create';
+export type PanelKind =
+    | 'edit'
+    | 'not_reported'
+    | 'reject'
+    | 'note'
+    | 'link'
+    | 'delete'
+    | 'create'
+    | 'relabel'
+    | 'omit'
+    | 'edit_point'
+    | 'add_point'
+    | 'move'
+    | 'merge'
+    | 'add_analysis';
 
-/** An inspector panel: what it acts on, and the slot row it sits in when it is on a slot or link. */
+/** An inspector panel: what it acts on, the slot row it sits in when it is on a slot or link, and the table an analysis is added to. */
 export interface Panel {
     kind: PanelKind;
     target: AnyTarget;
     slot?: string;
+    table?: string;
 }
 
 export type SaveStatus = 'idle' | 'saving' | 'offline' | 'closed' | 'signin' | 'failed';
 
 export interface Notice {
-    kind: 'conflict' | 'refused' | 'dangling';
+    kind: 'conflict' | 'refused' | 'dangling' | 'split';
     slot: string;
     message: string;
 }
@@ -87,6 +118,23 @@ export interface ReviewState {
     outlineOpen: boolean;
     helpOpen: boolean;
     panel: Panel | null;
+    /** The coordinate analysis in focus; null while a record item is. */
+    coordinates: CoordinateFocus | null;
+    /** The analyses selected for a merge. */
+    merging: string[];
+    showNonCoordinate: boolean;
+    /** The record entity an added analysis made, offered for focus. */
+    offer: { entity: string } | null;
+    focusAnalysis(key: string, point?: number | null): void;
+    movePoint(delta: 1 | -1): void;
+    moveAnalysis(delta: 1 | -1): void;
+    /** Selects or unselects a point of the focused analysis, the focused point by default. */
+    togglePoint(index?: number): void;
+    /** Selects or unselects an analysis for a merge, the focused one by default. */
+    toggleMerge(key?: string): void;
+    toggleNonCoordinate(): void;
+    /** Opens the panel that adds an analysis to `table`. */
+    addAnalysisTo(table: string): void;
     focusEntity(id: string): void;
     focusSlot(key: string): void;
     /** Focuses the link from the reference slot `slot` to the entity `target`. */
@@ -111,13 +159,14 @@ export interface ReviewState {
     dismissNotices(): void;
     /** Puts an op in pending: applied at once when it is local, held unapplied when the server applies it. */
     emit(op: Op): boolean;
+    /** Puts server-applied ops in pending as one batch, sent in one request whatever the save timing. */
+    emitBatch(ops: Op[]): boolean;
 }
 
 export type ReviewStore = ReturnType<typeof createReviewStore>;
 
 type EvidenceSet = NonNullable<Evidence['sets']>[number];
 
-const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max);
 const toSpan = ([start_char, end_char]: SpanPair): Span => ({ start_char, end_char });
 const spanKey = (s: Span) => `${s.start_char}:${s.end_char}`;
 
@@ -157,6 +206,11 @@ function spansOf(index: RecordIndex, focus: Focus): SpanPair[] {
     return (index.slot(focus.key) ?? index.entity(focus.entity))?.spans ?? [];
 }
 
+/** The spans the focus highlights: the coordinate focus's while there is one, else the record item's. */
+function spansNow(bundle: ReviewBundle, index: RecordIndex, focus: Focus, coordinates: CoordinateFocus | null) {
+    return coordinates ? coordinateSpans(bundle, coordinates) : spansOf(index, focus);
+}
+
 export const selectFocusedSlot = (s: Pick<ReviewState, 'index' | 'focus'>): SlotNode | undefined =>
     s.index.slot(s.focus.key);
 
@@ -194,6 +248,7 @@ const toDomBundle = (bundle: ReviewBundle): ReviewBundle => {
         ...bundle,
         record: spansToUtf16(text, bundle.record),
         coordinate_parse: spansToUtf16(text, bundle.coordinate_parse),
+        coordinate_revision: spansToUtf16(text, bundle.coordinate_revision),
         review: bundle.review && { ...bundle.review, annotations: spansToUtf16(text, bundle.review.annotations) },
     };
 };
@@ -214,6 +269,7 @@ const paperOf = (bundle: ReviewBundle, at: string): Paper => ({
     userId: bundle.review?.user_id ?? '',
     at,
     coordinateParse: bundle.coordinate_parse as CoordinateParse,
+    coordinateRevision: bundle.coordinate_revision as CoordinateParse | null,
     entities: bundle.entities,
 });
 
@@ -268,6 +324,7 @@ export function createReviewStore(
     const initialIndex = buildRecordIndex(bundle, declaredOf);
     const first = initialIndex.visible[0] ?? initialIndex.entities[0];
     const initial: Focus = { entity: first?.id ?? '', key: first ? entityKey(first.id) : '' };
+    const initialCoordinates = STEPS[0].id === 'coordinates' ? firstAnalysis(currentAnalyses(bundle), false) : null;
 
     return createStore<ReviewState>()((set, get) => {
         let seq = 0;
@@ -285,19 +342,57 @@ export function createReviewStore(
                 evidenceCursor: 0,
                 reveal: revealed(focusedSpans[0], reveal),
                 panel: null,
+                coordinates: null,
+                offer: null,
             });
+        };
+
+        const focusCoordinates = (coordinates: CoordinateFocus | null) => {
+            const { bundle: current, index, focus, reveal } = get();
+            const focusedSpans = spansNow(current, index, focus, coordinates);
+            set({
+                coordinates,
+                focusedSpans,
+                evidenceCursor: 0,
+                reveal: revealed(focusedSpans[0], reveal),
+                panel: null,
+            });
+        };
+
+        const guided = () => guidedOrder(currentAnalyses(get().bundle), get().showNonCoordinate);
+
+        /** After the analyses change from `before`, focuses the one that replaced the focused one, or the one now in its place. */
+        const refocusCoordinates = (before: CoordinateAnalysis[], sent: Op[]) => {
+            const { coordinates, bundle: current, merging, showNonCoordinate } = get();
+            const after = currentAnalyses(current);
+            const keys = new Set(after.map((a) => a.key));
+            set({ merging: merging.filter((k) => keys.has(k)) });
+            if (!coordinates) return;
+            const known = new Set(before.map((a) => a.key));
+            const adding = sent.some((op) => op.type === 'coordinate' && op.action === 'add');
+            const added = adding ? after.find((a) => !known.has(a.key) && !a.derived_from?.length) : undefined;
+            const made = added && entitiesNaming(get().index, added.key)[0];
+            if (made) set({ offer: { entity: made.id } });
+            const next = nextFocus(before, after, coordinates, showNonCoordinate, added);
+            if (!next) return focusCoordinates(null);
+            if (next.analysis === coordinates.analysis) {
+                return set({ coordinates: next, focusedSpans: coordinateSpans(current, next) });
+            }
+            focusCoordinates(next);
         };
 
         /** Focuses `created` once it is in the index, else the nearest ancestor of a focused entity that is gone. */
         const refocus = (rows: ReviewBundle['entities'], created?: string) => {
-            const { index, focus } = get();
+            const { index, focus, coordinates } = get();
             if (created && index.entity(created)) return focusOn({ entity: created, key: entityKey(created) });
             if (index.entity(focus.entity)) return;
             const parents = new Map(rows.map((r) => [r.local_id, r.parent]));
             let id = parents.get(focus.entity);
             while (id && !index.entity(id)) id = parents.get(id);
             const next = (id && index.entity(id)) || index.visible[0] || index.entities[0];
-            if (next) focusOn({ entity: next.id, key: entityKey(next.id) });
+            if (!next) return;
+            if (coordinates) set({ focus: { entity: next.id, key: entityKey(next.id) } });
+            else focusOn({ entity: next.id, key: entityKey(next.id) });
         };
 
         const withDocuments = (
@@ -322,7 +417,7 @@ export function createReviewStore(
                 touched && sameView
                     ? touched.reduce((view, key) => withSlotFrom(view, record, key), state.index)
                     : rebuiltIndex(next, record, state.index, state.focus);
-            const focusedSpans = spansOf(index, state.focus);
+            const focusedSpans = spansNow(next, index, state.focus, state.coordinates);
             set({
                 bundle: next,
                 ops: next.ops,
@@ -356,7 +451,7 @@ export function createReviewStore(
                 set({
                     ...documents,
                     index,
-                    focusedSpans: spansOf(index, state.focus),
+                    focusedSpans: spansNow(state.bundle, index, state.focus, state.coordinates),
                     pending: [...state.pending, op],
                 });
             }
@@ -398,7 +493,7 @@ export function createReviewStore(
             saveMessage: '',
             notices: [],
             focus: initial,
-            focusedSpans: spansOf(initialIndex, initial),
+            focusedSpans: spansNow(bundle, initialIndex, initial, initialCoordinates),
             evidenceCursor: 0,
             reveal: null,
             selection: null,
@@ -406,7 +501,63 @@ export function createReviewStore(
             outlineOpen: false,
             helpOpen: false,
             panel: null,
+            coordinates: initialCoordinates,
+            merging: [],
+            showNonCoordinate: false,
+            offer: null,
 
+            focusAnalysis: (key, point = null) => {
+                const { bundle: current, coordinates } = get();
+                const analysis = currentAnalyses(current).find((a) => a.key === key);
+                if (!analysis) return;
+                const count = analysis.points?.length ?? 0;
+                focusCoordinates({
+                    analysis: key,
+                    point: point !== null && point >= 0 && point < count ? point : null,
+                    selected: coordinates?.analysis === key ? coordinates.selected : [],
+                });
+            },
+            movePoint: (delta) => {
+                const { coordinates, bundle: current } = get();
+                const count = focusedAnalysis({ bundle: current, coordinates })?.points?.length ?? 0;
+                if (!coordinates || count === 0) return;
+                const at = coordinates.point;
+                const next =
+                    at === null ? (delta > 0 ? 0 : null) : at + delta < 0 ? null : Math.min(at + delta, count - 1);
+                if (next !== at) focusCoordinates({ ...coordinates, point: next });
+            },
+            moveAnalysis: (delta) => {
+                const order = guided();
+                const at = order.findIndex((a) => a.key === get().coordinates?.analysis);
+                const next = at === -1 ? 0 : clamp(at + delta, order.length - 1);
+                if (order[next] && next !== at)
+                    focusCoordinates({ analysis: order[next].key, point: null, selected: [] });
+            },
+            togglePoint: (index) => {
+                const { coordinates } = get();
+                const at = index ?? coordinates?.point ?? null;
+                if (!coordinates) return;
+                if (at === null) return get().toggleMerge();
+                const selected = coordinates.selected.includes(at)
+                    ? coordinates.selected.filter((i) => i !== at)
+                    : [...coordinates.selected, at].sort((a, b) => a - b);
+                set({ coordinates: { ...coordinates, selected } });
+            },
+            toggleMerge: (key) => {
+                const { merging, coordinates } = get();
+                const chosen = key ?? coordinates?.analysis;
+                if (chosen === undefined) return;
+                set({ merging: merging.includes(chosen) ? merging.filter((k) => k !== chosen) : [...merging, chosen] });
+            },
+            addAnalysisTo: (table) => set({ panel: addAnalysisPanel(table) }),
+            toggleNonCoordinate: () => {
+                const showNonCoordinate = !get().showNonCoordinate;
+                set({ showNonCoordinate });
+                const { coordinates } = get();
+                if (coordinates && !guided().some((a) => a.key === coordinates.analysis)) {
+                    focusCoordinates(firstAnalysis(currentAnalyses(get().bundle), showNonCoordinate));
+                }
+            },
             focusEntity: (id) => {
                 if (get().index.entity(id)) focusOn({ entity: id, key: entityKey(id) });
             },
@@ -470,20 +621,36 @@ export function createReviewStore(
                 }));
             },
             minted: (clientOpId) => mints.get(clientOpId) ?? Promise.resolve(),
-            setStep: (step) => set({ step }),
+            setStep: (step) => {
+                set({ step });
+                const { coordinates, bundle: current, showNonCoordinate } = get();
+                if (step !== 'coordinates' && coordinates) focusCoordinates(null);
+                if (step === 'coordinates' && !coordinates) {
+                    const first = firstAnalysis(currentAnalyses(current), showNonCoordinate);
+                    if (first) focusCoordinates(first);
+                }
+            },
             toggleOutline: (open) => set((s) => ({ outlineOpen: open ?? !s.outlineOpen })),
             toggleHelp: (open) => set((s) => ({ helpOpen: open ?? !s.helpOpen })),
             openPanel: (kind) => {
-                const panel = panelFor(get(), kind);
+                const state = get();
+                const panel = state.coordinates ? coordinatePanelFor(state, kind) : panelFor(state, kind);
                 if (panel) set({ panel });
             },
             closePanel: () => set({ panel: null }),
             setSave: (save, message = '') => set({ save, saveMessage: message }),
             confirm: (result, sent) => {
                 const { bundle: current, ops, pending } = get();
+                const before = currentAnalyses(current);
                 const sentIds = new Set(sent.map((op) => op.client_op_id));
                 const seqs = new Set(ops.map((s) => s.seq));
-                const dom = spansToUtf16(current.text, { record: result.record, annotations: result.annotations });
+                const dom = spansToUtf16(current.text, {
+                    record: result.record,
+                    annotations: result.annotations,
+                    coordinate_revision: result.coordinate_revision,
+                });
+                const parse = dom.coordinate_revision as CoordinateParse | null;
+                const revision = parse && { ...parse, analyses: keepUnchanged(before, parse.analyses ?? []) };
                 const review = current.review && {
                     ...current.review,
                     last_seq: result.last_seq,
@@ -492,22 +659,25 @@ export function createReviewStore(
                 };
                 const rest = pending.filter((op) => !sentIds.has(op.client_op_id));
                 const touched = [...sent, ...rest].flatMap((op) => ('target' in op ? [targetKey(op.target)] : []));
-                const dangling: Notice[] = result.ops.flatMap(({ op, after }) =>
-                    op.type === 'delete_entity' && Array.isArray(after.references)
-                        ? (after.references as { entity: string; path: string; target_entity: string }[]).map(
-                              (ref) => ({
-                                  kind: 'dangling' as const,
-                                  slot: `${ref.entity} ${ref.path}`,
-                                  message: `it points at ${ref.target_entity}`,
-                              })
-                          )
-                        : []
-                );
+                const linked = (after: Record<string, unknown>, field: string, kind: Notice['kind']): Notice[] =>
+                    Array.isArray(after[field])
+                        ? (after[field] as { entity: string; path: string; target_entity: string }[]).map((ref) => ({
+                              kind,
+                              slot: `${ref.entity} ${ref.path}`,
+                              message: `it points at ${ref.target_entity}`,
+                          }))
+                        : [];
+                const dangling: Notice[] = result.ops.flatMap(({ op, after }) => [
+                    ...(op.type === 'delete_entity' || op.type === 'coordinate'
+                        ? linked(after, 'references', 'dangling')
+                        : []),
+                    ...(op.type === 'coordinate' ? linked(after, 'links', 'split') : []),
+                ]);
                 withDocuments(
                     {
                         ...current,
                         record: dom.record,
-                        coordinate_revision: result.coordinate_revision,
+                        coordinate_revision: revision,
                         hidden: result.hidden,
                         entities: (result.entities as ReviewBundle['entities'] | undefined) ?? current.entities,
                         review,
@@ -523,10 +693,12 @@ export function createReviewStore(
                         : []
                 );
                 refocus(current.entities, created.at(-1));
+                refocusCoordinates(before, sent);
             },
             rebase: (fresh) => {
                 const stored = new Set(fresh.ops.map((s) => s.op.client_op_id));
                 const { pending, intents, bundle: current } = get();
+                const before = currentAnalyses(current);
                 withDocuments(
                     toDomBundle(fresh),
                     pending.filter((op) => !stored.has(op.client_op_id)),
@@ -535,6 +707,7 @@ export function createReviewStore(
                     (record, op) => carried(record, op, intents[op.client_op_id])
                 );
                 refocus(current.entities);
+                refocusCoordinates(before, []);
             },
             refuse: (refusals) => {
                 const refused = new Set(refusals.map((r) => r.op.client_op_id));
@@ -553,6 +726,11 @@ export function createReviewStore(
             emit: (op) => {
                 if (op.type === 'create_entity' && !(op.entity as Json).local_id) mintInto(op);
                 return push(op);
+            },
+            emitBatch: (ops) => {
+                if (ops.length === 0) return false;
+                set({ pending: [...get().pending, ...ops] });
+                return true;
             },
         };
     });

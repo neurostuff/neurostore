@@ -391,7 +391,7 @@ def _op_result(review, ops, coordinate_parse):
         "coordinate_revision": review.coordinate_revision,
         "provenance": review.provenance,
         "annotations": review.annotations,
-        "hidden": hidden(review.record, coordinate_parse),
+        "hidden": hidden(review.record, coordinate_parse, review.coordinate_revision),
         "entities": index_rows(review.record),
     }
 

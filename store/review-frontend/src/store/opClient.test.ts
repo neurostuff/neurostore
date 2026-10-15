@@ -13,6 +13,7 @@ import { createOpClient, type OpClient } from './opClient';
 import { createReviewStore, selectSaveLabel, type ReviewStore } from './reviewStore';
 import { mintLocalId } from '../model/mint';
 import { slotKey } from '../model/targetKey';
+import { CUNEUS, FACES, HOUSES, INSULA, PRECUNEUS, coordinateBundle } from '../test/coordinates';
 
 interface RecordedStep {
     request: { method: string; path: string; body: unknown };
@@ -882,5 +883,27 @@ describe('offsets outside the Basic Multilingual Plane', () => {
         await client.settled();
         const [op] = (posts(server)[0].body as { ops: SetEvidenceOp[] }).ops;
         expect(op.evidence).toMatchObject({ sets: [{ spans: [{ start_char: 16, end_char: 22 }] }] });
+    });
+});
+
+describe('a batch of coordinate ops', () => {
+    it('goes out in one POST, both ops in it, when the debounce is flushed at once', async () => {
+        server = fakeServer([coordinateBundle({ source: source.source })]);
+        const { store, client } = await open();
+        const edit = (id: string, analysis_key: string, points: unknown[]) =>
+            ({
+                client_op_id: id,
+                type: 'coordinate',
+                target: { kind: 'coordinate_analysis', analysis_key },
+                action: 'edit_points',
+                payload: { points },
+            }) as Op;
+        expect(
+            store
+                .getState()
+                .emitBatch([edit('move-0001', FACES.key, [CUNEUS]), edit('move-0002', HOUSES.key, [INSULA, PRECUNEUS])])
+        ).toBe(true);
+        await client.flush();
+        expect(sentIds(server)[0]).toEqual(['move-0001', 'move-0002']);
     });
 });

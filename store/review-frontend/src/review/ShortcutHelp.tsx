@@ -1,11 +1,6 @@
 import { Dialog, DialogContent, DialogTitle, Table, TableBody, TableCell, TableRow } from '@mui/material';
 import { useReviewStore } from '../store/context';
-import { SHORTCUTS } from './shortcuts';
-
-const keyLabel = (key: string) => {
-    if (key.length > 1) return key;
-    return key !== key.toLowerCase() ? `Shift+${key}` : key.toUpperCase();
-};
+import { keyLabel, SHORTCUTS } from './shortcuts';
 
 export function ShortcutHelp() {
     const open = useReviewStore((s) => s.helpOpen);
@@ -17,11 +12,12 @@ export function ShortcutHelp() {
                 <Table size="small">
                     <TableBody>
                         {SHORTCUTS.map((shortcut) => (
-                            <TableRow key={shortcut.label}>
+                            <TableRow key={`${shortcut.scope}:${shortcut.label}`}>
                                 <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                                     {keyLabel(shortcut.keys[0])}
                                 </TableCell>
                                 <TableCell>{shortcut.label}</TableCell>
+                                <TableCell>{shortcut.scope ?? 'anywhere'}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

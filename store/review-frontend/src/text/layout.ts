@@ -109,7 +109,17 @@ function tableBlock(text: string, table: ParsedTable, rowLines: Line[]): TableBl
     return { kind: 'table', start, end, contentEnd: end, tableId: table.table_id, rows };
 }
 
+let laidOut: { text: string; parsedPaper: ParsedPaperLayout; blocks: Block[] } | null = null;
+
+/** The blocks of `text` as laid out under `parsedPaper`; laid out once for each text and paper, then shared. */
 export function layoutText(text: string, parsedPaper: ParsedPaperLayout): Block[] {
+    if (laidOut?.text !== text || laidOut.parsedPaper !== parsedPaper) {
+        laidOut = { text, parsedPaper, blocks: layoutBlocks(text, parsedPaper) };
+    }
+    return laidOut.blocks;
+}
+
+function layoutBlocks(text: string, parsedPaper: ParsedPaperLayout): Block[] {
     const lines = splitLines(text);
     const tables = locateTables(lines, parsedPaper.tables ?? []);
     const title = parsedPaper.bibliography?.title?.trim();

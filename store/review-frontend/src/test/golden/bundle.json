@@ -46,7 +46,7 @@
         "stage": "analyses"
       }
     },
-    "parse_id": "0c9b14c251c250a6b5ff055566dece6664bbcd74774657b17367eea22b748149",
+    "parse_id": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8",
     "text_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
     "analyses": [
       {
@@ -86,6 +86,10 @@
           {
             "row": 2,
             "column_group": 0
+          },
+          {
+            "row": 3,
+            "column_group": 0
           }
         ],
         "name": "controls > patients",
@@ -105,9 +109,23 @@
                 "value": -3.5
               }
             ]
+          },
+          {
+            "coordinates": [
+              6,
+              -8,
+              4
+            ],
+            "space": null,
+            "values": [
+              {
+                "kind": "t",
+                "value": -4.1
+              }
+            ]
           }
         ],
-        "key": "analysis#77745f9962a07fc0"
+        "key": "analysis#e0bab4775f2f5228"
       },
       {
         "origin": "table",

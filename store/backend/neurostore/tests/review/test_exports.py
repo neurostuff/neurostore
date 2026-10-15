@@ -13,10 +13,13 @@ from jsonschema import Draft202012Validator
 from neurostore import cli
 from neurostore.database import db
 from neurostore.exceptions.base import NotFoundError
+from neurostore.ingest.study_schema import _check_verdicts, ingest_upload
 from neurostore.models import BaseStudy, ReviewOp, ReviewSource
 from neurostore.review import ReviewError, exports, imports, service
 from neurostore.review.layout import _dumped, read_layout
+from neurostore.study_schema_tools import expected_key as key_for
 from neurostore.study_schema_tools import schema_errors
+from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review.layouts import (
     LEAD,
     OTHER,
@@ -45,10 +48,10 @@ def write_clean(root, study_id="s1", dumps=dump, extraction=None):
     )
 
 
-def exported_name(relative, paper_id=PAPER_ID):
+def exported_name(relative, paper_id=PAPER_ID, study_id="s1"):
     """The name a paper's file has after export: the paper is renamed to its article id."""
-    return relative.replace("corpus/s1/", f"corpus/{paper_id}/").replace(
-        "records/s1.", f"records/{paper_id}."
+    return relative.replace(f"corpus/{study_id}/", f"corpus/{paper_id}/").replace(
+        f"records/{study_id}.", f"records/{paper_id}."
     )
 
 
@@ -72,13 +75,18 @@ def set_name(entity, name):
     }
 
 
-def omit(key):
+def coordinate(key, action, **fields):
     return {
-        "client_op_id": f"omit-{key}",
+        "client_op_id": f"{action}-{key}",
         "type": "coordinate",
         "target": {"kind": "coordinate_analysis", "analysis_key": key},
-        "action": "omit",
+        "action": action,
+        **fields,
     }
+
+
+def omit(key):
+    return coordinate(key, "omit")
 
 
 def edit(session, source_id, user_id, *ops):
@@ -91,11 +99,11 @@ def edit(session, source_id, user_id, *ops):
     return summary["id"]
 
 
-def assert_as_loaded(root, files, paper_id=PAPER_ID):
+def assert_as_loaded(root, files, paper_id=PAPER_ID, study_id="s1"):
     """Every file of the paper under ``root``: each JSON document equal to the loaded one and
     written as the layout dumps it, the text byte for byte."""
     for relative, data in files.items():
-        exported = (root / exported_name(relative, paper_id)).read_bytes()
+        exported = (root / exported_name(relative, paper_id, study_id)).read_bytes()
         if relative.endswith(".json"):
             assert json.loads(exported) == json.loads(data), relative
             assert exported == _dumped(json.loads(exported)), relative
@@ -290,6 +298,82 @@ def test_a_coordinate_op_writes_a_revision_that_validates(session, reviewers, tm
     assert revision_path.read_bytes() == _dumped(revision)
     assert COORDINATE_KEY not in [analysis["key"] for analysis in revision["analyses"]]
     assert revision == service.get_review(session, review_id)["coordinate_revision"]
+
+
+def test_split_and_added_analyses_export_as_the_derived_revision_beside_untouched_sources(
+    session, reviewers, tmp_path
+):
+    files, source_id = load(session, tmp_path / "in", study_id="s1")
+    untouched, _ = load(session, tmp_path / "in", study_id="s2")
+    analysis = documents("s1")[1]["analyses"][0]
+    points = [*analysis["points"], fx.point((22, -6, -16))]
+    grown = key_for({**analysis, "points": points})
+    review_id = edit(
+        session, source_id, REVIEWER,
+        coordinate(COORDINATE_KEY, "edit_points", payload={"points": points}),
+        coordinate(grown, "split", payload={"parts": [{"indices": [0]}, {"indices": [1]}]}),
+        {"client_op_id": "add-houses", "type": "coordinate",
+         "target": {"kind": "coordinate_parse"}, "action": "add",
+         "payload": {"analysis": {
+             **{k: v for k, v in analysis.items() if k != "key"}, "name": "Houses > Faces",
+         }}},
+    )
+
+    exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
+
+    root = tmp_path / "out" / REVIEWER
+    revision = json.loads(
+        (root / f"run/revisions/{PAPER_ID}.coordinate_parse.json").read_text("utf-8")
+    )
+    assert revision == service.get_review(session, review_id)["coordinate_revision"]
+    assert schema_errors("coordinate-parse", revision) == []
+    _check_verdicts(revision, documents("s1")[1])
+    assert [v["verdict"] for v in revision["verdicts"]] == ["split", "add"]
+    record = json.loads((root / f"run/records/{PAPER_ID}.extraction.json").read_text())
+    assert record == service.get_review(session, review_id)["record"]
+    assert [a["source_table_analysis"]["value"] for a in record["analyses"]] == [
+        a["key"] for a in revision["analyses"]
+    ]
+    parse_path = f"corpus/{PAPER_ID}/parse/coordinate_parse.json"
+    assert json.loads((root / parse_path).read_text()) == json.loads(
+        files["corpus/s1/parse/coordinate_parse.json"]
+    )
+    assert_as_loaded(tmp_path / "out" / exports.SOURCE_DIR, untouched, "art-s2", "s2")
+    assert not (tmp_path / "out" / exports.SOURCE_DIR / "run" / "revisions").exists()
+
+
+def test_the_pair_a_bulk_export_writes_ingests_with_no_orphaned_claims(
+    session, reviewers, tmp_path
+):
+    files, source_id = load(session, tmp_path / "in", study_id="s1")
+    analysis = documents("s1")[1]["analyses"][0]
+    points = [*analysis["points"], fx.point((22, -6, -16))]
+    grown = key_for({**analysis, "points": points})
+    edit(
+        session, source_id, REVIEWER,
+        coordinate(COORDINATE_KEY, "edit_points", payload={"points": points}),
+        coordinate(grown, "split", payload={"parts": [{"indices": [0]}, {"indices": [1]}]}),
+        {"client_op_id": "add-houses", "type": "coordinate",
+         "target": {"kind": "coordinate_parse"}, "action": "add",
+         "payload": {"analysis": {
+             **{k: v for k, v in analysis.items() if k != "key"}, "name": "Houses > Faces",
+         }}},
+    )
+
+    exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
+
+    root = tmp_path / "out" / REVIEWER
+    revision = json.loads(
+        (root / f"run/revisions/{PAPER_ID}.coordinate_parse.json").read_text("utf-8")
+    )
+    record = json.loads((root / f"run/records/{PAPER_ID}.extraction.json").read_text())
+    ingest_upload({
+        "coordinate_parse": documents("s1")[1],
+        "record": json.loads(files["run/records/s1.extraction.json"]),
+    })
+    summary = ingest_upload({"coordinate_parse": revision, "record": record})
+    assert summary["skeleton"]["orphaned_claims"] == []
+    assert summary["record"]["analyses"]["resolved"] == len(revision["analyses"])
 
 
 def test_reimporting_an_edited_export_loads_a_new_source(session, reviewers, tmp_path):

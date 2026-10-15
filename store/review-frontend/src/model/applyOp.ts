@@ -9,7 +9,7 @@ import type {
     SlotTarget,
     VerdictOp,
 } from '../contract/generated/review-ops';
-import { type CoordinateParse, originalAnalysis } from './coordinates';
+import { type CoordinateParse, knownAnalysis } from './coordinates';
 import type { PaperText } from './offsets';
 import {
     entityPath,
@@ -44,6 +44,7 @@ export interface ApplyContext {
     userId: string;
     at: string;
     coordinateParse?: CoordinateParse | null;
+    coordinateRevision?: CoordinateParse | null;
     entities: EntityRow[];
 }
 
@@ -131,7 +132,7 @@ function check(record: Json, target: AnyTarget, context: ApplyContext) {
             relationship(record, target, context, true);
             return;
         case 'coordinate_analysis':
-            originalAnalysis(context.coordinateParse, target.analysis_key);
+            knownAnalysis(context.coordinateParse, context.coordinateRevision, target.analysis_key);
     }
 }
 

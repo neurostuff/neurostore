@@ -11,6 +11,8 @@ from study_schema import keys
 from study_schema.jsonschema import load
 from study_schema.models.paper_parse import ParsedAnalysis
 
+from neurostore import study_schema_tools
+
 SCHEMA_VERSION = load("coordinate-parse")["version"]
 
 
@@ -94,35 +96,8 @@ def verdict(key, kind, replaced_by=None, reason="audited"):
 defs = load("extraction-record")["$defs"]
 
 
-def _resolve(schema, defs):
-    while "$ref" in schema:
-        schema = defs[schema["$ref"].rsplit("/", 1)[-1]]
-    return schema
-
-
 def minimal(schema, defs=defs):
-    schema = _resolve(schema, defs)
-    if "anyOf" in schema:
-        options = [o for o in schema["anyOf"] if o.get("type") != "null"]
-        return minimal(options[0], defs) if options else None
-    props = schema.get("properties", {})
-    if "extraction_status" in props and "evidence" in props:
-        return {"extraction_status": "not_reported", "evidence": {"status": "not_applicable"}}
-    kind = schema.get("type")
-    kind = [k for k in kind if k != "null"][0] if isinstance(kind, list) else kind
-    if "enum" in schema:
-        return schema["enum"][0]
-    if kind == "object" or props:
-        return {name: minimal(props[name], defs) for name in schema.get("required", [])}
-    if kind == "array":
-        return [minimal(schema["items"], defs) for _ in range(schema.get("minItems", 0))]
-    if kind == "string":
-        return "x"
-    if kind in ("integer", "number"):
-        return schema.get("minimum", 1)
-    if kind == "boolean":
-        return False
-    return None
+    return study_schema_tools.minimal(defs, schema, string="x")
 
 
 def extracted(value):

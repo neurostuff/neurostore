@@ -15,7 +15,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { AnyTarget } from '../contract/generated/review-ops';
 import type { SlotNode } from '../model/record';
 import { isTextField } from '../review/shortcuts';
@@ -154,8 +154,33 @@ export function NotePanel({ target, label }: { target: AnyTarget; label: string 
 
 export function LinkPanel({ slot }: { slot: SlotNode }) {
     const store = useReviewStoreApi();
-    const closePanel = useReviewStore((s) => s.closePanel);
     const options = useMemo(() => linkCandidates(store.getState(), slot), [store, slot]);
+    return (
+        <PickPanel
+            options={options}
+            label={`link ${slot.path} to`}
+            noOptionsText="no entity of this class to link"
+            optionKey={(option) => option.id}
+            onPick={(option) => link(store.getState(), slot, option.id)}
+        />
+    );
+}
+
+/** A list of the options to pick from; picking one runs `onPick`, and closes the panel when it returns true. */
+export function PickPanel<T extends { name: string }>({
+    options,
+    label,
+    noOptionsText,
+    optionKey,
+    onPick,
+}: {
+    options: T[];
+    label: string;
+    noOptionsText: string;
+    optionKey(option: T): string;
+    onPick(option: T): boolean;
+}) {
+    const closePanel = useReviewStore((s) => s.closePanel);
     return (
         <Stack
             sx={{ py: 1 }}
@@ -169,15 +194,16 @@ export function LinkPanel({ slot }: { slot: SlotNode }) {
                 autoHighlight
                 options={options}
                 getOptionLabel={(option) => option.name}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                noOptionsText="no entity of this class to link"
+                getOptionKey={optionKey}
+                isOptionEqualToValue={(option, value) => optionKey(option) === optionKey(value)}
+                noOptionsText={noOptionsText}
                 onClose={(_, reason) => {
                     if (reason === 'escape') closePanel();
                 }}
                 onChange={(_, option) => {
-                    if (option && link(store.getState(), slot, option.id)) closePanel();
+                    if (option && onPick(option)) closePanel();
                 }}
-                renderInput={(params) => <TextField {...params} autoFocus label={`link ${slot.path} to`} />}
+                renderInput={(params) => <TextField {...params} autoFocus label={label} />}
             />
         </Stack>
     );
@@ -213,43 +239,79 @@ export function CreateDialog() {
     );
 }
 
-export function DeleteDialog({ entity }: { entity: string }) {
-    const store = useReviewStoreApi();
+export type Dangling = ReturnType<typeof danglingLinks>[number];
+
+export function DanglingList({ links }: { links: Dangling[] }) {
+    return (
+        <>
+            <Typography variant="body2">These links would be left dangling:</Typography>
+            <List dense aria-label="dangling links">
+                {links.map(({ entity: from, slot, target }) => (
+                    <ListItem key={`${slot.key}:${target}`} disableGutters>
+                        {`${from.name} · ${slot.path} → ${target}`}
+                    </ListItem>
+                ))}
+            </List>
+        </>
+    );
+}
+
+/** A dialog that runs `onConfirm` on its button and closes when it returns true. */
+export function ConfirmDialog({
+    title,
+    confirmLabel,
+    color,
+    onConfirm,
+    children,
+}: {
+    title: string;
+    confirmLabel: string;
+    color?: 'error';
+    onConfirm(): boolean;
+    children: ReactNode;
+}) {
     const closePanel = useReviewStore((s) => s.closePanel);
-    const name = useReviewStore((s) => s.index.entity(entity)?.name ?? entity);
-    const dangling = useMemo(() => danglingLinks(store.getState(), entity), [store, entity]);
     const titleId = useId();
-    const confirm = () => {
-        if (deleteEntity(store.getState(), entity)) closePanel();
-    };
     return (
         <Dialog open onClose={closePanel} aria-labelledby={titleId}>
-            <DialogTitle id={titleId}>{`Delete ${name}?`}</DialogTitle>
-            <DialogContent>
-                {dangling.length === 0 ? (
-                    <Typography variant="body2">Nothing links to it.</Typography>
-                ) : (
-                    <>
-                        <Typography variant="body2">These links would be left dangling:</Typography>
-                        <List dense aria-label="dangling links">
-                            {dangling.map(({ entity: from, slot, target }) => (
-                                <ListItem key={`${slot.key}:${target}`} disableGutters>
-                                    {`${from.name} · ${slot.path} → ${target}`}
-                                </ListItem>
-                            ))}
-                        </List>
-                    </>
-                )}
-                <Typography variant="caption" color="text.secondary">
-                    The server applies the delete and reports every link it leaves.
-                </Typography>
-            </DialogContent>
+            <DialogTitle id={titleId}>{title}</DialogTitle>
+            <DialogContent>{children}</DialogContent>
             <DialogActions>
                 <Button onClick={closePanel}>Cancel</Button>
-                <Button color="error" variant="contained" autoFocus onClick={confirm}>
-                    Delete
+                <Button
+                    color={color}
+                    variant="contained"
+                    autoFocus
+                    onClick={() => {
+                        if (onConfirm()) closePanel();
+                    }}
+                >
+                    {confirmLabel}
                 </Button>
             </DialogActions>
         </Dialog>
+    );
+}
+
+export function DeleteDialog({ entity }: { entity: string }) {
+    const store = useReviewStoreApi();
+    const name = useReviewStore((s) => s.index.entity(entity)?.name ?? entity);
+    const dangling = useMemo(() => danglingLinks(store.getState(), entity), [store, entity]);
+    return (
+        <ConfirmDialog
+            title={`Delete ${name}?`}
+            confirmLabel="Delete"
+            color="error"
+            onConfirm={() => deleteEntity(store.getState(), entity)}
+        >
+            {dangling.length === 0 ? (
+                <Typography variant="body2">Nothing links to it.</Typography>
+            ) : (
+                <DanglingList links={dangling} />
+            )}
+            <Typography variant="caption" color="text.secondary">
+                The server applies the delete and reports every link it leaves.
+            </Typography>
+        </ConfirmDialog>
     );
 }

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import coordinateSchema from '../contract/coordinate-parse.schema.json';
 import extractionSchema from '../contract/extraction-record.schema.json';
 import type { ExtractedValue } from '../model/record';
 import { theme } from '../theme';
@@ -245,14 +246,15 @@ describe('SlotEditor', () => {
         expect(screen.getByRole('spinbutton', { name: 'slot' })).toHaveValue(3);
     });
 
-    it('names no extraction schema class in the inspector code', () => {
-        const classes = Object.keys((extractionSchema as Schema).$defs as Schema).filter(
-            (name) => name !== 'ExtractedValue'
-        );
-        const sources = readdirSync(__dirname).filter((file) => /\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file));
+    it.each(['inspector', 'coordinates'])('names no schema class in the %s code', (dir) => {
+        const classes = [extractionSchema, coordinateSchema]
+            .flatMap((schema) => Object.keys((schema as Schema).$defs as Schema))
+            .filter((name) => name !== 'ExtractedValue');
+        const at = path.join(__dirname, '..', dir);
+        const sources = readdirSync(at).filter((file) => /\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file));
         expect(sources.length).toBeGreaterThan(2);
         for (const file of sources) {
-            const source = readFileSync(path.join(__dirname, file), 'utf8');
+            const source = readFileSync(path.join(at, file), 'utf8');
             expect(
                 classes.filter((name) => new RegExp(`\\b${name}\\b`).test(source)),
                 file

@@ -2,6 +2,7 @@ import type { Provenance } from '../contract/generated/review-bundle';
 import type { Evidence } from '../contract/generated/review-ops';
 import { entityRows, ev, notReported, row } from '../test/bundles';
 import { applyBatch, applyOp, isLocalOp, type ApplyContext, type LocalOp } from './applyOp';
+import type { CoordinateAnalysis } from './coordinates';
 import { getIn } from './paths';
 import { codePointPaper, utf16Paper } from './offsets';
 
@@ -33,7 +34,7 @@ const context: ApplyContext = {
     },
     userId: 'u1',
     at: 'now',
-    coordinateParse: { analyses: [{ key: 'analysis#1' }] },
+    coordinateParse: { analyses: [{ key: 'analysis#1' } as CoordinateAnalysis] },
 };
 
 const mark = (state: Provenance['state']) => ({ state, user_id: 'u1', at: 'now' });
@@ -257,6 +258,14 @@ describe('applyOp verdict', () => {
 });
 
 describe('applyOp note', () => {
+    it('takes a note on an analysis the coordinate revision holds and the original parse does not', () => {
+        const revised = { ...context, coordinateRevision: { analyses: [{ key: 'analysis#2' } as CoordinateAnalysis] } };
+        const target = { kind: 'coordinate_analysis', analysis_key: 'analysis#2' } as const;
+        const op: LocalOp = { client_op_id: 'note-0001', type: 'note', target, note: 'split right' };
+        expect(applyOp(record, op, revised).record).toBe(record);
+        expect(() => applyOp(record, op, context)).toThrow("the coordinate parse has no analysis 'analysis#2'");
+    });
+
     it('changes no document', () => {
         const next = apply(op({ type: 'note', target: slot('grp_a', 'name'), note: 'check the table' }));
         expect(next).toEqual({ record, provenance: context.provenance, annotations: context.annotations });

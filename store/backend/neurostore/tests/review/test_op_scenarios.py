@@ -11,7 +11,11 @@ import json
 import os
 
 import pytest
+from study_schema import keys
+from study_schema.models.paper_parse import ParsedPoint
 
+from neurostore.ingest.study_schema import _check_verdicts
+from neurostore.study_schema_tools import schema_errors
 from neurostore.tests.review import golden, records
 from neurostore.tests.review.layouts import OTHER, REVIEWER
 from neurostore.tests.review.test_api import add_source
@@ -71,6 +75,55 @@ COORDINATE_ACCEPT = {
                "analysis_key": records.coordinate_parse()["analyses"][0]["key"]},
     "action": "accept",
 }
+PARSE = records.coordinate_parse()
+K0, K1, _ = [analysis["key"] for analysis in PARSE["analyses"]]
+P0 = PARSE["analyses"][0]["points"][0]
+P1A, P1B = PARSE["analyses"][1]["points"]
+
+
+def coordinate(client_op_id, key, action, **fields):
+    target = (
+        {"kind": "coordinate_parse"}
+        if key is None
+        else {"kind": "coordinate_analysis", "analysis_key": key}
+    )
+    return {"client_op_id": client_op_id, "type": "coordinate", "target": target,
+            "action": action, **fields}
+
+
+def key_of(name, points):
+    return keys.analysis_key(name, "MNI", [ParsedPoint.model_validate(p) for p in points])
+
+
+SPLIT = coordinate("scenario-split-a", K1, "split", payload={"parts": [
+    {"indices": [0]}, {"indices": [1], "name": "controls > patients, right"},
+]})
+EDIT_PART = coordinate("scenario-edit-part-a", key_of("controls > patients (part 1)", [P1A]),
+                       "edit_points", payload={"points": [{**P1A, "cluster_size": 48}]})
+MOVE = [
+    coordinate("scenario-move-from", K1, "edit_points", payload={"points": [P1A]}),
+    coordinate("scenario-move-to", K0, "edit_points", payload={"points": [P0, P1B]}),
+]
+MERGE = coordinate("scenario-merge-a", K0, "merge", payload={"with": [K1]})
+OMIT_MERGED = coordinate("scenario-omit-merged", key_of("patients > controls", [P0, P1A, P1B]),
+                         "omit", note="not a contrast of this study")
+ADDED = {
+    "origin": "table",
+    "table_id": "t1",
+    "cells": [{"row": 4, "column_group": 0}],
+    "name": "patients > controls, right",
+    "coordinate_space": "MNI",
+    "role": "result",
+    "points": [{"coordinates": [40, 20, 30], "values": [{"kind": "t", "value": 3.9}]}],
+}
+ADD = coordinate("scenario-add-a", None, "add", payload={"analysis": ADDED})
+RELABEL_ADDED = coordinate(
+    "scenario-relabel-added", key_of("patients > controls, right", ADDED["points"]),
+    "relabel", role="localization",
+)
+SPLIT_NOT_A_PARTITION = coordinate("scenario-refused-split", K1, "split", payload={"parts": [
+    {"indices": [0]}, {"indices": [0]},
+]})
 
 
 def minted(client_op_id):
@@ -175,9 +228,48 @@ SCENARIOS = {
         (REVIEWER, "get", BUNDLE, None, 200),
         (REVIEWER, "post", OPS, batch(0, LINK_REGION), 200),
     ],
+    "the bundle of the linked-analyses record": [
+        START,
+        (REVIEWER, "get", BUNDLE, None, 200),
+    ],
     "coordinate accept": [
         START,
         (REVIEWER, "post", OPS, batch(0, COORDINATE_ACCEPT), 200),
+    ],
+    "coordinate split": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, SPLIT), 200),
+    ],
+    "coordinate split, then a point edit of one part": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, SPLIT), 200),
+        (REVIEWER, "post", OPS, batch(1, EDIT_PART), 200),
+    ],
+    "coordinate move, one batch of two point edits": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, *MOVE), 200),
+    ],
+    "coordinate merge": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, MERGE), 200),
+    ],
+    "coordinate merge, then an omit of the merged analysis": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, MERGE), 200),
+        (REVIEWER, "post", OPS, batch(1, OMIT_MERGED), 200),
+    ],
+    "coordinate add": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, ADD), 200),
+    ],
+    "coordinate add, then a relabel of the added analysis": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, ADD), 200),
+        (REVIEWER, "post", OPS, batch(1, RELABEL_ADDED), 200),
+    ],
+    "coordinate split refused, its parts not a partition": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, SPLIT_NOT_A_PARTITION), 422),
     ],
     "create an entity with a client local id, then set a value on it": [
         START,
@@ -257,6 +349,13 @@ SCENARIOS = {
 }
 
 
+#: Scenarios played on records.linked_analyses(), where an_1 and an_2 read the parse's first
+#: two analyses; the others play on records.hidden_reach().
+COORDINATE_RECORD = {name for name in SCENARIOS if name.startswith("coordinate")} - {
+    "coordinate accept"
+} | {"the bundle of the linked-analyses record"}
+
+
 def _mask(value, ids):
     if isinstance(value, dict):
         return {key: _mask_field(key, item, ids) for key, item in value.items()}
@@ -276,8 +375,9 @@ def _mask_field(key, value, ids):
     return _mask(value, ids)
 
 
-async def _play(clients, session, steps):
-    source = add_source(session, record=records.hidden_reach())
+async def _play(clients, session, steps, name=None):
+    record = records.linked_analyses() if name in COORDINATE_RECORD else records.hidden_reach()
+    source = add_source(session, record=record)
     other = add_source(session, label="Another paper")
     ids = {
         source.id: "<source_id>",
@@ -307,7 +407,7 @@ def _step(method, path, body, response, ids):
 
 async def test_the_op_scenarios_match_the_golden_file(clients, session):
     document = [
-        {"name": name, "steps": await _play(clients, session, steps)}
+        {"name": name, "steps": await _play(clients, session, steps, name)}
         for name, steps in SCENARIOS.items()
     ]
     rendered = json.dumps(document, indent=2, ensure_ascii=False) + "\n"
@@ -326,9 +426,69 @@ async def test_a_link_that_reaches_a_hidden_entity_changes_the_hidden_set(client
     assert "reg_1" not in applied_hidden["entities"]
 
 
-async def test_a_coordinate_op_returns_a_revision(clients, session):
-    steps = await _play(clients, session, SCENARIOS["coordinate accept"])
-    assert steps[-1]["response"]["body"]["coordinate_revision"] is not None
+COORDINATE_SCENARIOS = [
+    name for name, steps in SCENARIOS.items()
+    if name.startswith("coordinate") and steps[-1][-1] == 200
+]
+
+
+@pytest.mark.parametrize("name", COORDINATE_SCENARIOS)
+async def test_a_coordinate_op_returns_a_revision(clients, session, name):
+    steps = await _play(clients, session, SCENARIOS[name], name)
+    revision = steps[-1]["response"]["body"]["coordinate_revision"]
+    assert revision is not None
+    assert schema_errors("coordinate-parse", revision) == []
+    _check_verdicts(revision, PARSE)
+
+
+async def test_each_step_of_a_coordinate_chain_targets_a_key_the_step_before_returned(
+    clients, session
+):
+    for name in COORDINATE_SCENARIOS:
+        steps = await _play(clients, session, SCENARIOS[name], name)
+        for before, after in zip(steps[1:], steps[2:]):
+            revision = before["response"]["body"]["coordinate_revision"]
+            held = [a["key"] for a in revision["analyses"]]
+            targets = [op["target"]["analysis_key"] for op in after["request"]["body"]["ops"]]
+            assert set(targets) <= set(held), name
+
+
+def _result(steps, n=-1):
+    return steps[n]["response"]["body"]
+
+
+def _analyses(result):
+    return {r["local_id"] for r in result["entities"] if r["entity_class"] == "Analysis"}
+
+
+async def test_the_record_follows_each_coordinate_scenario(clients, session):
+    played = {
+        name: await _play(clients, session, SCENARIOS[name], name)
+        for name in COORDINATE_RECORD if SCENARIOS[name][-1][-1] == 200
+    }
+    split = _result(played["coordinate split"])
+    assert len(_analyses(split)) == 3
+    assert split["ops"][0]["after"]["links"] == [
+        {"entity": "an_1", "path": "mirror_of", "target_entity": "an_2"},
+    ]
+    merge = _result(played["coordinate merge"])
+    assert _analyses(merge) == {"an_1"}
+    assert merge["ops"][0]["after"]["references"] == [
+        {"entity": "an_1", "path": "mirror_of", "target_entity": "an_2"},
+    ]
+    assert _result(played["coordinate merge, then an omit of the merged analysis"])["hidden"][
+        "analyses"
+    ] == ["an_1"]
+    added = _result(played["coordinate add"])
+    [new] = _analyses(added) - {"an_1", "an_2"}
+    assert new == minted("scenario-add-a")
+    move = _result(played["coordinate move, one batch of two point edits"])
+    assert {
+        a["local_id"]: a["source_table_analysis"]["value"] for a in move["record"]["analyses"]
+    } == {
+        "an_1": key_of("patients > controls", [P0, P1B]),
+        "an_2": key_of("controls > patients", [P1A]),
+    }
 
 
 async def test_a_created_entity_without_a_local_id_gets_the_minted_id(clients, session):

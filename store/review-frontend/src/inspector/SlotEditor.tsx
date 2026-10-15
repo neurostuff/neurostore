@@ -10,6 +10,7 @@ import {
     wrapperSpec,
     type EditorSpec,
     type Parsed,
+    textOf,
     type Scalar,
     type Schema,
 } from './schema';
@@ -26,8 +27,6 @@ export interface SlotEditorProps {
     onSave(value: SetValue): void;
     onCancel(): void;
 }
-
-const textOf = (value: unknown) => (value === null || value === undefined ? '' : String(value));
 
 function NativeSelect({
     id,
@@ -107,12 +106,14 @@ function SwitchField({
     );
 }
 
-function ScalarField({
+/** An editor for one scalar of `spec`; an optional closed choice can be left empty. */
+export function ScalarField({
     spec,
     value,
     onChange,
+    optional = false,
     ...field
-}: FieldProps & { spec: Scalar; value: string; onChange(value: string): void }) {
+}: FieldProps & { spec: Scalar; value: string; onChange(value: string): void; optional?: boolean }) {
     const { id, label, error, autoFocus } = field;
     if (spec.kind === 'boolean') return <SwitchField {...field} value={value} onChange={onChange} />;
     if (spec.kind === 'enum' && !spec.open) {
@@ -122,7 +123,7 @@ function ScalarField({
                 id={id}
                 label={label}
                 value={value}
-                options={value === '' ? ['', ...options] : options}
+                options={value === '' || optional ? ['', ...options] : options}
                 error={error}
                 fullWidth
                 autoFocus={autoFocus}

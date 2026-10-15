@@ -40,6 +40,7 @@ from neurostore.models import (
 )
 from neurostore.database import db
 from neurostore.models.data import is_result_analysis, study_entity_hash
+from neurostore.review.ops import ReviewState, apply_batch
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests import study_schema_fixtures as fx
 
@@ -627,6 +628,63 @@ def test_revision_versions_analyses_and_carries_claims(session):
     )
     assert again["carried"] == {"claims": 0}
     assert again["record"]["analyses"]["resolved"] == 3
+
+
+def _coordinate(action, payload, key=None):
+    target = (
+        {"kind": "coordinate_parse"}
+        if key is None
+        else {"kind": "coordinate_analysis", "analysis_key": key}
+    )
+    return {"client_op_id": f"ingest-{action}", "type": "coordinate", "target": target,
+            "action": action, "payload": payload}
+
+
+def test_a_revision_the_review_core_writes_is_ingested_with_its_claims_carried(session):
+    record = _record(GAIN, LOSS, RISK)
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL, "record": record})[
+        "base_study_id"
+    ]
+    added = {k: v for k, v in RISK.items() if k != "key"}
+    added.update(name="Risk > Loss", cells=fx.cells(8), points=[fx.point((7, 8, 9))])
+    reviewed, _ = apply_batch(
+        ReviewState(record=record, coordinate_parse=ORIGINAL),
+        {"ops": [
+            _coordinate("split", {"parts": [{"indices": [0, 1]}, {"indices": [2, 3]}]},
+                        GAIN["key"]),
+            _coordinate("merge", {"with": [RISK["key"]]}, LOSS["key"]),
+            _coordinate("add", {"analysis": added}),
+            _coordinate("edit_points", {"points": [fx.point((9, 9, 9))]}, SEED["key"]),
+        ]},
+        text="",
+        user_id="reviewer",
+        at="2026-10-15T12:00:00Z",
+    )
+    revision = reviewed.coordinate_revision
+
+    summary = ingest_upload({"coordinate_parse": revision})
+
+    assert summary["kind"] == "revision"
+    assert summary["skeleton"]["orphaned_claims"] == []
+    assert {a.source_id for a in _current(base_study_id).analyses} == {
+        a["key"] for a in revision["analyses"]
+    }
+    verdicts = {v["key"]: v for v in revision["verdicts"]}
+    assert [v["verdict"] for v in revision["verdicts"]] == [
+        "split", "merge", "merge", "split", "add",
+    ]
+    gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
+    assert gain_claims
+    for key in verdicts[GAIN["key"]]["replaced_by"]:
+        assert {c.carried_from for c in _claims(base_study_id, key)} == gain_claims
+    [merged] = verdicts[LOSS["key"]]["replaced_by"]
+    assert {c.carried_from for c in _claims(base_study_id, merged)} == {
+        c.id for c in _claims(base_study_id, LOSS["key"])
+    } | {c.id for c in _claims(base_study_id, RISK["key"])} - _shared_duplicates(base_study_id)
+
+    # The record the review core re-pointed reads the revision's analyses.
+    again = ingest_upload({"coordinate_parse": revision, "record": reviewed.record})
+    assert again["record"]["analyses"]["resolved"] == len(reviewed.record["analyses"]) == 4
 
 
 def test_a_revision_that_omits_an_analysis_reports_its_claims_as_not_carried(session):

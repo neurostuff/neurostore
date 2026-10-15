@@ -1,12 +1,12 @@
 import { Box, GlobalStyles, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { useReviewStore, useReviewStoreApi } from '../store/context';
 import { selectFocusedSlot, type ReviewState } from '../store/reviewStore';
 import { REVIEW_HIGHLIGHTS, type HighlightNames } from './highlights';
 import { layoutText, type ParsedPaperLayout } from './layout';
 import { SelectionBar } from './SelectionBar';
-import { TextBody } from './TextBody';
+import { TextBody, type Aside } from './TextBody';
 import { useHighlights } from './useHighlights';
 import { TextIndexContext, useTextIndex } from './useTextIndex';
 
@@ -56,11 +56,11 @@ const textStyles = {
     '& .rv-table td': { border: 1, borderColor: 'divider', px: 1, py: 0.5, verticalAlign: 'top' },
 };
 
-export function TextPane({ highlights = REVIEW_HIGHLIGHTS }: { highlights?: HighlightNames }) {
+export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights?: HighlightNames; aside?: Aside }) {
     const store = useReviewStoreApi();
     const text = useReviewStore((s) => s.bundle.text);
     const parsedPaper = useReviewStore((s) => s.bundle.parsed_paper as ParsedPaperLayout);
-    const blocks = useMemo(() => layoutText(text, parsedPaper), [text, parsedPaper]);
+    const blocks = layoutText(text, parsedPaper);
     const scrollerRef = useRef<HTMLDivElement>(null);
     const rootRef = useRef<HTMLDivElement>(null);
     const index = useTextIndex(rootRef);
@@ -87,7 +87,7 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS }: { highlights?: High
                     sx={{ flex: 1, overflow: 'auto', position: 'relative', px: 3 }}
                 >
                     <Box ref={rootRef} data-text-root sx={textStyles}>
-                        <TextBody text={text} blocks={blocks} />
+                        <TextBody text={text} blocks={blocks} aside={aside} />
                     </Box>
                     <SelectionBar scrollerRef={scrollerRef} />
                 </Box>

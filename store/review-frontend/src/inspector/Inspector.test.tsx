@@ -107,11 +107,9 @@ describe('Inspector', () => {
     it('says where a slot has no schema, instead of guessing an editor', () => {
         const view = renderWithStore(
             <Inspector />,
-            makeBundle(
-                { groups: [{ local_id: 'grp_a', name: ev('Patients'), mystery: ev('x') }] },
-                TEXT,
-                { entities: entityRows(row('grp_a', 'Group', 'groups')) }
-            )
+            makeBundle({ groups: [{ local_id: 'grp_a', name: ev('Patients'), mystery: ev('x') }] }, TEXT, {
+                entities: entityRows(row('grp_a', 'Group', 'groups')),
+            })
         );
         act(() => {
             view.store.getState().focusSlot('slot:grp_a:mystery');

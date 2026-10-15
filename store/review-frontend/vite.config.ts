@@ -34,7 +34,7 @@ export default defineConfig({
                 extends: true,
                 test: { name: 'unit', exclude: [...configDefaults.exclude, ...TIMED], sequence: { groupOrder: 0 } },
             },
-            { extends: true, test: { name: 'timed', include: TIMED, sequence: { groupOrder: 1 } } },
+            { extends: true, test: { name: 'timed', include: TIMED, sequence: { groupOrder: 1 }, fileParallelism: false } },
         ],
     },
 });

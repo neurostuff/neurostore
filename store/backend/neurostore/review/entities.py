@@ -69,3 +69,13 @@ def index_rows(record):
         }
         for e in index(record).values()
     ]
+
+
+def table_key(analysis):
+    """The coordinate-parse key an Analysis item's source_table_analysis names, or None."""
+    slot = analysis.get("source_table_analysis")
+    if not isinstance(slot, dict):
+        return slot
+    if slot.get("extraction_status") == "not_reported":
+        return None
+    return slot.get("value")

@@ -8,6 +8,7 @@ import { validateBundle } from '../schemas';
 import { json, fakeFetch } from '../fakeFetch';
 import { API_BASE, responseProblems } from '../spec';
 import { fakeServer } from '../fakeServer';
+import { LINKED_SCENARIO, linkedBundle } from '../linked';
 
 interface Step {
     request: { method: string; path: string; body: unknown };
@@ -143,7 +144,8 @@ const GAPS: Record<string, string> = {
 
 /** Replays a scenario's requests against a fresh test server, keeping each answer. */
 async function answersOf(scenario: Scenario) {
-    const server = fakeServer([OTHER, GOLDEN], { userId: 'user1-id' });
+    const seeded = scenario.name === LINKED_SCENARIO ? linkedBundle() : GOLDEN;
+    const server = fakeServer([OTHER, seeded], { userId: 'user1-id' });
     const answers: { url: string; method: string; status: number; body: unknown }[] = [];
     for (const step of scenario.steps) {
         const url = `${API_BASE}${toReal(step.request.path).replace(/^\/api/, '')}`;
@@ -163,15 +165,31 @@ async function answersOf(scenario: Scenario) {
     return answers;
 }
 
+const SERVER_APPLIED = 'coordinate ops are applied by the server only (D57), not by the test server';
+
+/** Whether a scenario posts a coordinate op, which only the server applies. */
+const postsCoordinateOp = (scenario: Scenario) =>
+    scenario.steps.some(
+        (step) =>
+            step.request.method === 'POST' &&
+            ((step.request.body as { ops?: Op[] } | null)?.ops ?? []).some((op) => op.type === 'coordinate')
+    );
+
+/** Why the test server does not reproduce a scenario, or undefined when it does. */
+const gapOf = (scenario: Scenario) => GAPS[scenario.name] ?? (postsCoordinateOp(scenario) ? SERVER_APPLIED : undefined);
+
 describe('the test server against the recorded responses', () => {
-    const reproduced = SCENARIOS.filter((scenario) => !(scenario.name in GAPS));
+    const reproduced = SCENARIOS.filter((scenario) => gapOf(scenario) === undefined);
     it.each(reproduced.map((scenario) => [scenario.name, scenario] as const))('%s', async (_name, scenario) => {
         const answers = await answersOf(scenario);
         expect(answers.map(({ status, body }) => ({ status, body: normalise(body) }))).toEqual(
             scenario.steps.map((step) => ({ status: step.response.status, body: normalise(step.response.body) }))
         );
     });
-    for (const [name, why] of Object.entries(GAPS)) it.todo(`${name}: ${why}`);
+    for (const scenario of SCENARIOS) {
+        const why = gapOf(scenario);
+        if (why !== undefined) it.todo(`${scenario.name}: ${why}`);
+    }
 });
 
 describe('every test-server answer is valid under the spec and the bundle schema', () => {

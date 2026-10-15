@@ -1,6 +1,12 @@
-import type { AnyTarget, RelationshipTarget, SlotTarget } from '../contract/generated/review-ops';
+import type {
+    AnyTarget,
+    CoordinateParseTarget,
+    RelationshipTarget,
+    SlotTarget,
+} from '../contract/generated/review-ops';
 
-export function targetKey(target: AnyTarget): string {
+/** A target as one string; the coordinate parse, like the paper, is `paper`, as the core keys it. */
+export function targetKey(target: AnyTarget | CoordinateParseTarget): string {
     switch (target.kind) {
         case 'slot':
             return `slot:${target.entity}:${target.path}`;
@@ -11,6 +17,7 @@ export function targetKey(target: AnyTarget): string {
         case 'coordinate_analysis':
             return `coordinate_analysis:${target.analysis_key}`;
         case 'paper':
+        case 'coordinate_parse':
             return 'paper';
     }
 }

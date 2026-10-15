@@ -63,7 +63,10 @@ def build():
 def coordinate_parse():
     return fx.parse([
         fx.table_analysis("t1", [1], "patients > controls", [fx.point((10, 20, 30))]),
-        fx.table_analysis("t1", [2], "controls > patients", [fx.point((-4, 2, 8), "negative")]),
+        fx.table_analysis("t1", [2, 3], "controls > patients", [
+            fx.point((-4, 2, 8), "negative"),
+            fx.point((6, -8, 4), "negative", t=4.1),
+        ]),
         fx.table_analysis("t2", [1], "seed", [fx.point((0, 0, 0))], role="anchor"),
     ])
 
@@ -103,6 +106,17 @@ def hidden_reach():
     a link from the shown analysis an_1 reaches it."""
     record = golden()
     record["analyses"].append(item("Analysis", "an_2", regions=["reg_1"]))
+    return record
+
+
+def linked_analyses():
+    """golden() (an_1 reads the first parse analysis) plus an_2, reading the second, which
+    an_1 names as its mirror."""
+    record = golden()
+    mirror = item("Analysis", "an_2", name=fx.extracted("controls > patients"))
+    mirror["source_table_analysis"] = fx.extracted(coordinate_parse()["analyses"][1]["key"])
+    record["analyses"][0]["mirror_of"] = "an_2"
+    record["analyses"].append(mirror)
     return record
 
 

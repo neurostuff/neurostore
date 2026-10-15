@@ -7,3 +7,8 @@ ajv.addSchema({ ...opsSchema, $id: new URL('review-ops.schema.json', bundleSchem
 
 export const validateBundle = ajv.compile(bundleSchema);
 export const validateOpBatch = ajv.compile({ ...opsSchema, $id: undefined });
+
+/** What is wrong with a batch of coordinate ops under review-ops.schema.json; empty when nothing is. */
+export function coordinateOpErrors(ops: unknown[]): unknown[] {
+    return validateOpBatch({ ops }) ? [] : (validateOpBatch.errors ?? []);
+}

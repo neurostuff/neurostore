@@ -1,16 +1,17 @@
-import { Box, Button, Chip, List, Stack, Typography } from '@mui/material';
+import { Box, Chip, List, Stack, Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import type { EntityNode, SlotNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
+import { ActionToolbar } from '../review/ActionToolbar';
 import { useReviewStore, useReviewStoreApi } from '../store/context';
 import type { Panel } from '../store/reviewStore';
-import { accept, pendingStructure, setValue, slotSchema, unlink } from './actions';
+import { pendingStructure, setValue, slotSchema, unlink } from './actions';
 import { CreateDialog, DeleteDialog, LinkPanel, NotePanel, RejectPanel } from './panels';
 import { RemoveIcon } from './RemoveIcon';
 import { EXTRACTION_SCHEMA } from './schema';
 import { SlotEditor } from './SlotEditor';
-import { reviewedStatus, statusColors, statusOf } from './status';
+import { reviewStatus, statusColors, statusOf } from './status';
 import { StatusLabel } from './StatusLabel';
 
 function formatValue(slot: SlotNode): string {
@@ -139,7 +140,7 @@ const SlotRow = memo(function SlotRow({
             <div className="rv-slot-head">
                 <span className="rv-slot-path">{slot.path}</span>
                 <StatusLabel id={statusOf(slot)} />
-                {reviewed && <StatusLabel id={reviewedStatus(reviewed)} />}
+                {reviewed && <StatusLabel id={reviewStatus(reviewed)} />}
             </div>
             {!editing &&
                 (slot.kind === 'reference' ? (
@@ -177,6 +178,21 @@ const headStyles = (theme: Theme) => ({
     ...statusColors(theme.palette),
 });
 
+/** The head of a card: its overline and title, then whatever else the head holds. */
+export function CardHead({ overline, title, children }: { overline: string; title: string; children?: ReactNode }) {
+    return (
+        <Box sx={headStyles}>
+            <Typography variant="overline" color="primary" component="div">
+                {overline}
+            </Typography>
+            <Typography variant="h6" component="h2">
+                {title}
+            </Typography>
+            {children}
+        </Box>
+    );
+}
+
 function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
     const panel = useReviewStore((s) => s.panel);
     const reviewed = useReviewStore((s) => s.provenance[entityKey(entity.id)]?.state);
@@ -190,18 +206,12 @@ function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?:
         panel && !panel.slot && panel.target.kind === 'entity' && panel.target.entity === entity.id ? panel : null;
     return (
         <Box component="section" aria-label={entity.name}>
-            <Box sx={headStyles}>
-                <Typography variant="overline" color="primary" component="div">
-                    {classLabel}
-                </Typography>
-                <Typography variant="h6" component="h2">
-                    {entity.name}
-                </Typography>
+            <CardHead overline={classLabel} title={entity.name}>
                 <Stack direction="row" spacing={1.5} alignItems="center">
                     <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
                         {entity.localId}
                     </Typography>
-                    {reviewed && <StatusLabel id={reviewedStatus(reviewed)} />}
+                    {reviewed && <StatusLabel id={reviewStatus(reviewed)} />}
                     {deleting && (
                         <Typography variant="caption" color="error">
                             deleting…
@@ -210,7 +220,7 @@ function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?:
                 </Stack>
                 {entityPanel?.kind === 'reject' && <RejectPanel target={entityPanel.target} label={entity.name} />}
                 {entityPanel?.kind === 'note' && <NotePanel target={entityPanel.target} label={entity.name} />}
-            </Box>
+            </CardHead>
             <List dense disablePadding sx={slotStyles}>
                 {entity.slots.map((slot) => (
                     <SlotRow
@@ -222,23 +232,6 @@ function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?:
                 ))}
             </List>
         </Box>
-    );
-}
-
-function FocusActions() {
-    const store = useReviewStoreApi();
-    return (
-        <Stack role="toolbar" aria-label="review actions" direction="row" spacing={1} sx={{ px: 2, pt: 1 }}>
-            <Button size="small" variant="outlined" onClick={() => void accept(store.getState())}>
-                Accept
-            </Button>
-            <Button size="small" variant="outlined" color="error" onClick={() => store.getState().openPanel('reject')}>
-                Reject
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => store.getState().openPanel('note')}>
-                Note
-            </Button>
-        </Stack>
     );
 }
 
@@ -263,7 +256,7 @@ export function Inspector() {
     const creating = useReviewStore((s) => s.panel?.kind === 'create');
     return (
         <>
-            <FocusActions />
+            <ActionToolbar scope="record" label="review actions" />
             <PendingChanges />
             {entity && <EntityCard entity={entity} focusedSlot={focusedSlot} />}
             {deleting && <DeleteDialog entity={deleting} />}

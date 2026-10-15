@@ -1,6 +1,7 @@
 """Apply review-ops batches to a ReviewState."""
 
 import copy
+import dataclasses
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -10,7 +11,9 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import best_match
 
-from neurostore.review import ReviewError, coordinates, entities, paths, references
+from neurostore.review import (
+    ReviewError, coordinates, entities, lists, paths, record_follow, references,
+)
 from neurostore.study_schema_tools import CHILD_LISTS, schema_errors
 
 OPS_SCHEMA = Path(__file__).parent / "schema" / "review-ops.schema.json"
@@ -80,8 +83,20 @@ def _batch_validator():
 
 
 @cache
-def _op_validator():
-    return Draft202012Validator({"$defs": _ops_schema()["$defs"], "$ref": "#/$defs/Op"})
+def _op_validator(name="Op"):
+    return Draft202012Validator({"$defs": _ops_schema()["$defs"], "$ref": f"#/$defs/{name}"})
+
+
+@cache
+def _op_definitions():
+    """The $defs name of each op type."""
+    defs = _ops_schema()["$defs"]
+    names = {}
+    for branch in defs["Op"]["oneOf"]:
+        name = branch["$ref"].rsplit("/", 1)[-1]
+        kind = defs[name]["properties"]["type"]
+        names.update((k, name) for k in kind.get("enum", [kind.get("const")]))
+    return names
 
 
 def _check_batch(batch):
@@ -89,9 +104,11 @@ def _check_batch(batch):
         (None, f"batch: {error.message}") for error in _batch_validator().iter_errors(batch)
     ]
     for index, item in enumerate(batch.get("ops") or ()):
-        error = best_match(_op_validator().iter_errors(item))
+        kind = item.get("type") if isinstance(item, dict) else None
+        error = best_match(_op_validator(_op_definitions().get(kind, "Op")).iter_errors(item))
         if error is not None:
-            failures.append((index, error.message))
+            where = "/".join(str(part) for part in error.absolute_path)
+            failures.append((index, f"{where}: {error.message}" if where else error.message))
     if failures:
         raise OpError("the batch does not validate against review-ops", failures)
 
@@ -113,31 +130,54 @@ def _apply(state, ops, text, user_id, at):
     """``(state, stored ops, failures)``: each op that applies, in order, on the ops before it.
     An op that cannot apply is left out and named in ``failures`` as (index, problem).
     """
-    state = copy.deepcopy(state)
+    work = _copy_state(state)
+    applier = _Applier(work, text, user_id, at)
     stored, failures = [], []
     for index, op in enumerate(ops):
-        trial = copy.deepcopy(state)
         try:
-            before, after = _Applier(trial, text, user_id, at).apply(op)
+            before, after = applier.apply(op)
         except ReviewError as error:
             failures.extend((index, problem) for problem in error.problems)
+            work = _replayed(state, [entry["op"] for entry in stored], text, user_id, at)
+            applier = _Applier(work, text, user_id, at)
             continue
-        trial.last_seq += 1
+        work.last_seq += 1
         stored.append({
-            "seq": trial.last_seq,
+            "seq": work.last_seq,
             "op": copy.deepcopy(op),
             "before": before,
             "after": after,
             "user_id": user_id,
             "created_at": at,
         })
-        state = trial
-    return state, stored, failures
+    return work, stored, failures
+
+
+def _replayed(state, ops, text, user_id, at):
+    """A copy of ``state`` with ``ops`` applied; the ops applied before a refused op, since the
+    refused op may have part-changed the copy."""
+    work = _copy_state(state)
+    applier = _Applier(work, text, user_id, at)
+    for op in ops:
+        applier.apply(op)
+        work.last_seq += 1
+    return work
+
+
+def _copy_state(state):
+    """A copy of ``state`` for a batch to change. No op changes the coordinate parse, and a
+    revision is replaced rather than changed, so both are shared with ``state``."""
+    return dataclasses.replace(
+        state,
+        record=copy.deepcopy(state.record),
+        provenance=copy.deepcopy(state.provenance),
+        annotations=copy.deepcopy(state.annotations),
+    )
 
 
 def _first_invalid_op(state, ops, text, user_id, at):
     """The index of the first op after which the document is invalid."""
-    applier = _Applier(copy.deepcopy(state), text, user_id, at)
+    applier = _Applier(_copy_state(state), text, user_id, at)
     for index, op in enumerate(ops):
         applier.apply(op)
         if _document_errors(applier.state):
@@ -175,22 +215,40 @@ class _Applier:
         return before, copy.deepcopy(self.state.provenance[key])
 
     def apply_coordinate(self, op):
-        key = op["target"]["analysis_key"]
-        revision, before, after = coordinates.revise(
-            self.state.coordinate_parse,
-            self.state.coordinate_revision,
-            key,
-            op["action"],
-            op.get("role"),
-            op.get("note"),
+        revision, before, after, marks, replacements = coordinates.revise(
+            self.state.coordinate_parse, self.state.coordinate_revision, op
         )
         self.state.coordinate_revision = revision
-        provenance_key = target_key(op["target"])
-        if op["action"] == "accept":
-            self._accept(provenance_key)
+        for key, state in marks:
+            provenance_key = target_key({"kind": "coordinate_analysis", "analysis_key": key})
+            if state == "verified":
+                self._accept(provenance_key)
+            else:
+                self._mark(provenance_key, state)
+        if op["action"] != "restore" and not replacements:
+            before["entities"], after["entities"] = [], []
+            return before, after
+        record_before = copy.deepcopy(self._analysis_items())
+        if op["action"] == "restore":
+            record_follow.restore(self.state.record, op["payload"]["record"])
         else:
-            self._mark(provenance_key, "edited" if op["action"] == "relabel" else "removed")
+            after.update(record_follow.follow(self.state.record, replacements, self._minter(op)))
+        self.index = entities.index(self.state.record)
+        record_after = self._analysis_items()
+        before["entities"] = lists.indexed(record_before, record_after, "entity")
+        after["entities"] = lists.indexed(record_after, record_before, "entity")
+        for key, state in record_follow.marks(record_before, record_after):
+            self._mark(key, state)
         return before, after
+
+    def _analysis_items(self):
+        return self.state.record.get("analyses") or []
+
+    def _minter(self, op):
+        """``mint(*parts)`` gives a local_id seeded by the op's client_op_id and ``parts``."""
+        def mint(*parts):
+            return self._mint(":".join((op["client_op_id"], *map(str, parts))))
+        return mint
 
     def apply_note(self, op):
         self._check(op["target"])
@@ -331,7 +389,9 @@ class _Applier:
         elif kind == "relationship":
             self._relationship(target, must_exist=True)
         elif kind == "coordinate_analysis":
-            coordinates.original_analysis(self.state.coordinate_parse, target["analysis_key"])
+            coordinates.known(
+                self.state.coordinate_parse, self.state.coordinate_revision, target["analysis_key"]
+            )
 
     def _filled(self, evidence):
         """``evidence`` with each span's text taken from the paper."""
@@ -448,6 +508,10 @@ def inverse(stored, client_op_id):
     elif kind == "delete_entity":
         ops = [{"type": "create_entity", "parent": before["parent"], "list": before["list"],
                 "index": before["index"], "entity": before["entity"]}]
+    elif kind == "coordinate":
+        restore = coordinates.restore_op(before, after)
+        restore["payload"]["record"] = {"remove": after["entities"], "insert": before["entities"]}
+        ops = [restore]
     else:
         raise ReviewError(f"a {kind} op has no inverse")
     if len(ops) == 1:

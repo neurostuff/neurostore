@@ -68,19 +68,25 @@ export type LinkOp = OpBase & {
     index?: number;
 };
 /**
- * An edit of the coordinate parse, saved as a revision with the coordinate parse schema's verdicts.
+ * An edit of the coordinate parse. The server applies it to the reviewer's revision, computes every key itself, and derives each original analysis's verdict from the analyses the revision then holds. The record's Analysis entities change in the same op.
  */
 export type CoordinateOp = OpBase & {
     client_op_id?: unknown;
-    note?: unknown;
-    type: 'coordinate';
-    target: CoordinateTarget;
     /**
-     * accept, relabel (needs role) and omit are applied; the other actions are rejected.
+     * Becomes the reason of each verdict the op changes; "reviewer <action>" when absent.
      */
-    action: 'accept' | 'relabel' | 'split' | 'merge' | 'omit' | 'add' | 'edit_points';
+    note?: string | null;
+    type: 'coordinate';
+    /**
+     * The analysis by its key in the current revision (its original key until it changes), or the coordinate parse for add and restore.
+     */
+    target: CoordinateTarget | CoordinateParseTarget;
+    /**
+     * accept, relabel (needs role) and omit judge the analysis and take no payload; accept or relabel brings an omitted original back. edit_points, split and merge replace it and need payload. add introduces an analysis and restore undoes a coordinate op; both target the coordinate parse.
+     */
+    action: 'accept' | 'relabel' | 'split' | 'merge' | 'omit' | 'add' | 'edit_points' | 'restore';
     role?: 'result' | 'anchor' | 'localization' | 'reference' | 'other';
-    payload?: {};
+    payload?: EditPointsPayload | SplitPayload | MergePayload | AddPayload | RestorePayload;
 };
 export type NoteOp = OpBase & {
     client_op_id?: unknown;
@@ -286,4 +292,104 @@ export interface Evidence {
 export interface Span {
     start_char: number;
     end_char: number;
+}
+/**
+ * The coordinate parse as a whole: the target of an add, or of a restore.
+ */
+export interface CoordinateParseTarget {
+    kind: 'coordinate_parse';
+}
+/**
+ * The analysis's whole point list after the edit, and optionally its new name and space. Removing a point is an edit without it; moving points is one batch of two edits.
+ */
+export interface EditPointsPayload {
+    /**
+     * ParsedPoints of the coordinate-parse schema.
+     */
+    points: {
+        /**
+         * @minItems 3
+         * @maxItems 3
+         */
+        coordinates: [number, number, number];
+    }[];
+    name?: string;
+    /**
+     * A ReportedSpace of the coordinate-parse schema, or null when the paper states none.
+     */
+    coordinate_space?: string | null;
+}
+/**
+ * Parts that partition the analysis's points by index, each point in exactly one part. An unnamed part takes the analysis's name with " (part n)" and name_is_printed false.
+ */
+export interface SplitPayload {
+    /**
+     * @minItems 2
+     */
+    parts: [
+        {
+            /**
+             * @minItems 1
+             */
+            indices: [number, ...number[]];
+            name?: string;
+        },
+        {
+            /**
+             * @minItems 1
+             */
+            indices: [number, ...number[]];
+            name?: string;
+        },
+        ...{
+            /**
+             * @minItems 1
+             */
+            indices: [number, ...number[]];
+            name?: string;
+        }[]
+    ];
+}
+/**
+ * The other analyses, by key in the current revision, whose points follow the target's in the merged analysis.
+ */
+export interface MergePayload {
+    /**
+     * @minItems 1
+     */
+    with: [string, ...string[]];
+}
+/**
+ * A ParsedAnalysis of the coordinate-parse schema without key or derived_from; the server computes the key.
+ */
+export interface AddPayload {
+    analysis: {};
+}
+/**
+ * Remove the revision's analyses in remove, which must still be as given, insert those in insert at their indexes, and set each verdict reason in reasons (null for none); record does the same with the record's Analysis entities, each {index, entity}. A restore is refused when a removed analysis or entity has changed since, an inserted local_id is taken, an inserted key is not the one its name, space and points give, an inserted derived_from names a non-original key, or the result would hold two analyses with one key.
+ */
+export interface RestorePayload {
+    remove: IndexedAnalysis[];
+    insert: IndexedAnalysis[];
+    reasons: {
+        [k: string]: string | null;
+    };
+    record: {
+        remove: IndexedEntity[];
+        insert: IndexedEntity[];
+    };
+}
+/**
+ * A ParsedAnalysis of the revision and its position in the revision's analyses.
+ */
+export interface IndexedAnalysis {
+    index: number;
+    analysis: {};
+}
+/**
+ * An Analysis entity of the record and its position in the record's analyses.
+ */
+export interface IndexedEntity {
+    index: number;
+    entity: {};
 }
