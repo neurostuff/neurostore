@@ -9,7 +9,6 @@ import anyio
 import connexion
 from connexion.exceptions import OAuthProblem, ProblemException
 from connexion.jsonifier import Jsonifier
-from connexion.resolver import MethodResolver
 from connexion.validators import VALIDATOR_MAP
 from connexion.validators.json import JSONRequestBodyValidator
 from starlette.applications import Starlette
@@ -31,6 +30,7 @@ from neurostore.observability.request_id import (
     RequestIdMiddleware,
 )
 from neurostore.observability.sentry import configure_sentry
+from neurostore.resolver import ReviewResolver
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler
 from neurostore.settings import load_settings
@@ -249,7 +249,7 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         base_path="/api",
         options={"swagger_ui": True},
         arguments={"title": "NeuroStore API"},
-        resolver=MethodResolver("neurostore.resources"),
+        resolver=ReviewResolver("neurostore.resources"),
         jsonifier=Jsonifier(_OrjsonModule),
         strict_validation=strict_validation,
         validate_responses=validate_responses,
