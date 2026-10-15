@@ -1,5 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { createElement } from 'react';
 import type { ReviewBundle } from '../../contract/generated/review-bundle';
 import type { Evidence, Op } from '../../contract/generated/review-ops';
 import { applyBatch, type Documents } from '../../model/applyOp';
@@ -7,7 +9,9 @@ import type { CoordinateParse } from '../../model/coordinates';
 import { codePointPaper } from '../../model/offsets';
 import type { Json } from '../../model/paths';
 import { slotKey } from '../../model/targetKey';
+import { ReviewScreen } from '../../review/ReviewScreen';
 import { createReviewStore, type EvidenceMode, type ReviewStore } from '../../store/reviewStore';
+import { renderWithStore } from '../render';
 import { validateOpBatch } from '../schemas';
 
 /** One batch on the golden bundle: the documents after it, or the refusal it meets. */
@@ -42,15 +46,33 @@ function applied(ops: Op[]): Documents {
 
 const after = ({ record, provenance, annotations }: Documents) => ({ record, provenance, annotations });
 
-function emitted(name: string, drive: (store: ReviewStore) => void): Entry {
+function mintIds(name: string) {
     let minted = 0;
     vi.spyOn(crypto, 'randomUUID').mockImplementation(() => {
         minted += 1;
         return `${name}-${minted}` as ReturnType<typeof crypto.randomUUID>;
     });
+}
+
+function emitted(name: string, drive: (store: ReviewStore) => void): Entry {
+    mintIds(name);
     const store = createReviewStore(bundle, { now: () => AT });
     drive(store);
     return { name, ops: store.getState().pending, expect: 'ok', ...after(store.getState()) };
+}
+
+const press = (key: string, init: KeyboardEventInit = {}, target: Element = document.activeElement ?? document.body) =>
+    act(() => void fireEvent.keyDown(target, { key, ...init }));
+
+/** The batch the inspector emits when the reviewer drives it through the keyboard and its editors. */
+function inspected(name: string, drive: (store: ReviewStore) => void): Entry {
+    cleanup();
+    mintIds(name);
+    const { store } = renderWithStore(createElement(ReviewScreen), bundle, { now: () => AT });
+    drive(store);
+    const entry = { name, ops: store.getState().pending, expect: 'ok', ...after(store.getState()) };
+    cleanup();
+    return entry;
 }
 
 const numbered = (name: string, ops: object[]) =>
@@ -186,6 +208,59 @@ function entries(): Entry[] {
             "field path 'name.value.x' goes through a non-object",
             note(slot('grp_a', 'name.value.x'), 'x')
         ),
+        inspected('golden-ui-enter-integer', (store) => {
+            act(() => store.getState().focusSlot(slotKey('an_1', 'groups[#0].n')));
+            press('Enter', {}, document.body);
+            fireEvent.change(screen.getByRole('spinbutton', { name: 'groups[#0].n' }), { target: { value: '21' } });
+            press('Enter');
+        }),
+        inspected('golden-ui-n-outside-text', (store) => {
+            act(() => store.getState().focusSlot(slotKey('grp_a', 'age_mean')));
+            press('n', {}, document.body);
+            fireEvent.change(screen.getByRole('combobox', { name: 'unreported reason' }), {
+                target: { value: 'outside_text' },
+            });
+            press('Enter');
+        }),
+        inspected('golden-ui-open-enum', (store) => {
+            act(() => store.getState().focusSlot(slotKey('grp_a', 'species')));
+            press('Enter', {}, document.body);
+            fireEvent.change(screen.getByRole('combobox', { name: 'extraction status' }), {
+                target: { value: 'extracted' },
+            });
+            fireEvent.change(screen.getByRole('combobox', { name: 'species' }), { target: { value: 'macaque' } });
+            press('Enter');
+        }),
+        inspected('golden-ui-list-add', (store) => {
+            act(() => store.getState().focusSlot(slotKey('grp_a', 'inclusion_criteria')));
+            press('Enter', {}, document.body);
+            const add = screen.getByRole('textbox', { name: 'add to inclusion_criteria' });
+            fireEvent.change(add, { target: { value: 'adults only' } });
+            press('Enter', {}, add);
+            press('Enter', {}, add);
+        }),
+        inspected('golden-ui-shift-a', (store) => {
+            act(() => store.getState().focusSlot(slotKey('grp_a', 'name')));
+            press('A', { shiftKey: true }, document.body);
+        }),
+        inspected('golden-ui-semicolon-slot', (store) => {
+            act(() => store.getState().focusSlot(slotKey('grp_a', 'name')));
+            press(';', {}, document.body);
+            fireEvent.change(screen.getByRole('textbox', { name: 'note on name' }), {
+                target: { value: 'the label is the paper’s' },
+            });
+            press('Enter');
+        }),
+        inspected('golden-ui-reject-other-note', (store) => {
+            act(() => store.getState().focusSlot(slotKey('grp_a', 'name')));
+            press('r', {}, document.body);
+            const panel = screen.getByRole('group', { name: 'reject name' });
+            press('5', {}, within(panel).getByRole('radio', { name: '1 wrong value' }));
+            fireEvent.change(within(panel).getByRole('textbox', { name: 'note' }), {
+                target: { value: 'the paper calls them patients' },
+            });
+            press('Enter');
+        }),
     ];
 }
 

@@ -11,7 +11,7 @@ import { SHORTCUTS, useShortcuts } from './shortcuts';
 import { StepBar } from './StepBar';
 import { SubmitStep } from './SubmitStep';
 
-const noDialogOpen = (s: ReviewState) => !s.helpOpen;
+const noDialogOpen = (s: ReviewState) => !s.helpOpen && !s.panel;
 
 export function ReviewScreen() {
     useShortcuts(useReviewStoreApi(), SHORTCUTS, noDialogOpen);

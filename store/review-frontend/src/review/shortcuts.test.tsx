@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { renderWithStore } from '../test/render';
 import { ReviewScreen } from './ReviewScreen';
@@ -60,10 +60,63 @@ describe('review shortcuts', () => {
         expect(outline()).not.toBeInTheDocument();
     });
 
+    it('a letter typed with Caps Lock runs its Shift shortcut', () => {
+        const { store } = setup();
+        act(() => store.getState().focusSlot('slot:grp_a:name'));
+        press('J');
+        expect(store.getState().focus.entity).toBe('grp_b');
+    });
+
     it('? opens the shortcut help', () => {
         setup();
         press('?', { shiftKey: true });
         expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveTextContent('next slot');
+    });
+
+    it('lists the editing keys in the help', () => {
+        setup();
+        press('?', { shiftKey: true });
+        const keys = within(screen.getByRole('dialog', { name: 'Keyboard shortcuts' }))
+            .getAllByRole('row')
+            .map((row) => row.firstElementChild?.textContent);
+        expect(keys).toEqual(
+            expect.arrayContaining(['A', 'Shift+A', 'R', 'Enter', 'N', 'L', 'C', 'Shift+Backspace', ';'])
+        );
+    });
+
+    it.each([
+        ['A', { key: 'a' }],
+        ['Enter', { key: 'Enter' }],
+        ['R', { key: 'r' }],
+        ['Shift+Backspace', { key: 'Backspace', shiftKey: true }],
+        [';', { key: ';' }],
+    ])('ignores %s typed into a text field', (_, init) => {
+        const { store } = setup();
+        act(() => store.getState().focusSlot('slot:grp_a:name'));
+        const field = document.body.appendChild(document.createElement('input'));
+        press(init.key, init, field);
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().panel).toBeNull();
+        field.remove();
+    });
+
+    it('leaves Enter on a button to the button', () => {
+        const { store } = setup();
+        act(() => store.getState().focusSlot('slot:grp_a:name'));
+        const button = document.body.appendChild(document.createElement('button'));
+        press('Enter', {}, button);
+        expect(store.getState().panel).toBeNull();
+        button.remove();
+    });
+
+    it('runs no shortcut while an inspector panel is open', () => {
+        const { store } = setup();
+        act(() => store.getState().focusSlot('slot:grp_a:name'));
+        press('r');
+        press('a', {}, screen.getByRole('group', { name: 'reject name' }));
+        press('J', { shiftKey: true }, document.body);
+        expect(store.getState().pending).toEqual([]);
+        expect(store.getState().focus.key).toBe('slot:grp_a:name');
     });
 
     it.each([

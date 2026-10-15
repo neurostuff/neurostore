@@ -88,6 +88,27 @@ describe('buildRecordIndex', () => {
         expect(index.entity('study')?.localId).toBe('P1');
     });
 
+    it('lists the slots its class declares that the record leaves out, unset, so a reference can be linked', () => {
+        const acquisitions = buildRecordIndex(
+            makeBundle({ acquisitions: [{ local_id: 'acq_1', name: ev('Scan A') }] }, TEXT, {
+                entities: entityRows(row('acq_1', 'Acquisition', 'acquisitions')),
+            }),
+            (r) =>
+                r.entity_class === 'Acquisition'
+                    ? [{ path: 'name', wrapper: {} }, { path: 'modality', wrapper: {} }, { path: 'device' }]
+                    : []
+        );
+        expect(acquisitions.entity('acq_1')?.slots.map((s) => [s.path, s.kind, s.references])).toEqual(
+            expect.arrayContaining([
+                ['device', 'reference', []],
+                ['modality', 'value', []],
+                ['name', 'value', []],
+            ])
+        );
+        expect(acquisitions.slot('slot:acq_1:modality')?.value).toBeUndefined();
+        expect(acquisitions.entity('acq_1')?.slots).toHaveLength(3);
+    });
+
     it('treats an object the entity index does not list as no entity', () => {
         const only = buildRecordIndex(
             makeBundle(record, TEXT, { entities: entityRows(row('grp_a', 'Group', 'groups')) })

@@ -5,6 +5,7 @@ import type { Notice } from '../store/reviewStore';
 const REASONS: Record<Notice['kind'], string> = {
     conflict: 'changed elsewhere, so this edit was dropped',
     refused: 'the server refused this edit',
+    dangling: 'left dangling by a delete',
 };
 
 export function SaveNotices() {

@@ -2,7 +2,10 @@ import { Dialog, DialogContent, DialogTitle, Table, TableBody, TableCell, TableR
 import { useReviewStore } from '../store/context';
 import { SHORTCUTS } from './shortcuts';
 
-const keyLabel = (key: string) => (key.length === 1 && key !== key.toLowerCase() ? `Shift+${key}` : key.toUpperCase());
+const keyLabel = (key: string) => {
+    if (key.length > 1) return key;
+    return key !== key.toLowerCase() ? `Shift+${key}` : key.toUpperCase();
+};
 
 export function ShortcutHelp() {
     const open = useReviewStore((s) => s.helpOpen);

@@ -104,3 +104,14 @@ def hidden_reach():
     record = golden()
     record["analyses"].append(item("Analysis", "an_2", regions=["reg_1"]))
     return record
+
+
+def subclasses():
+    """golden() with an Analysis whose details is a ConnectivityDetails, and acquisitions an
+    EEG, a PET and a bare EEG holding only its required keys beside the MRI."""
+    record = golden()
+    record["analyses"][0]["details"] = fx.minimal(fx.defs["ConnectivityDetails"])
+    eeg = item("EEG", "acq_2", eeg_channel_count=64)
+    pet = item("PET", "acq_3", tracer_name="FDG")
+    record["acquisitions"].extend([eeg, pet, item("EEG", "acq_4")])
+    return record

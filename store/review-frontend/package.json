@@ -11,7 +11,8 @@
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
         "format": "prettier --write .",
-        "gen:types": "node scripts/gen-types.mjs"
+        "gen:types": "node scripts/gen-types.mjs",
+        "sync:schemas": "node scripts/sync-schemas.mjs"
     },
     "dependencies": {
         "@auth0/auth0-react": "^2.21.0",

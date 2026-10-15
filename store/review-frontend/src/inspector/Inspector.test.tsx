@@ -72,7 +72,11 @@ describe('Inspector', () => {
 
     it('lists the slots doubtful first, each with a status shape, a visible status label and its value', () => {
         setup();
-        expect(rows().map((row) => row.getAttribute('data-slot-key'))).toEqual([
+        expect(
+            rows()
+                .slice(0, 9)
+                .map((row) => row.getAttribute('data-slot-key'))
+        ).toEqual([
             'slot:a_1:outcome',
             'slot:a_1:definition',
             'slot:a_1:prespecification',
@@ -100,6 +104,35 @@ describe('Inspector', () => {
         expect(rowOf('slot:a_1:spatial_scope')).toHaveTextContent('not reported (outside_text)');
     });
 
+    it('says where a slot has no schema, instead of guessing an editor', () => {
+        const view = renderWithStore(
+            <Inspector />,
+            makeBundle(
+                { groups: [{ local_id: 'grp_a', name: ev('Patients'), mystery: ev('x') }] },
+                TEXT,
+                { entities: entityRows(row('grp_a', 'Group', 'groups')) }
+            )
+        );
+        act(() => {
+            view.store.getState().focusSlot('slot:grp_a:mystery');
+            view.store.getState().openPanel('edit');
+        });
+        expect(screen.getByText('no schema for this slot')).toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'edit mystery' })).not.toBeInTheDocument();
+    });
+
+    it('lists the slots the class declares that the record leaves out, after the record’s', () => {
+        setup();
+        expect(rowOf('slot:a_1:assessments')).toHaveTextContent('—');
+        expect(rowOf('slot:a_1:coordinate_space')).toHaveTextContent('not in the record');
+    });
+
+    it('labels a declared slot the record leaves out as not in the record, not as evidence not found', () => {
+        setup();
+        expect(shapeIn(rowOf('slot:a_1:coordinate_space'))?.textContent).toBe('not in the record');
+        expect(shapeIn(rowOf('slot:a_1:coordinate_space'))?.getAttribute('data-status')).toBe('absent');
+    });
+
     it('gives every status its own shape', () => {
         const shapes = Object.values(STATUSES).map((status) => status.shape);
         expect(new Set(shapes).size).toBe(shapes.length);
@@ -112,6 +145,10 @@ describe('Inspector', () => {
         ['not reported', 6.48],
         ['evidence present', 5.25],
         ['reference', 4.86],
+        ['verified', 5.25],
+        ['edited', 4.86],
+        ['rejected', 5.28],
+        ['added', 4.86],
     ])('draws “%s” in a colour of %f:1 on white, at least 3:1', (label, ratio) => {
         const status = Object.values(STATUSES).find((s) => s.label === label)!;
         const measured = getContrastRatio(status.color(theme.palette), '#ffffff');
@@ -130,7 +167,7 @@ describe('Inspector', () => {
     it('focuses a slot when it is clicked', () => {
         const { store } = setup();
         fireEvent.click(within(rows()[3]).getByText('name'));
-        expect(store.getState().focus).toEqual({ entity: 'a_1', key: 'slot:a_1:name' });
+        expect(store.getState().focus).toEqual({ entity: 'a_1', key: 'slot:a_1:name', slot: 'slot:a_1:name' });
         expect(rows()[3]).toHaveAttribute('aria-current', 'true');
     });
 

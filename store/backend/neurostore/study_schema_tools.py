@@ -83,14 +83,41 @@ def is_extracted(defs, name):
 
 
 def pick(defs, names, value):
-    """The class among ``names`` that ``value`` is an instance of."""
+    """The class among ``names`` that ``value`` is an instance of.
+
+    A class whose property fixes a key the value holds to the value's own value wins outright;
+    otherwise the first class whose required keys and properties fit the value, and that no
+    fixed property contradicts; otherwise the first class.
+    """
     classes = [n for n in names if defs.get(n, {}).get("type") == "object"]
+    for name in classes:
+        if _pins(defs[name].get("properties", {}), value):
+            return name
     for name in classes:
         props = defs[name].get("properties", {})
         required = defs[name].get("required", [])
-        if all(r in value for r in required) and set(value) <= set(props):
+        if (
+            all(r in value for r in required)
+            and set(value) <= set(props)
+            and not any(_contradicts(props[k], value[k]) for k in value)
+        ):
             return name
     return classes[0] if classes else None
+
+
+def _fixed(schema):
+    """The one value a property schema fixes (by const or a single-member enum), as a list."""
+    allowed = [schema["const"]] if "const" in schema else schema.get("enum")
+    return allowed if allowed is not None and len(allowed) == 1 else None
+
+
+def _pins(props, value):
+    return any(k in value and _fixed(schema) == [value[k]] for k, schema in props.items())
+
+
+def _contradicts(schema, value):
+    fixed = _fixed(schema)
+    return fixed is not None and fixed != [value]
 
 
 def class_of(defs, schema, value):

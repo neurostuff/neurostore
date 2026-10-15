@@ -1,7 +1,7 @@
 import { createStore } from 'zustand';
 import type { OpResult, ReviewLifecycle } from '../api/reviewApi';
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
-import type { CreateEntityOp, Evidence, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
+import type { AnyTarget, CreateEntityOp, Evidence, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
 import {
     applyBatch,
     isLocalOp,
@@ -23,7 +23,9 @@ import {
     type SlotNode,
     type SpanPair,
 } from '../model/record';
-import { entityKey, targetKey } from '../model/targetKey';
+import { entityKey, relationshipKey, slotTarget, targetKey } from '../model/targetKey';
+import { panelFor } from '../inspector/actions';
+import { declaredAttributes, EXTRACTION_SCHEMA, type DeclaredAttribute } from '../inspector/schema';
 import { STEPS, type StepId } from '../review/steps';
 
 export type EvidenceMode = 'first' | 'new';
@@ -31,6 +33,8 @@ export type EvidenceMode = 'first' | 'new';
 export interface Focus {
     entity: string;
     key: string;
+    /** The slot the focus is on, or the reference slot holding the focused link. */
+    slot?: string;
 }
 
 export interface Reveal {
@@ -38,10 +42,19 @@ export interface Reveal {
     seq: number;
 }
 
+export type PanelKind = 'edit' | 'not_reported' | 'reject' | 'note' | 'link' | 'delete' | 'create';
+
+/** An inspector panel: what it acts on, and the slot row it sits in when it is on a slot or link. */
+export interface Panel {
+    kind: PanelKind;
+    target: AnyTarget;
+    slot?: string;
+}
+
 export type SaveStatus = 'idle' | 'saving' | 'offline' | 'closed' | 'signin' | 'failed';
 
 export interface Notice {
-    kind: 'conflict' | 'refused';
+    kind: 'conflict' | 'refused' | 'dangling';
     slot: string;
     message: string;
 }
@@ -73,8 +86,11 @@ export interface ReviewState {
     step: StepId;
     outlineOpen: boolean;
     helpOpen: boolean;
+    panel: Panel | null;
     focusEntity(id: string): void;
     focusSlot(key: string): void;
+    /** Focuses the link from the reference slot `slot` to the entity `target`. */
+    focusLink(slot: string, target: string): void;
     moveSlot(delta: 1 | -1): void;
     moveEntity(delta: 1 | -1): void;
     stepEvidence(delta: 1 | -1): void;
@@ -85,6 +101,8 @@ export interface ReviewState {
     setStep(step: StepId): void;
     toggleOutline(open?: boolean): void;
     toggleHelp(open?: boolean): void;
+    openPanel(kind: PanelKind): void;
+    closePanel(): void;
     setSave(save: SaveStatus, message?: string): void;
     confirm(result: OpResult, sent: Op[]): void;
     rebase(fresh: ReviewBundle): void;
@@ -180,6 +198,17 @@ const toDomBundle = (bundle: ReviewBundle): ReviewBundle => {
     };
 };
 
+const declaredCache = new Map<string, DeclaredAttribute[]>();
+/** The attributes a row's class declares, from the extraction record schema. */
+const declaredOf = (row: { schema_class: string }) => {
+    let declared = declaredCache.get(row.schema_class);
+    if (!declared) {
+        declared = declaredAttributes(EXTRACTION_SCHEMA, row.schema_class);
+        declaredCache.set(row.schema_class, declared);
+    }
+    return declared.map(({ path, wrapper }) => ({ path, wrapper }));
+};
+
 const paperOf = (bundle: ReviewBundle, at: string): Paper => ({
     text: utf16Paper(bundle.text),
     userId: bundle.review?.user_id ?? '',
@@ -224,7 +253,7 @@ function replay(
 }
 
 function rebuiltIndex(bundle: ReviewBundle, record: Json, previous: RecordIndex, focus: Focus) {
-    return withSlotOrderOf(buildRecordIndex({ ...bundle, record }), previous, focus.entity);
+    return withSlotOrderOf(buildRecordIndex({ ...bundle, record }, declaredOf), previous, focus.entity);
 }
 
 export interface ReviewStoreOptions {
@@ -236,7 +265,7 @@ export function createReviewStore(
     { now = () => new Date().toISOString() }: ReviewStoreOptions = {}
 ) {
     const bundle = toDomBundle(loaded);
-    const initialIndex = buildRecordIndex(bundle);
+    const initialIndex = buildRecordIndex(bundle, declaredOf);
     const first = initialIndex.visible[0] ?? initialIndex.entities[0];
     const initial: Focus = { entity: first?.id ?? '', key: first ? entityKey(first.id) : '' };
 
@@ -249,7 +278,26 @@ export function createReviewStore(
             const { index, focus: previous, reveal } = get();
             const next = withSlotsSorted(index, previous.entity);
             const focusedSpans = spansOf(next, focus);
-            set({ focus, index: next, focusedSpans, evidenceCursor: 0, reveal: revealed(focusedSpans[0], reveal) });
+            set({
+                focus,
+                index: next,
+                focusedSpans,
+                evidenceCursor: 0,
+                reveal: revealed(focusedSpans[0], reveal),
+                panel: null,
+            });
+        };
+
+        /** Focuses `created` once it is in the index, else the nearest ancestor of a focused entity that is gone. */
+        const refocus = (rows: ReviewBundle['entities'], created?: string) => {
+            const { index, focus } = get();
+            if (created && index.entity(created)) return focusOn({ entity: created, key: entityKey(created) });
+            if (index.entity(focus.entity)) return;
+            const parents = new Map(rows.map((r) => [r.local_id, r.parent]));
+            let id = parents.get(focus.entity);
+            while (id && !index.entity(id)) id = parents.get(id);
+            const next = (id && index.entity(id)) || index.visible[0] || index.entities[0];
+            if (next) focusOn({ entity: next.id, key: entityKey(next.id) });
         };
 
         const withDocuments = (
@@ -357,13 +405,20 @@ export function createReviewStore(
             step: STEPS[0].id,
             outlineOpen: false,
             helpOpen: false,
+            panel: null,
 
             focusEntity: (id) => {
                 if (get().index.entity(id)) focusOn({ entity: id, key: entityKey(id) });
             },
             focusSlot: (key) => {
                 const slot = get().index.slot(key);
-                if (slot) focusOn({ entity: slot.entity, key });
+                if (slot) focusOn({ entity: slot.entity, key, slot: key });
+            },
+            focusLink: (slot, target) => {
+                const node = get().index.slot(slot);
+                if (node?.kind !== 'reference' || !node.references.includes(target)) return;
+                const key = relationshipKey(node.entity, node.path, target);
+                focusOn({ entity: node.entity, key, slot: node.key });
             },
             moveSlot: (delta) => {
                 const { focus, index } = get();
@@ -371,7 +426,7 @@ export function createReviewStore(
                 if (slots.length === 0) return;
                 const at = slots.findIndex((s) => s.key === focus.key);
                 const next = at === -1 ? (delta > 0 ? 0 : slots.length - 1) : clamp(at + delta, slots.length - 1);
-                if (next !== at) focusOn({ entity: focus.entity, key: slots[next].key });
+                if (next !== at) focusOn({ entity: focus.entity, key: slots[next].key, slot: slots[next].key });
             },
             moveEntity: (delta) => {
                 const { visible } = get().index;
@@ -403,7 +458,7 @@ export function createReviewStore(
                 const op: SetEvidenceOp = {
                     client_op_id: crypto.randomUUID(),
                     type: 'set_evidence',
-                    target: { kind: 'slot', entity: slot.entity, path: slot.path },
+                    target: slotTarget(slot.entity, slot.path),
                     evidence: withSpan(slot.value?.evidence, intent.span, intent.set_index),
                 };
                 return push(op, (s) => ({
@@ -418,6 +473,11 @@ export function createReviewStore(
             setStep: (step) => set({ step }),
             toggleOutline: (open) => set((s) => ({ outlineOpen: open ?? !s.outlineOpen })),
             toggleHelp: (open) => set((s) => ({ helpOpen: open ?? !s.helpOpen })),
+            openPanel: (kind) => {
+                const panel = panelFor(get(), kind);
+                if (panel) set({ panel });
+            },
+            closePanel: () => set({ panel: null }),
             setSave: (save, message = '') => set({ save, saveMessage: message }),
             confirm: (result, sent) => {
                 const { bundle: current, ops, pending } = get();
@@ -432,6 +492,17 @@ export function createReviewStore(
                 };
                 const rest = pending.filter((op) => !sentIds.has(op.client_op_id));
                 const touched = [...sent, ...rest].flatMap((op) => ('target' in op ? [targetKey(op.target)] : []));
+                const dangling: Notice[] = result.ops.flatMap(({ op, after }) =>
+                    op.type === 'delete_entity' && Array.isArray(after.references)
+                        ? (after.references as { entity: string; path: string; target_entity: string }[]).map(
+                              (ref) => ({
+                                  kind: 'dangling' as const,
+                                  slot: `${ref.entity} ${ref.path}`,
+                                  message: `it points at ${ref.target_entity}`,
+                              })
+                          )
+                        : []
+                );
                 withDocuments(
                     {
                         ...current,
@@ -443,13 +514,19 @@ export function createReviewStore(
                         ops: [...ops, ...result.ops.filter((s) => !seqs.has(s.seq))],
                     },
                     rest,
-                    [],
+                    dangling,
                     sent.every(isLocalOp) ? touched : null
                 );
+                const created = sent.flatMap((op) =>
+                    op.type === 'create_entity' && typeof (op.entity as Json).local_id === 'string'
+                        ? [(op.entity as Json).local_id as string]
+                        : []
+                );
+                refocus(current.entities, created.at(-1));
             },
             rebase: (fresh) => {
                 const stored = new Set(fresh.ops.map((s) => s.op.client_op_id));
-                const { pending, intents } = get();
+                const { pending, intents, bundle: current } = get();
                 withDocuments(
                     toDomBundle(fresh),
                     pending.filter((op) => !stored.has(op.client_op_id)),
@@ -457,6 +534,7 @@ export function createReviewStore(
                     null,
                     (record, op) => carried(record, op, intents[op.client_op_id])
                 );
+                refocus(current.entities);
             },
             refuse: (refusals) => {
                 const refused = new Set(refusals.map((r) => r.op.client_op_id));

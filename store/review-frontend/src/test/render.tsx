@@ -4,11 +4,11 @@ import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { ReviewStoreProvider } from '../store/context';
-import { createReviewStore } from '../store/reviewStore';
+import { createReviewStore, type ReviewStoreOptions } from '../store/reviewStore';
 import { theme } from '../theme';
 
-export function renderWithStore(ui: ReactElement, bundle: ReviewBundle) {
-    const store = createReviewStore(bundle);
+export function renderWithStore(ui: ReactElement, bundle: ReviewBundle, options?: ReviewStoreOptions) {
+    const store = createReviewStore(bundle, options);
     const result = render(
         <ThemeProvider theme={theme}>
             <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

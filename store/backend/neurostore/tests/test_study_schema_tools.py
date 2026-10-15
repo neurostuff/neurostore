@@ -90,6 +90,28 @@ def test_class_of_is_the_concrete_class_of_an_item_or_an_object():
     assert class_of(DEFS, DEFS["Study"]["properties"]["design"], {}) == "StudyDesign"
 
 
+def test_class_of_honours_the_single_valued_discriminator_of_each_subclass():
+    acquisitions = DEFS["Study"]["properties"]["acquisitions"]
+    eeg = {"local_id": "acq_1", "acquisition_type": "EEG", "modality": "eeg"}
+    assert class_of(DEFS, acquisitions, eeg) == "EEG"
+
+
+def test_class_of_picks_the_details_subclass_its_details_type_names():
+    details = DEFS["Analysis"]["properties"]["details"]
+    assert class_of(DEFS, details, {"details_type": "DecodingDetails"}) == "DecodingDetails"
+
+
+def test_class_of_picks_the_subclass_a_partial_acquisition_names():
+    acquisitions = DEFS["Study"]["properties"]["acquisitions"]
+    assert class_of(DEFS, acquisitions, {"local_id": "acq_1", "acquisition_type": "EEG"}) == "EEG"
+
+
+def test_class_of_falls_back_to_the_first_class_when_no_discriminator_matches():
+    acquisitions = DEFS["Study"]["properties"]["acquisitions"]
+    unknown = {"local_id": "acq_1", "acquisition_type": "XYZ", "modality": "x"}
+    assert class_of(DEFS, acquisitions, unknown) == "MRI"
+
+
 def test_extracted_value_is_the_value_of_a_wrapper_or_the_bare_value():
     assert extracted_value(fx.extracted(3)) == 3
     assert extracted_value({"extraction_status": "not_reported"}) is None

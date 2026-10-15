@@ -91,7 +91,11 @@ function referencesIn(value: unknown): string[] | null {
 }
 
 /** Whether `attribute` of the entity `row` is a reference slot: nested slots by name, top-level ones by class (references.json). */
-export function isReferenceSlot(row: EntityRow, nested: boolean, attribute: string) {
+export function isReferenceSlot(
+    row: Pick<EntityRow, 'entity_class' | 'schema_class'>,
+    nested: boolean,
+    attribute: string
+) {
     if (nested) return slotNames.has(attribute);
     return classSlots.has(`${row.schema_class}.${attribute}`) || classSlots.has(`${row.entity_class}.${attribute}`);
 }
@@ -146,6 +150,23 @@ function itemsById(record: Json): Map<string, Json> {
     return items;
 }
 
+/** The attributes a class declares, by path; `wrapper` is set on value wrappers. */
+export type Declared = (row: EntityRow) => { path: string; wrapper?: unknown }[];
+
+/** The declared slots the record leaves out, unset: a reference that can be linked, or a value to be set. */
+function absentSlots(row: EntityRow, present: SlotNode[], declared: Declared): SlotNode[] {
+    const keys = new Set(present.map((slot) => slot.key));
+    return declared(row).flatMap(({ path, wrapper }): SlotNode[] => {
+        if (SKIPPED.has(path.split(/[.[]/)[0]) || keys.has(slotKey(row.local_id, path))) return [];
+        const steps = parsePath(path);
+        const attribute = steps.filter((step): step is string => typeof step === 'string').at(-1) ?? '';
+        if (isReferenceSlot(row, steps.length > 1, attribute)) {
+            return [slotNode(row.local_id, path, { kind: 'reference', references: [] })];
+        }
+        return wrapper ? [slotNode(row.local_id, path, { kind: 'value', references: [] })] : [];
+    });
+}
+
 const byDoubt = (slots: SlotNode[]) => [...slots].sort((a, b) => DOUBT_RANK[a.doubt] - DOUBT_RANK[b.doubt]);
 const spansOf = (slots: SlotNode[]) => sortSpans(slots.flatMap((s) => s.spans));
 
@@ -166,14 +187,15 @@ function replaceEntity(index: RecordIndex, entity: EntityNode): RecordIndex {
     return indexOf(index.entities.map((e) => (e.id === entity.id ? entity : e)));
 }
 
-export function buildRecordIndex(bundle: ReviewBundle): RecordIndex {
+export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () => []): RecordIndex {
     const record = bundle.record as Json;
     const hidden = new Set([...bundle.hidden.analyses, ...bundle.hidden.entities]);
     const items = itemsById(record);
     const found = bundle.entities.flatMap((row): EntityNode[] => {
         const item = items.get(row.local_id);
         if (!item) return [];
-        const slots = byDoubt(slotsOf(row, item));
+        const present = slotsOf(row, item);
+        const slots = byDoubt([...present, ...absentSlots(row, present, declared)]);
         const localId = typeof item.local_id === 'string' ? item.local_id : row.local_id;
         return [
             {

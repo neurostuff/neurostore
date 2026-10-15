@@ -8,6 +8,7 @@ import { ev, makeBundle } from '../test/bundles';
 import { fakeFetch, json } from '../test/fakeFetch';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
 import { API_BASE } from '../test/spec';
+import { acceptCard } from '../inspector/actions';
 import { createOpClient, type OpClient } from './opClient';
 import { createReviewStore, selectSaveLabel, type ReviewStore } from './reviewStore';
 import { mintLocalId } from '../model/mint';
@@ -106,6 +107,24 @@ describe('the save loop', () => {
         expect(store.getState().pending).toEqual([]);
         expect(selectSaveLabel(store.getState())).toBe('saved');
         expect(posts(server)[0].body).toMatchObject({ expected_last_seq: 0 });
+    });
+
+    it('sends a card’s accepts from one Shift+A as one batch', async () => {
+        const card = makeBundle(
+            {
+                description: ev('A study', [at('Twenty patients')]),
+                design: { description: ev('fMRI', [at('Stroop task')]) },
+            },
+            TEXT,
+            { source: { ...makeBundle({}, '').source, id: 'S1', label: 'A paper' } }
+        );
+        server = fakeServer([card]);
+        const { store, client } = await open();
+        expect(acceptCard(store.getState())).toBe(2);
+        await vi.advanceTimersByTimeAsync(1000);
+        await client.settled();
+        expect(sentIds(server)).toHaveLength(1);
+        expect(sentIds(server)[0]).toHaveLength(2);
     });
 
     it('sends at most 500 ops a batch', async () => {

@@ -1,4 +1,4 @@
-import type { AnyTarget } from '../contract/generated/review-ops';
+import type { AnyTarget, RelationshipTarget, SlotTarget } from '../contract/generated/review-ops';
 
 export function targetKey(target: AnyTarget): string {
     switch (target.kind) {
@@ -15,5 +15,15 @@ export function targetKey(target: AnyTarget): string {
     }
 }
 
-export const slotKey = (entity: string, path: string) => targetKey({ kind: 'slot', entity, path });
+export const slotTarget = (entity: string, path: string): SlotTarget => ({ kind: 'slot', entity, path });
+export const relationshipTarget = (entity: string, path: string, target_entity: string): RelationshipTarget => ({
+    kind: 'relationship',
+    entity,
+    path,
+    target_entity,
+});
+
+export const slotKey = (entity: string, path: string) => targetKey(slotTarget(entity, path));
+export const relationshipKey = (entity: string, path: string, target_entity: string) =>
+    targetKey(relationshipTarget(entity, path, target_entity));
 export const entityKey = (entity: string) => targetKey({ kind: 'entity', entity });

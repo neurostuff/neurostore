@@ -99,6 +99,24 @@ CREATE_MINTED = {
     "list": "groups",
     "entity": {k: v for k, v in records.item("Group", "x").items() if k != "local_id"},
 }
+CREATE_TERM = {
+    "client_op_id": "scenario-create-term-a",
+    "type": "create_entity",
+    "parent": "mdl_1",
+    "list": "terms",
+    "entity": records.item("ModelTerm", minted("scenario-create-term-a")),
+}
+LINK_ASSESSMENT = {
+    "client_op_id": "scenario-link-assessment",
+    "type": "link",
+    "target": {"kind": "relationship", "entity": "an_1", "path": "assessments",
+               "target_entity": "asm_1"},
+}
+DELETE_GROUP = {
+    "client_op_id": "scenario-delete-group-a",
+    "type": "delete_entity",
+    "target": {"kind": "entity", "entity": "grp_a"},
+}
 MANY_OPS = [{"client_op_id": f"scenario-many-{n}"} for n in range(501)]
 STRANGER = "newuser-id"
 SOURCES = "/api/review/sources/"
@@ -169,6 +187,18 @@ SCENARIOS = {
     "create an entity the server mints an id for": [
         START,
         (REVIEWER, "post", OPS, batch(0, CREATE_MINTED), 200),
+    ],
+    "create a term under a model estimation with a client local id": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, CREATE_TERM), 200),
+    ],
+    "link an analysis to an assessment of the record": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, LINK_ASSESSMENT), 200),
+    ],
+    "delete a group that an analysis still references": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, DELETE_GROUP), 200),
     ],
     "batch on a submitted review": [
         START,
@@ -305,3 +335,23 @@ async def test_a_created_entity_without_a_local_id_gets_the_minted_id(clients, s
     steps = await _play(clients, session, SCENARIOS["create an entity the server mints an id for"])
     created = steps[-1]["response"]["body"]["ops"][0]["after"]["entity"]["local_id"]
     assert created == minted("scenario-create-entity-b")
+
+
+async def test_a_term_created_under_a_model_estimation_gets_the_client_local_id(clients, session):
+    steps = await _play(
+        clients, session,
+        SCENARIOS["create a term under a model estimation with a client local id"],
+    )
+    created = steps[-1]["response"]["body"]["ops"][0]["after"]
+    assert created["parent"] == "mdl_1"
+    assert created["entity"]["local_id"] == minted("scenario-create-term-a")
+
+
+async def test_a_deleted_group_lists_the_references_it_leaves_dangling(clients, session):
+    steps = await _play(
+        clients, session, SCENARIOS["delete a group that an analysis still references"]
+    )
+    stored = steps[-1]["response"]["body"]["ops"][0]
+    assert stored["after"]["references"] == [
+        {"entity": "an_1", "path": "groups[group=grp_a].group", "target_entity": "grp_a"},
+    ]

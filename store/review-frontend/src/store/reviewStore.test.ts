@@ -4,6 +4,7 @@ import type { Provenance, ReviewBundle, StoredOp } from '../contract/generated/r
 import type { Op } from '../contract/generated/review-ops';
 import { validateOpBatch } from '../test/schemas';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
+import type { Json } from '../model/paths';
 import { createReviewStore } from './reviewStore';
 
 const TEXT = 'x'.repeat(300);
@@ -71,19 +72,25 @@ describe('review store navigation', () => {
     it('steps through the focused entity’s slots in inspector order and stops at the ends', () => {
         const store = setup();
         store.getState().focusEntity('grp_a');
-        const seen = [1, 1, 1, 1, 1].map(() => {
-            store.getState().moveSlot(1);
-            return store.getState().focus.key;
-        });
-        expect(seen).toEqual([
+        const keys = store
+            .getState()
+            .index.entity('grp_a')!
+            .slots.map((s) => s.key);
+        expect(keys.slice(0, 4)).toEqual([
             'slot:grp_a:sex',
             'slot:grp_a:species',
             'slot:grp_a:name',
             'slot:grp_a:description',
-            'slot:grp_a:description',
         ]);
+        const seen = keys.map(() => {
+            store.getState().moveSlot(1);
+            return store.getState().focus.key;
+        });
+        expect(seen).toEqual(keys);
+        store.getState().moveSlot(1);
+        expect(store.getState().focus.key).toBe(keys.at(-1));
         store.getState().moveSlot(-1);
-        expect(store.getState().focus).toEqual({ entity: 'grp_a', key: 'slot:grp_a:name' });
+        expect(store.getState().focus.key).toBe(keys.at(-2));
     });
 
     it('steps through visible entities, skipping hidden ones', () => {
@@ -214,7 +221,8 @@ describe('adding evidence', () => {
             store
                 .getState()
                 .index.entity('grp_a')!
-                .slots.map((s) => s.path);
+                .slots.filter((s) => s.value !== undefined)
+                .map((s) => s.path);
         expect(order()).toEqual(['sex', 'species', 'name', 'description']);
         store.getState().focusSlot('slot:grp_a:sex');
         store.getState().addEvidence([20, 25], 'first');
@@ -298,7 +306,7 @@ describe('emitting ops', () => {
 
     it('shows a slot a set_value creates', async () => {
         const store = open();
-        expect(store.getState().index.slot('slot:grp_b:species')).toBeUndefined();
+        expect(store.getState().index.slot('slot:grp_b:species')?.value).toBeUndefined();
         await store.getState().emit({
             client_op_id: 'species-1',
             type: 'set_value',
@@ -437,6 +445,123 @@ describe('emitting ops', () => {
         expect(groupsOf(store)[2].name.value).toBe('Cousins');
         expect(state.provenance).toEqual({ ...result.provenance, [`slot:${id}:name`]: mark('edited') });
         expect(state.pending.map((op) => op.client_op_id)).toEqual([`name-${id}`]);
+    });
+
+    const answer = (sent: Op, record: Json, rows: ReviewBundle['entities']): OpResult => ({
+        ops: [{ seq: 1, op: sent, before: {}, after: {}, user_id: 'u1', created_at: 'then' }],
+        last_seq: 1,
+        record,
+        coordinate_revision: null,
+        provenance: {},
+        annotations: {},
+        hidden: { analyses: ['a_hidden'], entities: [] },
+        entities: rows,
+    });
+
+    it('focuses the entity a create_entity made once the server answers', async () => {
+        const store = open();
+        store.getState().focusEntity('grp_b');
+        store.getState().emit(createGroup);
+        await store.getState().minted('create-0001');
+        const [created] = store.getState().pending;
+        const id = minted('create-0001');
+        expect(store.getState().focus.entity).toBe('grp_b');
+        store
+            .getState()
+            .confirm(
+                answer(created, { ...record, groups: [...record.groups, { local_id: id, name: ev('Siblings') }] }, [
+                    ...entities,
+                    row(id, 'Group', 'groups'),
+                ]),
+                [created]
+            );
+        expect(store.getState().focus).toEqual({ entity: id, key: `entity:${id}` });
+    });
+
+    it('focuses the parent of a focused entity the server deleted', () => {
+        const store = open();
+        store.getState().focusSlot('slot:grp_b:name');
+        const deletion: Op = {
+            client_op_id: 'delete-0001',
+            type: 'delete_entity',
+            target: { kind: 'entity', entity: 'grp_b' },
+        };
+        store.getState().emit(deletion);
+        expect(store.getState().focus.entity).toBe('grp_b');
+        store.getState().confirm(
+            answer(
+                deletion,
+                { ...record, groups: [record.groups[0]] },
+                entities.filter((e) => e.local_id !== 'grp_b')
+            ),
+            [deletion]
+        );
+        expect(store.getState().focus).toEqual({ entity: 'study', key: 'entity:study' });
+    });
+
+    it('reports the links the server says a delete left dangling, as notices', () => {
+        const store = open();
+        const deletion: Op = {
+            client_op_id: 'delete-0002',
+            type: 'delete_entity',
+            target: { kind: 'entity', entity: 'grp_b' },
+        };
+        store.getState().emit(deletion);
+        const result = answer(
+            deletion,
+            { ...record, groups: [record.groups[0]] },
+            entities.filter((e) => e.local_id !== 'grp_b')
+        );
+        result.ops[0].after = {
+            references: [{ entity: 'an_1', path: 'groups[group=grp_b].n', target_entity: 'grp_b' }],
+        };
+        store.getState().confirm(result, [deletion]);
+        expect(store.getState().notices).toEqual([
+            { kind: 'dangling', slot: 'an_1 groups[group=grp_b].n', message: 'it points at grp_b' },
+        ]);
+    });
+});
+
+describe('inspector panels and links', () => {
+    it('opens a panel on the focused item and closes it when the focus moves', () => {
+        const store = setup();
+        store.getState().focusSlot('slot:grp_a:name');
+        store.getState().openPanel('reject');
+        expect(store.getState().panel).toEqual({
+            kind: 'reject',
+            target: { kind: 'slot', entity: 'grp_a', path: 'name' },
+            slot: 'slot:grp_a:name',
+        });
+        store.getState().closePanel();
+        expect(store.getState().panel).toBeNull();
+        store.getState().openPanel('note');
+        store.getState().focusSlot('slot:grp_a:sex');
+        expect(store.getState().panel).toBeNull();
+    });
+
+    it('opens only the panels that apply to the focus', () => {
+        const store = setup();
+        store.getState().focusEntity('grp_a');
+        store.getState().openPanel('edit');
+        expect(store.getState().panel).toBeNull();
+        store.getState().openPanel('link');
+        expect(store.getState().panel).toBeNull();
+        store.getState().openPanel('reject');
+        expect(store.getState().panel).toEqual({ kind: 'reject', target: { kind: 'entity', entity: 'grp_a' } });
+    });
+
+    it('focuses a link by its relationship key, on its entity', () => {
+        const store = createReviewStore(
+            makeBundle({ ...record, analyses: [{ local_id: 'a_1', groups: [{ group: 'grp_a' }] }] }, TEXT, {
+                entities: entityRows(row('grp_a', 'Group', 'groups'), row('a_1', 'Analysis', 'analyses')),
+            })
+        );
+        store.getState().focusLink('slot:a_1:groups[#0].group', 'grp_a');
+        expect(store.getState().focus).toEqual({
+            entity: 'a_1',
+            key: 'relationship:a_1:groups[#0].group:grp_a',
+            slot: 'slot:a_1:groups[#0].group',
+        });
     });
 });
 
