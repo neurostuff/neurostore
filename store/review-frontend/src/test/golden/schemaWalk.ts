@@ -1,4 +1,4 @@
-import { classOf, type Schema } from '../../inspector/schema';
+import { classOf, type Schema } from '../../model/schema';
 import extractionSchema from './schemas/extraction-record.schema.json';
 import { isObject, type Json } from '../../model/paths';
 

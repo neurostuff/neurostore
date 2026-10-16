@@ -1,10 +1,10 @@
 import { Box, Button, GlobalStyles, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useLayoutEffect, useRef } from 'react';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
-import { selectFocusedSlot, type ReviewState } from '../store/reviewStore';
+import { useReviewStores, useSession, useSessionView, useView } from '../store/context';
+import { selectEvidenceCursor, selectFocusedSpans } from '../store/viewSelectors';
 import { REVIEW_HIGHLIGHTS, type HighlightNames } from './highlights';
-import { layoutText, type ParsedPaperLayout } from './layout';
+import { layoutText, type ParsedPaperLayout } from '../model/layout';
 import { SelectionBar } from './SelectionBar';
 import { SupportMenu } from './SupportMenu';
 import { TextBody, type Aside } from './TextBody';
@@ -17,13 +17,12 @@ function scrollToRange(scroller: HTMLElement, range: Range) {
     scroller.scrollTop += top - scroller.clientHeight / 3;
 }
 
-function selectCounter(s: ReviewState): string {
-    if (s.focusedSpans.length > 0) return `evidence ${s.evidenceCursor + 1} of ${s.focusedSpans.length}`;
-    return selectFocusedSlot(s)?.value?.extraction_status === 'not_reported' ? 'not reported' : 'no evidence';
-}
-
 function EvidenceCounter() {
-    const counter = useReviewStore(selectCounter);
+    const spans = useSessionView((session, view) => selectFocusedSpans(session, view).length);
+    const cursor = useSessionView(selectEvidenceCursor);
+    const focused = useView((s) => s.focus.key);
+    const notReported = useSession((s) => s.index.slot(focused)?.value?.extraction_status === 'not_reported');
+    const counter = spans > 0 ? `evidence ${cursor + 1} of ${spans}` : notReported ? 'not reported' : 'no evidence';
     return (
         <Typography variant="body2" color="text.secondary" data-evidence-counter>
             {counter}
@@ -32,8 +31,8 @@ function EvidenceCounter() {
 }
 
 function ShowAllToggle() {
-    const showAll = useReviewStore((s) => s.showAllEvidence);
-    const toggleAllEvidence = useReviewStore((s) => s.toggleAllEvidence);
+    const showAll = useView((s) => s.showAllEvidence);
+    const toggleAllEvidence = useView((s) => s.toggleAllEvidence);
     return (
         <Button size="small" aria-pressed={showAll} onClick={() => toggleAllEvidence()}>
             show all evidence
@@ -43,7 +42,7 @@ function ShowAllToggle() {
 
 /** What the two span sets look like while the diff is shown. */
 function DiffLegend() {
-    const diffOn = useReviewStore((s) => s.diffOn);
+    const diffOn = useView((s) => s.diffOn);
     if (!diffOn) return null;
     return (
         <Stack role="note" aria-label="diff legend" direction="row" spacing={1.5} sx={{ typography: 'caption' }}>
@@ -92,24 +91,24 @@ const textStyles = {
 };
 
 export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights?: HighlightNames; aside?: Aside }) {
-    const store = useReviewStoreApi();
-    const text = useReviewStore((s) => s.bundle.text);
-    const parsedPaper = useReviewStore((s) => s.bundle.parsed_paper as ParsedPaperLayout);
+    const stores = useReviewStores();
+    const text = useSession((s) => s.bundle.text);
+    const parsedPaper = useSession((s) => s.bundle.parsed_paper as ParsedPaperLayout);
     const blocks = layoutText(text, parsedPaper);
     const scrollerRef = useRef<HTMLDivElement>(null);
     const rootRef = useRef<HTMLDivElement>(null);
     const index = useTextIndex(rootRef);
     const layer = useHighlights(index, highlights);
-    const showAll = useReviewStore((s) => s.showAllEvidence);
+    const showAll = useView((s) => s.showAllEvidence);
     const { onClick, onKeyDown, menu } = useSupportingFocus(index, layer);
 
     useLayoutEffect(() => {
         if (!layer) return;
-        return store.subscribe(({ reveal }, prev) => {
+        return stores.view.subscribe(({ reveal }, prev) => {
             if (reveal && reveal.seq !== prev.reveal?.seq)
                 scrollToRange(scrollerRef.current!, layer.range(reveal.span));
         });
-    }, [store, layer]);
+    }, [stores, layer]);
 
     return (
         <TextIndexContext.Provider value={index}>

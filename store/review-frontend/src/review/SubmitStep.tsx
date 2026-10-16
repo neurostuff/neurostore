@@ -4,9 +4,9 @@ import type { ReviewLifecycle } from '../api/reviewApi';
 import { useShallow } from 'zustand/react/shallow';
 import { currentAnalyses, parseOf } from '../model/coordinates';
 import { visibleItems } from '../model/diff';
-import { useOpClient, useReviewStore } from '../store/context';
+import { useOpClient, useSession, useView } from '../store/context';
 import { selectDiff, selectOriginalIndex } from '../store/diffSelectors';
-import { selectSaveLabel } from '../store/reviewStore';
+import { selectSaveLabel } from '../store/sessionStore';
 import {
     changeGroups,
     openNotes,
@@ -19,7 +19,7 @@ import {
 const count = (groups: SummaryGroup[]) => groups.reduce((n, group) => n + group.items.length, 0);
 
 function SummaryLine({ item, secondary }: { item: SummaryItem; secondary?: string }) {
-    const focusTarget = useReviewStore((s) => s.focusTarget);
+    const focusTarget = useView((s) => s.focusTarget);
     const { target } = item;
     const text = <ListItemText primary={item.label} secondary={secondary} />;
     return (
@@ -59,18 +59,13 @@ function Groups({ groups }: { groups: SummaryGroup[] }) {
 
 /** The summary's three parts, from the review as it is now. */
 function useSummary() {
-    const diff = useReviewStore(selectDiff);
-    const original = useReviewStore(selectOriginalIndex);
-    const state = useReviewStore(
-        useShallow((s) => ({
-            index: s.index,
-            bundle: s.bundle,
-            provenance: s.provenance,
-            showNonCoordinate: s.showNonCoordinate,
-        }))
-    );
-    const ops = useReviewStore((s) => s.ops);
-    const pending = useReviewStore((s) => s.pending);
+    const diff = useSession(selectDiff);
+    const original = useSession(selectOriginalIndex);
+    const documents = useSession(useShallow((s) => ({ index: s.index, bundle: s.bundle, provenance: s.provenance })));
+    const showNonCoordinate = useView((s) => s.showNonCoordinate);
+    const state = useMemo(() => ({ ...documents, showNonCoordinate }), [documents, showNonCoordinate]);
+    const ops = useSession((s) => s.ops);
+    const pending = useSession((s) => s.pending);
     const label = useMemo(() => {
         const { parse } = parseOf(state.bundle);
         return targetLabeller(state.index, original, [...(parse.analyses ?? []), ...currentAnalyses(state.bundle)]);
@@ -114,8 +109,8 @@ const unreviewedText = (left: number) =>
 
 export function SubmitStep() {
     const client = useOpClient();
-    const state = useReviewStore((s) => s.bundle.review?.state);
-    const saved = useReviewStore((s) => selectSaveLabel(s) === 'saved');
+    const state = useSession((s) => s.bundle.review?.state);
+    const saved = useSession((s) => selectSaveLabel(s) === 'saved');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const summary = useSummary();

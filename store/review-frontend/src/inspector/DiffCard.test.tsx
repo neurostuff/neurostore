@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { Inspector } from './FocusedCard';
 
 const TEXT = 'x'.repeat(200);
@@ -15,14 +15,14 @@ const entities = entityRows(row('grp_a', 'Group', 'groups'), row('grp_b', 'Group
 function setup() {
     const record = structuredClone(original);
     record.groups[0].n = ev(24, [[60, 62]]);
-    const view = renderWithStore(
+    const view = renderWithStores(
         <Inspector />,
         makeBundle(record, TEXT, {
             entities,
             original: { record: { local_id: 'P1', ...original }, entities, hidden: { analyses: [], entities: [] } },
         })
     );
-    act(() => view.store.getState().focusEntity('grp_a'));
+    act(() => view.stores.view.getState().focusEntity('grp_a'));
     return view;
 }
 
@@ -36,8 +36,8 @@ describe('the inspector while the diff is shown', () => {
     });
 
     it('shows the focused entity in two columns, original and review, with the changed slots marked', () => {
-        const { store } = setup();
-        act(() => store.getState().toggleDiff(true));
+        const { stores } = setup();
+        act(() => stores.view.getState().toggleDiff(true));
         const table = screen.getByRole('table', { name: 'Patients: original and review' });
         expect(
             within(table)
@@ -56,10 +56,10 @@ describe('the inspector while the diff is shown', () => {
     });
 
     it('focuses a slot from its row', () => {
-        const { store } = setup();
-        act(() => store.getState().toggleDiff(true));
+        const { stores } = setup();
+        act(() => stores.view.getState().toggleDiff(true));
         fireEvent.click(diffRow('n'));
-        expect(store.getState().focus.key).toBe('slot:grp_a:n');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_a:n');
         expect(diffRow('n')).toHaveAttribute('aria-current', 'true');
     });
 });
@@ -87,7 +87,7 @@ describe('the diff card’s rows for links, slots only the original has, and slo
     function show(change: (record: typeof base) => void, entity: string) {
         const record = structuredClone(base);
         change(record);
-        const view = renderWithStore(
+        const view = renderWithStores(
             <Inspector />,
             makeBundle(record, TEXT, {
                 entities: rows,
@@ -98,8 +98,8 @@ describe('the diff card’s rows for links, slots only the original has, and slo
                 },
             })
         );
-        act(() => view.store.getState().focusEntity(entity));
-        act(() => view.store.getState().toggleDiff(true));
+        act(() => view.stores.view.getState().focusEntity(entity));
+        act(() => view.stores.view.getState().toggleDiff(true));
         return view;
     }
 

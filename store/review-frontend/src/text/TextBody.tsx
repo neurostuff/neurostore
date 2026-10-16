@@ -1,5 +1,5 @@
 import { Fragment, memo, type ComponentType, type ReactNode } from 'react';
-import type { Block, TableBlock } from './layout';
+import type { Block, TableBlock } from '../model/layout';
 
 /** What is set beside a block, or after the text when `block` is null; it renders itself, so the text never re-renders. */
 export type Aside = ComponentType<{ block: Block | null }>;

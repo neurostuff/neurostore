@@ -1,10 +1,11 @@
 import { getContrastRatio } from '@mui/material/styles';
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { theme } from '../theme';
 import { Inspector } from './FocusedCard';
 import { STATUSES } from './status';
+import { openPanelOn } from './openPanel';
 
 const TEXT = 'x'.repeat(200);
 
@@ -41,8 +42,8 @@ const entities = entityRows(
 );
 
 function setup(entity = 'a_1') {
-    const view = renderWithStore(<Inspector />, makeBundle(record, TEXT, { entities }));
-    act(() => view.store.getState().focusEntity(entity));
+    const view = renderWithStores(<Inspector />, makeBundle(record, TEXT, { entities }));
+    act(() => view.stores.view.getState().focusEntity(entity));
     return view;
 }
 
@@ -54,9 +55,9 @@ describe('Inspector', () => {
     it('names the reviewer who made each change, on the slot’s badge and the entity’s', () => {
         const view = setup();
         act(() =>
-            view.store.setState({
+            view.stores.session.setState({
                 bundle: {
-                    ...view.store.getState().bundle,
+                    ...view.stores.session.getState().bundle,
                     reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }],
                 },
                 provenance: {
@@ -123,15 +124,15 @@ describe('Inspector', () => {
     });
 
     it('says where a slot has no schema, instead of guessing an editor', () => {
-        const view = renderWithStore(
+        const view = renderWithStores(
             <Inspector />,
             makeBundle({ groups: [{ local_id: 'grp_a', name: ev('Patients'), mystery: ev('x') }] }, TEXT, {
                 entities: entityRows(row('grp_a', 'Group', 'groups')),
             })
         );
         act(() => {
-            view.store.getState().focusSlot('slot:grp_a:mystery');
-            view.store.getState().openPanel('edit');
+            view.stores.view.getState().focusSlot('slot:grp_a:mystery');
+            openPanelOn(view.stores, 'edit');
         });
         expect(screen.getByText('no schema for this slot')).toBeInTheDocument();
         expect(screen.queryByRole('group', { name: 'edit mystery' })).not.toBeInTheDocument();
@@ -173,27 +174,27 @@ describe('Inspector', () => {
     });
 
     it('renders reference slots as chips naming their targets, and a chip focuses its entity', () => {
-        const { store } = setup();
+        const { stores } = setup();
         expect(within(rowOf('slot:a_1:measure')).getByRole('button', { name: 'BOLD' })).toBeInTheDocument();
         fireEvent.click(within(rowOf('slot:a_1:groups[#0].group')).getByRole('button', { name: 'Patients' }));
-        expect(store.getState().focus).toEqual({ entity: 'grp_a', key: 'entity:grp_a' });
+        expect(stores.view.getState().focus).toEqual({ entity: 'grp_a', key: 'entity:grp_a' });
         expect(screen.getByRole('region', { name: 'Patients' })).toBeInTheDocument();
     });
 
     it('focuses a slot when it is clicked', () => {
-        const { store } = setup();
+        const { stores } = setup();
         fireEvent.click(within(rows()[3]).getByText('name'));
-        expect(store.getState().focus).toEqual({ entity: 'a_1', key: 'slot:a_1:name', slot: 'slot:a_1:name' });
+        expect(stores.view.getState().focus).toEqual({ entity: 'a_1', key: 'slot:a_1:name', slot: 'slot:a_1:name' });
         expect(rows()[3]).toHaveAttribute('aria-current', 'true');
     });
 
     it('updates a slot’s status when evidence is added, and keeps the row in place while it is focused', () => {
-        const { store } = setup();
-        act(() => store.getState().focusSlot('slot:a_1:outcome'));
-        act(() => void store.getState().addEvidence([10, 20], 'first'));
+        const { stores } = setup();
+        act(() => stores.view.getState().focusSlot('slot:a_1:outcome'));
+        act(() => void stores.session.getState().addEvidence(stores.view.getState().focus.key, [10, 20], 'first'));
         expect(rows()[0]).toHaveAttribute('data-slot-key', 'slot:a_1:outcome');
         expect(shapeIn(rows()[0])).toHaveTextContent('evidence present');
-        act(() => store.getState().focusSlot('slot:a_1:definition'));
+        act(() => stores.view.getState().focusSlot('slot:a_1:definition'));
         expect(rows()[0]).toHaveAttribute('data-slot-key', 'slot:a_1:definition');
     });
 });

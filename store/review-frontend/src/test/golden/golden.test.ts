@@ -10,8 +10,9 @@ import { codePointPaper } from '../../model/offsets';
 import type { Json } from '../../model/paths';
 import { slotKey } from '../../model/targetKey';
 import { ReviewScreen } from '../../review/ReviewScreen';
-import { createReviewStore, type EvidenceMode, type ReviewStore } from '../../store/reviewStore';
-import { renderWithStore } from '../render';
+import { createReviewStores, type ReviewStores } from '../../store/context';
+import type { EvidenceMode } from '../../store/sessionStore';
+import { renderWithStores } from '../render';
 import { validateOpBatch } from '../schemas';
 
 /** One batch on the golden bundle: the documents after it, or the refusal it meets. */
@@ -54,23 +55,23 @@ function mintIds(name: string) {
     });
 }
 
-function emitted(name: string, drive: (store: ReviewStore) => void): Entry {
+function emitted(name: string, drive: (stores: ReviewStores) => void): Entry {
     mintIds(name);
-    const store = createReviewStore(bundle, { now: () => AT });
-    drive(store);
-    return { name, ops: store.getState().pending, expect: 'ok', ...after(store.getState()) };
+    const stores = createReviewStores(bundle, { now: () => AT });
+    drive(stores);
+    return { name, ops: stores.session.getState().pending, expect: 'ok', ...after(stores.session.getState()) };
 }
 
 const press = (key: string, init: KeyboardEventInit = {}, target: Element = document.activeElement ?? document.body) =>
     act(() => void fireEvent.keyDown(target, { key, ...init }));
 
 /** The batch the inspector emits when the reviewer drives it through the keyboard and its editors. */
-function inspected(name: string, drive: (store: ReviewStore) => void): Entry {
+function inspected(name: string, drive: (stores: ReviewStores) => void): Entry {
     cleanup();
     mintIds(name);
-    const { store } = renderWithStore(createElement(ReviewScreen), bundle, { now: () => AT });
-    drive(store);
-    const entry = { name, ops: store.getState().pending, expect: 'ok', ...after(store.getState()) };
+    const { stores } = renderWithStores(createElement(ReviewScreen), bundle, { now: () => AT });
+    drive(stores);
+    const entry = { name, ops: stores.session.getState().pending, expect: 'ok', ...after(stores.session.getState()) };
     cleanup();
     return entry;
 }
@@ -107,9 +108,9 @@ const verdict = (target: object, verdict: 'accept' | 'reject', reason?: string) 
 const note = (target: object, text: string) => ({ type: 'note', target, note: text });
 const reported = (value: unknown) => ({ extraction_status: 'extracted', value, value_source: 'reported' });
 
-const addTo = (entity: string, path: string, words: string, mode: EvidenceMode) => (store: ReviewStore) => {
-    store.getState().focusSlot(slotKey(entity, path));
-    expect(store.getState().addEvidence(at(words), mode)).toBe(true);
+const addTo = (entity: string, path: string, words: string, mode: EvidenceMode) => (stores: ReviewStores) => {
+    stores.view.getState().focusSlot(slotKey(entity, path));
+    expect(stores.session.getState().addEvidence(stores.view.getState().focus.key, at(words), mode)).toBe(true);
 };
 
 function entries(): Entry[] {
@@ -208,22 +209,22 @@ function entries(): Entry[] {
             "field path 'name.value.x' goes through a non-object",
             note(slot('grp_a', 'name.value.x'), 'x')
         ),
-        inspected('golden-ui-enter-integer', (store) => {
-            act(() => store.getState().focusSlot(slotKey('an_1', 'groups[#0].n')));
+        inspected('golden-ui-enter-integer', (stores) => {
+            act(() => stores.view.getState().focusSlot(slotKey('an_1', 'groups[#0].n')));
             press('Enter', {}, document.body);
             fireEvent.change(screen.getByRole('spinbutton', { name: 'groups[#0].n' }), { target: { value: '21' } });
             press('Enter');
         }),
-        inspected('golden-ui-n-outside-text', (store) => {
-            act(() => store.getState().focusSlot(slotKey('grp_a', 'age_mean')));
+        inspected('golden-ui-n-outside-text', (stores) => {
+            act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'age_mean')));
             press('n', {}, document.body);
             fireEvent.change(screen.getByRole('combobox', { name: 'unreported reason' }), {
                 target: { value: 'outside_text' },
             });
             press('Enter');
         }),
-        inspected('golden-ui-open-enum', (store) => {
-            act(() => store.getState().focusSlot(slotKey('grp_a', 'species')));
+        inspected('golden-ui-open-enum', (stores) => {
+            act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'species')));
             press('Enter', {}, document.body);
             fireEvent.change(screen.getByRole('combobox', { name: 'extraction status' }), {
                 target: { value: 'extracted' },
@@ -231,28 +232,28 @@ function entries(): Entry[] {
             fireEvent.change(screen.getByRole('combobox', { name: 'species' }), { target: { value: 'macaque' } });
             press('Enter');
         }),
-        inspected('golden-ui-list-add', (store) => {
-            act(() => store.getState().focusSlot(slotKey('grp_a', 'inclusion_criteria')));
+        inspected('golden-ui-list-add', (stores) => {
+            act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'inclusion_criteria')));
             press('Enter', {}, document.body);
             const add = screen.getByRole('textbox', { name: 'add to inclusion_criteria' });
             fireEvent.change(add, { target: { value: 'adults only' } });
             press('Enter', {}, add);
             press('Enter', {}, add);
         }),
-        inspected('golden-ui-shift-a', (store) => {
-            act(() => store.getState().focusSlot(slotKey('grp_a', 'name')));
+        inspected('golden-ui-shift-a', (stores) => {
+            act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'name')));
             press('A', { shiftKey: true }, document.body);
         }),
-        inspected('golden-ui-semicolon-slot', (store) => {
-            act(() => store.getState().focusSlot(slotKey('grp_a', 'name')));
+        inspected('golden-ui-semicolon-slot', (stores) => {
+            act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'name')));
             press(';', {}, document.body);
             fireEvent.change(screen.getByRole('textbox', { name: 'note on name' }), {
                 target: { value: 'the label is the paper’s' },
             });
             press('Enter');
         }),
-        inspected('golden-ui-reject-other-note', (store) => {
-            act(() => store.getState().focusSlot(slotKey('grp_a', 'name')));
+        inspected('golden-ui-reject-other-note', (stores) => {
+            act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'name')));
             press('r', {}, document.body);
             const panel = screen.getByRole('group', { name: 'reject name' });
             press('5', {}, within(panel).getByRole('radio', { name: '1 wrong value' }));
@@ -319,9 +320,11 @@ describe('the golden op file the backend replays', () => {
     });
 
     it('emits nothing for evidence on the not reported slot', () => {
-        const store = createReviewStore(bundle);
-        store.getState().focusSlot(slotKey('grp_b', 'age_mean'));
-        expect(store.getState().addEvidence(at('eighteen controls'), 'first')).toBe(false);
-        expect(store.getState().pending).toEqual([]);
+        const stores = createReviewStores(bundle);
+        stores.view.getState().focusSlot(slotKey('grp_b', 'age_mean'));
+        expect(
+            stores.session.getState().addEvidence(stores.view.getState().focus.key, at('eighteen controls'), 'first')
+        ).toBe(false);
+        expect(stores.session.getState().pending).toEqual([]);
     });
 });

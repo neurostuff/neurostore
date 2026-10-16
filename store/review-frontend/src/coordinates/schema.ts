@@ -1,5 +1,6 @@
 import { schemaOf } from '../contract/schemas';
-import { asSchema, branchesOf, scalarOf, textOf, type Scalar, type Schema } from '../inspector/schema';
+import { scalarOf, textOf, type Scalar } from '../inspector/schema';
+import { asSchema, branchesOf, type Schema } from '../model/schema';
 import { ANALYSES, ANALYSIS_EDITS, POINTS, READ_FROM } from '../model/coordinates';
 
 export const coordinateSchema = () => schemaOf('coordinate-parse');

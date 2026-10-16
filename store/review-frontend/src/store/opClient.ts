@@ -2,7 +2,7 @@ import { ApiError, ROLE_MESSAGE, type ReviewApi, type ReviewLifecycle, type SetA
 import type { Op } from '../contract/generated/review-ops';
 import { isLocalOp } from '../model/applyOp';
 import { spansToCodePoints } from '../model/offsets';
-import { selectIsBlocked, type Refusal, type ReviewStore } from './reviewStore';
+import { selectIsBlocked, type Refusal, type SessionStore } from './sessionStore';
 
 export const MAX_BATCH = 500;
 export const DEBOUNCE_MS = 1000;
@@ -80,7 +80,7 @@ function needsSignIn(error: unknown): boolean {
 }
 
 /** Saves the store's pending ops to its review, one batch at a time. */
-export function createOpClient(store: ReviewStore, api: ReviewApi) {
+export function createOpClient(store: SessionStore, api: ReviewApi) {
     let debounce: ReturnType<typeof setTimeout> | undefined;
     let backoff: ReturnType<typeof setTimeout> | undefined;
     /** The batch whose answer was lost, sent again unchanged so the server can replay it. */

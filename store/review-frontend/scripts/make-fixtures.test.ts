@@ -18,7 +18,7 @@ def index_rows(record):
     ]
 `;
 const STUB_BUNDLE = `
-def hidden(record, coordinate_parse):
+def hidden(record, parse, revision, provenance, index=None):
     return {"analyses": [], "entities": []}
 `;
 const KEPT = 'analysis#0123456789abcdef';
@@ -31,12 +31,13 @@ function writeJson(file: string, value: unknown) {
 
 function stubBackend() {
     const root = mkdtempSync(path.join(tmpdir(), 'review-backend-'));
-    const review = path.join(root, 'neurostore', 'review');
-    mkdirSync(review, { recursive: true });
+    const core = path.join(root, 'neurostore', 'review', 'core');
+    mkdirSync(core, { recursive: true });
     writeFileSync(path.join(root, 'neurostore', '__init__.py'), '');
-    writeFileSync(path.join(review, '__init__.py'), '');
-    writeFileSync(path.join(review, 'entities.py'), STUB_ENTITIES);
-    writeFileSync(path.join(review, 'bundle.py'), STUB_BUNDLE);
+    writeFileSync(path.join(root, 'neurostore', 'review', '__init__.py'), '');
+    writeFileSync(path.join(core, '__init__.py'), '');
+    writeFileSync(path.join(core, 'entities.py'), STUB_ENTITIES);
+    writeFileSync(path.join(core, 'bundle.py'), STUB_BUNDLE);
     return root;
 }
 
@@ -70,6 +71,17 @@ function makeLayout() {
     });
     return root;
 }
+
+/** The `def hidden(...)` line of a Python module. */
+const hiddenSignature = (source: string) => source.match(/^def hidden\(.*\):$/m)?.[0];
+
+describe('the stub backend', () => {
+    it('defines hidden with the signature the backend’s core gives it', () => {
+        const core = readFileSync(path.resolve(__dirname, '../../backend/neurostore/review/core/bundle.py'), 'utf8');
+        expect(hiddenSignature(core)).toMatch(/^def hidden\(/);
+        expect(hiddenSignature(STUB_BUNDLE)).toBe(hiddenSignature(core));
+    });
+});
 
 describe('make-fixtures.py', () => {
     const layout = makeLayout();

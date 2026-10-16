@@ -1,5 +1,5 @@
 import type { Schemas } from '../contract/schemas';
-import type { Schema } from '../inspector/schema';
+import type { Schema } from '../model/schema';
 import coordinateSchema from './golden/schemas/coordinate-parse.schema.json';
 import extractionSchema from './golden/schemas/extraction-record.schema.json';
 

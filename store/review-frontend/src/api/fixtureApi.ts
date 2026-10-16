@@ -1,5 +1,5 @@
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
-import type { Schema } from '../inspector/schema';
+import type { Schema } from '../model/schema';
 import { applyBatch, isLocalOp, OpRefused, type Documents } from '../model/applyOp';
 import type { CoordinateParse } from '../model/coordinates';
 import { codePointPaper } from '../model/offsets';

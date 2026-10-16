@@ -1,6 +1,6 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Span } from '../contract/generated/review-ops';
-import type { Block, TableBlock } from '../text/layout';
+import type { Block, TableBlock } from './layout';
 import type { Json } from './paths';
 import type { EntityNode, RecordIndex } from './record';
 

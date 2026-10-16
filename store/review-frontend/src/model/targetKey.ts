@@ -1,6 +1,7 @@
 import type {
     AnyTarget,
     CoordinateParseTarget,
+    CoordinateTarget,
     RelationshipTarget,
     SlotTarget,
 } from '../contract/generated/review-ops';
@@ -28,6 +29,11 @@ export const relationshipTarget = (entity: string, path: string, target_entity: 
     entity,
     path,
     target_entity,
+});
+
+export const analysisTarget = (analysis_key: string): CoordinateTarget => ({
+    kind: 'coordinate_analysis',
+    analysis_key,
 });
 
 export const slotKey = (entity: string, path: string) => targetKey(slotTarget(entity, path));

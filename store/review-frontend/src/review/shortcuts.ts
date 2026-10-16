@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { acceptAnalysis, removePoint, splitAnalysis } from '../coordinates/actions';
 import { accept, acceptCard, createOn } from '../inspector/actions';
-import type { ReviewState, ReviewStore } from '../store/reviewStore';
+import type { ReviewStores } from '../store/context';
+import type { ViewState } from '../store/viewStore';
 import { addSelection } from '../text/addSelection';
+import { openPanelOn } from '../inspector/openPanel';
 
 /** Where a shortcut acts: on a record item, on a coordinate analysis, or (unscoped) anywhere. */
 export type Scope = 'record' | 'coordinates';
@@ -13,7 +15,7 @@ export interface Shortcut {
     scope?: Scope;
     /** The toolbar button that runs the shortcut, if it has one. */
     button?: { label: string; color?: 'error' };
-    run(state: ReviewState): void;
+    run(stores: ReviewStores): void;
 }
 
 /** The key as the table names it: a letter is upper case, a named key is as written, Space is spelt out. */
@@ -26,25 +28,28 @@ export const keyLabel = (key: string) => {
 const record = (shortcut: Omit<Shortcut, 'scope'>): Shortcut => ({ ...shortcut, scope: 'record' });
 const coordinates = (shortcut: Omit<Shortcut, 'scope'>): Shortcut => ({ ...shortcut, scope: 'coordinates' });
 
+const view = (stores: ReviewStores) => stores.view.getState();
+const session = (stores: ReviewStores) => stores.session.getState();
+
 /** Runs `normal`, or, while the diff is shown, steps to the next or previous change. */
-const diffAware = (normal: (s: ReviewState) => void, delta: 1 | -1) => (s: ReviewState) =>
-    s.diffOn ? s.moveChange(delta) : normal(s);
+const diffAware = (normal: (s: ReviewStores) => void, delta: 1 | -1) => (s: ReviewStores) =>
+    view(s).diffOn ? view(s).moveChange(delta) : normal(s);
 
 export const SHORTCUTS: Shortcut[] = [
     record({
         keys: ['j'],
         label: 'next slot; next change while the diff is shown',
-        run: diffAware((s) => s.moveSlot(1), 1),
+        run: diffAware((s) => view(s).moveSlot(1), 1),
     }),
     record({
         keys: ['k'],
         label: 'previous slot; previous change while the diff is shown',
-        run: diffAware((s) => s.moveSlot(-1), -1),
+        run: diffAware((s) => view(s).moveSlot(-1), -1),
     }),
-    record({ keys: ['Shift+J'], label: 'next entity', run: (s) => s.moveEntity(1) }),
-    record({ keys: ['Shift+K'], label: 'previous entity', run: (s) => s.moveEntity(-1) }),
-    { keys: [']'], label: 'next evidence span', run: (s) => s.stepEvidence(1) },
-    { keys: ['['], label: 'previous evidence span', run: (s) => s.stepEvidence(-1) },
+    record({ keys: ['Shift+J'], label: 'next entity', run: (s) => view(s).moveEntity(1) }),
+    record({ keys: ['Shift+K'], label: 'previous entity', run: (s) => view(s).moveEntity(-1) }),
+    { keys: [']'], label: 'next evidence span', run: (s) => view(s).stepEvidence(1) },
+    { keys: ['['], label: 'previous evidence span', run: (s) => view(s).stepEvidence(-1) },
     record({ keys: ['e'], label: 'add the selection to the slot’s evidence', run: (s) => addSelection(s, 'first') }),
     record({ keys: ['Shift+E'], label: 'add the selection as a new evidence set', run: (s) => addSelection(s, 'new') }),
     record({
@@ -62,19 +67,19 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['r'],
         label: 'reject, with a reason (1–5) and an optional note',
         button: { label: 'Reject', color: 'error' },
-        run: (s) => s.openPanel('reject'),
+        run: (s) => openPanelOn(s, 'reject'),
     }),
     record({
         keys: ['Enter'],
         label: 'edit the focused value; Enter saves, Esc cancels',
-        run: (s) => s.openPanel('edit'),
+        run: (s) => openPanelOn(s, 'edit'),
     }),
     record({
         keys: ['n'],
         label: 'mark the focused slot not reported, with its reason',
-        run: (s) => s.openPanel('not_reported'),
+        run: (s) => openPanelOn(s, 'not_reported'),
     }),
-    record({ keys: ['l'], label: 'link the focused reference slot to an entity', run: (s) => s.openPanel('link') }),
+    record({ keys: ['l'], label: 'link the focused reference slot to an entity', run: (s) => openPanelOn(s, 'link') }),
     record({
         keys: ['c'],
         label: 'create an entity in the focused entity’s list; asks which class where the list has several',
@@ -83,26 +88,26 @@ export const SHORTCUTS: Shortcut[] = [
     record({
         keys: ['Shift+Backspace'],
         label: 'delete the focused entity, after confirming',
-        run: (s) => s.openPanel('delete'),
+        run: (s) => openPanelOn(s, 'delete'),
     }),
     record({
         keys: [';'],
         label: 'add a note to the focused item',
         button: { label: 'Note' },
-        run: (s) => s.openPanel('note'),
+        run: (s) => openPanelOn(s, 'note'),
     }),
     coordinates({
         keys: ['j'],
         label: 'next point; next change while the diff is shown',
-        run: diffAware((s) => s.movePoint(1), 1),
+        run: diffAware((s) => view(s).movePoint(1), 1),
     }),
     coordinates({
         keys: ['k'],
         label: 'previous point, from the first back to the analysis; previous change while the diff is shown',
-        run: diffAware((s) => s.movePoint(-1), -1),
+        run: diffAware((s) => view(s).movePoint(-1), -1),
     }),
-    coordinates({ keys: ['Shift+J'], label: 'next analysis', run: (s) => s.moveAnalysis(1) }),
-    coordinates({ keys: ['Shift+K'], label: 'previous analysis', run: (s) => s.moveAnalysis(-1) }),
+    coordinates({ keys: ['Shift+J'], label: 'next analysis', run: (s) => view(s).moveAnalysis(1) }),
+    coordinates({ keys: ['Shift+K'], label: 'previous analysis', run: (s) => view(s).moveAnalysis(-1) }),
     coordinates({
         keys: ['a'],
         label: 'accept the focused analysis',
@@ -113,36 +118,36 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['Shift+Backspace'],
         label: 'reject the focused analysis: with a reason (1–5) and an optional note',
         button: { label: 'Reject', color: 'error' },
-        run: (s) => s.openPanel('reject'),
+        run: (s) => openPanelOn(s, 'reject'),
     }),
     coordinates({
         keys: [';'],
         label: 'add a note to the focused analysis',
         button: { label: 'Note' },
-        run: (s) => s.openPanel('note'),
+        run: (s) => openPanelOn(s, 'note'),
     }),
     coordinates({
         keys: ['r'],
         label: 'relabel the focused analysis with another role',
         button: { label: 'Relabel' },
-        run: (s) => s.openPanel('relabel'),
+        run: (s) => openPanelOn(s, 'relabel'),
     }),
     coordinates({
         keys: ['Enter'],
         label: 'edit the focused point; Enter saves, Esc cancels',
         button: { label: 'Edit point' },
-        run: (s) => s.openPanel('edit_point'),
+        run: (s) => openPanelOn(s, 'edit_point'),
     }),
     coordinates({
         keys: [' '],
         label: 'select or unselect the focused point; on the analysis, select it for a merge',
-        run: (s) => s.togglePoint(),
+        run: (s) => view(s).togglePoint(),
     }),
     coordinates({
         keys: ['p'],
         label: 'add a point to the focused analysis',
         button: { label: 'Add point' },
-        run: (s) => s.openPanel('add_point'),
+        run: (s) => openPanelOn(s, 'add_point'),
     }),
     coordinates({
         keys: ['Backspace'],
@@ -154,7 +159,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['m'],
         label: 'move the selected points, or the focused one, to another analysis',
         button: { label: 'Move' },
-        run: (s) => s.openPanel('move'),
+        run: (s) => openPanelOn(s, 'move'),
     }),
     coordinates({
         keys: ['s'],
@@ -166,37 +171,37 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['g'],
         label: 'merge the analyses selected for a merge with the focused one, after confirming',
         button: { label: 'Merge' },
-        run: (s) => s.openPanel('merge'),
+        run: (s) => openPanelOn(s, 'merge'),
     }),
     coordinates({
         keys: ['c'],
         label: 'add an analysis to the focused analysis’s table',
         button: { label: 'Add analysis' },
-        run: (s) => s.openPanel('add_analysis'),
+        run: (s) => openPanelOn(s, 'add_analysis'),
     }),
-    { keys: ['Alt+Shift+J'], label: 'next step', run: (s) => s.moveStep(1) },
-    { keys: ['Alt+Shift+K'], label: 'previous step', run: (s) => s.moveStep(-1) },
+    { keys: ['Alt+Shift+J'], label: 'next step', run: (s) => view(s).moveStep(1) },
+    { keys: ['Alt+Shift+K'], label: 'previous step', run: (s) => view(s).moveStep(-1) },
     {
         keys: ['Shift+H'],
         label: 'show or hide the analyses with no coordinates',
-        run: (s) => s.toggleNonCoordinate(),
+        run: (s) => view(s).toggleNonCoordinate(),
     },
-    { keys: ['Shift+V'], label: 'show or hide all the evidence', run: (s) => s.toggleAllEvidence() },
-    { keys: ['o', 'Shift+O'], label: 'toggle the outline', run: (s) => s.toggleOutline() },
-    { keys: ['d', 'Shift+D'], label: 'show or hide the diff against the original', run: (s) => s.toggleDiff() },
-    { keys: ['Escape'], label: 'leave the diff', run: (s) => s.toggleDiff(false) },
-    { keys: ['Ctrl+Z'], label: 'undo the last edit (Cmd for Ctrl on a Mac)', run: (s) => s.undo() },
+    { keys: ['Shift+V'], label: 'show or hide all the evidence', run: (s) => view(s).toggleAllEvidence() },
+    { keys: ['o', 'Shift+O'], label: 'toggle the outline', run: (s) => view(s).toggleOutline() },
+    { keys: ['d', 'Shift+D'], label: 'show or hide the diff against the original', run: (s) => view(s).toggleDiff() },
+    { keys: ['Escape'], label: 'leave the diff', run: (s) => view(s).toggleDiff(false) },
+    { keys: ['Ctrl+Z'], label: 'undo the last edit (Cmd for Ctrl on a Mac)', run: (s) => session(s).undo() },
     {
         keys: ['Ctrl+Shift+Z', 'Ctrl+Y'],
         label: 'redo the last undone edit',
-        run: (s) => s.redo(),
+        run: (s) => session(s).redo(),
     },
     {
         keys: ['Ctrl+K'],
         label: 'command palette: search entities, slots, values and the paper text',
-        run: (s) => s.togglePalette(true),
+        run: (s) => view(s).togglePalette(true),
     },
-    { keys: ['?'], label: 'show these shortcuts', run: (s) => s.toggleHelp(true) },
+    { keys: ['?'], label: 'show these shortcuts', run: (s) => view(s).toggleHelp(true) },
 ];
 
 const TEXT_FIELD =
@@ -231,7 +236,7 @@ function keyName(event: KeyboardEvent) {
     return event.altKey ? altKeyName(event) : plainKeyName(event);
 }
 
-export function useShortcuts(store: ReviewStore, table: Shortcut[], enabled: (state: ReviewState) => boolean) {
+export function useShortcuts(stores: ReviewStores, table: Shortcut[], enabled: (view: ViewState) => boolean) {
     useEffect(() => {
         const byKey = new Map<string, Shortcut[]>();
         for (const shortcut of table) {
@@ -240,17 +245,16 @@ export function useShortcuts(store: ReviewStore, table: Shortcut[], enabled: (st
         const onKeyDown = (event: KeyboardEvent) => {
             if (isTextField(event.target)) return;
             if ((event.key === 'Enter' || event.key === ' ') && isControl(event.target)) return;
-            const state = store.getState();
-            const scope: Scope = state.coordinates ? 'coordinates' : 'record';
+            const scope: Scope = view(stores).coordinates ? 'coordinates' : 'record';
             const inScope = (key: string) => byKey.get(key)?.find((s) => (s.scope ?? scope) === scope);
             const plain = !event.ctrlKey && !event.metaKey && !event.altKey;
             const capsLock = plain && /^[A-Z]$/.test(event.key) ? inScope(`Shift+${event.key}`) : undefined;
             const shortcut = inScope(keyName(event)) ?? capsLock;
-            if (!shortcut || !enabled(state)) return;
+            if (!shortcut || !enabled(view(stores))) return;
             event.preventDefault();
-            shortcut.run(state);
+            shortcut.run(stores);
         };
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [store, table, enabled]);
+    }, [stores, table, enabled]);
 }

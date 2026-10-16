@@ -2,7 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { registeredSpans } from '../test/highlights';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { validateOpBatch } from '../test/schemas';
 import { TextIndex } from './TextIndex';
 
@@ -14,11 +14,11 @@ const record = {
 };
 
 function setup() {
-    const view = renderWithStore(
+    const view = renderWithStores(
         <ReviewScreen />,
         makeBundle(record, TEXT, { entities: entityRows(row('grp_a', 'Group', 'groups')) })
     );
-    act(() => view.store.getState().focusSlot('slot:grp_a:name'));
+    act(() => view.stores.view.getState().focusSlot('slot:grp_a:name'));
     const select = (start: number, end: number) =>
         act(() => {
             const selection = window.getSelection()!;
@@ -44,10 +44,10 @@ describe('adding evidence from a text selection', () => {
     });
 
     it('E adds the selection, snapped to words, to the focused slot’s first evidence set', () => {
-        const { store, select, textRoot } = setup();
+        const { stores, select, textRoot } = setup();
         select(TEXT.indexOf('ontrol'), TEXT.indexOf('ontrol') + 3);
         press('e');
-        const { pending } = store.getState();
+        const { pending } = stores.session.getState();
         expect(validateOpBatch({ ops: pending })).toBe(true);
         expect(pending).toEqual([
             {
@@ -72,10 +72,10 @@ describe('adding evidence from a text selection', () => {
     });
 
     it('Shift+E adds the selection as a new evidence set', () => {
-        const { store, select } = setup();
+        const { stores, select } = setup();
         select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
         press('E', true);
-        expect(store.getState().pending[0]).toMatchObject({
+        expect(stores.session.getState().pending[0]).toMatchObject({
             evidence: {
                 sets: [
                     { spans: [{ start_char: at('patients')[0] }] },
@@ -86,28 +86,28 @@ describe('adding evidence from a text selection', () => {
     });
 
     it('the bar’s buttons do what E and Shift+E do', () => {
-        const { store, select } = setup();
+        const { stores, select } = setup();
         select(TEXT.indexOf('twenty'), TEXT.indexOf('twenty') + 2);
         fireEvent.click(screen.getByRole('button', { name: /add to evidence/i }));
-        expect(store.getState().pending).toHaveLength(1);
+        expect(stores.session.getState().pending).toHaveLength(1);
         select(TEXT.indexOf('3 T'), TEXT.indexOf('3 T') + 3);
         fireEvent.click(screen.getByRole('button', { name: /new evidence set/i }));
-        expect(store.getState().pending[1]).toMatchObject({
+        expect(stores.session.getState().pending[1]).toMatchObject({
             evidence: { sets: [{}, { spans: [{ start_char: at('3 T')[0] }] }] },
         });
     });
 
     it('on a slot that is not extracted, disables both actions and says to set a value first', () => {
-        const { store, select } = setup();
-        act(() => store.getState().focusSlot('slot:grp_a:species'));
+        const { stores, select } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:species'));
         select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
         expect(screen.getByRole('button', { name: /add to evidence/i })).toBeDisabled();
         expect(screen.getByRole('button', { name: /new evidence set/i })).toBeDisabled();
         expect(bar()).toHaveTextContent('set a value first');
         press('e');
         press('E', true);
-        expect(store.getState().pending).toEqual([]);
-        act(() => store.getState().focusSlot('slot:grp_a:name'));
+        expect(stores.session.getState().pending).toEqual([]);
+        act(() => stores.view.getState().focusSlot('slot:grp_a:name'));
         expect(bar()).not.toHaveTextContent('set a value first');
     });
 

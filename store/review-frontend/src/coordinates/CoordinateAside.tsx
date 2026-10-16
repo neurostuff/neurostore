@@ -1,16 +1,17 @@
 import { Box, Button, Chip, Stack, Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { memo } from 'react';
+import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { reviewStatus, statusColors } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import { analysesBeside, currentAnalyses, guidedOrder, hasPoints, type CoordinateAnalysis } from '../model/coordinates';
 import { targetKey } from '../model/targetKey';
 import { useEditorName } from '../review/editor';
-import { useReviewStore } from '../store/context';
-import type { ReviewState } from '../store/reviewStore';
-import { layoutText, type Block, type ParsedPaperLayout } from '../text/layout';
+import { useSession, useView } from '../store/context';
+import { layoutText, type Block, type ParsedPaperLayout } from '../model/layout';
 import { ASIDE } from '../text/TextIndex';
-import { analysisTarget, pendingKeys } from './actions';
+import { analysisTarget } from '../model/targetKey';
+import { addAnalysisPanel, pendingKeys } from './actions';
 import { PointGrid } from './PointGrid';
 
 const asideStyles = (theme: Theme) => ({
@@ -34,15 +35,15 @@ const asideStyles = (theme: Theme) => ({
 });
 
 const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: CoordinateAnalysis }) {
-    const focused = useReviewStore((s) => s.coordinates?.analysis === analysis.key);
-    const focusedPoint = useReviewStore((s) => (s.coordinates?.analysis === analysis.key ? s.coordinates.point : null));
-    const selected = useReviewStore((s) => (s.coordinates?.analysis === analysis.key ? s.coordinates.selected : null));
-    const merging = useReviewStore((s) => s.merging.includes(analysis.key));
-    const saving = useReviewStore((s) => pendingKeys(s).has(analysis.key));
-    const reviewed = useReviewStore((s) => s.provenance[targetKey(analysisTarget(analysis.key))]?.state);
+    const focused = useView((s) => s.coordinates?.analysis === analysis.key);
+    const focusedPoint = useView((s) => (s.coordinates?.analysis === analysis.key ? s.coordinates.point : null));
+    const selected = useView((s) => (s.coordinates?.analysis === analysis.key ? s.coordinates.selected : null));
+    const merging = useView((s) => s.merging.includes(analysis.key));
+    const saving = useSession((s) => pendingKeys(s).has(analysis.key));
+    const reviewed = useSession((s) => s.provenance[targetKey(analysisTarget(analysis.key))]?.state);
     const editor = useEditorName(targetKey(analysisTarget(analysis.key)));
-    const focusAnalysis = useReviewStore((s) => s.focusAnalysis);
-    const toggleMerge = useReviewStore((s) => s.toggleMerge);
+    const focusAnalysis = useView((s) => s.focusAnalysis);
+    const toggleMerge = useView((s) => s.toggleMerge);
     const nonCoordinate = !hasPoints(analysis);
     return (
         <Box
@@ -80,12 +81,12 @@ const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: Coordi
 
 let besideCache: { key: unknown[]; beside: ReturnType<typeof analysesBeside> } | null = null;
 /** The analyses beside each block of the text in guided order; worked out once per text, parse, revision and display setting. */
-function besideBlocks(s: Pick<ReviewState, 'bundle' | 'showNonCoordinate'>) {
-    const { text, parsed_paper, coordinate_parse, coordinate_revision } = s.bundle;
-    const key = [text, parsed_paper, coordinate_parse, coordinate_revision, s.showNonCoordinate];
+function besideBlocks(bundle: ReviewBundle, showNonCoordinate: boolean) {
+    const { text, parsed_paper, coordinate_parse, coordinate_revision } = bundle;
+    const key = [text, parsed_paper, coordinate_parse, coordinate_revision, showNonCoordinate];
     if (!besideCache || besideCache.key.some((part, i) => part !== key[i])) {
         const blocks = layoutText(text, parsed_paper as ParsedPaperLayout);
-        const ordered = guidedOrder(currentAnalyses(s.bundle), s.showNonCoordinate);
+        const ordered = guidedOrder(currentAnalyses(bundle), showNonCoordinate);
         besideCache = { key, beside: analysesBeside(blocks, ordered) };
     }
     return besideCache.beside;
@@ -93,10 +94,11 @@ function besideBlocks(s: Pick<ReviewState, 'bundle' | 'showNonCoordinate'>) {
 
 /** The analyses set beside a block of the text in the coordinates step, and a table's button to add one. */
 export function CoordinateAside({ block }: { block: Block | null }) {
-    const step = useReviewStore((s) => s.step);
-    const beside = useReviewStore(besideBlocks);
-    const tables = useReviewStore((s) => (s.bundle.parsed_paper as ParsedPaperLayout).tables);
-    const addAnalysisTo = useReviewStore((s) => s.addAnalysisTo);
+    const step = useView((s) => s.step);
+    const showNonCoordinate = useView((s) => s.showNonCoordinate);
+    const beside = useSession((s) => besideBlocks(s.bundle, showNonCoordinate));
+    const tables = useSession((s) => (s.bundle.parsed_paper as ParsedPaperLayout).tables);
+    const openPanel = useView((s) => s.openPanel);
     if (step !== 'coordinates') return null;
     const analyses = beside.get(block?.start ?? 'end') ?? [];
     const table = block?.kind === 'table' ? block : undefined;
@@ -108,7 +110,7 @@ export function CoordinateAside({ block }: { block: Block | null }) {
                 <AnalysisCard key={analysis.key} analysis={analysis} />
             ))}
             {table && (
-                <Button size="small" onClick={() => addAnalysisTo(table.tableId)}>
+                <Button size="small" onClick={() => openPanel(addAnalysisPanel(table.tableId))}>
                     {`Add an analysis to ${label}`}
                 </Button>
             )}

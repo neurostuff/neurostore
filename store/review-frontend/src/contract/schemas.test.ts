@@ -1,6 +1,5 @@
 import { coordinateSchema, pointFields } from '../coordinates/schema';
-import { extractionSchema } from '../inspector/schema';
-import type { Schema } from '../inspector/schema';
+import { extractionSchema, type Schema } from '../model/schema';
 import { referenceSlots } from './references';
 import { loadSchemas, schemaOf, SCHEMA_NAMES, type SchemaName } from './schemas';
 

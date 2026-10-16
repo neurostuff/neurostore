@@ -1,6 +1,6 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { reviewerName } from '../format/people';
-import { useReviewStore } from '../store/context';
+import { useSession } from '../store/context';
 
 /** The name of the reviewer who made the change `entry` records, or undefined when no one has. */
 export function editorName(
@@ -11,5 +11,5 @@ export function editorName(
 }
 
 export function useEditorName(key: string): string | undefined {
-    return useReviewStore((s) => editorName(s.bundle.reviewers, s.provenance[key]));
+    return useSession((s) => editorName(s.bundle.reviewers, s.provenance[key]));
 }

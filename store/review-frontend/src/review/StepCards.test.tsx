@@ -2,7 +2,7 @@ import { within } from '@testing-library/react';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { EntityNode } from '../model/record';
 import { ev, makeBundle } from '../test/bundles';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { StepCards } from './StepCards';
 
 const study = { id: 'study', name: 'A study', entityClass: 'Study', spans: [], slots: [] } as unknown as EntityNode;
@@ -20,7 +20,7 @@ describe('a card’s provenance badge', () => {
                 annotations: {},
             } as unknown as ReviewBundle['review'],
         });
-        renderWithStore(<StepCards label="Study" cards={[study]} />, bundle);
+        renderWithStores(<StepCards label="Study" cards={[study]} />, bundle);
         const head = document.querySelector('[data-card="study"]') as HTMLElement;
         expect(within(head).getByText('verified by Ana')).toBeInTheDocument();
     });

@@ -1,4 +1,4 @@
-import type { Schema } from '../inspector/schema';
+import type { Schema } from '../model/schema';
 import { fromSchema } from './schemas';
 
 export interface Reference {

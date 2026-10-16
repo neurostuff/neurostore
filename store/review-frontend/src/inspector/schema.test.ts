@@ -1,15 +1,6 @@
 import extractionSchema from '../test/golden/schemas/extraction-record.schema.json';
-import {
-    classOf,
-    editorFor,
-    parseScalar,
-    pick,
-    referenceTarget,
-    requiredDefaults,
-    wrapperSchemaAt,
-    wrapperSpec,
-    type Schema,
-} from './schema';
+import { classOf, pick, referenceTarget, requiredDefaults, wrapperSchemaAt, type Schema } from '../model/schema';
+import { editorFor, parseScalar, wrapperSpec } from './schema';
 
 const root = extractionSchema as Schema;
 const row = (entity_class: string, schema_class = entity_class) => ({ entity_class, schema_class });

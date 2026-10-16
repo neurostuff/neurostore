@@ -1,4 +1,4 @@
-import type { Schema } from '../inspector/schema';
+import type { Schema } from '../model/schema';
 import { analysisFields, coordinateSchema, gridColumns, pointFields } from './schema';
 
 const STATISTICS = ['t', 'z', 'f', 'chi_square', 'd', 'g', 'r', 'beta', 'p', 'other'];

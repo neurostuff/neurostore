@@ -7,7 +7,7 @@ import coordinateSchema from '../test/golden/schemas/coordinate-parse.schema.jso
 import extractionSchema from '../test/golden/schemas/extraction-record.schema.json';
 import type { ExtractedValue } from '../model/record';
 import { theme } from '../theme';
-import type { Schema } from './schema';
+import type { Schema } from '../model/schema';
 import { SlotEditor, type SlotEditorProps } from './SlotEditor';
 
 const wrapper = (value: Schema): Schema => ({

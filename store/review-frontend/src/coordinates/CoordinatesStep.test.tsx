@@ -15,10 +15,11 @@ import {
     LOCALIZER,
     PRECUNEUS,
     RECORD,
+    revision,
     SCRAMBLED,
 } from '../test/coordinates';
 import { registeredSpans } from '../test/highlights';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { coordinateOpErrors } from '../test/schemas';
 
 // These tests render the whole review screen and query it by role, which takes 1.5–3 s each in
@@ -26,10 +27,11 @@ import { coordinateOpErrors } from '../test/schemas';
 vi.setConfig({ testTimeout: 15_000 });
 
 function setup(bundle = coordinateBundle()) {
-    const view = renderWithStore(<ReviewScreen />, bundle, { now: () => 'now' });
-    const state = () => view.store.getState();
-    const pending = () => state().pending;
-    return { ...view, state, pending };
+    const view = renderWithStores(<ReviewScreen />, bundle, { now: () => 'now' });
+    const session = () => view.stores.session.getState();
+    const viewState = () => view.stores.view.getState();
+    const pending = () => session().pending;
+    return { ...view, session, viewState, pending };
 }
 
 const press = (key: string, init: KeyboardEventInit = {}, target: Element = document.activeElement ?? document.body) =>
@@ -67,16 +69,16 @@ describe('the coordinates step', () => {
     it('names the reviewer who edited an analysis, on its card and in the inspector', () => {
         const view = setup();
         act(() =>
-            view.store.setState({
+            view.stores.session.setState({
                 bundle: {
-                    ...view.store.getState().bundle,
+                    ...view.stores.session.getState().bundle,
                     reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }],
                 },
                 provenance: { [`coordinate_analysis:${FACES.key}`]: { state: 'edited', user_id: 'u1', at: 'then' } },
             })
         );
         expect(within(card(FACES.name)).getByText('edited by Ana')).toBeInTheDocument();
-        act(() => view.store.getState().focusAnalysis(FACES.key));
+        act(() => view.stores.view.getState().focusAnalysis(FACES.key));
         expect(within(screen.getByRole('region', { name: FACES.name })).getByText('edited by Ana')).toBeInTheDocument();
     });
 
@@ -117,25 +119,25 @@ describe('the coordinates step', () => {
     });
 
     it('focuses a point by click and selects points with Space and Shift+click', () => {
-        const { state } = setup();
+        const { viewState } = setup();
         fireEvent.click(rowsOf(HOUSES.name)[0]);
-        expect(state().coordinates).toEqual({ analysis: HOUSES.key, point: 0, selected: [] });
+        expect(viewState().coordinates).toEqual({ analysis: HOUSES.key, point: 0, selected: [] });
         press(' ');
         expect(rowsOf(HOUSES.name)[0]).toHaveAttribute('aria-selected', 'true');
         fireEvent.click(rowsOf(FACES.name)[1], { shiftKey: true });
-        expect(state().coordinates).toEqual({ analysis: FACES.key, point: 1, selected: [1] });
+        expect(viewState().coordinates).toEqual({ analysis: FACES.key, point: 1, selected: [1] });
         expect(rowsOf(FACES.name)[1]).toHaveAttribute('aria-selected', 'true');
     });
 
     it('keeps analyses with no points hidden until Shift+H, then last, greyed and labelled', () => {
-        const { state } = setup();
+        const { viewState } = setup();
         expect(screen.queryByRole('article', { name: SCRAMBLED.name })).not.toBeInTheDocument();
         press('H', { shiftKey: true });
         expect(within(card(SCRAMBLED.name)).getByText('non-coordinate')).toBeInTheDocument();
         press('J', { shiftKey: true });
         press('J', { shiftKey: true });
         press('J', { shiftKey: true });
-        expect(state().coordinates?.analysis).toBe(SCRAMBLED.key);
+        expect(viewState().coordinates?.analysis).toBe(SCRAMBLED.key);
         press('H', { shiftKey: true });
         expect(screen.queryByRole('article', { name: SCRAMBLED.name })).not.toBeInTheDocument();
     });
@@ -289,7 +291,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
     });
 
     it('P adds a point, and Backspace removes the focused one, each as edit_points', () => {
-        const { pending, state } = setup();
+        const { pending, session } = setup();
         press('p');
         const editor = screen.getByRole('group', { name: `edit a new point of ${FACES.name}` });
         for (const [axis, value] of [
@@ -305,7 +307,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
                 payload: { points: [PRECUNEUS, INSULA, { coordinates: [1, 2, 3] }] },
             }),
         ]);
-        act(() => state().refuse([{ op: pending()[0], message: 'no' }]));
+        act(() => session().refuse([{ op: pending()[0], message: 'no' }]));
         press('j');
         press('Backspace');
         expect(pending()).toEqual([
@@ -453,9 +455,29 @@ describe('coordinate actions, each emitted as the server applies it', () => {
     });
 });
 
+describe('an open coordinate panel', () => {
+    it('offers the analyses a rebase leaves, by the names it gives them', () => {
+        const { session } = setup();
+        press('j');
+        press('m');
+        const renamed = { ...HOUSES, name: 'Houses, rerun' };
+        act(() =>
+            session().rebase(
+                coordinateBundle({
+                    coordinate_revision: revision([FACES, renamed, LOCALIZER, SCRAMBLED]) as never,
+                })
+            )
+        );
+        fireEvent.change(screen.getByRole('combobox', { name: 'move 1 point to' }), { target: { value: 'Houses' } });
+        expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+            expect.stringContaining('Houses, rerun'),
+        ]);
+    });
+});
+
 describe('after a coordinate result', () => {
     it('renders the result’s revision and keeps focus on the analysis that replaced the focused one', () => {
-        const { pending, state } = setup();
+        const { pending, session, viewState } = setup();
         press('j');
         press(' ');
         press('s');
@@ -480,18 +502,21 @@ describe('after a coordinate result', () => {
             [`coordinate_analysis:${second.key}`]: { state: 'added', user_id: 'u1', at: 'then' },
         };
         act(() =>
-            state().confirm(coordinateResult(sent, [first, second, HOUSES, LOCALIZER, SCRAMBLED], { provenance }), sent)
+            session().confirm(
+                coordinateResult(sent, [first, second, HOUSES, LOCALIZER, SCRAMBLED], { provenance }),
+                sent
+            )
         );
         expect(screen.queryByRole('article', { name: FACES.name })).not.toBeInTheDocument();
         expect(card(first.name)).toHaveAttribute('aria-current', 'true');
         expect(within(card(first.name)).getByText('added by u1')).toBeInTheDocument();
         expect(within(card(first.name)).queryByText('saving…')).not.toBeInTheDocument();
         expect(rowsOf(second.name)).toHaveLength(1);
-        expect(state().coordinates).toEqual({ analysis: first.key, point: 0, selected: [] });
+        expect(viewState().coordinates).toEqual({ analysis: first.key, point: 0, selected: [] });
     });
 
     it('takes the record and entity index from the result, and offers the card an added analysis made', () => {
-        const { pending, state } = setup();
+        const { pending, session, viewState } = setup();
         press('c');
         const form = screen.getByRole('group', { name: 'edit the first point of a new analysis in Table 1' });
         fireEvent.change(within(form).getByRole('textbox', { name: 'name' }), { target: { value: 'Faces > Objects' } });
@@ -513,22 +538,22 @@ describe('after a coordinate result', () => {
         };
         const entities = [...ENTITIES, row('rv_0123456789ab', 'Analysis', 'analyses')];
         act(() =>
-            state().confirm(
+            session().confirm(
                 coordinateResult(sent, [FACES, HOUSES, LOCALIZER, SCRAMBLED, added], { record, entities }),
                 sent
             )
         );
-        expect(state().index.entity('rv_0123456789ab')?.name).toBe('Faces > Objects');
+        expect(session().index.entity('rv_0123456789ab')?.name).toBe('Faces > Objects');
         expect(card(added.name)).toHaveAttribute('aria-current', 'true');
         fireEvent.click(screen.getByRole('button', { name: 'Open the record’s card for Faces > Objects' }));
-        expect(state().focus.entity).toBe('rv_0123456789ab');
-        expect(state().coordinates).toBeNull();
+        expect(viewState().focus.entity).toBe('rv_0123456789ab');
+        expect(viewState().coordinates).toBeNull();
         expect(screen.getByRole('region', { name: 'Faces > Objects' })).toBeInTheDocument();
     });
 
     it('reports the links a merge left dangling, as a delete does', () => {
-        const { pending, state } = setup();
-        act(() => state().toggleMerge(HOUSES.key));
+        const { pending, session, viewState } = setup();
+        act(() => viewState().toggleMerge(HOUSES.key));
         press('g');
         fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Merge' }));
         const sent = pending();
@@ -541,7 +566,7 @@ describe('after a coordinate result', () => {
         const record = { analyses: [{ ...RECORD.analyses[0], source_table_analysis: ev(merged.key) }] };
         const after = { references: [{ entity: 'ana_faces', path: 'mirror_of', target_entity: 'ana_houses' }] };
         act(() =>
-            state().confirm(
+            session().confirm(
                 coordinateResult(sent, [merged, LOCALIZER, SCRAMBLED], {
                     record,
                     entities: ENTITIES.slice(0, 2),
@@ -553,11 +578,11 @@ describe('after a coordinate result', () => {
         expect(screen.getByRole('status', { name: '' })).toHaveTextContent(
             'ana_faces mirror_of: left dangling by a delete or a merge (it points at ana_houses)'
         );
-        expect(state().index.entity('ana_houses')).toBeUndefined();
+        expect(session().index.entity('ana_houses')).toBeUndefined();
     });
 
     it('reports the links a split leaves on its first part, as notices', () => {
-        const { pending, state } = setup();
+        const { pending, session } = setup();
         press('j');
         press(' ');
         press('s');
@@ -572,7 +597,7 @@ describe('after a coordinate result', () => {
         const second = { ...first, key: key(0x2a1), name: 'Faces > Houses (part 2)', points: [INSULA, CUNEUS] };
         const after = { links: [{ entity: 'ana_faces', path: 'mirror_of', target_entity: 'ana_houses' }] };
         act(() =>
-            state().confirm(coordinateResult(sent, [first, second, HOUSES, LOCALIZER, SCRAMBLED], { after }), sent)
+            session().confirm(coordinateResult(sent, [first, second, HOUSES, LOCALIZER, SCRAMBLED], { after }), sent)
         );
         expect(screen.getByRole('status', { name: '' })).toHaveTextContent(
             'ana_faces mirror_of: kept on the first part of a split (it points at ana_houses)'
@@ -590,36 +615,36 @@ describe('while a coordinate op is pending', () => {
     };
 
     it('no accept is sent, since the focused analysis’s key may change', () => {
-        const { state, pending } = setup();
-        act(() => void state().emitBatch([accept]));
+        const { pending, session } = setup();
+        act(() => void session().emitBatch([accept]));
         press('a');
         expect(pending()).toEqual([accept]);
     });
 
     it('no coordinate panel opens', () => {
-        const { state } = setup();
-        act(() => void state().emitBatch([accept]));
+        const { session } = setup();
+        act(() => void session().emitBatch([accept]));
         press('r');
         expect(screen.queryByRole('combobox', { name: 'role' })).not.toBeInTheDocument();
     });
 
     it('a merge the dialog confirms is not sent', () => {
-        const { state, pending } = setup();
+        const { pending, session } = setup();
         press('J', { shiftKey: true });
         press(' ');
         press('K', { shiftKey: true });
         press('g');
         const dialog = screen.getByRole('dialog', { name: `Merge 2 analyses into ${FACES.name}?` });
-        act(() => void state().emitBatch([accept]));
+        act(() => void session().emitBatch([accept]));
         fireEvent.click(within(dialog).getByRole('button', { name: 'Merge' }));
         expect(pending()).toEqual([accept]);
     });
 
     it('an analysis the form adds is not sent', () => {
-        const { state, pending } = setup();
+        const { pending, session } = setup();
         press('c');
         const form = screen.getByRole('group', { name: 'edit the first point of a new analysis in Table 1' });
-        act(() => void state().emitBatch([accept]));
+        act(() => void session().emitBatch([accept]));
         fireEvent.change(within(form).getByRole('spinbutton', { name: 'x' }), { target: { value: '8' } });
         fireEvent.change(within(form).getByRole('spinbutton', { name: 'y' }), { target: { value: '9' } });
         fireEvent.change(within(form).getByRole('spinbutton', { name: 'z' }), { target: { value: '10' } });
@@ -629,7 +654,7 @@ describe('while a coordinate op is pending', () => {
     });
 
     it('the analyses a pending merge takes show as saving, with the one it joins into', () => {
-        const { state } = setup();
+        const { session } = setup();
         const merge: Op = {
             client_op_id: 'c-merge',
             type: 'coordinate',
@@ -637,7 +662,7 @@ describe('while a coordinate op is pending', () => {
             action: 'merge',
             payload: { with: [HOUSES.key] },
         };
-        act(() => void state().emitBatch([merge]));
+        act(() => void session().emitBatch([merge]));
         expect(within(card(HOUSES.name)).getByText('saving…')).toBeInTheDocument();
         expect(within(card(FACES.name)).getByText('saving…')).toBeInTheDocument();
     });

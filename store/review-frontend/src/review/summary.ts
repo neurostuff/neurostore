@@ -4,8 +4,8 @@ import { diffTarget, isChange, type DiffItem } from '../model/diff';
 import type { RecordIndex } from '../model/record';
 import { targetKey } from '../model/targetKey';
 import type { ProvenanceMap } from '../model/applyOp';
-import { stepTargets, type StepState } from './guided';
-import { STEPS } from './steps';
+import { stepTargets, type StepState } from '../model/guided';
+import { STEPS } from '../model/steps';
 
 /** One line of the summary: what it names, and the target that focuses it, if the review still has it. */
 export interface SummaryItem {

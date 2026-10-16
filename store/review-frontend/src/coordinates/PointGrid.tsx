@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { fromSchema } from '../contract/schemas';
 import type { CoordinateAnalysis } from '../model/coordinates';
-import { useReviewStore } from '../store/context';
+import { useView } from '../store/context';
 import { gridColumns, pointFields } from './schema';
 
 const columnsOf = fromSchema('coordinate-parse', (schema) => gridColumns(pointFields(schema)));
@@ -16,8 +16,8 @@ export function PointGrid({
     focusedPoint: number | null;
     selected: number[];
 }) {
-    const focusAnalysis = useReviewStore((s) => s.focusAnalysis);
-    const togglePoint = useReviewStore((s) => s.togglePoint);
+    const focusAnalysis = useView((s) => s.focusAnalysis);
+    const togglePoint = useView((s) => s.togglePoint);
     const columns = columnsOf();
     const onRow = (index: number) => (event: MouseEvent) => {
         event.stopPropagation();

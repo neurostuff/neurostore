@@ -1,10 +1,10 @@
 import { Dialog, DialogContent, DialogTitle, Table, TableBody, TableCell, TableRow } from '@mui/material';
-import { useReviewStore } from '../store/context';
+import { useView } from '../store/context';
 import { keyLabel, SHORTCUTS } from './shortcuts';
 
 export function ShortcutHelp() {
-    const open = useReviewStore((s) => s.helpOpen);
-    const toggleHelp = useReviewStore((s) => s.toggleHelp);
+    const open = useView((s) => s.helpOpen);
+    const toggleHelp = useView((s) => s.toggleHelp);
     return (
         <Dialog open={open} onClose={() => toggleHelp(false)} aria-labelledby="shortcut-help-title">
             <DialogTitle id="shortcut-help-title">Keyboard shortcuts</DialogTitle>

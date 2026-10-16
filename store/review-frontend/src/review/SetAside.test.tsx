@@ -1,9 +1,8 @@
 import { ThemeProvider } from '@mui/material';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { OpClientProvider, ReviewStoreProvider } from '../store/context';
+import { createReviewStores, OpClientProvider, type ReviewStores, ReviewStoresProvider } from '../store/context';
 import { createOpClient, type OpClient } from '../store/opClient';
-import { createReviewStore, type ReviewStore } from '../store/reviewStore';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
 import { theme } from '../theme';
@@ -28,19 +27,19 @@ afterEach(() => {
     expect(server.invalid()).toEqual([]);
 });
 
-async function renderScreen(): Promise<ReviewStore> {
+async function renderScreen(): Promise<ReviewStores> {
     await server.backend.startReview('S1');
-    const store = createReviewStore(await server.backend.getBundle('S1'));
-    client = createOpClient(store, server.api());
+    const store = createReviewStores(await server.backend.getBundle('S1'));
+    client = createOpClient(store.session, server.api());
     client.start();
     render(
         <ThemeProvider theme={theme}>
             <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <ReviewStoreProvider store={store}>
+                <ReviewStoresProvider stores={store}>
                     <OpClientProvider client={client}>
                         <ReviewScreen />
                     </OpClientProvider>
-                </ReviewStoreProvider>
+                </ReviewStoresProvider>
             </MemoryRouter>
         </ThemeProvider>
     );
@@ -52,7 +51,7 @@ const patches = () => server.requests.filter((r) => r.method === 'PATCH').map((r
 describe('setting a paper aside', () => {
     it('sets the paper aside from any step with a reason and a note, and resumes it', async () => {
         const store = await renderScreen();
-        act(() => store.getState().setStep('leftovers'));
+        act(() => store.view.getState().setStep('leftovers'));
         fireEvent.click(screen.getByRole('button', { name: 'Set aside' }));
         const dialog = screen.getByRole('dialog', { name: 'Set this paper aside' });
         fireEvent.click(within(dialog).getByRole('radio', { name: 'duplicate of another paper' }));
@@ -63,11 +62,11 @@ describe('setting a paper aside', () => {
         expect(banner).toHaveTextContent('Set aside: duplicate of another paper. same as P2');
         expect(patches()).toEqual([{ state: 'set_aside', reason: 'duplicate', note: 'same as P2' }]);
         expect(screen.queryByRole('button', { name: 'Set aside' })).not.toBeInTheDocument();
-        expect(store.getState().bundle.review?.state).toBe('set_aside');
-        expect(store.getState().step).toBe('leftovers');
+        expect(store.session.getState().bundle.review?.state).toBe('set_aside');
+        expect(store.view.getState().step).toBe('leftovers');
 
         fireEvent.click(within(banner).getByRole('button', { name: 'Resume' }));
-        await waitFor(() => expect(store.getState().bundle.review?.state).toBe('in_progress'), SLOW);
+        await waitFor(() => expect(store.session.getState().bundle.review?.state).toBe('in_progress'), SLOW);
         expect(screen.queryByRole('status', { name: 'set aside' })).not.toBeInTheDocument();
         expect(patches().at(-1)).toEqual({ state: 'in_progress' });
     }, 30_000);
@@ -91,6 +90,6 @@ describe('setting a paper aside', () => {
         fireEvent.click(within(dialog).getByRole('button', { name: 'Set aside' }));
         expect(within(dialog).getByRole('alert')).toHaveTextContent('pick a reason');
         expect(patches()).toEqual([]);
-        expect(store.getState().bundle.review?.state).toBe('in_progress');
+        expect(store.session.getState().bundle.review?.state).toBe('in_progress');
     });
 });

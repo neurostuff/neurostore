@@ -6,7 +6,7 @@ import { currentAnalyses, type CoordinateAnalysis } from '../model/coordinates';
 import { createOpClient, type OpClient } from '../store/opClient';
 import { fakeFetch, json } from '../test/fakeFetch';
 import { linkedBundle, RECORDED } from '../test/linked';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { coordinateOpErrors } from '../test/schemas';
 import { API_BASE } from '../test/spec';
 import { ReviewScreen } from './ReviewScreen';
@@ -54,11 +54,11 @@ afterEach(() => {
 
 /** The linked bundle on screen, with a save loop that sends to a fake fetch answering the recorded response. */
 function open(scenario: string) {
-    const view = renderWithStore(<ReviewScreen />, linkedBundle(), { now: () => 'now' });
+    const view = renderWithStores(<ReviewScreen />, linkedBundle(), { now: () => 'now' });
     const answers = recorded(scenario).result;
     const served = fakeFetch(async () => json(answers, 200));
     const client = createOpClient(
-        view.store,
+        view.stores.session,
         httpApi(API_BASE, async () => 'token-1', served.fetch)
     );
     client.start();
@@ -67,61 +67,61 @@ function open(scenario: string) {
     return { ...view, served, sent };
 }
 
-async function saved(store: ReturnType<typeof open>['store']) {
-    await waitFor(() => expect(store.getState().pending).toEqual([]));
+async function saved(stores: ReturnType<typeof open>['stores']) {
+    await waitFor(() => expect(stores.session.getState().pending).toEqual([]));
 }
 
 describe('the recorded linked-analyses bundle, driven through the screen', () => {
     it('splits the second analysis as recorded: cards, focus, notices and record from the result', async () => {
-        const { store, sent } = open('coordinate split');
+        const { stores, sent } = open('coordinate split');
         const { ops, result } = recorded('coordinate split');
         fireEvent.click(card(SECOND));
         press('j');
         press(' ');
         press('s');
-        await saved(store);
+        await saved(stores);
         expect(actionsOf(sent())).toEqual(actionsOf(ops));
         expect(coordinateOpErrors(sent())).toEqual([]);
-        const revised = currentAnalyses(store.getState().bundle);
+        const revised = currentAnalyses(stores.session.getState().bundle);
         expect(cardsShown()).toEqual(byName(revisedOf(result)));
         expect(revised.map((a) => a.key)).toEqual(revisedOf(result).map((a) => a.key));
         const first = revised.find((a) => a.derived_from?.length)!;
-        expect(store.getState().coordinates?.analysis).toBe(first.key);
-        expect(store.getState().notices).toEqual([
+        expect(stores.view.getState().coordinates?.analysis).toBe(first.key);
+        expect(stores.session.getState().notices).toEqual([
             { kind: 'split', slot: 'an_1 mirror_of', message: 'it points at an_2' },
         ]);
-        expect(store.getState().bundle.hidden).toEqual(result.hidden);
-        expect(store.getState().bundle.entities).toEqual(result.entities);
+        expect(stores.session.getState().bundle.hidden).toEqual(result.hidden);
+        expect(stores.session.getState().bundle.entities).toEqual(result.entities);
     });
 
     it('merges the analyses selected, focus on the merged one and its dangling reference as a notice', async () => {
-        const { store, sent } = open('coordinate merge');
+        const { stores, sent } = open('coordinate merge');
         const { ops, result } = recorded('coordinate merge');
         fireEvent.click(card(SECOND), { shiftKey: true });
         fireEvent.click(card(FIRST));
         press('g');
         fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Merge' }));
-        await saved(store);
+        await saved(stores);
         expect(actionsOf(sent())).toEqual(actionsOf(ops));
         expect(coordinateOpErrors(sent())).toEqual([]);
-        const revised = currentAnalyses(store.getState().bundle);
+        const revised = currentAnalyses(stores.session.getState().bundle);
         expect(cardsShown()).toEqual(byName(revisedOf(result)));
         const merged = revised.find((a) => a.derived_from?.includes(FIRST_KEY) && a.derived_from.includes(SECOND_KEY))!;
-        expect(store.getState().coordinates?.analysis).toBe(merged.key);
-        expect(store.getState().notices).toEqual([
+        expect(stores.view.getState().coordinates?.analysis).toBe(merged.key);
+        expect(stores.session.getState().notices).toEqual([
             { kind: 'dangling', slot: 'an_1 mirror_of', message: 'it points at an_2' },
         ]);
-        expect(store.getState().bundle.hidden).toEqual(result.hidden);
-        expect(store.getState().bundle.entities).toEqual(result.entities);
+        expect(stores.session.getState().bundle.hidden).toEqual(result.hidden);
+        expect(stores.session.getState().bundle.entities).toEqual(result.entities);
     });
 
     it('adds the analysis the form makes, focus on it, the record and entities from the result', async () => {
-        const { store, sent } = open('coordinate add');
+        const { stores, sent } = open('coordinate add');
         const { ops, result } = recorded('coordinate add');
         const added = (ops[0] as Extract<Op, { type: 'coordinate' }>).payload as {
             analysis: { name: string; points: { coordinates: number[] }[] };
         };
-        const before = new Set(currentAnalyses(store.getState().bundle).map((a) => a.key));
+        const before = new Set(currentAnalyses(stores.session.getState().bundle).map((a) => a.key));
         fireEvent.click(card(FIRST));
         press('c');
         const form = screen.getByRole('group', { name: 'edit the first point of a new analysis in t1' });
@@ -133,19 +133,19 @@ describe('the recorded linked-analyses bundle, driven through the screen', () =>
             target: { value: added.analysis.name },
         });
         press('Enter');
-        await saved(store);
+        await saved(stores);
         expect(actionsOf(sent())).toEqual(actionsOf(ops));
         expect(coordinateOpErrors(sent())).toEqual([]);
-        const revised = currentAnalyses(store.getState().bundle);
+        const revised = currentAnalyses(stores.session.getState().bundle);
         expect(cardsShown()).toEqual(byName(revisedOf(result)));
-        expect(store.getState().coordinates?.analysis).toBe(revised.find((a) => !before.has(a.key))!.key);
-        expect(store.getState().notices).toEqual([]);
-        expect(store.getState().bundle.hidden).toEqual(result.hidden);
-        expect(store.getState().bundle.entities).toEqual(result.entities);
+        expect(stores.view.getState().coordinates?.analysis).toBe(revised.find((a) => !before.has(a.key))!.key);
+        expect(stores.session.getState().notices).toEqual([]);
+        expect(stores.session.getState().bundle.hidden).toEqual(result.hidden);
+        expect(stores.session.getState().bundle.entities).toEqual(result.entities);
     });
 
     it('moves the selected point as one batch of two point edits, focus on the source', async () => {
-        const { store, sent } = open('coordinate move, one batch of two point edits');
+        const { stores, sent } = open('coordinate move, one batch of two point edits');
         const { ops, result } = recorded('coordinate move, one batch of two point edits');
         fireEvent.click(card(SECOND));
         press('j');
@@ -153,15 +153,15 @@ describe('the recorded linked-analyses bundle, driven through the screen', () =>
         press('m');
         fireEvent.change(screen.getByRole('combobox', { name: 'move 1 point to' }), { target: { value: FIRST } });
         fireEvent.click(screen.getByRole('option', { name: new RegExp(FIRST) }));
-        await saved(store);
+        await saved(stores);
         expect(actionsOf(sent())).toEqual(actionsOf(ops));
         expect(coordinateOpErrors(sent())).toEqual([]);
-        const revised = currentAnalyses(store.getState().bundle);
+        const revised = currentAnalyses(stores.session.getState().bundle);
         expect(cardsShown()).toEqual(byName(revisedOf(result)));
-        expect(store.getState().coordinates?.analysis).toBe(
+        expect(stores.view.getState().coordinates?.analysis).toBe(
             revised.find((a) => a.derived_from?.includes(SECOND_KEY))!.key
         );
-        expect(store.getState().bundle.hidden).toEqual(result.hidden);
-        expect(store.getState().bundle.entities).toEqual(result.entities);
+        expect(stores.session.getState().bundle.hidden).toEqual(result.hidden);
+        expect(stores.session.getState().bundle.entities).toEqual(result.entities);
     });
 });

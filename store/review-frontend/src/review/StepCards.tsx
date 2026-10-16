@@ -7,22 +7,22 @@ import { reviewStatus, statusColors } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
-import { useReviewStore } from '../store/context';
-import type { ReviewState } from '../store/reviewStore';
+import { useSession, useShown, useView } from '../store/context';
+import type { SessionState } from '../store/sessionStore';
 import { useEditorName } from './editor';
 
 /** What a step adds below its focused card. */
 export type CardDetail = ComponentType<{ entity: EntityNode }>;
 
-const judged = (s: Pick<ReviewState, 'provenance'>, id: string) => s.provenance[entityKey(id)]?.state;
+const judged = (s: Pick<SessionState, 'provenance'>, id: string) => s.provenance[entityKey(id)]?.state;
 
 const spanCount = (n: number) => `${n} evidence ${n === 1 ? 'span' : 'spans'}`;
 
 const headStyles = (theme: Theme) => statusColors(theme.palette);
 
 const CardHead = memo(function CardHead({ entity, focused }: { entity: EntityNode; focused: boolean }) {
-    const focusEntity = useReviewStore((s) => s.focusEntity);
-    const state = useReviewStore((s) => judged(s, entity.id));
+    const focusEntity = useView((s) => s.focusEntity);
+    const state = useSession((s) => judged(s, entity.id));
     const editor = useEditorName(entityKey(entity.id));
     return (
         <ListItemButton
@@ -49,10 +49,9 @@ const CardHead = memo(function CardHead({ entity, focused }: { entity: EntityNod
 
 /** The focused entity's card when it is not one of the step's. */
 function Outside({ cards }: { cards: EntityNode[] }) {
-    const entity = useReviewStore((s) =>
-        cards.some((e) => e.id === s.focus.entity) ? undefined : s.index.entity(s.focus.entity)
-    );
-    const focusedSlot = useReviewStore((s) => s.focus.slot);
+    const focused = useView((s) => s.focus.entity);
+    const entity = useShown((index) => (cards.some((e) => e.id === focused) ? undefined : index.entity(focused)));
+    const focusedSlot = useView((s) => s.focus.slot);
     if (!entity) return null;
     return (
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -74,9 +73,9 @@ export function StepCards({
     cards: EntityNode[];
     detail?: CardDetail;
 }) {
-    const focused = useReviewStore((s) => s.focus.entity);
-    const focusedSlot = useReviewStore((s) => s.focus.slot);
-    const done = useReviewStore((s) => cards.filter((e) => judged(s, e.id)).length);
+    const focused = useView((s) => s.focus.entity);
+    const focusedSlot = useView((s) => s.focus.slot);
+    const done = useSession((s) => cards.filter((e) => judged(s, e.id)).length);
     return (
         <InspectorFrame>
             <Typography variant="overline" component="h2" sx={{ px: 2, display: 'block' }}>

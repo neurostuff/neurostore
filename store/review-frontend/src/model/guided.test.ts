@@ -1,4 +1,4 @@
-import { buildRecordIndex, withHidden } from '../model/record';
+import { buildRecordIndex, withHidden } from './record';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { auditMatrix, guidedCards } from './guided';
 

@@ -5,12 +5,12 @@ import type { EntityNode, SlotNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
 import { ActionToolbar } from '../review/ActionToolbar';
 import { useEditorName } from '../review/editor';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
-import type { Panel } from '../store/reviewStore';
+import { useReviewStores, useSession, useView } from '../store/context';
+import type { Panel } from '../store/viewStore';
 import { pendingStructure, setValue, slotSchema, unlink } from './actions';
 import { CreateDialog, DeleteDialog, LinkPanel, NotePanel, RejectPanel } from './panels';
 import { RemoveIcon } from './RemoveIcon';
-import { extractionSchema } from './schema';
+import { extractionSchema } from '../model/schema';
 import { SlotEditor } from './SlotEditor';
 import { CardHead } from './CardHead';
 import { formatValue } from './formatValue';
@@ -18,11 +18,11 @@ import { reviewStatus, statusColors, statusOf } from './status';
 import { StatusLabel } from './StatusLabel';
 
 function ReferenceChips({ slot }: { slot: SlotNode }) {
-    const store = useReviewStoreApi();
-    const index = useReviewStore((s) => s.index);
-    const pending = useReviewStore((s) => s.pending);
-    const focusEntity = useReviewStore((s) => s.focusEntity);
-    const focusLink = useReviewStore((s) => s.focusLink);
+    const stores = useReviewStores();
+    const index = useSession((s) => s.index);
+    const pending = useSession((s) => s.pending);
+    const focusEntity = useView((s) => s.focusEntity);
+    const focusLink = useView((s) => s.focusLink);
     const { linksBySlot } = useMemo(() => pendingStructure({ pending }), [pending]);
     const pendingLinks = linksBySlot.get(slot.key);
     const linking = [...(pendingLinks ?? [])].flatMap(([id, type]) => (type === 'link' ? [id] : []));
@@ -46,7 +46,7 @@ function ReferenceChips({ slot }: { slot: SlotNode }) {
                             event.stopPropagation();
                             focusEntity(id);
                         }}
-                        onDelete={unlinking ? undefined : () => void unlink(store.getState(), slot, id)}
+                        onDelete={unlinking ? undefined : () => void unlink(stores, slot, id)}
                         deleteIcon={<RemoveIcon label={`unlink ${nameOf(id)}`} />}
                     />
                 );
@@ -61,9 +61,11 @@ function ReferenceChips({ slot }: { slot: SlotNode }) {
 }
 
 function SlotPanel({ panel, slot, label }: { panel: Panel; slot: SlotNode; label: string }) {
-    const store = useReviewStoreApi();
-    const closePanel = useReviewStore((s) => s.closePanel);
-    const schema = useMemo(() => slotSchema(store.getState(), slot), [store, slot]);
+    const stores = useReviewStores();
+    const closePanel = useView((s) => s.closePanel);
+    const bundle = useSession((s) => s.bundle);
+    const record = useSession((s) => s.record);
+    const schema = useMemo(() => slotSchema({ bundle, record }, slot), [bundle, record, slot]);
     switch (panel.kind) {
         case 'edit':
         case 'not_reported':
@@ -81,7 +83,7 @@ function SlotPanel({ panel, slot, label }: { panel: Panel; slot: SlotNode; label
                     value={slot.value}
                     mode={panel.kind}
                     onSave={(value) => {
-                        if (setValue(store.getState(), slot, value)) closePanel();
+                        if (setValue(stores, slot, value)) closePanel();
                     }}
                     onCancel={closePanel}
                 />
@@ -106,10 +108,10 @@ const SlotRow = memo(function SlotRow({
     focused: boolean;
     panel: Panel | null;
 }) {
-    const focusSlot = useReviewStore((s) => s.focusSlot);
-    const reviewed = useReviewStore((s) => s.provenance[slot.key]?.state);
+    const focusSlot = useView((s) => s.focusSlot);
+    const reviewed = useSession((s) => s.provenance[slot.key]?.state);
     const slotEditor = useEditorName(slot.key);
-    const panelLabel = useReviewStore((s) => {
+    const panelLabel = useSession((s) => {
         const target = panel?.target;
         if (target?.kind !== 'relationship') return slot.path;
         return `${slot.path} → ${s.index.entity(target.target_entity)?.name ?? target.target_entity}`;
@@ -164,11 +166,11 @@ const slotStyles = (theme: Theme) => ({
 });
 
 export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
-    const panel = useReviewStore((s) => s.panel);
-    const reviewed = useReviewStore((s) => s.provenance[entityKey(entity.id)]?.state);
+    const panel = useView((s) => s.panel);
+    const reviewed = useSession((s) => s.provenance[entityKey(entity.id)]?.state);
     const entityEditor = useEditorName(entityKey(entity.id));
-    const deleting = useReviewStore((s) => pendingStructure(s).deleting.has(entity.id));
-    const panelSlot = useReviewStore((s) => s.panel?.slot);
+    const deleting = useSession((s) => pendingStructure(s).deleting.has(entity.id));
+    const panelSlot = useView((s) => s.panel?.slot);
     const classLabel =
         entity.schemaClass === entity.entityClass
             ? entity.entityClass
@@ -207,7 +209,7 @@ export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focuse
 }
 
 function PendingChanges() {
-    const pending = useReviewStore((s) => s.pending);
+    const pending = useSession((s) => s.pending);
     const { creating } = useMemo(() => pendingStructure({ pending }), [pending]);
     return (
         <Box role="status" aria-label="pending changes" sx={{ px: 2, typography: 'caption', color: 'text.secondary' }}>
@@ -220,10 +222,10 @@ function PendingChanges() {
 
 /** The inspector's toolbar, pending changes and dialogs around `children`. */
 export function InspectorFrame({ children }: { children?: ReactNode }) {
-    const deleting = useReviewStore((s) =>
+    const deleting = useView((s) =>
         s.panel?.kind === 'delete' && s.panel.target.kind === 'entity' ? s.panel.target.entity : null
     );
-    const creating = useReviewStore((s) => s.panel?.kind === 'create');
+    const creating = useView((s) => s.panel?.kind === 'create');
     return (
         <>
             <ActionToolbar scope="record" label="review actions" />

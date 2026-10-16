@@ -3,35 +3,35 @@ import { useMemo, useState } from 'react';
 import { acceptTarget, link, mergeCandidates, mergeCopies, mergeInto } from '../inspector/actions';
 import { ConfirmDialog, PickPanel } from '../inspector/panels';
 import type { EntityNode } from '../model/record';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
-import { analysisSlotsFor } from './guided';
+import { useReviewStores, useShown, useView } from '../store/context';
+import type { PanelKind } from '../store/viewStore';
+import { analysisSlotsFor } from '../model/guided';
+import { openPanelOn } from '../inspector/openPanel';
 
 function LinkToAnalysis({ entity }: { entity: EntityNode }) {
-    const store = useReviewStoreApi();
-    const options = useMemo(() => {
-        const { index } = store.getState();
-        return analysisSlotsFor(index, entity);
-    }, [store, entity]);
+    const stores = useReviewStores();
+    const index = useShown((shown) => shown);
+    const options = useMemo(() => analysisSlotsFor(index, entity), [index, entity]);
     return (
         <PickPanel
             options={options}
             label={`link ${entity.name} from`}
             noOptionsText="no analysis can link it"
             optionKey={(option) => option.id}
-            onPick={(option) => link(store.getState(), option.slot, entity.id)}
+            onPick={(option) => link(stores, option.slot, entity.id)}
         />
     );
 }
 
 /** The entities `entity` can merge into, the one chosen and the slots chosen to copy, following the record. */
 function useMergeChoice(entity: EntityNode) {
-    const store = useReviewStoreApi();
-    const index = useReviewStore((s) => s.index);
+    const stores = useReviewStores();
+    const index = useShown((shown) => shown);
     const [picked, setPicked] = useState('');
     const [copy, setCopy] = useState<string[]>([]);
-    const candidates = useMemo(() => mergeCandidates({ index }, entity.id), [index, entity.id]);
+    const candidates = useMemo(() => mergeCandidates(index, entity.id), [index, entity.id]);
     const into = candidates.some((candidate) => candidate.id === picked) ? picked : '';
-    const copies = useMemo(() => (into ? mergeCopies({ index }, entity.id, into) : []), [index, entity.id, into]);
+    const copies = useMemo(() => (into ? mergeCopies(index, entity.id, into) : []), [index, entity.id, into]);
     return {
         candidates,
         copies,
@@ -43,7 +43,7 @@ function useMergeChoice(entity: EntityNode) {
         },
         toggle: (path: string) =>
             setCopy((chosen) => (chosen.includes(path) ? chosen.filter((p) => p !== path) : [...chosen, path])),
-        merge: () => into !== '' && mergeInto(store.getState(), entity.id, into, copy),
+        merge: () => into !== '' && mergeInto(stores, entity.id, into, copy),
     };
 }
 
@@ -92,16 +92,16 @@ function MergeDialog({ entity }: { entity: EntityNode }) {
 
 /** Step 4's actions on a leftover entity: keep, link from an analysis, merge into another, or delete. */
 export function LeftoverActions({ entity }: { entity: EntityNode }) {
-    const store = useReviewStoreApi();
-    const panel = useReviewStore((s) => s.panel?.kind);
-    const openPanel = useReviewStore((s) => s.openPanel);
+    const stores = useReviewStores();
+    const panel = useView((s) => s.panel?.kind);
+    const openPanel = (kind: PanelKind) => openPanelOn(stores, kind);
     return (
         <Stack sx={{ px: 2, py: 1 }}>
             <Stack role="toolbar" aria-label="leftover actions" direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => acceptTarget(store.getState(), { kind: 'entity', entity: entity.id })}
+                    onClick={() => acceptTarget(stores, { kind: 'entity', entity: entity.id })}
                 >
                     Keep
                 </Button>

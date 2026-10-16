@@ -19,7 +19,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type R
 import type { AnyTarget } from '../contract/generated/review-ops';
 import type { SlotNode } from '../model/record';
 import { isTextField } from '../review/shortcuts';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
+import { useReviewStores, useSession, useView } from '../store/context';
 import {
     addNote,
     createSibling,
@@ -35,8 +35,8 @@ import {
 import { panelKeys } from './panelKeys';
 
 export function RejectPanel({ target, label }: { target: AnyTarget; label: string }) {
-    const store = useReviewStoreApi();
-    const closePanel = useReviewStore((s) => s.closePanel);
+    const stores = useReviewStores();
+    const closePanel = useView((s) => s.closePanel);
     const id = useId();
     const groupRef = useRef<HTMLDivElement>(null);
     const noteRef = useRef<HTMLInputElement>(null);
@@ -55,7 +55,7 @@ export function RejectPanel({ target, label }: { target: AnyTarget; label: strin
         if (!reason) return setError({ on: 'reason', message: 'pick a reason, 1–5' });
         if (reason === 'other' && !note.trim())
             return setError({ on: 'note', message: 'a note is required with “other”' });
-        if (reject(store.getState(), target, reason, note.trim())) closePanel();
+        if (reject(stores, target, reason, note.trim())) closePanel();
     };
     const onDigit = (event: KeyboardEvent) => {
         const picked = REJECT_REASONS[Number(event.key) - 1];
@@ -123,14 +123,14 @@ export function RejectPanel({ target, label }: { target: AnyTarget; label: strin
 }
 
 export function NotePanel({ target, label }: { target: AnyTarget; label: string }) {
-    const store = useReviewStoreApi();
-    const closePanel = useReviewStore((s) => s.closePanel);
+    const stores = useReviewStores();
+    const closePanel = useView((s) => s.closePanel);
     const id = useId();
     const [note, setNote] = useState('');
     const [error, setError] = useState('');
     const submit = () => {
         if (!note.trim()) return setError('write a note first');
-        if (addNote(store.getState(), target, note.trim())) closePanel();
+        if (addNote(stores, target, note.trim())) closePanel();
     };
     return (
         <Stack spacing={1} sx={{ py: 1 }} onKeyDown={panelKeys(submit, closePanel)}>
@@ -153,15 +153,17 @@ export function NotePanel({ target, label }: { target: AnyTarget; label: string 
 }
 
 export function LinkPanel({ slot }: { slot: SlotNode }) {
-    const store = useReviewStoreApi();
-    const options = useMemo(() => linkCandidates(store.getState(), slot), [store, slot]);
+    const stores = useReviewStores();
+    const bundle = useSession((s) => s.bundle);
+    const index = useSession((s) => s.index);
+    const options = useMemo(() => linkCandidates({ bundle, index }, slot), [bundle, index, slot]);
     return (
         <PickPanel
             options={options}
             label={`link ${slot.path} to`}
             noOptionsText="no entity of this class to link"
             optionKey={(option) => option.id}
-            onPick={(option) => link(store.getState(), slot, option.id)}
+            onPick={(option) => link(stores, slot, option.id)}
         />
     );
 }
@@ -180,7 +182,7 @@ export function PickPanel<T extends { name: string }>({
     optionKey(option: T): string;
     onPick(option: T): boolean;
 }) {
-    const closePanel = useReviewStore((s) => s.closePanel);
+    const closePanel = useView((s) => s.closePanel);
     return (
         <Stack
             sx={{ py: 1 }}
@@ -210,9 +212,12 @@ export function PickPanel<T extends { name: string }>({
 }
 
 export function CreateDialog() {
-    const store = useReviewStoreApi();
-    const closePanel = useReviewStore((s) => s.closePanel);
-    const classes = useMemo(() => siblingClasses(store.getState()), [store]);
+    const stores = useReviewStores();
+    const closePanel = useView((s) => s.closePanel);
+    const bundle = useSession((s) => s.bundle);
+    const record = useSession((s) => s.record);
+    const focused = useView((s) => s.focus.entity);
+    const classes = useMemo(() => siblingClasses({ bundle, record }, focused), [bundle, record, focused]);
     const titleId = useId();
     return (
         <Dialog open onClose={closePanel} aria-labelledby={titleId}>
@@ -223,7 +228,7 @@ export function CreateDialog() {
                         <ListItem key={name} disableGutters>
                             <Button
                                 onClick={() => {
-                                    if (createSibling(store.getState(), name)) closePanel();
+                                    if (createSibling(stores, name)) closePanel();
                                 }}
                             >
                                 {title}
@@ -270,7 +275,7 @@ export function ConfirmDialog({
     onConfirm(): boolean;
     children: ReactNode;
 }) {
-    const closePanel = useReviewStore((s) => s.closePanel);
+    const closePanel = useView((s) => s.closePanel);
     const titleId = useId();
     return (
         <Dialog open onClose={closePanel} aria-labelledby={titleId}>
@@ -294,15 +299,17 @@ export function ConfirmDialog({
 }
 
 export function DeleteDialog({ entity }: { entity: string }) {
-    const store = useReviewStoreApi();
-    const name = useReviewStore((s) => s.index.entity(entity)?.name ?? entity);
-    const dangling = useMemo(() => danglingLinks(store.getState(), entity), [store, entity]);
+    const stores = useReviewStores();
+    const name = useSession((s) => s.index.entity(entity)?.name ?? entity);
+    const bundle = useSession((s) => s.bundle);
+    const index = useSession((s) => s.index);
+    const dangling = useMemo(() => danglingLinks({ bundle, index }, entity), [bundle, index, entity]);
     return (
         <ConfirmDialog
             title={`Delete ${name}?`}
             confirmLabel="Delete"
             color="error"
-            onConfirm={() => deleteEntity(store.getState(), entity)}
+            onConfirm={() => deleteEntity(stores, entity)}
         >
             {dangling.length === 0 ? (
                 <Typography variant="body2">Nothing links to it.</Typography>

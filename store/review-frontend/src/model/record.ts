@@ -25,6 +25,8 @@ export interface SlotNode {
     references: string[];
     spans: SpanPair[];
     doubt: Doubt;
+    /** Where the slot comes among its entity's slots in the record, the declared ones it leaves out last. */
+    position: number;
 }
 
 export interface EntityNode {
@@ -44,11 +46,11 @@ export interface RecordIndex {
     entities: EntityNode[];
     /** The entities not hidden, whether or not the view shows the hidden ones. */
     unhidden: EntityNode[];
-    /** The entities the view lists: all of them when `showHidden`, else the ones not hidden. */
+    /** The entities the view lists: the ones not hidden, or all of them in the index `withHidden` lists. */
     visible: EntityNode[];
-    showHidden: boolean;
     entity(id: string): EntityNode | undefined;
     slot(key: string): SlotNode | undefined;
+    /** Every span of the visible entities, in reading order. */
     allSpans: SpanPair[];
 }
 
@@ -115,7 +117,11 @@ export function isReferenceSlot(
     return slots.has(`${row.schema_class}.${attribute}`) || slots.has(`${row.entity_class}.${attribute}`);
 }
 
-function slotNode(entity: string, path: string, slot: Pick<SlotNode, 'kind' | 'value' | 'references'>): SlotNode {
+function slotNode(
+    entity: string,
+    path: string,
+    slot: Pick<SlotNode, 'kind' | 'value' | 'references' | 'position'>
+): SlotNode {
     return {
         ...slot,
         key: slotKey(entity, path),
@@ -134,7 +140,9 @@ function slotsOf(row: EntityRow, item: Json): SlotNode[] {
             const path = prefix ? `${prefix}.${attribute}` : attribute;
             const targets = isReferenceSlot(row, prefix !== '', attribute) ? referencesIn(value) : null;
             if (targets) {
-                slots.push(slotNode(row.local_id, path, { kind: 'reference', references: targets }));
+                slots.push(
+                    slotNode(row.local_id, path, { kind: 'reference', references: targets, position: slots.length })
+                );
                 continue;
             }
             const children = Array.isArray(value)
@@ -142,7 +150,14 @@ function slotsOf(row: EntityRow, item: Json): SlotNode[] {
                 : [[value, path] as const];
             for (const [child, at] of children) {
                 if (isExtractedValue(child)) {
-                    slots.push(slotNode(row.local_id, at, { kind: 'value', value: child, references: [] }));
+                    slots.push(
+                        slotNode(row.local_id, at, {
+                            kind: 'value',
+                            value: child,
+                            references: [],
+                            position: slots.length,
+                        })
+                    );
                 } else if (isObject(child) && !isEntity(child)) {
                     visit(child, at);
                 }
@@ -171,48 +186,47 @@ export type Declared = (row: EntityRow) => { path: string; wrapper?: unknown }[]
 /** The declared slots the record leaves out, unset: a reference that can be linked, or a value to be set. */
 function absentSlots(row: EntityRow, present: SlotNode[], declared: Declared): SlotNode[] {
     const keys = new Set(present.map((slot) => slot.key));
+    let position = present.length;
     return declared(row).flatMap(({ path, wrapper }): SlotNode[] => {
         if (SKIPPED.has(path.split(/[.[]/)[0]) || keys.has(slotKey(row.local_id, path))) return [];
         const steps = parsePath(path);
         const attribute = steps.filter((step): step is string => typeof step === 'string').at(-1) ?? '';
-        if (isReferenceSlot(row, steps.length > 1, attribute)) {
-            return [slotNode(row.local_id, path, { kind: 'reference', references: [] })];
-        }
-        return wrapper ? [slotNode(row.local_id, path, { kind: 'value', references: [] })] : [];
+        const kind = isReferenceSlot(row, steps.length > 1, attribute) ? 'reference' : wrapper ? 'value' : null;
+        return kind ? [slotNode(row.local_id, path, { kind, references: [], position: position++ })] : [];
     });
 }
 
+/** The slots, given in record order, sorted by doubt, the most doubtful first. */
 const byDoubt = (slots: SlotNode[]) => [...slots].sort((a, b) => DOUBT_RANK[a.doubt] - DOUBT_RANK[b.doubt]);
+const inRecordOrder = (slots: SlotNode[]) => [...slots].sort((a, b) => a.position - b.position);
 const spansOf = (slots: SlotNode[]) => sortSpans(slots.flatMap((s) => s.spans));
 
-function indexOf(entities: EntityNode[], showHidden: boolean): RecordIndex {
+function indexOf(entities: EntityNode[], listHidden = false): RecordIndex {
     const byId = new Map(entities.map((e) => [e.id, e]));
     const bySlot = new Map(entities.flatMap((e) => e.slots.map((s) => [s.key, s] as const)));
     const unhidden = entities.filter((e) => !e.hidden);
-    const visible = showHidden ? entities : unhidden;
+    const visible = listHidden ? entities : unhidden;
     return {
         entities,
         unhidden,
         visible,
-        showHidden,
         entity: (id) => byId.get(id),
         slot: (key) => bySlot.get(key),
         allSpans: sortSpans(visible.flatMap((e) => e.spans)),
     };
 }
 
-function replaceEntity(index: RecordIndex, entity: EntityNode): RecordIndex {
-    return indexOf(
-        index.entities.map((e) => (e.id === entity.id ? entity : e)),
-        index.showHidden
-    );
+const listingHidden = new WeakMap<RecordIndex, RecordIndex>();
+
+/** The index listing the hidden entities too, or the index itself while they are left out. */
+export function withHidden(index: RecordIndex, listHidden: boolean): RecordIndex {
+    if (!listHidden) return index;
+    let listed = listingHidden.get(index);
+    if (!listed) listingHidden.set(index, (listed = indexOf(index.entities, true)));
+    return listed;
 }
 
-export function withHidden(index: RecordIndex, showHidden: boolean): RecordIndex {
-    return indexOf(index.entities, showHidden);
-}
-
-export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () => [], showHidden = false): RecordIndex {
+export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () => []): RecordIndex {
     const record = bundle.record as Json;
     const hidden = new Set([...bundle.hidden.analyses, ...bundle.hidden.entities]);
     const items = itemsById(record);
@@ -237,12 +251,10 @@ export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () =
         ];
     });
     const classOrder = [...new Set(found.map((e) => e.entityClass))];
-    return indexOf(
-        classOrder.flatMap((c) => found.filter((e) => e.entityClass === c)),
-        showHidden
-    );
+    return indexOf(classOrder.flatMap((c) => found.filter((e) => e.entityClass === c)));
 }
 
+/** The session's index with the slot `key` read again from `record`, its entity's slots sorted again. */
 export function withSlotFrom(index: RecordIndex, record: Json, key: string): RecordIndex {
     const slot = index.slot(key);
     const entity = slot && index.entity(slot.entity);
@@ -253,24 +265,28 @@ export function withSlotFrom(index: RecordIndex, record: Json, key: string): Rec
         kind: slot.kind,
         value: isExtractedValue(value) ? value : undefined,
         references: slot.references,
+        position: slot.position,
     });
-    const slots = entity.slots.map((s) => (s.key === key ? next : s));
-    return replaceEntity(index, { ...entity, slots, spans: spansOf(slots) });
+    const slots = byDoubt(inRecordOrder(entity.slots.map((s) => (s.key === key ? next : s))));
+    const edited = { ...entity, slots, spans: spansOf(slots) };
+    return indexOf(index.entities.map((e) => (e.id === entity.id ? edited : e)));
 }
 
-export function withSlotsSorted(index: RecordIndex, id: string): RecordIndex {
+/** The index with the slots of `id` in the order of `keys`, any others after them; the index itself when that is their order. */
+export function withSlotOrder(index: RecordIndex, id: string, keys: string[]): RecordIndex {
     const entity = index.entity(id);
     if (!entity) return index;
-    const slots = byDoubt(entity.slots);
-    return slots.every((s, i) => s === entity.slots[i]) ? index : replaceEntity(index, { ...entity, slots });
-}
-
-export function withSlotOrderOf(index: RecordIndex, previous: RecordIndex, id: string): RecordIndex {
-    const entity = index.entity(id);
-    const order = previous.entity(id)?.slots.map((s) => s.key);
-    if (!entity || !order) return index;
-    const rank = new Map(order.map((key, i) => [key, i]));
-    const at = (key: string) => rank.get(key) ?? order.length;
-    const slots = [...entity.slots].sort((a, b) => at(a.key) - at(b.key));
-    return replaceEntity(index, { ...entity, slots });
+    const rank = new Map(keys.map((key, i) => [key, i]));
+    const at = (slot: SlotNode) => rank.get(slot.key) ?? keys.length;
+    const slots = [...entity.slots].sort((a, b) => at(a) - at(b));
+    if (slots.every((s, i) => s === entity.slots[i])) return index;
+    const ordered = { ...entity, slots };
+    const swap = (nodes: EntityNode[]) => nodes.map((e) => (e === entity ? ordered : e));
+    return {
+        ...index,
+        entities: swap(index.entities),
+        unhidden: swap(index.unhidden),
+        visible: swap(index.visible),
+        entity: (other) => (other === id ? ordered : index.entity(other)),
+    };
 }

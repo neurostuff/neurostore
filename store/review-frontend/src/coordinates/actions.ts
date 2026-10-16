@@ -1,4 +1,4 @@
-import type { CoordinateOp, CoordinateTarget, Op } from '../contract/generated/review-ops';
+import type { CoordinateOp, Op } from '../contract/generated/review-ops';
 import { acceptTarget, danglingLinks } from '../inspector/actions';
 import {
     currentAnalyses,
@@ -8,25 +8,21 @@ import {
     type CoordinatePoint,
 } from '../model/coordinates';
 import { randomUUID } from '../model/uuid';
-import type { Panel, PanelKind, ReviewState } from '../store/reviewStore';
+import { focusedAnalysis } from '../model/coordinateFocus';
+import { analysisTarget } from '../model/targetKey';
+import type { ReviewStores } from '../store/context';
+import type { SessionState } from '../store/sessionStore';
+import type { Panel, PanelKind, ViewState } from '../store/viewStore';
 
-type State = Pick<ReviewState, 'bundle' | 'coordinates' | 'merging' | 'pending'>;
-type Emitting = State & Pick<ReviewState, 'emitBatch'>;
+type Session = Pick<SessionState, 'bundle' | 'pending'>;
+type View = Pick<ViewState, 'coordinates' | 'merging'>;
 type NewOp = Omit<CoordinateOp, 'client_op_id' | 'type'>;
 
-export const analysisTarget = (analysis_key: string): CoordinateTarget => ({
-    kind: 'coordinate_analysis',
-    analysis_key,
-});
-
-export const focusedAnalysis = (s: Pick<State, 'bundle' | 'coordinates'>) =>
-    currentAnalyses(s.bundle).find((analysis) => analysis.key === s.coordinates?.analysis);
-
 /** Whether a coordinate op waits for its result; until it lands no key the client holds can be trusted. */
-export const coordinatePending = (s: Pick<State, 'pending'>) => s.pending.some((op) => op.type === 'coordinate');
+export const coordinatePending = (s: Pick<SessionState, 'pending'>) => s.pending.some((op) => op.type === 'coordinate');
 
 /** The keys the pending coordinate ops change. */
-export function pendingKeys(s: Pick<State, 'pending'>): Set<string> {
+export function pendingKeys(s: Pick<SessionState, 'pending'>): Set<string> {
     return new Set(
         s.pending.flatMap((op) => {
             if (op.type !== 'coordinate') return [];
@@ -37,14 +33,19 @@ export function pendingKeys(s: Pick<State, 'pending'>): Set<string> {
 }
 
 const coordinateOp = (op: NewOp) => ({ client_op_id: randomUUID(), type: 'coordinate', ...op }) as Op;
-const send = (s: Pick<ReviewState, 'emitBatch'>, op: NewOp) => s.emitBatch([coordinateOp(op)]);
+const send = ({ session }: ReviewStores, op: NewOp) => session.getState().emitBatch([coordinateOp(op)]);
 
 /** Emits the ops `build` makes from the focused analysis, as one batch; false when there is none or a coordinate op is pending. */
-function act(s: Emitting, build: (analysis: CoordinateAnalysis) => NewOp[] | undefined) {
-    const analysis = focusedAnalysis(s);
-    const ops = analysis && !coordinatePending(s) ? build(analysis) : undefined;
+function act(
+    stores: ReviewStores,
+    build: (analysis: CoordinateAnalysis, session: Session, view: View) => NewOp[] | undefined
+) {
+    const session = stores.session.getState();
+    const view = stores.view.getState();
+    const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates });
+    const ops = analysis && !coordinatePending(session) ? build(analysis, session, view) : undefined;
     if (!ops?.length) return false;
-    return s.emitBatch(ops.map(coordinateOp));
+    return session.emitBatch(ops.map(coordinateOp));
 }
 
 const pointsOf = (analysis: CoordinateAnalysis): CoordinatePoint[] => analysis.points ?? [];
@@ -56,29 +57,30 @@ const editPoints = (analysis: CoordinateAnalysis, points: CoordinatePoint[]): Ne
 });
 
 /** Accepts the focused analysis with a verdict op, the one way to judge it; false when there is none or a coordinate op is pending. */
-export function acceptAnalysis(s: State & Pick<ReviewState, 'emit'>) {
-    const analysis = focusedAnalysis(s);
-    if (!analysis || coordinatePending(s)) return false;
-    return acceptTarget(s, analysisTarget(analysis.key));
+export function acceptAnalysis(stores: ReviewStores) {
+    const session = stores.session.getState();
+    const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: stores.view.getState().coordinates });
+    if (!analysis || coordinatePending(session)) return false;
+    return acceptTarget(stores, analysisTarget(analysis.key));
 }
 
-export const relabelAnalysis = (s: Emitting, role: NonNullable<CoordinateOp['role']>) =>
-    act(s, (analysis) =>
+export const relabelAnalysis = (stores: ReviewStores, role: NonNullable<CoordinateOp['role']>) =>
+    act(stores, (analysis) =>
         role === analysis.role ? undefined : [{ target: analysisTarget(analysis.key), action: 'relabel', role }]
     );
 
 /** Saves `point` as the point at `index` of the focused analysis, or as a new last point when `index` is null. */
-export const savePoint = (s: Emitting, index: number | null, point: CoordinatePoint) =>
-    act(s, (analysis) => {
+export const savePoint = (stores: ReviewStores, index: number | null, point: CoordinatePoint) =>
+    act(stores, (analysis) => {
         const points = pointsOf(analysis);
         return [
             editPoints(analysis, index === null ? [...points, point] : points.map((p, i) => (i === index ? point : p))),
         ];
     });
 
-export const removePoint = (s: Emitting) =>
-    act(s, (analysis) => {
-        const at = s.coordinates?.point;
+export const removePoint = (stores: ReviewStores) =>
+    act(stores, (analysis, _, view) => {
+        const at = view.coordinates?.point;
         return at === null || at === undefined
             ? undefined
             : [
@@ -90,22 +92,23 @@ export const removePoint = (s: Emitting) =>
     });
 
 /** The points a move takes: the selected ones, else the focused one. */
-export function movingPoints(s: Pick<State, 'coordinates'>): number[] {
-    const { coordinates } = s;
+export function movingPoints({ coordinates }: Pick<ViewState, 'coordinates'>): number[] {
     if (!coordinates) return [];
     if (coordinates.selected.length) return coordinates.selected;
     return coordinates.point === null ? [] : [coordinates.point];
 }
 
 /** The analyses points can move to: every other one the revision holds. */
-export const moveTargets = (s: Pick<State, 'bundle' | 'coordinates'>) =>
-    currentAnalyses(s.bundle).filter((analysis) => analysis.key !== s.coordinates?.analysis);
+export const moveTargets = (
+    { bundle }: Pick<SessionState, 'bundle'>,
+    { coordinates }: Pick<ViewState, 'coordinates'>
+) => currentAnalyses(bundle).filter((analysis) => analysis.key !== coordinates?.analysis);
 
 /** Moves the moving points to the analysis `to`, as one batch of two edit_points. */
-export const movePoints = (s: Emitting, to: string) =>
-    act(s, (analysis) => {
-        const moving = movingPoints(s);
-        const destination = moveTargets(s).find((candidate) => candidate.key === to);
+export const movePoints = (stores: ReviewStores, to: string) =>
+    act(stores, (analysis, session, view) => {
+        const moving = movingPoints(view);
+        const destination = moveTargets(session, view).find((candidate) => candidate.key === to);
         if (!moving.length || !destination) return undefined;
         const points = pointsOf(analysis);
         return [
@@ -120,9 +123,9 @@ export const movePoints = (s: Emitting, to: string) =>
 type Indices = [number, ...number[]];
 
 /** Splits the focused analysis in two: the selected points, then the rest. */
-export const splitAnalysis = (s: Emitting) =>
-    act(s, (analysis) => {
-        const selected = s.coordinates?.selected ?? [];
+export const splitAnalysis = (stores: ReviewStores) =>
+    act(stores, (analysis, _, view) => {
+        const selected = view.coordinates?.selected ?? [];
         const rest = pointsOf(analysis)
             .map((_, i) => i)
             .filter((i) => !selected.includes(i));
@@ -135,15 +138,19 @@ export const splitAnalysis = (s: Emitting) =>
     });
 
 /** The analyses a merge joins: those selected and the focused one, in guided order; the first takes the others. */
-export function mergeSet(s: Pick<State, 'bundle' | 'coordinates' | 'merging'>): CoordinateAnalysis[] {
-    const chosen = new Set([...s.merging, ...(s.coordinates ? [s.coordinates.analysis] : [])]);
-    return guidedOrder(currentAnalyses(s.bundle), true).filter((analysis) => chosen.has(analysis.key));
+export function mergeSet(
+    { bundle }: Pick<SessionState, 'bundle'>,
+    { coordinates, merging }: View
+): CoordinateAnalysis[] {
+    const chosen = new Set([...merging, ...(coordinates ? [coordinates.analysis] : [])]);
+    return guidedOrder(currentAnalyses(bundle), true).filter((analysis) => chosen.has(analysis.key));
 }
 
-export function mergeAnalyses(s: Emitting) {
-    const [into, ...others] = mergeSet(s);
-    if (!into || !others.length || coordinatePending(s)) return false;
-    return send(s, {
+export function mergeAnalyses(stores: ReviewStores) {
+    const session = stores.session.getState();
+    const [into, ...others] = mergeSet(session, stores.view.getState());
+    if (!into || !others.length || coordinatePending(session)) return false;
+    return send(stores, {
         target: analysisTarget(into.key),
         action: 'merge',
         payload: { with: others.map((analysis) => analysis.key) as [string, ...string[]] },
@@ -151,12 +158,12 @@ export function mergeAnalyses(s: Emitting) {
 }
 
 /** What a merge would remove from the record, as a preview: the other analyses' entities and the links into them. */
-export function mergePreview(s: Pick<ReviewState, 'bundle' | 'coordinates' | 'merging' | 'index'>) {
-    const [, ...others] = mergeSet(s);
-    const removed = others.flatMap((analysis) => entitiesNaming(s.index, analysis.key));
+export function mergePreview(session: Pick<SessionState, 'bundle' | 'index'>, view: View) {
+    const [, ...others] = mergeSet(session, view);
+    const removed = others.flatMap((analysis) => entitiesNaming(session.index, analysis.key));
     const gone = new Set(removed.map((entity) => entity.id));
     const dangling = removed
-        .flatMap((entity) => danglingLinks(s, entity.id))
+        .flatMap((entity) => danglingLinks(session, entity.id))
         .filter((link) => !gone.has(link.entity.id));
     return { removed, dangling };
 }
@@ -168,14 +175,9 @@ interface NewAnalysis {
 }
 
 /** Adds an analysis read from `table`, with its first point; the server computes its key. */
-export function addAnalysis(
-    s: Pick<State, 'pending'> & Pick<ReviewState, 'emitBatch'>,
-    table: string,
-    fields: NewAnalysis,
-    point: CoordinatePoint
-) {
-    if (coordinatePending(s)) return false;
-    return send(s, {
+export function addAnalysis(stores: ReviewStores, table: string, fields: NewAnalysis, point: CoordinatePoint) {
+    if (coordinatePending(stores.session.getState())) return false;
+    return send(stores, {
         target: { kind: 'coordinate_parse' },
         action: 'add',
         payload: { analysis: { origin: 'table', table_id: table, ...fields, cells: [], points: [point] } },
@@ -196,12 +198,9 @@ const COORDINATE_ACTIONS = new Set<PanelKind>([
 export const addAnalysisPanel = (table: string): Panel => ({ kind: 'add_analysis', target: { kind: 'paper' }, table });
 
 /** The panel `kind` opens on the focused coordinate analysis; undefined where it does not apply. */
-export function coordinatePanelFor(
-    s: Pick<ReviewState, 'bundle' | 'coordinates' | 'merging' | 'pending'>,
-    kind: PanelKind
-): Panel | undefined {
-    const analysis = focusedAnalysis(s);
-    if (!analysis || (COORDINATE_ACTIONS.has(kind) && coordinatePending(s))) return undefined;
+export function coordinatePanelFor(session: Session, view: View, kind: PanelKind): Panel | undefined {
+    const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates });
+    if (!analysis || (COORDINATE_ACTIONS.has(kind) && coordinatePending(session))) return undefined;
     const target = analysisTarget(analysis.key);
     switch (kind) {
         case 'note':
@@ -210,11 +209,11 @@ export function coordinatePanelFor(
         case 'add_point':
             return { kind, target };
         case 'edit_point':
-            return s.coordinates?.point === null ? undefined : { kind, target };
+            return view.coordinates?.point === null ? undefined : { kind, target };
         case 'move':
-            return movingPoints(s).length && moveTargets(s).length ? { kind, target } : undefined;
+            return movingPoints(view).length && moveTargets(session, view).length ? { kind, target } : undefined;
         case 'merge':
-            return mergeSet(s).length > 1 ? { kind, target } : undefined;
+            return mergeSet(session, view).length > 1 ? { kind, target } : undefined;
         case 'add_analysis':
             return analysis.table_id ? addAnalysisPanel(analysis.table_id) : undefined;
         default:

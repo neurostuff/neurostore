@@ -3,7 +3,7 @@ import { slotKey } from '../model/targetKey';
 import { ev, makeBundle } from '../test/bundles';
 import { fakeServer } from '../test/fakeServer';
 import { createOpClient } from './opClient';
-import { createReviewStore, type ReviewStore } from './reviewStore';
+import { createReviewStores, type ReviewStores } from './context';
 
 const TEXT = 'Twenty patients and eighteen controls performed a Stroop task during fMRI scanning at 3 T.';
 const at = (words: string): [number, number] => [TEXT.indexOf(words), TEXT.indexOf(words) + words.length];
@@ -13,10 +13,10 @@ const source = makeBundle(
     { source: { ...makeBundle({}, '').source, id: 'S1', label: 'A paper' } }
 );
 
-function edit(store: ReviewStore, path: string, words: string) {
-    store.getState().focusSlot(slotKey('study', path));
-    expect(store.getState().addEvidence(at(words), 'new')).toBe(true);
-    return store.getState().pending.at(-1)!;
+function edit(store: ReviewStores, path: string, words: string) {
+    store.view.getState().focusSlot(slotKey('study', path));
+    expect(store.session.getState().addEvidence(store.view.getState().focus.key, at(words), 'new')).toBe(true);
+    return store.session.getState().pending.at(-1)!;
 }
 
 describe('two tabs saving to one review', () => {
@@ -25,8 +25,8 @@ describe('two tabs saving to one review', () => {
         const server = fakeServer([source]);
         const review = (await server.backend.startReview('S1')).summary;
         const open = async () => {
-            const store = createReviewStore(await server.backend.getBundle('S1'));
-            const client = createOpClient(store, server.api());
+            const store = createReviewStores(await server.backend.getBundle('S1'));
+            const client = createOpClient(store.session, server.api());
             return { store, client };
         };
         const a = await open();
@@ -44,7 +44,7 @@ describe('two tabs saving to one review', () => {
         made.push(edit(a.store, 'task', 'a Stroop'));
         await a.client.flush();
         const afterA = await server.backend.getBundle('S1');
-        expect(a.store.getState().record).toEqual(afterA.record);
+        expect(a.store.session.getState().record).toEqual(afterA.record);
         made.push(edit(b.store, 'design.field', 'at 3 T'));
         await b.client.flush();
 
@@ -54,9 +54,9 @@ describe('two tabs saving to one review', () => {
         expect(new Set(ids)).toEqual(new Set(made.map((op) => op.client_op_id)));
         expect(final.ops.map((s) => s.seq)).toEqual(made.map((_, i) => i + 1));
         expect(final.review?.last_seq).toBe(made.length);
-        expect(b.store.getState().record).toEqual(final.record);
-        expect(b.store.getState().ops).toEqual(final.ops);
-        expect([a.store.getState().pending, b.store.getState().pending]).toEqual([[], []]);
+        expect(b.store.session.getState().record).toEqual(final.record);
+        expect(b.store.session.getState().ops).toEqual(final.ops);
+        expect([a.store.session.getState().pending, b.store.session.getState().pending]).toEqual([[], []]);
         expect(server.requests.some((r) => r.path === `/api/review/sources/S1/bundle`)).toBe(true);
         expect(server.invalid()).toEqual([]);
         expect(review.id).toBe(final.review?.id);
@@ -67,8 +67,8 @@ describe('two tabs saving to one review', () => {
         const server = fakeServer([source]);
         await server.backend.startReview('S1');
         const open = async () => {
-            const store = createReviewStore(await server.backend.getBundle('S1'));
-            return { store, client: createOpClient(store, server.api()) };
+            const store = createReviewStores(await server.backend.getBundle('S1'));
+            return { store, client: createOpClient(store.session, server.api()) };
         };
         const a = await open();
         const b = await open();
@@ -76,8 +76,10 @@ describe('two tabs saving to one review', () => {
             [a, 'Twenty patients'],
             [b, 'eighteen controls'],
         ] as const) {
-            tab.store.getState().focusSlot(slotKey('study', 'description'));
-            expect(tab.store.getState().addEvidence(at(words), 'first')).toBe(true);
+            tab.store.view.getState().focusSlot(slotKey('study', 'description'));
+            expect(
+                tab.store.session.getState().addEvidence(tab.store.view.getState().focus.key, at(words), 'first')
+            ).toBe(true);
         }
         await a.client.flush();
         await b.client.flush();
@@ -99,7 +101,7 @@ describe('two tabs saving to one review', () => {
                 ],
             },
         ]);
-        expect(b.store.getState().record).toEqual(final.record);
+        expect(b.store.session.getState().record).toEqual(final.record);
         expect(server.invalid()).toEqual([]);
         expect(server.requests.filter((r) => r.status === 409)).toHaveLength(1);
     });

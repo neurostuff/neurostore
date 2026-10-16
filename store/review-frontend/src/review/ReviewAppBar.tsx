@@ -2,8 +2,8 @@ import { AppBar, Button, Chip, Toolbar, Typography } from '@mui/material';
 import { Brand } from '../Brand';
 import { editSummary } from '../format/editSummary';
 import { displayName } from '../format/people';
-import { useReviewStore } from '../store/context';
-import { selectIsBlocked, selectSaveLabel, type ReviewState } from '../store/reviewStore';
+import { useSession, useView } from '../store/context';
+import { selectIsBlocked, selectSaveLabel, type SessionState } from '../store/sessionStore';
 
 const STATES = {
     in_progress: 'in progress',
@@ -12,7 +12,7 @@ const STATES = {
     set_aside: 'set aside',
 } as const;
 
-function selectProgress(s: ReviewState): string {
+function selectProgress(s: Pick<SessionState, 'index' | 'provenance' | 'bundle'>): string {
     const slots = s.index.unhidden.flatMap((e) => e.slots);
     const reviewed = slots.filter((slot) => slot.key in s.provenance).length;
     const analyses = s.bundle.hidden.analyses.length;
@@ -20,14 +20,14 @@ function selectProgress(s: ReviewState): string {
 }
 
 export function ReviewAppBar() {
-    const label = useReviewStore((s) => s.bundle.source.label);
-    const state = useReviewStore((s) => (s.bundle.review ? STATES[s.bundle.review.state] : 'new review'));
-    const progress = useReviewStore(selectProgress);
-    const showing = useReviewStore((s) => s.showNonCoordinate);
-    const toggleNonCoordinate = useReviewStore((s) => s.toggleNonCoordinate);
-    const saved = useReviewStore(selectSaveLabel);
-    const blocked = useReviewStore(selectIsBlocked);
-    const reviewers = useReviewStore((s) => s.bundle.reviewers);
+    const label = useSession((s) => s.bundle.source.label);
+    const state = useSession((s) => (s.bundle.review ? STATES[s.bundle.review.state] : 'new review'));
+    const progress = useSession(selectProgress);
+    const showing = useView((s) => s.showNonCoordinate);
+    const toggleNonCoordinate = useView((s) => s.toggleNonCoordinate);
+    const saved = useSession(selectSaveLabel);
+    const blocked = useSession(selectIsBlocked);
+    const reviewers = useSession((s) => s.bundle.reviewers);
     const now = new Date();
     return (
         <AppBar position="static" elevation={0}>

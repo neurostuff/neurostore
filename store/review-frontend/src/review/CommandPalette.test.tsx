@@ -1,7 +1,8 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { ReviewScreen } from './ReviewScreen';
+import { focusedSpans } from '../test/stores';
 
 const TEXT = '# A paper\n\nWe scanned twenty patients on a 3 T scanner.\n\nControls were matched for age.\n';
 const at = (word: string): [number, number] => [TEXT.indexOf(word), TEXT.indexOf(word) + word.length];
@@ -18,7 +19,7 @@ const record = {
 const entities = entityRows(row('grp_a', 'Group', 'groups'), row('grp_b', 'Group', 'groups'));
 
 function setup() {
-    const view = renderWithStore(<ReviewScreen />, makeBundle(record, TEXT, { entities }));
+    const view = renderWithStores(<ReviewScreen />, makeBundle(record, TEXT, { entities }));
     return {
         ...view,
         press: (key: string, init: KeyboardEventInit = {}) => fireEvent.keyDown(document.body, { key, ...init }),
@@ -42,10 +43,10 @@ describe('the command palette', () => {
     });
 
     it('leaves Ctrl+K to the browser inside a text field', () => {
-        const { store } = setup();
+        const { stores } = setup();
         const field = document.body.appendChild(document.createElement('input'));
         act(() => void fireEvent.keyDown(field, { key: 'k', ctrlKey: true }));
-        expect(store.getState().paletteOpen).toBe(false);
+        expect(stores.view.getState().paletteOpen).toBe(false);
         field.remove();
     });
 
@@ -68,55 +69,55 @@ describe('the command palette', () => {
     });
 
     it('focuses an entity it chooses, which scrolls the text to its first evidence', async () => {
-        const { press, store } = setup();
+        const { press, stores } = setup();
         openPalette(press);
         search('controls');
         fireEvent.click(group('entities').getByRole('option', { name: /Controls/ }));
         await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Command palette' })).not.toBeInTheDocument());
-        expect(store.getState().focus.entity).toBe('grp_b');
-        expect(store.getState().reveal?.span).toEqual(store.getState().focusedSpans[0]);
+        expect(stores.view.getState().focus.entity).toBe('grp_b');
+        expect(stores.view.getState().reveal?.span).toEqual(focusedSpans(stores)[0]);
     });
 
     it('focuses a slot it chooses', () => {
-        const { press, store } = setup();
+        const { press, stores } = setup();
         openPalette(press);
         search('age');
         fireEvent.click(group('slots').getByRole('option', { name: /^age Controls/ }));
-        expect(store.getState().focus.key).toBe('slot:grp_b:age');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_b:age');
     });
 
     it('focuses the slot of a value it chooses', () => {
-        const { press, store } = setup();
+        const { press, stores } = setup();
         openPalette(press);
         search('matched');
         fireEvent.click(group('values').getByRole('option', { name: /^matched/ }));
-        expect(store.getState().focus.key).toBe('slot:grp_b:age');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_b:age');
     });
 
     it('scrolls the text to a passage it chooses', () => {
-        const { press, store } = setup();
+        const { press, stores } = setup();
         openPalette(press);
         search('matched for');
         fireEvent.click(group('paper text').getByRole('option', { name: new RegExp(PASSAGE) }));
-        expect(store.getState().reveal?.span).toEqual(passage);
+        expect(stores.view.getState().reveal?.span).toEqual(passage);
     });
 
     it('moves the active result with the arrow keys, and chooses it with Enter', () => {
-        const { press, store } = setup();
+        const { press, stores } = setup();
         openPalette(press);
         search('patients');
         const input = screen.getByRole('textbox', { name: 'search' });
         fireEvent.keyDown(input, { key: 'ArrowDown' });
         expect(group('values').getByRole('option', { name: /^Patients/ })).toHaveAttribute('aria-selected', 'true');
         fireEvent.keyDown(input, { key: 'Enter' });
-        expect(store.getState().focus.key).toBe('slot:grp_a:name');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_a:name');
     });
 
     it('closes on Escape without choosing anything', async () => {
-        const { press, store } = setup();
+        const { press, stores } = setup();
         openPalette(press);
         fireEvent.keyDown(screen.getByRole('textbox', { name: 'search' }), { key: 'Escape' });
         await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Command palette' })).not.toBeInTheDocument());
-        expect(store.getState().focus.key).toBe('entity:study');
+        expect(stores.view.getState().focus.key).toBe('entity:study');
     });
 });

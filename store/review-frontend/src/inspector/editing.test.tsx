@@ -2,7 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react';
 import type { Op } from '../contract/generated/review-ops';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { validateOpBatch } from '../test/schemas';
 
 const TEXT = 'We scanned twenty patients and twenty controls on a 3 T scanner.';
@@ -51,11 +51,12 @@ const review = {
 } as const;
 
 function setup() {
-    const view = renderWithStore(<ReviewScreen />, makeBundle(record, TEXT, { entities, review: { ...review } }));
-    const state = () => view.store.getState();
-    const pending = () => state().pending;
+    const view = renderWithStores(<ReviewScreen />, makeBundle(record, TEXT, { entities, review: { ...review } }));
+    const session = () => view.stores.session.getState();
+    const viewState = () => view.stores.view.getState();
+    const pending = () => session().pending;
     const last = () => pending().at(-1);
-    return { ...view, state, pending, last };
+    return { ...view, session, viewState, pending, last };
 }
 
 const press = (key: string, init: KeyboardEventInit = {}, target: Element = document.activeElement ?? document.body) =>
@@ -71,8 +72,8 @@ function expectValid(...ops: (Op | undefined)[]) {
 
 describe('editing a slot', () => {
     it('Enter edits the focused value in the editor its schema calls for; Enter saves one set_value', () => {
-        const { state, pending, last } = setup();
-        act(() => state().focusSlot('slot:grp_a:acquired_count'));
+        const { pending, last, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:acquired_count'));
         press('Enter', {}, document.body);
         const field = screen.getByRole('spinbutton', { name: 'acquired_count' });
         expect(field).toHaveFocus();
@@ -96,30 +97,30 @@ describe('editing a slot', () => {
     });
 
     it('Esc cancels the edit, emitting nothing', () => {
-        const { state, pending } = setup();
-        act(() => state().focusSlot('slot:grp_a:name'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:name'));
         press('Enter', {}, document.body);
         fireEvent.change(screen.getByRole('textbox', { name: 'name' }), { target: { value: 'Cases' } });
         press('Escape');
         expect(screen.queryByRole('group', { name: 'edit name' })).not.toBeInTheDocument();
         expect(pending()).toEqual([]);
-        expect(state().panel).toBeNull();
+        expect(viewState().panel).toBeNull();
     });
 
     it('gives a boolean slot a switch and an open vocabulary a text field with suggestions', () => {
-        const { state } = setup();
-        act(() => state().focusSlot('slot:grp_a:is_healthy'));
+        const { viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:is_healthy'));
         press('Enter', {}, document.body);
         expect(screen.getByRole('switch', { name: 'is_healthy' })).not.toBeChecked();
         press('Escape');
-        act(() => state().focusSlot('slot:grp_a:species'));
+        act(() => viewState().focusSlot('slot:grp_a:species'));
         press('Enter', {}, document.body);
         expect(screen.getByRole('combobox', { name: 'species' })).toHaveValue('human');
     });
 
     it('N marks the slot not reported with a reason from the schema, as one set_value', () => {
-        const { state, last } = setup();
-        act(() => state().focusSlot('slot:grp_a:name'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:name'));
         press('n', {}, document.body);
         const reason = screen.getByRole('combobox', { name: 'unreported reason' });
         expect(reason).toHaveFocus();
@@ -137,8 +138,8 @@ describe('editing a slot', () => {
 
 describe('verdicts and notes', () => {
     it('A accepts the focused slot, and its status reads verified', () => {
-        const { state, last } = setup();
-        act(() => state().focusSlot('slot:grp_a:name'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:name'));
         expect(statusIn('slot:grp_a:name')).toHaveTextContent('evidence present');
         press('a', {}, document.body);
         expect(last()).toMatchObject({
@@ -153,8 +154,8 @@ describe('verdicts and notes', () => {
     });
 
     it('A accepts the focused entity, shown on its card', () => {
-        const { state, last } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press('a', {}, document.body);
         expect(last()).toMatchObject({
             type: 'verdict',
@@ -167,8 +168,8 @@ describe('verdicts and notes', () => {
     });
 
     it('A accepts the focused link', () => {
-        const { state, last } = setup();
-        act(() => state().focusEntity('a_1'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusEntity('a_1'));
         const chip = within(rowOf('slot:a_1:acquisitions')).getByRole('button', { name: 'Scan A' });
         act(() => chip.focus());
         press('a');
@@ -181,8 +182,8 @@ describe('verdicts and notes', () => {
     });
 
     it('Shift+A accepts every untouched slot on the card that has evidence, in one batch', () => {
-        const { state, pending } = setup();
-        act(() => state().focusSlot('slot:grp_a:name'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:name'));
         press('a', {}, document.body);
         press('A', { shiftKey: true }, document.body);
         const accepted = pending().slice(1);
@@ -195,8 +196,8 @@ describe('verdicts and notes', () => {
     });
 
     it('R opens the reason chips; a digit picks one, and Enter rejects with the note', () => {
-        const { state, last } = setup();
-        act(() => state().focusSlot('slot:grp_a:species'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:species'));
         press('r', {}, document.body);
         const panel = screen.getByRole('group', { name: 'reject species' });
         expect(
@@ -222,8 +223,8 @@ describe('verdicts and notes', () => {
     });
 
     it('a digit pressed on a reason radio picks that reason, and one typed in the note does not', () => {
-        const { state } = setup();
-        act(() => state().focusSlot('slot:grp_a:species'));
+        const { viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:species'));
         press('r', {}, document.body);
         const panel = screen.getByRole('group', { name: 'reject species' });
         press('2', {}, within(panel).getByRole('radio', { name: '1 wrong value' }));
@@ -236,8 +237,8 @@ describe('verdicts and notes', () => {
     });
 
     it('a reject with the reason other needs a note', () => {
-        const { state, pending } = setup();
-        act(() => state().focusSlot('slot:grp_a:species'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:species'));
         press('r', {}, document.body);
         press('5');
         const note = screen.getByRole('textbox', { name: 'note' });
@@ -249,8 +250,8 @@ describe('verdicts and notes', () => {
     });
 
     it('a reject without a picked reason asks for one', () => {
-        const { state, pending } = setup();
-        act(() => state().focusSlot('slot:grp_a:species'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:species'));
         press('r', {}, document.body);
         press('Enter');
         expect(pending()).toEqual([]);
@@ -258,16 +259,16 @@ describe('verdicts and notes', () => {
     });
 
     it('N on an entity does nothing and opens no panel', () => {
-        const { state, pending } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press('n', {}, document.body);
-        expect(state().panel).toBeNull();
+        expect(viewState().panel).toBeNull();
         expect(pending()).toEqual([]);
     });
 
     it('a note left empty is refused, with no op', () => {
-        const { state, pending } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press(';', {}, document.body);
         press('Enter');
         expect(pending()).toEqual([]);
@@ -277,8 +278,8 @@ describe('verdicts and notes', () => {
     });
 
     it('; adds a note to the focused item', () => {
-        const { state, last } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press(';', {}, document.body);
         const note = screen.getByRole('textbox', { name: 'note on Controls' });
         expect(note).toHaveFocus();
@@ -294,8 +295,8 @@ describe('verdicts and notes', () => {
     });
 
     it('; adds a note to the focused slot, and to the focused link', () => {
-        const { state, last } = setup();
-        act(() => state().focusSlot('slot:grp_a:name'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:name'));
         press(';', {}, document.body);
         fireEvent.change(screen.getByRole('textbox', { name: 'note on name' }), {
             target: { value: 'check the label' },
@@ -307,7 +308,7 @@ describe('verdicts and notes', () => {
             target: { kind: 'slot', entity: 'grp_a', path: 'name' },
         });
         expectValid(last());
-        act(() => state().focusEntity('a_1'));
+        act(() => viewState().focusEntity('a_1'));
         const chip = within(rowOf('slot:a_1:acquisitions')).getByRole('button', { name: 'Scan A' });
         act(() => chip.focus());
         press(';');
@@ -324,22 +325,22 @@ describe('verdicts and notes', () => {
 
 describe('the status a review gives an entity', () => {
     it('shows an entity the server created as added, on its card', () => {
-        const { store } = renderWithStore(
+        const { stores } = renderWithStores(
             <ReviewScreen />,
             makeBundle(record, TEXT, {
                 entities,
                 review: { ...review, provenance: { 'entity:grp_b': { state: 'added', user_id: 'u1', at: 'then' } } },
             })
         );
-        act(() => store.getState().focusEntity('grp_b'));
+        act(() => stores.view.getState().focusEntity('grp_b'));
         expect(within(screen.getByRole('region', { name: 'Controls' })).getByText('added by u1')).toBeInTheDocument();
     });
 });
 
 describe('links and entities', () => {
     it('L opens a type-ahead over entities of the slot’s class; choosing one emits link, pending until the server answers', () => {
-        const { state, last } = setup();
-        act(() => state().focusSlot('slot:a_1:acquisitions'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusSlot('slot:a_1:acquisitions'));
         press('l', {}, document.body);
         const input = screen.getByRole('combobox', { name: 'link acquisitions to' });
         expect(input).toHaveFocus();
@@ -355,8 +356,8 @@ describe('links and entities', () => {
     });
 
     it('a chip’s remove button emits unlink, shown pending', () => {
-        const { state, last } = setup();
-        act(() => state().focusEntity('a_1'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusEntity('a_1'));
         fireEvent.click(within(rowOf('slot:a_1:acquisitions')).getByRole('button', { name: 'unlink Scan A' }));
         expect(last()).toMatchObject({
             type: 'unlink',
@@ -367,11 +368,11 @@ describe('links and entities', () => {
     });
 
     it('C creates an entity in the focused entity’s list with a minted id, shown pending', async () => {
-        const { state, last } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { last, session, viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press('c', {}, document.body);
         expect(last()).toMatchObject({ type: 'create_entity', parent: 'study', list: 'groups', entity: {} });
-        await act(() => state().minted(last()!.client_op_id));
+        await act(() => session().minted(last()!.client_op_id));
         expect(last()).toMatchObject({ entity: { local_id: expect.stringMatching(/^rv_[0-9a-f]{12}$/) } });
         expectValid(last());
         expect(screen.getByRole('status', { name: 'pending changes' })).toHaveTextContent(
@@ -380,35 +381,35 @@ describe('links and entities', () => {
     });
 
     it('clears the pending markers once the server’s answer lands', async () => {
-        const { state, last } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { last, session, viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press('c', {}, document.body);
-        await act(() => state().minted(last()!.client_op_id));
+        await act(() => session().minted(last()!.client_op_id));
         const created = last()!;
         const localId = (created as unknown as { entity: { local_id: string } }).entity.local_id;
         expect(screen.getByRole('status', { name: 'pending changes' })).toBeInTheDocument();
         act(() =>
-            state().confirm(
+            session().confirm(
                 {
                     ops: [{ seq: 1, op: created, before: {}, after: {}, user_id: 'u1', created_at: 'then' }],
                     last_seq: 1,
-                    record: state().record,
+                    record: session().record,
                     coordinate_revision: null,
                     provenance: {},
                     annotations: {},
                     hidden: { analyses: [], entities: [] },
-                    entities: [...state().bundle.entities, row(localId, 'Group', 'groups')],
+                    entities: [...session().bundle.entities, row(localId, 'Group', 'groups')],
                 },
                 [created]
             )
         );
-        expect(state().pending).toEqual([]);
+        expect(session().pending).toEqual([]);
         expect(screen.getByRole('status', { name: 'pending changes' })).not.toHaveTextContent('creating');
     });
 
     it('Shift+Backspace confirms, listing the dangling links, then deletes the focused entity', () => {
-        const { state, last, pending } = setup();
-        act(() => state().focusEntity('grp_a'));
+        const { last, pending, viewState } = setup();
+        act(() => viewState().focusEntity('grp_a'));
         press('Backspace', { shiftKey: true }, document.body);
         const dialog = screen.getByRole('dialog', { name: 'Delete Patients?' });
         expect(within(dialog).getByRole('list', { name: 'dangling links' })).toHaveTextContent(
@@ -424,8 +425,8 @@ describe('links and entities', () => {
     });
 
     it('closes the delete dialog on confirm, before the server answers', () => {
-        const { state, pending } = setup();
-        act(() => state().focusEntity('grp_a'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusEntity('grp_a'));
         press('Backspace', { shiftKey: true }, document.body);
         fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -433,10 +434,43 @@ describe('links and entities', () => {
     });
 
     it('says when nothing links to the entity being deleted', () => {
-        const { state } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press('Backspace', { shiftKey: true }, document.body);
         expect(screen.getByRole('dialog', { name: 'Delete Controls?' })).toHaveTextContent('Nothing links to it.');
+    });
+
+    it('lists in the open delete dialog a link a confirmed edit makes to the entity', () => {
+        const { session, viewState } = setup();
+        act(() => viewState().focusEntity('acq_2'));
+        press('Backspace', { shiftKey: true }, document.body);
+        expect(screen.getByRole('dialog', { name: 'Delete Scan B?' })).toHaveTextContent('Nothing links to it.');
+        const linking: Op = {
+            client_op_id: 'link-1',
+            type: 'link',
+            target: { kind: 'relationship', entity: 'a_1', path: 'acquisitions', target_entity: 'acq_2' },
+        };
+        act(() => void session().emit(linking));
+        const { bundle, provenance, annotations } = session();
+        const linked = { ...record, analyses: [{ ...record.analyses[0], acquisitions: ['acq_1', 'acq_2'] }] };
+        act(() =>
+            session().confirm(
+                {
+                    ops: [{ seq: 1, op: linking, before: {}, after: {}, user_id: 'u1', created_at: 'now' }],
+                    last_seq: 1,
+                    record: linked,
+                    coordinate_revision: bundle.coordinate_revision,
+                    provenance,
+                    annotations,
+                    hidden: bundle.hidden,
+                    entities: bundle.entities,
+                },
+                [linking]
+            )
+        );
+        expect(within(screen.getByRole('dialog')).getByRole('list', { name: 'dangling links' })).toHaveTextContent(
+            'Patients > Controls · acquisitions → Scan B'
+        );
     });
 
     it('does not offer to delete the study', () => {
@@ -448,8 +482,8 @@ describe('links and entities', () => {
 
 describe('keyboard paths', () => {
     it('Delete on a focused link chip unlinks it', () => {
-        const { state, last } = setup();
-        act(() => state().focusEntity('a_1'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusEntity('a_1'));
         const chip = within(rowOf('slot:a_1:acquisitions')).getByRole('button', { name: 'Scan A' });
         act(() => chip.focus());
         fireEvent.keyDown(chip, { key: 'Delete' });
@@ -458,8 +492,8 @@ describe('keyboard paths', () => {
     });
 
     it('Esc closes the link type-ahead without linking', () => {
-        const { state, pending } = setup();
-        act(() => state().focusSlot('slot:a_1:acquisitions'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusSlot('slot:a_1:acquisitions'));
         press('l', {}, document.body);
         press('Escape', {}, screen.getByRole('combobox', { name: 'link acquisitions to' }));
         expect(screen.queryByRole('combobox', { name: 'link acquisitions to' })).not.toBeInTheDocument();
@@ -467,32 +501,32 @@ describe('keyboard paths', () => {
     });
 
     it('the delete dialog focuses Delete, so Enter confirms, and Esc cancels', () => {
-        const { state, pending } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { pending, viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press('Backspace', { shiftKey: true }, document.body);
         const dialog = screen.getByRole('dialog', { name: 'Delete Controls?' });
         expect(within(dialog).getByRole('button', { name: 'Delete' })).toHaveFocus();
         press('Escape');
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-        expect(state().panel).toBeNull();
+        expect(viewState().panel).toBeNull();
         expect(pending()).toEqual([]);
     });
 
     it('L and Enter do nothing where they do not apply', () => {
-        const { state } = setup();
-        act(() => state().focusSlot('slot:grp_a:name'));
+        const { viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:name'));
         press('l', {}, document.body);
-        expect(state().panel).toBeNull();
-        act(() => state().focusSlot('slot:a_1:acquisitions'));
+        expect(viewState().panel).toBeNull();
+        act(() => viewState().focusSlot('slot:a_1:acquisitions'));
         press('Enter', {}, document.body);
-        expect(state().panel).toBeNull();
+        expect(viewState().panel).toBeNull();
     });
 });
 
 describe('creating, and the actions for a pointer', () => {
     it('C builds the new entity with its required slots not reported', () => {
-        const { state, last } = setup();
-        act(() => state().focusEntity('grp_b'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusEntity('grp_b'));
         press('c', {}, document.body);
         expect(last()).toMatchObject({
             type: 'create_entity',
@@ -506,8 +540,8 @@ describe('creating, and the actions for a pointer', () => {
     });
 
     it('C on a list of subclasses asks which class first, and creates the one chosen', () => {
-        const { state, last, pending } = setup();
-        act(() => state().focusEntity('acq_1'));
+        const { last, pending, viewState } = setup();
+        act(() => viewState().focusEntity('acq_1'));
         press('c', {}, document.body);
         const kinds = within(screen.getByRole('dialog')).getByRole('list', { name: 'kinds' });
         expect(
@@ -527,8 +561,8 @@ describe('creating, and the actions for a pointer', () => {
     });
 
     it('the toolbar accepts the focused item, and opens reject on it', () => {
-        const { state, last } = setup();
-        act(() => state().focusSlot('slot:grp_a:species'));
+        const { last, viewState } = setup();
+        act(() => viewState().focusSlot('slot:grp_a:species'));
         fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
         expect(last()).toMatchObject({
             type: 'verdict',

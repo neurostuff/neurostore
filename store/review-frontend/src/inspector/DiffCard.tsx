@@ -3,7 +3,7 @@ import type { Theme } from '@mui/material/styles';
 import { memo, useMemo } from 'react';
 import type { DiffStatus, ReviewDiff } from '../model/diff';
 import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
-import { useReviewStore } from '../store/context';
+import { useSession, useView } from '../store/context';
 import { selectDiff, selectOriginalIndex } from '../store/diffSelectors';
 import { CardHead } from './CardHead';
 import { formatValue } from './formatValue';
@@ -103,10 +103,10 @@ const nameIn = (review: RecordIndex, original: RecordIndex) => (id: string) =>
 
 /** An entity in two columns, the original's slots against the review's, with the changed ones marked. */
 export function DiffCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
-    const diff = useReviewStore(selectDiff);
-    const index = useReviewStore((s) => s.index);
-    const originalIndex = useReviewStore(selectOriginalIndex);
-    const focusSlot = useReviewStore((s) => s.focusSlot);
+    const diff = useSession(selectDiff);
+    const index = useSession((s) => s.index);
+    const originalIndex = useSession(selectOriginalIndex);
+    const focusSlot = useView((s) => s.focusSlot);
     const original = originalIndex.entity(entity.id);
     const rows = useMemo(() => diffRows(entity, original, diff), [entity, original, diff]);
     const names = useMemo(() => nameIn(index, originalIndex), [index, originalIndex]);

@@ -3,8 +3,7 @@ import type { StatusId } from '../inspector/status';
 import { isChange, type DiffStatus } from '../model/diff';
 import { isDoubtful, type EntityNode } from '../model/record';
 import { targetKey } from '../model/targetKey';
-
-export type OutlineFilter = 'all' | 'unreviewed' | 'changed' | 'noted' | 'doubtful';
+import type { OutlineFilter } from '../store/viewStore';
 
 /** The target keys that carry a note: a note op, or a verdict with a note. */
 export function notedKeys(ops: Op[]): Set<string> {

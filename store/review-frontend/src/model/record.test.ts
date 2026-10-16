@@ -1,5 +1,6 @@
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
-import { buildRecordIndex } from './record';
+import type { Json } from './paths';
+import { buildRecordIndex, withHidden, withSlotFrom, withSlotOrder } from './record';
 
 const TEXT = 'x'.repeat(200);
 
@@ -204,8 +205,62 @@ describe('hidden entities in the view', () => {
         const index = buildRecordIndex(bundle);
         expect(index.visible.map((e) => e.id)).not.toContain('a_hidden');
         expect(index.visible.map((e) => e.id)).not.toContain('grp_b');
-        const shown = buildRecordIndex(bundle, undefined, true);
+        const shown = withHidden(index, true);
         expect(shown.visible.map((e) => e.id)).toEqual(expect.arrayContaining(['a_hidden', 'grp_b']));
         expect(shown.entity('grp_b')?.hidden).toBe(true);
+    });
+});
+
+describe('the index after an edit', () => {
+    const bundle = makeBundle(record, TEXT, { entities, hidden: { analyses: ['a_hidden'], entities: [] } });
+    const index = buildRecordIndex(bundle);
+    const edited = structuredClone(record) as Json;
+    (edited.groups as Json[])[0].species = ev('human', [[40, 45]]);
+
+    it('sorts an edited slot back among the slots of its doubt in record order', () => {
+        const after = withSlotFrom(index, edited, 'slot:grp_a:species');
+        expect(after.entity('grp_a')?.slots.map((s) => [s.path, s.doubt])).toEqual([
+            ['name', 'other'],
+            ['species', 'other'],
+        ]);
+        expect(after.allSpans).toContainEqual([40, 45]);
+    });
+});
+
+describe('a slot order kept for one entity', () => {
+    const index = buildRecordIndex(
+        makeBundle(record, TEXT, { entities, hidden: { analyses: ['a_hidden'], entities: [] } })
+    );
+
+    it('lists the entity’s slots in the order given, the others after them, its spans as they were', () => {
+        const kept = withSlotOrder(index, 'a_1', ['slot:a_1:name', 'slot:a_1:measure']);
+        expect(
+            kept
+                .entity('a_1')
+                ?.slots.slice(0, 3)
+                .map((s) => s.path)
+        ).toEqual(['name', 'measure', 'outcome']);
+        expect(kept.visible.find((e) => e.id === 'a_1')?.slots[0].path).toBe('name');
+        expect(kept.entity('grp_a')).toBe(index.entity('grp_a'));
+        expect(kept.allSpans).toBe(index.allSpans);
+    });
+
+    it('is the index itself when the order is the one it has', () => {
+        const order = index.entity('a_1')!.slots.map((s) => s.key);
+        expect(withSlotOrder(index, 'a_1', order)).toBe(index);
+        expect(withSlotOrder(index, 'nobody', order)).toBe(index);
+    });
+});
+
+describe('listing the hidden entities', () => {
+    const index = buildRecordIndex(
+        makeBundle(record, TEXT, { entities, hidden: { analyses: ['a_hidden'], entities: [] } })
+    );
+
+    it('is the index itself while they are left out, and the same listing each time they are shown', () => {
+        expect(withHidden(index, false)).toBe(index);
+        expect(withHidden(index, true)).toBe(withHidden(index, true));
+        expect(withHidden(index, true).visible.map((e) => e.id)).toContain('a_hidden');
+        expect(withHidden(index, true).allSpans).toContainEqual([170, 175]);
     });
 });

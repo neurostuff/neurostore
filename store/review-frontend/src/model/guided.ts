@@ -1,13 +1,12 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { AnyTarget } from '../contract/generated/review-ops';
-import { analysisTarget } from '../coordinates/actions';
-import { referenceTarget } from '../inspector/schema';
+import { referenceTarget } from './schema';
 import { fromSchema } from '../contract/schemas';
-import { currentAnalyses, guidedOrder, RECORD_LINK } from '../model/coordinates';
-import { ROOT_ENTITY } from '../model/paths';
-import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
-import { relationshipTarget, targetKey } from '../model/targetKey';
-import type { ProvenanceMap } from '../model/applyOp';
+import { currentAnalyses, guidedOrder, RECORD_LINK } from './coordinates';
+import { ROOT_ENTITY } from './paths';
+import type { EntityNode, RecordIndex, SlotNode } from './record';
+import { analysisTarget, relationshipTarget, targetKey } from './targetKey';
+import type { ProvenanceMap } from './applyOp';
 import type { StepId } from './steps';
 
 /** The class of the record entities that report a coordinate analysis: the one declaring its link slot. */

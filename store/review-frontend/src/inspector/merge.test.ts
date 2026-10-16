@@ -1,6 +1,6 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
-import { createReviewStore, type ReviewStore } from '../store/reviewStore';
+import { createReviewStores, type ReviewStores } from '../store/context';
 import type { InverseOp } from '../store/undoSteps';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { answerPending, withoutIds } from '../test/undoHelpers';
@@ -34,11 +34,11 @@ const review: NonNullable<ReviewBundle['review']> = {
     annotations: {},
 };
 const openWith = (overrides: Partial<ReviewBundle>) =>
-    createReviewStore(makeBundle(record, TEXT, { entities, review, ...overrides }), { now: () => 'now' });
+    createReviewStores(makeBundle(record, TEXT, { entities, review, ...overrides }), { now: () => 'now' });
 const open = () => openWith({});
-const shapes = (store: ReviewStore) => withoutIds(store.getState().pending);
-const groups = (store: ReviewStore) => {
-    const { pending, groupOf } = store.getState();
+const shapes = (store: ReviewStores) => withoutIds(store.session.getState().pending);
+const groups = (store: ReviewStores) => {
+    const { pending, groupOf } = store.session.getState();
     return new Set(pending.map((op) => groupOf[op.client_op_id] ?? op.client_op_id));
 };
 const link = (entity: string, target_entity: string) => ({
@@ -51,13 +51,15 @@ const link = (entity: string, target_entity: string) => ({
 describe('merging one record entity into another', () => {
     it('offers the other entities of its class, and the slots the kept one lacks', () => {
         const store = open();
-        expect(mergeCandidates(store.getState(), 'asm_2').map((e) => e.id)).toEqual(['asm_1']);
-        expect(mergeCopies(store.getState(), 'asm_2', 'asm_1').map((s) => s.path)).toEqual(['description']);
+        expect(mergeCandidates(store.session.getState().index, 'asm_2').map((e) => e.id)).toEqual(['asm_1']);
+        expect(mergeCopies(store.session.getState().index, 'asm_2', 'asm_1').map((s) => s.path)).toEqual([
+            'description',
+        ]);
     });
 
     it('re-points every link, copies only the chosen slots and deletes the merged entity, as one batch', () => {
         const store = open();
-        expect(mergeInto(store.getState(), 'asm_2', 'asm_1', [])).toBe(true);
+        expect(mergeInto(store, 'asm_2', 'asm_1', [])).toBe(true);
         expect(shapes(store)).toEqual([
             { type: 'unlink', target: link('grp_a', 'asm_2') },
             { type: 'link', target: link('grp_a', 'asm_1') },
@@ -69,7 +71,7 @@ describe('merging one record entity into another', () => {
 
     it('copies a chosen slot with its value and evidence', () => {
         const store = open();
-        mergeInto(store.getState(), 'asm_2', 'asm_1', ['description']);
+        mergeInto(store, 'asm_2', 'asm_1', ['description']);
         const target = { kind: 'slot', entity: 'asm_1', path: 'description' };
         expect(shapes(store)).toContainEqual({
             type: 'set_value',
@@ -88,7 +90,7 @@ describe('merging one record entity into another', () => {
 
     it('is undone as one step, every inverse in one batch, last op first', () => {
         const store = open();
-        mergeInto(store.getState(), 'asm_2', 'asm_1', []);
+        mergeInto(store, 'asm_2', 'asm_1', []);
         const inverse = (op: Op): InverseOp[] => {
             if (op.type === 'link') return [{ type: 'unlink', target: op.target }];
             if (op.type === 'unlink') return [{ type: 'link', target: op.target }];
@@ -103,15 +105,15 @@ describe('merging one record entity into another', () => {
             ];
         };
         const sent = answerPending(store, inverse);
-        store.getState().undo();
+        store.session.getState().undo();
         expect(shapes(store)).toEqual(sent.flatMap(inverse).reverse());
         expect(groups(store).size).toBe(1);
-        expect(store.getState().undoStack).toEqual([]);
+        expect(store.session.getState().undoStack).toEqual([]);
     });
 
     it('re-points the links a hidden entity holds too', () => {
         const hiddenRecord = { ...record, analyses: [{ local_id: 'an_h', assessments: ['asm_2'] }] };
-        const store = createReviewStore(
+        const store = createReviewStores(
             makeBundle(hiddenRecord, TEXT, {
                 entities: [...entities, row('an_h', 'Analysis', 'analyses')],
                 hidden: { analyses: ['an_h'], entities: [] },
@@ -119,7 +121,7 @@ describe('merging one record entity into another', () => {
             }),
             { now: () => 'now' }
         );
-        mergeInto(store.getState(), 'asm_2', 'asm_1', []);
+        mergeInto(store, 'asm_2', 'asm_1', []);
         const analysisLink = (type: string, target_entity: string) => ({
             type,
             target: { kind: 'relationship', entity: 'an_h', path: 'assessments', target_entity },
@@ -138,14 +140,14 @@ describe('merging one record entity into another', () => {
         const mirrors = {
             analyses: [{ local_id: 'an_1', mirror_of: 'an_2' }, { local_id: 'an_2' }],
         };
-        const store = createReviewStore(
+        const store = createReviewStores(
             makeBundle(mirrors, TEXT, {
                 entities: entityRows(row('an_1', 'Analysis', 'analyses'), row('an_2', 'Analysis', 'analyses')),
                 review,
             }),
             { now: () => 'now' }
         );
-        mergeInto(store.getState(), 'an_2', 'an_1', []);
+        mergeInto(store, 'an_2', 'an_1', []);
         expect(shapes(store)).toEqual([
             {
                 type: 'unlink',

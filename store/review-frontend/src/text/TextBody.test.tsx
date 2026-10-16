@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
 import { hasFixture, loadFixture } from '../test/bundles';
-import { layoutText, type ParsedPaperLayout } from './layout';
+import { layoutText, type ParsedPaperLayout } from '../model/layout';
 import { TextBody } from './TextBody';
 import { TextIndex } from './TextIndex';
 

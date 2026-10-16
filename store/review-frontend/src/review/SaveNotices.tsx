@@ -1,6 +1,6 @@
 import { Alert, List, ListItem } from '@mui/material';
-import { useReviewStore } from '../store/context';
-import type { Notice } from '../store/reviewStore';
+import { useSession } from '../store/context';
+import type { Notice } from '../store/sessionStore';
 
 const REASONS: Record<Notice['kind'], string> = {
     conflict: 'changed elsewhere, so this edit was dropped',
@@ -12,8 +12,8 @@ const REASONS: Record<Notice['kind'], string> = {
 };
 
 export function SaveNotices() {
-    const notices = useReviewStore((s) => s.notices);
-    const dismiss = useReviewStore((s) => s.dismissNotices);
+    const notices = useSession((s) => s.notices);
+    const dismiss = useSession((s) => s.dismissNotices);
     if (notices.length === 0) return null;
     return (
         <Alert

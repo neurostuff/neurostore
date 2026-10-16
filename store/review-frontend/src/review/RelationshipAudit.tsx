@@ -2,9 +2,9 @@ import { Box, ButtonBase, Table, TableBody, TableCell, TableHead, TableRow, Typo
 import { memo, useMemo } from 'react';
 import { link, pendingStructure, unlink } from '../inspector/actions';
 import { InspectorFrame } from '../inspector/Inspector';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
+import { useReviewStores, useSession, useShown } from '../store/context';
 import type { EntityNode } from '../model/record';
-import { auditMatrix, type AuditGroup, type AuditMatrix } from './guided';
+import { auditMatrix, type AuditGroup, type AuditMatrix } from '../model/guided';
 
 const cellStyles = { p: 0.25, textAlign: 'center' } as const;
 const headStyles = { px: 0.5, py: 0.5, whiteSpace: 'nowrap' } as const;
@@ -31,11 +31,10 @@ const LinkCell = memo(function LinkCell({
     linked: boolean;
     busy: boolean;
 }) {
-    const store = useReviewStoreApi();
+    const stores = useReviewStores();
     const toggle = () => {
-        const state = store.getState();
-        const node = slot === undefined ? undefined : state.index.slot(slot);
-        if (node) (linked ? unlink : link)(state, node, entity);
+        const node = slot === undefined ? undefined : stores.session.getState().index.slot(slot);
+        if (node) (linked ? unlink : link)(stores, node, entity);
     };
     return (
         <TableCell sx={cellStyles}>
@@ -152,9 +151,9 @@ function busyByEntity(
 
 /** Step 5: the analyses against each class they link to; a click on a cell links or unlinks. */
 export function RelationshipAudit() {
-    const matrix = useReviewStore((s) => auditMatrix(s.index));
-    const pending = useReviewStore((s) => s.pending);
-    const index = useReviewStore((s) => s.index);
+    const matrix = useShown(auditMatrix);
+    const pending = useSession((s) => s.pending);
+    const index = useSession((s) => s.index);
     const busy = useMemo(() => busyByEntity(pendingStructure({ pending }).linksBySlot, index), [pending, index]);
     return (
         <InspectorFrame>

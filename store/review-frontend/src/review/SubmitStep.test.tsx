@@ -4,7 +4,7 @@ import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { CUNEUS, coordinateBundle, HOUSES, key, REVIEW } from '../test/coordinates';
 import type { CoordinateAnalysis } from '../model/coordinates';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import type { OpClient } from '../store/opClient';
 import { OpClientProvider } from '../store/context';
 import { SubmitStep } from './SubmitStep';
@@ -20,7 +20,7 @@ const edit = {
 describe('the submit step', () => {
     it('is disabled while anything is unsaved, and enabled once everything is saved', () => {
         const client = { changeState: vi.fn(async () => {}) } as unknown as OpClient;
-        const { store } = renderWithStore(
+        const { stores } = renderWithStores(
             <OpClientProvider client={client}>
                 <SubmitStep />
             </OpClientProvider>,
@@ -28,9 +28,9 @@ describe('the submit step', () => {
         );
         const submit = screen.getByRole('button', { name: 'Submit review' });
         expect(submit).toBeEnabled();
-        act(() => store.setState({ pending: [edit] }));
+        act(() => stores.session.setState({ pending: [edit] }));
         expect(submit).toBeDisabled();
-        act(() => store.setState({ pending: [] }));
+        act(() => stores.session.setState({ pending: [] }));
         expect(submit).toBeEnabled();
         fireEvent.click(submit);
         expect(client.changeState).toHaveBeenCalledWith('submitted');
@@ -88,7 +88,7 @@ describe('the submit summary', () => {
         };
         const verified = { state: 'verified' as const, user_id: 'me', at: 'then' };
         const client = { changeState: vi.fn(async () => {}) } as unknown as OpClient;
-        const view = renderWithStore(
+        const view = renderWithStores(
             <OpClientProvider client={client}>
                 <SubmitStep />
             </OpClientProvider>,
@@ -109,7 +109,7 @@ describe('the submit summary', () => {
     const section = (name: string) => screen.getByRole('region', { name });
 
     it('counts what changed by kind, each item focusing what it names', () => {
-        const { store } = setup();
+        const { stores } = setup();
         const changes = section('what changed');
         expect(within(changes).getByRole('heading', { name: 'slots edited (1)' })).toBeInTheDocument();
         expect(within(changes).getByRole('heading', { name: 'entities removed (1)' })).toBeInTheDocument();
@@ -117,22 +117,22 @@ describe('the submit summary', () => {
         expect(within(changes).queryByRole('button', { name: 'Siblings' })).not.toBeInTheDocument();
         expect(within(changes).queryByRole('heading', { name: /links added/ })).not.toBeInTheDocument();
         fireEvent.click(within(changes).getByRole('button', { name: 'Healthy controls · name' }));
-        expect(store.getState().focus.key).toBe('slot:grp_b:name');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_b:name');
     });
 
     it('lists the open notes from the op log, each focusing its item', () => {
-        const { store } = setup();
+        const { stores } = setup();
         const notes = section('open notes');
         expect(within(notes).getByRole('heading', { name: 'open notes (2)' })).toBeInTheDocument();
         fireEvent.click(within(notes).getByRole('button', { name: /Patients.*check the ages/ }));
-        expect(store.getState().focus.key).toBe('entity:grp_a');
+        expect(stores.view.getState().focus.key).toBe('entity:grp_a');
         expect(
             within(notes).getByRole('button', { name: /Healthy controls · name.*renamed as in table 1/ })
         ).toBeInTheDocument();
     });
 
     it('lists the unreviewed items by step, says how many, and still lets the review be submitted', () => {
-        const { store, client } = setup();
+        const { stores, client } = setup();
         const unreviewed = section('unreviewed');
         expect(within(unreviewed).getByRole('heading', { name: 'unreviewed (3)' })).toBeInTheDocument();
         expect(within(unreviewed).getByRole('heading', { name: 'Entities (1)' })).toBeInTheDocument();
@@ -142,7 +142,7 @@ describe('the submit summary', () => {
         fireEvent.click(
             within(unreviewed).getByRole('button', { name: 'Patients > Controls · groups[#0].group → Patients' })
         );
-        expect(store.getState().focus.key).toBe('relationship:a_1:groups[#0].group:grp_a');
+        expect(stores.view.getState().focus.key).toBe('relationship:a_1:groups[#0].group:grp_a');
         expect(screen.getByText('3 items are still unreviewed.')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
         expect(client.changeState).toHaveBeenCalledWith('submitted');
@@ -227,7 +227,7 @@ describe('the submit summary by kind', () => {
             ],
         };
         const client = { changeState: vi.fn(async () => {}) } as unknown as OpClient;
-        const view = renderWithStore(
+        const view = renderWithStores(
             <OpClientProvider client={client}>
                 <SubmitStep />
             </OpClientProvider>,
@@ -245,7 +245,7 @@ describe('the submit summary by kind', () => {
                 ...overrides,
             })
         );
-        if (showNonCoordinate) act(() => view.store.getState().toggleNonCoordinate());
+        if (showNonCoordinate) act(() => view.stores.view.getState().toggleNonCoordinate());
         return view;
     }
 
@@ -290,14 +290,14 @@ describe('the submit summary by kind', () => {
     });
 
     it('focuses the entity of a slot removed from a kept entity, and the slot of a removed link', () => {
-        const { store } = setup({ analysesRevised: false, edit: (record) => delete record.groups[1].n });
+        const { stores } = setup({ analysesRevised: false, edit: (record) => delete record.groups[1].n });
         const changes = screen.getByRole('region', { name: 'what changed' });
         fireEvent.click(within(changes).getByRole('button', { name: 'Controls · n' }));
-        expect(store.getState().focus.key).toBe('entity:grp_b');
+        expect(stores.view.getState().focus.key).toBe('entity:grp_b');
         fireEvent.click(
             within(changes).getByRole('button', { name: 'Patients > Controls · groups[#0].group → Patients' })
         );
-        expect(store.getState().focus.key).toBe('slot:a_1:groups[#0].group');
+        expect(stores.view.getState().focus.key).toBe('slot:a_1:groups[#0].group');
         expect(within(changes).queryByRole('button', { name: 'Siblings' })).not.toBeInTheDocument();
     });
 
@@ -313,9 +313,9 @@ describe('the submit summary by kind', () => {
     });
 
     it('lists the notes still waiting to be saved among the open notes', () => {
-        const { store } = setup({ analysesRevised: false });
+        const { stores } = setup({ analysesRevised: false });
         act(() =>
-            store.setState({
+            stores.session.setState({
                 pending: [
                     { client_op_id: 'n-9', type: 'note', target: { kind: 'entity', entity: 'grp_a' }, note: 'later' },
                 ],

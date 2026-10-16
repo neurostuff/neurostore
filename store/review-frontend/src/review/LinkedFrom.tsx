@@ -5,19 +5,19 @@ import { reviewStatus, statusColors } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
 import { relationshipKey, relationshipTarget } from '../model/targetKey';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
+import { useReviewStores, useSession, useShown } from '../store/context';
 import { useEditorName } from './editor';
-import { guidedCards, type Link } from './guided';
+import { guidedCards, type Link } from '../model/guided';
 
 const listStyles = (theme: Theme) => ({ px: 2, ...statusColors(theme.palette) });
 
 function LinkRow({ link, target }: { link: Link; target: string }) {
-    const store = useReviewStoreApi();
+    const stores = useReviewStores();
     const { entity, slot } = link;
     const key = relationshipKey(entity.id, slot.path, target);
-    const state = useReviewStore((s) => s.provenance[key]?.state);
+    const state = useSession((s) => s.provenance[key]?.state);
     const editor = useEditorName(key);
-    const unlinking = useReviewStore((s) => pendingStructure(s).linksBySlot.get(slot.key)?.get(target) === 'unlink');
+    const unlinking = useSession((s) => pendingStructure(s).linksBySlot.get(slot.key)?.get(target) === 'unlink');
     return (
         <ListItem disableGutters sx={{ display: 'block' }}>
             <Typography variant="body2">{`${entity.name} · ${slot.path}`}</Typography>
@@ -31,13 +31,11 @@ function LinkRow({ link, target }: { link: Link; target: string }) {
                     <>
                         <Button
                             size="small"
-                            onClick={() =>
-                                acceptTarget(store.getState(), relationshipTarget(entity.id, slot.path, target))
-                            }
+                            onClick={() => acceptTarget(stores, relationshipTarget(entity.id, slot.path, target))}
                         >
                             Accept link
                         </Button>
-                        <Button size="small" color="error" onClick={() => unlink(store.getState(), slot, target)}>
+                        <Button size="small" color="error" onClick={() => unlink(stores, slot, target)}>
                             Unlink
                         </Button>
                     </>
@@ -49,7 +47,7 @@ function LinkRow({ link, target }: { link: Link; target: string }) {
 
 /** The links pointing at `entity`, each with its review status, to accept or unlink. */
 export function LinkedFrom({ entity }: { entity: EntityNode }) {
-    const links = useReviewStore((s) => guidedCards(s.index).linksInto(entity.id));
+    const links = useShown((index) => guidedCards(index).linksInto(entity.id));
     return (
         <Box sx={listStyles}>
             <Typography variant="overline" component="h3">

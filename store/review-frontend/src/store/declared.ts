@@ -1,5 +1,5 @@
 import { fromSchemaKeyed } from '../contract/schemas';
-import { declaredAttributes } from '../inspector/schema';
+import { declaredAttributes } from '../model/schema';
 
 const declaredIn = fromSchemaKeyed('extraction-record', (schema, schemaClass: string) =>
     declaredAttributes(schema, schemaClass).map(({ path, wrapper }) => ({ path, wrapper }))

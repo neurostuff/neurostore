@@ -2,38 +2,41 @@ import { ThemeProvider } from '@mui/material';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReviewApi } from '../api/reviewApi';
-import { OpClientProvider, ReviewStoreProvider } from '../store/context';
+import { createReviewStores, OpClientProvider, type ReviewStores, ReviewStoresProvider } from '../store/context';
 import { createOpClient } from '../store/opClient';
-import { createReviewStore, type ReviewStore } from '../store/reviewStore';
 import { slotKey } from '../model/targetKey';
 import { ev, makeBundle } from '../test/bundles';
 import { theme } from '../theme';
 import { BlockedSave } from './BlockedSave';
+import type { SpanPair } from '../model/record';
+import type { EvidenceMode } from '../store/sessionStore';
 
 const TEXT = 'Twenty patients performed a Stroop task during fMRI scanning.';
 const bundle = makeBundle({ description: ev('A study'), design: { description: ev('fMRI') } }, TEXT);
 
 function setup() {
-    const store: ReviewStore = createReviewStore(bundle);
+    const store: ReviewStores = createReviewStores(bundle);
     const api = { postOps: () => new Promise<never>(() => {}) } as unknown as ReviewApi;
-    const client = createOpClient(store, api);
-    const { addEvidence, focusSlot } = store.getState();
+    const client = createOpClient(store.session, api);
+    const { focusSlot } = store.view.getState();
+    const addEvidence = (span: SpanPair, mode: EvidenceMode) =>
+        store.session.getState().addEvidence(store.view.getState().focus.key, span, mode);
     focusSlot(slotKey('study', 'description'));
     addEvidence([TEXT.indexOf('Twenty'), TEXT.indexOf('Twenty') + 'Twenty'.length], 'new');
     focusSlot(slotKey('study', 'design.description'));
     addEvidence([TEXT.indexOf('fMRI'), TEXT.indexOf('fMRI') + 'fMRI'.length], 'new');
-    const pending = store.getState().pending;
-    store
+    const pending = store.session.getState().pending;
+    store.session
         .getState()
         .block(pending, 'the batch leaves an invalid document', ['extraction-record /description: too long']);
     render(
         <ThemeProvider theme={theme}>
             <MemoryRouter>
-                <ReviewStoreProvider store={store}>
+                <ReviewStoresProvider stores={store}>
                     <OpClientProvider client={client}>
                         <BlockedSave />
                     </OpClientProvider>
-                </ReviewStoreProvider>
+                </ReviewStoresProvider>
             </MemoryRouter>
         </ThemeProvider>
     );
@@ -49,7 +52,7 @@ describe('a refused save that names no op', () => {
         expect(alert).toHaveTextContent('too long');
         expect(alert).not.toHaveTextContent('/description');
         act(() => fireEvent.click(within(alert).getByRole('button', { name: /description/ })));
-        expect(store.getState().focus.key).toBe(slotKey('study', 'description'));
+        expect(store.view.getState().focus.key).toBe(slotKey('study', 'description'));
     });
 
     it('lists the pending edits, each by its op and slot', () => {
@@ -63,8 +66,8 @@ describe('a refused save that names no op', () => {
     it('discards every pending edit and resumes saving', () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
-        expect(store.getState().pending).toEqual([]);
-        expect(store.getState().save).toBe('idle');
+        expect(store.session.getState().pending).toEqual([]);
+        expect(store.session.getState().save).toBe('idle');
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
@@ -84,24 +87,26 @@ describe('a refused save that names no op', () => {
             reader.onload = () => resolve(reader.result as string);
             reader.readAsText(blobs[0]);
         });
-        expect(JSON.parse(text)).toEqual(store.getState().pending);
+        expect(JSON.parse(text)).toEqual(store.session.getState().pending);
     });
 
     it('keeps an edit made after the refusal when it undoes the refused ones', () => {
         const { store } = setup();
-        const { addEvidence, focusSlot } = store.getState();
+        const { focusSlot } = store.view.getState();
+        const addEvidence = (span: SpanPair, mode: EvidenceMode) =>
+            store.session.getState().addEvidence(store.view.getState().focus.key, span, mode);
         focusSlot(slotKey('study', 'description'));
         addEvidence([TEXT.indexOf('Stroop'), TEXT.indexOf('Stroop') + 'Stroop'.length], 'new');
-        const [later] = store.getState().pending.slice(-1);
+        const [later] = store.session.getState().pending.slice(-1);
         fireEvent.click(screen.getByRole('button', { name: 'Undo the edits that caused it' }));
-        expect(store.getState().pending).toEqual([later]);
+        expect(store.session.getState().pending).toEqual([later]);
     });
 
     it('undoes the edits that caused the refusal, and leaves the save blocked no longer', () => {
         const { store } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Undo the edits that caused it' }));
-        expect(store.getState().pending).toEqual([]);
-        expect(store.getState().blocked).toBeNull();
-        expect(store.getState().save).toBe('idle');
+        expect(store.session.getState().pending).toEqual([]);
+        expect(store.session.getState().blocked).toBeNull();
+        expect(store.session.getState().save).toBe('idle');
     });
 });

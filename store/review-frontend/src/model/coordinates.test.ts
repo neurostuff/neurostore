@@ -1,4 +1,4 @@
-import { layoutText, type ParsedPaperLayout, type TableBlock } from '../text/layout';
+import { layoutText, type ParsedPaperLayout, type TableBlock } from './layout';
 import {
     COORD_TEXT,
     coordinateBundle,

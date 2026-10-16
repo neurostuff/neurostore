@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useId, useState } from 'react';
 import type { SetAside } from '../api/reviewApi';
-import { useOpClient, useReviewStore } from '../store/context';
+import { useOpClient, useSession } from '../store/context';
 import { SET_ASIDE_REASONS } from './asideReasons';
 
 const REASONS = Object.entries(SET_ASIDE_REASONS) as [SetAside['reason'], string][];
@@ -86,7 +86,7 @@ function SetAsideDialog({ onClose }: { onClose(): void }) {
 
 /** Sets the paper aside, with a reason, from any step while the review is in progress. */
 export function SetAsideButton() {
-    const open = useReviewStore((s) => s.bundle.review?.state === 'in_progress');
+    const open = useSession((s) => s.bundle.review?.state === 'in_progress');
     const [asking, setAsking] = useState(false);
     if (!open) return null;
     return (
@@ -101,7 +101,7 @@ export function SetAsideButton() {
 
 /** While the paper is set aside: why, and a way to resume it. */
 export function SetAsideBanner() {
-    const setAside = useReviewStore((s) =>
+    const setAside = useSession((s) =>
         s.bundle.review?.state === 'set_aside' ? s.bundle.review.set_aside : undefined
     );
     if (!setAside) return null;

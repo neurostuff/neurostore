@@ -2,9 +2,11 @@ import { act, fireEvent, screen, within } from '@testing-library/react';
 import type { AnyTarget, Op } from '../contract/generated/review-ops';
 import { withoutIds } from '../test/undoHelpers';
 import { entityRows, ev, hasFixture, loadFixture, makeBundle, row } from '../test/bundles';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { RelationshipAudit } from './RelationshipAudit';
 import { ReviewScreen } from './ReviewScreen';
+import type { ReviewStores } from '../store/context';
+import { focusedSpans } from '../test/stores';
 
 const TEXT = 'Twenty patients and twenty controls performed a Stroop task during a 3 T fMRI scan.';
 const at = (word: string): [number, number] => [TEXT.indexOf(word), TEXT.indexOf(word) + word.length];
@@ -45,8 +47,8 @@ const press = (key: string, init: KeyboardEventInit = {}) =>
     act(() => void fireEvent.keyDown(document.body, { key, ...init }));
 
 function setup(step: 'analyses' | 'entities' | 'leftovers' | 'relationships') {
-    const view = renderWithStore(<ReviewScreen />, bundle);
-    act(() => view.store.getState().setStep(step));
+    const view = renderWithStores(<ReviewScreen />, bundle);
+    act(() => view.stores.view.getState().setStep(step));
     return view;
 }
 
@@ -59,43 +61,43 @@ const cardNames = (name: string) =>
 
 describe('step 2, analyses', () => {
     it('shows one card per analysis in record order, leaving out hidden ones until shown, then last', () => {
-        const { store } = setup('analyses');
+        const { stores } = setup('analyses');
         expect(cardNames('analyses')).toEqual(['a_1', 'a_2']);
-        act(() => store.getState().toggleNonCoordinate());
+        act(() => stores.view.getState().toggleNonCoordinate());
         expect(cardNames('analyses')).toEqual(['a_1', 'a_2', 'a_h']);
     });
 
     it('opens on the first analysis, with its name, slots and evidence, through the inspector’s card', () => {
-        const { store } = setup('analyses');
-        expect(store.getState().focus.entity).toBe('a_1');
+        const { stores } = setup('analyses');
+        expect(stores.view.getState().focus.entity).toBe('a_1');
         const card = screen.getByRole('region', { name: 'Patients > Controls' });
         expect(within(card).getByText('statistic')).toBeInTheDocument();
         expect(within(card).getByText('groups[#0].n')).toBeInTheDocument();
         expect(within(cardList('analyses')).getByRole('button', { name: /Patients > Controls/ })).toHaveTextContent(
             '3 evidence spans'
         );
-        expect(store.getState().focusedSpans).toEqual([at('Twenty'), at('patients'), at('Stroop')]);
+        expect(focusedSpans(stores)).toEqual([at('Twenty'), at('patients'), at('Stroop')]);
     });
 
     it('Shift+J and Shift+K move between the step’s cards; J and K between the slots of one', () => {
-        const { store } = setup('analyses');
+        const { stores } = setup('analyses');
         press('J', { shiftKey: true });
-        expect(store.getState().focus.entity).toBe('a_2');
+        expect(stores.view.getState().focus.entity).toBe('a_2');
         press('J', { shiftKey: true });
-        expect(store.getState().focus.entity).toBe('a_2');
+        expect(stores.view.getState().focus.entity).toBe('a_2');
         press('K', { shiftKey: true });
-        expect(store.getState().focus.entity).toBe('a_1');
+        expect(stores.view.getState().focus.entity).toBe('a_1');
         press('j');
-        expect(store.getState().focus.entity).toBe('a_1');
-        expect(store.getState().focus.slot).toBeDefined();
+        expect(stores.view.getState().focus.entity).toBe('a_1');
+        expect(stores.view.getState().focus.slot).toBeDefined();
     });
 
     it('accepts and rejects on the card as the inspector does, and shows a judged card as done', () => {
-        const { store } = setup('analyses');
+        const { stores } = setup('analyses');
         const card = () => within(cardList('analyses')).getByRole('button', { name: /Patients > Controls/ });
         expect(card()).not.toHaveTextContent('done');
         press('a');
-        expect(store.getState().provenance['entity:a_1']?.state).toBe('verified');
+        expect(stores.session.getState().provenance['entity:a_1']?.state).toBe('verified');
         expect(card()).toHaveTextContent('done');
         press('J', { shiftKey: true });
         press('r');
@@ -103,24 +105,24 @@ describe('step 2, analyses', () => {
     });
 
     it('focuses an analysis when its card is clicked', () => {
-        const { store } = setup('analyses');
+        const { stores } = setup('analyses');
         fireEvent.click(within(cardList('analyses')).getByRole('button', { name: /Controls > Patients/ }));
-        expect(store.getState().focus.entity).toBe('a_2');
+        expect(stores.view.getState().focus.entity).toBe('a_2');
     });
 });
 
 describe('step 3, entities outward from the analyses', () => {
     it('lists the entities the analyses use once each, most used first, and opens on the first', () => {
-        const { store } = setup('entities');
+        const { stores } = setup('entities');
         expect(cardNames('entities')).toEqual(['acq_1', 'grp_a']);
-        expect(store.getState().focus.entity).toBe('acq_1');
+        expect(stores.view.getState().focus.entity).toBe('acq_1');
     });
 
     it('names the reviewer who checked each link', () => {
-        const { store } = setup('entities');
+        const { stores } = setup('entities');
         act(() =>
-            store.setState({
-                bundle: { ...store.getState().bundle, reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }] },
+            stores.session.setState({
+                bundle: { ...stores.session.getState().bundle, reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }] },
                 provenance: { 'relationship:a_1:acquisitions:acq_1': { state: 'verified', user_id: 'u1', at: 'then' } },
             })
         );
@@ -129,7 +131,7 @@ describe('step 3, entities outward from the analyses', () => {
     });
 
     it('shows the analyses linked to the focused entity, so the links are checked there', () => {
-        const { store } = setup('entities');
+        const { stores } = setup('entities');
         const links = screen.getByRole('list', { name: 'linked from' });
         expect(
             within(links)
@@ -137,10 +139,10 @@ describe('step 3, entities outward from the analyses', () => {
                 .map((li) => li.firstChild?.textContent)
         ).toEqual(['Patients > Controls · acquisitions', 'Controls > Patients · acquisitions']);
         fireEvent.click(within(links).getAllByRole('button', { name: 'Accept link' })[0]);
-        expect(store.getState().provenance['relationship:a_1:acquisitions:acq_1']?.state).toBe('verified');
+        expect(stores.session.getState().provenance['relationship:a_1:acquisitions:acq_1']?.state).toBe('verified');
         expect(within(links).getAllByRole('listitem')[0]).toHaveTextContent('verified');
         fireEvent.click(within(links).getAllByRole('button', { name: 'Unlink' })[1]);
-        expect(store.getState().pending.at(-1)).toMatchObject({
+        expect(stores.session.getState().pending.at(-1)).toMatchObject({
             type: 'unlink',
             target: { kind: 'relationship', entity: 'a_2', path: 'acquisitions', target_entity: 'acq_1' },
         });
@@ -159,8 +161,8 @@ describe('step 3, entities outward from the analyses', () => {
                 annotations: {},
             },
         });
-        const view = renderWithStore(<ReviewScreen />, judged);
-        act(() => view.store.getState().setStep('entities'));
+        const view = renderWithStores(<ReviewScreen />, judged);
+        act(() => view.stores.view.getState().setStep('entities'));
         const card = (name: RegExp) => within(cardList('entities')).getByRole('button', { name });
         expect(card(/^Patients/)).toHaveTextContent('done');
         expect(card(/^fMRI/)).not.toHaveTextContent('done');
@@ -190,14 +192,14 @@ describe('step 5, the relationship audit', () => {
     });
 
     it('toggles a link with a click: unlink where it is set, link where it is not', () => {
-        const { store } = setup('relationships');
+        const { stores } = setup('relationships');
         fireEvent.click(cell('Controls > Patients → fMRI'));
-        expect(store.getState().pending.at(-1)).toMatchObject({
+        expect(stores.session.getState().pending.at(-1)).toMatchObject({
             type: 'unlink',
             target: { entity: 'a_2', path: 'acquisitions', target_entity: 'acq_1' },
         });
         fireEvent.click(cell('Patients > Controls → Controls'));
-        expect(store.getState().pending.at(-1)).toMatchObject({
+        expect(stores.session.getState().pending.at(-1)).toMatchObject({
             type: 'link',
             target: { entity: 'a_1', path: 'groups[#0].group', target_entity: 'grp_b' },
         });
@@ -211,8 +213,8 @@ describe('step 5, the relationship audit', () => {
     it.skipIf(!hasFixture('25Czf8TcaxDS'))(
         `renders the largest paper and redraws after a click within ${CLICK_BUDGET_MS} ms`,
         () => {
-            const view = renderWithStore(<RelationshipAudit />, loadFixture('25Czf8TcaxDS'));
-            const analyses = view.store.getState().index.visible.filter((e) => e.entityClass === 'Analysis');
+            const view = renderWithStores(<RelationshipAudit />, loadFixture('25Czf8TcaxDS'));
+            const analyses = view.stores.session.getState().index.visible.filter((e) => e.entityClass === 'Analysis');
             const table = view.container.querySelector('table[aria-label="relationship audit"]')!;
             expect(table.querySelectorAll('tbody th')).toHaveLength(analyses.length);
             const [first, second] = table.querySelectorAll<HTMLButtonElement>('tbody button:not([disabled])');
@@ -229,46 +231,49 @@ describe('step 4, leftover entities', () => {
     const actions = () => screen.getByRole('toolbar', { name: 'leftover actions' });
 
     it('lists the entities no analysis reaches', () => {
-        const { store } = setup('leftovers');
+        const { stores } = setup('leftovers');
         expect(cardNames('leftovers')).toEqual(['grp_b', 'grp_c']);
-        expect(store.getState().focus.entity).toBe('grp_b');
+        expect(stores.view.getState().focus.entity).toBe('grp_b');
     });
 
     it('keeps one with an accept', () => {
-        const { store } = setup('leftovers');
+        const { stores } = setup('leftovers');
         fireEvent.click(within(actions()).getByRole('button', { name: 'Keep' }));
-        expect(store.getState().provenance['entity:grp_b']?.state).toBe('verified');
+        expect(stores.session.getState().provenance['entity:grp_b']?.state).toBe('verified');
     });
 
     it('links one to an analysis with the link action', async () => {
-        const { store } = setup('leftovers');
+        const { stores } = setup('leftovers');
         fireEvent.click(within(actions()).getByRole('button', { name: 'Link to an analysis' }));
         fireEvent.click(await screen.findByRole('option', { name: 'Patients > Controls · groups[#0].group' }));
-        expect(store.getState().pending.at(-1)).toMatchObject({
+        expect(stores.session.getState().pending.at(-1)).toMatchObject({
             type: 'link',
             target: { entity: 'a_1', path: 'groups[#0].group', target_entity: 'grp_b' },
         });
     });
 
     it('merges one into another of its class, copying the slots chosen, as one batch', () => {
-        const { store } = setup('leftovers');
-        act(() => store.getState().focusEntity('grp_c'));
+        const { stores } = setup('leftovers');
+        act(() => stores.view.getState().focusEntity('grp_c'));
         fireEvent.click(within(actions()).getByRole('button', { name: 'Merge into…' }));
         const dialog = screen.getByRole('dialog', { name: 'Merge Patients again into…' });
         fireEvent.click(within(dialog).getByRole('radio', { name: 'Patients' }));
         fireEvent.click(within(dialog).getByRole('button', { name: 'Merge' }));
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-        const { pending, groupOf } = store.getState();
+        const { pending, groupOf } = stores.session.getState();
         expect(pending.map((op) => op.type)).toEqual(['delete_entity']);
         expect(new Set(pending.map((op) => groupOf[op.client_op_id] ?? op.client_op_id)).size).toBe(1);
     });
 
     it('deletes one with the delete dialog', () => {
-        const { store } = setup('leftovers');
+        const { stores } = setup('leftovers');
         fireEvent.click(within(actions()).getByRole('button', { name: 'Delete' }));
         const dialog = screen.getByRole('dialog', { name: 'Delete Controls?' });
         fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-        expect(store.getState().pending.at(-1)).toMatchObject({ type: 'delete_entity', target: { entity: 'grp_b' } });
+        expect(stores.session.getState().pending.at(-1)).toMatchObject({
+            type: 'delete_entity',
+            target: { entity: 'grp_b' },
+        });
     });
 });
 
@@ -285,27 +290,27 @@ describe('moving between steps', () => {
         );
 
     it('Alt+Shift+J and Alt+Shift+K go to the next and previous step, whatever character the layout types', () => {
-        const { store } = renderWithStore(<ReviewScreen />, bundle);
+        const { stores } = renderWithStores(<ReviewScreen />, bundle);
         stepKey('J');
-        expect(store.getState().step).toBe('analyses');
-        expect(store.getState().focus.entity).toBe('a_1');
+        expect(stores.view.getState().step).toBe('analyses');
+        expect(stores.view.getState().focus.entity).toBe('a_1');
         act(() => void fireEvent.keyDown(document.body, { key: 'Ô', code: 'KeyJ', altKey: true, shiftKey: true }));
-        expect(store.getState().step).toBe('entities');
+        expect(stores.view.getState().step).toBe('entities');
         stepKey('K');
-        expect(store.getState().step).toBe('analyses');
+        expect(stores.view.getState().step).toBe('analyses');
         stepKey('K');
         stepKey('K');
-        expect(store.getState().step).toBe('coordinates');
+        expect(stores.view.getState().step).toBe('coordinates');
     });
 
     it('does not change step on Alt+J without Shift', () => {
-        const { store } = renderWithStore(<ReviewScreen />, bundle);
+        const { stores } = renderWithStores(<ReviewScreen />, bundle);
         act(() => void fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', altKey: true }));
-        expect(store.getState().step).toBe('coordinates');
+        expect(stores.view.getState().step).toBe('coordinates');
     });
 
     it('lists the step keys in the help', () => {
-        renderWithStore(<ReviewScreen />, bundle);
+        renderWithStores(<ReviewScreen />, bundle);
         press('?', { shiftKey: true });
         const help = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
         expect(help).toHaveTextContent('Alt+Shift+J');
@@ -313,7 +318,7 @@ describe('moving between steps', () => {
     });
 
     it('shows each step’s done count in the step bar', () => {
-        const { store } = setup('analyses');
+        const { stores } = setup('analyses');
         const stepButton = (name: RegExp) => screen.getByRole('button', { name });
         expect(stepButton(/^Analyses/)).toHaveTextContent('0 of 2');
         expect(stepButton(/^Entities/)).toHaveTextContent('0 of 2');
@@ -321,18 +326,17 @@ describe('moving between steps', () => {
         expect(stepButton(/^Relationships/)).toHaveTextContent('0 of 3');
         press('a');
         expect(stepButton(/^Analyses/)).toHaveTextContent('1 of 2');
-        expect(store.getState().step).toBe('analyses');
+        expect(stores.view.getState().step).toBe('analyses');
     });
 
     it('keeps the reviewer’s step when the bundle is rebased', () => {
-        const { store } = setup('leftovers');
-        act(() => store.getState().rebase(bundle));
-        expect(store.getState().step).toBe('leftovers');
+        const { stores } = setup('leftovers');
+        act(() => stores.session.getState().rebase(bundle));
+        expect(stores.view.getState().step).toBe('leftovers');
     });
 });
 
-const pending = (store: { getState(): { pending: { client_op_id: string }[] } }) =>
-    withoutIds(store.getState().pending as Op[]);
+const pending = (stores: ReviewStores) => withoutIds(stores.session.getState().pending as Op[]);
 
 describe('the order of the entity cards', () => {
     const orderRecord = {
@@ -363,8 +367,8 @@ describe('the order of the entity cards', () => {
     });
 
     it('puts entities reached equally by class, then by name, not in the order they were reached', () => {
-        const view = renderWithStore(<ReviewScreen />, orderBundle);
-        act(() => view.store.getState().setStep('entities'));
+        const view = renderWithStores(<ReviewScreen />, orderBundle);
+        act(() => view.stores.view.getState().setStep('entities'));
         expect(cardNames('entities')).toEqual(['acq_1', 'grp_a', 'grp_z']);
     });
 
@@ -397,20 +401,20 @@ describe('the order of the entity cards', () => {
             ),
             hidden: { analyses: [], entities: ['grp_h', 'grp_hu'] },
         });
-        const view = renderWithStore(<ReviewScreen />, hiddenBundle);
-        act(() => view.store.getState().toggleNonCoordinate());
-        act(() => view.store.getState().setStep('entities'));
+        const view = renderWithStores(<ReviewScreen />, hiddenBundle);
+        act(() => view.stores.view.getState().toggleNonCoordinate());
+        act(() => view.stores.view.getState().setStep('entities'));
         expect(cardNames('entities')).toEqual(['grp_z', 'grp_h']);
-        act(() => view.store.getState().setStep('leftovers'));
+        act(() => view.stores.view.getState().setStep('leftovers'));
         expect(cardNames('leftovers')).toEqual(['grp_u', 'grp_hu']);
     });
 });
 
 describe('done means judged, accepted or rejected', () => {
-    const reject = (store: ReturnType<typeof setup>['store'], target: AnyTarget) =>
+    const reject = (stores: ReturnType<typeof setup>['stores'], target: AnyTarget) =>
         act(
             () =>
-                void store.getState().emit({
+                void stores.session.getState().emit({
                     client_op_id: `reject-${JSON.stringify(target)}`,
                     type: 'verdict',
                     target,
@@ -421,8 +425,8 @@ describe('done means judged, accepted or rejected', () => {
     const stepButton = (name: RegExp) => screen.getByRole('button', { name });
 
     it('counts a rejected card in its step and marks it done', () => {
-        const { store } = setup('analyses');
-        reject(store, { kind: 'entity', entity: 'a_1' });
+        const { stores } = setup('analyses');
+        reject(stores, { kind: 'entity', entity: 'a_1' });
         expect(stepButton(/^Analyses/)).toHaveTextContent('1 of 2');
         expect(within(cardList('analyses')).getByRole('button', { name: /Patients > Controls/ })).toHaveTextContent(
             'done'
@@ -430,16 +434,16 @@ describe('done means judged, accepted or rejected', () => {
     });
 
     it('counts a rejected link in the relationships step', () => {
-        const { store } = setup('analyses');
-        reject(store, { kind: 'relationship', entity: 'a_1', path: 'acquisitions', target_entity: 'acq_1' });
+        const { stores } = setup('analyses');
+        reject(stores, { kind: 'relationship', entity: 'a_1', path: 'acquisitions', target_entity: 'acq_1' });
         expect(stepButton(/^Relationships/)).toHaveTextContent('1 of 3');
     });
 });
 
 describe('the relationship audit with hidden analyses and self links', () => {
     it('has a row for each hidden analysis once they are shown', () => {
-        const { store } = setup('relationships');
-        act(() => store.getState().toggleNonCoordinate());
+        const { stores } = setup('relationships');
+        act(() => stores.view.getState().toggleNonCoordinate());
         const rows = within(screen.getByRole('table', { name: 'relationship audit' }))
             .getAllByRole('rowheader')
             .map((h) => h.textContent);
@@ -457,8 +461,8 @@ describe('the relationship audit with hidden analyses and self links', () => {
             TEXT,
             { entities: entityRows(row('a_1', 'Analysis', 'analyses'), row('a_2', 'Analysis', 'analyses')) }
         );
-        const view = renderWithStore(<ReviewScreen />, mirrored);
-        act(() => view.store.getState().setStep('relationships'));
+        const view = renderWithStores(<ReviewScreen />, mirrored);
+        act(() => view.stores.view.getState().setStep('relationships'));
         const audit = screen.getByRole('table', { name: 'relationship audit' });
         expect(within(audit).getByRole('button', { name: 'First → First' })).toBeDisabled();
         expect(within(audit).getByRole('button', { name: 'First → Second' })).toHaveAttribute('aria-pressed', 'true');
@@ -488,15 +492,15 @@ describe('step 4, a leftover that something links to', () => {
         ),
     });
     const open = () => {
-        const view = renderWithStore(<ReviewScreen />, linkedBundle);
-        act(() => view.store.getState().setStep('leftovers'));
-        act(() => view.store.getState().focusEntity('dev_x'));
+        const view = renderWithStores(<ReviewScreen />, linkedBundle);
+        act(() => view.stores.view.getState().setStep('leftovers'));
+        act(() => view.stores.view.getState().focusEntity('dev_x'));
         return view;
     };
     const actions = () => screen.getByRole('toolbar', { name: 'leftover actions' });
 
     it('lists the links a delete would leave dangling', () => {
-        const { store } = open();
+        const { stores } = open();
         expect(cardNames('leftovers')).toEqual(['acq_x', 'dev_x']);
         fireEvent.click(within(actions()).getByRole('button', { name: 'Delete' }));
         const dialog = screen.getByRole('dialog', { name: 'Delete dev_x?' });
@@ -504,11 +508,11 @@ describe('step 4, a leftover that something links to', () => {
             'Spare scan · device → dev_x'
         );
         fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-        expect(pending(store)).toEqual([{ type: 'delete_entity', target: { kind: 'entity', entity: 'dev_x' } }]);
+        expect(pending(stores)).toEqual([{ type: 'delete_entity', target: { kind: 'entity', entity: 'dev_x' } }]);
     });
 
     it('merges into a linked entity: re-points the link, copies the one slot ticked, deletes it, as one batch', () => {
-        const { store } = open();
+        const { stores } = open();
         fireEvent.click(within(actions()).getByRole('button', { name: 'Merge into…' }));
         const dialog = screen.getByRole('dialog', { name: 'Merge dev_x into…' });
         fireEvent.click(within(dialog).getByRole('radio', { name: 'dev_a' }));
@@ -519,7 +523,7 @@ describe('step 4, a leftover that something links to', () => {
             target: { kind: 'relationship', entity: 'acq_x', path: 'device', target_entity },
         });
         const model = { kind: 'slot', entity: 'dev_a', path: 'model' };
-        expect(pending(store)).toEqual([
+        expect(pending(stores)).toEqual([
             device('unlink', 'dev_x'),
             device('link', 'dev_a'),
             {
@@ -537,12 +541,12 @@ describe('step 4, a leftover that something links to', () => {
             },
             { type: 'delete_entity', target: { kind: 'entity', entity: 'dev_x' } },
         ]);
-        const { groupOf, pending: ops } = store.getState();
+        const { groupOf, pending: ops } = stores.session.getState();
         expect(new Set(ops.map((op) => groupOf[op.client_op_id] ?? op.client_op_id)).size).toBe(1);
     });
 
     it('refreshes what the merge dialog offers when the record changes under it', () => {
-        const { store } = open();
+        const { stores } = open();
         fireEvent.click(within(actions()).getByRole('button', { name: 'Merge into…' }));
         const dialog = screen.getByRole('dialog', { name: 'Merge dev_x into…' });
         expect(within(dialog).getByRole('radio', { name: 'dev_a' })).toBeInTheDocument();
@@ -554,9 +558,9 @@ describe('step 4, a leftover that something links to', () => {
             },
             entities: linkedBundle.entities.filter((entity) => entity.local_id !== id),
         });
-        act(() => store.getState().rebase(without('dev_a')));
+        act(() => stores.session.getState().rebase(without('dev_a')));
         expect(within(dialog).queryByRole('radio', { name: 'dev_a' })).not.toBeInTheDocument();
-        act(() => store.getState().rebase(linkedBundle));
+        act(() => stores.session.getState().rebase(linkedBundle));
         expect(within(dialog).getByRole('radio', { name: 'dev_a' })).toBeInTheDocument();
     });
 });

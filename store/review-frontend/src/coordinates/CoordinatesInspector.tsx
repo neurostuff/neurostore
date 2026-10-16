@@ -6,14 +6,16 @@ import { StatusLabel } from '../inspector/StatusLabel';
 import { targetKey } from '../model/targetKey';
 import { ActionToolbar } from '../review/ActionToolbar';
 import { useEditorName } from '../review/editor';
-import { useReviewStore } from '../store/context';
-import { analysisTarget, coordinatePending, focusedAnalysis } from './actions';
+import { useSession, useView } from '../store/context';
+import { focusedAnalysis } from '../model/coordinateFocus';
+import { analysisTarget } from '../model/targetKey';
+import { coordinatePending } from './actions';
 import { AddAnalysisPanel, MergeDialog, MovePanel, PointPanel, RelabelPanel } from './panels';
 
 function Offer() {
-    const offer = useReviewStore((s) => s.offer);
-    const name = useReviewStore((s) => (s.offer ? (s.index.entity(s.offer.entity)?.name ?? s.offer.entity) : ''));
-    const focusEntity = useReviewStore((s) => s.focusEntity);
+    const offer = useView((s) => s.offer);
+    const name = useSession((s) => (offer ? (s.index.entity(offer.entity)?.name ?? offer.entity) : ''));
+    const focusEntity = useView((s) => s.focusEntity);
     if (!offer) return null;
     return (
         <Alert severity="info" sx={{ mx: 2, mt: 1 }}>
@@ -27,12 +29,12 @@ function Offer() {
 
 /** The inspector while a coordinate analysis is in focus: its actions, its summary and the panel open on it. */
 export function CoordinatesInspector() {
-    const analysis = useReviewStore(focusedAnalysis);
-    const coordinates = useReviewStore((s) => s.coordinates);
-    const panel = useReviewStore((s) => s.panel);
-    const merging = useReviewStore((s) => s.merging.length);
-    const saving = useReviewStore(coordinatePending);
-    const reviewed = useReviewStore((s) =>
+    const coordinates = useView((s) => s.coordinates);
+    const analysis = useSession((s) => focusedAnalysis({ bundle: s.bundle, coordinates }));
+    const panel = useView((s) => s.panel);
+    const merging = useView((s) => s.merging.length);
+    const saving = useSession(coordinatePending);
+    const reviewed = useSession((s) =>
         analysis ? s.provenance[targetKey(analysisTarget(analysis.key))]?.state : undefined
     );
     const editor = useEditorName(analysis ? targetKey(analysisTarget(analysis.key)) : '');

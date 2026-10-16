@@ -1,9 +1,11 @@
 import type { AnyTarget, Op, SetEvidenceOp, SetValueOp, VerdictOp } from '../contract/generated/review-ops';
 import { entityPath, getIn, ROOT_ENTITY } from '../model/paths';
-import type { EntityNode, SlotNode } from '../model/record';
+import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
 import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } from '../model/targetKey';
 import { randomUUID } from '../model/uuid';
-import type { Panel, PanelKind, ReviewState } from '../store/reviewStore';
+import type { ReviewStores } from '../store/context';
+import type { SessionState } from '../store/sessionStore';
+import type { Focus, Panel, PanelKind } from '../store/viewStore';
 import {
     extractionSchema,
     type Schema,
@@ -12,7 +14,7 @@ import {
     requiredDefaults,
     titleOf,
     wrapperSchemaAt,
-} from './schema';
+} from '../model/schema';
 
 export type RejectReason = NonNullable<VerdictOp['reason']>;
 
@@ -24,16 +26,16 @@ export const REJECT_REASONS: { reason: RejectReason; label: string }[] = [
     { reason: 'other', label: 'other' },
 ];
 
-type State = Pick<ReviewState, 'index' | 'focus' | 'bundle' | 'record' | 'provenance' | 'pending'>;
-type Emitting = State & Pick<ReviewState, 'emit'>;
+type Documents = Pick<SessionState, 'index' | 'bundle' | 'record'>;
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 type NewOp = DistributiveOmit<Op, 'client_op_id'>;
 
-const send = (s: Pick<ReviewState, 'emit'>, op: NewOp) => s.emit({ client_op_id: randomUUID(), ...op } as Op);
+const send = ({ session }: ReviewStores, op: NewOp) =>
+    session.getState().emit({ client_op_id: randomUUID(), ...op } as Op);
 
 /** The reference slot and target of a link's focus key on `entity`. */
-function linkAt(s: Pick<State, 'index'>, entity: string, key: string) {
-    for (const slot of s.index.entity(entity)?.slots ?? []) {
+function linkAt(index: RecordIndex, entity: string, key: string) {
+    for (const slot of index.entity(entity)?.slots ?? []) {
         if (slot.kind !== 'reference') continue;
         const target = slot.references.find((id) => relationshipKey(slot.entity, slot.path, id) === key);
         if (target !== undefined) return { slot, target };
@@ -41,27 +43,25 @@ function linkAt(s: Pick<State, 'index'>, entity: string, key: string) {
     return undefined;
 }
 
-/** The op target of a focus key. */
-function targetOf(s: Pick<State, 'index' | 'focus'>, key: string): AnyTarget | undefined {
-    const slot = s.index.slot(key);
+/** The op target of a focus key on the entity `focused`. */
+function targetOf(index: RecordIndex, focused: string, key: string): AnyTarget | undefined {
+    const slot = index.slot(key);
     if (slot) return slotTarget(slot.entity, slot.path);
-    if (key === entityKey(s.focus.entity)) return { kind: 'entity', entity: s.focus.entity };
-    const link = linkAt(s, s.focus.entity, key);
+    if (key === entityKey(focused)) return { kind: 'entity', entity: focused };
+    const link = linkAt(index, focused, key);
     return link && relationshipTarget(link.slot.entity, link.slot.path, link.target);
 }
 
-const focusedSlot = (s: Pick<State, 'index' | 'focus'>) => s.index.slot(s.focus.key);
-
-const entityRow = (s: Pick<State, 'bundle'>, id: string) => s.bundle.entities.find((e) => e.local_id === id);
+const entityRow = (s: Pick<Documents, 'bundle'>, id: string) => s.bundle.entities.find((e) => e.local_id === id);
 
 /** The record item of an entity, as the record holds it. */
-const itemOf = (s: Pick<State, 'record'>, id: string) => {
+const itemOf = (s: Pick<Documents, 'record'>, id: string) => {
     const at = entityPath(s.record, id);
     return at && getIn(s.record, at);
 };
 
 /** The value wrapper schema of a slot, from the extraction record schema, choosing classes by the values held. */
-export function slotSchema(s: Pick<State, 'bundle' | 'record'>, slot: SlotNode): Schema | undefined {
+export function slotSchema(s: Pick<Documents, 'bundle' | 'record'>, slot: SlotNode): Schema | undefined {
     const row = entityRow(s, slot.entity);
     if (!row) return undefined;
     const item = itemOf(s, slot.entity);
@@ -71,48 +71,51 @@ export function slotSchema(s: Pick<State, 'bundle' | 'record'>, slot: SlotNode):
     );
 }
 
-export const acceptTarget = (s: Pick<ReviewState, 'emit'>, target: AnyTarget) =>
-    send(s, { type: 'verdict', target, verdict: 'accept' });
+export const acceptTarget = (stores: ReviewStores, target: AnyTarget) =>
+    send(stores, { type: 'verdict', target, verdict: 'accept' });
 
-export function accept(s: Emitting, key = s.focus.key) {
-    const target = targetOf(s, key);
-    return target ? acceptTarget(s, target) : false;
+/** Accepts the slot, entity or link of the focus key `key` on the focused entity, the focused one by default. */
+export function accept(stores: ReviewStores, key?: string) {
+    const { focus } = stores.view.getState();
+    const target = targetOf(stores.session.getState().index, focus.entity, key ?? focus.key);
+    return target ? acceptTarget(stores, target) : false;
 }
 
 /** Accepts every slot on the focused card that has evidence and no decision yet; the count accepted. */
-export function acceptCard(s: Emitting) {
-    const untouched = (s.index.entity(s.focus.entity)?.slots ?? []).filter(
-        (slot) => slot.kind === 'value' && slot.value?.evidence?.status === 'present' && !s.provenance[slot.key]
+export function acceptCard(stores: ReviewStores) {
+    const { index, provenance } = stores.session.getState();
+    const untouched = (index.entity(stores.view.getState().focus.entity)?.slots ?? []).filter(
+        (slot) => slot.kind === 'value' && slot.value?.evidence?.status === 'present' && !provenance[slot.key]
     );
-    return untouched.filter((slot) => accept(s, slot.key)).length;
+    return untouched.filter((slot) => accept(stores, slot.key)).length;
 }
 
-export function reject(s: Emitting, target: AnyTarget, reason: RejectReason, note: string) {
-    return send(s, { type: 'verdict', target, verdict: 'reject', reason, ...(note ? { note } : {}) });
+export function reject(stores: ReviewStores, target: AnyTarget, reason: RejectReason, note: string) {
+    return send(stores, { type: 'verdict', target, verdict: 'reject', reason, ...(note ? { note } : {}) });
 }
 
-export function addNote(s: Emitting, target: AnyTarget, note: string) {
-    return send(s, { type: 'note', target, note });
+export function addNote(stores: ReviewStores, target: AnyTarget, note: string) {
+    return send(stores, { type: 'note', target, note });
 }
 
-export function setValue(s: Pick<ReviewState, 'emit'>, slot: SlotNode, value: SetValueOp['value']) {
-    return send(s, { type: 'set_value', target: slotTarget(slot.entity, slot.path), value });
+export function setValue(stores: ReviewStores, slot: SlotNode, value: SetValueOp['value']) {
+    return send(stores, { type: 'set_value', target: slotTarget(slot.entity, slot.path), value });
 }
 
-export const link = (s: Pick<ReviewState, 'emit'>, slot: SlotNode, target: string) =>
-    send(s, { type: 'link', target: relationshipTarget(slot.entity, slot.path, target) });
+export const link = (stores: ReviewStores, slot: SlotNode, target: string) =>
+    send(stores, { type: 'link', target: relationshipTarget(slot.entity, slot.path, target) });
 
-export const unlink = (s: Pick<ReviewState, 'emit'>, slot: SlotNode, target: string) =>
-    send(s, { type: 'unlink', target: relationshipTarget(slot.entity, slot.path, target) });
+export const unlink = (stores: ReviewStores, slot: SlotNode, target: string) =>
+    send(stores, { type: 'unlink', target: relationshipTarget(slot.entity, slot.path, target) });
 
 /** The class a reference slot links to. */
-function linkClass(s: Pick<State, 'bundle'>, slot: SlotNode) {
+function linkClass(s: Pick<Documents, 'bundle'>, slot: SlotNode) {
     const row = entityRow(s, slot.entity);
     return row && referenceTarget(row, slot.path);
 }
 
 /** The entities a reference slot can link to: of its target class, not linked already. */
-export function linkCandidates(s: Pick<State, 'bundle' | 'index'>, slot: SlotNode) {
+export function linkCandidates(s: Pick<Documents, 'bundle' | 'index'>, slot: SlotNode) {
     const target = linkClass(s, slot);
     if (!target) return [];
     return s.bundle.entities
@@ -123,9 +126,12 @@ export function linkCandidates(s: Pick<State, 'bundle' | 'index'>, slot: SlotNod
         .map((e) => ({ id: e.local_id, name: s.index.entity(e.local_id)?.name ?? e.local_id }));
 }
 
-/** The classes a new entity in the focused entity's list can take. */
-export function siblingClasses(s: Pick<State, 'bundle' | 'record' | 'focus'>): { name: string; title: string }[] {
-    const row = entityRow(s, s.focus.entity);
+/** The classes a new entity in the list holding `entity` can take. */
+export function siblingClasses(
+    s: Pick<Documents, 'bundle' | 'record'>,
+    entity: string
+): { name: string; title: string }[] {
+    const row = entityRow(s, entity);
     const parent = row?.parent && entityRow(s, row.parent);
     if (!row?.parent || !row.list_path || !parent) return [];
     return listClassesAt(extractionSchema(), parent.schema_class, row.list_path, itemOf(s, row.parent)).map((name) => ({
@@ -135,13 +141,15 @@ export function siblingClasses(s: Pick<State, 'bundle' | 'record' | 'focus'>): {
 }
 
 /** Creates an entity of `className`, or of the list's only class, beside the focused entity. */
-export function createSibling(s: Emitting, className?: string) {
-    const row = entityRow(s, s.focus.entity);
+export function createSibling(stores: ReviewStores, className?: string) {
+    const documents = stores.session.getState();
+    const { entity } = stores.view.getState().focus;
+    const row = entityRow(documents, entity);
     if (!row?.parent || !row.list_path) return false;
-    const classes = siblingClasses(s);
+    const classes = siblingClasses(documents, entity);
     const chosen = className ?? (classes.length === 1 ? classes[0].name : undefined);
     if (chosen === undefined) return false;
-    return send(s, {
+    return send(stores, {
         type: 'create_entity',
         parent: row.parent,
         list: row.list_path,
@@ -149,11 +157,11 @@ export function createSibling(s: Emitting, className?: string) {
     });
 }
 
-export const deleteEntity = (s: Pick<ReviewState, 'emit'>, entity: string) =>
-    send(s, { type: 'delete_entity', target: { kind: 'entity', entity } });
+export const deleteEntity = (stores: ReviewStores, entity: string) =>
+    send(stores, { type: 'delete_entity', target: { kind: 'entity', entity } });
 
 /** The entity and the ones nested in it, which a delete removes together. */
-function withDescendants(s: Pick<State, 'bundle'>, id: string) {
+function withDescendants(s: Pick<Documents, 'bundle'>, id: string) {
     const doomed = new Set([id]);
     for (const parent of doomed) {
         for (const row of s.bundle.entities) if (row.parent === parent) doomed.add(row.local_id);
@@ -162,7 +170,7 @@ function withDescendants(s: Pick<State, 'bundle'>, id: string) {
 }
 
 /** The links other entities have to `id` or what is nested in it, which a delete would leave dangling. */
-export function danglingLinks(s: Pick<State, 'bundle' | 'index'>, id: string) {
+export function danglingLinks(s: Pick<Documents, 'bundle' | 'index'>, id: string) {
     const doomed = withDescendants(s, id);
     return s.index.entities
         .filter((entity) => !doomed.has(entity.id))
@@ -177,23 +185,23 @@ export function danglingLinks(s: Pick<State, 'bundle' | 'index'>, id: string) {
         );
 }
 
-const canDelete = (s: Pick<State, 'focus'>) => s.focus.entity !== ROOT_ENTITY && s.focus.entity !== '';
+const canDelete = (focus: Focus) => focus.entity !== ROOT_ENTITY && focus.entity !== '';
 
-/** The panel `kind` opens on the focused item, its target resolved now; undefined where it does not apply. */
-export function panelFor(s: Pick<State, 'index' | 'focus' | 'bundle' | 'record'>, kind: PanelKind): Panel | undefined {
-    const slot = s.focus.slot === undefined ? undefined : s.index.slot(s.focus.slot);
-    const entity = { kind: 'entity', entity: s.focus.entity } as const;
+/** The panel `kind` opens on `focus`, its target resolved now; undefined where it does not apply. */
+export function panelFor(s: Documents, focus: Focus, kind: PanelKind): Panel | undefined {
+    const slot = focus.slot === undefined ? undefined : s.index.slot(focus.slot);
+    const entity = { kind: 'entity', entity: focus.entity } as const;
     switch (kind) {
         case 'edit':
         case 'not_reported': {
-            const value = focusedSlot(s);
+            const value = s.index.slot(focus.key);
             return value?.kind === 'value'
                 ? { kind, target: slotTarget(value.entity, value.path), slot: value.key }
                 : undefined;
         }
         case 'reject':
         case 'note': {
-            const target = targetOf(s, s.focus.key);
+            const target = targetOf(s.index, focus.entity, focus.key);
             return target ? { kind, target, slot: slot?.key } : undefined;
         }
         case 'link':
@@ -203,20 +211,22 @@ export function panelFor(s: Pick<State, 'index' | 'focus' | 'bundle' | 'record'>
         case 'delete':
         case 'link_analysis':
         case 'merge_entity':
-            return canDelete(s) ? { kind, target: entity } : undefined;
+            return canDelete(focus) ? { kind, target: entity } : undefined;
         case 'create':
-            return siblingClasses(s).length > 1 ? { kind, target: entity } : undefined;
+            return siblingClasses(s, focus.entity).length > 1 ? { kind, target: entity } : undefined;
     }
 }
 
 /** C: creates an entity in the focused list, or asks which class first when the list holds several. */
-export function createOn(s: ReviewState) {
-    if (siblingClasses(s).length > 1) s.openPanel('create');
-    else void createSibling(s);
+export function createOn(stores: ReviewStores) {
+    const view = stores.view.getState();
+    const panel = panelFor(stores.session.getState(), view.focus, 'create');
+    if (panel) view.openPanel(panel);
+    else void createSibling(stores);
 }
 
 /** The structural ops waiting for the server, by what they touch. */
-export function pendingStructure(s: Pick<State, 'pending'>) {
+export function pendingStructure(s: Pick<SessionState, 'pending'>) {
     const linksBySlot = new Map<string, Map<string, 'link' | 'unlink'>>();
     const deleting = new Set<string>();
     const creating: { parent: string; list: string }[] = [];
@@ -232,16 +242,16 @@ export function pendingStructure(s: Pick<State, 'pending'>) {
     return { linksBySlot, deleting, creating };
 }
 
-/** The entities `from` can be merged into: the others of its class. */
-export const mergeCandidates = (s: Pick<State, 'index'>, from: string): EntityNode[] => {
-    const merged = s.index.entity(from);
-    return s.index.visible.filter((e) => e.id !== from && e.entityClass === merged?.entityClass);
+/** The entities `from` can be merged into: the others of its class `index` lists. */
+export const mergeCandidates = (index: RecordIndex, from: string): EntityNode[] => {
+    const merged = index.entity(from);
+    return index.visible.filter((e) => e.id !== from && e.entityClass === merged?.entityClass);
 };
 
 /** The value slots of `from` holding a value `into` has none for, which a merge can copy over. */
-export function mergeCopies(s: Pick<State, 'index'>, from: string, into: string): SlotNode[] {
-    const held = new Set(s.index.entity(into)?.slots.flatMap((slot) => (slot.value ? [slot.path] : [])));
-    return (s.index.entity(from)?.slots ?? []).filter(
+export function mergeCopies(index: RecordIndex, from: string, into: string): SlotNode[] {
+    const held = new Set(index.entity(into)?.slots.flatMap((slot) => (slot.value ? [slot.path] : [])));
+    return (index.entity(from)?.slots ?? []).filter(
         (slot) => slot.kind === 'value' && slot.value && !held.has(slot.path)
     );
 }
@@ -272,10 +282,11 @@ function copyOps(slot: SlotNode, into: string): NewOp[] {
  * Merges `from` into `into` as one batch: each link to `from` is re-pointed to `into`, the value slots at
  * `copy` are copied over, then `from` is deleted.
  */
-export function mergeInto(s: Pick<ReviewState, 'emitBatch' | 'index'>, from: string, into: string, copy: string[]) {
-    const merged = s.index.entity(from);
-    if (!merged || !s.index.entity(into) || from === into) return false;
-    const relinks = s.index.entities
+export function mergeInto(stores: ReviewStores, from: string, into: string, copy: string[]) {
+    const { index, emitBatch } = stores.session.getState();
+    const merged = index.entity(from);
+    if (!merged || !index.entity(into) || from === into) return false;
+    const relinks = index.entities
         .filter((entity) => entity.id !== from)
         .flatMap((entity) =>
             entity.slots.flatMap((slot): NewOp[] => {
@@ -289,5 +300,5 @@ export function mergeInto(s: Pick<ReviewState, 'emitBatch' | 'index'>, from: str
         .filter((slot) => copy.includes(slot.path) && slot.value)
         .flatMap((slot) => copyOps(slot, into));
     const ops: NewOp[] = [...relinks, ...copies, { type: 'delete_entity', target: { kind: 'entity', entity: from } }];
-    return s.emitBatch(ops.map((op) => ({ client_op_id: randomUUID(), ...op }) as Op));
+    return emitBatch(ops.map((op) => ({ client_op_id: randomUUID(), ...op }) as Op));
 }

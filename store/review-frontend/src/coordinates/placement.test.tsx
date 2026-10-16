@@ -2,7 +2,7 @@ import { act } from '@testing-library/react';
 import { analysesBeside } from '../model/coordinates';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { coordinateBundle, FACES, HOUSES } from '../test/coordinates';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 
 vi.mock('../model/coordinates', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../model/coordinates')>();
@@ -17,15 +17,15 @@ beforeEach(() => {
 
 describe('the placement of analyses beside the text', () => {
     it('is worked out once, not for each aside, and again only when the text, parse or display setting changes', () => {
-        const { store } = renderWithStore(<ReviewScreen />, coordinateBundle(), { now: () => 'now' });
+        const { stores } = renderWithStores(<ReviewScreen />, coordinateBundle(), { now: () => 'now' });
         expect(placements()).toBe(1);
         act(() => {
-            store.getState().focusAnalysis(HOUSES.key);
-            store.getState().focusAnalysis(FACES.key);
-            store.getState().setLifecycle('submitted');
+            stores.view.getState().focusAnalysis(HOUSES.key);
+            stores.view.getState().focusAnalysis(FACES.key);
+            stores.session.getState().setLifecycle('submitted');
         });
         expect(placements()).toBe(1);
-        act(() => store.getState().toggleNonCoordinate());
+        act(() => stores.view.getState().toggleNonCoordinate());
         expect(placements()).toBe(2);
     });
 });

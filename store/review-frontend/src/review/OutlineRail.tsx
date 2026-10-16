@@ -16,10 +16,11 @@ import { reviewStatus } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
-import { useReviewStore } from '../store/context';
+import { useSession, useShown, useView } from '../store/context';
 import { selectDiff } from '../store/diffSelectors';
 import { editorName } from './editor';
-import { notedKeys, outlineMatches, type OutlineFilter } from './outline';
+import { notedKeys, outlineMatches } from './outline';
+import type { OutlineFilter } from '../store/viewStore';
 
 const RAIL_WIDTH = 48;
 
@@ -34,8 +35,8 @@ function byClass(entities: EntityNode[]) {
 }
 
 function FilterBar() {
-    const filter = useReviewStore((s) => s.outlineFilter);
-    const setOutlineFilter = useReviewStore((s) => s.setOutlineFilter);
+    const filter = useView((s) => s.outlineFilter);
+    const setOutlineFilter = useView((s) => s.setOutlineFilter);
     return (
         <ToggleButtonGroup
             size="small"
@@ -55,16 +56,16 @@ function FilterBar() {
 }
 
 function Outline() {
-    const entities = useReviewStore((s) => s.index.visible);
-    const provenance = useReviewStore((s) => s.provenance);
-    const reviewers = useReviewStore((s) => s.bundle.reviewers);
-    const ops = useReviewStore((s) => s.bundle.ops);
-    const pending = useReviewStore((s) => s.pending);
-    const filter = useReviewStore((s) => s.outlineFilter);
-    const diff = useReviewStore(selectDiff);
-    const focused = useReviewStore((s) => s.focus.entity);
-    const focusEntity = useReviewStore((s) => s.focusEntity);
-    const toggleOutline = useReviewStore((s) => s.toggleOutline);
+    const entities = useShown((index) => index.visible);
+    const provenance = useSession((s) => s.provenance);
+    const reviewers = useSession((s) => s.bundle.reviewers);
+    const ops = useSession((s) => s.bundle.ops);
+    const pending = useSession((s) => s.pending);
+    const filter = useView((s) => s.outlineFilter);
+    const diff = useSession(selectDiff);
+    const focused = useView((s) => s.focus.entity);
+    const focusEntity = useView((s) => s.focusEntity);
+    const toggleOutline = useView((s) => s.toggleOutline);
     const noted = useMemo(() => notedKeys([...ops.map((s) => s.op), ...pending]), [ops, pending]);
     const statuses = useMemo(
         () => new Map(entities.map((entity) => [entity.id, reviewStatus(provenance[entityKey(entity.id)]?.state)])),
@@ -128,8 +129,8 @@ function Outline() {
 }
 
 export function OutlineRail() {
-    const open = useReviewStore((s) => s.outlineOpen);
-    const toggleOutline = useReviewStore((s) => s.toggleOutline);
+    const open = useView((s) => s.outlineOpen);
+    const toggleOutline = useView((s) => s.toggleOutline);
     return (
         <>
             <Box

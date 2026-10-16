@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent, type MouseEvent } from 'react';
 import type { RecordIndex, SlotNode } from '../model/record';
-import { useReviewStoreApi } from '../store/context';
+import { useReviewStores } from '../store/context';
+import { selectEvidenceCursor, selectFocusedSpans, selectShown } from '../store/viewSelectors';
 import type { HighlightLayer } from './highlights';
 import type { SupportChoice } from './SupportMenu';
 import type { TextIndex } from './TextIndex';
@@ -22,13 +23,13 @@ export function slotsAt(index: RecordIndex, offset: number): SlotNode[] {
 
 /** Focuses the item a click or Enter on the paper text points at, or lists the items in a menu where there are several. */
 export function useSupportingFocus(index: TextIndex | null, layer: HighlightLayer | null) {
-    const store = useReviewStoreApi();
+    const { session, view } = useReviewStores();
     const [choice, setChoice] = useState<SupportChoice | null>(null);
 
     const focusSupporting = (slots: SlotNode[], at: SupportChoice['at']) => {
-        if (slots.length === 1) return store.getState().focusSlot(slots[0].key);
+        if (slots.length === 1) return view.getState().focusSlot(slots[0].key);
         if (slots.length > 1) {
-            const { index: records } = store.getState();
+            const { index: records } = session.getState();
             const items = slots.map((slot) => ({
                 key: slot.key,
                 label: `${records.entity(slot.entity)?.name ?? slot.entity} · ${slot.path}`,
@@ -41,17 +42,19 @@ export function useSupportingFocus(index: TextIndex | null, layer: HighlightLaye
         if (!index) return;
         const offset = offsetAtPoint(index, event.clientX, event.clientY);
         if (offset === null) return;
-        focusSupporting(slotsAt(store.getState().index, offset), { top: event.clientY, left: event.clientX });
+        const listed = selectShown(session.getState(), view.getState());
+        focusSupporting(slotsAt(listed, offset), { top: event.clientY, left: event.clientX });
     };
 
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         if (event.key !== 'Enter') return;
         event.stopPropagation();
-        const { focusedSpans, evidenceCursor, index: records } = store.getState();
-        const span = focusedSpans[evidenceCursor];
+        const documents = session.getState();
+        const focused = view.getState();
+        const span = selectFocusedSpans(documents, focused)[selectEvidenceCursor(documents, focused)];
         if (!span || !layer) return;
         const rect = layer.range(span).getBoundingClientRect();
-        focusSupporting(slotsAt(records, span[0]), { top: rect.bottom, left: rect.left });
+        focusSupporting(slotsAt(selectShown(documents, focused), span[0]), { top: rect.bottom, left: rect.left });
     };
 
     return {
@@ -61,7 +64,7 @@ export function useSupportingFocus(index: TextIndex | null, layer: HighlightLaye
             choice,
             onChoose: (key: string) => {
                 setChoice(null);
-                store.getState().focusSlot(key);
+                view.getState().focusSlot(key);
             },
             onClose: () => setChoice(null),
         },

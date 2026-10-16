@@ -1,8 +1,8 @@
 import { Box } from '@mui/material';
 import { CoordinateAside } from '../coordinates/CoordinateAside';
 import { CoordinatesInspector } from '../coordinates/CoordinatesInspector';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
-import type { ReviewState } from '../store/reviewStore';
+import { useReviewStores, useView } from '../store/context';
+import type { ViewState } from '../store/viewStore';
 import { TextPane } from '../text/TextPane';
 import { CommandPalette } from './CommandPalette';
 import { StepInspector } from './GuidedSteps';
@@ -16,13 +16,13 @@ import { SetAsideBanner, SetAsideButton } from './SetAside';
 import { StepBar } from './StepBar';
 import { SubmitStep } from './SubmitStep';
 
-const noDialogOpen = (s: ReviewState) => !s.helpOpen && !s.panel && !s.paletteOpen;
-const onCoordinates = (s: ReviewState) => s.coordinates !== null || s.panel?.kind === 'add_analysis';
+const noDialogOpen = (s: ViewState) => !s.helpOpen && !s.panel && !s.paletteOpen;
+const onCoordinates = (s: ViewState) => s.coordinates !== null || s.panel?.kind === 'add_analysis';
 
 export function ReviewScreen() {
-    useShortcuts(useReviewStoreApi(), SHORTCUTS, noDialogOpen);
-    const submitting = useReviewStore((s) => s.step === 'submit');
-    const coordinates = useReviewStore(onCoordinates);
+    useShortcuts(useReviewStores(), SHORTCUTS, noDialogOpen);
+    const submitting = useView((s) => s.step === 'submit');
+    const coordinates = useView(onCoordinates);
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
             <ReviewAppBar />

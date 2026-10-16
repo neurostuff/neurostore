@@ -1,10 +1,10 @@
 import { act } from '@testing-library/react';
 import { currentAnalyses } from '../model/coordinates';
 import { selectDiff } from '../store/diffSelectors';
-import { createReviewStore } from '../store/reviewStore';
+import { createReviewStores } from '../store/context';
 import { hasFixture, loadFixture } from '../test/bundles';
 import { registeredSpans } from '../test/highlights';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { ReviewScreen } from './ReviewScreen';
 import { buildPaletteIndex, searchPalette } from './search';
 
@@ -26,8 +26,8 @@ function timed(focus: () => void) {
 const median = (timings: number[]) => [...timings].sort((a, b) => a - b)[Math.floor(timings.length / 2)];
 
 function open(id: string) {
-    const view = renderWithStore(<ReviewScreen />, loadFixture(id));
-    const { index } = view.store.getState();
+    const view = renderWithStores(<ReviewScreen />, loadFixture(id));
+    const { index } = view.stores.session.getState();
     const slots = index.visible.flatMap((e) => e.slots).filter((s) => s.spans.length > 0);
     return { ...view, index, slots };
 }
@@ -36,10 +36,10 @@ describe.each(['22fv2dADxHqR', HEAVY])('focus performance on %s', (id) => {
     it.skipIf(!hasFixture(id))(
         `updates the highlights within ${BUDGET_MS} ms of focusing a slot`,
         () => {
-            const { store, textRoot, slots } = open(id);
-            act(() => store.getState().focusSlot(slots[slots.length - 1].key));
+            const { stores, textRoot, slots } = open(id);
+            act(() => stores.view.getState().focusSlot(slots[slots.length - 1].key));
             const timings = slots.slice(0, RUNS).map((slot) => {
-                const elapsed = timed(() => store.getState().focusSlot(slot.key));
+                const elapsed = timed(() => stores.view.getState().focusSlot(slot.key));
                 expect(registeredSpans('rv-focus', textRoot())).toEqual(slot.spans);
                 return elapsed;
             });
@@ -53,10 +53,10 @@ describe.skipIf(!hasFixture(HEAVY))(`focus performance on ${HEAVY}’s heaviest 
     it(
         `focuses an entity, highlighting all its slots’ spans, within ${BUDGET_MS} ms`,
         () => {
-            const { store, textRoot, index } = open(HEAVY);
+            const { stores, textRoot, index } = open(HEAVY);
             const entities = [...index.visible].sort((a, b) => b.spans.length - a.spans.length).slice(0, RUNS);
             const timings = entities.map((entity) => {
-                const elapsed = timed(() => store.getState().focusEntity(entity.id));
+                const elapsed = timed(() => stores.view.getState().focusEntity(entity.id));
                 expect(registeredSpans('rv-focus', textRoot())).toEqual(entity.spans);
                 return elapsed;
             });
@@ -68,14 +68,14 @@ describe.skipIf(!hasFixture(HEAVY))(`focus performance on ${HEAVY}’s heaviest 
     it(
         `focuses each of the ${RUNS} analyses with the most points, first in the coordinates step, within ${FIRST_COORDINATE_FOCUS_MS} ms in jsdom`,
         () => {
-            const { store } = open(HEAVY);
-            expect(store.getState().step).toBe('coordinates');
-            const analyses = [...currentAnalyses(store.getState().bundle)]
+            const { stores } = open(HEAVY);
+            expect(stores.view.getState().step).toBe('coordinates');
+            const analyses = [...currentAnalyses(stores.session.getState().bundle)]
                 .sort((a, b) => (b.points?.length ?? 0) - (a.points?.length ?? 0))
                 .slice(0, RUNS);
             const timings = analyses.map((analysis) => {
-                const elapsed = timed(() => store.getState().focusAnalysis(analysis.key));
-                expect(store.getState().coordinates?.analysis).toBe(analysis.key);
+                const elapsed = timed(() => stores.view.getState().focusAnalysis(analysis.key));
+                expect(stores.view.getState().coordinates?.analysis).toBe(analysis.key);
                 return elapsed;
             });
             expect(median(timings)).toBeLessThan(FIRST_COORDINATE_FOCUS_MS);
@@ -86,13 +86,13 @@ describe.skipIf(!hasFixture(HEAVY))(`focus performance on ${HEAVY}’s heaviest 
     it(
         `focuses each of the 3 slots with the most spans within ${BUDGET_MS} ms`,
         () => {
-            const { store, textRoot, slots } = open(HEAVY);
+            const { stores, textRoot, slots } = open(HEAVY);
             const heaviest = [...slots].sort((a, b) => b.spans.length - a.spans.length).slice(0, 3);
             const elsewhere = slots[slots.length - 1];
             for (const slot of heaviest) {
                 const timings = Array.from({ length: RUNS }, () => {
-                    act(() => store.getState().focusSlot(elsewhere.key));
-                    return timed(() => store.getState().focusSlot(slot.key));
+                    act(() => stores.view.getState().focusSlot(elsewhere.key));
+                    return timed(() => stores.view.getState().focusSlot(slot.key));
                 });
                 expect(registeredSpans('rv-focus', textRoot())).toEqual(slot.spans);
                 expect(median(timings), `${slot.key}, ${slot.spans.length} spans`).toBeLessThan(BUDGET_MS);
@@ -106,8 +106,8 @@ describe.skipIf(!hasFixture(HEAVY))(`command palette on ${HEAVY}`, () => {
     it(
         `answers each keystroke of a search within ${KEYSTROKE_BUDGET_MS} ms`,
         () => {
-            const { store } = open(HEAVY);
-            const { index, bundle } = store.getState();
+            const { stores } = open(HEAVY);
+            const { index, bundle } = stores.session.getState();
             const palette = buildPaletteIndex(index, bundle.text);
             const names = index.visible
                 .map((e) => e.name)
@@ -132,11 +132,11 @@ describe.skipIf(!hasFixture(HEAVY))(`the diff against the original on ${HEAVY}`,
         `computes the whole diff, the original's index included, within ${BUDGET_MS} ms`,
         () => {
             const timings = Array.from({ length: RUNS }, () => {
-                const store = createReviewStore(loadFixture(HEAVY));
+                const stores = createReviewStores(loadFixture(HEAVY));
                 const started = performance.now();
-                const diff = selectDiff(store.getState());
+                const diff = selectDiff(stores.session.getState());
                 const elapsed = performance.now() - started;
-                expect(diff.items.length).toBeGreaterThan(store.getState().index.entities.length);
+                expect(diff.items.length).toBeGreaterThan(stores.session.getState().index.entities.length);
                 return elapsed;
             });
             expect(median(timings)).toBeLessThan(BUDGET_MS);
@@ -147,13 +147,13 @@ describe.skipIf(!hasFixture(HEAVY))(`the diff against the original on ${HEAVY}`,
     it(
         `turns the diff on and off on the heaviest entity within ${BUDGET_MS} ms`,
         () => {
-            const { store, textRoot, index } = open(HEAVY);
+            const { stores, textRoot, index } = open(HEAVY);
             const [heaviest] = [...index.visible].sort((a, b) => b.spans.length - a.spans.length);
-            act(() => store.getState().focusEntity(heaviest.id));
-            act(() => store.getState().toggleDiff(true));
-            act(() => store.getState().toggleDiff(false));
-            const timings = Array.from({ length: RUNS * 2 }, () => timed(() => store.getState().toggleDiff()));
-            expect(store.getState().diffOn).toBe(false);
+            act(() => stores.view.getState().focusEntity(heaviest.id));
+            act(() => stores.view.getState().toggleDiff(true));
+            act(() => stores.view.getState().toggleDiff(false));
+            const timings = Array.from({ length: RUNS * 2 }, () => timed(() => stores.view.getState().toggleDiff()));
+            expect(stores.view.getState().diffOn).toBe(false);
             expect(registeredSpans('rv-focus', textRoot())).toEqual(heaviest.spans);
             expect(median(timings)).toBeLessThan(BUDGET_MS);
         },
@@ -176,13 +176,13 @@ describe.skipIf(!hasFixture(HEAVY))(`the diff against the original on ${HEAVY}`,
                 Object.values(item).forEach(rename);
             };
             rename(bundle.record);
-            const store = createReviewStore(bundle);
-            store.getState().toggleDiff(true);
+            const stores = createReviewStores(bundle);
+            stores.view.getState().toggleDiff(true);
             const keys = new Set<string>();
             const step = (delta: 1 | -1) =>
                 timed(() => {
-                    store.getState().moveChange(delta);
-                    keys.add(store.getState().focus.key);
+                    stores.view.getState().moveChange(delta);
+                    keys.add(stores.view.getState().focus.key);
                 });
             const timings = [
                 ...Array.from({ length: RUNS * 4 }, () => step(1)),

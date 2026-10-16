@@ -1,13 +1,22 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
-import { currentAnalyses, guidedOrder, pointSpan, successor, type CoordinateAnalysis } from '../model/coordinates';
-import type { SpanPair } from '../model/record';
-import { layoutText, type ParsedPaperLayout, type TableBlock } from '../text/layout';
-import type { CoordinateFocus } from '../store/reviewStore';
+import { currentAnalyses, guidedOrder, pointSpan, successor, type CoordinateAnalysis } from './coordinates';
+import type { SpanPair } from './record';
+import { layoutText, type ParsedPaperLayout, type TableBlock } from './layout';
+
+/** The focused coordinate analysis, by its key in the revision, its focused point and the points selected in it. */
+export interface CoordinateFocus {
+    analysis: string;
+    point: number | null;
+    selected: number[];
+}
 
 export const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max);
 
 const inOrder = (spans: SpanPair[]) =>
     [...new Map(spans.map((s) => [`${s[0]}:${s[1]}`, s])).values()].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+
+export const focusedAnalysis = (s: { bundle: ReviewBundle; coordinates: CoordinateFocus | null }) =>
+    currentAnalyses(s.bundle).find((analysis) => analysis.key === s.coordinates?.analysis);
 
 /** The spans a coordinate focus highlights: the focused point's, or every point's and the analysis's own. */
 export function coordinateSpans(bundle: ReviewBundle, focus: CoordinateFocus): SpanPair[] {

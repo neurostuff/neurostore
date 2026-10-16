@@ -1,5 +1,5 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
-import type { Schema } from '../inspector/schema';
+import type { Schema } from '../model/schema';
 import {
     ApiError,
     type Assignee,

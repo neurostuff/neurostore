@@ -6,14 +6,14 @@ import { isChange, visibleItems, type DiffItem } from '../../model/diff';
 import { targetKey } from '../../model/targetKey';
 import { changeGroups, targetLabeller } from '../../review/summary';
 import { selectDiff, selectOriginalIndex } from '../../store/diffSelectors';
-import { createReviewStore } from '../../store/reviewStore';
+import { createReviewStores } from '../../store/context';
 
 const read = (name: string) => JSON.parse(readFileSync(path.resolve(__dirname, name), 'utf8'));
 const bundle: ReviewBundle = read('diff-bundle.json');
 const verdicts: { key: string; verdict: string; replaced_by?: string[] }[] = read('diff-verdicts.json');
 
-const store = createReviewStore(bundle);
-const state = store.getState();
+const store = createReviewStores(bundle);
+const state = store.session.getState();
 const diff = selectDiff(state);
 const changed = diff.items.filter((item) => isChange(item.status));
 const keysOf = (items: DiffItem[]) => items.map((item) => item.key).sort();

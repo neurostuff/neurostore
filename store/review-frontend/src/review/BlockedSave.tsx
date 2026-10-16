@@ -1,8 +1,8 @@
 import { Alert, AlertTitle, Button, List, ListItem, Stack, Typography } from '@mui/material';
 import type { Op } from '../contract/generated/review-ops';
 import type { RecordIndex } from '../model/record';
-import { useOpClient, useReviewStore, useReviewStoreApi } from '../store/context';
-import type { Blocked } from '../store/reviewStore';
+import { useOpClient, useReviewStores, useSession } from '../store/context';
+import type { Blocked } from '../store/sessionStore';
 import { explain } from './explainProblem';
 
 function opLabel(op: Op, index: RecordIndex): string {
@@ -21,16 +21,16 @@ function download(ops: Op[]) {
 }
 
 export function BlockedSave() {
-    const blocked = useReviewStore((s) => s.blocked);
+    const blocked = useSession((s) => s.blocked);
     return blocked != null ? <Banner blocked={blocked} /> : null;
 }
 
 function Banner({ blocked: { problems } }: { blocked: Blocked }) {
-    const store = useReviewStoreApi();
+    const stores = useReviewStores();
     const client = useOpClient();
-    const pending = useReviewStore((s) => s.pending);
-    const index = useReviewStore((s) => s.index);
-    const record = useReviewStore((s) => s.record);
+    const pending = useSession((s) => s.pending);
+    const index = useSession((s) => s.index);
+    const record = useSession((s) => s.record);
     return (
         <Alert severity="error" sx={{ borderRadius: 0 }}>
             <AlertTitle>Saving has stopped: the server refused an edit and did not say which one</AlertTitle>
@@ -46,8 +46,8 @@ function Banner({ blocked: { problems } }: { blocked: Blocked }) {
                                         color="inherit"
                                         onClick={() =>
                                             focus.slot
-                                                ? store.getState().focusSlot(focus.slot)
-                                                : store.getState().focusEntity(focus.entity)
+                                                ? stores.view.getState().focusSlot(focus.slot)
+                                                : stores.view.getState().focusEntity(focus.entity)
                                         }
                                     >
                                         {label}
@@ -75,7 +75,7 @@ function Banner({ blocked: { problems } }: { blocked: Blocked }) {
                 <Button size="small" color="inherit" onClick={() => client.discardPending()}>
                     Discard
                 </Button>
-                <Button size="small" color="inherit" onClick={() => download(store.getState().pending)}>
+                <Button size="small" color="inherit" onClick={() => download(stores.session.getState().pending)}>
                     Download
                 </Button>
                 <Button size="small" variant="contained" color="error" onClick={() => void client.undoBlocked()}>

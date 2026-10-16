@@ -1,5 +1,5 @@
 import type { RecordIndex, SpanPair } from '../model/record';
-import type { ReviewState } from '../store/reviewStore';
+import type { ViewState } from '../store/viewStore';
 
 export const PALETTE_KINDS = {
     entity: 'entities',
@@ -20,7 +20,7 @@ export interface PaletteEntry {
     detail: string;
     /** The lower-cased words a query is matched against. */
     haystack: string;
-    run(state: ReviewState): void;
+    run(state: ViewState): void;
 }
 
 export interface PaletteIndex {

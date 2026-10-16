@@ -9,13 +9,13 @@ import {
     TextField,
 } from '@mui/material';
 import { useMemo, useState, type KeyboardEvent } from 'react';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
+import { useReviewStores, useSession, useShown, useView } from '../store/context';
 import { buildPaletteIndex, PALETTE_KINDS, searchPalette, type PaletteEntry } from './search';
 
 function PaletteBody() {
-    const store = useReviewStoreApi();
-    const index = useReviewStore((s) => s.index);
-    const text = useReviewStore((s) => s.bundle.text);
+    const stores = useReviewStores();
+    const index = useShown((shown) => shown);
+    const text = useSession((s) => s.bundle.text);
     const palette = useMemo(() => buildPaletteIndex(index, text), [index, text]);
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
@@ -31,9 +31,9 @@ function PaletteBody() {
     const results = useMemo(() => groups.flatMap((group) => group.entries), [groups]);
 
     const choose = (entry: PaletteEntry) => {
-        const state = store.getState();
-        state.togglePalette(false);
-        entry.run(state);
+        const view = stores.view.getState();
+        view.togglePalette(false);
+        entry.run(view);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -88,8 +88,8 @@ function PaletteBody() {
 }
 
 export function CommandPalette() {
-    const open = useReviewStore((s) => s.paletteOpen);
-    const togglePalette = useReviewStore((s) => s.togglePalette);
+    const open = useView((s) => s.paletteOpen);
+    const togglePalette = useView((s) => s.togglePalette);
     return (
         <Dialog
             open={open}

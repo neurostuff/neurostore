@@ -1,4 +1,4 @@
-import type { Schema } from '../inspector/schema';
+import type { Schema } from '../model/schema';
 
 export const SCHEMA_NAMES = ['extraction-record', 'coordinate-parse'] as const;
 

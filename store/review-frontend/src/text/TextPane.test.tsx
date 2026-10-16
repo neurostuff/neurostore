@@ -1,7 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { registeredSpans } from '../test/highlights';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
-import { renderWithStore } from '../test/render';
+import { renderWithStores } from '../test/render';
 import { TextIndex } from './TextIndex';
 import { TextPane } from './TextPane';
 
@@ -23,7 +23,7 @@ const record = {
 };
 
 const entities = entityRows(row('grp_a', 'Group', 'groups'), row('grp_b', 'Group', 'groups'));
-const setup = () => renderWithStore(<TextPane />, makeBundle(record, TEXT, { entities }));
+const setup = () => renderWithStores(<TextPane />, makeBundle(record, TEXT, { entities }));
 const styleText = () => [...document.querySelectorAll('style')].map((style) => style.textContent).join('');
 
 describe('TextPane highlights', () => {
@@ -41,9 +41,9 @@ describe('TextPane highlights', () => {
     });
 
     it('changes only the registered ranges when focus changes, never the text DOM', () => {
-        const { store, textRoot } = setup();
+        const { stores, textRoot } = setup();
         const before = TextIndex.build(textRoot()).textNodes();
-        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('A paper'), at('twenty')]);
         expect(registeredSpans('rv-evidence', textRoot())).toEqual([
             at('scanned'),
@@ -57,12 +57,12 @@ describe('TextPane highlights', () => {
     });
 
     it('keeps the underlines right after evidence is added and focus moves on', () => {
-        const { store, textRoot } = setup();
-        act(() => store.getState().focusSlot('slot:grp_a:name'));
-        act(() => void store.getState().addEvidence(at('matched'), 'first'));
+        const { stores, textRoot } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:name'));
+        act(() => void stores.session.getState().addEvidence(stores.view.getState().focus.key, at('matched'), 'first'));
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('patients'), at('matched')]);
         expect(registeredSpans('rv-evidence', textRoot())).not.toContainEqual(at('matched'));
-        act(() => store.getState().focusSlot('slot:grp_b:name'));
+        act(() => stores.view.getState().focusSlot('slot:grp_b:name'));
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('Controls')]);
         expect(registeredSpans('rv-evidence', textRoot())).toEqual([
             at('A paper'),
@@ -90,42 +90,42 @@ describe('TextPane evidence navigation', () => {
         });
 
     it('counts the focused item’s evidence and steps through it with wrapping', () => {
-        const { store } = setup();
-        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        const { stores } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
         expect(screen.getByText('evidence 1 of 2')).toBeInTheDocument();
-        act(() => store.getState().stepEvidence(1));
+        act(() => stores.view.getState().stepEvidence(1));
         expect(screen.getByText('evidence 2 of 2')).toBeInTheDocument();
-        act(() => store.getState().stepEvidence(1));
+        act(() => stores.view.getState().stepEvidence(1));
         expect(screen.getByText('evidence 1 of 2')).toBeInTheDocument();
-        act(() => store.getState().focusEntity('grp_a'));
+        act(() => stores.view.getState().focusEntity('grp_a'));
         expect(screen.getByText('evidence 1 of 3')).toBeInTheDocument();
     });
 
     it('says when a slot has no evidence or was not reported', () => {
-        const { store } = setup();
-        act(() => store.getState().focusSlot('slot:grp_b:sex'));
+        const { stores } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_b:sex'));
         expect(screen.getByText('no evidence')).toBeInTheDocument();
-        act(() => store.getState().focusSlot('slot:grp_b:species'));
+        act(() => stores.view.getState().focusSlot('slot:grp_b:species'));
         expect(screen.getByText('not reported')).toBeInTheDocument();
     });
 
     it('scrolls the text to the focused slot’s first evidence span, then to the span stepped to', () => {
-        const { store, textRoot, container } = setup();
+        const { stores, textRoot, container } = setup();
         const scroller = container.querySelector<HTMLElement>('[data-text-scroller]')!;
         placeRangesByOffset(textRoot(), scroller);
-        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
         expect(scroller.scrollTop).toBe(at('A paper')[0]);
-        act(() => store.getState().stepEvidence(1));
+        act(() => stores.view.getState().stepEvidence(1));
         expect(scroller.scrollTop).toBe(at('twenty')[0]);
     });
 
     it('starts again at the first span, and scrolls to it, when another slot is focused after stepping', () => {
-        const { store, textRoot, container } = setup();
+        const { stores, textRoot, container } = setup();
         const scroller = container.querySelector<HTMLElement>('[data-text-scroller]')!;
         placeRangesByOffset(textRoot(), scroller);
-        act(() => store.getState().focusSlot('slot:grp_a:n'));
-        act(() => store.getState().stepEvidence(1));
-        act(() => store.getState().focusSlot('slot:grp_b:age'));
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
+        act(() => stores.view.getState().stepEvidence(1));
+        act(() => stores.view.getState().focusSlot('slot:grp_b:age'));
         expect(screen.getByText('evidence 1 of 2')).toBeInTheDocument();
         expect(scroller.scrollTop).toBe(at('Controls')[0]);
     });
@@ -144,43 +144,43 @@ describe('TextPane clicks and Enter on highlights', () => {
     });
 
     it('focuses the one item a clicked span supports', () => {
-        const { store, textRoot, container } = setup();
+        const { stores, textRoot, container } = setup();
         clickAt(scrollerOf(container), textRoot(), at('patients')[0] + 1);
-        expect(store.getState().focus.key).toBe('slot:grp_a:name');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_a:name');
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
     it('does nothing when the click is on text no evidence uses', () => {
-        const { store, textRoot, container } = setup();
-        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        const { stores, textRoot, container } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
         clickAt(scrollerOf(container), textRoot(), TEXT.indexOf('were'));
-        expect(store.getState().focus.key).toBe('slot:grp_a:n');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_a:n');
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
     it('lists the items a clicked span supports in a menu, and focuses the one chosen', () => {
-        const { store, textRoot, container } = setup();
+        const { stores, textRoot, container } = setup();
         clickAt(scrollerOf(container), textRoot(), at('Controls')[0] + 1);
         const items = screen.getAllByRole('menuitem');
         expect(items.map((item) => item.textContent)).toEqual(['Controls · name', 'Controls · age']);
         fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · age' }));
-        expect(store.getState().focus.key).toBe('slot:grp_b:age');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_b:age');
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
     it('focuses the item under Enter on the evidence the cursor is on', () => {
-        const { store, container } = setup();
-        act(() => store.getState().focusEntity('grp_a'));
+        const { stores, container } = setup();
+        act(() => stores.view.getState().focusEntity('grp_a'));
         fireEvent.keyDown(scrollerOf(container), { key: 'Enter' });
-        expect(store.getState().focus.key).toBe('slot:grp_a:n');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_a:n');
     });
 
     it('lists the items under Enter in a menu when the cursor span supports several', () => {
-        const { store, container } = setup();
-        act(() => store.getState().focusSlot('slot:grp_b:age'));
+        const { stores, container } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_b:age'));
         fireEvent.keyDown(scrollerOf(container), { key: 'Enter' });
         fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · name' }));
-        expect(store.getState().focus.key).toBe('slot:grp_b:name');
+        expect(stores.view.getState().focus.key).toBe('slot:grp_b:name');
     });
 });
 
@@ -191,11 +191,11 @@ describe('TextPane show all evidence', () => {
     });
 
     it('fills every evidence span when on, and leaves the focused item’s spans where they are', () => {
-        const { store, textRoot } = setup();
-        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        const { stores, textRoot } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
         fireEvent.click(screen.getByRole('button', { name: 'show all evidence' }));
         expect(screen.getByRole('button', { name: 'show all evidence' })).toHaveAttribute('aria-pressed', 'true');
-        expect(store.getState().showAllEvidence).toBe(true);
+        expect(stores.view.getState().showAllEvidence).toBe(true);
         expect(styleText()).toContain('::highlight(rv-evidence){background-color:');
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('A paper'), at('twenty')]);
         expect(registeredSpans('rv-evidence', textRoot())).toEqual([
@@ -207,22 +207,22 @@ describe('TextPane show all evidence', () => {
     });
 
     it('goes back to underlines when switched off', () => {
-        const { store } = setup();
+        const { stores } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'show all evidence' }));
         fireEvent.click(screen.getByRole('button', { name: 'show all evidence' }));
-        expect(store.getState().showAllEvidence).toBe(false);
+        expect(stores.view.getState().showAllEvidence).toBe(false);
         expect(styleText()).not.toContain('::highlight(rv-evidence){background-color:');
     });
 });
 
 describe('TextPane scrolls to an item’s first evidence', () => {
     it('scrolls to the first span, in reading order, of an entity focused by its id', () => {
-        const { store, textRoot, container } = setup();
+        const { stores, textRoot, container } = setup();
         const scroller = container.querySelector<HTMLElement>('[data-text-scroller]')!;
         vi.spyOn(Range.prototype, 'getBoundingClientRect').mockImplementation(function (this: Range) {
             return { top: TextIndex.build(textRoot()).fromRange(this)![0] - scroller.scrollTop } as DOMRect;
         });
-        act(() => store.getState().focusEntity('grp_b'));
+        act(() => stores.view.getState().focusEntity('grp_b'));
         expect(scroller.scrollTop).toBe(at('Controls')[0]);
     });
 });
@@ -231,7 +231,7 @@ describe('TextPane while the diff is shown', () => {
     const moved = structuredClone(record);
     moved.groups[0].n = ev(20, [at('twenty'), at('scanner')]);
     const diffSetup = () =>
-        renderWithStore(
+        renderWithStores(
             <TextPane />,
             makeBundle(moved, TEXT, {
                 entities,
@@ -240,16 +240,16 @@ describe('TextPane while the diff is shown', () => {
         );
 
     it('registers the original’s spans of the focused item beside the review’s, and a legend telling them apart', () => {
-        const { store, textRoot } = diffSetup();
-        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        const { stores, textRoot } = diffSetup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
         expect(registeredSpans('rv-original', textRoot())).toEqual([]);
         expect(screen.queryByRole('note', { name: 'diff legend' })).not.toBeInTheDocument();
-        act(() => store.getState().toggleDiff(true));
+        act(() => stores.view.getState().toggleDiff(true));
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('twenty'), at('scanner')]);
         expect(registeredSpans('rv-original', textRoot())).toEqual([at('A paper'), at('twenty')]);
         expect(screen.getByRole('note', { name: 'diff legend' })).toHaveTextContent(/original.*review/);
         expect(styleText()).toMatch(/::highlight\(rv-original\)[^}]*dashed/);
-        act(() => store.getState().toggleDiff(false));
+        act(() => stores.view.getState().toggleDiff(false));
         expect(registeredSpans('rv-original', textRoot())).toEqual([]);
     });
 });

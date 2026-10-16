@@ -2,7 +2,7 @@ import type { ErrorBody, OpResult as GeneratedOpResult, ReviewSummary } from '..
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
 import type { SchemaName } from '../contract/schemas';
-import type { Schema } from '../inspector/schema';
+import type { Schema } from '../model/schema';
 
 export type { ErrorBody, ReviewSummary } from '../contract/generated/review-api';
 

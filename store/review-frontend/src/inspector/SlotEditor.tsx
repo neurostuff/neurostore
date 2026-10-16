@@ -4,16 +4,8 @@ import type { SetValueOp } from '../contract/generated/review-ops';
 import type { ExtractedValue } from '../model/record';
 import { panelKeys } from './panelKeys';
 import { RemoveIcon } from './RemoveIcon';
-import {
-    inferredEditor,
-    parseScalar,
-    wrapperSpec,
-    type EditorSpec,
-    type Parsed,
-    textOf,
-    type Scalar,
-    type Schema,
-} from './schema';
+import { inferredEditor, parseScalar, wrapperSpec, type EditorSpec, type Parsed, textOf, type Scalar } from './schema';
+import type { Schema } from '../model/schema';
 
 type SetValue = SetValueOp['value'];
 

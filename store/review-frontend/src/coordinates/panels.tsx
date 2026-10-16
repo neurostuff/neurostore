@@ -6,8 +6,8 @@ import { ConfirmDialog, DanglingList, PickPanel } from '../inspector/panels';
 import { panelKeys } from '../inspector/panelKeys';
 import { ScalarField } from '../inspector/SlotEditor';
 import { currentAnalyses, type CoordinateAnalysis, type CoordinatePoint } from '../model/coordinates';
-import { useReviewStore, useReviewStoreApi } from '../store/context';
-import type { ParsedPaperLayout } from '../text/layout';
+import { useReviewStores, useSession, useView } from '../store/context';
+import type { ParsedPaperLayout } from '../model/layout';
 import {
     addAnalysis,
     mergeAnalyses,
@@ -33,13 +33,13 @@ const editorsOf = fromSchema('coordinate-parse', (schema) => {
 type Role = NonNullable<CoordinateOp['role']>;
 
 export function RelabelPanel({ analysis }: { analysis: CoordinateAnalysis }) {
-    const store = useReviewStoreApi();
-    const closePanel = useReviewStore((s) => s.closePanel);
+    const stores = useReviewStores();
+    const closePanel = useView((s) => s.closePanel);
     const editors = editorsOf();
     const id = useId();
     const [role, setRole] = useState(analysis.role);
     const save = () => {
-        if (role === analysis.role || relabelAnalysis(store.getState(), role as Role)) closePanel();
+        if (role === analysis.role || relabelAnalysis(stores, role as Role)) closePanel();
     };
     return (
         <Stack
@@ -64,14 +64,24 @@ export function RelabelPanel({ analysis }: { analysis: CoordinateAnalysis }) {
 }
 
 export function MergeDialog() {
-    const store = useReviewStoreApi();
-    const [into, ...others] = useMemo(() => mergeSet(store.getState()), [store]);
-    const { removed, dangling } = useMemo(() => mergePreview(store.getState()), [store]);
+    const stores = useReviewStores();
+    const bundle = useSession((s) => s.bundle);
+    const index = useSession((s) => s.index);
+    const coordinates = useView((s) => s.coordinates);
+    const merging = useView((s) => s.merging);
+    const [into, ...others] = useMemo(
+        () => mergeSet({ bundle }, { coordinates, merging }),
+        [bundle, coordinates, merging]
+    );
+    const { removed, dangling } = useMemo(
+        () => mergePreview({ bundle, index }, { coordinates, merging }),
+        [bundle, index, coordinates, merging]
+    );
     return (
         <ConfirmDialog
             title={`Merge ${others.length + 1} analyses into ${into.name}?`}
             confirmLabel="Merge"
-            onConfirm={() => mergeAnalyses(store.getState())}
+            onConfirm={() => mergeAnalyses(stores)}
         >
             <Typography variant="body2">{`Their points follow ${into.name}’s: ${others.map((a) => a.name).join(', ')}.`}</Typography>
             {removed.length > 0 && (
@@ -95,30 +105,32 @@ export function MergeDialog() {
 }
 
 export function MovePanel() {
-    const store = useReviewStoreApi();
-    const options = useMemo(() => moveTargets(store.getState()), [store]);
-    const count = useMemo(() => movingPoints(store.getState()).length, [store]);
+    const stores = useReviewStores();
+    const bundle = useSession((s) => s.bundle);
+    const coordinates = useView((s) => s.coordinates);
+    const options = useMemo(() => moveTargets({ bundle }, { coordinates }), [bundle, coordinates]);
+    const count = movingPoints({ coordinates }).length;
     return (
         <PickPanel
             options={options}
             label={`move ${count} point${count === 1 ? '' : 's'} to`}
             noOptionsText="no other analysis"
             optionKey={(option) => option.key}
-            onPick={(option) => movePoints(store.getState(), option.key)}
+            onPick={(option) => movePoints(stores, option.key)}
         />
     );
 }
 
 export function PointPanel({ analysis, index }: { analysis: CoordinateAnalysis; index: number | null }) {
-    const store = useReviewStoreApi();
-    const closePanel = useReviewStore((s) => s.closePanel);
+    const stores = useReviewStores();
+    const closePanel = useView((s) => s.closePanel);
     const point = index === null ? null : (analysis.points?.[index] ?? null);
     return (
         <PointEditor
             label={index === null ? `a new point of ${analysis.name}` : `point ${index + 1} of ${analysis.name}`}
             point={point}
             onSave={(next) => {
-                if (savePoint(store.getState(), index, next as CoordinatePoint)) closePanel();
+                if (savePoint(stores, index, next as CoordinatePoint)) closePanel();
             }}
             onCancel={closePanel}
         />
@@ -130,21 +142,21 @@ const tableSpace = (analyses: CoordinateAnalysis[], table: string) =>
     analyses.find((a) => a.table_id === table && a.coordinate_space)?.coordinate_space ?? '';
 
 export function AddAnalysisPanel({ table }: { table: string }) {
-    const store = useReviewStoreApi();
-    const closePanel = useReviewStore((s) => s.closePanel);
+    const stores = useReviewStores();
+    const closePanel = useView((s) => s.closePanel);
     const editors = editorsOf();
-    const label = useReviewStore(
+    const label = useSession(
         (s) => (s.bundle.parsed_paper as ParsedPaperLayout).tables?.find((t) => t.table_id === table)?.label ?? table
     );
     const id = useId();
     const [name, setName] = useState('');
     const [nameError, setNameError] = useState('');
     const [role, setRole] = useState(editors.roles?.kind === 'enum' ? editors.roles.options[0] : '');
-    const [space, setSpace] = useState(() => tableSpace(currentAnalyses(store.getState().bundle), table));
+    const [space, setSpace] = useState(() => tableSpace(currentAnalyses(stores.session.getState().bundle), table));
     const save = (point: CoordinatePoint) => {
         if (!name.trim()) return setNameError('required');
         const fields = { name: name.trim(), role, ...(space ? { coordinate_space: space } : {}) };
-        if (addAnalysis(store.getState(), table, fields, point)) closePanel();
+        if (addAnalysis(stores, table, fields, point)) closePanel();
     };
     return (
         <PointEditor

@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { createReviewStore } from '../store/reviewStore';
+import { createReviewStores } from '../store/context';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { createSibling, danglingLinks, linkCandidates } from './actions';
 
@@ -29,7 +29,7 @@ const entities = entityRows(
     row('asm_1', 'Assessment', 'assessments')
 );
 
-const state = () => createReviewStore(makeBundle(record, 'x'.repeat(10), { entities })).getState();
+const state = () => createReviewStores(makeBundle(record, 'x'.repeat(10), { entities })).session.getState();
 
 describe('link candidates', () => {
     it('offers entities of the slot’s class, leaving out the entity itself and what it links already', () => {
@@ -37,11 +37,11 @@ describe('link candidates', () => {
         expect(linkCandidates(s, s.index.slot('slot:a_1:mirror_of')!)).toEqual([{ id: 'a_3', name: 'Other' }]);
     });
     it('offers an entity by its schema class too, when its list holds another class', () => {
-        const withMeasure = createReviewStore(
+        const withMeasure = createReviewStores(
             makeBundle(record, 'x'.repeat(10), {
                 entities: [...entities, row('x_1', 'Measure', 'measures', { schema_class: 'Assessment' })],
             })
-        ).getState();
+        ).session.getState();
         expect(linkCandidates(withMeasure, withMeasure.index.slot('slot:a_1:assessments')!)).toEqual([
             { id: 'asm_1', name: 'Anxiety' },
             { id: 'x_1', name: 'x_1' },
@@ -58,10 +58,11 @@ describe('a reference the record leaves out', () => {
 
 describe('creating in a nested list', () => {
     it('creates the entity under the list’s parent, not the study', () => {
-        const store = createReviewStore(makeBundle(record, 'x'.repeat(10), { entities }));
-        store.getState().focusEntity('t_1');
+        const store = createReviewStores(makeBundle(record, 'x'.repeat(10), { entities }));
+        store.view.getState().focusEntity('t_1');
         const emit = vi.fn(() => true);
-        createSibling({ ...store.getState(), emit }, 'ModelTerm');
+        store.session.setState({ emit });
+        createSibling(store, 'ModelTerm');
         expect(emit).toHaveBeenCalledWith(
             expect.objectContaining({ type: 'create_entity', parent: 'a_1', list: 'effect.terms' })
         );
@@ -71,14 +72,15 @@ describe('creating in a nested list', () => {
 describe('creating with no parent', () => {
     it('creates nothing in a list whose entity has no parent, even when a class is named', () => {
         const withGroup = { ...record, groups: [{ local_id: 'x_2', name: ev('Extra') }] };
-        const store = createReviewStore(
+        const store = createReviewStores(
             makeBundle(withGroup, 'x'.repeat(10), {
                 entities: [...entities, row('x_2', 'Group', 'groups', { parent: '' })],
             })
         );
-        store.getState().focusEntity('x_2');
+        store.view.getState().focusEntity('x_2');
         const emit = vi.fn(() => true);
-        expect(createSibling({ ...store.getState(), emit }, 'Group')).toBe(false);
+        store.session.setState({ emit });
+        expect(createSibling(store, 'Group')).toBe(false);
         expect(emit).not.toHaveBeenCalled();
     });
 });

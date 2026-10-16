@@ -10,12 +10,13 @@ import {
 } from '../model/diff';
 import { buildRecordIndex, type RecordIndex, type SpanPair } from '../model/record';
 import { declaredOf } from './declared';
-import type { ReviewState } from './reviewStore';
+import type { SessionState } from './sessionStore';
+import type { ViewState } from './viewStore';
 
 const originalIndexes = new WeakMap<ReviewBundle['original'], RecordIndex>();
 
 /** The index of the record as loaded, built once per bundle's original. */
-export function selectOriginalIndex(s: Pick<ReviewState, 'bundle'>): RecordIndex {
+export function selectOriginalIndex(s: Pick<SessionState, 'bundle'>): RecordIndex {
     const { original } = s.bundle;
     let index = originalIndexes.get(original);
     if (!index) {
@@ -26,7 +27,7 @@ export function selectOriginalIndex(s: Pick<ReviewState, 'bundle'>): RecordIndex
 }
 
 /** The review against the original: its record against the record as loaded, its coordinates against the parse. */
-export function selectDiff(s: Pick<ReviewState, 'bundle' | 'record' | 'index' | 'provenance'>): ReviewDiff {
+export function selectDiff(s: Pick<SessionState, 'bundle' | 'record' | 'index' | 'provenance'>): ReviewDiff {
     const { parse, revision, originalRecord } = parseOf(s.bundle);
     const records = diffRecords(
         { record: originalRecord, index: selectOriginalIndex(s) },
@@ -38,13 +39,16 @@ export function selectDiff(s: Pick<ReviewState, 'bundle' | 'record' | 'index' | 
 const NO_SPANS: SpanPair[] = [];
 
 /** The original's spans of the focused item while the diff is on. */
-export function selectOriginalSpans(s: ReviewState): SpanPair[] {
-    if (!s.diffOn) return NO_SPANS;
-    if (s.coordinates) return analysisItemFor(selectDiff(s), s.coordinates.analysis)?.evidence.before ?? NO_SPANS;
-    const original = selectOriginalIndex(s);
-    return (original.slot(s.focus.key) ?? original.entity(s.focus.entity))?.spans ?? NO_SPANS;
+export function selectOriginalSpans(
+    session: Pick<SessionState, 'bundle' | 'record' | 'index' | 'provenance'>,
+    { diffOn, coordinates, focus }: Pick<ViewState, 'diffOn' | 'coordinates' | 'focus'>
+): SpanPair[] {
+    if (!diffOn) return NO_SPANS;
+    if (coordinates) return analysisItemFor(selectDiff(session), coordinates.analysis)?.evidence.before ?? NO_SPANS;
+    const original = selectOriginalIndex(session);
+    return (original.slot(focus.key) ?? original.entity(focus.entity))?.spans ?? NO_SPANS;
 }
 
 /** Whether focusing `intent` would leave the focus where it is. */
-export const isFocused = (s: Pick<ReviewState, 'coordinates' | 'focus'>, intent: FocusIntent): boolean =>
+export const isFocused = (s: Pick<ViewState, 'coordinates' | 'focus'>, intent: FocusIntent): boolean =>
     intent.kind === 'analysis' ? s.coordinates?.analysis === intent.key : !s.coordinates && s.focus.key === intent.key;

@@ -1,8 +1,12 @@
-import type { EvidenceMode, ReviewState } from '../store/reviewStore';
+import type { ReviewStores } from '../store/context';
+import type { EvidenceMode } from '../store/sessionStore';
 
-export function addSelection(state: ReviewState, mode: EvidenceMode) {
-    if (state.selection && state.addEvidence(state.selection, mode)) {
+/** Adds the selection to the focused slot's evidence, and puts the evidence cursor on it. */
+export function addSelection({ session, view }: ReviewStores, mode: EvidenceMode) {
+    const { selection, focus } = view.getState();
+    if (selection && session.getState().addEvidence(focus.key, selection, mode)) {
+        view.getState().showSpan(selection);
         window.getSelection()?.removeAllRanges();
-        state.setSelection(null);
+        view.getState().setSelection(null);
     }
 }
