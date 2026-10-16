@@ -18,6 +18,7 @@ from neurostore.models import Fulltext, Review, ReviewOp, ReviewSource, User
 from neurostore.review.bundle import bundle, hidden, source_summary
 from neurostore.review.entities import index_rows, walk
 from neurostore.review.ops import OpError, ReviewState, apply_batch
+from neurostore.review.targets import target_key
 from neurostore.review.validation import document_problems
 
 #: Provenance states that count as a change in the paper list.
@@ -92,7 +93,7 @@ def _judgeable(record, parse):
         f"slot:{wrapper['entity']}:{wrapper['path']}" for wrapper in walk(record)["wrappers"]
     }
     analyses = {
-        f"coordinate_analysis:{analysis['key']}"
+        target_key({"kind": "coordinate_analysis", "analysis_key": analysis["key"]})
         for analysis in (parse or {}).get("analyses") or []
     }
     return values | analyses
@@ -436,7 +437,8 @@ def _op_result(review, ops, coordinate_parse):
         "coordinate_revision": review.coordinate_revision,
         "provenance": review.provenance,
         "annotations": review.annotations,
-        "hidden": hidden(review.record, coordinate_parse, review.coordinate_revision),
+        "hidden": hidden(review.record, coordinate_parse, review.coordinate_revision,
+                         provenance=review.provenance),
         "entities": index_rows(review.record),
     }
 

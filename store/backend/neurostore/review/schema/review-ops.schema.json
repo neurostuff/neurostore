@@ -289,8 +289,8 @@
           "oneOf": [{"$ref": "#/$defs/CoordinateTarget"}, {"$ref": "#/$defs/CoordinateParseTarget"}]
         },
         "action": {
-          "description": "accept, relabel (needs role) and omit judge the analysis and take no payload; accept or relabel brings an omitted original back. edit_points, split and merge replace it and need payload. add introduces an analysis and restore undoes a coordinate op; both target the coordinate parse.",
-          "enum": ["accept", "relabel", "split", "merge", "omit", "add", "edit_points", "restore"]
+          "description": "relabel (needs role) changes the analysis's role and takes no payload. edit_points, split and merge replace it and need payload. add introduces an analysis and restore undoes a coordinate op; both target the coordinate parse. A verdict op, never a coordinate op, accepts or rejects an analysis.",
+          "enum": ["relabel", "split", "merge", "add", "edit_points", "restore"]
         },
         "role": {"enum": ["result", "anchor", "localization", "reference", "other"]},
         "payload": {

@@ -40,7 +40,8 @@ def bundle(*, source, text, parsed_paper, state, review, ops, reviewers):
         },
         "ops": ops,
         "entities": entities.index_rows(state.record),
-        "hidden": hidden(state.record, state.coordinate_parse, state.coordinate_revision, index),
+        "hidden": hidden(state.record, state.coordinate_parse, state.coordinate_revision,
+                         state.provenance, index),
         "reviewers": reviewers,
     }
 
@@ -57,17 +58,18 @@ def source_summary(source):
     }
 
 
-def hidden(record, parse, revision, index=None):
+def hidden(record, parse, revision, provenance, index=None):
     """The local ids hidden by default: non-coordinate analyses and what only they reach.
 
-    An analysis is non-coordinate when its source_table_analysis is missing, not reported, or
-    a key ``coordinate_parse`` (the reviewer's revision, once there is one) lacks. An entity
-    is hidden when those analyses reach it (by reference or as a descendant) and no shown
-    entity does; a shown entity's ancestors are shown.
+    An analysis is non-coordinate when its source_table_analysis is missing, not reported, a
+    key ``coordinate_parse`` (the reviewer's revision, once there is one) lacks, or a key the
+    reviewer rejected in ``provenance``. An entity is hidden when those analyses reach it (by
+    reference or as a descendant) and no shown entity does; a shown entity's ancestors are
+    shown.
     """
     index = entities.index(record) if index is None else index
     keys = {a.get("key") for a in (coordinates.current(parse, revision) or {}).get("analyses", [])}
-    keys -= {None}
+    keys -= {None} | coordinates.rejected(provenance, keys)
     analyses = {
         e.local_id
         for e in index.values()

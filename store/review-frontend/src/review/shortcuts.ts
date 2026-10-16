@@ -95,9 +95,9 @@ export const SHORTCUTS: Shortcut[] = [
     }),
     coordinates({
         keys: ['Shift+Backspace'],
-        label: 'omit the focused analysis, after confirming',
-        button: { label: 'Omit', color: 'error' },
-        run: (s) => s.openPanel('omit'),
+        label: 'reject the focused analysis: with a reason (1–5) and an optional note',
+        button: { label: 'Reject', color: 'error' },
+        run: (s) => s.openPanel('reject'),
     }),
     coordinates({
         keys: [';'],

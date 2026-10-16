@@ -9,18 +9,21 @@ import pytest
 import sqlalchemy as sa
 from click.testing import CliRunner
 from jsonschema import Draft202012Validator
+from study_schema.models.paper_parse import CoordinateParse
 
 from neurostore import cli
 from neurostore.database import db
 from neurostore.exceptions.base import NotFoundError
 from neurostore.ingest.study_schema import _check_verdicts, ingest_upload
-from neurostore.models import BaseStudy, ReviewOp, ReviewSource
+from neurostore.models import BaseStudy, FieldClaim, ReviewOp, ReviewSource, StudyEntity
+from neurostore.models.data import study_entity_hash
 from neurostore.review import ReviewError, exports, imports, service
 from neurostore.review.layout import _dumped, read_layout
 from neurostore.study_schema_tools import expected_key as key_for
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review.layouts import (
+    DIGEST,
     LEAD,
     OTHER,
     REVIEWER,
@@ -55,9 +58,33 @@ def exported_name(relative, paper_id=PAPER_ID, study_id="s1"):
     )
 
 
-def load(session, root, study_id="s1", dumps=dump):
+def three_analyses():
+    """The paper s1 with three analyses, A, B and C, each in the record once."""
+    paper, _, _ = documents("s1")
+    analyses = [
+        fx.table_analysis("t1", [1], "Faces > Houses", [fx.point((20, -4, -18))]),
+        fx.table_analysis("t1", [2], "Houses > Faces", [fx.point((-20, 4, 18))]),
+        fx.table_analysis("t1", [3], "Scrambled > Faces", [fx.point((30, 0, 0))]),
+    ]
+    parse = fx.parse(analyses, pmid="s1")
+    parse["text_sha256"] = DIGEST
+    record = fx.record(
+        [fx.record_analysis(f"a{i}", a["key"], a["name"]) for i, a in enumerate(analyses)]
+    )
+    record["extraction_metadata"]["source_text_hash"] = DIGEST
+    return paper, parse, record
+
+
+def write_three(root, study_id="s1", dumps=dump):
+    paper, parse, record = three_analyses()
+    paper["source"] = "pubget"
+    paper["header"]["article_id"] = f"art-{study_id}"
+    return write_layout(root, study_id, paper, parse, record, dumps=dumps)
+
+
+def load(session, root, study_id="s1", dumps=dump, writer=write_clean):
     """Write a clean paper under ``root``, load it and return (its files, its source id)."""
-    files = write_clean(root, study_id, dumps)
+    files = writer(root, study_id, dumps)
     session.add(BaseStudy(name="a paper", level="group", pmid=study_id))
     session.commit()
     report = imports.import_layout(session, root, user_id=REVIEWER)
@@ -86,7 +113,7 @@ def coordinate(key, action, **fields):
 
 
 def omit(key):
-    return coordinate(key, "omit")
+    return judge(key, "reject")
 
 
 def edit(session, source_id, user_id, *ops):
@@ -214,6 +241,7 @@ def test_an_edited_review_writes_a_wrapper_beside_its_record(session, reviewers,
             "state": "in_progress",
         },
         "derived_from": {"source_id": source_id, "record_sha256": source.record_sha256},
+        "reviewed": True,
         "edited": True,
         "last_edit_at": review["ops"][-1]["created_at"],
         "producer": {"name": "neurostore-review", "version": 1},
@@ -234,8 +262,40 @@ def test_an_unedited_review_writes_a_wrapper_that_says_so(session, reviewers, tm
         "user_id": REVIEWER,
         "state": "in_progress",
     }
+    assert wrapper["reviewed"] is False
     assert wrapper["edited"] is False
     assert wrapper["last_edit_at"] is None
+
+
+def test_a_review_that_accepts_a_slot_unchanged_is_reviewed_but_not_edited(
+    session, reviewers, tmp_path
+):
+    _, source_id = load(session, tmp_path / "in")
+    accept = {"client_op_id": "accept-a1-name", "type": "verdict",
+              "target": {"kind": "slot", "entity": "a1", "path": "name"}, "verdict": "accept"}
+    review_id = edit(session, source_id, REVIEWER, accept)
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    wrapper = wrapper_of(tmp_path / "out")
+    assert provenance_errors(wrapper) == []
+    assert (wrapper["reviewed"], wrapper["edited"], wrapper["last_edit_at"]) == (
+        True, False, None,
+    )
+
+
+def test_a_review_that_only_notes_a_value_is_edited_and_reviewed_not(
+    session, reviewers, tmp_path
+):
+    _, source_id = load(session, tmp_path / "in")
+    note = {"client_op_id": "note-a1-name", "type": "note",
+            "target": {"kind": "slot", "entity": "a1", "path": "name"}, "note": "check it"}
+    review_id = edit(session, source_id, REVIEWER, note)
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    wrapper = wrapper_of(tmp_path / "out")
+    assert (wrapper["reviewed"], wrapper["edited"]) == (False, False)
 
 
 def test_a_review_that_only_omits_a_coordinate_exports_the_loaded_record(
@@ -281,12 +341,12 @@ def test_the_ops_file_holds_the_ops_in_seq_order(session, reviewers, tmp_path):
     assert [op["seq"] for op in exported] == [1, 2]
     assert [op["op"]["client_op_id"] for op in exported] == [
         "set-a1-x",
-        f"omit-{COORDINATE_KEY}",
+        f"reject-{COORDINATE_KEY}",
     ]
     assert set(exported[0]) == {"seq", "op", "before", "after", "user_id", "created_at"}
 
 
-def test_a_coordinate_op_writes_a_revision_that_validates(session, reviewers, tmp_path):
+def test_a_coordinate_verdict_writes_a_revision_that_validates(session, reviewers, tmp_path):
     _, source_id = load(session, tmp_path / "in")
     review_id = edit(session, source_id, REVIEWER, omit(COORDINATE_KEY))
 
@@ -297,7 +357,102 @@ def test_a_coordinate_op_writes_a_revision_that_validates(session, reviewers, tm
     assert schema_errors("coordinate-parse", revision) == []
     assert revision_path.read_bytes() == _dumped(revision)
     assert COORDINATE_KEY not in [analysis["key"] for analysis in revision["analyses"]]
-    assert revision == service.get_review(session, review_id)["coordinate_revision"]
+
+
+def judge(key, verdict, note=None, reason="not_in_text"):
+    op = {
+        "client_op_id": f"{verdict}-{key}",
+        "type": "verdict",
+        "target": {"kind": "coordinate_analysis", "analysis_key": key},
+        "verdict": verdict,
+        **({"note": note} if note else {}),
+    }
+    return {**op, "reason": reason} if verdict == "reject" else op
+
+
+def add_houses():
+    analysis = documents("s1")[1]["analyses"][0]
+    return {"client_op_id": "add-houses", "type": "coordinate",
+            "target": {"kind": "coordinate_parse"}, "action": "add",
+            "payload": {"analysis": {
+                **{k: v for k, v in analysis.items() if k != "key"}, "name": "Houses > Faces",
+            }}}
+
+
+def exported_revision(root):
+    path = root / f"run/revisions/{PAPER_ID}.coordinate_parse.json"
+    assert path.exists(), "the export wrote no coordinate revision"
+    revision = json.loads(path.read_text("utf-8"))
+    assert schema_errors("coordinate-parse", revision) == []
+    _check_verdicts(revision, documents("s1")[1])
+    return revision
+
+
+def verdict_of(revision, key):
+    return next(v for v in revision["verdicts"] if v["key"] == key)
+
+
+def test_a_coordinate_analysis_rejected_with_a_verdict_exports_as_omit(
+    session, reviewers, tmp_path
+):
+    _, source_id = load(session, tmp_path / "in")
+    review_id = edit(session, source_id, REVIEWER, judge(COORDINATE_KEY, "reject"))
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    revision = exported_revision(tmp_path / "out")
+    assert COORDINATE_KEY not in [a["key"] for a in revision["analyses"]]
+    assert verdict_of(revision, COORDINATE_KEY) == {
+        "key": COORDINATE_KEY, "verdict": "omit", "reason": "reviewer reject (not_in_text)",
+    }
+
+
+@pytest.mark.parametrize(
+    "note, reason", [(None, "reviewer accept"), ("peaks checked", "peaks checked")]
+)
+def test_an_analysis_accepted_with_a_verdict_exports_as_accepted_beside_other_edits(
+    session, reviewers, tmp_path, note, reason
+):
+    _, source_id = load(session, tmp_path / "in")
+    review_id = edit(
+        session, source_id, REVIEWER, judge(COORDINATE_KEY, "accept", note), add_houses()
+    )
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    assert verdict_of(exported_revision(tmp_path / "out"), COORDINATE_KEY) == {
+        "key": COORDINATE_KEY, "verdict": "accept", "reason": reason,
+    }
+
+
+def test_an_analysis_only_accepted_with_a_verdict_exports_a_revision_saying_so(
+    session, reviewers, tmp_path
+):
+    _, source_id = load(session, tmp_path / "in")
+    review_id = edit(session, source_id, REVIEWER, judge(COORDINATE_KEY, "accept"))
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    assert verdict_of(exported_revision(tmp_path / "out"), COORDINATE_KEY)["reason"] == (
+        "reviewer accept"
+    )
+
+
+def test_an_analysis_judged_then_edited_exports_the_edits_reason(session, reviewers, tmp_path):
+    _, source_id = load(session, tmp_path / "in")
+    analysis = documents("s1")[1]["analyses"][0]
+    assert analysis["role"] != "anchor"
+    review_id = edit(
+        session, source_id, REVIEWER,
+        judge(COORDINATE_KEY, "reject"),
+        coordinate(COORDINATE_KEY, "relabel", role="anchor", note="a seed"),
+    )
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    assert verdict_of(exported_revision(tmp_path / "out"), COORDINATE_KEY) == {
+        "key": COORDINATE_KEY, "verdict": "relabel", "role": "anchor", "reason": "a seed",
+    }
 
 
 def test_split_and_added_analyses_export_as_the_derived_revision_beside_untouched_sources(
@@ -438,7 +593,7 @@ def test_each_reviewer_tree_holds_its_record_its_wrapper_its_revision_and_its_op
         (tmp_path / "out" / REVIEWER / f"run/revisions/{PAPER_ID}.coordinate_parse.json")
         .read_text()
     )
-    assert revision == reviews[REVIEWER]["coordinate_revision"]
+    assert verdict_of(revision, COORDINATE_KEY)["verdict"] == "omit"
     assert not (tmp_path / "out" / OTHER / "run" / "revisions").exists()
 
 
@@ -461,6 +616,7 @@ def test_an_unreviewed_source_exports_a_wrapper_naming_the_source(
             "run_id": None,
         },
         "derived_from": {"source_id": source_id, "record_sha256": source.record_sha256},
+        "reviewed": False,
         "edited": False,
         "last_edit_at": None,
         "producer": {"name": "neurostore-review", "version": 1},
@@ -930,3 +1086,54 @@ def test_the_export_issues_the_same_statements_for_one_source_as_for_four(
 
     assert len(manifest) == 8
     assert len(four_sources) == len(one_source)
+
+
+def _claims_of(base_study_id, key):
+    entity = StudyEntity.query.filter_by(
+        entity_hash=study_entity_hash(base_study_id, "Analysis", key)
+    ).one()
+    return FieldClaim.query.filter_by(entity_id=entity.id).all()
+
+
+def test_an_export_ingested_again_carries_claims_orphans_the_rejected_and_keeps_the_note(
+    session, reviewers, tmp_path
+):
+    layouts = pytest.importorskip("study_schema.layouts", reason="needs study_schema[layouts]")
+    paper, parse, record = three_analyses()
+    _, source_id = load(session, tmp_path / "in", writer=write_three)
+    base_study_id = ingest_upload(
+        {"coordinate_parse": parse, "record": record, "parsed_paper": paper}
+    )["base_study_id"]
+    session.commit()
+    a, b, c = (analysis["key"] for analysis in parse["analyses"])
+    accept_c = {"client_op_id": f"accept-{c}", "type": "verdict", "note": "checked",
+                "target": {"kind": "coordinate_analysis", "analysis_key": c},
+                "verdict": "accept"}
+    review_id = edit(
+        session, source_id, REVIEWER,
+        coordinate(a, "edit_points", payload={"points": [fx.point((10, 20, 32))]}),
+        judge(b, "reject"),
+        accept_c,
+    )
+    exports.export_review(session, review_id, tmp_path / "out")
+    revision = json.loads(
+        (tmp_path / "out" / f"run/revisions/{PAPER_ID}.coordinate_parse.json").read_text("utf-8")
+    )
+
+    summary = ingest_upload({"coordinate_parse": revision})
+    session.commit()
+
+    assert summary["kind"] == "revision"
+    verdicts = {v["key"]: v for v in revision["verdicts"]}
+    [edited] = verdicts[a]["replaced_by"]
+    assert verdicts[a]["verdict"] == "edit"
+    original_claims = {claim.id for claim in _claims_of(base_study_id, a)}
+    assert original_claims
+    assert {claim.carried_from for claim in _claims_of(base_study_id, edited)} == original_claims
+    assert [
+        (orphan["key"], orphan["reason"]) for orphan in summary["skeleton"]["orphaned_claims"]
+    ] == [(b, "not_carried")]
+    assert (verdicts[c]["verdict"], verdicts[c]["reason"]) == ("accept", "checked")
+    assert layouts.check_revision(
+        CoordinateParse.model_validate(parse), CoordinateParse.model_validate(revision)
+    ) == []

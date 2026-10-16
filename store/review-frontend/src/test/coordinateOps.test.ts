@@ -6,9 +6,7 @@ const POINT = { coordinates: [1, 2, 3], values: [{ kind: 't', value: 4 }] };
 
 describe('the D55 coordinate op fixture', () => {
     it.each([
-        ['accept', op({ action: 'accept' })],
         ['relabel', op({ action: 'relabel', role: 'anchor' })],
-        ['omit', op({ action: 'omit', note: 'not coordinates' })],
         ['edit_points', op({ action: 'edit_points', payload: { points: [POINT] } })],
         ['split', op({ action: 'split', payload: { parts: [{ indices: [1] }, { indices: [0, 2], name: 'B' }] } })],
         ['merge', op({ action: 'merge', payload: { with: ['analysis#00000000000000b2'] } })],
@@ -25,6 +23,8 @@ describe('the D55 coordinate op fixture', () => {
     });
 
     it.each([
+        ['an accept, which is a verdict op', op({ action: 'accept' })],
+        ['an omit, which is a reject verdict', op({ action: 'omit', note: 'not coordinates' })],
         ['relabel without a role', op({ action: 'relabel' })],
         ['a point with two coordinates', op({ action: 'edit_points', payload: { points: [{ coordinates: [1, 2] }] } })],
         ['a split into one part', op({ action: 'split', payload: { parts: [{ indices: [0] }] } })],

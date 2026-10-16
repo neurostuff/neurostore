@@ -26,7 +26,7 @@ Claims (field_claims) hang off StudyEntity rows identified by ``entity_hash``
 (``study_entity_hash``); for an analysis or coordinate set the hash covers its content key,
 once a stored parse holds that key. An analysis a new version extracts unchanged keeps its
 key and its claims untouched; one it drops keeps its claims on its history analysis
-(``orphaned_claims``). A revision's split and merge verdicts copy the claims, evidence and
+(``orphaned_claims``). A revision's replacing verdicts copy the claims, evidence and
 runs on the old entity to each replacement, each copy naming its origin in ``carried_from``.
 Record keys that are positional rather than content keys, or that no stored parse holds,
 are set aside (the record summary's ``parked`` and ``claims.parked_entities``), never made
@@ -123,6 +123,9 @@ OUTCOME_WITHHELD_REASON = (
 
 # Analysis fields the skeleton keeps as columns or points rather than in metadata.
 _ANALYSIS_COLUMNS = {"key", "name", "description", "points", "role", "from_prior_study"}
+
+# The verdicts that name, in replaced_by, the keys an analysis became.
+REPLACING = ("split", "merge", "edit")
 
 SUPERSEDED_REASON = (
     "the record read an older parse; a revision since replaced this key, and its claims "
@@ -357,7 +360,7 @@ def _check_verdicts(revision, revised):
                     code="VERDICT_KEY_NOT_IN_REVISION",
                 )
             )
-        if verdict["verdict"] in ("split", "merge") and not replaced_by:
+        if verdict["verdict"] in REPLACING and not replaced_by:
             errors.append(
                 make_field_error(
                     f"coordinate_parse/verdicts/{index}/replaced_by", None, code="MISSING"
@@ -977,7 +980,7 @@ def _relabels_dropped(superseded, revision_of):
 def _orphaned_claims(base_study, superseded, parse):
     """The entities with claims that a superseded analysis keeps, each with its reason.
 
-    An entity the revision's verdict split or merged is left out: its claims are copied
+    An entity a replacing verdict of the revision replaced is left out: its claims are copied
     on to the replacements.
     """
     verdicts = {v["key"]: v["verdict"] for v in parse.get("verdicts") or []}
@@ -985,7 +988,7 @@ def _orphaned_claims(base_study, superseded, parse):
     orphaned = []
     for analysis in superseded:
         key = analysis.source_id
-        if verdicts.get(key) in ("split", "merge"):
+        if verdicts.get(key) in REPLACING:
             continue
         for entity_class in CONTENT_KEYED_CLASSES:
             entity = _stored_entity(base_study, entity_class, analysis)
@@ -1090,11 +1093,11 @@ def _entity(base_study, entity_class, key, config=None):
 
 
 def _carry_claims(base_study, study, revision):
-    """Copy what is stored against each split or merged key to its replacements."""
+    """Copy what is stored against each key a replacing verdict replaced to its replacements."""
     current = {a.source_id: a for a in study.analyses}
     carried = {"claims": 0}
     for verdict in revision.get("verdicts") or []:
-        if verdict["verdict"] not in ("split", "merge"):
+        if verdict["verdict"] not in REPLACING:
             continue
         hashes = [
             h
@@ -1233,7 +1236,7 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
             [make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
         )
 
-    # A record that read an older parse: its keys the revisions since split or merged
+    # A record that read an older parse: its keys the revisions since replacing verdicts
     # resolve to history, and its claims are carried on to their replacements.
     revisions = _revisions_since(base_study, parse["parse_id"], study)
     analyses = {"resolved": 0, "unresolved": [], "parked": [], "superseded": []}
@@ -1369,13 +1372,13 @@ def _revisions_since(base_study, parse_id, study):
 
 
 def _replaced_by(revisions, key):
-    """The keys ``key`` became through the split and merge verdicts of ``revisions``."""
+    """The keys ``key`` became through the replacing verdicts of ``revisions``."""
     keys = [key]
     for revision in revisions:
         mapped = {
             v["key"]: v["replaced_by"]
             for v in revision.get("verdicts") or []
-            if v["verdict"] in ("split", "merge")
+            if v["verdict"] in REPLACING
         }
         keys = [new for k in keys for new in mapped.get(k, [k])]
     return sorted(set(keys)) if keys != [key] else []

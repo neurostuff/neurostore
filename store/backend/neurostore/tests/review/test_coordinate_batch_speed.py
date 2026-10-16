@@ -10,7 +10,7 @@ from neurostore.review.ops import OpError, ReviewState, apply_batch
 from neurostore.study_schema_tools import expected_key
 from neurostore.tests.review import golden
 
-ANALYSES, POINTS, ACCEPTS = 40, 220, 100
+ANALYSES, POINTS, RELABELS = 40, 220, 100
 LARGE = (120, 1980)
 AT = "2026-10-15T12:00:00Z"
 BOUND_SECONDS = 2.0
@@ -77,9 +77,10 @@ def _quote(value, text, quotes):
         _quote(item, text, quotes)
 
 
-def _accept(key, n):
-    return {"client_op_id": f"accept-{n:04d}", "type": "coordinate",
-            "target": {"kind": "coordinate_analysis", "analysis_key": key}, "action": "accept"}
+def _relabel(key, n):
+    return {"client_op_id": f"relabel-{n:04d}", "type": "coordinate",
+            "target": {"kind": "coordinate_analysis", "analysis_key": key}, "action": "relabel",
+            "role": "result"}
 
 
 def _set_name(local_id, n, value="renamed"):
@@ -96,10 +97,10 @@ def _set_n(local_id, n, value):
 
 def _reviewed(analyses, points):
     """The text and a state of a paper of that size with a record of the largest Astra
-    paper's density, its revision accepting the first analysis."""
+    paper's density, its revision relabelling the first analysis."""
     text, parse, record = _paper(analyses, points, QUOTES)
     state = ReviewState(record=record, coordinate_parse=parse)
-    state, _ = apply_batch(state, {"ops": [_accept(parse["analyses"][0]["key"], 0)]},
+    state, _ = apply_batch(state, {"ops": [_relabel(parse["analyses"][0]["key"], 0)]},
                            text=text, user_id="u1", at=AT)
     return text, state
 
@@ -118,20 +119,20 @@ def _fastest(state, ops, text):
     return min(times), outcome
 
 
-def test_a_hundred_accepts_on_a_paper_of_the_golden_size_apply_within_two_seconds():
+def test_a_hundred_relabels_on_a_paper_of_the_golden_size_apply_within_two_seconds():
     text, parse, record = _paper()
     assert len(parse["analyses"]) == ANALYSES
     assert sum(len(a["points"]) for a in parse["analyses"]) == POINTS
     keys = [analysis["key"] for analysis in parse["analyses"]]
-    batch = {"ops": [_accept(keys[n % len(keys)], n) for n in range(ACCEPTS)]}
+    batch = {"ops": [_relabel(keys[n % len(keys)], n) for n in range(RELABELS)]}
     state = ReviewState(record=record, coordinate_parse=parse)
 
     started = time.perf_counter()
     _, stored = apply_batch(state, batch, text=text, user_id="u1", at=AT)
     elapsed = time.perf_counter() - started
 
-    assert len(stored) == ACCEPTS
-    assert elapsed < BOUND_SECONDS, f"{ACCEPTS} accepts took {elapsed:.2f}s"
+    assert len(stored) == RELABELS
+    assert elapsed < BOUND_SECONDS, f"{RELABELS} relabels took {elapsed:.2f}s"
 
 
 def test_the_quoted_record_of_the_golden_size_is_the_largest_astra_papers_size():
@@ -144,7 +145,7 @@ def test_the_quoted_record_of_the_golden_size_is_the_largest_astra_papers_size()
 def test_one_op_on_a_large_paper_applies_within_its_bound(size, bound, kind):
     text, state = _reviewed(*size)
     second = state.coordinate_parse["analyses"][1]["key"]
-    op = _set_name("bench_an_1", 1) if kind == "set_value" else _accept(second, 1)
+    op = _set_name("bench_an_1", 1) if kind == "set_value" else _relabel(second, 1)
 
     elapsed, (_, stored) = _fastest(state, [op], text)
 
@@ -156,16 +157,16 @@ def test_a_refused_hundred_op_batch_whose_last_op_is_invalid_is_refused_within_t
     text, state = _reviewed(ANALYSES, POINTS)
     keys = [analysis["key"] for analysis in state.coordinate_parse["analyses"]]
     ops = [
-        _accept(keys[n % len(keys)], n) if n % 2 else _set_name(f"bench_an_{n % ANALYSES}", n)
-        for n in range(ACCEPTS - 1)
+        _relabel(keys[n % len(keys)], n) if n % 2 else _set_name(f"bench_an_{n % ANALYSES}", n)
+        for n in range(RELABELS - 1)
     ]
-    ops.append(_set_n("bench_an_0", ACCEPTS, "many"))
+    ops.append(_set_n("bench_an_0", RELABELS, "many"))
 
     elapsed, refusal = _fastest(state, ops, text)
 
     assert isinstance(refusal, OpError)
-    assert str(refusal) == f"op {ACCEPTS - 1} leaves an invalid document"
+    assert str(refusal) == f"op {RELABELS - 1} leaves an invalid document"
     assert refusal.problems[0].startswith(
-        f"op {ACCEPTS - 1}: extraction-record /analyses/1/groups/0/n/value"
+        f"op {RELABELS - 1}: extraction-record /analyses/1/groups/0/n/value"
     )
     assert elapsed < BOUND_SECONDS, f"the refused batch took {elapsed:.2f}s"

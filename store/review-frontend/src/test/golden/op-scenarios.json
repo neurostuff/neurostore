@@ -6882,7 +6882,7 @@
     ]
   },
   {
-    "name": "coordinate accept",
+    "name": "verdict accept of a coordinate analysis",
     "steps": [
       {
         "request": {
@@ -6912,12 +6912,12 @@
             "ops": [
               {
                 "client_op_id": "scenario-coordinate-a",
-                "type": "coordinate",
+                "type": "verdict",
                 "target": {
                   "kind": "coordinate_analysis",
                   "analysis_key": "analysis#12d544dad3a9b2df"
                 },
-                "action": "accept"
+                "verdict": "accept"
               }
             ]
           }
@@ -6930,26 +6930,18 @@
                 "seq": 1,
                 "op": {
                   "client_op_id": "scenario-coordinate-a",
-                  "type": "coordinate",
+                  "type": "verdict",
                   "target": {
                     "kind": "coordinate_analysis",
                     "analysis_key": "analysis#12d544dad3a9b2df"
                   },
-                  "action": "accept"
+                  "verdict": "accept"
                 },
-                "before": {
-                  "analyses": [],
-                  "reasons": {
-                    "analysis#12d544dad3a9b2df": null
-                  },
-                  "entities": []
-                },
+                "before": null,
                 "after": {
-                  "analyses": [],
-                  "reasons": {
-                    "analysis#12d544dad3a9b2df": "reviewer accept"
-                  },
-                  "entities": []
+                  "state": "verified",
+                  "user_id": "user1-id",
+                  "at": "<iso>"
                 },
                 "user_id": "user1-id",
                 "created_at": "<iso>"
@@ -7345,160 +7337,7 @@
                 "extractor_version": "1.0.0"
               }
             },
-            "coordinate_revision": {
-              "header": {
-                "producer": {
-                  "name": "neurostore-review",
-                  "version": "1"
-                },
-                "article_id": "art-12345678",
-                "identifiers": {
-                  "pmid": "12345678"
-                },
-                "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
-                "inputs": [
-                  {
-                    "artifact_kind": "parsed_paper",
-                    "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000"
-                  },
-                  {
-                    "artifact_kind": "coordinate_parse",
-                    "fingerprint": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8"
-                  }
-                ]
-              },
-              "analyses": [
-                {
-                  "key": "analysis#12d544dad3a9b2df",
-                  "name": "patients > controls",
-                  "role": "result",
-                  "cells": [
-                    {
-                      "row": 1,
-                      "column_group": 0
-                    }
-                  ],
-                  "origin": "table",
-                  "points": [
-                    {
-                      "space": null,
-                      "values": [
-                        {
-                          "kind": "t",
-                          "value": 3.5
-                        }
-                      ],
-                      "coordinates": [
-                        10,
-                        20,
-                        30
-                      ]
-                    }
-                  ],
-                  "table_id": "t1",
-                  "coordinate_space": "MNI"
-                },
-                {
-                  "key": "analysis#e0bab4775f2f5228",
-                  "name": "controls > patients",
-                  "role": "result",
-                  "cells": [
-                    {
-                      "row": 2,
-                      "column_group": 0
-                    },
-                    {
-                      "row": 3,
-                      "column_group": 0
-                    }
-                  ],
-                  "origin": "table",
-                  "points": [
-                    {
-                      "space": null,
-                      "values": [
-                        {
-                          "kind": "t",
-                          "value": -3.5
-                        }
-                      ],
-                      "coordinates": [
-                        -4,
-                        2,
-                        8
-                      ]
-                    },
-                    {
-                      "space": null,
-                      "values": [
-                        {
-                          "kind": "t",
-                          "value": -4.1
-                        }
-                      ],
-                      "coordinates": [
-                        6,
-                        -8,
-                        4
-                      ]
-                    }
-                  ],
-                  "table_id": "t1",
-                  "coordinate_space": "MNI"
-                },
-                {
-                  "key": "analysis#25dc160a851819c3",
-                  "name": "seed",
-                  "role": "anchor",
-                  "cells": [
-                    {
-                      "row": 1,
-                      "column_group": 0
-                    }
-                  ],
-                  "origin": "table",
-                  "points": [
-                    {
-                      "space": null,
-                      "values": [
-                        {
-                          "kind": "t",
-                          "value": 3.5
-                        }
-                      ],
-                      "coordinates": [
-                        0,
-                        0,
-                        0
-                      ]
-                    }
-                  ],
-                  "table_id": "t2",
-                  "coordinate_space": "MNI"
-                }
-              ],
-              "parse_id": "9fe19b5eca6f5010c377dd194535f7784008ecd6872106847cb6b4a65675566d",
-              "text_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-              "revision_of": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8",
-              "verdicts": [
-                {
-                  "key": "analysis#12d544dad3a9b2df",
-                  "verdict": "accept",
-                  "reason": "reviewer accept"
-                },
-                {
-                  "key": "analysis#e0bab4775f2f5228",
-                  "verdict": "accept",
-                  "reason": "not judged by the reviewer"
-                },
-                {
-                  "key": "analysis#25dc160a851819c3",
-                  "verdict": "accept",
-                  "reason": "not judged by the reviewer"
-                }
-              ]
-            },
+            "coordinate_revision": null,
             "provenance": {
               "coordinate_analysis:analysis#12d544dad3a9b2df": {
                 "state": "verified",
@@ -7636,6 +7475,72 @@
                 "list_path": "design.timepoints"
               }
             ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "coordinate accept refused, the verdict op judges",
+    "steps": [
+      {
+        "request": {
+          "method": "PUT",
+          "path": "/api/review/sources/<source_id>/review",
+          "body": null
+        },
+        "response": {
+          "status": 201,
+          "body": {
+            "id": "<review_id>",
+            "source_id": "<source_id>",
+            "user_id": "user1-id",
+            "state": "in_progress",
+            "last_seq": 0,
+            "created_at": "<iso>",
+            "updated_at": null
+          }
+        }
+      },
+      {
+        "request": {
+          "method": "POST",
+          "path": "/api/review/reviews/<review_id>/ops",
+          "body": {
+            "expected_last_seq": 0,
+            "ops": [
+              {
+                "client_op_id": "scenario-refused-coordinate-accept",
+                "type": "coordinate",
+                "target": {
+                  "kind": "coordinate_analysis",
+                  "analysis_key": "analysis#12d544dad3a9b2df"
+                },
+                "action": "accept"
+              }
+            ]
+          }
+        },
+        "response": {
+          "status": 422,
+          "body": {
+            "status": 422,
+            "title": "Unprocessable Entity",
+            "detail": "the batch does not validate against review-ops",
+            "type": "about:blank",
+            "errors": [
+              {
+                "field": "ops/0",
+                "code": "REJECTED",
+                "message": "accept and reject a coordinate analysis with a verdict op",
+                "context": {
+                  "op_index": 0,
+                  "client_op_id": "scenario-refused-coordinate-accept"
+                }
+              }
+            ],
+            "timestamp": "<iso>",
+            "request_id": "<request_id>"
           }
         }
       }
@@ -12253,13 +12158,13 @@
                   "coordinate_space": "MNI"
                 }
               ],
-              "parse_id": "d9baa6064a21939b555adc333a496d413a55471ced8c0a67e58369f68cee5d8f",
+              "parse_id": "02245d72dffe4702900139af1f1a9bdfe9ef892be1c86f817eb0d215ba27a672",
               "text_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
               "revision_of": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8",
               "verdicts": [
                 {
                   "key": "analysis#12d544dad3a9b2df",
-                  "verdict": "split",
+                  "verdict": "edit",
                   "reason": "reviewer edit_points",
                   "replaced_by": [
                     "analysis#e96e3e956bec488c"
@@ -12267,7 +12172,7 @@
                 },
                 {
                   "key": "analysis#e0bab4775f2f5228",
-                  "verdict": "split",
+                  "verdict": "edit",
                   "reason": "reviewer edit_points",
                   "replaced_by": [
                     "analysis#77745f9962a07fc0"
@@ -13582,7 +13487,7 @@
     ]
   },
   {
-    "name": "coordinate merge, then an omit of the merged analysis",
+    "name": "coordinate merge, then a reject of the merged analysis",
     "steps": [
       {
         "request": {
@@ -14725,13 +14630,14 @@
             "expected_last_seq": 1,
             "ops": [
               {
-                "client_op_id": "scenario-omit-merged",
-                "type": "coordinate",
+                "client_op_id": "scenario-reject-merged",
+                "type": "verdict",
                 "target": {
                   "kind": "coordinate_analysis",
                   "analysis_key": "analysis#e9e118b519660a70"
                 },
-                "action": "omit",
+                "verdict": "reject",
+                "reason": "other",
                 "note": "not a contrast of this study"
               }
             ]
@@ -14744,104 +14650,25 @@
               {
                 "seq": 2,
                 "op": {
-                  "client_op_id": "scenario-omit-merged",
-                  "type": "coordinate",
+                  "client_op_id": "scenario-reject-merged",
+                  "type": "verdict",
                   "target": {
                     "kind": "coordinate_analysis",
                     "analysis_key": "analysis#e9e118b519660a70"
                   },
-                  "action": "omit",
+                  "verdict": "reject",
+                  "reason": "other",
                   "note": "not a contrast of this study"
                 },
                 "before": {
-                  "analyses": [
-                    {
-                      "index": 0,
-                      "analysis": {
-                        "key": "analysis#e9e118b519660a70",
-                        "name": "patients > controls",
-                        "role": "result",
-                        "cells": [
-                          {
-                            "row": 1,
-                            "column_group": 0
-                          },
-                          {
-                            "row": 2,
-                            "column_group": 0
-                          },
-                          {
-                            "row": 3,
-                            "column_group": 0
-                          }
-                        ],
-                        "origin": "table",
-                        "points": [
-                          {
-                            "space": null,
-                            "values": [
-                              {
-                                "kind": "t",
-                                "value": 3.5
-                              }
-                            ],
-                            "coordinates": [
-                              10,
-                              20,
-                              30
-                            ]
-                          },
-                          {
-                            "space": null,
-                            "values": [
-                              {
-                                "kind": "t",
-                                "value": -3.5
-                              }
-                            ],
-                            "coordinates": [
-                              -4,
-                              2,
-                              8
-                            ]
-                          },
-                          {
-                            "space": null,
-                            "values": [
-                              {
-                                "kind": "t",
-                                "value": -4.1
-                              }
-                            ],
-                            "coordinates": [
-                              6,
-                              -8,
-                              4
-                            ]
-                          }
-                        ],
-                        "table_id": "t1",
-                        "derived_from": [
-                          "analysis#12d544dad3a9b2df",
-                          "analysis#e0bab4775f2f5228"
-                        ],
-                        "coordinate_space": "MNI"
-                      }
-                    }
-                  ],
-                  "reasons": {
-                    "analysis#12d544dad3a9b2df": "reviewer merge",
-                    "analysis#e0bab4775f2f5228": "reviewer merge"
-                  },
-                  "entities": []
+                  "at": "<iso>",
+                  "state": "added",
+                  "user_id": "user1-id"
                 },
                 "after": {
-                  "analyses": [],
-                  "reasons": {
-                    "analysis#12d544dad3a9b2df": "not a contrast of this study",
-                    "analysis#e0bab4775f2f5228": "not a contrast of this study"
-                  },
-                  "entities": []
+                  "state": "removed",
+                  "user_id": "user1-id",
+                  "at": "<iso>"
                 },
                 "user_id": "user1-id",
                 "created_at": "<iso>"
@@ -15193,6 +15020,16 @@
             },
             "coordinate_revision": {
               "header": {
+                "inputs": [
+                  {
+                    "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+                    "artifact_kind": "parsed_paper"
+                  },
+                  {
+                    "fingerprint": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8",
+                    "artifact_kind": "coordinate_parse"
+                  }
+                ],
                 "producer": {
                   "name": "neurostore-review",
                   "version": "1"
@@ -15202,19 +15039,79 @@
                   "pmid": "12345678"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
-                "inputs": [
-                  {
-                    "artifact_kind": "parsed_paper",
-                    "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000"
-                  },
-                  {
-                    "artifact_kind": "coordinate_parse",
-                    "fingerprint": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8"
-                  }
-                ]
+                "schema_version": "0.6.0"
               },
               "analyses": [
+                {
+                  "key": "analysis#e9e118b519660a70",
+                  "name": "patients > controls",
+                  "role": "result",
+                  "cells": [
+                    {
+                      "row": 1,
+                      "column_group": 0
+                    },
+                    {
+                      "row": 2,
+                      "column_group": 0
+                    },
+                    {
+                      "row": 3,
+                      "column_group": 0
+                    }
+                  ],
+                  "origin": "table",
+                  "points": [
+                    {
+                      "space": null,
+                      "values": [
+                        {
+                          "kind": "t",
+                          "value": 3.5
+                        }
+                      ],
+                      "coordinates": [
+                        10,
+                        20,
+                        30
+                      ]
+                    },
+                    {
+                      "space": null,
+                      "values": [
+                        {
+                          "kind": "t",
+                          "value": -3.5
+                        }
+                      ],
+                      "coordinates": [
+                        -4,
+                        2,
+                        8
+                      ]
+                    },
+                    {
+                      "space": null,
+                      "values": [
+                        {
+                          "kind": "t",
+                          "value": -4.1
+                        }
+                      ],
+                      "coordinates": [
+                        6,
+                        -8,
+                        4
+                      ]
+                    }
+                  ],
+                  "table_id": "t1",
+                  "derived_from": [
+                    "analysis#12d544dad3a9b2df",
+                    "analysis#e0bab4775f2f5228"
+                  ],
+                  "coordinate_space": "MNI"
+                },
                 {
                   "key": "analysis#25dc160a851819c3",
                   "name": "seed",
@@ -15246,26 +15143,32 @@
                   "coordinate_space": "MNI"
                 }
               ],
-              "parse_id": "7d5d3f2aee61101d4dca77507c52c9373a2d0d504df67d6b1763fc10dd2b903d",
-              "text_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-              "revision_of": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8",
+              "parse_id": "81c02ef961ce53ff841068adaa7a840fa89ce4d8b071b76001e0fba717baf8ec",
               "verdicts": [
                 {
                   "key": "analysis#12d544dad3a9b2df",
-                  "verdict": "omit",
-                  "reason": "not a contrast of this study"
+                  "reason": "reviewer merge",
+                  "verdict": "merge",
+                  "replaced_by": [
+                    "analysis#e9e118b519660a70"
+                  ]
                 },
                 {
                   "key": "analysis#e0bab4775f2f5228",
-                  "verdict": "omit",
-                  "reason": "not a contrast of this study"
+                  "reason": "reviewer merge",
+                  "verdict": "merge",
+                  "replaced_by": [
+                    "analysis#e9e118b519660a70"
+                  ]
                 },
                 {
                   "key": "analysis#25dc160a851819c3",
-                  "verdict": "accept",
-                  "reason": "not judged by the reviewer"
+                  "reason": "not judged by the reviewer",
+                  "verdict": "accept"
                 }
-              ]
+              ],
+              "revision_of": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8",
+              "text_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
             },
             "provenance": {
               "entity:an_2": {

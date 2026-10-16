@@ -526,6 +526,27 @@ def test_link_and_unlink_a_single_reference():
     assert _validates(after.record)
 
 
+def test_linking_a_single_reference_marks_the_replaced_link_removed():
+    after, _ = apply(
+        state(),
+        op("create_entity", parent="study", list="devices",
+           entity=records.item("Device", "dev_2")),
+        op("link", target=relationship("acq_1", "device", "dev_2")),
+    )
+    assert {k: v for k, v in _states(after).items() if k.startswith("relationship:")} == {
+        "relationship:acq_1:device:dev_1": "removed",
+        "relationship:acq_1:device:dev_2": "added",
+    }
+    assert _states(after)["slot:acq_1:device"] == "edited"
+
+
+def test_linking_an_unset_single_reference_marks_only_the_new_link():
+    after, _ = apply(state(), op("link", target=relationship("grp_a", "arm", "arm_1")))
+    assert {k: v for k, v in _states(after).items() if k.startswith("relationship:")} == {
+        "relationship:grp_a:arm:arm_1": "added",
+    }
+
+
 def test_link_at_an_index_inserts_into_the_list():
     after, _ = apply(
         state(),
@@ -662,7 +683,7 @@ def test_stored_ops_and_provenance_record_the_user_who_applied_them():
 def test_a_batch_leaving_an_invalid_coordinate_revision_is_rejected():
     parse = {**_parse(), "tables": "not a list"}
     review = ReviewState(record=records.build(), coordinate_parse=parse)
-    errors = errors_of(review, coordinate(review, 0, "accept"))
+    errors = errors_of(review, coordinate(review, 0, "relabel", role="other"))
     assert errors == [
         "op 0: coordinate-parse /tables: 'not a list' is not of type 'array', 'null'"
     ]
@@ -714,24 +735,25 @@ def _parse_errors(document):
     return schema_errors("coordinate-parse", document)
 
 
-def test_coordinate_ops_write_a_revision_with_a_verdict_per_original_analysis():
+def test_coordinate_ops_write_a_revision_that_keeps_a_rejected_original_accept_until_export():
     review = ReviewState(record=records.build(), coordinate_parse=_parse())
     original = copy.deepcopy(review.coordinate_parse)
     keys = [a["key"] for a in original["analyses"]]
     after, stored = apply(
         review,
         coordinate(review, 1, "relabel", role="localization"),
-        coordinate(review, 2, "omit", note="a seed, not a result"),
+        op("verdict", target={"kind": "coordinate_analysis", "analysis_key": keys[2]},
+           verdict="reject", reason="not_in_text"),
     )
     revision = after.coordinate_revision
     assert after.coordinate_parse == original
     assert revision["revision_of"] == original["parse_id"]
     assert revision["parse_id"] != original["parse_id"]
     assert [(v["key"], v["verdict"], v.get("role")) for v in revision["verdicts"]] == [
-        (keys[0], "accept", None), (keys[1], "relabel", "localization"), (keys[2], "omit", None),
+        (keys[0], "accept", None), (keys[1], "relabel", "localization"), (keys[2], "accept", None),
     ]
     assert [(a["key"], a["role"]) for a in revision["analyses"]] == [
-        (keys[0], "result"), (keys[1], "localization"),
+        (keys[0], "result"), (keys[1], "localization"), (keys[2], "anchor"),
     ]
     assert _parse_errors(revision) == []
     assert stored[0]["before"] == {
@@ -751,7 +773,9 @@ def test_coordinate_ops_write_a_revision_with_a_verdict_per_original_analysis():
 
 def test_a_coordinate_op_note_becomes_the_verdict_reason():
     review = ReviewState(record=records.build(), coordinate_parse=_parse())
-    after, stored = apply(review, coordinate(review, 2, "omit", note="a seed, not a result"))
+    after, stored = apply(
+        review, coordinate(review, 2, "relabel", role="other", note="a seed, not a result")
+    )
     key = review.coordinate_parse["analyses"][2]["key"]
     assert stored[0]["after"]["reasons"] == {key: "a seed, not a result"}
     assert after.coordinate_revision["verdicts"][2]["reason"] == "a seed, not a result"
@@ -760,16 +784,16 @@ def test_a_coordinate_op_note_becomes_the_verdict_reason():
 def test_a_later_coordinate_op_updates_the_revision():
     review = ReviewState(record=records.build(), coordinate_parse=_parse())
     keys = [a["key"] for a in review.coordinate_parse["analyses"]]
-    after, _ = apply(review, coordinate(review, 2, "omit"))
-    after, stored = apply(after, coordinate(review, 2, "accept"), coordinate(review, 0, "omit"))
+    after, _ = apply(review, coordinate(review, 2, "relabel", role="other", note="first"))
+    after, stored = apply(after, coordinate(review, 2, "relabel", role="anchor"),
+                          coordinate(review, 0, "relabel", role="other"))
     assert [v["verdict"] for v in after.coordinate_revision["verdicts"]] == [
-        "omit", "accept", "accept",
+        "relabel", "accept", "accept",
     ]
-    assert [a["key"] for a in after.coordinate_revision["analyses"]] == keys[1:]
-    assert stored[0]["before"] == {
-        "analyses": [], "reasons": {keys[2]: "reviewer omit"}, "entities": [],
-    }
-    assert _states(after)[f"coordinate_analysis:{keys[2]}"] == "verified"
+    assert [a["key"] for a in after.coordinate_revision["analyses"]] == keys
+    assert stored[0]["before"]["reasons"] == {keys[2]: "first"}
+    assert stored[0]["after"]["reasons"] == {keys[2]: "reviewer relabel"}
+    assert _states(after)[f"coordinate_analysis:{keys[2]}"] == "edited"
     assert _parse_errors(after.coordinate_revision) == []
 
 
@@ -798,7 +822,7 @@ def test_coordinate_op_errors():
     review = ReviewState(record=records.build(), coordinate_parse=_parse())
     unknown = {"kind": "coordinate_analysis", "analysis_key": "analysis#" + "0" * 16}
     assert "has no analysis" in errors_of(
-        review, op("coordinate", target=unknown, action="accept")
+        review, op("coordinate", target=unknown, action="relabel", role="other")
     )[0]
 
 
@@ -912,7 +936,9 @@ def test_one_batch_or_several_give_the_same_review():
         coordinate(review, 1, "relabel", role="reference"),
         op("unlink", target=relationship("an_1", "tasks", "tsk_1")),
         op("verdict", target=entity("asm_1"), verdict="reject", reason="not_in_text"),
-        coordinate(review, 0, "omit"),
+        op("verdict", target={"kind": "coordinate_analysis",
+                              "analysis_key": review.coordinate_parse["analyses"][0]["key"]},
+           verdict="reject", reason="duplicate"),
     ]
     whole, whole_ops = apply(review, *sequence)
     for size in (1, 4):

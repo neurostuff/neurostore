@@ -158,7 +158,7 @@ describe('the coordinates step', () => {
         const buttons = within(toolbar()).getAllByRole('button');
         expect(buttons.map((b) => b.textContent)).toEqual([
             'Accept',
-            'Omit',
+            'Reject',
             'Note',
             'Relabel',
             'Edit point',
@@ -174,22 +174,22 @@ describe('the coordinates step', () => {
 });
 
 describe('coordinate actions, each emitted as the server applies it', () => {
-    it('A accepts the focused analysis, pending until the result lands', () => {
+    it('A accepts the focused analysis with a verdict op, the one way to judge it', () => {
         const { pending } = setup();
         press('a');
         expect(pending()).toEqual([
-            { client_op_id: expect.any(String), type: 'coordinate', target: target(FACES.key), action: 'accept' },
+            { client_op_id: expect.any(String), type: 'verdict', target: target(FACES.key), verdict: 'accept' },
         ]);
         expectValid(pending());
-        expect(within(card(FACES.name)).getByText('saving…')).toBeInTheDocument();
-        press('a');
-        expect(pending()).toHaveLength(1);
+        expect(within(card(FACES.name)).getByText('verified')).toBeInTheDocument();
     });
 
     it('the Accept button does the same', () => {
         const { pending } = setup();
         fireEvent.click(within(toolbar()).getByRole('button', { name: 'Accept' }));
-        expect(pending()).toEqual([expect.objectContaining({ action: 'accept', target: target(FACES.key) })]);
+        expect(pending()).toEqual([
+            expect.objectContaining({ type: 'verdict', verdict: 'accept', target: target(FACES.key) }),
+        ]);
     });
 
     it('R relabels the focused analysis with a role from the schema', () => {
@@ -220,18 +220,28 @@ describe('coordinate actions, each emitted as the server applies it', () => {
         expect(pending()).toEqual([]);
     });
 
-    it('Shift+Backspace omits the focused analysis once confirmed; Omit asks the same', () => {
+    it('Shift+Backspace rejects the focused analysis with a verdict op and a reason; Reject asks the same', () => {
         const { pending } = setup();
         press('Backspace', { shiftKey: true });
-        const dialog = screen.getByRole('dialog', { name: `Omit ${FACES.name}?` });
-        fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+        screen.getByRole('group', { name: `reject ${FACES.name}` });
+        press('Escape');
+        expect(screen.queryByRole('group', { name: `reject ${FACES.name}` })).not.toBeInTheDocument();
         expect(pending()).toEqual([]);
-        fireEvent.click(within(toolbar()).getByRole('button', { name: 'Omit' }));
-        fireEvent.click(
-            within(screen.getByRole('dialog', { name: `Omit ${FACES.name}?` })).getByRole('button', { name: 'Omit' })
-        );
-        expect(pending()).toEqual([expect.objectContaining({ action: 'omit', target: target(FACES.key) })]);
+        fireEvent.click(within(toolbar()).getByRole('button', { name: 'Reject' }));
+        expect(screen.getByRole('group', { name: `reject ${FACES.name}` })).toHaveFocus();
+        press('4');
+        press('Enter');
+        expect(pending()).toEqual([
+            {
+                client_op_id: expect.any(String),
+                type: 'verdict',
+                target: target(FACES.key),
+                verdict: 'reject',
+                reason: 'duplicate',
+            },
+        ]);
         expectValid(pending());
+        expect(within(card(FACES.name)).getByText('rejected')).toBeInTheDocument();
     });
 
     it('; adds a note to the focused analysis', () => {
@@ -555,7 +565,20 @@ describe('after a coordinate result', () => {
 });
 
 describe('while a coordinate op is pending', () => {
-    const accept: Op = { client_op_id: 'c-pending', type: 'coordinate', target: target(FACES.key), action: 'accept' };
+    const accept: Op = {
+        client_op_id: 'c-pending',
+        type: 'coordinate',
+        target: target(FACES.key),
+        action: 'relabel',
+        role: 'anchor',
+    };
+
+    it('no accept is sent, since the focused analysis’s key may change', () => {
+        const { state, pending } = setup();
+        act(() => void state().emitBatch([accept]));
+        press('a');
+        expect(pending()).toEqual([accept]);
+    });
 
     it('no coordinate panel opens', () => {
         const { state } = setup();

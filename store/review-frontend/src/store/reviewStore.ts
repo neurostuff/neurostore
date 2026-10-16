@@ -68,7 +68,6 @@ export type PanelKind =
     | 'delete'
     | 'create'
     | 'relabel'
-    | 'omit'
     | 'edit_point'
     | 'add_point'
     | 'move'

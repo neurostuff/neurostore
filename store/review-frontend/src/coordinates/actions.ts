@@ -1,5 +1,5 @@
 import type { CoordinateOp, CoordinateTarget, Op } from '../contract/generated/review-ops';
-import { danglingLinks } from '../inspector/actions';
+import { acceptTarget, danglingLinks } from '../inspector/actions';
 import {
     currentAnalyses,
     entitiesNaming,
@@ -55,16 +55,17 @@ const editPoints = (analysis: CoordinateAnalysis, points: CoordinatePoint[]): Ne
     payload: { points },
 });
 
-export const acceptAnalysis = (s: Emitting) =>
-    act(s, (analysis) => [{ target: analysisTarget(analysis.key), action: 'accept' }]);
+/** Accepts the focused analysis with a verdict op, the one way to judge it; false when there is none or a coordinate op is pending. */
+export function acceptAnalysis(s: State & Pick<ReviewState, 'emit'>) {
+    const analysis = focusedAnalysis(s);
+    if (!analysis || coordinatePending(s)) return false;
+    return acceptTarget(s, analysisTarget(analysis.key));
+}
 
 export const relabelAnalysis = (s: Emitting, role: NonNullable<CoordinateOp['role']>) =>
     act(s, (analysis) =>
         role === analysis.role ? undefined : [{ target: analysisTarget(analysis.key), action: 'relabel', role }]
     );
-
-export const omitAnalysis = (s: Emitting) =>
-    act(s, (analysis) => [{ target: analysisTarget(analysis.key), action: 'omit' }]);
 
 /** Saves `point` as the point at `index` of the focused analysis, or as a new last point when `index` is null. */
 export const savePoint = (s: Emitting, index: number | null, point: CoordinatePoint) =>
@@ -183,7 +184,7 @@ export function addAnalysis(
 
 const COORDINATE_ACTIONS = new Set<PanelKind>([
     'relabel',
-    'omit',
+    'reject',
     'edit_point',
     'add_point',
     'move',
@@ -205,7 +206,7 @@ export function coordinatePanelFor(
     switch (kind) {
         case 'note':
         case 'relabel':
-        case 'omit':
+        case 'reject':
         case 'add_point':
             return { kind, target };
         case 'edit_point':

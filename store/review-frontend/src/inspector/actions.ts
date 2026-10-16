@@ -71,9 +71,12 @@ export function slotSchema(s: Pick<State, 'bundle' | 'record'>, slot: SlotNode):
     );
 }
 
+export const acceptTarget = (s: Pick<ReviewState, 'emit'>, target: AnyTarget) =>
+    send(s, { type: 'verdict', target, verdict: 'accept' });
+
 export function accept(s: Emitting, key = s.focus.key) {
     const target = targetOf(s, key);
-    return target ? send(s, { type: 'verdict', target, verdict: 'accept' }) : false;
+    return target ? acceptTarget(s, target) : false;
 }
 
 /** Accepts every slot on the focused card that has evidence and no decision yet; the count accepted. */

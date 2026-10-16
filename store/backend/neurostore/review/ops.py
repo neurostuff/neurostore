@@ -14,11 +14,14 @@ from jsonschema.exceptions import best_match
 from neurostore.review import (
     ReviewError, coordinates, entities, lists, paths, record_follow, references, validation,
 )
+from neurostore.review.targets import target_key
 from neurostore.study_schema_tools import CHILD_LISTS
 
 OPS_SCHEMA = Path(__file__).parent / "schema" / "review-ops.schema.json"
 #: The fields of an ExtractedValue a set_value op writes, as a group.
 VALUE_FIELDS = ("extraction_status", "value", "value_source", "unreported_reason")
+#: Exists only so the 422 for a coordinate verdict can name the verdict op.
+COORDINATE_JUDGEMENTS_REFUSED = ("accept", "omit", "reject")
 #: Evidence that clears an entity's or a relationship's annotation.
 NO_EVIDENCE = {"status": "not_applicable"}
 #: How apply_batch finds the problems of the documents ops leave: "incremental" validates the
@@ -110,6 +113,9 @@ def _check_batch(batch):
     ]
     for index, item in enumerate(batch.get("ops") or ()):
         kind = item.get("type") if isinstance(item, dict) else None
+        if kind == "coordinate" and item.get("action") in COORDINATE_JUDGEMENTS_REFUSED:
+            failures.append((index, "accept and reject a coordinate analysis with a verdict op"))
+            continue
         error = best_match(_op_validator(_op_definitions().get(kind, "Op")).iter_errors(item))
         if error is not None:
             path = validation.where(error)
@@ -234,6 +240,12 @@ class _Applier:
             self._mark(key, "removed")
         else:
             self._accept(key)
+            if op.get("note") and target["kind"] == "coordinate_analysis" and (
+                self.state.provenance[key]["state"] in ("edited", "added")
+            ):
+                self.state.coordinate_revision = coordinates.annotate(
+                    self.state.coordinate_parse, self.state.coordinate_revision, op
+                )
         return before, copy.deepcopy(self.state.provenance[key])
 
     def apply_coordinate(self, op):
@@ -336,6 +348,8 @@ class _Applier:
             if index is not None:
                 raise ReviewError(f"{row['slot']!r} is not a list; index needs a list slot")
             owner[row["slot"]] = linked.local_id
+            if before is not None:
+                self._mark(target_key({**target, "target_entity": before}), "removed")
         else:
             position = len(ids) if index is None else index
             if position > len(ids):
@@ -483,20 +497,6 @@ class _Applier:
     def _descendants(self, local_id):
         children = [e.local_id for e in self.index.values() if e.parent == local_id]
         return [d for child in children for d in (child, *self._descendants(child))]
-
-
-def target_key(target):
-    """A target as one string (review-bundle.schema.json#/$defs/TargetKey)."""
-    kind = target["kind"]
-    if kind == "slot":
-        return f"slot:{target['entity']}:{target['path']}"
-    if kind == "entity":
-        return f"entity:{target['entity']}"
-    if kind == "relationship":
-        return f"relationship:{target['entity']}:{target['path']}:{target['target_entity']}"
-    if kind == "coordinate_analysis":
-        return f"coordinate_analysis:{target['analysis_key']}"
-    return "paper"
 
 
 def _is_wrapper(value):

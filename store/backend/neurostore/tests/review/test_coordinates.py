@@ -6,10 +6,10 @@ import random
 
 import pytest
 from study_schema import keys
-from study_schema.models.paper_parse import ParsedPoint
+from study_schema.models.paper_parse import CoordinateParse, ParsedPoint
 
 from neurostore.ingest.study_schema import _check_verdicts
-from neurostore.review import ReviewError
+from neurostore.review import ReviewError, coordinates
 from neurostore.review.bundle import hidden
 from neurostore.review.ops import ReviewState, apply_batch, inverse
 from neurostore.study_schema_tools import schema_errors
@@ -60,6 +60,14 @@ def merge(key, *others):
     return coordinate(key, "merge", payload={"with": list(others)})
 
 
+def verdict(key, kind, note=None):
+    op = {"client_op_id": f"coord-{next(_ids):06d}", "type": "verdict",
+          "target": {"kind": "coordinate_analysis", "analysis_key": key}, "verdict": kind}
+    if kind == "reject":
+        op["reason"] = "not_in_text"
+    return {**op, "note": note} if note else op
+
+
 def add(analysis, **fields):
     return {"client_op_id": f"coord-{next(_ids):06d}", "type": "coordinate",
             "target": {"kind": "coordinate_parse"}, "action": "add",
@@ -78,6 +86,13 @@ def refused(review, *ops):
 
 def key_of(name, space, points):
     return keys.analysis_key(name, space, [ParsedPoint.model_validate(p) for p in points])
+
+
+def exported(*ops, review=None):
+    """``(review, revision)``: ``ops`` applied, and the revision export writes after them."""
+    review, _ = apply(review or state(), *ops)
+    revision = coordinates.judged(PARSE, review.coordinate_revision, review.provenance, ops)
+    return review, revision
 
 
 def checked(revision):
@@ -107,17 +122,16 @@ def states(review):
 
 def test_verdicts_follow_the_parse_order_then_the_added_analyses():
     moved = fx.point((10, 20, 32))
-    after, _ = apply(
-        state(),
+    _, revision = exported(
         edit(K0, [moved]),
         add(ADDED),
-        coordinate(K2, "omit", note="a seed, not a result"),
+        verdict(K2, "reject", note="a seed, not a result"),
     )
-    revision = checked(after.coordinate_revision)
+    revision = checked(revision)
     edited = key_of("patients > controls", "MNI", [moved])
     added = key_of("missed contrast", "MNI", ADDED["points"])
     assert verdicts(revision, "reason") == [
-        (K0, "split", [edited], "reviewer edit_points"),
+        (K0, "edit", [edited], "reviewer edit_points"),
         (K1, "accept", None, "not judged by the reviewer"),
         (K2, "omit", None, "a seed, not a result"),
         (added, "add", None, "reviewer add"),
@@ -142,7 +156,7 @@ def test_a_point_edit_may_rename_the_analysis_and_change_its_space():
     key = key_of("patients over controls", "TAL", [P0])
     assert analysis(revision, key)["name"] == "patients over controls"
     assert analysis(revision, key)["coordinate_space"] == "TAL"
-    assert verdicts(revision)[0] == (K0, "split", [key])
+    assert verdicts(revision)[0] == (K0, "edit", [key])
 
 
 def test_a_split_partitions_the_points_into_parts():
@@ -177,8 +191,8 @@ def test_a_split_whose_parts_do_not_partition_the_points_is_refused(parts):
 
 
 def test_a_merge_appends_the_others_points_to_the_targets():
-    after, _ = apply(state(), merge(K0, K1), coordinate(K2, "accept"))
-    revision = checked(after.coordinate_revision)
+    _, revision = exported(merge(K0, K1), verdict(K2, "accept"))
+    revision = checked(revision)
     merged = key_of("patients > controls", "MNI", [P0, P1A, P1B])
     assert [a["key"] for a in revision["analyses"]] == [merged, K2]
     assert revision["analyses"][0]["points"] == [P0, P1A, P1B]
@@ -225,23 +239,23 @@ def test_a_target_names_the_analysis_as_the_revision_holds_it():
     parts = ", ".join(repr(a["key"]) for a in after.coordinate_revision["analyses"][1:3])
     assert (
         f"the coordinate revision has no analysis {K1!r}; it was replaced by {parts}"
-        in refused(after, coordinate(K1, "accept"))
+        in refused(after, coordinate(K1, "relabel", role="other"))
     )
     assert f"the coordinate revision has no analysis {UNKNOWN!r}" in refused(
-        after, coordinate(UNKNOWN, "accept")
+        after, coordinate(UNKNOWN, "relabel", role="other")
     )
 
 
-def test_accept_relabel_and_omit_work_on_split_parts_and_added_analyses():
+def test_verdicts_and_relabels_work_on_split_parts_and_added_analyses():
     after, _ = apply(state(), split(K1, {"indices": [0]}, {"indices": [1]}), add(ADDED))
     _, first, second, _, added = [a["key"] for a in after.coordinate_revision["analyses"]]
-    after, _ = apply(
-        after,
+    ops = (
         coordinate(first, "relabel", role="localization"),
-        coordinate(second, "accept", note="both rows checked"),
+        verdict(second, "accept", note="both rows checked"),
         coordinate(added, "relabel", role="anchor"),
     )
-    revision = checked(after.coordinate_revision)
+    after, revision = exported(*ops, review=after)
+    revision = checked(revision)
     assert [analysis(revision, k)["role"] for k in (first, second, added)] == [
         "localization", "result", "anchor",
     ]
@@ -252,17 +266,16 @@ def test_accept_relabel_and_omit_work_on_split_parts_and_added_analyses():
     assert revision["verdicts"][-1] == {
         "key": added, "verdict": "add", "reason": "reviewer relabel",
     }
-    after, _ = apply(after, coordinate(added, "omit"))
-    assert [v["verdict"] for v in checked(after.coordinate_revision)["verdicts"]] == [
-        "accept", "split", "accept",
-    ]
+    _, revision = exported(verdict(added, "reject"), review=after)
+    assert [v["verdict"] for v in checked(revision)["verdicts"]] == ["accept", "split", "accept"]
 
 
 def test_omitting_every_part_of_a_split_omits_the_original():
     after, _ = apply(state(), split(K1, {"indices": [0]}, {"indices": [1]}))
     first, second = [a["key"] for a in after.coordinate_revision["analyses"][1:3]]
-    after, _ = apply(after, coordinate(first, "omit"), coordinate(second, "omit", note="noise"))
-    revision = checked(after.coordinate_revision)
+    _, revision = exported(verdict(first, "reject"), verdict(second, "reject", note="noise"),
+                           review=after)
+    revision = checked(revision)
     assert revision["verdicts"][1] == {"key": K1, "verdict": "omit", "reason": "noise"}
     assert [a["key"] for a in revision["analyses"]] == [K0, K2]
 
@@ -275,7 +288,7 @@ def test_a_move_is_two_point_edits_each_keeping_its_own_origin():
     assert [(a["key"], a.get("derived_from")) for a in revision["analyses"]] == [
         (destination, [K0]), (source, [K1]), (K2, None),
     ]
-    assert verdicts(revision)[:2] == [(K0, "split", [destination]), (K1, "split", [source])]
+    assert verdicts(revision)[:2] == [(K0, "edit", [destination]), (K1, "edit", [source])]
 
 
 def test_chained_edits_collapse_into_one_revision_of_the_original():
@@ -289,14 +302,38 @@ def test_chained_edits_collapse_into_one_revision_of_the_original():
     assert analysis(revision, edited)["derived_from"] == [K1]
 
 
-def test_an_omitted_original_comes_back_in_its_place_when_accepted():
-    after, _ = apply(state(), coordinate(K1, "omit"))
-    after, _ = apply(after, coordinate(K1, "relabel", role="reference"))
-    revision = checked(after.coordinate_revision)
-    assert [(a["key"], a["role"]) for a in revision["analyses"]] == [
-        (K0, "result"), (K1, "reference"), (K2, "anchor"),
-    ]
-    assert verdicts(revision)[1] == (K1, "relabel", None)
+def test_a_rejected_original_accepted_again_exports_as_accepted():
+    _, revision = exported(verdict(K1, "reject"), verdict(K1, "accept"))
+    revision = checked(revision)
+    assert [a["key"] for a in revision["analyses"]] == [K0, K1, K2]
+    assert verdicts(revision, "reason")[1] == (K1, "accept", None, "reviewer accept")
+
+
+def test_an_accept_note_on_a_relabelled_original_is_its_reason():
+    _, revision = exported(
+        coordinate(K0, "relabel", role="other"), verdict(K0, "accept", note="checked twice")
+    )
+    assert verdicts(checked(revision), "reason")[0] == (K0, "relabel", None, "checked twice")
+
+
+def test_an_accept_note_on_an_edited_key_is_its_reason():
+    review, _ = apply(state(), edit(K0, [fx.point((10, 20, 32))]))
+    new = review.coordinate_revision["analyses"][0]["key"]
+    _, revision = exported(verdict(new, "accept", note="checked edit"), review=review)
+    assert verdicts(checked(revision), "reason")[0] == (K0, "edit", [new], "checked edit")
+
+
+def test_the_last_accept_note_on_a_split_original_is_its_reason():
+    review, _ = apply(state(), split(K1, {"indices": [0]}, {"indices": [1]}))
+    first, second = [a["key"] for a in review.coordinate_revision["analyses"][1:3]]
+    _, revision = exported(
+        verdict(first, "accept", note="row 1 ok"),
+        verdict(second, "accept", note="both rows checked"),
+        review=review,
+    )
+    assert verdicts(checked(revision), "reason")[1] == (
+        K1, "split", [first, second], "both rows checked",
+    )
 
 
 def test_an_op_leaving_two_analyses_with_one_key_is_refused():
@@ -378,11 +415,11 @@ def test_a_merge_repoints_the_target_and_deletes_the_others_entities():
     ]
 
 
-def test_an_omitted_analysis_keeps_its_entity_which_becomes_hidden():
-    review, stored = apply(state(), coordinate(K0, "omit"))
+def test_a_rejected_analysis_keeps_its_entity_which_becomes_hidden():
+    review, _ = apply(state(), verdict(K0, "reject"))
     assert review.record == RECORD
-    assert stored[0]["after"]["entities"] == []
-    assert hidden(review.record, PARSE, review.coordinate_revision)["analyses"] == ["an_1"]
+    assert hidden(review.record, PARSE, review.coordinate_revision,
+                  provenance=review.provenance)["analyses"] == ["an_1"]
 
 
 def test_a_restore_of_an_entity_whose_local_id_is_taken_is_refused():
@@ -400,7 +437,7 @@ def test_a_restore_of_an_entity_whose_local_id_is_taken_is_refused():
 def test_created_analyses_are_added_and_the_ones_they_replace_edited():
     moved = fx.point((10, 20, 32))
     after, _ = apply(state(), split(K1, {"indices": [0]}, {"indices": [1]}), edit(K0, [moved]),
-                     add(ADDED), coordinate(K2, "omit"))
+                     add(ADDED), verdict(K2, "reject"))
     first, second = [a["key"] for a in after.coordinate_revision["analyses"][1:3]]
     edited = key_of("patients > controls", "MNI", [moved])
     added = key_of("missed contrast", "MNI", ADDED["points"])
@@ -443,17 +480,12 @@ def _split_part(review):
 @pytest.mark.parametrize(
     "setup, change",
     [
-        ([], lambda r: coordinate(K0, "accept")),
         ([], lambda r: coordinate(K1, "relabel", role="other", note="checked")),
-        ([], lambda r: coordinate(K2, "omit")),
-        ([coordinate(K2, "omit")], lambda r: coordinate(K2, "accept")),
         ([], lambda r: edit(K1, [{**P1A, "cluster_size": 9}, P1B])),
         ([], lambda r: edit(K0, [P0, fx.point((2, 2, 2))], name="renamed")),
         ([], lambda r: split(K1, {"indices": [1]}, {"indices": [0], "name": "left"})),
         ([], lambda r: merge(K2, K0, K1)),
         ([], lambda r: add(ADDED)),
-        ([split(K1, {"indices": [0]}, {"indices": [1]})],
-         lambda r: coordinate(_split_part(r), "omit")),
         ([split(K1, {"indices": [0]}, {"indices": [1]})],
          lambda r: edit(_split_part(r), [fx.point((5, 5, 5))])),
     ],
@@ -477,7 +509,7 @@ def _random_op(rng, review):
     point = fx.point(tuple(rng.randint(-60, 60) for _ in range(3)), t=rng.choice([2.5, 3.1]))
     choices = ["add"]
     if analyses:
-        choices += ["accept", "relabel", "omit", "edit_points", "edit_points"]
+        choices += ["relabel", "edit_points", "edit_points"]
     if any(len(a.get("points") or ()) > 1 for a in analyses):
         choices += ["split", "split"]
     if len(analyses) > 1:
@@ -502,9 +534,8 @@ def _random_op(rng, review):
         else:
             points.insert(rng.randint(0, len(points)), point)
         return edit(target["key"], points)
-    if action == "relabel":
-        return coordinate(target["key"], "relabel", role=rng.choice(["result", "other", "anchor"]))
-    return coordinate(target["key"], action, note=rng.choice([None, "checked"]))
+    return coordinate(target["key"], "relabel", role=rng.choice(["result", "other", "anchor"]),
+                      note=rng.choice([None, "checked"]))
 
 
 @pytest.mark.parametrize("seed", range(25))
@@ -531,8 +562,49 @@ def test_an_inverse_whose_analyses_changed_since_is_refused():
     assert "has changed since" in refused(review, *inverse(stored[0], "undo-0001"))
 
 
+def _random_judgement(rng, review):
+    """A verdict op on an analysis of ``review``'s revision, with or without a note."""
+    analyses = (review.coordinate_revision or review.coordinate_parse)["analyses"]
+    return verdict(rng.choice(analyses)["key"], rng.choice(["accept", "reject"]),
+                   note=rng.choice([None, "checked"]))
+
+
+@pytest.mark.parametrize("seed", range(25))
+def test_random_coordinate_ops_and_verdicts_export_revisions_that_pass_the_checks(seed):
+    layouts = pytest.importorskip("study_schema.layouts", reason="needs study_schema[layouts]")
+    rng = random.Random(seed)
+    review, ops = state(), []
+    while len(ops) < 16:
+        op = _random_judgement(rng, review) if rng.random() < 0.3 else _random_op(rng, review)
+        try:
+            review, _ = apply(review, op)
+        except ReviewError as error:
+            assert "would hold two analyses with key" in str(error.problems), error.problems
+            continue
+        ops.append(op)
+        revision = coordinates.judged(PARSE, review.coordinate_revision, review.provenance, ops)
+        if revision is not None:
+            checked(revision)
+            assert layouts.check_revision(
+                CoordinateParse.model_validate(PARSE), CoordinateParse.model_validate(revision)
+            ) == []
+
+
+def test_a_split_with_a_part_rejected_then_merged_exports_a_checked_revision():
+    layouts = pytest.importorskip("study_schema.layouts", reason="needs study_schema[layouts]")
+    cut = split(K1, {"indices": [0]}, {"indices": [1]})
+    review, _ = apply(state(), cut)
+    first, second = [a["key"] for a in review.coordinate_revision["analyses"][1:3]]
+    _, revision = exported(cut, verdict(first, "reject", note="noise"), merge(second, K0))
+    revision = checked(revision)
+    assert [v["verdict"] for v in revision["verdicts"]] == ["merge", "merge", "accept"]
+    assert layouts.check_revision(
+        CoordinateParse.model_validate(PARSE), CoordinateParse.model_validate(revision)
+    ) == []
+
+
 def test_a_restore_with_a_key_its_content_does_not_give_is_refused():
-    review, stored = apply(state(), coordinate(K2, "omit"))
+    review, stored = apply(state(), edit(K2, [fx.point((1, 1, 1))]))
     undo = copy.deepcopy(inverse(stored[0], "undo-0001"))
     undo[0]["payload"]["insert"][0]["analysis"]["name"] = "not the seed"
     assert "is not the key its name, space and points give" in refused(review, *undo)
@@ -555,18 +627,17 @@ def test_undoing_a_merge_is_refused_once_its_target_entity_has_changed():
 
 
 def test_a_restore_inserting_a_derived_from_that_is_not_an_original_is_refused():
-    review, stored = apply(state(), coordinate(K2, "omit"))
+    review, stored = apply(state(), edit(K2, [fx.point((1, 1, 1))]))
     undo = copy.deepcopy(inverse(stored[0], "undo-0001"))
     undo[0]["payload"]["insert"][0]["analysis"]["derived_from"] = [UNKNOWN]
     assert f"derived_from names {UNKNOWN!r}, which is not an analysis" in refused(review, *undo)
 
 
-def test_omitting_an_omitted_original_again_only_updates_its_reason():
-    review, _ = apply(state(), coordinate(K2, "omit", note="first"))
-    held = review.coordinate_revision["analyses"]
-    review, _ = apply(review, coordinate(K2, "omit", note="second"))
-    assert review.coordinate_revision["analyses"] == held
-    assert verdicts(review.coordinate_revision, "reason")[2] == (K2, "omit", None, "second")
+def test_rejecting_an_analysis_again_only_updates_its_reason():
+    review, revision = exported(verdict(K2, "reject", note="first"))
+    _, again = exported(verdict(K2, "reject", note="second"), review=review)
+    assert again["analyses"] == revision["analyses"]
+    assert verdicts(again, "reason")[2] == (K2, "omit", None, "second")
 
 
 def test_undoing_a_split_is_refused_once_a_part_changed_under_its_key():
@@ -601,8 +672,8 @@ def test_an_added_analysis_without_a_role_is_refused():
     assert "'role' is a required property" in refused(state(), add(analysis))
 
 
-def test_a_restore_of_an_omitted_original_is_refused_when_the_result_holds_its_key_twice():
-    review, stored = apply(state(), coordinate(K0, "omit"))
+def test_a_restore_of_a_replaced_original_is_refused_when_the_result_holds_its_key_twice():
+    review, stored = apply(state(), edit(K0, [fx.point((1, 1, 1))]))
     original = copy.deepcopy(PARSE["analyses"][0])
     original.pop("key")
     review, _ = apply(review, add(original))
@@ -610,7 +681,7 @@ def test_a_restore_of_an_omitted_original_is_refused_when_the_result_holds_its_k
 
 
 def test_an_added_analysis_with_an_originals_key_is_edited_not_added():
-    review, _ = apply(state(), coordinate(K0, "omit"))
+    review, _ = apply(state(), edit(K0, [fx.point((1, 1, 1))]), verdict(K0, "reject"))
     original = copy.deepcopy(PARSE["analyses"][0])
     original.pop("key")
     review, _ = apply(review, add(original))
@@ -620,7 +691,7 @@ def test_an_added_analysis_with_an_originals_key_is_edited_not_added():
 def test_accepting_an_added_part_keeps_its_added_provenance():
     review, _ = apply(state(), split(K1, {"indices": [0]}, {"indices": [1]}))
     part = _split_part(review)
-    review, _ = apply(review, coordinate(part, "accept"))
+    review, _ = apply(review, verdict(part, "accept"))
     assert states(review)[f"coordinate_analysis:{part}"] == "added"
 
 
@@ -643,13 +714,6 @@ def test_a_merge_derives_from_the_originals_in_parse_order():
     assert merged["derived_from"] == [K0, K1, K2]
 
 
-def test_an_original_brought_back_sits_in_parse_order_before_the_added_analyses():
-    review, _ = apply(state(), coordinate(K2, "omit"), add(ADDED))
-    review, _ = apply(review, coordinate(K2, "accept"))
-    keys = [a["key"] for a in review.coordinate_revision["analyses"]]
-    assert keys[:3] == [K0, K1, K2] and len(keys) == 4
-
-
 def test_renaming_an_unnamed_part_drops_its_name_is_printed_flag():
     review, _ = apply(state(), split(K1, {"indices": [0]}, {"indices": [1]}))
     assert analysis(review.coordinate_revision, _split_part(review))["name_is_printed"] is False
@@ -666,10 +730,52 @@ def test_a_split_copies_the_entity_right_after_the_original():
 
 
 def test_a_revision_header_names_the_producer_and_its_inputs():
-    after, _ = apply(state(), coordinate(K2, "omit"))
+    after, _ = apply(state(), coordinate(K2, "relabel", role="result"))
     header = after.coordinate_revision["header"]
     assert header["producer"] == {"name": "neurostore-review", "version": "1"}
     assert header["inputs"] == [
         {"artifact_kind": "parsed_paper", "fingerprint": PARSE["text_sha256"]},
         {"artifact_kind": "coordinate_parse", "fingerprint": PARSE["parse_id"]},
     ]
+
+
+# one way to judge (W23)
+
+
+@pytest.mark.parametrize("action", ["accept", "omit", "reject"])
+def test_the_coordinate_op_refuses_accept_and_reject_and_names_the_verdict_op(action):
+    assert (
+        "accept and reject a coordinate analysis with a verdict op" in refused(
+            state(), coordinate(K0, action)
+        )
+    )
+
+
+def test_a_key_changing_point_edit_is_an_edit_verdict():
+    moved = fx.point((10, 20, 32))
+    after, _ = apply(state(), edit(K0, [moved]))
+    revision = checked(after.coordinate_revision)
+    assert verdicts(revision)[0] == (K0, "edit", [key_of("patients > controls", "MNI", [moved])])
+
+
+def test_the_revisions_the_core_writes_pass_study_schemas_revision_check():
+    layouts = pytest.importorskip("study_schema.layouts", reason="needs study_schema[layouts]")
+    moved = fx.point((10, 20, 32))
+    revisions = [
+        exported(edit(K0, [moved]))[1],
+        exported(edit(K0, [P0], name="patients over controls"), verdict(K2, "reject"))[1],
+        exported(split(K1, {"indices": [0]}, {"indices": [1]}), add(ADDED))[1],
+        exported(merge(K0, K1), verdict(K2, "accept"))[1],
+    ]
+    original = CoordinateParse.model_validate(PARSE)
+    for revision in revisions:
+        assert layouts.check_revision(original, CoordinateParse.model_validate(revision)) == []
+    assert [v["verdict"] for v in revisions[1]["verdicts"]] == ["edit", "accept", "omit"]
+
+
+def test_an_original_takes_the_reason_of_the_last_verdict_on_its_parts():
+    after, _ = apply(state(), split(K1, {"indices": [0]}, {"indices": [1]}))
+    first, second = [a["key"] for a in after.coordinate_revision["analyses"][1:3]]
+    _, revision = exported(verdict(first, "reject", note="a"), verdict(second, "reject", note="b"),
+                           verdict(first, "reject", note="c"), review=after)
+    assert checked(revision)["verdicts"][1] == {"key": K1, "verdict": "omit", "reason": "c"}

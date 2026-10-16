@@ -82,9 +82,9 @@ export type CoordinateOp = OpBase & {
      */
     target: CoordinateTarget | CoordinateParseTarget;
     /**
-     * accept, relabel (needs role) and omit judge the analysis and take no payload; accept or relabel brings an omitted original back. edit_points, split and merge replace it and need payload. add introduces an analysis and restore undoes a coordinate op; both target the coordinate parse.
+     * relabel (needs role) changes the analysis's role and takes no payload. edit_points, split and merge replace it and need payload. add introduces an analysis and restore undoes a coordinate op; both target the coordinate parse. A verdict op, never a coordinate op, accepts or rejects an analysis.
      */
-    action: 'accept' | 'relabel' | 'split' | 'merge' | 'omit' | 'add' | 'edit_points' | 'restore';
+    action: 'relabel' | 'split' | 'merge' | 'add' | 'edit_points' | 'restore';
     role?: 'result' | 'anchor' | 'localization' | 'reference' | 'other';
     payload?: EditPointsPayload | SplitPayload | MergePayload | AddPayload | RestorePayload;
 };

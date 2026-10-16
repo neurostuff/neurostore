@@ -1,13 +1,13 @@
 import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { CardHead } from '../inspector/Inspector';
-import { NotePanel } from '../inspector/panels';
+import { NotePanel, RejectPanel } from '../inspector/panels';
 import { reviewStatus } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import { targetKey } from '../model/targetKey';
 import { ActionToolbar } from '../review/ActionToolbar';
 import { useReviewStore } from '../store/context';
 import { analysisTarget, coordinatePending, focusedAnalysis } from './actions';
-import { AddAnalysisPanel, MergeDialog, MovePanel, OmitDialog, PointPanel, RelabelPanel } from './panels';
+import { AddAnalysisPanel, MergeDialog, MovePanel, PointPanel, RelabelPanel } from './panels';
 
 function Offer() {
     const offer = useReviewStore((s) => s.offer);
@@ -75,7 +75,7 @@ export function CoordinatesInspector() {
                                 index={panel.kind === 'edit_point' ? coordinates.point : null}
                             />
                         )}
-                        {panel?.kind === 'omit' && <OmitDialog analysis={analysis} />}
+                        {panel?.kind === 'reject' && <RejectPanel target={panel.target} label={analysis.name} />}
                         {panel?.kind === 'merge' && <MergeDialog />}
                     </CardHead>
                 </Box>

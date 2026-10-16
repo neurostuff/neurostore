@@ -671,7 +671,7 @@ def test_a_revision_the_review_core_writes_is_ingested_with_its_claims_carried(s
     }
     verdicts = {v["key"]: v for v in revision["verdicts"]}
     assert [v["verdict"] for v in revision["verdicts"]] == [
-        "split", "merge", "merge", "split", "add",
+        "split", "merge", "merge", "edit", "add",
     ]
     gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
     assert gain_claims
@@ -712,6 +712,63 @@ def test_a_revision_that_omits_an_analysis_reports_its_claims_as_not_carried(ses
             "reason": NOT_CARRIED,
         }
     ]
+
+
+def _edited_gain(*verdicts):
+    """A revision whose verdicts give Gain an edited first point; Loss, Risk and Seed kept."""
+    edited = fx.table_analysis(
+        "tbl1", [0, 1, 2, 3], "Gain > Neutral", [fx.point((11, 20, 30)), *GAIN["points"][1:]]
+    )
+    revision = fx.parse(
+        [edited, LOSS, RISK, SEED],
+        revision_of=ORIGINAL["parse_id"],
+        verdicts=[
+            *verdicts,
+            fx.verdict(LOSS["key"], "accept", [LOSS["key"]]),
+            fx.verdict(RISK["key"], "accept", [RISK["key"]]),
+            fx.verdict(SEED["key"], "accept", [SEED["key"]]),
+        ],
+    )
+    return revision, edited
+
+
+def test_an_edit_verdict_carries_the_claims_to_its_replacement(session):
+    base_study_id = _ingested(ORIGINAL, GAIN)["base_study_id"]
+    gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
+    edited = _edited_gain()[1]
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit", [edited["key"]]))
+
+    summary = ingest_upload({"coordinate_parse": revision})
+
+    assert summary["skeleton"]["orphaned_claims"] == []
+    assert gain_claims
+    assert {c.carried_from for c in _claims(base_study_id, edited["key"])} == gain_claims
+    assert summary["carried"]["claims"] == len(gain_claims)
+
+
+def test_a_record_of_the_parse_an_edit_revised_names_the_replacement(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    edited = _edited_gain()[1]
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit", [edited["key"]]))
+    ingest_upload({"coordinate_parse": revision})
+
+    summary = ingest_upload(
+        {"record": _record(GAIN), "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id}
+    )
+
+    [superseded] = summary["record"]["analyses"]["superseded"]
+    assert (superseded["key"], superseded["replaced_by"]) == (GAIN["key"], [edited["key"]])
+
+
+def test_an_edit_verdict_without_its_replacement_is_refused(session):
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit"))
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": revision})
+
+    assert error.value.status_code == 422
+    assert "coordinate_parse/verdicts/0/replaced_by" in str(error.value.errors)
 
 
 def test_orphaned_claim_reasons_are_codes():

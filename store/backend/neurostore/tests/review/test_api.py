@@ -339,7 +339,8 @@ async def test_the_bundle_without_a_review_is_the_source_as_loaded(clients, sour
     assert bundle["record"] == source.record
     assert bundle["source"]["base_study_id"] == source.fulltext.base_study_id
     assert bundle["source"]["text_sha256"] == source.fulltext.sha256
-    assert bundle["hidden"] == review_bundle.hidden(source.record, source.coordinate_parse, None)
+    expected = review_bundle.hidden(source.record, source.coordinate_parse, None, {})
+    assert bundle["hidden"] == expected
     assert [r["user_id"] for r in bundle["reviewers"]] == [OTHER]
     assert bundle["reviewers"][0]["name"] == f"name of {OTHER}"
 
@@ -388,7 +389,7 @@ async def test_the_bundle_hidden_set_is_computed_from_the_review_record(clients,
     )
     assert applied.status_code == 200, applied.json()
     bundle = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
-    expected = review_bundle.hidden(bundle["record"], source.coordinate_parse, None)
+    expected = review_bundle.hidden(bundle["record"], source.coordinate_parse, None, {})
     assert expected["analyses"] == ["an_1"]
     assert "grp_a" in expected["entities"]
     assert bundle["hidden"] == expected
@@ -414,11 +415,25 @@ async def test_the_hidden_set_reads_the_revisions_keys(clients, source):
     assert "an_1" not in merged.json()["hidden"]["analyses"]
     shown = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
     assert shown["hidden"] == merged.json()["hidden"]
-    omitted = await clients[REVIEWER].post(ops_path, data=batch(1, coordinate(merged_key, "omit")))
+    rejected = op("verdict", target={"kind": "coordinate_analysis", "analysis_key": merged_key},
+                  verdict="reject", reason="duplicate")
+    omitted = await clients[REVIEWER].post(ops_path, data=batch(1, rejected))
     assert omitted.status_code == 200, omitted.json()
     bundle = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
     assert bundle["hidden"]["analyses"] == ["an_1"]
     assert omitted.json()["hidden"] == bundle["hidden"]
+
+
+async def test_a_coordinate_accept_is_a_422_that_names_the_verdict_op(clients, source):
+    review = await start(clients, source)
+    key = source.coordinate_parse["analyses"][0]["key"]
+    refused = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, coordinate(key, "accept"))
+    )
+    assert refused.status_code == 422, refused.json()
+    [error] = refused.json()["errors"]
+    assert error["context"]["op_index"] == 0
+    assert error["message"] == "accept and reject a coordinate analysis with a verdict op"
 
 
 async def test_a_point_that_does_not_validate_is_refused_as_a_422_naming_its_path(clients, source):
@@ -583,7 +598,7 @@ async def test_the_op_result_carries_the_hidden_set_of_the_new_record(clients, s
     )
     assert response.status_code == 200
     result = response.json()
-    expected = review_bundle.hidden(result["record"], source.coordinate_parse, None)
+    expected = review_bundle.hidden(result["record"], source.coordinate_parse, None, {})
     assert result["hidden"] == expected
 
 
@@ -923,17 +938,17 @@ def test_an_analysis_without_a_known_table_analysis_is_hidden():
     ]
     del analyses[1]["source_table_analysis"]
     analyses[2]["source_table_analysis"] = {"extraction_status": "not_reported"}
-    hidden = review_bundle.hidden(fx.record(analyses), records.coordinate_parse(), None)
+    hidden = review_bundle.hidden(fx.record(analyses), records.coordinate_parse(), None, {})
     assert hidden == {"analyses": ["a_missing", "a_unreported", "a_unknown"], "entities": []}
 
 
 def test_without_a_coordinate_parse_every_analysis_is_hidden():
     record = with_key(records.build(), "an_1", KEYS[0])
-    assert review_bundle.hidden(record, None, None)["analyses"] == ["an_1"]
+    assert review_bundle.hidden(record, None, None, {})["analyses"] == ["an_1"]
 
 
 def test_entities_reached_only_through_a_hidden_analysis_are_hidden():
-    hidden = review_bundle.hidden(records.build(), records.coordinate_parse(), None)
+    hidden = review_bundle.hidden(records.build(), records.coordinate_parse(), None, {})
     assert hidden["analyses"] == ["an_1"]
     assert set(hidden["entities"]) == BEHIND_AN_1
 
@@ -941,7 +956,7 @@ def test_entities_reached_only_through_a_hidden_analysis_are_hidden():
 def test_an_entity_a_shown_analysis_also_reaches_stays_shown():
     record = records.build()
     shown_analysis(record, "an_2", cells=["trm_1"], tasks=["tsk_1"])
-    hidden = review_bundle.hidden(record, records.coordinate_parse(), None)
+    hidden = review_bundle.hidden(record, records.coordinate_parse(), None, {})
     assert hidden["analyses"] == ["an_1"]
     assert set(hidden["entities"]) == {"grp_a", "dev_1", "acq_1", "msr_1"}
 
@@ -949,7 +964,7 @@ def test_an_entity_a_shown_analysis_also_reaches_stays_shown():
 def test_an_entity_a_shown_entity_references_stays_shown():
     record = records.build()
     record["acquisitions"].append(records.item("MRI", "acq_2", device="dev_1"))
-    hidden = review_bundle.hidden(record, records.coordinate_parse(), None)
+    hidden = review_bundle.hidden(record, records.coordinate_parse(), None, {})
     assert "acq_1" in hidden["entities"]
     assert "dev_1" not in hidden["entities"]
 
@@ -960,7 +975,7 @@ def test_a_shown_analysis_a_hidden_one_references_stays_shown():
     mirror["source_table_analysis"] = fx.extracted(KEYS[1])
     record["analyses"].append(mirror)
     record["analyses"][0]["mirror_of"] = "an_2"
-    hidden = review_bundle.hidden(record, records.coordinate_parse(), None)
+    hidden = review_bundle.hidden(record, records.coordinate_parse(), None, {})
     assert hidden["analyses"] == ["an_1"]
     assert "an_2" not in hidden["entities"]
 
@@ -968,7 +983,7 @@ def test_a_shown_analysis_a_hidden_one_references_stays_shown():
 def test_a_shown_analysis_that_references_a_hidden_one_hides_what_lies_behind_it():
     record = records.build()
     shown_analysis(record, "an_2", mirror_of="an_1")
-    hidden = review_bundle.hidden(record, records.coordinate_parse(), None)
+    hidden = review_bundle.hidden(record, records.coordinate_parse(), None, {})
     assert hidden["analyses"] == ["an_1"]
     assert set(hidden["entities"]) == BEHIND_AN_1
 
@@ -976,7 +991,7 @@ def test_a_shown_analysis_that_references_a_hidden_one_hides_what_lies_behind_it
 def test_a_top_level_entity_stays_shown_when_only_its_child_is_reached_through_hidden_analyses():
     record = records.build()
     del record["analyses"][0]["model_estimation"]
-    hidden = review_bundle.hidden(record, records.coordinate_parse(), None)
+    hidden = review_bundle.hidden(record, records.coordinate_parse(), None, {})
     assert "mdl_1" not in hidden["entities"]
     assert "trm_1" not in hidden["entities"]
 

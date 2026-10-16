@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from neurostore.exceptions.utils.error_helpers import abort_not_found
 from neurostore.models import Fulltext, Review, ReviewSource
-from neurostore.review import ReviewError, service
+from neurostore.review import ReviewError, coordinates, service
 from neurostore.review.layout import _dumped, paper_from_documents, write_export
 
 UNREVIEWED_DIR = "unreviewed"
@@ -122,7 +122,12 @@ def _write_review(root, source, review, taken):
     else:
         ops = _ops(review)
         record = review.record
-        revision = review.coordinate_revision
+        revision = coordinates.judged(
+            source.coordinate_parse,
+            review.coordinate_revision,
+            review.provenance,
+            [entry["op"] for entry in ops],
+        )
     paper = paper_from_documents(
         paper_id,
         source.parsed_paper,
@@ -164,6 +169,7 @@ def _write_provenance(root, paper_id, record_path, source, review, ops):
         "record_path": record_path,
         "source": _provenance_source(source, review),
         "derived_from": {"source_id": source.id, "record_sha256": source.record_sha256},
+        "reviewed": review is not None and bool(review.provenance),
         "edited": edited,
         "last_edit_at": ops[-1]["created_at"] if edited else None,
         "producer": {"name": "neurostore-review", "version": 1},

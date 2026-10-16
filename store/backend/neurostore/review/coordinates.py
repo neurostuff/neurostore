@@ -16,13 +16,12 @@ from study_schema.jsonschema import load
 
 from neurostore.review import ReviewError
 from neurostore.review.lists import indexed, splice
+from neurostore.review.targets import target_key
 from neurostore.review.validation import where
 from neurostore.study_schema_tools import expected_key, sha256_of
 
 PRODUCER = {"name": "neurostore-review", "version": "1"}
 UNJUDGED = "not judged by the reviewer"
-#: Actions that may name an omitted original.
-JUDGEMENTS = ("accept", "relabel", "omit")
 
 
 def known(parse, revision, analysis_key):
@@ -36,6 +35,54 @@ def known(parse, revision, analysis_key):
 def current(parse, revision):
     """The coordinates as the reviewer has them: the revision once there is one, else the parse."""
     return parse if revision is None else revision
+
+
+def coordinate_state(provenance, key):
+    """The provenance state of the analysis ``key``; None when it has none."""
+    entry = provenance.get(target_key({"kind": "coordinate_analysis", "analysis_key": key}))
+    return (entry or {}).get("state")
+
+
+def rejected(provenance, keys):
+    """The ``keys`` of the analyses ``provenance`` records as removed."""
+    return {key for key in keys if coordinate_state(provenance, key) == "removed"}
+
+
+def judged(parse, revision, provenance, ops):
+    """The revision as export writes it: ``revision`` with the verdict ``ops`` that judged its
+    analyses, as their review ``provenance`` still records them.
+
+    An analysis verified takes the reason of its last verdict op; one removed is left out, so an
+    original rejected unchanged reads omit. The others keep the reasons coordinate ops gave.
+    """
+    if parse is None:
+        return revision
+    work = _Revision(parse, revision)
+    verdicts = [
+        op
+        for op in ops
+        if op["type"] == "verdict" and op["target"]["kind"] == "coordinate_analysis"
+    ]
+    last = {op["target"]["analysis_key"]: op for op in verdicts}
+    for op in verdicts:
+        key = op["target"]["analysis_key"]
+        index = work.find(key)
+        expected = "removed" if op["verdict"] == "reject" else "verified"
+        if last[key] is not op or index is None or coordinate_state(provenance, key) != expected:
+            continue
+        analysis = work.analyses[index]
+        if op["verdict"] == "reject":
+            del work.analyses[index]
+        work.judge([analysis], op)
+    return work.document()
+
+
+def annotate(parse, revision, op):
+    """``revision`` with the note of the accept verdict ``op`` as the reason of the originals its
+    analysis comes from."""
+    work = _Revision(parse, revision)
+    work.judge([work.analyses[work.target(op)]], op)
+    return work.document()
 
 
 def revise(parse, revision, op):
@@ -102,25 +149,11 @@ class _Revision:
 
     # the actions
 
-    def accept(self, op):
-        index = self.judged_target(op)
-        self.judge([self.analyses[index]], op)
-        return [(self.analyses[index]["key"], "verified")]
-
     def relabel(self, op):
-        index = self.judged_target(op)
+        index = self.target(op)
         self.analyses[index] = {**self.analyses[index], "role": op["role"]}
         self.judge([self.analyses[index]], op)
         return [(self.analyses[index]["key"], "edited")]
-
-    def omit(self, op):
-        key = op["target"]["analysis_key"]
-        index = self.target(op)
-        if index is None:
-            self.reasons[key] = self.reason(op)
-        else:
-            self.judge([self.analyses.pop(index)], op)
-        return [(key, "removed")]
 
     def edit_points(self, op):
         index = self.target(op)
@@ -165,7 +198,7 @@ class _Revision:
         analysis = self.analyses[index]
         if analysis["key"] in op["payload"]["with"]:
             raise ReviewError("an analysis cannot be merged with itself")
-        others = [self.analyses[self.current(key, "merge")] for key in op["payload"]["with"]]
+        others = [self.analyses[self.current(key)] for key in op["payload"]["with"]]
         merged = {**analysis, "points": [
             p for a in (analysis, *others) for p in a.get("points") or ()
         ]}
@@ -208,37 +241,15 @@ class _Revision:
 
     # targets
 
-    def judged_target(self, op):
-        """The op's target index; accept and relabel bring back an omitted original first."""
-        key, action = op["target"]["analysis_key"], op["action"]
-        if action in ("accept", "relabel") and self.find(key) is None and self.omitted(key):
-            return self.reinstate(key)
-        return self.target(op)
-
     def target(self, op):
-        """The index of the op's target analysis, found without changing the revision; None for
-        an omitted original being omitted again."""
-        key, action = op["target"]["analysis_key"], op["action"]
-        omitted = action in JUDGEMENTS and self.find(key) is None and self.omitted(key)
-        return None if omitted and action == "omit" else self.current(key, action)
+        """The index of the op's target analysis."""
+        return self.current(op["target"]["analysis_key"])
 
-    def reinstate(self, key):
-        """Put the omitted original ``key`` back in parse order; returns its index."""
-        rank = self.order[key]
-        index = next(
-            (i for i, a in enumerate(self.analyses) if self.rank(a) > rank), len(self.analyses)
-        )
-        self.analyses.insert(index, copy.deepcopy(self.parse["analyses"][rank]))
-        return index
-
-    def current(self, key, action):
+    def current(self, key):
         """The index of ``key`` in the revision, raising when it is not there."""
         index = self.find(key)
         if index is not None:
             return index
-        if self.omitted(key):
-            raise ReviewError(f"analysis {key!r} is omitted from the coordinate revision; "
-                              f"accept it before you {action} it")
         replacements = [a["key"] for a in self.analyses if key in self.sources(a)]
         if replacements:
             raise ReviewError(f"the coordinate revision has no analysis {key!r}; it was "
@@ -248,9 +259,6 @@ class _Revision:
     def find(self, key):
         return next((i for i, a in enumerate(self.analyses) if a["key"] == key), None)
 
-    def omitted(self, key):
-        return key in self.order and not any(key in self.sources(a) for a in self.analyses)
-
     # derivation
 
     def sources(self, analysis):
@@ -258,9 +266,6 @@ class _Revision:
         if analysis.get("derived_from"):
             return analysis["derived_from"]
         return [analysis["key"]] if analysis["key"] in self.order else []
-
-    def rank(self, analysis):
-        return min((self.order[s] for s in self.sources(analysis)), default=len(self.order))
 
     def keyed(self, analysis, sources):
         """``analysis`` with the key its content gives and ``sources`` as derived_from."""
@@ -290,14 +295,11 @@ class _Revision:
                 )
             seen.add(analysis["key"])
 
-    def reason(self, op):
-        return op.get("note") or f"reviewer {op['action']}"
-
     def judge(self, analyses, op):
         """Give each original ``analyses`` come from, or each added one, the op's reason."""
         for analysis in analyses:
             for key in self.sources(analysis) or [analysis["key"]]:
-                self.reasons[key] = self.reason(op)
+                self.reasons[key] = _reason(op)
 
     def created(self, key):
         return "edited" if key in self.order else "added"
@@ -326,6 +328,8 @@ class _Revision:
                     verdict.update(verdict="relabel", role=found[0]["role"])
             elif len(found) == 1 and len(self.sources(found[0])) > 1:
                 verdict.update(verdict="merge", replaced_by=[found[0]["key"]])
+            elif len(found) == 1:
+                verdict.update(verdict="edit", replaced_by=[found[0]["key"]])
             elif found:
                 verdict.update(verdict="split", replaced_by=[a["key"] for a in found])
             verdicts.append(verdict)
@@ -364,6 +368,17 @@ class _Revision:
         identity = {k: revision[k] for k in ("revision_of", "analyses", "verdicts")}
         revision["parse_id"] = sha256_of(identity)
         return revision
+
+
+def _reason(op):
+    """The note of ``op``, else what it did."""
+    if op.get("note"):
+        return op["note"]
+    if op["type"] == "coordinate":
+        return f"reviewer {op['action']}"
+    if op["verdict"] == "accept":
+        return "reviewer accept"
+    return f"reviewer reject ({op['reason']})"
 
 
 def _content_key(analysis):

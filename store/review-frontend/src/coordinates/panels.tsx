@@ -15,7 +15,6 @@ import {
     movePoints,
     moveTargets,
     movingPoints,
-    omitAnalysis,
     relabelAnalysis,
     savePoint,
 } from './actions';
@@ -50,22 +49,6 @@ export function RelabelPanel({ analysis }: { analysis: CoordinateAnalysis }) {
                 <ScalarField id={id} label="role" spec={ROLES} value={role} error="" autoFocus onChange={setRole} />
             )}
         </Stack>
-    );
-}
-
-export function OmitDialog({ analysis }: { analysis: CoordinateAnalysis }) {
-    const store = useReviewStoreApi();
-    return (
-        <ConfirmDialog
-            title={`Omit ${analysis.name}?`}
-            confirmLabel="Omit"
-            color="error"
-            onConfirm={() => omitAnalysis(store.getState())}
-        >
-            <Typography variant="body2">
-                Its points leave the revision. The record keeps its analysis, which no longer has coordinates.
-            </Typography>
-        </ConfirmDialog>
     );
 }
 

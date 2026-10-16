@@ -121,7 +121,7 @@ const GAPS: Record<string, string> = {
     'partial replay': 'verdict ops are not applied by the test server, nor its before and after',
     'stale expected_last_seq behind': 'verdict ops are not applied by the test server',
     'link reaches a hidden entity': 'link ops and the hidden set are not modelled by the test server',
-    'coordinate accept': 'coordinate ops and coordinate_revision are not modelled by the test server',
+    'verdict accept of a coordinate analysis': 'verdict ops are not applied by the test server',
     'create an entity with a client local id, then set a value on it':
         'structural ops are applied by the server only (D49), not by the test server',
     'create an entity the server mints an id for':

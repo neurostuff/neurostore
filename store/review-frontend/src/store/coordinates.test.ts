@@ -29,6 +29,15 @@ const INSULA_ROW = rowOf('Insula\t-36\t20\t2\t4.2');
 const CUNEUS_ROW = rowOf('Cuneus\t10\t-80\t12\t3.3');
 const CUNEUS_POINT = CUNEUS;
 
+/** The restore that undoes the add of the analysis at `index`: the coordinate op that takes an analysis away whole. */
+const undoingAdd = (client_op_id: string, analysis: object, index: number): Op => ({
+    client_op_id,
+    type: 'coordinate',
+    target: { kind: 'coordinate_parse' },
+    action: 'restore',
+    payload: { remove: [{ index, analysis }], insert: [], reasons: {}, record: { remove: [], insert: [] } },
+});
+
 describe('the coordinates step’s focus', () => {
     it('opens on the first analysis, its points’ rows highlighted', () => {
         const state = open().getState();
@@ -164,9 +173,9 @@ describe('after a coordinate result', () => {
         expect(state.focusedSpans).toEqual([PRECUNEUS_ROW]);
     });
 
-    it('focuses the next analysis when the focused one was omitted', () => {
+    it('focuses the next analysis when the focused one was taken away', () => {
         const store = open();
-        store.getState().emit({ client_op_id: 'c-omit', type: 'coordinate', target: accept.target, action: 'omit' });
+        store.getState().emit(undoingAdd('c-omit', FACES, 0));
         store.getState().confirm(coordinateResult([accept], [HOUSES, LOCALIZER, SCRAMBLED]), store.getState().pending);
         expect(store.getState().coordinates?.analysis).toBe(HOUSES.key);
     });
@@ -196,15 +205,10 @@ describe('after a coordinate result', () => {
         expect(store.getState().coordinates?.analysis).toBe(edited.key);
     });
 
-    it('focuses the analysis now in the focused one’s place when it was omitted from the middle', () => {
+    it('focuses the analysis now in the focused one’s place when it was taken from the middle', () => {
         const store = open();
         store.getState().focusAnalysis(HOUSES.key);
-        const omit: Op = {
-            client_op_id: 'c-3',
-            type: 'coordinate',
-            target: { kind: 'coordinate_analysis', analysis_key: HOUSES.key },
-            action: 'omit',
-        };
+        const omit = undoingAdd('c-3', HOUSES, 1);
         store.getState().emit(omit);
         store.getState().confirm(coordinateResult([omit], [FACES, LOCALIZER, SCRAMBLED]), [omit]);
         expect(store.getState().coordinates?.analysis).toBe(LOCALIZER.key);

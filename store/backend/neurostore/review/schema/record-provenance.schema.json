@@ -5,7 +5,9 @@
   "description": "Where an exported extraction record came from: a review or a loaded source. Written beside each exported record as run/provenance/<id>.json.",
   "version": "1",
   "type": "object",
-  "required": ["record_path", "source", "derived_from", "edited", "last_edit_at", "producer"],
+  "required": [
+    "record_path", "source", "derived_from", "reviewed", "edited", "last_edit_at", "producer"
+  ],
   "additionalProperties": false,
   "properties": {
     "record_path": {
@@ -21,6 +23,10 @@
         "source_id": {"type": "string", "minLength": 1},
         "record_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
       }
+    },
+    "reviewed": {
+      "type": "boolean",
+      "description": "Whether the reviewer judged any target: verified, edited, added or removed it. A review that accepts everything unchanged is reviewed and not edited."
     },
     "edited": {
       "type": "boolean",

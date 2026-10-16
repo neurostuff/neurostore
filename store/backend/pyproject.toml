@@ -60,6 +60,9 @@ dev = [
     "pytest~=9.1",
     "vcrpy~=8.3",
     "pytest-recording~=0.14.0",
+    # study_schema.layouts (check_revision) imports pyarty; pinned to the pydantic-payload
+    # branch because jdkent/pyarty main lacks it.
+    "pyarty @ git+https://github.com/jdkent/pyarty.git@54477a94c9b3b99b140deca00dd5ce1be3b38c41",
 ]
 
 [project.scripts]

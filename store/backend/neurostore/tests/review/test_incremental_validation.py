@@ -82,7 +82,7 @@ def _start(rng, name):
     if rng.random() < 0.4:
         keys = [a["key"] for a in state.coordinate_parse["analyses"]]
         state, _ = apply_batch(state, {"ops": [
-            _op("coordinate", target=_analysis(keys[0]), action="accept"),
+            _op("verdict", target=_analysis(keys[0]), verdict="accept"),
             _op("coordinate", target=_analysis(keys[2]), action="relabel", role="other"),
         ]}, text=records.TEXT, user_id="u0", at=AT)
     if rng.random() < 0.25:
@@ -236,8 +236,10 @@ class _Ops:
         action = rng.choice([
             "accept", "omit", "relabel", "edit_points", "split", "merge", "add", "restore",
         ])
-        if action in ("accept", "omit"):
-            return _op("coordinate", target=_analysis(key), action=action)
+        if action == "accept":
+            return _op("verdict", target=_analysis(key), verdict="accept")
+        if action == "omit":
+            return _op("verdict", target=_analysis(key), verdict="reject", reason="duplicate")
         if action == "relabel":
             return _op("coordinate", target=_analysis(key), action=action,
                        role=rng.choice(ROLES))

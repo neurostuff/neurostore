@@ -68,11 +68,17 @@ LINK_REGION = {
     "target": {"kind": "relationship", "entity": "an_1", "path": "regions",
                "target_entity": "reg_1"},
 }
-COORDINATE_ACCEPT = {
+VERDICT_ON_ANALYSIS = {
     "client_op_id": "scenario-coordinate-a",
-    "type": "coordinate",
+    "type": "verdict",
     "target": {"kind": "coordinate_analysis",
                "analysis_key": records.coordinate_parse()["analyses"][0]["key"]},
+    "verdict": "accept",
+}
+COORDINATE_ACCEPT = {
+    "client_op_id": "scenario-refused-coordinate-accept",
+    "type": "coordinate",
+    "target": VERDICT_ON_ANALYSIS["target"],
     "action": "accept",
 }
 PARSE = records.coordinate_parse()
@@ -105,8 +111,15 @@ MOVE = [
     coordinate("scenario-move-to", K0, "edit_points", payload={"points": [P0, P1B]}),
 ]
 MERGE = coordinate("scenario-merge-a", K0, "merge", payload={"with": [K1]})
-OMIT_MERGED = coordinate("scenario-omit-merged", key_of("patients > controls", [P0, P1A, P1B]),
-                         "omit", note="not a contrast of this study")
+REJECT_MERGED = {
+    "client_op_id": "scenario-reject-merged",
+    "type": "verdict",
+    "target": {"kind": "coordinate_analysis",
+               "analysis_key": key_of("patients > controls", [P0, P1A, P1B])},
+    "verdict": "reject",
+    "reason": "other",
+    "note": "not a contrast of this study",
+}
 ADDED = {
     "origin": "table",
     "table_id": "t1",
@@ -232,9 +245,13 @@ SCENARIOS = {
         START,
         (REVIEWER, "get", BUNDLE, None, 200),
     ],
-    "coordinate accept": [
+    "verdict accept of a coordinate analysis": [
         START,
-        (REVIEWER, "post", OPS, batch(0, COORDINATE_ACCEPT), 200),
+        (REVIEWER, "post", OPS, batch(0, VERDICT_ON_ANALYSIS), 200),
+    ],
+    "coordinate accept refused, the verdict op judges": [
+        START,
+        (REVIEWER, "post", OPS, batch(0, COORDINATE_ACCEPT), 422),
     ],
     "coordinate split": [
         START,
@@ -253,10 +270,10 @@ SCENARIOS = {
         START,
         (REVIEWER, "post", OPS, batch(0, MERGE), 200),
     ],
-    "coordinate merge, then an omit of the merged analysis": [
+    "coordinate merge, then a reject of the merged analysis": [
         START,
         (REVIEWER, "post", OPS, batch(0, MERGE), 200),
-        (REVIEWER, "post", OPS, batch(1, OMIT_MERGED), 200),
+        (REVIEWER, "post", OPS, batch(1, REJECT_MERGED), 200),
     ],
     "coordinate add": [
         START,
@@ -352,9 +369,9 @@ SCENARIOS = {
 #: Scenarios played on records.linked_analyses(), where an_1 and an_2 read the parse's first
 #: two analyses; the paged list plays on records.golden(), the record of the front end's test
 #: server; the others play on records.hidden_reach().
-COORDINATE_RECORD = {name for name in SCENARIOS if name.startswith("coordinate")} - {
-    "coordinate accept"
-} | {"the bundle of the linked-analyses record"}
+COORDINATE_RECORD = {name for name in SCENARIOS if name.startswith("coordinate")} | {
+    "the bundle of the linked-analyses record"
+}
 
 
 def _mask(value, ids):
@@ -482,7 +499,7 @@ async def test_the_record_follows_each_coordinate_scenario(clients, session):
     assert merge["ops"][0]["after"]["references"] == [
         {"entity": "an_1", "path": "mirror_of", "target_entity": "an_2"},
     ]
-    assert _result(played["coordinate merge, then an omit of the merged analysis"])["hidden"][
+    assert _result(played["coordinate merge, then a reject of the merged analysis"])["hidden"][
         "analyses"
     ] == ["an_1"]
     added = _result(played["coordinate add"])
