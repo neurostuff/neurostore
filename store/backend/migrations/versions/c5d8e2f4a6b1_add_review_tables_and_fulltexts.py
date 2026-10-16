@@ -29,20 +29,15 @@ def upgrade():
         sa.Column("base_study_id", sa.Text(), nullable=False),
         sa.Column("source", sa.Text(), nullable=False),
         sa.Column("source_version", sa.Text(), nullable=True),
-        sa.Column("tier", sa.SmallInteger(), nullable=False),
         sa.Column("sha256", sa.String(64), nullable=False),
         sa.Column("text", sa.Text(), nullable=False),
-        sa.Column("length", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(["base_study_id"], ["base_studies.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.CheckConstraint("tier IN (1, 2, 3)", name="ck_fulltexts_tier"),
         sa.UniqueConstraint("base_study_id", "sha256", name="uq_fulltexts_base_study_sha256"),
     )
     _index_base_columns("fulltexts")
     op.create_index(
-        "ix_fulltexts_base_study_tier_created",
-        "fulltexts",
-        ["base_study_id", "tier", "created_at"],
+        "ix_fulltexts_base_study_created", "fulltexts", ["base_study_id", "created_at"]
     )
     op.add_column("base_studies", sa.Column("fulltext_id", sa.Text(), nullable=True))
     op.create_foreign_key(
@@ -61,7 +56,7 @@ def upgrade():
         sa.Column("parsed_paper", JSONB(), nullable=True),
         sa.Column("coordinate_parse", JSONB(), nullable=True),
         sa.Column("record", JSONB(), nullable=False),
-        sa.Column("origin", sa.Text(), nullable=False),
+        sa.Column("judgeable_keys", JSONB(), nullable=False),
         sa.Column("pipeline_config_id", sa.Text(), nullable=True),
         sa.Column("run_id", sa.Text(), nullable=True),
         sa.Column("label", sa.Text(), nullable=True),
@@ -72,9 +67,6 @@ def upgrade():
         sa.ForeignKeyConstraint(["pipeline_config_id"], ["pipeline_configs.id"]),
         sa.ForeignKeyConstraint(["loaded_by_id"], ["users.external_id"]),
         sa.PrimaryKeyConstraint("id"),
-        sa.CheckConstraint(
-            "origin IN ('upload', 'pipeline_run')", name="ck_review_sources_origin"
-        ),
         sa.UniqueConstraint(
             "fulltext_id", "record_sha256", name="uq_review_sources_fulltext_record"
         ),

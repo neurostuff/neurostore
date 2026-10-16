@@ -1,9 +1,6 @@
 """Review tables and full-text storage: constraints, and staying out of the API."""
 
-import ast
 import hashlib
-import importlib.util
-import json
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -11,6 +8,9 @@ from pathlib import Path
 import pytest
 import yaml
 import sqlalchemy as sa
+from alembic.autogenerate import compare_metadata
+from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from starlette.applications import Starlette
@@ -30,13 +30,11 @@ from neurostore.models import (
 from neurostore.models import fulltext as fulltext_model
 from neurostore.models.fulltext import refresh_fulltext_pointer
 from neurostore.review import entities
-from neurostore.tests.review.layouts import documents
-from neurostore.tests.review import records
 
 REVIEW_TABLES = (Fulltext, ReviewSource, Review, ReviewOp, ReviewAssignment)
 PREVIOUS_REVISION = "a7d3e9c1b5f2"
-BEFORE_DROP = "c5d8e2f4a6b1"
-BEFORE_TIER_DROP = "b4e1f7a9c2d6"
+REVIEW_REVISION = "c5d8e2f4a6b1"
+REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
 OPENAPI = (
     Path(schemas.__file__).resolve().parents[1] / "openapi" / "neurostore-openapi.yml"
 )
@@ -512,6 +510,34 @@ def test_deleting_a_base_study_deletes_its_assignments(session, paper):
 # The migration
 
 
+def test_the_review_migration_is_the_only_head():
+    script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
+    assert script.get_heads() == [REVIEW_REVISION]
+
+
+def test_the_migrated_review_tables_match_the_models(db):
+    def in_review_scope(obj, name, type_, reflected, compare_to):
+        if type_ == "table":
+            return name in REVIEW_TABLE_NAMES
+        if obj.table.name in REVIEW_TABLE_NAMES:
+            return True
+        return obj.table.name == "base_studies" and name in {
+            "fulltext_id",
+            "fk_base_studies_fulltext_id",
+        }
+
+    with db.engine.connect() as conn:
+        context = MigrationContext.configure(
+            conn,
+            opts={
+                "compare_type": True,
+                "compare_server_default": True,
+                "include_object": in_review_scope,
+            },
+        )
+        assert compare_metadata(context, db.metadata) == []
+
+
 def test_the_migration_seeds_the_role_and_downgrade_removes_everything(session, paper):
     base_study, user = paper
     base_study.ace_fulltext = "ace text"
@@ -561,202 +587,18 @@ def test_the_migration_seeds_the_role_and_downgrade_removes_everything(session, 
     assert ("admin-reviewer", "admin-reviewer") in [tuple(role) for role in roles]
 
 
-def test_the_migration_drops_fulltext_length_and_source_origin(session):
+def test_the_review_migration_creates_the_final_columns_and_indexes(session):
     inspector = sa.inspect(session.bind)
-    assert "length" not in {c["name"] for c in inspector.get_columns("fulltexts")}
-    assert "origin" not in {c["name"] for c in inspector.get_columns("review_sources")}
-
-
-def test_the_downgrade_before_the_drop_restores_length_and_origin(session, paper):
-    base_study = paper[0]
-    fulltext = add_text(session, base_study, "pmc", "Some text.")
-    config = PipelineConfig()
-    session.add(config)
-    session.commit()
-    session.add_all([
-        make_source(paper, fulltext, record_sha256="1" * 64),
-        make_source(paper, fulltext, record_sha256="2" * 64, pipeline_config_id=config.id),
-        make_source(
-            paper, fulltext, record_sha256="3" * 64, pipeline_config_id=config.id, run_id="run-1"
-        ),
-    ])
-    session.commit()
-    fulltext_id = fulltext.id
-    session.remove()
-    try:
-        service_migrations.downgrade(BEFORE_DROP)
-        inspector = sa.inspect(session.bind)
-        assert "length" in {c["name"] for c in inspector.get_columns("fulltexts")}
-        assert "origin" in {c["name"] for c in inspector.get_columns("review_sources")}
-        with session.bind.connect() as conn:
-            length, char_length = conn.execute(
-                sa.text("SELECT length, char_length(text) FROM fulltexts WHERE id = :id"),
-                {"id": fulltext_id},
-            ).one()
-            origins = conn.scalars(
-                sa.text("SELECT origin FROM review_sources ORDER BY record_sha256")
-            ).all()
-        assert length == char_length == len("Some text.")
-        assert origins == ["upload", "upload", "pipeline_run"]
-        with pytest.raises(IntegrityError, match="ck_review_sources_origin"):
-            with session.bind.begin() as conn:
-                conn.execute(
-                    sa.text(
-                        "INSERT INTO review_sources (id, fulltext_id, record, record_sha256,"
-                        " origin) VALUES ('email-source', :fulltext, '{}', :sha, 'email')"
-                    ),
-                    {"fulltext": fulltext_id, "sha": "9" * 64},
-                )
-    finally:
-        service_migrations.upgrade("heads")
-
-
-def test_the_migration_drops_the_tier_and_backfills_the_judgeable_keys_both_ways(session, paper):
-    base_id, user_id = paper[0].id, paper[1].external_id
-    golden, parse = records.golden(), records.coordinate_parse()
-    _, other_parse, other = documents("1001")
-    assert entities.judgeable_keys(golden, parse) != entities.judgeable_keys(other, other_parse)
-    session.remove()
-    service_migrations.downgrade(BEFORE_TIER_DROP)
-    try:
-        with session.bind.begin() as conn:
-            conn.execute(
-                sa.text(
-                    "INSERT INTO fulltexts (id, base_study_id, source, tier, sha256, text)"
-                    " VALUES ('ft-jats', :bs, 'pubget', 1, :jats, 'jats'),"
-                    " ('ft-pdf', :bs, 'pdf', 3, :pdf, 'pdf'),"
-                    " ('ft-ace', :bs, 'ace', 2, :ace, 'ace'),"
-                    " ('ft-springer', :bs, 'springer', 1, :springer, 'springer')"
-                ),
-                {
-                    "bs": base_id,
-                    "jats": "a" * 64,
-                    "pdf": "b" * 64,
-                    "ace": "d" * 64,
-                    "springer": "e" * 64,
-                },
-            )
-            conn.execute(
-                sa.text(
-                    "INSERT INTO review_sources (id, fulltext_id, record, coordinate_parse,"
-                    " record_sha256, label, loaded_by_id)"
-                    " VALUES (:id, :fulltext, CAST(:record AS jsonb),"
-                    " CAST(:parse AS jsonb), :sha, 'A paper', :user)"
-                ),
-                [
-                    {
-                        "id": "src-1",
-                        "fulltext": "ft-jats",
-                        "record": json.dumps(golden),
-                        "parse": json.dumps(parse),
-                        "sha": "c" * 64,
-                        "user": user_id,
-                    },
-                    {
-                        "id": "src-2",
-                        "fulltext": "ft-pdf",
-                        "record": json.dumps(other),
-                        "parse": json.dumps(other_parse),
-                        "sha": "f" * 64,
-                        "user": user_id,
-                    },
-                ],
-            )
-        service_migrations.upgrade("heads")
-        inspector = sa.inspect(session.bind)
-        assert "tier" not in {c["name"] for c in inspector.get_columns("fulltexts")}
-        assert "ck_fulltexts_tier" not in {
-            c["name"] for c in inspector.get_check_constraints("fulltexts")
-        }
-        assert "ix_fulltexts_base_study_tier_created" not in {
-            i["name"] for i in inspector.get_indexes("fulltexts")
-        }
-        keys_column = {
-            c["name"]: c["nullable"] for c in inspector.get_columns("review_sources")
-        }["judgeable_keys"]
-        assert keys_column is False
-        with session.bind.connect() as conn:
-            keys = dict(
-                conn.execute(sa.text("SELECT id, judgeable_keys FROM review_sources")).all()
-            )
-        assert keys == {
-            "src-1": entities.judgeable_keys(golden, parse),
-            "src-2": entities.judgeable_keys(other, other_parse),
-        }
-
-        service_migrations.downgrade(BEFORE_TIER_DROP)
-        inspector = sa.inspect(session.bind)
-        assert "judgeable_keys" not in {c["name"] for c in inspector.get_columns("review_sources")}
-        assert "ck_fulltexts_tier" in {
-            c["name"] for c in inspector.get_check_constraints("fulltexts")
-        }
-        assert "ix_fulltexts_base_study_tier_created" in {
-            i["name"] for i in inspector.get_indexes("fulltexts")
-        }
-        with session.bind.connect() as conn:
-            tiers = dict(conn.execute(sa.text("SELECT id, tier FROM fulltexts")).all())
-        assert tiers == {"ft-jats": 1, "ft-pdf": 3, "ft-ace": 2, "ft-springer": 1}
-    finally:
-        service_migrations.upgrade("heads")
-
-
-def test_the_upgrade_points_each_base_study_at_its_best_text(session, paper):
-    base_id = paper[0].id
-    session.remove()
-    service_migrations.downgrade(BEFORE_TIER_DROP)
-    try:
-        with session.bind.begin() as conn:
-            conn.execute(
-                sa.text(
-                    "INSERT INTO fulltexts (id, base_study_id, source, tier, sha256, text,"
-                    " created_at) VALUES ('ft-jats', :bs, 'pubget', 1, :jats, 'jats', :old),"
-                    " ('ft-pdf', :bs, 'pdf', 3, :pdf, 'pdf', :new)"
-                ),
-                {
-                    "bs": base_id,
-                    "jats": "a" * 64,
-                    "pdf": "b" * 64,
-                    "old": T0,
-                    "new": T0 + timedelta(days=1),
-                },
-            )
-            conn.execute(
-                sa.text("UPDATE base_studies SET fulltext_id = 'ft-pdf' WHERE id = :bs"),
-                {"bs": base_id},
-            )
-        service_migrations.upgrade("heads")
-        with session.bind.connect() as conn:
-            pointed = conn.scalar(
-                sa.text("SELECT fulltext_id FROM base_studies WHERE id = :bs"), {"bs": base_id}
-            )
-        assert pointed == "ft-jats"
-    finally:
-        service_migrations.upgrade("heads")
-
-
-def test_the_backfill_gives_each_source_its_own_keys_in_batches(session, paper):
-    backfill = _load_backfill()
-    golden, parse = records.golden(), records.coordinate_parse()
-    _, other_parse, other = documents("1001")
-    first = make_source(
-        paper, add_text(session, paper[0], "pmc", "One."),
-        record=golden, coordinate_parse=parse, judgeable_keys=[],
-    )
-    second = make_source(
-        paper, add_text(session, paper[0], "ace", "Two."),
-        record=other, coordinate_parse=other_parse, judgeable_keys=[], record_sha256="b" * 64,
-    )
-    session.add_all([first, second])
-    session.commit()
-
-    with session.bind.begin() as conn:
-        backfill.backfill_judgeable_keys(conn, batch_size=1)
-
-    with session.bind.connect() as conn:
-        keys = dict(conn.execute(sa.text("SELECT id, judgeable_keys FROM review_sources")).all())
-    assert keys == {
-        first.id: entities.judgeable_keys(golden, parse),
-        second.id: entities.judgeable_keys(other, other_parse),
+    fulltext_columns = {c["name"] for c in inspector.get_columns("fulltexts")}
+    assert not fulltext_columns & {"length", "tier"}
+    assert ["base_study_id", "created_at"] in [
+        i["column_names"] for i in inspector.get_indexes("fulltexts")
+    ]
+    source_columns = {c["name"]: c["nullable"] for c in inspector.get_columns("review_sources")}
+    assert "origin" not in source_columns
+    assert source_columns["judgeable_keys"] is False
+    assert "ck_review_sources_origin" not in {
+        c["name"] for c in inspector.get_check_constraints("review_sources")
     }
 
 
@@ -821,45 +663,3 @@ def test_no_admin_view_reads_the_review_tables(app):
     base_study_view = views[BaseStudy]
     assert "fulltext" in base_study_view.column_details_exclude_list
     assert "fulltext" in base_study_view.form_excluded_columns
-
-
-def _backfill_path():
-    return next((Path(__file__).parents[3] / "migrations" / "versions").glob("e8a2c6d4f1b9_*.py"))
-
-
-def _load_backfill():
-    path = _backfill_path()
-    spec = importlib.util.spec_from_file_location("backfill", path)
-    migration = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(migration)
-    return migration
-
-
-def test_the_backfill_migration_imports_no_neurostore_module():
-    source = _backfill_path().read_text("utf-8")
-    modules = [
-        alias.name for node in ast.walk(ast.parse(source)) if isinstance(node, ast.Import)
-        for alias in node.names
-    ] + [
-        node.module or ""
-        for node in ast.walk(ast.parse(source))
-        if isinstance(node, ast.ImportFrom)
-    ]
-
-    assert not [
-        module for module in modules
-        if module.split(".")[0] in {"neurostore", "study_schema"}
-    ]
-
-
-def test_the_backfill_rule_gives_the_judgeable_keys_of_the_fixtures_today():
-    migration = _load_backfill()
-    paper_parse, coordinate_parse, extraction = documents("1001")
-    fixtures = [
-        (records.build(), records.coordinate_parse()),
-        (extraction, coordinate_parse),
-        (records.golden(), None),
-    ]
-
-    for record, parse in fixtures:
-        assert migration.judgeable_keys(record, parse) == entities.judgeable_keys(record, parse)
