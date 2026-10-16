@@ -36,7 +36,7 @@ const reviewerLine = (review: ReviewerProgress, total: number) =>
     `${review.user_name ?? review.user_id}: ${stateLabel(review)}, ${review.edited} edited, ${review.verified} verified, ${reviewedShare(review.reviewed, total)} reviewed`;
 
 function progressOf(paper: PaperSummary, now: Date) {
-    if (!paper.reviews?.length) return 'not started';
+    if (!paper.reviews.length) return 'not started';
     return paper.reviews.map((review) => (
         <Fragment key={review.user_id}>
             <Box component="span" sx={{ display: 'block' }}>
@@ -66,8 +66,7 @@ function Assignment({
     release: AssignmentMutation;
 }) {
     if (!me) return null;
-    const assignees = paper.assignees ?? [];
-    const isMine = assignees.some((a) => a.user_id === me.user_id);
+    const isMine = paper.assignees.some((a) => a.user_id === me.user_id);
     const assignTo = (userId: string) => assign.mutate({ baseStudyId: paper.base_study_id, userId });
     const releaseFrom = (userId: string) => release.mutate({ baseStudyId: paper.base_study_id, userId });
     return (
@@ -82,7 +81,7 @@ function Assignment({
             )}
             {me.lead && (
                 <>
-                    {assignees
+                    {paper.assignees
                         .filter((a) => a.user_id !== me.user_id)
                         .map((a) => (
                             <Button
@@ -97,7 +96,7 @@ function Assignment({
                     <TextField
                         select
                         size="small"
-                        label={`Assign ${paper.label} to`}
+                        label={`Assign ${paper.label ?? paper.id} to`}
                         value=""
                         sx={{ minWidth: 200 }}
                         onChange={(event) => event.target.value && assignTo(event.target.value)}
@@ -162,14 +161,14 @@ export function PaperListPage() {
                                 >
                                     <ListItemButton component={RouterLink} to={`/papers/${paper.id}`}>
                                         <ListItemText
-                                            primary={paper.label}
+                                            primary={paper.label ?? paper.id}
                                             secondary={
                                                 <>
                                                     <Box component="span" sx={{ display: 'block' }}>
                                                         {paper.id}
                                                     </Box>
                                                     <Box component="span" sx={{ display: 'block' }}>
-                                                        {assigneeNames(paper.assignees ?? [])}
+                                                        {assigneeNames(paper.assignees)}
                                                     </Box>
                                                     {progressOf(paper, now)}
                                                 </>

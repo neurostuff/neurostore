@@ -2,13 +2,10 @@
 
 Each scenario drives the HTTP app, so the real post_ops and set_state answer. The request and
 response of every step, with ids, timestamps and request ids masked, is the golden file the
-front end's test server must reproduce. Regenerate it with:
-UPDATE_GOLDEN=1 python -m pytest neurostore/tests/review/test_op_scenarios.py
+front end's test server must reproduce. Regenerate it as store/review-frontend/README.md says.
 """
 
 import hashlib
-import json
-import os
 
 import pytest
 from study_schema import keys
@@ -23,10 +20,6 @@ from neurostore.tests.review.test_api import add_source
 pytestmark = pytest.mark.anyio
 
 GOLDEN = golden.ROOT / "review-frontend/src/test/golden/op-scenarios.json"
-REGENERATE = (
-    "regenerate it with: cd store/backend && UPDATE_GOLDEN=1 python -m "
-    "pytest neurostore/tests/review/test_op_scenarios.py"
-)
 MOMENT_KEYS = {"created_at", "updated_at", "last_edit_at", "at", "timestamp"}
 
 ACCEPT = {
@@ -204,7 +197,6 @@ MERGE_ASSESSMENT = [
         "target": {"kind": "entity", "entity": "asm_2"},
     },
 ]
-MANY_OPS = [{"client_op_id": f"scenario-many-{n}"} for n in range(501)]
 STRANGER = "newuser-id"
 SOURCES = "/api/review/sources/"
 BUNDLE = "/api/review/sources/{source}/bundle"
@@ -408,9 +400,11 @@ SCENARIOS = {
     ],
     "batch the spec refuses": [
         START,
-        (REVIEWER, "post", OPS, batch(0), 400),
-        (REVIEWER, "post", OPS, batch(0, *MANY_OPS), 400),
         (REVIEWER, "post", OPS, {"expected_last_seq": 0, "ops": ["not an op"]}, 400),
+    ],
+    "batch of no ops": [
+        START,
+        (REVIEWER, "post", OPS, batch(0), 422),
     ],
     "submit, reopen and submit again": [
         START,
@@ -538,11 +532,7 @@ async def test_the_op_scenarios_match_the_golden_file(clients, session):
         {"name": name, "steps": await _play(clients, session, steps, name)}
         for name, steps in SCENARIOS.items()
     ]
-    rendered = json.dumps(document, indent=2, ensure_ascii=False) + "\n"
-    if os.environ.get("UPDATE_GOLDEN") == "1":
-        GOLDEN.write_text(rendered, encoding="utf-8")
-    assert GOLDEN.exists(), f"{GOLDEN} is missing; {REGENERATE}"
-    assert GOLDEN.read_text("utf-8") == rendered, f"op-scenarios.json is stale; {REGENERATE}"
+    golden.check(GOLDEN, golden.render(document))
 
 
 async def test_a_link_that_reaches_a_hidden_entity_changes_the_hidden_set(clients, session):

@@ -129,9 +129,15 @@ def _op_definitions():
     return names
 
 
+def _at(error):
+    path = validation.where(error)
+    return f" /{path}" if path else ""
+
+
 def _check_batch(batch):
     failures = [
-        (None, f"batch: {error.message}") for error in _batch_validator().iter_errors(batch)
+        (None, f"batch{_at(error)}: failed the {error.validator} rule")
+        for error in _batch_validator().iter_errors(batch)
     ]
     seen = set()
     for index, item in enumerate(batch.get("ops") or ()):

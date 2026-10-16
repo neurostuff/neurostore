@@ -5,18 +5,27 @@ import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ApiProvider, createQueryClient } from '../api/context';
-import type { PaperSummary, ReviewApi } from '../api/reviewApi';
+import type { PaperSummary, ReviewApi, ReviewerProgress } from '../api/reviewApi';
 import { theme } from '../theme';
 import { PaperListPage } from './PaperListPage';
 
+const listed: Pick<PaperSummary, 'origin' | 'created_at' | 'assignees'> = {
+    origin: 'upload',
+    created_at: '2026-10-16T09:00:00+00:00',
+    assignees: [],
+};
+const progressed: Pick<ReviewerProgress, 'last_seq' | 'updated_at'> = { last_seq: 0, updated_at: null };
+
 const papers: PaperSummary[] = [
     {
+        ...listed,
         id: 'P1',
         base_study_id: 'B-P1',
         label: 'First paper',
         total: 10,
         reviews: [
             {
+                ...progressed,
                 user_id: 'ana',
                 user_name: 'Ana',
                 state: 'submitted',
@@ -27,6 +36,7 @@ const papers: PaperSummary[] = [
                 last_edit_at: null,
             },
             {
+                ...progressed,
                 user_id: 'ben',
                 user_name: null,
                 state: 'in_progress',
@@ -38,14 +48,16 @@ const papers: PaperSummary[] = [
             },
         ],
     },
-    { id: 'P2', base_study_id: 'B-P2', label: 'Second paper', total: 0, reviews: [] },
+    { ...listed, id: 'P2', base_study_id: 'B-P2', label: 'Second paper', total: 0, reviews: [] },
     {
+        ...listed,
         id: 'P3',
         base_study_id: 'B-P3',
         label: 'Third paper',
         total: 0,
         reviews: [
             {
+                ...progressed,
                 user_id: 'ana',
                 user_name: 'Ana',
                 state: 'in_progress',
@@ -91,6 +103,12 @@ describe('the paper list', () => {
         expect(within(third).getByText('Ana: in progress, 0 edited, 0 verified, — reviewed')).toBeInTheDocument();
     });
 
+    it('lists a paper with no label by its id', async () => {
+        renderList([{ ...listed, id: 'P7', base_study_id: 'B-P7', label: null, total: 0, reviews: [] }]);
+        const row = await screen.findByRole('link', { name: /^P7/ });
+        expect(within(row).getAllByText('P7')).toHaveLength(2);
+    });
+
     it('says when no one has started a paper', async () => {
         renderList();
         const row = await screen.findByRole('link', { name: /Second paper/ });
@@ -100,12 +118,14 @@ describe('the paper list', () => {
     it('rounds the reviewed share to a whole percent', async () => {
         renderList([
             {
+                ...listed,
                 id: 'P4',
                 base_study_id: 'B-P4',
                 label: 'Fourth paper',
                 total: 3,
                 reviews: [
                     {
+                        ...progressed,
                         user_id: 'ana',
                         user_name: 'Ana',
                         state: 'in_progress',
@@ -125,12 +145,14 @@ describe('the paper list', () => {
     it('shows a set-aside review as set aside, with its reason, so it can be found and resumed', async () => {
         renderList([
             {
+                ...listed,
                 id: 'P5',
                 base_study_id: 'B-P5',
                 label: 'Fifth paper',
                 total: 4,
                 reviews: [
                     {
+                        ...progressed,
                         user_id: 'ana',
                         user_name: 'Ana',
                         state: 'set_aside',
@@ -159,6 +181,7 @@ const reviewers = [
 ];
 
 const assigned = (assignees: { user_id: string; name: string | null }[]): PaperSummary => ({
+    ...listed,
     id: 'P6',
     base_study_id: 'B-P6',
     label: 'Sixth paper',
@@ -236,6 +259,15 @@ describe('assignments in the paper list', () => {
         expect(release).toHaveBeenCalledWith('B-P6', 'ben');
     });
 
+    it('names the picker of a paper with no label by its id', async () => {
+        renderPapers({
+            listPapers: async () => [{ ...assigned([]), label: null }],
+            getMe: async () => ({ ...me, lead: true }),
+        });
+        await screen.findByRole('link', { name: /^P6/ });
+        expect(screen.getByRole('combobox', { name: 'Assign P6 to' })).toBeInTheDocument();
+    });
+
     it('filters the list to the papers assigned to the caller with “Assigned to me”', async () => {
         const listPapers = vi.fn(async () => [assigned([{ user_id: 'ana', name: 'Ana' }])]);
         renderPapers({ listPapers });
@@ -268,6 +300,7 @@ describe('assignments in the paper list', () => {
                     total: 4,
                     reviews: [
                         {
+                            ...progressed,
                             user_id: 'ben',
                             user_name: 'Ben',
                             state: 'in_progress',

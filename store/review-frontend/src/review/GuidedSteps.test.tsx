@@ -1,9 +1,8 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import type { AnyTarget, Op } from '../contract/generated/review-ops';
 import { withoutIds } from '../test/undoHelpers';
-import { entityRows, ev, hasFixture, loadFixture, makeBundle, row } from '../test/bundles';
+import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { renderWithStores } from '../test/render';
-import { RelationshipAudit } from './RelationshipAudit';
 import { ReviewScreen } from './ReviewScreen';
 import type { ReviewStores } from '../store/context';
 import { focusedSpans } from '../test/stores';
@@ -169,9 +168,6 @@ describe('step 3, entities outward from the analyses', () => {
     });
 });
 
-// jsdom renders MUI about ten times slower than a browser; the first click also warms React up, so is not timed.
-const CLICK_BUDGET_MS = 100;
-
 describe('step 5, the relationship audit', () => {
     const matrix = () => screen.getByRole('table', { name: 'relationship audit' });
     const cell = (name: string) => within(matrix()).getByRole('button', { name });
@@ -209,22 +205,6 @@ describe('step 5, the relationship audit', () => {
         setup('relationships');
         expect(cell('Controls > Patients → Patients')).toBeDisabled();
     });
-
-    it.skipIf(!hasFixture('25Czf8TcaxDS'))(
-        `renders the largest paper and redraws after a click within ${CLICK_BUDGET_MS} ms`,
-        () => {
-            const view = renderWithStores(<RelationshipAudit />, loadFixture('25Czf8TcaxDS'));
-            const analyses = view.stores.session.getState().index.visible.filter((e) => e.entityClass === 'Analysis');
-            const table = view.container.querySelector('table[aria-label="relationship audit"]')!;
-            expect(table.querySelectorAll('tbody th')).toHaveLength(analyses.length);
-            const [first, second] = table.querySelectorAll<HTMLButtonElement>('tbody button:not([disabled])');
-            act(() => void fireEvent.click(first));
-            const started = performance.now();
-            act(() => void fireEvent.click(second));
-            expect(performance.now() - started).toBeLessThan(CLICK_BUDGET_MS);
-        },
-        30_000
-    );
 });
 
 describe('step 4, leftover entities', () => {

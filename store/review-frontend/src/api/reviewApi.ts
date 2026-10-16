@@ -1,10 +1,26 @@
-import type { ErrorBody, OpResult as GeneratedOpResult, ReviewSummary } from '../contract/generated/review-api';
+import type {
+    Assignee,
+    ErrorBody,
+    OpResult as GeneratedOpResult,
+    Me,
+    PaperSummary,
+    ReviewSummary,
+} from '../contract/generated/review-api';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
 import type { SchemaName } from '../contract/schemas';
 import type { Schema } from '../model/schema';
 
-export type { ErrorBody, ReviewSummary } from '../contract/generated/review-api';
+export type {
+    Assignee,
+    ErrorBody,
+    Me,
+    PaperPage,
+    PaperSummary,
+    ReviewerList,
+    ReviewerProgress,
+    ReviewSummary,
+} from '../contract/generated/review-api';
 
 export type OpResult = Omit<GeneratedOpResult, 'hidden'> & { hidden: ReviewBundle['hidden'] };
 
@@ -12,40 +28,6 @@ export const ROLE_MESSAGE = 'You need the admin-reviewer role';
 
 /** Why and how a review was set aside, while it is. */
 export type SetAside = NonNullable<ReviewSummary['set_aside']>;
-
-export interface ReviewerProgress {
-    user_id: string;
-    user_name: string | null;
-    state: ReviewLifecycle;
-    set_aside?: SetAside;
-    edited: number;
-    verified: number;
-    reviewed: number;
-    op_count: number;
-    last_edit_at: string | null;
-}
-
-/** A reviewer a paper is assigned to, or one who can be assigned a paper. */
-export interface Assignee {
-    user_id: string;
-    name: string | null;
-}
-
-export interface PaperSummary {
-    id: string;
-    base_study_id: string;
-    label: string;
-    total: number;
-    assignees?: Assignee[];
-    reviews?: ReviewerProgress[];
-}
-
-/** The caller as a reviewer; `lead` is true for an admin-reviewer who is also an admin. */
-export interface Me {
-    user_id: string;
-    name: string | null;
-    lead: boolean;
-}
 
 /** `assigned: 'me'` keeps the papers assigned to the caller. */
 export interface PaperFilter {

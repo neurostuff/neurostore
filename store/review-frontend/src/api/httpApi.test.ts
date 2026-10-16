@@ -1,11 +1,19 @@
 import type { Op } from '../contract/generated/review-ops';
 import { makeBundle } from '../test/bundles';
 import { fakeFetch, json, type Handler } from '../test/fakeFetch';
-import { API_BASE } from '../test/spec';
+import { API_BASE, responseProblems } from '../test/spec';
 import { httpApi } from './httpApi';
 import { ApiError } from './reviewApi';
 
-const summary = { id: 'R1', source_id: 'S1', user_id: 'me', state: 'in_progress', last_seq: 0 };
+const summary = {
+    id: 'R1',
+    source_id: 'S1',
+    user_id: 'me',
+    state: 'in_progress',
+    last_seq: 0,
+    created_at: '2026-10-16T09:00:00+00:00',
+    updated_at: null,
+};
 
 const op: Op = {
     client_op_id: 'op-00001',
@@ -14,8 +22,21 @@ const op: Op = {
     evidence: { status: 'present', sets: [{ spans: [{ start_char: 0, end_char: 4 }] }] },
 };
 
+const nonConforming: string[] = [];
+
+afterEach(() => {
+    expect(nonConforming.splice(0)).toEqual([]);
+});
+
 function serve(handler: Handler) {
-    const server = fakeFetch(handler);
+    const server = fakeFetch(async (request) => {
+        const response = await handler(request);
+        const text = await response.clone().text();
+        if (text.startsWith('{') || text.startsWith('[')) {
+            nonConforming.push(...responseProblems(request.method, request.url, response.status, JSON.parse(text)));
+        }
+        return response;
+    });
     const api = httpApi(API_BASE, async () => 'token-1', server.fetch);
     return { api, requests: server.requests };
 }
@@ -24,8 +45,13 @@ describe('httpApi', () => {
     it('lists every page of /review/sources/', async () => {
         const sources = Array.from({ length: 150 }, (_, i) => ({
             id: `S${i}`,
+            base_study_id: `B${i}`,
             label: i === 3 ? null : `Paper ${i}`,
+            origin: 'upload',
+            created_at: '2026-10-16T09:00:00+00:00',
             total: 10 + i,
+            reviews: [],
+            assignees: [],
         }));
         const { api, requests } = serve(({ url }) => {
             const params = new URL(url).searchParams;
@@ -38,8 +64,7 @@ describe('httpApi', () => {
         });
         const papers = await api.listPapers();
         expect(papers).toHaveLength(150);
-        expect(papers[0]).toEqual({ id: 'S0', label: 'Paper 0', total: 10 });
-        expect(papers[3]).toEqual({ id: 'S3', label: 'S3', total: 13 });
+        expect(papers).toEqual(sources);
         expect(requests.map((r) => r.path)).toEqual(['/api/review/sources/', '/api/review/sources/']);
         expect(requests.flatMap((r) => r.problems)).toEqual([]);
     });
@@ -63,7 +88,15 @@ describe('httpApi', () => {
     });
 
     it('posts ops with expected_last_seq, keepalive when asked', async () => {
-        const result = { ops: [], last_seq: 4, record: {}, coordinate_revision: null, provenance: {}, annotations: {} };
+        const result = {
+            ops: [],
+            last_seq: 4,
+            record: {},
+            coordinate_revision: null,
+            provenance: {},
+            annotations: {},
+            hidden: {},
+        };
         const { api, requests } = serve(() => json(result));
         expect(await api.postOps('R1', 3, [op])).toEqual(result);
         await api.postOps('R1', 3, [op], { keepalive: true });
@@ -91,7 +124,14 @@ describe('httpApi', () => {
     });
 
     it('throws an ApiError carrying the ErrorResponse', async () => {
-        const body = { status: 409, title: 'Conflict', detail: 'The review has changed', last_seq: 7 };
+        const body = {
+            status: 409,
+            title: 'Conflict',
+            detail: 'The review has changed',
+            last_seq: 7,
+            timestamp: '2026-10-16T09:00:00+00:00',
+            request_id: 'req-1',
+        };
         const { api } = serve(() => json(body, 409));
         const error = await api.postOps('R1', 3, [op]).catch((e: unknown) => e);
         expect(error).toBeInstanceOf(ApiError);
@@ -114,6 +154,8 @@ describe('assignments and reviewers', () => {
                         id: 'S1',
                         base_study_id: 'B1',
                         label: 'Paper',
+                        origin: 'upload',
+                        created_at: '2026-10-16T09:00:00+00:00',
                         total: 4,
                         assignees: [{ user_id: 'me', name: 'Me' }],
                         reviews: [
@@ -121,6 +163,8 @@ describe('assignments and reviewers', () => {
                                 user_id: 'me',
                                 user_name: 'Me',
                                 state: 'in_progress',
+                                last_seq: 2,
+                                updated_at: '2026-10-16T10:00:00+00:00',
                                 edited: 1,
                                 verified: 0,
                                 reviewed: 1,

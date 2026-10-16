@@ -1,10 +1,11 @@
-import { act } from '@testing-library/react';
+import { act, fireEvent } from '@testing-library/react';
 import { currentAnalyses } from '../model/coordinates';
 import { selectDiff } from '../store/diffSelectors';
 import { createReviewStores } from '../store/context';
 import { hasFixture, loadFixture } from '../test/bundles';
 import { registeredSpans } from '../test/highlights';
 import { renderWithStores } from '../test/render';
+import { RelationshipAudit } from './RelationshipAudit';
 import { ReviewScreen } from './ReviewScreen';
 import { buildPaletteIndex, searchPalette } from './search';
 
@@ -16,6 +17,8 @@ const RUNS = 5;
 const HEAVY = '25Czf8TcaxDS';
 const RENDER_TIMEOUT_MS = 30_000;
 const KEYSTROKE_BUDGET_MS = 50;
+// jsdom renders MUI about ten times slower than a browser; the first click also warms React up, so is not timed.
+const CLICK_BUDGET_MS = 100;
 
 function timed(focus: () => void) {
     const started = performance.now();
@@ -191,6 +194,24 @@ describe.skipIf(!hasFixture(HEAVY))(`the diff against the original on ${HEAVY}`,
             expect(keys.size).toBeGreaterThan(RUNS);
             expect(median(timings)).toBeLessThan(BUDGET_MS);
             expect(Math.max(...timings)).toBeLessThan(BUDGET_MS * 3);
+        },
+        RENDER_TIMEOUT_MS
+    );
+});
+
+describe('relationship audit performance', () => {
+    it.skipIf(!hasFixture(HEAVY))(
+        `renders the largest paper and redraws after a click within ${CLICK_BUDGET_MS} ms`,
+        () => {
+            const view = renderWithStores(<RelationshipAudit />, loadFixture(HEAVY));
+            const analyses = view.stores.session.getState().index.visible.filter((e) => e.entityClass === 'Analysis');
+            const table = view.container.querySelector('table[aria-label="relationship audit"]')!;
+            expect(table.querySelectorAll('tbody th')).toHaveLength(analyses.length);
+            const [first, second] = table.querySelectorAll<HTMLButtonElement>('tbody button:not([disabled])');
+            act(() => void fireEvent.click(first));
+            const started = performance.now();
+            act(() => void fireEvent.click(second));
+            expect(performance.now() - started).toBeLessThan(CLICK_BUDGET_MS);
         },
         RENDER_TIMEOUT_MS
     );

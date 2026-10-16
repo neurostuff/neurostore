@@ -53,6 +53,15 @@ describe('the session’s diff against the original', () => {
         });
     });
 
+    it('has an item for each entity and each slot the review or the original holds', () => {
+        const store = reviewed();
+        const { items } = selectDiff(store.session.getState());
+        expect(items.length).toBeGreaterThan(store.session.getState().index.entities.length);
+        expect(items.map((item) => item.key)).toEqual(
+            expect.arrayContaining(['entity:grp_a', 'slot:grp_a:name', 'slot:grp_a:n', 'entity:grp_c'])
+        );
+    });
+
     it('turns the diff on and off', () => {
         const store = reviewed();
         expect(store.view.getState().diffOn).toBe(false);

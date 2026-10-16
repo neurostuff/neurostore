@@ -1,16 +1,13 @@
 """The study_schema JSON Schemas the review app reads, served by /review/schemas/{name}, and the
-front end's test copy of them.
-
-Regenerate the copy with:
-UPDATE_GOLDEN=1 python -m pytest neurostore/tests/review/test_schemas.py
+front end's test copy of them. Regenerate the copy as store/review-frontend/README.md says.
 """
 
 import json
-import os
 
 import pytest
 from study_schema.jsonschema import load, references
 
+from neurostore.review.core import SCHEMA_DIR
 from neurostore.review.core.schemas import strip_descriptions
 from neurostore.tests.review import golden
 from neurostore.tests.review.layouts import OTHER, REVIEWER, assert_matches_spec
@@ -20,10 +17,6 @@ pytestmark = pytest.mark.anyio
 NAMES = ["extraction-record", "coordinate-parse"]
 GOLDEN = golden.ROOT / "review-frontend/src/test/golden/schemas"
 REFERENCES = golden.ROOT / "review-frontend/src/contract/references.fixture.json"
-REGENERATE = (
-    "regenerate it with: cd store/backend && UPDATE_GOLDEN=1 python -m "
-    "pytest neurostore/tests/review/test_schemas.py"
-)
 
 
 def path(name):
@@ -98,7 +91,23 @@ async def test_a_stale_if_none_match_gets_the_schema(clients):
     assert response.json() == strip_descriptions(load("extraction-record"))
 
 
-@pytest.mark.parametrize("name", ["storage-study", "parsed-paper", "nope"])
+@pytest.mark.parametrize("name", ["review-bundle", "review-ops"])
+async def test_a_review_contract_is_served_as_its_json_schema_with_its_descriptions(
+    clients, name
+):
+    response = await clients[REVIEWER].get(path(name))
+
+    assert response.status_code == 200
+    assert response.json() == json.loads(
+        (SCHEMA_DIR / f"{name}.schema.json").read_text("utf-8")
+    )
+    assert "etag" in response.headers
+    assert_matches_spec(response, "/review/schemas/{name}", "get")
+
+
+@pytest.mark.parametrize(
+    "name", ["storage-study", "parsed-paper", "record-provenance", "review-bundle.schema", "nope"]
+)
 async def test_an_unknown_schema_is_not_found(clients, name):
     response = await clients[REVIEWER].get(path(name))
 
@@ -125,13 +134,7 @@ async def test_a_schema_needs_the_admin_reviewer_role(clients, make_user):
 @pytest.mark.parametrize("name", NAMES)
 async def test_the_front_ends_copy_is_the_served_schema(clients, name):
     served = (await clients[REVIEWER].get(path(name))).json()
-    rendered = json.dumps(served, indent=2, ensure_ascii=False) + "\n"
-    copy = GOLDEN / f"{name}.schema.json"
-    if os.environ.get("UPDATE_GOLDEN") == "1":
-        GOLDEN.mkdir(parents=True, exist_ok=True)
-        copy.write_text(rendered, encoding="utf-8")
-    assert copy.exists(), f"{copy} is missing; {REGENERATE}"
-    assert copy.read_text("utf-8") == rendered, f"{copy.name} is stale; {REGENERATE}"
+    golden.check(GOLDEN / f"{name}.schema.json", golden.render(served))
 
 
 def test_the_front_end_has_no_other_schema_copy():
@@ -149,7 +152,4 @@ def test_the_front_ends_reference_fixture_is_study_schemas_references():
         {"class": row.cls, "slot": row.slot, "target": row.target, "multivalued": row.multivalued}
         for row in references("extraction-record")
     ]
-    rendered = json.dumps(rows, indent=2) + "\n"
-    if os.environ.get("UPDATE_GOLDEN") == "1":
-        REFERENCES.write_text(rendered, encoding="utf-8")
-    assert REFERENCES.read_text("utf-8") == rendered, f"{REFERENCES.name} is stale; {REGENERATE}"
+    golden.check(REFERENCES, json.dumps(rows, indent=2) + "\n")

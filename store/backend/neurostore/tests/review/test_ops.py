@@ -461,6 +461,12 @@ def test_a_batch_that_repeats_a_client_op_id_is_refused_naming_the_repeat():
     assert "same-op-id" in raised.value.problems[0]
 
 
+def test_a_batch_without_ops_is_refused_with_a_batch_level_message_that_names_no_path():
+    with pytest.raises(ops.OpError) as raised:
+        ops.apply_batch(state(), {}, text=records.TEXT, user_id="u1", at=AT)
+    assert raised.value.failures == [(None, "batch: failed the required rule")]
+
+
 @pytest.mark.parametrize(
     "parent, list_path, local_id, message",
     [

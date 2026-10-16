@@ -56,6 +56,14 @@ describe('TextPane highlights', () => {
         after.forEach((node, i) => expect(node).toBe(before[i]));
     });
 
+    it('registers the spans of all the slots of a focused entity as the focus highlight', () => {
+        const { stores, textRoot } = setup();
+        act(() => stores.view.getState().focusEntity('grp_b'));
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('Controls'), at('age')]);
+        act(() => stores.view.getState().focusEntity('grp_a'));
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('A paper'), at('twenty'), at('patients')]);
+    });
+
     it('keeps the underlines right after evidence is added and focus moves on', () => {
         const { stores, textRoot } = setup();
         act(() => stores.view.getState().focusSlot('slot:grp_a:name'));
@@ -251,5 +259,6 @@ describe('TextPane while the diff is shown', () => {
         expect(styleText()).toMatch(/::highlight\(rv-original\)[^}]*dashed/);
         act(() => stores.view.getState().toggleDiff(false));
         expect(registeredSpans('rv-original', textRoot())).toEqual([]);
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('twenty'), at('scanner')]);
     });
 });

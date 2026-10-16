@@ -2,30 +2,18 @@ import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Schema } from '../model/schema';
 import {
     ApiError,
-    type Assignee,
     type OpResult,
     type PaperFilter,
+    type PaperPage,
     type PaperSummary,
     type Me,
     type ReviewApi,
-    type ReviewerProgress,
+    type ReviewerList,
     type ReviewSummary,
     type SetAside,
 } from './reviewApi';
 
 const PAGE_SIZE = 100;
-
-interface SourcePage {
-    metadata: { total_count: number };
-    results: {
-        id: string;
-        base_study_id: string;
-        label: string | null;
-        total: number;
-        assignees: Assignee[];
-        reviews: ReviewerProgress[];
-    }[];
-}
 
 /** A set-aside's reason, and its note when it has one, as the state patch takes them. */
 const patchOf = (setAside?: SetAside) =>
@@ -59,20 +47,11 @@ export function httpApi(
             const papers: PaperSummary[] = [];
             const assigned = filter.assigned ? `&assigned=${filter.assigned}` : '';
             for (let page = 1; ; page += 1) {
-                const { metadata, results } = await request<SourcePage>(
+                const { metadata, results } = await request<PaperPage>(
                     'GET',
                     `/review/sources/?page=${page}&page_size=${PAGE_SIZE}${assigned}`
                 );
-                papers.push(
-                    ...results.map((s) => ({
-                        id: s.id,
-                        base_study_id: s.base_study_id,
-                        label: s.label ?? s.id,
-                        total: s.total,
-                        assignees: s.assignees,
-                        reviews: s.reviews,
-                    }))
-                );
+                papers.push(...results);
                 if (results.length === 0 || papers.length >= metadata.total_count) return papers;
             }
         },
@@ -83,7 +62,7 @@ export function httpApi(
             await request('DELETE', `/review/base-studies/${id(baseStudyId)}/assignments/${id(userId)}`);
         },
         getMe: () => request<Me>('GET', '/review/me'),
-        listReviewers: async () => (await request<{ results: Assignee[] }>('GET', '/review/reviewers/')).results,
+        listReviewers: async () => (await request<ReviewerList>('GET', '/review/reviewers/')).results,
         getBundle: (sourceId) => request<ReviewBundle>('GET', `/review/sources/${id(sourceId)}/bundle`),
         startReview: (sourceId) => request<ReviewSummary>('PUT', `/review/sources/${id(sourceId)}/review`),
         postOps: (reviewId, expectedLastSeq, ops, options = {}) =>

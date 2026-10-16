@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { ApiError, type ReviewApi } from './api/reviewApi';
+import { ApiError, type PaperSummary, type ReviewApi } from './api/reviewApi';
 import { App, AppRoutes } from './App';
 import { ev, makeBundle } from './test/bundles';
 import { GOLDEN_SCHEMAS } from './test/goldenSchemas';
@@ -17,10 +17,17 @@ const bundles = {
     P2: paper('P2', 'Second paper', 'Hello, reviewer.'),
 };
 
+const listed: Pick<PaperSummary, 'origin' | 'created_at' | 'reviews' | 'assignees'> = {
+    origin: 'upload',
+    created_at: '2026-10-16T09:00:00+00:00',
+    reviews: [],
+    assignees: [],
+};
+
 const api: ReviewApi = {
     listPapers: async () => [
-        { id: 'P1', base_study_id: 'P1', label: 'First paper', total: 0 },
-        { id: 'P2', base_study_id: 'P2', label: 'Second paper', total: 0 },
+        { ...listed, id: 'P1', base_study_id: 'P1', label: 'First paper', total: 0 },
+        { ...listed, id: 'P2', base_study_id: 'P2', label: 'Second paper', total: 0 },
     ],
     assign: async () => {},
     release: async () => {},
@@ -30,7 +37,15 @@ const api: ReviewApi = {
         if (!(id in bundles)) throw new Error(`no bundle ${id}`);
         return bundles[id as keyof typeof bundles];
     },
-    startReview: async (id) => ({ id: `R-${id}`, source_id: id, user_id: 'me', state: 'in_progress', last_seq: 0 }),
+    startReview: async (id) => ({
+        id: `R-${id}`,
+        source_id: id,
+        user_id: 'me',
+        state: 'in_progress',
+        last_seq: 0,
+        created_at: '2026-10-16T09:00:00+00:00',
+        updated_at: null,
+    }),
     postOps: () => Promise.reject(new Error('no saving in these tests')),
     setState: () => Promise.reject(new Error('no saving in these tests')),
     getSchema: async (name) => GOLDEN_SCHEMAS[name],

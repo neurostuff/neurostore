@@ -211,10 +211,10 @@ async def test_a_400_on_a_review_route_is_an_error_response_that_does_not_echo_t
     reviewer, source, session
 ):
     review = add_review(session, source, REVIEWER)
-    too_many = [accept(f"grp_marker_{n}") for n in range(501)]
+    marked = [accept(f"grp_marker_{n}") for n in range(3)]
 
     response = await reviewer.post(
-        f"/api/review/reviews/{review.id}/ops", data=batch(0, *too_many)
+        f"/api/review/reviews/{review.id}/ops", data=batch(0, *marked, "grp_marker_not_an_op")
     )
 
     assert response.status_code == 400
@@ -224,7 +224,40 @@ async def test_a_400_on_a_review_route_is_an_error_response_that_does_not_echo_t
     assert body["request_id"]
     assert body["timestamp"]
     assert body["errors"] == [
-        {"field": "ops", "code": "maxItems", "message": "failed the maxItems rule"}
+        {"field": "ops.3", "code": "type", "message": "failed the type rule"}
+    ]
+    assert_matches_spec(response, "/review/reviews/{id}/ops", "post")
+    assert "grp_marker_" not in response.text
+    assert op_count(session) == 0
+
+
+async def test_a_batch_of_no_ops_is_a_422_with_a_batch_level_message(reviewer, source, session):
+    review = add_review(session, source, REVIEWER)
+
+    response = await reviewer.post(f"/api/review/reviews/{review.id}/ops", data=batch(0))
+
+    assert response.status_code == 422
+    assert response.json()["errors"] == [
+        {"field": "ops", "code": "REJECTED", "message": "batch /ops: failed the minItems rule"}
+    ]
+    assert_matches_spec(response, "/review/reviews/{id}/ops", "post")
+    assert op_count(session) == 0
+
+
+async def test_a_batch_over_the_op_schemas_limit_is_a_422_that_does_not_echo_it(
+    reviewer, source, session
+):
+    review = add_review(session, source, REVIEWER)
+    limit = json.loads(OPS_SCHEMA.read_text("utf-8"))["properties"]["ops"]["maxItems"]
+    too_many = [accept(f"grp_marker_{n}") for n in range(limit + 1)]
+
+    response = await reviewer.post(
+        f"/api/review/reviews/{review.id}/ops", data=batch(0, *too_many)
+    )
+
+    assert response.status_code == 422
+    assert response.json()["errors"] == [
+        {"field": "ops", "code": "REJECTED", "message": "batch /ops: failed the maxItems rule"}
     ]
     assert_matches_spec(response, "/review/reviews/{id}/ops", "post")
     assert "grp_marker_" not in response.text

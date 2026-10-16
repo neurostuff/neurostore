@@ -6,15 +6,11 @@ from neurostore.review.core import coordinates, entities, paths
 from neurostore.review.core.bundle import validator
 from neurostore.tests.review import golden, records
 
-REGENERATE = "regenerate it with: cd store/backend && python -m neurostore.tests.review.golden"
 ENTRIES = json.loads(golden.OPS.read_text("utf-8")) if golden.OPS.exists() else []
 
 
 def test_the_committed_bundle_is_what_golden_builds():
-    assert golden.BUNDLE.exists(), f"{golden.BUNDLE} is missing; {REGENERATE}"
-    assert golden.BUNDLE.read_text("utf-8") == golden.render(golden.build_bundle()), (
-        f"bundle.json is stale; {REGENERATE}"
-    )
+    golden.check(golden.BUNDLE, golden.render(golden.build_bundle()))
 
 
 def test_the_bundle_validates_against_the_bundle_schema_with_its_entity_index():
@@ -30,13 +26,8 @@ def test_the_bundle_carries_only_the_synthetic_text():
 
 def test_the_committed_diff_bundle_and_its_verdicts_are_what_golden_builds():
     bundle, verdicts = golden.build_diff()
-    assert golden.DIFF_BUNDLE.exists(), f"{golden.DIFF_BUNDLE} is missing; {REGENERATE}"
-    assert golden.DIFF_BUNDLE.read_text("utf-8") == golden.render(bundle), (
-        f"diff-bundle.json is stale; {REGENERATE}"
-    )
-    assert golden.DIFF_VERDICTS.read_text("utf-8") == golden.render(verdicts), (
-        f"diff-verdicts.json is stale; {REGENERATE}"
-    )
+    golden.check(golden.DIFF_BUNDLE, golden.render(bundle))
+    golden.check(golden.DIFF_VERDICTS, golden.render(verdicts))
 
 
 def test_the_diff_bundle_validates_and_carries_the_original_beside_the_edited_record():

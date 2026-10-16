@@ -1,10 +1,9 @@
 import { ApiError, ROLE_MESSAGE, type ReviewApi, type ReviewLifecycle, type SetAside } from '../api/reviewApi';
-import type { Op } from '../contract/generated/review-ops';
+import { BATCH_MAX_OPS, type Op } from '../contract/generated/review-ops';
 import { isLocalOp } from '../model/applyOp';
 import { spansToCodePoints } from '../model/offsets';
 import { selectIsBlocked, type Refusal, type SessionStore } from './sessionStore';
 
-export const MAX_BATCH = 500;
 export const DEBOUNCE_MS = 1000;
 export const MAX_BACKOFF_MS = 30_000;
 /** Browsers refuse a keepalive body over 64 KiB; a hidden-page flush stays under this. */
@@ -40,13 +39,13 @@ function measured(text: string, batch: Op[]): Batch {
     return { batch, sent, size: bytesOf(sent) };
 }
 
-/** The leading whole groups to send: at most MAX_BATCH ops, and when hidden under KEEPALIVE_LIMIT bytes. */
+/** The leading whole groups to send: at most BATCH_MAX_OPS ops, and when hidden under KEEPALIVE_LIMIT bytes. */
 function nextBatch(pending: Op[], groupOf: Record<string, string>, text: string, hidden: boolean): Batch {
     const next: Batch = { batch: [], sent: [], size: 0 };
     for (const group of groupsOf(pending, groupOf)) {
         const converted = spansToCodePoints(text, group);
         const groupSize = bytesOf(converted);
-        const overBatch = next.batch.length + group.length > MAX_BATCH;
+        const overBatch = next.batch.length + group.length > BATCH_MAX_OPS;
         const overKeepalive = hidden && next.size + groupSize >= KEEPALIVE_LIMIT;
         if (next.batch.length > 0 && (overBatch || overKeepalive)) break;
         next.batch.push(...group);

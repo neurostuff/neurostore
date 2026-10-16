@@ -1,4 +1,7 @@
-"""Batches on papers of the golden size and larger apply within their bounds (N4)."""
+"""Batches on papers of the golden size and larger apply within their bounds (N4).
+
+The timed tests run with ``python -m pytest --performance``.
+"""
 
 import copy
 import json
@@ -8,6 +11,7 @@ import pytest
 
 from neurostore.review.core.ops import OpError, ReviewState, apply_batch
 from neurostore.study_schema_tools import expected_key
+from neurostore.tests.conftest import performance_test
 from neurostore.tests.review import golden
 
 ANALYSES, POINTS, RELABELS = 40, 220, 100
@@ -114,6 +118,7 @@ def _fastest(state, ops, text):
     return min(times), outcome
 
 
+@performance_test
 def test_a_hundred_relabels_on_a_paper_of_the_golden_size_apply_within_two_seconds():
     text, parse, record = _paper()
     assert len(parse["analyses"]) == ANALYSES
@@ -135,6 +140,7 @@ def test_the_quoted_record_of_the_golden_size_is_the_largest_astra_papers_size()
     assert 0.85 < len(json.dumps(record)) / 2**20 < 1.0
 
 
+@performance_test
 @pytest.mark.parametrize("size, bound", [((ANALYSES, POINTS), 0.3), (LARGE, 1.0)])
 @pytest.mark.parametrize("kind", ["set_value", "coordinate"])
 def test_one_op_on_a_large_paper_applies_within_its_bound(size, bound, kind):
@@ -148,7 +154,7 @@ def test_one_op_on_a_large_paper_applies_within_its_bound(size, bound, kind):
     assert elapsed < bound, f"one {kind} op at {size} took {elapsed:.2f}s"
 
 
-def test_a_refused_hundred_op_batch_whose_last_op_is_invalid_is_refused_within_two_seconds():
+def _hundred_ops_the_last_invalid():
     text, state = _reviewed(ANALYSES, POINTS)
     keys = [analysis["key"] for analysis in state.coordinate_parse["analyses"]]
     ops = [
@@ -156,12 +162,31 @@ def test_a_refused_hundred_op_batch_whose_last_op_is_invalid_is_refused_within_t
         for n in range(RELABELS - 1)
     ]
     ops.append(_set_n("bench_an_0", RELABELS, "many"))
+    return text, state, ops
 
-    elapsed, refusal = _fastest(state, ops, text)
 
+def _assert_refused_at_the_last_op(refusal):
     assert isinstance(refusal, OpError)
     assert str(refusal) == f"op {RELABELS - 1} leaves an invalid document"
     assert refusal.problems[0].startswith(
         f"op {RELABELS - 1}: extraction-record /analyses/1/groups/0/n/value"
     )
+
+
+def test_a_hundred_op_batch_whose_last_op_is_invalid_is_refused_naming_that_op_and_path():
+    text, state, ops = _hundred_ops_the_last_invalid()
+
+    with pytest.raises(OpError) as raised:
+        apply_batch(state, {"ops": ops}, text=text, user_id="u1", at=AT)
+
+    _assert_refused_at_the_last_op(raised.value)
+
+
+@performance_test
+def test_a_refused_hundred_op_batch_whose_last_op_is_invalid_is_refused_within_two_seconds():
+    text, state, ops = _hundred_ops_the_last_invalid()
+
+    elapsed, refusal = _fastest(state, ops, text)
+
+    _assert_refused_at_the_last_op(refusal)
     assert elapsed < BOUND_SECONDS, f"the refused batch took {elapsed:.2f}s"

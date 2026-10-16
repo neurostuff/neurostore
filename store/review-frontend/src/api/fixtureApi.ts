@@ -22,9 +22,21 @@ async function getJson<T>(url: string): Promise<T> {
     return response.json() as Promise<T>;
 }
 
+// index.json records no load time, so every fixture paper is listed as loaded at the epoch.
+const FIXTURE_CREATED_AT = new Date(0).toISOString();
+
 const summary = (bundle: ReviewBundle): ReviewSummary => {
     const { id, user_id, state, set_aside, last_seq } = bundle.review!;
-    return { id, source_id: bundle.source.id, user_id, state, ...(set_aside && { set_aside }), last_seq };
+    return {
+        id,
+        source_id: bundle.source.id,
+        user_id,
+        state,
+        ...(set_aside && { set_aside }),
+        last_seq,
+        created_at: FIXTURE_CREATED_AT,
+        updated_at: null,
+    };
 };
 
 /**
@@ -49,15 +61,16 @@ export function fixtureApi(base: string): ReviewApi {
 
     return {
         async listPapers(filter: PaperFilter = {}) {
-            const papers = await getJson<Omit<PaperSummary, 'base_study_id' | 'assignees'>[]>(url('index.json'));
+            const papers = await getJson<Pick<PaperSummary, 'id' | 'label' | 'total'>[]>(url('index.json'));
             const listed: PaperSummary[] = papers.map((paper) => ({
                 ...paper,
                 base_study_id: paper.id,
+                origin: 'upload',
+                created_at: FIXTURE_CREATED_AT,
+                reviews: [],
                 assignees: assigned.get(paper.id) ?? [],
             }));
-            return filter.assigned
-                ? listed.filter((paper) => paper.assignees?.some((a) => a.user_id === 'me'))
-                : listed;
+            return filter.assigned ? listed.filter((paper) => paper.assignees.some((a) => a.user_id === 'me')) : listed;
         },
         async assign(baseStudyId, userId) {
             const current = assigned.get(baseStudyId) ?? [];

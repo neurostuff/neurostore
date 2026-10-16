@@ -138,6 +138,7 @@ const GAPS: Record<string, string> = {
     'refused batch, op 1 fails after op 0 would apply': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 leaves an invalid document': 'the 422 message is the backend’s, not the test server’s',
     'batch the spec refuses': 'the 400 messages are the spec validator’s, not the test server’s',
+    'batch of no ops': 'the 422 message is the backend’s, not the test server’s',
     'no token': 'the test server does not check the Authorization header',
     'not an admin-reviewer': 'the test server has no role model',
     'reference by a non-admin': 'the test server has no role model',

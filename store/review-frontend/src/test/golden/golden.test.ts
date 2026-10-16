@@ -270,7 +270,7 @@ describe('the golden op file the backend replays', () => {
 
     it('holds what the store emits for the golden bundle; regenerate with UPDATE_GOLDEN=1', () => {
         const rendered = JSON.stringify(golden, null, 2) + '\n';
-        if (process.env.UPDATE_GOLDEN) writeFileSync(OPS, rendered);
+        if (process.env.UPDATE_GOLDEN === '1') writeFileSync(OPS, rendered);
         expect(existsSync(OPS)).toBe(true);
         expect(readFileSync(OPS, 'utf8')).toBe(rendered);
     });

@@ -5,7 +5,8 @@ import react from '@vitejs/plugin-react';
 
 const fixturesDir = path.resolve(__dirname, 'fixtures');
 const schemasDir = path.resolve(__dirname, 'src/test/golden/schemas');
-const TIMED = ['src/review/performance.test.tsx', 'src/pages/ReviewPage.test.tsx'];
+const SERIAL = ['src/pages/ReviewPage.test.tsx'];
+const PERF = ['src/**/*.perf.test.tsx'];
 
 function serveFixtures(): Plugin {
     const middleware = (req: { url?: string }, res: NodeJS.WritableStream & { statusCode: number; setHeader: (k: string, v: string) => void }, next: () => void) => {
@@ -22,7 +23,23 @@ function serveFixtures(): Plugin {
     };
 }
 
-export default defineConfig({
+const projects = (mode: string) =>
+    mode === 'perf'
+        ? [{ extends: true as const, test: { name: 'perf', include: PERF, fileParallelism: false } }]
+        : [
+              {
+                  extends: true as const,
+                  test: { name: 'unit', exclude: [...configDefaults.exclude, ...SERIAL, ...PERF], sequence: { groupOrder: 0 } },
+              },
+              {
+                  extends: true as const,
+                  test: { name: 'serial', include: SERIAL, sequence: { groupOrder: 1 }, fileParallelism: false },
+              },
+          ];
+
+// The timing tests are a project only under `--mode perf` (npm run test:perf). As a third project they would run in a
+// bare `vitest run`, and `npm run test` would need --project flags to leave them out, so the two would differ.
+export default defineConfig(({ mode }) => ({
     base: '/review/',
     plugins: [react(), serveFixtures()],
     server: { port: 3001, fs: { allow: ['.', '../../packages'] } },
@@ -30,12 +47,6 @@ export default defineConfig({
         globals: true,
         environment: 'jsdom',
         setupFiles: 'src/test/setup.ts',
-        projects: [
-            {
-                extends: true,
-                test: { name: 'unit', exclude: [...configDefaults.exclude, ...TIMED], sequence: { groupOrder: 0 } },
-            },
-            { extends: true, test: { name: 'timed', include: TIMED, sequence: { groupOrder: 1 }, fileParallelism: false } },
-        ],
+        projects: projects(mode),
     },
-});
+}));

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
-import type { Op, SetEvidenceOp } from '../contract/generated/review-ops';
+import { BATCH_MAX_OPS, type Op, type SetEvidenceOp } from '../contract/generated/review-ops';
 import { ApiError } from '../api/reviewApi';
 import { httpApi } from '../api/httpApi';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
@@ -142,19 +142,21 @@ describe('the save loop', () => {
         expect(sentIds(server)[0]).toHaveLength(2);
     });
 
-    it('sends at most 500 ops a batch', async () => {
+    it('sends at most the contract’s maximum of ops a batch', async () => {
         const { store, client } = await open();
-        const ops = Array.from({ length: 1200 }, (_, i) =>
+        const ops = Array.from({ length: 2 * BATCH_MAX_OPS + 200 }, (_, i) =>
             evidenceOp(`op-${String(i).padStart(6, '0')}`, 'description', i % 2 ? 'Stroop' : 'fMRI')
         );
         store.session.setState({ pending: ops });
         await vi.advanceTimersByTimeAsync(1000);
         await client.settled();
-        expect(sentIds(server).map((ids) => ids.length)).toEqual([500, 500, 200]);
+        expect(sentIds(server).map((ids) => ids.length)).toEqual([BATCH_MAX_OPS, BATCH_MAX_OPS, 200]);
         expect(posts(server).map((r) => (r.body as { expected_last_seq: number }).expected_last_seq)).toEqual([
-            0, 500, 1000,
+            0,
+            BATCH_MAX_OPS,
+            2 * BATCH_MAX_OPS,
         ]);
-        expect(store.session.getState().bundle.review?.last_seq).toBe(1200);
+        expect(store.session.getState().bundle.review?.last_seq).toBe(ops.length);
     });
 
     it('stays saving across batches, going idle once at the end', async () => {
@@ -936,7 +938,7 @@ describe('a refetch and a 400', () => {
                     title: 'Bad Request',
                     detail: 'The request body is not valid.',
                     status: 400,
-                    errors: [{ field: 'ops', code: 'minItems', message: 'failed the minItems rule' }],
+                    errors: [{ field: 'ops.0', code: 'type', message: 'failed the type rule' }],
                 },
                 400
             )
@@ -946,7 +948,7 @@ describe('a refetch and a 400', () => {
         await vi.advanceTimersByTimeAsync(60_000);
         expect(posts(server)).toHaveLength(1);
         expect(store.session.getState().pending).toHaveLength(1);
-        expect(selectSaveLabel(store.session.getState())).toBe('ops: failed the minItems rule');
+        expect(selectSaveLabel(store.session.getState())).toBe('ops.0: failed the type rule');
     });
 
     it('falls back to the detail of a 400 that carries no errors', async () => {

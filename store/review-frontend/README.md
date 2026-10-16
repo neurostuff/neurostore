@@ -12,7 +12,22 @@ The main dev server proxies `/review/` to port 3001, including the HMR websocket
 
 ## Scripts
 
-- `npm run test`: unit tests (Vitest)
+- `npm run test`: unit tests (Vitest), without the timing tests (a bare `vitest run` is the same)
+- `npm run test:perf`: the timing tests (`src/**/*.perf.test.tsx`), on their own (`vitest run --mode perf`); CI does not run them
 - `npm run typecheck`: TypeScript without emit
 - `npm run lint`: ESLint
 - `npm run build`: typecheck and production build
+- `npm run gen:types`: regenerate `src/contract/generated` from the OpenAPI spec and the review JSON Schemas
+- `npm run check:types`: regenerate them and fail if `src/contract/generated` differs from what git holds, an untracked file included
+
+The backend's timing tests are skipped by default; run them with `python -m pytest --performance neurostore/tests/review/test_coordinate_batch_speed.py`.
+
+## Golden files
+
+The golden files under `src/test/golden` (and `src/contract/references.fixture.json`) are shared with the backend's tests. Regenerate them all this way, from the monorepo root:
+
+1. The backend's goldens: the store test command from AGENTS.md, with `UPDATE_GOLDEN=1`:
+   `cd store && docker compose run -e "APP_ENV=docker_test" -e "UPDATE_GOLDEN=1" --rm neurostore bash -c "python -m pytest neurostore/tests/review"`
+   The container writes the files as root; `chown` them back to yourself afterwards.
+2. `ops.json`, which the front end writes from `bundle.json`: `cd store/review-frontend && UPDATE_GOLDEN=1 npm run test`
+3. Run step 1 again without `UPDATE_GOLDEN`, so the backend replays the new `ops.json`.

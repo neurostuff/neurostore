@@ -17,7 +17,16 @@ describe('fixtureApi', () => {
     it('lists the papers in fixtures/index.json under the app’s base', async () => {
         serve({ '/review/fixtures/index.json': [{ id: 'P1', label: 'A paper', total: 4 }] });
         expect(await fixtureApi('/review/').listPapers()).toEqual([
-            { id: 'P1', base_study_id: 'P1', label: 'A paper', total: 4, assignees: [] },
+            {
+                id: 'P1',
+                base_study_id: 'P1',
+                label: 'A paper',
+                origin: 'upload',
+                created_at: '1970-01-01T00:00:00.000Z',
+                total: 4,
+                reviews: [],
+                assignees: [],
+            },
         ]);
     });
 

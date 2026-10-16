@@ -1,7 +1,7 @@
 """The synthetic review bundle the front end's tests open, and the op batches replayed on it.
 
-Run ``python -m neurostore.tests.review.golden`` from store/backend to rewrite bundle.json,
-diff-bundle.json and diff-verdicts.json.
+Every golden file is regenerated the one way store/review-frontend/README.md gives: the store
+test command with UPDATE_GOLDEN=1, then the front end's tests with UPDATE_GOLDEN=1 for ops.json.
 ops.json is a list of {"name", "ops": [op, ...], "expect": "ok" | "<error substring>"}; an
 "ok" entry also holds the "record", "provenance" and "annotations" the front end's applyOp
 left. Each entry is one batch, applied on its own to the bundle's state.
@@ -9,6 +9,7 @@ left. Each entry is one batch, applied on its own to the bundle's state.
 
 import hashlib
 import json
+import os
 from pathlib import Path
 
 from neurostore.review.core import coordinates, entities, paths
@@ -23,6 +24,10 @@ BUNDLE = ROOT / "review-frontend/src/test/golden/bundle.json"
 OPS = BUNDLE.with_name("ops.json")
 DIFF_BUNDLE = BUNDLE.with_name("diff-bundle.json")
 DIFF_VERDICTS = BUNDLE.with_name("diff-verdicts.json")
+REGENERATE = (
+    "regenerate it: cd store && docker compose run -e APP_ENV=docker_test -e UPDATE_GOLDEN=1 "
+    '--rm neurostore bash -c "python -m pytest neurostore/tests/review"'
+)
 AT = "2026-10-14T12:00:00Z"
 USER = "golden-reviewer"
 DOCUMENTS = ("record", "provenance", "annotations")
@@ -109,6 +114,15 @@ def render(bundle):
     return json.dumps(bundle, indent=2, ensure_ascii=False) + "\n"
 
 
+def check(path, rendered):
+    """Assert that ``path`` holds ``rendered``, writing it first under UPDATE_GOLDEN=1."""
+    if os.environ.get("UPDATE_GOLDEN") == "1":
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(rendered, encoding="utf-8")
+    assert path.exists(), f"{path} is missing; {REGENERATE}"
+    assert path.read_text("utf-8") == rendered, f"{path.name} is stale; {REGENERATE}"
+
+
 def check_entry(bundle, entry):
     """Apply one ops.json entry to the bundle's state; raise AssertionError if it misbehaves."""
     review = bundle["review"]
@@ -150,15 +164,3 @@ def check_entry(bundle, entry):
         assert stored_op["before"] == wrapper.get("evidence"), (
             f"{name}: the stored before of {slot} is not the bundle's evidence"
         )
-
-
-def main():
-    BUNDLE.parent.mkdir(parents=True, exist_ok=True)
-    BUNDLE.write_text(render(build_bundle()), encoding="utf-8")
-    diff, verdicts = build_diff()
-    DIFF_BUNDLE.write_text(render(diff), encoding="utf-8")
-    DIFF_VERDICTS.write_text(render(verdicts), encoding="utf-8")
-
-
-if __name__ == "__main__":
-    main()

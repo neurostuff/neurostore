@@ -1,22 +1,14 @@
 """The schema class of every entity and nested object of the golden records, as the front end's
 schema walk must reproduce it (D53).
 
-Regenerate the golden file with:
-UPDATE_GOLDEN=1 python -m pytest neurostore/tests/review/test_slot_classes.py
+Regenerate the golden file as store/review-frontend/README.md says.
 """
-
-import json
-import os
 
 from neurostore.review.core import defs, entities
 from neurostore.study_schema_tools import DECLARED_KEYS, schema_errors
 from neurostore.tests.review import golden, records
 
 GOLDEN = golden.ROOT / "review-frontend/src/test/golden/slot-classes.json"
-REGENERATE = (
-    "regenerate it with: cd store/backend && UPDATE_GOLDEN=1 python -m "
-    "pytest neurostore/tests/review/test_slot_classes.py"
-)
 RECORDS = {
     "golden": lambda: golden.build_bundle()["record"],
     "hidden_reach": records.hidden_reach,
@@ -35,11 +27,7 @@ def test_the_slot_classes_match_the_golden_file():
     for name, build in RECORDS.items():
         record = build()
         document[name] = {"record": record, **entities.walk(record)}
-    rendered = json.dumps(document, indent=2, ensure_ascii=False) + "\n"
-    if os.environ.get("UPDATE_GOLDEN") == "1":
-        GOLDEN.write_text(rendered, encoding="utf-8")
-    assert GOLDEN.exists(), f"{GOLDEN} is missing; {REGENERATE}"
-    assert GOLDEN.read_text("utf-8") == rendered, f"slot-classes.json is stale; {REGENERATE}"
+    golden.check(GOLDEN, golden.render(document))
 
 
 def test_a_subclass_is_picked_over_the_first_branch_of_its_any_of():
