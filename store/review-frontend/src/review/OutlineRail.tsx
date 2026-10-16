@@ -17,9 +17,11 @@ import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
 import { useReviewStore } from '../store/context';
+import { selectDiff } from '../store/diffSelectors';
 import { notedKeys, outlineMatches, type OutlineFilter } from './outline';
 
 const RAIL_WIDTH = 48;
+
 const FILTERS: Exclude<OutlineFilter, 'all'>[] = ['unreviewed', 'changed', 'noted', 'doubtful'];
 
 function byClass(entities: EntityNode[]) {
@@ -57,6 +59,7 @@ function Outline() {
     const ops = useReviewStore((s) => s.bundle.ops);
     const pending = useReviewStore((s) => s.pending);
     const filter = useReviewStore((s) => s.outlineFilter);
+    const diff = useReviewStore(selectDiff);
     const focused = useReviewStore((s) => s.focus.entity);
     const focusEntity = useReviewStore((s) => s.focusEntity);
     const toggleOutline = useReviewStore((s) => s.toggleOutline);
@@ -69,10 +72,16 @@ function Outline() {
         () =>
             byClass(
                 entities.filter((entity) =>
-                    outlineMatches(filter, entity, statuses.get(entity.id)!, noted.has(entityKey(entity.id)))
+                    outlineMatches(
+                        filter,
+                        entity,
+                        statuses.get(entity.id)!,
+                        noted.has(entityKey(entity.id)),
+                        diff.byKey.get(entityKey(entity.id))?.status ?? 'same'
+                    )
                 )
             ),
-        [entities, statuses, filter, noted]
+        [entities, statuses, filter, noted, diff]
     );
     return (
         <Paper

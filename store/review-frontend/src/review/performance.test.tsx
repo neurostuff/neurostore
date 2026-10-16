@@ -1,5 +1,7 @@
 import { act } from '@testing-library/react';
 import { currentAnalyses } from '../model/coordinates';
+import { selectDiff } from '../store/diffSelectors';
+import { createReviewStore } from '../store/reviewStore';
 import { hasFixture, loadFixture } from '../test/bundles';
 import { registeredSpans } from '../test/highlights';
 import { renderWithStore } from '../test/render';
@@ -120,6 +122,75 @@ describe.skipIf(!hasFixture(HEAVY))(`command palette on ${HEAVY}`, () => {
                 return performance.now() - started;
             });
             expect(Math.max(...timings), `${palette.entries.length} entries`).toBeLessThan(KEYSTROKE_BUDGET_MS);
+        },
+        RENDER_TIMEOUT_MS
+    );
+});
+
+describe.skipIf(!hasFixture(HEAVY))(`the diff against the original on ${HEAVY}`, () => {
+    it(
+        `computes the whole diff, the original's index included, within ${BUDGET_MS} ms`,
+        () => {
+            const timings = Array.from({ length: RUNS }, () => {
+                const store = createReviewStore(loadFixture(HEAVY));
+                const started = performance.now();
+                const diff = selectDiff(store.getState());
+                const elapsed = performance.now() - started;
+                expect(diff.items.length).toBeGreaterThan(store.getState().index.entities.length);
+                return elapsed;
+            });
+            expect(median(timings)).toBeLessThan(BUDGET_MS);
+        },
+        RENDER_TIMEOUT_MS
+    );
+
+    it(
+        `turns the diff on and off on the heaviest entity within ${BUDGET_MS} ms`,
+        () => {
+            const { store, textRoot, index } = open(HEAVY);
+            const [heaviest] = [...index.visible].sort((a, b) => b.spans.length - a.spans.length);
+            act(() => store.getState().focusEntity(heaviest.id));
+            act(() => store.getState().toggleDiff(true));
+            act(() => store.getState().toggleDiff(false));
+            const timings = Array.from({ length: RUNS * 2 }, () => timed(() => store.getState().toggleDiff()));
+            expect(store.getState().diffOn).toBe(false);
+            expect(registeredSpans('rv-focus', textRoot())).toEqual(heaviest.spans);
+            expect(median(timings)).toBeLessThan(BUDGET_MS);
+        },
+        RENDER_TIMEOUT_MS
+    );
+
+    it(
+        `steps between changes with J and K within ${BUDGET_MS} ms`,
+        () => {
+            const bundle = loadFixture(HEAVY);
+            let edits = 0;
+            const rename = (node: unknown): void => {
+                if (edits >= 40 || typeof node !== 'object' || node === null) return;
+                const item = node as Record<string, unknown>;
+                const name = item.name as { value?: unknown } | undefined;
+                if (typeof item.local_id === 'string' && typeof name?.value === 'string') {
+                    name.value = `${name.value} (edited)`;
+                    edits += 1;
+                }
+                Object.values(item).forEach(rename);
+            };
+            rename(bundle.record);
+            const store = createReviewStore(bundle);
+            store.getState().toggleDiff(true);
+            const keys = new Set<string>();
+            const step = (delta: 1 | -1) =>
+                timed(() => {
+                    store.getState().moveChange(delta);
+                    keys.add(store.getState().focus.key);
+                });
+            const timings = [
+                ...Array.from({ length: RUNS * 4 }, () => step(1)),
+                ...Array.from({ length: RUNS }, () => step(-1)),
+            ];
+            expect(keys.size).toBeGreaterThan(RUNS);
+            expect(median(timings)).toBeLessThan(BUDGET_MS);
+            expect(Math.max(...timings)).toBeLessThan(BUDGET_MS * 3);
         },
         RENDER_TIMEOUT_MS
     );

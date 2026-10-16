@@ -1,6 +1,7 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Span } from '../contract/generated/review-ops';
 import type { Block, TableBlock } from '../text/layout';
+import type { Json } from './paths';
 import type { EntityNode, RecordIndex } from './record';
 
 export interface CoordinatePoint {
@@ -23,8 +24,27 @@ export interface CoordinateAnalysis {
     [field: string]: unknown;
 }
 
+/** What a revision's verdict, or the lack of one, makes of an original analysis. */
+export type AnalysisChange = 'accept' | 'relabel' | 'edit' | 'split' | 'merge' | 'omit' | 'reject' | 'add';
+
+export interface AnalysisVerdict {
+    key: string;
+    verdict: AnalysisChange;
+    replaced_by?: string[];
+}
+
 export interface CoordinateParse {
     analyses?: CoordinateAnalysis[];
+    verdicts?: AnalysisVerdict[];
+}
+
+/** A bundle's coordinate parse and revision, and the record as loaded, typed. */
+export function parseOf(bundle: Pick<ReviewBundle, 'coordinate_parse' | 'coordinate_revision' | 'original'>) {
+    return {
+        parse: bundle.coordinate_parse as CoordinateParse,
+        revision: bundle.coordinate_revision as CoordinateParse | null,
+        originalRecord: bundle.original.record as Json,
+    };
 }
 
 /** The parse's list of analyses, and an analysis's list of points. */

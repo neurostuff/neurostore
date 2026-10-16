@@ -2,6 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
+import { coordinateBundle, CUNEUS, FACES, HOUSES, key, LOCALIZER, revision, SCRAMBLED } from '../test/coordinates';
 import { renderWithStore } from '../test/render';
 import { answerPending, withoutIds } from '../test/undoHelpers';
 import { ReviewScreen } from './ReviewScreen';
@@ -47,6 +48,72 @@ describe('review shortcuts', () => {
         expect(screen.getByText('evidence 1 of 2')).toBeInTheDocument();
         press('[');
         expect(screen.getByText('evidence 2 of 2')).toBeInTheDocument();
+    });
+
+    it('D shows the diff, where J and K step between the changed items; Esc or D leaves it', () => {
+        const edited = structuredClone(record);
+        edited.groups[1].name = ev('Healthy controls', [at('controls')]);
+        edited.description = ev('An fMRI study', [at('scanned')]);
+        const { store } = renderWithStore(
+            <ReviewScreen />,
+            makeBundle(edited, TEXT, {
+                entities,
+                original: { record: { local_id: 'P1', ...record }, entities, hidden: { analyses: [], entities: [] } },
+            })
+        );
+        expect(store.getState().focus.key).toBe('entity:study');
+        press('d');
+        expect(store.getState().diffOn).toBe(true);
+        press('j');
+        expect(store.getState().focus.key).toBe('slot:study:description');
+        press('j');
+        expect(store.getState().focus.key).toBe('entity:grp_b');
+        press('j');
+        expect(store.getState().focus.key).toBe('slot:grp_b:name');
+        press('k');
+        expect(store.getState().focus.key).toBe('entity:grp_b');
+        press('Escape');
+        expect(store.getState().diffOn).toBe(false);
+        press('j');
+        expect(store.getState().focus.key).toBe('slot:grp_b:name');
+        press('D');
+        expect(store.getState().diffOn).toBe(true);
+        press('d');
+        expect(store.getState().diffOn).toBe(false);
+    });
+
+    it('J and K step between the changed analyses in the coordinates scope while the diff is on, and between points otherwise', () => {
+        const left = { ...FACES, key: key(0xe1), points: FACES.points!.slice(0, 1), derived_from: [FACES.key] };
+        const right = { ...FACES, key: key(0xe2), points: FACES.points!.slice(1), derived_from: [FACES.key] };
+        const resized = { ...HOUSES, points: [{ ...CUNEUS, cluster_size: 40 }] };
+        const verdict = (a: { key: string }, kind: string, replaced_by?: string[]) => ({
+            key: a.key,
+            verdict: kind,
+            reason: 'x',
+            ...(replaced_by && { replaced_by }),
+        });
+        const { store } = renderWithStore(
+            <ReviewScreen />,
+            coordinateBundle({
+                coordinate_revision: {
+                    ...revision([left, right, resized, LOCALIZER, SCRAMBLED]),
+                    verdicts: [
+                        verdict(FACES, 'split', [left.key, right.key]),
+                        verdict(HOUSES, 'edit'),
+                        verdict(LOCALIZER, 'accept'),
+                        verdict(SCRAMBLED, 'accept'),
+                    ],
+                },
+            })
+        );
+        act(() => store.getState().focusAnalysis(left.key));
+        press('j');
+        expect(store.getState().coordinates).toMatchObject({ analysis: left.key, point: 0 });
+        act(() => store.getState().toggleDiff(true));
+        press('j');
+        expect(store.getState().coordinates?.analysis).toBe(HOUSES.key);
+        press('k');
+        expect(store.getState().coordinates?.analysis).toBe(left.key);
     });
 
     it('O toggles the outline, which lists entities by class and closes on picking one', () => {

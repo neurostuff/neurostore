@@ -5,7 +5,7 @@
   "description": "Everything the review app needs to open one paper for one reviewer.",
   "version": "1",
   "type": "object",
-  "required": ["source", "text", "parsed_paper", "coordinate_parse", "record", "coordinate_revision", "review", "ops", "entities", "hidden", "reviewers"],
+  "required": ["source", "text", "parsed_paper", "coordinate_parse", "record", "coordinate_revision", "review", "ops", "entities", "hidden", "original", "reviewers"],
   "additionalProperties": false,
   "properties": {
     "source": {
@@ -69,30 +69,17 @@
       ]
     },
     "ops": {"type": "array", "items": {"$ref": "#/$defs/StoredOp"}},
-    "entities": {
-      "description": "The record's entity index (review.entities.index_rows), in record order.",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["local_id", "entity_class", "schema_class", "parent", "list_path"],
-        "additionalProperties": false,
-        "properties": {
-          "local_id": {"type": "string"},
-          "entity_class": {"type": "string"},
-          "schema_class": {"type": "string"},
-          "parent": {"type": ["string", "null"]},
-          "list_path": {"type": ["string", "null"]}
-        }
-      }
-    },
-    "hidden": {
-      "description": "Local ids hidden by default: non-coordinate analyses and the entities only they reach.",
+    "entities": {"$ref": "#/$defs/EntityIndex"},
+    "hidden": {"$ref": "#/$defs/HiddenSet"},
+    "original": {
+      "description": "The extraction record as loaded, before any of the reviewer's ops, with its entity index and hidden set.",
       "type": "object",
-      "required": ["analyses", "entities"],
+      "required": ["record", "entities", "hidden"],
       "additionalProperties": false,
       "properties": {
-        "analyses": {"type": "array", "items": {"type": "string"}},
-        "entities": {"type": "array", "items": {"type": "string"}}
+        "record": {"type": "object"},
+        "entities": {"$ref": "#/$defs/EntityIndex"},
+        "hidden": {"$ref": "#/$defs/HiddenSet"}
       }
     },
     "reviewers": {
@@ -113,6 +100,32 @@
     }
   },
   "$defs": {
+    "EntityIndex": {
+      "description": "The record's entity index (review.entities.index_rows), in record order.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["local_id", "entity_class", "schema_class", "parent", "list_path"],
+        "additionalProperties": false,
+        "properties": {
+          "local_id": {"type": "string"},
+          "entity_class": {"type": "string"},
+          "schema_class": {"type": "string"},
+          "parent": {"type": ["string", "null"]},
+          "list_path": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "HiddenSet": {
+      "description": "Local ids hidden by default: non-coordinate analyses and the entities only they reach.",
+      "type": "object",
+      "required": ["analyses", "entities"],
+      "additionalProperties": false,
+      "properties": {
+        "analyses": {"type": "array", "items": {"type": "string"}},
+        "entities": {"type": "array", "items": {"type": "string"}}
+      }
+    },
     "TargetKey": {
       "pattern": "^(slot:[^:]+:.+|entity:[^:]+|relationship:[^:]+:[^:]+:[^:]+|coordinate_analysis:analysis#[0-9a-f]{16}|paper)$",
       "description": "A target written as one string: its kind, then its fields, colon-separated: slot:<entity>:<path>, entity:<entity>, relationship:<entity>:<path>:<target_entity>, coordinate_analysis:<analysis_key>, paper.",

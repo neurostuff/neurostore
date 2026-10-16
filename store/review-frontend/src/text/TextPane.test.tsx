@@ -226,3 +226,30 @@ describe('TextPane scrolls to an item’s first evidence', () => {
         expect(scroller.scrollTop).toBe(at('Controls')[0]);
     });
 });
+
+describe('TextPane while the diff is shown', () => {
+    const moved = structuredClone(record);
+    moved.groups[0].n = ev(20, [at('twenty'), at('scanner')]);
+    const diffSetup = () =>
+        renderWithStore(
+            <TextPane />,
+            makeBundle(moved, TEXT, {
+                entities,
+                original: { record: { local_id: 'P1', ...record }, entities, hidden: { analyses: [], entities: [] } },
+            })
+        );
+
+    it('registers the original’s spans of the focused item beside the review’s, and a legend telling them apart', () => {
+        const { store, textRoot } = diffSetup();
+        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        expect(registeredSpans('rv-original', textRoot())).toEqual([]);
+        expect(screen.queryByRole('note', { name: 'diff legend' })).not.toBeInTheDocument();
+        act(() => store.getState().toggleDiff(true));
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('twenty'), at('scanner')]);
+        expect(registeredSpans('rv-original', textRoot())).toEqual([at('A paper'), at('twenty')]);
+        expect(screen.getByRole('note', { name: 'diff legend' })).toHaveTextContent(/original.*review/);
+        expect(styleText()).toMatch(/::highlight\(rv-original\)[^}]*dashed/);
+        act(() => store.getState().toggleDiff(false));
+        expect(registeredSpans('rv-original', textRoot())).toEqual([]);
+    });
+});

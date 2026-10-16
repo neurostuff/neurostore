@@ -18,6 +18,7 @@ import {
     type CoordinateAnalysis,
     type CoordinateParse,
 } from '../model/coordinates';
+import { analysisItemFor, diffTarget, nextChange, resolveTarget, visibleItems } from '../model/diff';
 import { spansToUtf16, utf16Paper } from '../model/offsets';
 import { mintLocalId } from '../model/mint';
 import { randomUUID } from '../model/uuid';
@@ -36,9 +37,9 @@ import { entityKey, relationshipKey, slotTarget, targetKey } from '../model/targ
 import { addAnalysisPanel, coordinatePanelFor, focusedAnalysis } from '../coordinates/actions';
 import { clamp, coordinateSpans, firstAnalysis, nextFocus } from '../coordinates/focus';
 import { panelFor } from '../inspector/actions';
-import { fromSchemaKeyed } from '../contract/schemas';
-import { declaredAttributes } from '../inspector/schema';
 import { STEPS, type StepId } from '../review/steps';
+import { declaredOf } from './declared';
+import { isFocused, selectDiff } from './diffSelectors';
 import { stepCards } from '../review/guided';
 import type { OutlineFilter } from '../review/outline';
 import {
@@ -153,6 +154,13 @@ export interface ReviewState {
     /** The analyses selected for a merge. */
     merging: string[];
     showNonCoordinate: boolean;
+    /** Whether the diff against the original is shown. */
+    diffOn: boolean;
+    toggleDiff(on?: boolean): void;
+    /** Focuses the next or previous changed item of the diff. */
+    moveChange(delta: 1 | -1): void;
+    /** Focuses a slot, entity, link or coordinate analysis; false when the review has no such item. */
+    focusTarget(target: AnyTarget): boolean;
     /** The record entity an added analysis made, offered for focus. */
     offer: { entity: string } | null;
     focusAnalysis(key: string, point?: number | null): void;
@@ -308,17 +316,12 @@ const toDomBundle = (bundle: ReviewBundle): ReviewBundle => {
     return {
         ...bundle,
         record: spansToUtf16(text, bundle.record),
+        original: { ...bundle.original, record: spansToUtf16(text, bundle.original.record) },
         coordinate_parse: spansToUtf16(text, bundle.coordinate_parse),
         coordinate_revision: spansToUtf16(text, bundle.coordinate_revision),
         review: bundle.review && { ...bundle.review, annotations: spansToUtf16(text, bundle.review.annotations) },
     };
 };
-
-const declaredIn = fromSchemaKeyed('extraction-record', (schema, schemaClass: string) =>
-    declaredAttributes(schema, schemaClass).map(({ path, wrapper }) => ({ path, wrapper }))
-);
-/** The attributes a row's class declares, from the extraction record schema. */
-const declaredOf = (row: { schema_class: string }) => declaredIn(row.schema_class);
 
 const paperOf = (bundle: ReviewBundle, at: string): Paper => ({
     text: utf16Paper(bundle.text),
@@ -631,6 +634,7 @@ export function createReviewStore(
             coordinates: initialCoordinates,
             merging: [],
             showNonCoordinate: false,
+            diffOn: false,
             offer: null,
             undoStack: [],
             redoStack: [],
@@ -769,6 +773,44 @@ export function createReviewStore(
                 const at = STEPS.findIndex((step) => step.id === get().step);
                 const next = STEPS[clamp(at + delta, STEPS.length - 1)].id;
                 if (next !== get().step) get().setStep(next);
+            },
+            toggleDiff: (on) => set((s) => ({ diffOn: on ?? !s.diffOn })),
+            moveChange: (delta) => {
+                const state = get();
+                const diff = selectDiff(state);
+                const focused = state.coordinates?.analysis;
+                const next = nextChange(
+                    visibleItems(diff, state.showNonCoordinate),
+                    state.focus.key,
+                    focused ? analysisItemFor(diff, focused) : undefined,
+                    delta,
+                    (item) => {
+                        const target = diffTarget(item);
+                        const intent = target && resolveTarget(state.index, state.bundle, target);
+                        return !!intent && !isFocused(state, intent);
+                    }
+                );
+                const target = next && diffTarget(next);
+                if (target) get().focusTarget(target);
+            },
+            focusTarget: (target) => {
+                const intent = resolveTarget(get().index, get().bundle, target);
+                if (!intent) return false;
+                switch (intent.kind) {
+                    case 'slot':
+                        get().focusSlot(intent.key);
+                        break;
+                    case 'entity':
+                        get().focusEntity(intent.entity);
+                        break;
+                    case 'link':
+                        get().focusLink(intent.slot, intent.target);
+                        break;
+                    case 'analysis':
+                        get().focusAnalysis(intent.key);
+                        break;
+                }
+                return true;
             },
             toggleOutline: (open) => set((s) => ({ outlineOpen: open ?? !s.outlineOpen })),
             setOutlineFilter: (outlineFilter) => set({ outlineFilter }),

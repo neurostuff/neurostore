@@ -1,5 +1,5 @@
 import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
-import { CardHead } from '../inspector/Inspector';
+import { CardHead } from '../inspector/CardHead';
 import { NotePanel, RejectPanel } from '../inspector/panels';
 import { reviewStatus } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';

@@ -41,12 +41,34 @@ function ShowAllToggle() {
     );
 }
 
+/** What the two span sets look like while the diff is shown. */
+function DiffLegend() {
+    const diffOn = useReviewStore((s) => s.diffOn);
+    if (!diffOn) return null;
+    return (
+        <Stack role="note" aria-label="diff legend" direction="row" spacing={1.5} sx={{ typography: 'caption' }}>
+            <Box component="span" sx={{ borderBottom: 2, borderBottomStyle: 'dashed', borderColor: 'secondary.main' }}>
+                original
+            </Box>
+            <Box component="span" sx={(theme) => ({ bgcolor: alpha(theme.palette.primary.main, 0.3) })}>
+                review
+            </Box>
+        </Stack>
+    );
+}
+
 function HighlightStyles({ names, showAll }: { names: HighlightNames; showAll: boolean }) {
     return (
         <GlobalStyles
             styles={(theme) => ({
                 [`::highlight(${names.focus})`]: {
                     backgroundColor: alpha(theme.palette.primary.main, 0.3),
+                },
+                [`::highlight(${names.original})`]: {
+                    textDecorationLine: 'underline',
+                    textDecorationStyle: 'dashed',
+                    textDecorationThickness: '2px',
+                    textDecorationColor: theme.palette.secondary.main,
                 },
                 [`::highlight(${names.evidence})`]: {
                     ...(showAll && { backgroundColor: alpha(theme.palette.primary.main, 0.12) }),
@@ -101,6 +123,7 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights
                 >
                     <EvidenceCounter />
                     <ShowAllToggle />
+                    <DiffLegend />
                 </Stack>
                 <Box
                     ref={scrollerRef}

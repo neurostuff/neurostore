@@ -106,6 +106,10 @@ describe('make-fixtures.py', () => {
         ]);
     });
 
+    it('carries the record as loaded as its original, with its entity index and hidden set', () => {
+        expect(bundle.original).toEqual({ record: bundle.record, entities: bundle.entities, hidden: bundle.hidden });
+    });
+
     it('lists the bundles in index.json', () => {
         expect(JSON.parse(readFileSync(path.join(out, 'index.json'), 'utf8'))).toEqual([
             { id: 'P1', label: 'A Title' },

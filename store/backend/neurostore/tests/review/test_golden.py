@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from neurostore.review import entities, paths
+from neurostore.review import coordinates, entities, paths
 from neurostore.review.bundle import validator
 from neurostore.tests.review import golden, records
 
@@ -26,6 +26,52 @@ def test_the_bundle_validates_against_the_bundle_schema_with_its_entity_index():
 
 def test_the_bundle_carries_only_the_synthetic_text():
     assert golden.build_bundle()["text"] == records.TEXT
+
+
+def test_the_committed_diff_bundle_and_its_verdicts_are_what_golden_builds():
+    bundle, verdicts = golden.build_diff()
+    assert golden.DIFF_BUNDLE.exists(), f"{golden.DIFF_BUNDLE} is missing; {REGENERATE}"
+    assert golden.DIFF_BUNDLE.read_text("utf-8") == golden.render(bundle), (
+        f"diff-bundle.json is stale; {REGENERATE}"
+    )
+    assert golden.DIFF_VERDICTS.read_text("utf-8") == golden.render(verdicts), (
+        f"diff-verdicts.json is stale; {REGENERATE}"
+    )
+
+
+def test_the_diff_bundle_validates_and_carries_the_original_beside_the_edited_record():
+    bundle, _ = golden.build_diff()
+    assert [error.message for error in validator().iter_errors(bundle)] == []
+    before = {e["local_id"] for e in bundle["original"]["entities"]}
+    after = {e["local_id"] for e in bundle["entities"]}
+    assert after - before == {"grp_c"}
+    assert bundle["original"]["record"] == records.golden()
+
+
+def test_the_diff_bundle_holds_one_change_of_each_kind_in_its_ops():
+    bundle, _ = golden.build_diff()
+    assert [(o["op"]["type"], o["op"].get("action")) for o in bundle["ops"]] == [
+        ("set_value", None),
+        ("create_entity", None),
+        ("link", None),
+        ("unlink", None),
+        ("coordinate", "split"),
+        ("verdict", None),
+    ]
+
+
+def test_the_diff_verdicts_are_the_ones_export_derives_from_the_revision_and_provenance():
+    bundle, verdicts = golden.build_diff()
+    review = bundle["review"]
+    judged = coordinates.judged(
+        bundle["coordinate_parse"],
+        bundle["coordinate_revision"],
+        review["provenance"],
+        [stored["op"] for stored in bundle["ops"]],
+    )
+    assert verdicts == judged["verdicts"]
+    kinds = {v["verdict"] for v in verdicts}
+    assert {"accept", "split", "omit"} <= kinds
 
 
 def _slot(item, path):

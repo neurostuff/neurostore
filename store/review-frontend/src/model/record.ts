@@ -67,7 +67,8 @@ export const isExtractedValue = (value: unknown): value is ExtractedValue =>
     isObject(value) && 'extraction_status' in value;
 const isEntity = (value: unknown): value is Json => isObject(value) && typeof value.local_id === 'string';
 
-function sortSpans(spans: SpanPair[]): SpanPair[] {
+/** The spans in reading order, each once. */
+export function sortSpans(spans: SpanPair[]): SpanPair[] {
     const sorted = [...spans].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
     return sorted.filter((s, i) => i === 0 || s[0] !== sorted[i - 1][0] || s[1] !== sorted[i - 1][1]);
 }

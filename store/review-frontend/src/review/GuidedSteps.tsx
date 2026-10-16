@@ -1,4 +1,4 @@
-import { Inspector } from '../inspector/Inspector';
+import { Inspector } from '../inspector/FocusedCard';
 import { useReviewStore } from '../store/context';
 import type { ReviewState } from '../store/reviewStore';
 import { guidedCards } from './guided';

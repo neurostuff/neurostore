@@ -26,9 +26,21 @@ export const keyLabel = (key: string) => {
 const record = (shortcut: Omit<Shortcut, 'scope'>): Shortcut => ({ ...shortcut, scope: 'record' });
 const coordinates = (shortcut: Omit<Shortcut, 'scope'>): Shortcut => ({ ...shortcut, scope: 'coordinates' });
 
+/** Runs `normal`, or, while the diff is shown, steps to the next or previous change. */
+const diffAware = (normal: (s: ReviewState) => void, delta: 1 | -1) => (s: ReviewState) =>
+    s.diffOn ? s.moveChange(delta) : normal(s);
+
 export const SHORTCUTS: Shortcut[] = [
-    record({ keys: ['j'], label: 'next slot', run: (s) => s.moveSlot(1) }),
-    record({ keys: ['k'], label: 'previous slot', run: (s) => s.moveSlot(-1) }),
+    record({
+        keys: ['j'],
+        label: 'next slot; next change while the diff is shown',
+        run: diffAware((s) => s.moveSlot(1), 1),
+    }),
+    record({
+        keys: ['k'],
+        label: 'previous slot; previous change while the diff is shown',
+        run: diffAware((s) => s.moveSlot(-1), -1),
+    }),
     record({ keys: ['Shift+J'], label: 'next entity', run: (s) => s.moveEntity(1) }),
     record({ keys: ['Shift+K'], label: 'previous entity', run: (s) => s.moveEntity(-1) }),
     { keys: [']'], label: 'next evidence span', run: (s) => s.stepEvidence(1) },
@@ -79,11 +91,15 @@ export const SHORTCUTS: Shortcut[] = [
         button: { label: 'Note' },
         run: (s) => s.openPanel('note'),
     }),
-    coordinates({ keys: ['j'], label: 'next point', run: (s) => s.movePoint(1) }),
+    coordinates({
+        keys: ['j'],
+        label: 'next point; next change while the diff is shown',
+        run: diffAware((s) => s.movePoint(1), 1),
+    }),
     coordinates({
         keys: ['k'],
-        label: 'previous point; from the first, back to the analysis',
-        run: (s) => s.movePoint(-1),
+        label: 'previous point, from the first back to the analysis; previous change while the diff is shown',
+        run: diffAware((s) => s.movePoint(-1), -1),
     }),
     coordinates({ keys: ['Shift+J'], label: 'next analysis', run: (s) => s.moveAnalysis(1) }),
     coordinates({ keys: ['Shift+K'], label: 'previous analysis', run: (s) => s.moveAnalysis(-1) }),
@@ -167,6 +183,8 @@ export const SHORTCUTS: Shortcut[] = [
     },
     { keys: ['Shift+V'], label: 'show or hide all the evidence', run: (s) => s.toggleAllEvidence() },
     { keys: ['o', 'Shift+O'], label: 'toggle the outline', run: (s) => s.toggleOutline() },
+    { keys: ['d', 'Shift+D'], label: 'show or hide the diff against the original', run: (s) => s.toggleDiff() },
+    { keys: ['Escape'], label: 'leave the diff', run: (s) => s.toggleDiff(false) },
     { keys: ['Ctrl+Z'], label: 'undo the last edit (Cmd for Ctrl on a Mac)', run: (s) => s.undo() },
     {
         keys: ['Ctrl+Shift+Z', 'Ctrl+Y'],

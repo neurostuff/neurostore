@@ -37,8 +37,9 @@ export const notReported = (reason = 'ambiguous') => ({
     evidence: { status: 'not_applicable' },
 });
 
+/** A bundle of `record`; unless `overrides` gives one, its original is the record as the bundle has it. */
 export function makeBundle(record: Json, text: string, overrides: Partial<ReviewBundle> = {}): ReviewBundle {
-    return {
+    const bundle: Omit<ReviewBundle, 'original'> = {
         source: {
             id: 'P1',
             base_study_id: 'P1',
@@ -59,6 +60,8 @@ export function makeBundle(record: Json, text: string, overrides: Partial<Review
         reviewers: [],
         ...overrides,
     };
+    const { record: loaded, entities, hidden } = bundle;
+    return { ...bundle, original: overrides.original ?? { record: loaded, entities, hidden } };
 }
 
 const fixturesDir = path.resolve(__dirname, '../../fixtures');

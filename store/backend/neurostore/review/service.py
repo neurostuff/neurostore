@@ -112,6 +112,7 @@ def get_bundle(session, source_id, user_id):
         source=source_summary(source),
         text=source.fulltext.text,
         parsed_paper=source.parsed_paper or {},
+        original=source.record,
         state=state,
         review=summary,
         ops=ops,

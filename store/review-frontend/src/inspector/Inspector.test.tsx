@@ -3,7 +3,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
 import { renderWithStore } from '../test/render';
 import { theme } from '../theme';
-import { Inspector } from './Inspector';
+import { Inspector } from './FocusedCard';
 import { STATUSES } from './status';
 
 const TEXT = 'x'.repeat(200);

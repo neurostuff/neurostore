@@ -4,9 +4,15 @@ import type { TextIndex } from './TextIndex';
 export interface HighlightNames {
     focus: string;
     evidence: string;
+    /** The original's spans of the focused item, while the diff is shown. */
+    original: string;
 }
 
-export const REVIEW_HIGHLIGHTS: HighlightNames = { focus: 'rv-focus', evidence: 'rv-evidence' };
+export const REVIEW_HIGHLIGHTS: HighlightNames = {
+    focus: 'rv-focus',
+    evidence: 'rv-evidence',
+    original: 'rv-original',
+};
 
 const spanKey = ([start, end]: SpanPair) => `${start}:${end}`;
 
@@ -32,7 +38,7 @@ export class HighlightLayer {
         return range;
     }
 
-    update(focused: SpanPair[], evidence: SpanPair[]) {
+    update(focused: SpanPair[], evidence: SpanPair[], original: SpanPair[]) {
         if (!highlightsSupported()) return;
         const focusedKeys = new Set(focused.map(spanKey));
         const others = evidence.filter((span) => !focusedKeys.has(spanKey(span)));
@@ -40,11 +46,13 @@ export class HighlightLayer {
         focus.priority = 1;
         CSS.highlights.set(this.names.focus, focus);
         CSS.highlights.set(this.names.evidence, new Highlight(...others.map((span) => this.range(span))));
+        CSS.highlights.set(this.names.original, new Highlight(...original.map((span) => this.range(span))));
     }
 
     clear() {
         if (!highlightsSupported()) return;
         CSS.highlights.delete(this.names.focus);
         CSS.highlights.delete(this.names.evidence);
+        CSS.highlights.delete(this.names.original);
     }
 }

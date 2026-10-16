@@ -1,7 +1,8 @@
 import { Box, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { memo, type ComponentType } from 'react';
-import { EntityCard, InspectorFrame } from '../inspector/Inspector';
+import { FocusedCard } from '../inspector/FocusedCard';
+import { InspectorFrame } from '../inspector/Inspector';
 import { reviewStatus, statusColors } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
@@ -56,7 +57,7 @@ function Outside({ cards }: { cards: EntityNode[] }) {
             <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
                 outside this step
             </Typography>
-            <EntityCard entity={entity} focusedSlot={focusedSlot} />
+            <FocusedCard entity={entity} focusedSlot={focusedSlot} />
         </Box>
     );
 }
@@ -91,7 +92,7 @@ export function StepCards({
                             <CardHead entity={entity} focused={entity.id === focused} />
                             {entity.id === focused && (
                                 <Box sx={{ borderLeft: 3, borderColor: 'primary.main' }}>
-                                    <EntityCard entity={entity} focusedSlot={focusedSlot} />
+                                    <FocusedCard entity={entity} focusedSlot={focusedSlot} />
                                     {Detail && <Detail entity={entity} />}
                                 </Box>
                             )}

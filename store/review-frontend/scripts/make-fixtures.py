@@ -44,6 +44,8 @@ def make_bundle(layout, paper_id):
     record = read_json(layout / "run" / "records" / f"{paper_id}.extraction.json")
     raw = (paper_dir / parsed_paper["text_path"]).read_bytes()
     metadata = record.get("extraction_metadata", {})
+    entities = index_rows(record)
+    hidden_set = hidden(record, coordinate_parse)
     return {
         "source": {
             "id": paper_id,
@@ -65,8 +67,9 @@ def make_bundle(layout, paper_id):
         "coordinate_revision": None,
         "review": None,
         "ops": [],
-        "entities": index_rows(record),
-        "hidden": hidden(record, coordinate_parse),
+        "entities": entities,
+        "hidden": hidden_set,
+        "original": {"record": record, "entities": entities, "hidden": hidden_set},
         "reviewers": [],
     }
 

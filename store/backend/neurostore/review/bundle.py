@@ -22,8 +22,9 @@ def validator():
     return Draft202012Validator(bundle_schema, registry=registry)
 
 
-def bundle(*, source, text, parsed_paper, state, review, ops, reviewers):
-    """The review-bundle document; ``review`` is {id, user_id, state} or None."""
+def bundle(*, source, text, parsed_paper, original, state, review, ops, reviewers):
+    """The review-bundle document; ``original`` is the record as loaded, ``review`` is
+    {id, user_id, state} or None."""
     index = entities.index(state.record)
     return {
         "source": source,
@@ -42,6 +43,11 @@ def bundle(*, source, text, parsed_paper, state, review, ops, reviewers):
         "entities": entities.index_rows(state.record),
         "hidden": hidden(state.record, state.coordinate_parse, state.coordinate_revision,
                          state.provenance, index),
+        "original": {
+            "record": original,
+            "entities": entities.index_rows(original),
+            "hidden": hidden(original, state.coordinate_parse, None, {}),
+        },
         "reviewers": reviewers,
     }
 

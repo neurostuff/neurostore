@@ -11,18 +11,10 @@ import { CreateDialog, DeleteDialog, LinkPanel, NotePanel, RejectPanel } from '.
 import { RemoveIcon } from './RemoveIcon';
 import { extractionSchema } from './schema';
 import { SlotEditor } from './SlotEditor';
+import { CardHead } from './CardHead';
+import { formatValue } from './formatValue';
 import { reviewStatus, statusColors, statusOf } from './status';
 import { StatusLabel } from './StatusLabel';
-
-function formatValue(slot: SlotNode): string {
-    const value = slot.value;
-    if (!value) return 'not in the record';
-    if (value.extraction_status === 'not_reported') {
-        return value.unreported_reason ? `not reported (${value.unreported_reason})` : 'not reported';
-    }
-    if (value.value === null || value.value === undefined) return '—';
-    return typeof value.value === 'object' ? JSON.stringify(value.value) : String(value.value);
-}
 
 function ReferenceChips({ slot }: { slot: SlotNode }) {
     const store = useReviewStoreApi();
@@ -169,30 +161,6 @@ const slotStyles = (theme: Theme) => ({
     ...statusColors(theme.palette),
 });
 
-const headStyles = (theme: Theme) => ({
-    px: 2,
-    pt: 2,
-    pb: 1,
-    borderBottom: 1,
-    borderColor: 'divider',
-    ...statusColors(theme.palette),
-});
-
-/** The head of a card: its overline and title, then whatever else the head holds. */
-export function CardHead({ overline, title, children }: { overline: string; title: string; children?: ReactNode }) {
-    return (
-        <Box sx={headStyles}>
-            <Typography variant="overline" color="primary" component="div">
-                {overline}
-            </Typography>
-            <Typography variant="h6" component="h2">
-                {title}
-            </Typography>
-            {children}
-        </Box>
-    );
-}
-
 export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
     const panel = useReviewStore((s) => s.panel);
     const reviewed = useReviewStore((s) => s.provenance[entityKey(entity.id)]?.state);
@@ -262,10 +230,4 @@ export function InspectorFrame({ children }: { children?: ReactNode }) {
             {creating && <CreateDialog />}
         </>
     );
-}
-
-export function Inspector() {
-    const entity = useReviewStore((s) => s.index.entity(s.focus.entity));
-    const focusedSlot = useReviewStore((s) => s.focus.slot);
-    return <InspectorFrame>{entity && <EntityCard entity={entity} focusedSlot={focusedSlot} />}</InspectorFrame>;
 }

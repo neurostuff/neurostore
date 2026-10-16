@@ -1,11 +1,12 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
+import type { AnyTarget } from '../contract/generated/review-ops';
 import { analysisTarget } from '../coordinates/actions';
 import { referenceTarget } from '../inspector/schema';
 import { fromSchema } from '../contract/schemas';
 import { currentAnalyses, guidedOrder, RECORD_LINK } from '../model/coordinates';
 import { ROOT_ENTITY } from '../model/paths';
 import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
-import { entityKey, relationshipKey, targetKey } from '../model/targetKey';
+import { relationshipTarget, targetKey } from '../model/targetKey';
 import type { ProvenanceMap } from '../model/applyOp';
 import type { StepId } from './steps';
 
@@ -191,41 +192,36 @@ export interface Progress {
     total: number;
 }
 
-const countJudged = (s: { provenance: ProvenanceMap }, keys: string[]): Progress => ({
-    done: keys.filter((key) => s.provenance[key] !== undefined).length,
-    total: keys.length,
-});
+export type StepState = { index: RecordIndex; bundle: ReviewBundle; showNonCoordinate: boolean };
 
-/** How many of a step's items are judged: coordinate analyses, entity cards or links; null for submit. */
-export function stepProgress(
-    s: { index: RecordIndex; bundle: ReviewBundle; provenance: ProvenanceMap; showNonCoordinate: boolean },
-    step: StepId
-): Progress | null {
+/** What a step has the reviewer judge: coordinate analyses, entity cards or links; null for submit. */
+export function stepTargets(s: StepState, step: StepId): AnyTarget[] | null {
     switch (step) {
         case 'coordinates':
-            return countJudged(
-                s,
-                guidedOrder(currentAnalyses(s.bundle), s.showNonCoordinate).map((a) => targetKey(analysisTarget(a.key)))
-            );
+            return guidedOrder(currentAnalyses(s.bundle), s.showNonCoordinate).map((a) => analysisTarget(a.key));
         case 'analyses':
         case 'entities':
         case 'leftovers':
-            return countJudged(
-                s,
-                guidedCards(s.index)[step].map((e) => entityKey(e.id))
-            );
-        case 'relationships': {
-            const { rows } = auditMatrix(s.index);
-            const links = rows.flatMap((analysis) =>
+            return guidedCards(s.index)[step].map((e): AnyTarget => ({ kind: 'entity', entity: e.id }));
+        case 'relationships':
+            return auditMatrix(s.index).rows.flatMap((analysis) =>
                 analysis.slots.flatMap((slot) =>
-                    slot.kind === 'reference' && slot.references.length
-                        ? slot.references.map((target) => relationshipKey(analysis.id, slot.path, target))
+                    slot.kind === 'reference'
+                        ? slot.references.map((target) => relationshipTarget(analysis.id, slot.path, target))
                         : []
                 )
             );
-            return countJudged(s, links);
-        }
         case 'submit':
             return null;
     }
+}
+
+/** How many of a step's items are judged; null for submit. */
+export function stepProgress(s: StepState & { provenance: ProvenanceMap }, step: StepId): Progress | null {
+    const targets = stepTargets(s, step);
+    if (!targets) return null;
+    return {
+        done: targets.filter((target) => s.provenance[targetKey(target)] !== undefined).length,
+        total: targets.length,
+    };
 }

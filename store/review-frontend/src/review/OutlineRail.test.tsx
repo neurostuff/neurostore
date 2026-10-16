@@ -96,6 +96,82 @@ describe('the outline rail’s filters', () => {
         expect(names().join('|')).not.toMatch(/Patients|Others|Left/);
     });
 
+    it('shows as changed an entity whose slot differs from the original, with no review status on the entity', () => {
+        const edited = structuredClone(record);
+        edited.groups[5].name = ev('Left handed');
+        renderWithStore(
+            <OutlineRail />,
+            makeBundle(edited, TEXT, {
+                entities,
+                original: { record: { local_id: 'P1', ...record }, entities, hidden: { analyses: [], entities: [] } },
+            })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'toggle outline' }));
+        filter('changed');
+        expect(names()).toHaveLength(1);
+        expect(names()[0]).toMatch(/^Left handed/);
+    });
+
+    const withOriginal = (edited: typeof record, review = entities) => {
+        renderWithStore(
+            <OutlineRail />,
+            makeBundle(edited, TEXT, {
+                entities: review,
+                original: { record: { local_id: 'P1', ...record }, entities, hidden: { analyses: [], entities: [] } },
+            })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'toggle outline' }));
+        filter('changed');
+    };
+
+    it('shows as changed an entity that lost a slot the original had', () => {
+        const original = { ...record, groups: [...record.groups, { local_id: 'grp_g', name: ev('Ages 2'), n: ev(3) }] };
+        const rows = entityRows(
+            ...entities.slice(1).map((r) => row(r.local_id, 'Group', 'groups')),
+            row('grp_g', 'Group', 'groups')
+        );
+        const edited = structuredClone(original);
+        delete (edited.groups[6] as Record<string, unknown>).n;
+        renderWithStore(
+            <OutlineRail />,
+            makeBundle(edited, TEXT, {
+                entities: rows,
+                original: {
+                    record: { local_id: 'P1', ...original },
+                    entities: rows,
+                    hidden: { analyses: [], entities: [] },
+                },
+            })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'toggle outline' }));
+        filter('changed');
+        expect(names()).toHaveLength(1);
+        expect(names()[0]).toMatch(/^Ages 2/);
+    });
+
+    it('shows as changed an entity only the review has, and not one that is the same', () => {
+        const edited = structuredClone(record);
+        edited.groups.push({ local_id: 'grp_g', name: ev('New group') });
+        withOriginal(
+            edited,
+            entityRows(
+                ...entities.slice(1).map((r) => row(r.local_id, 'Group', 'groups')),
+                row('grp_g', 'Group', 'groups')
+            )
+        );
+        expect(names()).toHaveLength(1);
+        expect(names()[0]).toMatch(/^New group/);
+    });
+
+    it('shows as changed an entity the reviewer rejected, whatever the original holds', () => {
+        const { store } = renderWithStore(<OutlineRail />, makeBundle(record, TEXT, { entities }));
+        fireEvent.click(screen.getByRole('button', { name: 'toggle outline' }));
+        act(() => store.setState({ provenance: { 'entity:grp_f': provenance('removed') } }));
+        filter('changed');
+        expect(names()).toHaveLength(1);
+        expect(names()[0]).toMatch(/^Left/);
+    });
+
     it('shows only the entities with a note on them, from the saved or pending ops', () => {
         const { store } = setup();
         const note = {

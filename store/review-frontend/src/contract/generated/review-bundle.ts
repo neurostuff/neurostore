@@ -105,6 +105,16 @@ export type NoteOp = OpBase & {
     type: 'note';
     target: SlotTarget | EntityTarget | RelationshipTarget | CoordinateTarget | PaperTarget;
 };
+/**
+ * The record's entity index (review.entities.index_rows), in record order.
+ */
+export type EntityIndex = {
+    local_id: string;
+    entity_class: string;
+    schema_class: string;
+    parent: string | null;
+    list_path: string | null;
+}[];
 
 /**
  * Everything the review app needs to open one paper for one reviewer.
@@ -164,22 +174,15 @@ export interface ReviewBundle {
         };
     };
     ops: StoredOp[];
+    entities: EntityIndex;
+    hidden: HiddenSet;
     /**
-     * The record's entity index (review.entities.index_rows), in record order.
+     * The extraction record as loaded, before any of the reviewer's ops, with its entity index and hidden set.
      */
-    entities: {
-        local_id: string;
-        entity_class: string;
-        schema_class: string;
-        parent: string | null;
-        list_path: string | null;
-    }[];
-    /**
-     * Local ids hidden by default: non-coordinate analyses and the entities only they reach.
-     */
-    hidden: {
-        analyses: string[];
-        entities: string[];
+    original: {
+        record: {};
+        entities: EntityIndex;
+        hidden: HiddenSet;
     };
     /**
      * Everyone who has a review of this paper, newest edit first.
@@ -416,4 +419,11 @@ export interface IndexedAnalysis {
 export interface IndexedEntity {
     index: number;
     entity: {};
+}
+/**
+ * Local ids hidden by default: non-coordinate analyses and the entities only they reach.
+ */
+export interface HiddenSet {
+    analyses: string[];
+    entities: string[];
 }

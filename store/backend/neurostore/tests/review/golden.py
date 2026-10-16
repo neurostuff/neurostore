@@ -1,6 +1,7 @@
 """The synthetic review bundle the front end's tests open, and the op batches replayed on it.
 
-Run ``python -m neurostore.tests.review.golden`` from store/backend to rewrite bundle.json.
+Run ``python -m neurostore.tests.review.golden`` from store/backend to rewrite bundle.json,
+diff-bundle.json and diff-verdicts.json.
 ops.json is a list of {"name", "ops": [op, ...], "expect": "ok" | "<error substring>"}; an
 "ok" entry also holds the "record", "provenance" and "annotations" the front end's applyOp
 left. Each entry is one batch, applied on its own to the bundle's state.
@@ -10,7 +11,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from neurostore.review import ReviewError, entities, paths
+from neurostore.review import ReviewError, coordinates, entities, paths
 from neurostore.review.bundle import bundle
 from neurostore.review.ops import ReviewState, apply_batch
 from neurostore.tests import study_schema_fixtures as fx
@@ -19,6 +20,8 @@ from neurostore.tests.review import records
 ROOT = Path(__file__).resolve().parents[4]
 BUNDLE = ROOT / "review-frontend/src/test/golden/bundle.json"
 OPS = BUNDLE.with_name("ops.json")
+DIFF_BUNDLE = BUNDLE.with_name("diff-bundle.json")
+DIFF_VERDICTS = BUNDLE.with_name("diff-verdicts.json")
 AT = "2026-10-14T12:00:00Z"
 USER = "golden-reviewer"
 DOCUMENTS = ("record", "provenance", "annotations")
@@ -31,21 +34,62 @@ REVIEW_OPS = [
          {"spans": [{"start_char": 0, "end_char": 6}]}]}},
 ]
 
+_PARSE = records.coordinate_parse()
+DIFF_OPS = [
+    {"client_op_id": "golden-diff-0001", "type": "set_value",
+     "target": {"kind": "slot", "entity": "grp_a", "path": "age_mean"},
+     "value": {"extraction_status": "extracted", "value": 35.0, "value_source": "reported"}},
+    {"client_op_id": "golden-diff-0002", "type": "create_entity", "parent": "study",
+     "list": "groups", "entity": records.item("Group", "grp_c", name=fx.extracted("siblings"))},
+    {"client_op_id": "golden-diff-0003", "type": "link",
+     "target": {"kind": "relationship", "entity": "grp_b", "path": "diagnostic_instrument",
+                "target_entity": "asm_1"}},
+    {"client_op_id": "golden-diff-0004", "type": "unlink",
+     "target": {"kind": "relationship", "entity": "an_1", "path": "tasks",
+                "target_entity": "tsk_1"}},
+    {"client_op_id": "golden-diff-0005", "type": "coordinate",
+     "target": {"kind": "coordinate_analysis", "analysis_key": _PARSE["analyses"][1]["key"]},
+     "action": "split", "payload": {"parts": [{"indices": [0]}, {"indices": [1]}]}},
+    {"client_op_id": "golden-diff-0006", "type": "verdict",
+     "target": {"kind": "coordinate_analysis", "analysis_key": _PARSE["analyses"][2]["key"]},
+     "verdict": "reject", "reason": "not_in_text"},
+]
+
 
 def build_bundle():
+    return _build("golden-1", "golden-base-1", "Golden synthetic paper", REVIEW_OPS)
+
+
+def build_diff():
+    """The bundle of a review that edited a slot, created an entity, linked and unlinked,
+    split a coordinate analysis and rejected another, and the verdicts export derives from it."""
+    document = _build(
+        "golden-diff-1", "golden-diff-base-1", "Golden synthetic paper, edited", DIFF_OPS
+    )
+    judged = coordinates.judged(
+        document["coordinate_parse"],
+        document["coordinate_revision"],
+        document["review"]["provenance"],
+        [stored["op"] for stored in document["ops"]],
+    )
+    return document, judged["verdicts"]
+
+
+def _build(source_id, base_study_id, label, review_ops):
     base = ReviewState(record=records.golden(), coordinate_parse=records.coordinate_parse())
-    state, stored = apply_batch(base, {"ops": REVIEW_OPS}, text=records.TEXT, user_id=USER, at=AT)
+    state, stored = apply_batch(base, {"ops": review_ops}, text=records.TEXT, user_id=USER, at=AT)
     document = bundle(
         source={
-            "id": "golden-1",
-            "base_study_id": "golden-base-1",
-            "label": "Golden synthetic paper",
+            "id": source_id,
+            "base_study_id": base_study_id,
+            "label": label,
             "origin": "upload",
             "text_sha256": hashlib.sha256(records.TEXT.encode("utf-8")).hexdigest(),
             "schema_versions": {"paper_parse": "0.6.0", "extraction": "0.5.0"},
         },
         text=records.TEXT,
         parsed_paper=fx.parsed_paper(),
+        original=base.record,
         state=state,
         review={"id": "golden-review-1", "user_id": USER, "state": "in_progress"},
         ops=stored,
@@ -110,6 +154,9 @@ def check_entry(bundle, entry):
 def main():
     BUNDLE.parent.mkdir(parents=True, exist_ok=True)
     BUNDLE.write_text(render(build_bundle()), encoding="utf-8")
+    diff, verdicts = build_diff()
+    DIFF_BUNDLE.write_text(render(diff), encoding="utf-8")
+    DIFF_VERDICTS.write_text(render(verdicts), encoding="utf-8")
 
 
 if __name__ == "__main__":

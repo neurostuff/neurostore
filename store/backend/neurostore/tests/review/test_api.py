@@ -786,6 +786,67 @@ def logged(ops):
     return [{k: v for k, v in stored.items() if k != "inverse"} for stored in ops]
 
 
+LOADED_ENTITIES = [
+    {"local_id": "study", "entity_class": "Study", "schema_class": "Study",
+     "parent": None, "list_path": None},
+    *(
+        {"local_id": local_id, "entity_class": entity_class, "schema_class": schema_class,
+         "parent": parent, "list_path": list_path}
+        for local_id, entity_class, schema_class, parent, list_path in [
+            ("grp_a", "Group", "Group", "study", "groups"),
+            ("grp_b", "Group", "Group", "study", "groups"),
+            ("tsk_1", "Task", "Task", "study", "tasks"),
+            ("cnd_1", "Condition", "Condition", "tsk_1", "conditions"),
+            ("cnd_2", "Condition", "Condition", "tsk_1", "conditions"),
+            ("asm_1", "Assessment", "Assessment", "study", "assessments"),
+            ("reg_1", "Region", "Region", "study", "regions"),
+            ("dev_1", "Device", "Device", "study", "devices"),
+            ("acq_1", "Acquisition", "MRI", "study", "acquisitions"),
+            ("mdl_1", "ModelEstimation", "ModelEstimation", "study", "model_estimations"),
+            ("trm_1", "ModelTerm", "ModelTerm", "mdl_1", "terms"),
+            ("msr_1", "Measure", "Measure", "study", "measures"),
+            ("an_1", "Analysis", "Analysis", "study", "analyses"),
+            ("arm_1", "Arm", "Arm", "study", "design.arms"),
+            ("tp_1", "Timepoint", "Timepoint", "study", "design.timepoints"),
+        ]
+    ),
+]
+
+
+async def test_the_bundle_carries_the_record_as_loaded_beside_the_reviewed_one(clients, source):
+    loaded = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
+    assert loaded["original"]["record"] == source.record
+    assert loaded["original"]["entities"] == LOADED_ENTITIES
+    assert loaded["original"]["hidden"] == {"analyses": [], "entities": []}
+
+    review = await start(clients, source)
+    ops_path = f"/api/review/reviews/{review['id']}/ops"
+    keys = [analysis["key"] for analysis in source.coordinate_parse["analyses"]]
+    merged = await clients[REVIEWER].post(
+        ops_path,
+        data=batch(
+            0,
+            set_name("grp_b", "healthy controls"),
+            coordinate(keys[0], "merge", payload={"with": [keys[1]]}),
+        ),
+    )
+    assert merged.status_code == 200, merged.json()
+    merged_key = merged.json()["coordinate_revision"]["analyses"][0]["key"]
+    rejected = op("verdict", target={"kind": "coordinate_analysis", "analysis_key": merged_key},
+                  verdict="reject", reason="duplicate")
+    assert (await clients[REVIEWER].post(ops_path, data=batch(2, rejected))).status_code == 200
+
+    bundle = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
+    assert [error.message for error in validator().iter_errors(bundle)] == []
+    assert bundle["record"]["groups"][1]["name"]["value"] == "healthy controls"
+    assert bundle["review"]["provenance"][f"coordinate_analysis:{merged_key}"]["state"] == "removed"
+    assert bundle["hidden"]["analyses"] == ["an_1"]
+    assert bundle["original"]["record"] == source.record
+    assert bundle["original"]["record"]["groups"][1]["name"]["value"] == "controls"
+    assert bundle["original"]["entities"] == LOADED_ENTITIES
+    assert bundle["original"]["hidden"] == {"analyses": [], "entities": []}
+
+
 async def test_a_full_round_of_editing_a_review(clients, source, session):
     review = await start(clients, source)
     ops_path = f"/api/review/reviews/{review['id']}/ops"
