@@ -6,18 +6,18 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from functools import cache
-from pathlib import Path
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import best_match
 
-from neurostore.review import (
-    ReviewError, coordinates, entities, lists, paths, record_follow, references, validation,
+from neurostore.review.core import (
+    SCHEMA_DIR, coordinates, entities, lists, paths, record_follow, references, validation,
 )
-from neurostore.review.targets import target_key
+from neurostore.review.core.targets import target_key
+from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import CHILD_LISTS
 
-OPS_SCHEMA = Path(__file__).parent / "schema" / "review-ops.schema.json"
+OPS_SCHEMA = SCHEMA_DIR / "review-ops.schema.json"
 #: The fields of an ExtractedValue a set_value op writes, as a group.
 VALUE_FIELDS = ("extraction_status", "value", "value_source", "unreported_reason")
 #: Exists only so the 422 for a coordinate verdict can name the verdict op.
@@ -26,9 +26,6 @@ COORDINATE_JUDGEMENTS_REFUSED = ("accept", "omit", "reject")
 NO_EVIDENCE = {"status": "not_applicable"}
 #: The op types no inverse undoes.
 NO_INVERSE = {"note"}
-#: How apply_batch finds the problems of the documents ops leave: "incremental" validates the
-#: parts the ops changed, "full" the whole documents. Tests switch it.
-VALIDATION = "incremental"
 
 
 class OpError(ReviewError):
@@ -55,11 +52,34 @@ class ReviewState:
     last_seq: int = 0
 
 
-def apply_batch(state, batch, *, text, user_id, at):
+def incremental_problems(state, changed, revision_before):
+    """The problems of ``state``'s documents after ops that replaced the coordinate revision
+    ``revision_before`` and made ``changed`` to its record; the documents before them validated.
+
+    ``changed`` is a (changes, entity index) pair.
+    """
+    changes, index = changed
+    return validation.record_problems(index, changes) + validation.replaced_problems(
+        "coordinate-parse", revision_before, state.coordinate_revision
+    )
+
+
+def full_problems(state, changed=None, revision_before=None):
+    """The problems of ``state``'s whole documents; ``changed`` and ``revision_before`` are
+    unused, so that it stands in for incremental_problems."""
+    problems = validation.document_problems("extraction-record", state.record)
+    if state.coordinate_revision is not None:
+        problems += validation.document_problems("coordinate-parse", state.coordinate_revision)
+    return problems
+
+
+def apply_batch(state, batch, *, text, user_id, at, validate=incremental_problems):
     """``(new state, stored ops)`` for ``batch`` applied in order to a copy of ``state``.
 
-    ``state``'s documents must validate, as those of every state a batch leaves do; only the
-    parts of them the batch changes are validated.
+    ``state``'s documents must validate, as those of every state a batch leaves do.
+    ``validate(state, changed, revision_before)`` gives the problems of the documents the ops
+    leave, as ``changed`` and ``revision_before`` describe the batch: incremental_problems, the
+    default, validates only the parts the batch changes, and full_problems the whole documents.
 
     Raises:
         ReviewError naming each failing op; the input state is never changed.
@@ -72,8 +92,8 @@ def apply_batch(state, batch, *, text, user_id, at):
         named = ", ".join(str(index) for index in indexes)
         verb = "op" if len(indexes) == 1 else "ops"
         raise OpError(f"{verb} {named} cannot be applied", failures)
-    if _problems(after, changed, state.coordinate_revision):
-        index, problems = _first_invalid_op(state, ops, text, user_id, at)
+    if validate(after, changed, state.coordinate_revision):
+        index, problems = _first_invalid_op(state, ops, text, user_id, at, validate)
         raise OpError(
             f"op {index} leaves an invalid document", [(index, problem) for problem in problems]
         )
@@ -113,8 +133,15 @@ def _check_batch(batch):
     failures = [
         (None, f"batch: {error.message}") for error in _batch_validator().iter_errors(batch)
     ]
+    seen = set()
     for index, item in enumerate(batch.get("ops") or ()):
         kind = item.get("type") if isinstance(item, dict) else None
+        client_op_id = item.get("client_op_id") if isinstance(item, dict) else None
+        if isinstance(client_op_id, str):
+            if client_op_id in seen:
+                failures.append((index, f"client_op_id {client_op_id} repeats an earlier op's"))
+                continue
+            seen.add(client_op_id)
         if kind == "coordinate" and item.get("action") in COORDINATE_JUDGEMENTS_REFUSED:
             failures.append((index, "accept and reject a coordinate analysis with a verdict op"))
             continue
@@ -124,25 +151,6 @@ def _check_batch(batch):
             failures.append((index, f"{path}: {error.message}" if path else error.message))
     if failures:
         raise OpError("the batch does not validate against review-ops", failures)
-
-
-def _document_errors(state):
-    problems = validation.document_problems("extraction-record", state.record)
-    if state.coordinate_revision is not None:
-        problems += validation.document_problems("coordinate-parse", state.coordinate_revision)
-    return problems
-
-
-def _problems(state, changed, revision_before):
-    """The problems of ``state``'s documents after ops that replaced the coordinate revision
-    ``revision_before`` and made ``changed``, a (changes, entity index) pair, to its record; the
-    documents before them validated."""
-    if VALIDATION == "full":
-        return _document_errors(state)
-    changes, index = changed
-    return validation.record_problems(index, changes) + validation.replaced_problems(
-        "coordinate-parse", revision_before, state.coordinate_revision
-    )
 
 
 def _apply(state, ops, text, user_id, at):
@@ -195,16 +203,18 @@ def _copy_state(state):
     )
 
 
-def _first_invalid_op(state, ops, text, user_id, at):
-    """``(index, problems)`` of the first op after which the documents are invalid."""
+def _first_invalid_op(state, ops, text, user_id, at, validate):
+    """``(index, problems)`` of the first op after which the documents are invalid, or None
+    when every op leaves them valid."""
     applier = _Applier(_copy_state(state), text, user_id, at)
     for index, op in enumerate(ops):
         revision = applier.state.coordinate_revision
         applier.take_changes()
         applier.apply(op)
-        problems = _problems(applier.state, applier.take_changes(), revision)
+        problems = validate(applier.state, applier.take_changes(), revision)
         if problems:
             return index, problems
+    return None
 
 
 class _Applier:

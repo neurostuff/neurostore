@@ -1,6 +1,7 @@
 import pytest
 
-from neurostore.review import ReviewError, entities, references
+from neurostore.review.core import entities, references
+from neurostore.review.errors import ReviewError
 from neurostore.tests.review import records
 
 

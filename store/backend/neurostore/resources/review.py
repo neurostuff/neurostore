@@ -9,16 +9,14 @@ from connexion import request
 from connexion.lifecycle import ConnexionResponse
 
 from neurostore.database import db
-from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import (
     abort_not_found,
     abort_permission,
     abort_too_large,
-    abort_unprocessable,
 )
-from neurostore.review import ReviewError, exports, imports, schemas, service
-from neurostore.review.layout import LayoutError
 from neurostore.resources.utils import get_current_user, is_user_admin, user_has_role
+from neurostore.review.app import exports, imports, service
+from neurostore.review.core import schemas
 
 MAX_IMPORT_BYTES = 200 * 1024 * 1024
 SCHEMA_CACHE_CONTROL = "private, no-cache"
@@ -80,14 +78,14 @@ def _zipped(write, filename):
 
 
 def _commit(write):
-    """Commit what ``write()`` flushed, or roll it back when it raises."""
+    """``write()``'s result once what it flushed is committed; rolled back when either raises."""
     try:
         result = write()
+        db.session.commit()
     except Exception:
         db.session.rollback()
         raise
-    db.session.commit()
-    return result, 200
+    return result
 
 
 def _matches(if_none_match, etag):
@@ -139,14 +137,14 @@ class ReviewAssignmentsView:
 
     def put(self, id, user_id):
         user = _reviewer()
-        assignment, created = service.assign(db.session, id, user_id, _caller(user))
-        db.session.commit()
+        assignment, created = _commit(
+            lambda: service.assign(db.session, id, user_id, _caller(user))
+        )
         return assignment, 201 if created else 200
 
     def delete(self, id, user_id):
         user = _reviewer()
-        service.release(db.session, id, user_id, _caller(user))
-        db.session.commit()
+        _commit(lambda: service.release(db.session, id, user_id, _caller(user)))
         return ConnexionResponse(status_code=204)
 
 
@@ -165,8 +163,9 @@ class ReviewBundlesView:
 class SourceReviewsView:
     def put(self, id):
         user = _reviewer()
-        summary, created = service.start_review(db.session, id, user.external_id)
-        db.session.commit()
+        summary, created = _commit(
+            lambda: service.start_review(db.session, id, user.external_id)
+        )
         return summary, 201 if created else 200
 
 
@@ -193,32 +192,24 @@ class ReviewsView:
 class ReviewOpsView:
     def post(self, id, body):
         user = _reviewer()
-        return _commit(
-            lambda: service.post_ops(db.session, id, user.external_id, body)
-        )
+        return _commit(lambda: service.post_ops(db.session, id, user.external_id, body))
 
 
 class ReviewExportView:
     def get(self, id):
         _reviewer()
-        try:
-            return _zipped(
-                lambda root: exports.export_review(db.session, id, root), f"review-{id}.zip"
-            )
-        except ReviewError as error:
-            abort_unprocessable(str(error))
+        return _zipped(
+            lambda root: exports.export_review(db.session, id, root), f"review-{id}.zip"
+        )
 
 
 class ReviewExportsView:
     def post(self, body=None):
         _reviewer()
-        try:
-            return _zipped(
-                lambda root: exports.export_bulk(db.session, root, **(body or {})),
-                "review-exports.zip",
-            )
-        except ReviewError as error:
-            abort_unprocessable(str(error))
+        return _zipped(
+            lambda root: exports.export_bulk(db.session, root, **(body or {})),
+            "review-exports.zip",
+        )
 
 
 class ReviewImportsView:
@@ -229,15 +220,6 @@ class ReviewImportsView:
         with tempfile.TemporaryDirectory() as directory:
             layout = Path(directory) / "layout.zip"
             _spool(file, layout)
-            try:
-                return _commit(
-                    lambda: imports.import_layout(db.session, layout, user_id=user.external_id)
-                )
-            except LayoutError as error:
-                abort_unprocessable(
-                    "The file is not a study_schema layout.",
-                    [
-                        make_field_error("file", problem, code="INVALID_LAYOUT")
-                        for problem in error.problems
-                    ],
-                )
+            return _commit(
+                lambda: imports.import_layout(db.session, layout, user_id=user.external_id)
+            )

@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 
 from jsonschema.exceptions import best_match
 
-from neurostore.review import entities
+from neurostore.review.core import entities
 from neurostore.study_schema_tools import schema, schema_errors, subschema_errors
 
 #: Keywords that judge an instance by itself, or hand each property or item to one sub-schema.

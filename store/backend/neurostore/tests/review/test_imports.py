@@ -13,8 +13,9 @@ from neurostore.database import db
 from neurostore.models import BaseStudy, Fulltext, ReviewSource
 from neurostore.resources import body_limit
 from neurostore.resources import review as review_resources
-from neurostore.review import entities, imports
-from neurostore.review.layout import LayoutError
+from neurostore.review.app import imports
+from neurostore.review.core import entities
+from neurostore.review.core.layout import LayoutError
 from neurostore.study_schema_tools import sha256_of
 from neurostore.tests.review.layouts import (
     DIGEST,
@@ -716,6 +717,20 @@ async def test_a_zip_with_no_corpus_is_refused_as_unprocessable(clients, tmp_pat
 
     assert response.status_code == 422
     assert_matches_spec(response, "/review/imports/", "post")
+
+
+async def test_a_zip_with_no_corpus_names_each_problem_under_the_file_field(clients, tmp_path):
+    bare = zip_layout({"notes/readme.txt": b"no corpus here"}, tmp_path / "bare.zip")
+
+    response = await post_zip(clients[LEAD], bare)
+
+    body = response.json()
+    assert response.status_code == 422
+    assert "no corpus/" in body["detail"]
+    assert [(error["field"], error["code"]) for error in body["errors"]] == [
+        ("file", "INVALID_LAYOUT")
+    ]
+    assert "no corpus/" in body["errors"][0]["context"]["provided"]
 
 
 @pytest.mark.parametrize("field", ["schema_version", "article_id"])

@@ -9,8 +9,8 @@ from store/:
         python /store/review-frontend/scripts/make-fixtures.py \
         /layout /store/review-frontend/fixtures
 
-The layout's paths are the ones store/backend/neurostore/review/layout.py reads. Each paper
-(every record in the layout when no id is given) becomes <out>/<id>.bundle.json, and
+The layout's paths are the ones store/backend/neurostore/review/core/layout.py reads. Each
+paper (every record in the layout when no id is given) becomes <out>/<id>.bundle.json, and
 <out>/index.json lists every bundle in <out>.
 """
 
@@ -19,8 +19,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from neurostore.review.bundle import hidden
-from neurostore.review.entities import index_rows
+from neurostore.review.core.bundle import hidden
+from neurostore.review.core.entities import index_rows
 
 
 def read_json(path):
@@ -45,7 +45,7 @@ def make_bundle(layout, paper_id):
     raw = (paper_dir / parsed_paper["text_path"]).read_bytes()
     metadata = record.get("extraction_metadata", {})
     entities = index_rows(record)
-    hidden_set = hidden(record, coordinate_parse)
+    hidden_set = hidden(record, coordinate_parse, None, {})
     return {
         "source": {
             "id": paper_id,

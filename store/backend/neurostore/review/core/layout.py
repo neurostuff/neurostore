@@ -9,13 +9,25 @@ from pathlib import Path, PurePosixPath
 
 from pydantic import ValidationError
 
+from neurostore.review.errors import Unprocessable
 from neurostore.study_schema_tools import expected_key, schema_errors
 
 
-class LayoutError(Exception):
+class LayoutError(Unprocessable):
+    """A file that is not a study_schema layout; each problem is a field error on ``file``."""
+
     def __init__(self, problems):
-        super().__init__("; ".join(problems))
-        self.problems = list(problems)
+        problems = list(problems)
+        errors = [
+            {
+                "field": "file",
+                "code": "INVALID_LAYOUT",
+                "message": "invalid value for file",
+                "context": {"provided": problem},
+            }
+            for problem in problems
+        ]
+        super().__init__("; ".join(problems), problems, errors=errors)
 
 
 @dataclass(frozen=True)
@@ -268,7 +280,7 @@ def read_layout(source: Path) -> list[Paper]:
         return [read_paper(root, study_id) for study_id in study_ids(root)]
 
 
-def _dumped(document):
+def dumped(document):
     return (json.dumps(document, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
 
 
@@ -279,13 +291,13 @@ def write_export(
     study_id = paper.study_id
     paths = _document_paths(study_id)
     files = {
-        paths["parsed_paper"]: _dumped(paper.parsed_paper),
-        paths["coordinate_parse"]: _dumped(paper.coordinate_parse),
-        paths["record"]: _dumped(record),
+        paths["parsed_paper"]: dumped(paper.parsed_paper),
+        paths["coordinate_parse"]: dumped(paper.coordinate_parse),
+        paths["record"]: dumped(record),
         _text_path(study_id, paper.parsed_paper): paper.text.encode("utf-8"),
     }
     if coordinate_revision is not None:
-        files[_revision_path(study_id)] = _dumped(coordinate_revision)
+        files[_revision_path(study_id)] = dumped(coordinate_revision)
     if ops is not None:
         files[_ops_path(study_id)] = "".join(
             json.dumps(op, ensure_ascii=False) + "\n" for op in ops

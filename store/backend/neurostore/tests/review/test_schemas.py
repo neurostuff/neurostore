@@ -11,7 +11,7 @@ import os
 import pytest
 from study_schema.jsonschema import load, references
 
-from neurostore.review.schemas import strip_descriptions
+from neurostore.review.core.schemas import strip_descriptions
 from neurostore.tests.review import golden
 from neurostore.tests.review.layouts import OTHER, REVIEWER, assert_matches_spec
 

@@ -7,22 +7,23 @@ from pathlib import Path
 import sqlalchemy as sa
 from sqlalchemy.orm import joinedload, selectinload
 
-from neurostore.exceptions.utils.error_helpers import abort_not_found
 from neurostore.models import Fulltext, Review, ReviewSource
-from neurostore.review import ReviewError, coordinates, service
-from neurostore.review.layout import _dumped, paper_from_documents, write_export
+from neurostore.review.app import service
+from neurostore.review.core import SCHEMA_DIR, coordinates
+from neurostore.review.core.layout import dumped, paper_from_documents, write_export
+from neurostore.review.errors import NotFound, ReviewError
 
 UNREVIEWED_DIR = "unreviewed"
 BATCH_SIZE = 100
 PROVENANCE_DIR = "run/provenance"
-PROVENANCE_SCHEMA = Path(__file__).parent / "schema" / "record-provenance.schema.json"
+PROVENANCE_SCHEMA = SCHEMA_DIR / "record-provenance.schema.json"
 
 
 def export_review(session, review_id, out):
     """Write the plain layout of one review under ``out``; returns its manifest."""
     review = session.get(Review, review_id)
     if review is None:
-        abort_not_found("review", review_id)
+        raise NotFound("review", review_id)
     source = service.get_source(session, review.source_id)
     path = _write_review(Path(out), source, review, set())
     return [_entry(path, source.id, review)]
@@ -178,7 +179,7 @@ def _write_provenance(root, paper_id, record_path, source, review, ops):
     }
     path = root / PROVENANCE_DIR / f"{paper_id}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(_dumped(document))
+    path.write_bytes(dumped(document))
 
 
 def _provenance_source(source, review):

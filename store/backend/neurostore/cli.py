@@ -9,7 +9,7 @@ import click
 from sqlalchemy.exc import OperationalError
 
 from neurostore.models.review import REVIEW_STATES
-from neurostore.review import ReviewError
+from neurostore.review.errors import ReviewError
 from neurostore.scripts.transfer_ownership import (
     OwnershipTransferError,
     transfer_user_ownership,
@@ -153,12 +153,11 @@ def review_import_command(path, user_id, run_id):
     """
 
     def _run(_app, db):
-        from neurostore.review.imports import import_layout
-        from neurostore.review.layout import LayoutError
+        from neurostore.review.app.imports import import_layout
 
         try:
             report = import_layout(db.session, path, user_id=user_id, run_id=run_id)
-        except LayoutError as error:
+        except ReviewError as error:
             raise click.ClickException(str(error)) from error
         db.session.commit()
         return report
@@ -193,7 +192,7 @@ def review_export_command(out, source_ids, base_study_ids, user_ids, states, inc
     """
 
     def _run(_app, db):
-        from neurostore.review.exports import export_bulk
+        from neurostore.review.app.exports import export_bulk
 
         return export_bulk(
             db.session,

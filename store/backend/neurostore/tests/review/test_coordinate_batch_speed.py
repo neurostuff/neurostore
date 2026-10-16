@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from neurostore.review.ops import OpError, ReviewState, apply_batch
+from neurostore.review.core.ops import OpError, ReviewState, apply_batch
 from neurostore.study_schema_tools import expected_key
 from neurostore.tests.review import golden
 
@@ -19,11 +19,6 @@ BOUND_SECONDS = 2.0
 QUOTES = 64
 #: Runs of a timed batch; the fastest is the one compared with its bound.
 RUNS = 3
-
-
-@pytest.fixture(autouse=True)
-def validation_mode(unchecked_validation):
-    """Timed batches are not checked against full validation."""
 
 
 def _paper(analyses=ANALYSES, points=POINTS, quotes=0):

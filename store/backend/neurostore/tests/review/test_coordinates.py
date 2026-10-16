@@ -9,9 +9,10 @@ from study_schema import keys
 from study_schema.models.paper_parse import CoordinateParse, ParsedPoint
 
 from neurostore.ingest.study_schema import _check_verdicts
-from neurostore.review import ReviewError, coordinates
-from neurostore.review.bundle import hidden
-from neurostore.review.ops import ReviewState, apply_batch, inverse
+from neurostore.review.core import coordinates
+from neurostore.review.core.bundle import hidden
+from neurostore.review.core.ops import ReviewState, apply_batch, inverse
+from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review import records

@@ -14,10 +14,10 @@ from functools import cache
 from jsonschema import validators
 from study_schema.jsonschema import load
 
-from neurostore.review import ReviewError
-from neurostore.review.lists import indexed, splice
-from neurostore.review.targets import target_key
-from neurostore.review.validation import where
+from neurostore.review.core.lists import indexed, splice
+from neurostore.review.core.targets import target_key
+from neurostore.review.core.validation import where
+from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import expected_key, sha256_of
 
 PRODUCER = {"name": "neurostore-review", "version": "1"}

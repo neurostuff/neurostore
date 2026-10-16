@@ -11,9 +11,10 @@ import hashlib
 import json
 from pathlib import Path
 
-from neurostore.review import ReviewError, coordinates, entities, paths
-from neurostore.review.bundle import bundle
-from neurostore.review.ops import ReviewState, apply_batch
+from neurostore.review.core import coordinates, entities, paths
+from neurostore.review.core.bundle import bundle
+from neurostore.review.core.ops import ReviewState, apply_batch
+from neurostore.review.errors import ReviewError
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review import records
 

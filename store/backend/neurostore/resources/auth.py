@@ -7,7 +7,8 @@ from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
 from jose import jwt
 
-from neurostore.exceptions.handlers import error_response, is_review_path
+from neurostore.exceptions.handlers import error_response
+from neurostore.paths import is_review_path
 
 
 def _oauth_problem(detail):

@@ -5,8 +5,9 @@ from functools import cache
 
 from study_schema import jsonschema
 
-from neurostore.review import ReviewError, paths
-from neurostore.review.defs import class_of, is_extracted
+from neurostore.review.core import paths
+from neurostore.review.core.defs import class_of, is_extracted
+from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import CHILD_LISTS, DECLARED_KEYS
 
 

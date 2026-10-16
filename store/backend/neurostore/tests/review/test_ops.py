@@ -5,8 +5,9 @@ import json
 import pytest
 from jsonschema import Draft202012Validator
 
-from neurostore.review import ReviewError, ops
-from neurostore.review.ops import ReviewState, apply_batch, inverse
+from neurostore.review.core import SCHEMA_DIR, ops
+from neurostore.review.core.ops import ReviewState, apply_batch, inverse
+from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review import records
@@ -420,9 +421,19 @@ def test_create_entity_at_an_index_past_the_end_is_an_error():
 def test_create_entity_ops_sharing_a_client_op_id_mint_distinct_ids():
     same = {"client_op_id": "same-op-id", "type": "create_entity", "parent": "study",
             "list": "groups", "entity": group()}
-    after, _ = apply(state(), same, same)
+    first, _ = apply(state(), same)
+    after, _ = apply(first, same)
     minted = [g["local_id"] for g in after.record["groups"][2:]]
     assert len(set(minted)) == 2 and all(local_id.startswith("rv_") for local_id in minted)
+
+
+def test_a_batch_that_repeats_a_client_op_id_is_refused_naming_the_repeat():
+    same = {"client_op_id": "same-op-id", "type": "create_entity", "parent": "study",
+            "list": "groups", "entity": group()}
+    with pytest.raises(ops.OpError) as raised:
+        apply(state(), same, same)
+    assert [index for index, _ in raised.value.failures] == [1]
+    assert "same-op-id" in raised.value.problems[0]
 
 
 @pytest.mark.parametrize(
@@ -988,7 +999,7 @@ def test_one_batch_or_several_give_the_same_review():
 # bundle keys
 
 
-BUNDLE = ops.OPS_SCHEMA.with_name("review-bundle.schema.json")
+BUNDLE = SCHEMA_DIR / "review-bundle.schema.json"
 
 
 def _bundle_validator(definition):

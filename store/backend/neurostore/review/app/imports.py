@@ -8,9 +8,9 @@ from sqlalchemy.exc import DBAPIError
 from neurostore.base_studies import find_base_study
 from neurostore.models import Fulltext, ReviewSource
 from neurostore.models.fulltext import FULLTEXT_SOURCE_PREFERENCE
-from neurostore.review import ReviewError, defs
-from neurostore.review.entities import judgeable_keys
-from neurostore.review.layout import (
+from neurostore.review.core import defs
+from neurostore.review.core.entities import judgeable_keys
+from neurostore.review.core.layout import (
     LayoutError,
     check_paper,
     open_layout,
@@ -18,6 +18,7 @@ from neurostore.review.layout import (
     read_provenance,
     study_ids,
 )
+from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import extracted_value, sha256_of
 
 _POSITIONAL_KEY = re.compile(r"(prose|table)#\d+")

@@ -1,24 +1,29 @@
 from connexion.exceptions import ResolverError
 from connexion.resolver import MethodResolver, Resolution
 
-REVIEW_PATH_PREFIX = "/review/"
+from neurostore.paths import REVIEW_PATH_PREFIX
+
+
+def _review(tail):
+    return f"{REVIEW_PATH_PREFIX}{tail}"
+
 
 REVIEW_HANDLERS = {
-    ("GET", "/review/sources/"): "ReviewSourcesView.search",
-    ("GET", "/review/sources/{id}/bundle"): "ReviewBundlesView.get",
-    ("PUT", "/review/sources/{id}/review"): "SourceReviewsView.put",
-    ("GET", "/review/reviews/{id}"): "ReviewsView.get",
-    ("PATCH", "/review/reviews/{id}"): "ReviewsView.patch",
-    ("POST", "/review/reviews/{id}/ops"): "ReviewOpsView.post",
-    ("GET", "/review/reviews/{id}/export"): "ReviewExportView.get",
-    ("POST", "/review/exports/"): "ReviewExportsView.post",
-    ("POST", "/review/imports/"): "ReviewImportsView.post",
-    ("GET", "/review/schemas/{name}"): "ReviewSchemasView.get",
-    ("GET", "/review/base-studies/{id}/assignments"): "ReviewAssignmentsView.get",
-    ("PUT", "/review/base-studies/{id}/assignments/{user_id}"): "ReviewAssignmentsView.put",
-    ("DELETE", "/review/base-studies/{id}/assignments/{user_id}"): "ReviewAssignmentsView.delete",
-    ("GET", "/review/reviewers/"): "ReviewersView.get",
-    ("GET", "/review/me"): "ReviewMeView.get",
+    ("GET", _review("sources/")): "ReviewSourcesView.search",
+    ("GET", _review("sources/{id}/bundle")): "ReviewBundlesView.get",
+    ("PUT", _review("sources/{id}/review")): "SourceReviewsView.put",
+    ("GET", _review("reviews/{id}")): "ReviewsView.get",
+    ("PATCH", _review("reviews/{id}")): "ReviewsView.patch",
+    ("POST", _review("reviews/{id}/ops")): "ReviewOpsView.post",
+    ("GET", _review("reviews/{id}/export")): "ReviewExportView.get",
+    ("POST", _review("exports/")): "ReviewExportsView.post",
+    ("POST", _review("imports/")): "ReviewImportsView.post",
+    ("GET", _review("schemas/{name}")): "ReviewSchemasView.get",
+    ("GET", _review("base-studies/{id}/assignments")): "ReviewAssignmentsView.get",
+    ("PUT", _review("base-studies/{id}/assignments/{user_id}")): "ReviewAssignmentsView.put",
+    ("DELETE", _review("base-studies/{id}/assignments/{user_id}")): "ReviewAssignmentsView.delete",
+    ("GET", _review("reviewers/")): "ReviewersView.get",
+    ("GET", _review("me")): "ReviewMeView.get",
 }
 
 

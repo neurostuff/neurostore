@@ -13,12 +13,12 @@ from study_schema.models.paper_parse import CoordinateParse
 
 from neurostore import cli
 from neurostore.database import db
-from neurostore.exceptions.base import NotFoundError
 from neurostore.ingest.study_schema import _check_verdicts, ingest_upload
 from neurostore.models import BaseStudy, FieldClaim, ReviewOp, ReviewSource, StudyEntity
 from neurostore.models.data import study_entity_hash
-from neurostore.review import ReviewError, exports, imports, service
-from neurostore.review.layout import _dumped, read_layout
+from neurostore.review.app import exports, imports, service
+from neurostore.review.core.layout import dumped, read_layout
+from neurostore.review.errors import NotFound, ReviewError
 from neurostore.study_schema_tools import expected_key as key_for
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests import study_schema_fixtures as fx
@@ -134,7 +134,7 @@ def assert_as_loaded(root, files, paper_id=PAPER_ID, study_id="s1"):
         exported = (root / exported_name(relative, paper_id, study_id)).read_bytes()
         if relative.endswith(".json"):
             assert json.loads(exported) == json.loads(data), relative
-            assert exported == _dumped(json.loads(exported)), relative
+            assert exported == dumped(json.loads(exported)), relative
         else:
             assert exported == data, relative
 
@@ -348,7 +348,7 @@ def test_a_coordinate_verdict_writes_a_revision_that_validates(session, reviewer
     revision_path = tmp_path / "out" / f"run/revisions/{PAPER_ID}.coordinate_parse.json"
     revision = json.loads(revision_path.read_text("utf-8"))
     assert schema_errors("coordinate-parse", revision) == []
-    assert revision_path.read_bytes() == _dumped(revision)
+    assert revision_path.read_bytes() == dumped(revision)
     assert COORDINATE_KEY not in [analysis["key"] for analysis in revision["analyses"]]
 
 
@@ -713,7 +713,7 @@ def test_include_unreviewed_with_empty_filter_lists_is_allowed(session, reviewer
 
 
 def test_an_unknown_review_is_not_found_by_the_export(session, reviewers, tmp_path):
-    with pytest.raises(NotFoundError):
+    with pytest.raises(NotFound):
         exports.export_review(session, "nope", tmp_path / "out")
 
 
@@ -919,6 +919,21 @@ def test_the_cli_refuses_include_unreviewed_with_a_filter(
 
     assert result.exit_code == 2, result.output
     assert not (tmp_path / "out").exists()
+
+
+def test_the_cli_prints_a_review_error_and_exits_non_zero(
+    session, reviewers, tmp_path, run_cli
+):
+    _, source_id = load(session, tmp_path / "in")
+    source = session.get(ReviewSource, source_id)
+    header = {k: v for k, v in source.parsed_paper["header"].items() if k != "article_id"}
+    source.parsed_paper = {**source.parsed_paper, "header": header}
+    session.commit()
+
+    result = run_cli(str(tmp_path / "out"), "--include-unreviewed")
+
+    assert result.exit_code == 2
+    assert f"review source {source_id} has no article_id" in result.output
 
 
 def test_each_cli_option_changes_the_manifest(session, reviewers, tmp_path, run_cli):

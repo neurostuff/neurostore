@@ -1,9 +1,5 @@
-"""The review core: a reviewer's typed ops applied to one paper's study_schema documents."""
+"""A reviewer's typed ops applied to one paper's study_schema documents, in two layers.
 
-
-class ReviewError(ValueError):
-    """An op or a path the review core cannot apply; ``problems`` names each problem."""
-
-    def __init__(self, message, problems=None):
-        super().__init__(message)
-        self.problems = problems or [message]
+``core`` applies and validates ops on plain documents and touches no database or web framework;
+``app`` loads and stores reviews through a session. Both layers raise the errors of ``errors``.
+"""

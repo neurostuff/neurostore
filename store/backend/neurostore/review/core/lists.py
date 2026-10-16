@@ -2,7 +2,7 @@
 
 import copy
 
-from neurostore.review import ReviewError
+from neurostore.review.errors import ReviewError
 
 
 def indexed(items, others, name="analysis"):

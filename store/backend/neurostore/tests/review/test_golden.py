@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from neurostore.review import coordinates, entities, paths
-from neurostore.review.bundle import validator
+from neurostore.review.core import coordinates, entities, paths
+from neurostore.review.core.bundle import validator
 from neurostore.tests.review import golden, records
 
 REGENERATE = "regenerate it with: cd store/backend && python -m neurostore.tests.review.golden"

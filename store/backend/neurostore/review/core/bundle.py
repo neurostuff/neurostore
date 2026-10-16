@@ -8,14 +8,14 @@ from urllib.parse import urljoin
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from neurostore.review import coordinates, entities, references
-from neurostore.review.ops import OPS_SCHEMA
+from neurostore.review.core import SCHEMA_DIR, coordinates, entities, references
+from neurostore.review.core.ops import OPS_SCHEMA
 
 
 @cache
 def validator():
     ops_schema = json.loads(OPS_SCHEMA.read_text("utf-8"))
-    bundle_path = OPS_SCHEMA.with_name("review-bundle.schema.json")
+    bundle_path = SCHEMA_DIR / "review-bundle.schema.json"
     bundle_schema = json.loads(bundle_path.read_text("utf-8"))
     ops_uri = urljoin(bundle_schema["$id"], OPS_SCHEMA.name)
     registry = Registry().with_resource(ops_uri, Resource.from_contents(ops_schema))

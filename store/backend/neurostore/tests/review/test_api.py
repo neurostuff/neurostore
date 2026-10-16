@@ -14,21 +14,25 @@ from jsonschema import Draft202012Validator
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from neurostore.exceptions.base import ConflictError
+from neurostore.database import db
 from neurostore.models import (
     BaseStudy,
     Fulltext,
     PipelineConfig,
     Review,
+    ReviewAssignment,
     ReviewOp,
     ReviewSource,
 )
 from neurostore.resources import body_limit
+from neurostore.resources import review as review_views
 from neurostore.resources.base import ObjectView
-from neurostore.review import bundle as review_bundle
-from neurostore.review import entities, exports, service
-from neurostore.review.bundle import validator
-from neurostore.review.ops import OPS_SCHEMA
+from neurostore.review.app import exports, service
+from neurostore.review.core import bundle as review_bundle
+from neurostore.review.core import entities
+from neurostore.review.core.bundle import validator
+from neurostore.review.core.ops import OPS_SCHEMA
+from neurostore.review.errors import Conflict
 from neurostore.study_schema_tools import sha256_of
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.request_utils import AsyncClient
@@ -1282,6 +1286,41 @@ async def test_every_op_the_core_refuses_is_named_by_its_index(clients, source, 
     assert session.get(Review, review["id"]).last_seq == 0
 
 
+async def test_a_batch_that_repeats_a_client_op_id_is_refused_naming_it(clients, source, session):
+    review = await start(clients, source)
+    first = accept("grp_a")
+    again = {**set_name("grp_a", "patients"), "client_op_id": first["client_op_id"]}
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, first, again)
+    )
+    assert response.status_code == 422, response.json()
+    [error] = response.json()["errors"]
+    assert error["field"] == "ops/1"
+    assert error["context"] == {"op_index": 1, "client_op_id": first["client_op_id"]}
+    assert first["client_op_id"] in error["message"]
+    session.expire_all()
+    assert session.get(Review, review["id"]).last_seq == 0
+
+
+async def test_a_batch_repeating_an_op_that_is_already_stored_is_refused_naming_it(
+    clients, source, session
+):
+    review = await start(clients, source)
+    ops_path = f"/api/review/reviews/{review['id']}/ops"
+    stored = accept("grp_a")
+    applied = await clients[REVIEWER].post(ops_path, data=batch(0, stored))
+    assert applied.status_code == 200, applied.json()
+
+    response = await clients[REVIEWER].post(ops_path, data=batch(1, stored, stored))
+
+    assert response.status_code == 422, response.json()
+    [error] = response.json()["errors"]
+    assert error["field"] == "ops/1"
+    assert stored["client_op_id"] in error["message"]
+    session.expire_all()
+    assert session.get(Review, review["id"]).last_seq == 1
+
+
 async def test_an_op_that_does_not_validate_is_named_by_its_index(clients, source):
     review = await start(clients, source)
     malformed = {"client_op_id": "malformed-1", "type": "no_such_type"}
@@ -1319,9 +1358,9 @@ async def test_two_concurrent_batches_cannot_both_apply(clients, source, session
             service.post_ops(second, review_id, REVIEWER, batch(0, accept("grp_a")))
             second.commit()
             outcome["second"] = "applied"
-        except ConflictError as conflict:
+        except Conflict as conflict:
             second.rollback()
-            outcome["second"] = conflict.to_payload()
+            outcome["second"] = conflict.last_seq
         except Exception as error:
             second.rollback()
             outcome["second"] = error
@@ -1340,7 +1379,7 @@ async def test_two_concurrent_batches_cannot_both_apply(clients, source, session
     finally:
         first.close()
         second.close()
-    assert outcome["second"]["last_seq"] == 1, outcome["second"]
+    assert outcome["second"] == 1, outcome["second"]
     session.expire_all()
     assert session.get(Review, review_id).last_seq == 1
 
@@ -1507,7 +1546,7 @@ async def test_two_concurrent_reference_marks_leave_one_reference(clients, sourc
     finally:
         first.close()
         second.close()
-    assert isinstance(outcome["second"], ConflictError)
+    assert isinstance(outcome["second"], Conflict)
     session.expire_all()
     references = session.scalars(sa.select(Review).where(Review.state == "reference")).all()
     assert [review.id for review in references] == [mine["id"]]
@@ -1947,3 +1986,45 @@ async def test_the_reviewer_list_is_only_the_reviewers(clients):
     response = await clients[REVIEWER].get("/api/review/reviewers/")
 
     assert set(response.json()) == {"results"}
+
+
+# a failed commit
+
+
+def failing_commit(monkeypatch, session, reviewer):
+    """Make the views run in the test's session as ``reviewer``, with a commit that fails."""
+    monkeypatch.setattr(review_views, "get_current_user", lambda: reviewer)
+
+    def commit():
+        raise IntegrityError("COMMIT", {}, Exception("forced"))
+
+    monkeypatch.setattr(db.session, "commit", commit)
+
+
+def test_a_review_start_whose_commit_fails_is_rolled_back(
+    monkeypatch, session, source, make_user
+):
+    failing_commit(monkeypatch, session, make_user(REVIEWER, "admin-reviewer"))
+    with pytest.raises(IntegrityError):
+        review_views.SourceReviewsView().put(source.id)
+
+    assert session.scalars(sa.select(Review).where(Review.source_id == source.id)).all() == []
+
+
+@pytest.mark.parametrize("method", ["put", "delete"])
+def test_an_assignment_whose_commit_fails_is_rolled_back(
+    monkeypatch, session, source, make_user, method
+):
+    base_study_id = source.fulltext.base_study_id
+    reviewer = make_user(REVIEWER, "admin-reviewer")
+    if method == "delete":
+        session.add(ReviewAssignment(
+            base_study_id=base_study_id, user_id=REVIEWER, assigned_by_id=REVIEWER
+        ))
+        session.commit()
+    before = session.scalars(sa.select(ReviewAssignment.user_id)).all()
+    failing_commit(monkeypatch, session, reviewer)
+    with pytest.raises(IntegrityError):
+        getattr(review_views.ReviewAssignmentsView(), method)(base_study_id, REVIEWER)
+
+    assert session.scalars(sa.select(ReviewAssignment.user_id)).all() == before

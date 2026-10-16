@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import pytest
 import sqlalchemy as sa
 
+from neurostore.database import db
 from neurostore.exceptions.base import NeuroStoreException
 from neurostore.ingest.study_schema import (
     BOTH_DIRECTIONS,
@@ -38,9 +39,8 @@ from neurostore.models import (
     Study,
     StudyEntity,
 )
-from neurostore.database import db
 from neurostore.models.data import is_result_analysis, study_entity_hash
-from neurostore.review.ops import ReviewState, apply_batch
+from neurostore.review.core.ops import ReviewState, apply_batch
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests import study_schema_fixtures as fx
 

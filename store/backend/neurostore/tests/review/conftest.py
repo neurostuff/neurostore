@@ -7,32 +7,8 @@ import pytest
 import sqlalchemy as sa
 
 from neurostore.models import Role, User
-from neurostore.review import ops
 from neurostore.tests.request_utils import AsyncClient
 from neurostore.tests.review.layouts import LEAD, OTHER, REVIEWER, TOKENS
-
-
-UNCHECKED_PROBLEMS = ops._problems
-
-
-@pytest.fixture(autouse=True)
-def validation_mode(monkeypatch):
-    """Each batch's incremental validation checked against full validation."""
-
-    def checked(state, changed, revision_before):
-        problems = UNCHECKED_PROBLEMS(state, changed, revision_before)
-        full = ops._document_errors(state)
-        assert problems == full, f"incremental validation found {problems}; full, {full}"
-        return problems
-
-    monkeypatch.setattr(ops, "_problems", checked)
-
-
-@pytest.fixture
-def unchecked_validation(monkeypatch):
-    """Batch validation without the check against full validation, for a test that starts from
-    documents which do not validate, and for timing."""
-    monkeypatch.setattr(ops, "_problems", UNCHECKED_PROBLEMS)
 
 
 @pytest.fixture

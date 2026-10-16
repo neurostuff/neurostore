@@ -29,7 +29,7 @@ from neurostore.models import (
 )
 from neurostore.models import fulltext as fulltext_model
 from neurostore.models.fulltext import refresh_fulltext_pointer
-from neurostore.review import entities
+from neurostore.review.core import entities
 
 REVIEW_TABLES = (Fulltext, ReviewSource, Review, ReviewOp, ReviewAssignment)
 PREVIOUS_REVISION = "a7d3e9c1b5f2"

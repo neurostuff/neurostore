@@ -3,9 +3,10 @@ puts them back."""
 
 import copy
 
-from neurostore.review import ReviewError, entities, references
-from neurostore.review.defs import extraction_defs
-from neurostore.review.lists import splice
+from neurostore.review.core import entities, references
+from neurostore.review.core.defs import extraction_defs
+from neurostore.review.core.lists import splice
+from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import minimal
 
 

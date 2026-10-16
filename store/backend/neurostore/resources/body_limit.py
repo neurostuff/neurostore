@@ -3,7 +3,8 @@
 from starlette.requests import Request
 from starlette.responses import Response
 
-from neurostore.exceptions.handlers import UPLOAD_PATH_PREFIX, error_response, is_review_path
+from neurostore.exceptions.handlers import error_response
+from neurostore.paths import UPLOAD_URL_PREFIX, is_review_path
 
 MAX_REVIEW_BODY_BYTES = 8 * 1024 * 1024
 CAPPED_METHODS = {"POST", "PUT", "PATCH"}
@@ -15,7 +16,7 @@ def _is_capped(scope):
         scope["type"] == "http"
         and scope.get("method") in CAPPED_METHODS
         and is_review_path(path)
-        and not path.startswith(UPLOAD_PATH_PREFIX)
+        and not path.startswith(UPLOAD_URL_PREFIX)
     )
 
 

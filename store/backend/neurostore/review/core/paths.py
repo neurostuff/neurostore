@@ -11,7 +11,7 @@ a position, or a tuple of ``(slot, value)`` pairs.
 
 import re
 
-from neurostore.review import ReviewError
+from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import extracted_value
 
 _NAME = r"[A-Za-z_][A-Za-z0-9_]*"

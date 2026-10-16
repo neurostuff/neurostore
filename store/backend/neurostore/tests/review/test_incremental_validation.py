@@ -1,5 +1,7 @@
 """Validating only what a batch changed refuses exactly the batches, with exactly the problems
-and failing op, that validating the whole documents does."""
+and failing op, that validating the whole documents does.
+
+This is where incremental validation is checked against full validation."""
 
 import collections
 import copy
@@ -7,14 +9,16 @@ import random
 
 import pytest
 
-from neurostore.review import entities, ops, paths, references, validation
-from neurostore.review.ops import OpError, ReviewState, apply_batch
+from neurostore.review.core import defs, entities, paths, references, validation
+from neurostore.review.core.ops import (
+    OpError, ReviewState, apply_batch, full_problems, incremental_problems,
+)
 from neurostore.study_schema_tools import CHILD_LISTS, DECLARED_KEYS, schema_errors
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review import records
 
 AT = "2026-10-15T12:00:00Z"
-MODES = ("full", "incremental")
+MODES = {"full": full_problems, "incremental": incremental_problems}
 SEEDS = 150
 
 
@@ -58,10 +62,11 @@ def _refusal_kind(op, problem):
     return "entity part"
 
 
-def _outcome(monkeypatch, mode, state, batch):
-    monkeypatch.setattr(ops, "VALIDATION", mode)
+def _outcome(mode, state, batch):
     try:
-        after, stored = apply_batch(state, batch, text=records.TEXT, user_id="u1", at=AT)
+        after, stored = apply_batch(
+            state, batch, text=records.TEXT, user_id="u1", at=AT, validate=MODES[mode]
+        )
     except OpError as error:
         return "refused", str(error), error.failures
     documents = (after.record, after.coordinate_revision, after.provenance, after.annotations)
@@ -84,7 +89,7 @@ def _start(rng, name):
         state, _ = apply_batch(state, {"ops": [
             _op("verdict", target=_analysis(keys[0]), verdict="accept"),
             _op("coordinate", target=_analysis(keys[2]), action="relabel", role="other"),
-        ]}, text=records.TEXT, user_id="u0", at=AT)
+        ]}, text=records.TEXT, user_id="u0", at=AT, validate=full_problems)
     if rng.random() < 0.25:
         state.coordinate_parse = {**state.coordinate_parse, "tables": "not a list"}
     return state
@@ -325,24 +330,23 @@ def _batch(rng, state):
 def _verdict(state, op):
     """What applying ``op`` alone to ``state`` gives, and the state it leaves."""
     try:
-        after, _ = apply_batch(state, {"ops": [op]}, text=records.TEXT, user_id="u1", at=AT)
+        after, _ = apply_batch(
+            state, {"ops": [op]}, text=records.TEXT, user_id="u1", at=AT, validate=full_problems
+        )
     except OpError as error:
         return ("invalid" if "invalid document" in str(error) else "cannot apply"), None
     return "applied", after
 
 
 @pytest.mark.parametrize("start", STARTS)
-def test_incremental_validation_refuses_exactly_what_full_validation_refuses(
-    monkeypatch, start
-):
+def test_incremental_validation_refuses_exactly_what_full_validation_refuses(start):
     verdicts, mismatches = collections.Counter(), []
     for seed in range(SEEDS):
         rng = random.Random(f"{start}-{seed}")
         state = _start(rng, start)
         assert _validates(state)
-        monkeypatch.setattr(ops, "VALIDATION", "full")
         batch = _batch(rng, state)
-        outcomes = {mode: _outcome(monkeypatch, mode, state, batch) for mode in MODES}
+        outcomes = {mode: _outcome(mode, state, batch) for mode in MODES}
         if len({repr(outcome) for outcome in outcomes.values()}) != 1:
             mismatches.append((seed, outcomes))
         kind, *refusal = outcomes["full"]
@@ -352,31 +356,27 @@ def test_incremental_validation_refuses_exactly_what_full_validation_refuses(
     assert verdicts["applied"] >= SEEDS // 8, verdicts
 
 
-def _refused_kinds(monkeypatch, start):
+def _refused_kinds(start):
     """The kinds of part the seeded batches of ``start`` leave invalid, as full validation
     refuses them."""
     kinds = collections.Counter()
     for seed in range(SEEDS):
         rng = random.Random(f"{start}-{seed}")
         state = _start(rng, start)
-        monkeypatch.setattr(ops, "VALIDATION", "full")
         batch = _batch(rng, state)
-        _, *refusal = _outcome(monkeypatch, "full", state, batch)
+        _, *refusal = _outcome("full", state, batch)
         if "invalid document" in str(refusal):
             index, problem = refusal[1][0]
             kinds[_refusal_kind(batch["ops"][index], problem)] += 1
     return kinds
 
 
-def test_every_kind_of_invalid_part_is_generated(monkeypatch):
-    kinds = sum((_refused_kinds(monkeypatch, start) for start in STARTS), collections.Counter())
+def test_every_kind_of_invalid_part_is_generated():
+    kinds = sum((_refused_kinds(start) for start in STARTS), collections.Counter())
     assert all(kinds[kind] >= KIND_FLOOR for kind in KINDS), kinds
 
 
-def test_a_batch_is_validated_only_where_it_changed_the_documents(
-    monkeypatch, unchecked_validation
-):
-    monkeypatch.setattr(ops, "VALIDATION", "incremental")
+def test_a_batch_is_validated_only_where_it_changed_the_documents():
     record = records.golden()
     record["regions"][0]["bogus_slot"] = 1
     rename = _op("set_value", target={"kind": "slot", "entity": "grp_b", "path": "name"},
@@ -442,3 +442,26 @@ def test_a_revision_changing_a_header_reports_the_bad_value_below_it():
     problems = _replaced_problems(*_revision(bad_producer_version))
     assert len(problems) == 1
     assert problems[0].startswith("coordinate-parse /header/producer/version:")
+
+
+LENGTH_KEYWORDS = {"minItems", "maxItems", "uniqueItems", "contains", "minContains", "maxContains"}
+
+
+def _class_named(schema):
+    """The class a property schema refers to, directly or as an option of an anyOf."""
+    refs = [schema, *schema.get("anyOf", ())]
+    return next(option["$ref"] for option in refs if "$ref" in option).rsplit("/", 1)[-1]
+
+
+def test_no_entity_list_is_constrained_by_its_length():
+    """So adding or removing an entity can invalidate a record only through the entity itself,
+    and a batch that changes a list's membership needs only its owner's own keywords checked."""
+    schemas = defs.extraction_defs()
+    for cls, entries in CHILD_LISTS.items():
+        for path, _ in entries:
+            owner = cls
+            *parents, attribute = path.split(".")
+            for parent in parents:
+                owner = _class_named(schemas[owner]["properties"][parent])
+            schema = schemas[owner]["properties"][attribute]
+            assert LENGTH_KEYWORDS.isdisjoint(schema), (cls, path, schema)

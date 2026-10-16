@@ -1,7 +1,7 @@
 import pytest
 
-from neurostore.review import ReviewError
-from neurostore.review import paths
+from neurostore.review.core import paths
+from neurostore.review.errors import ReviewError
 
 
 def _group():

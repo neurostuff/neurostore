@@ -37,7 +37,7 @@ from neurostore.resources.data_views.common import (
     apply_map_type_filter,
 )
 from neurostore.resources.utils import view_maker
-from neurostore.review.service import review_source_count
+from neurostore.review.app.service import review_source_count
 from neurostore.schemas.data import BaseDataSchema, StringOrNested, StudySchema
 
 

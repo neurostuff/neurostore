@@ -8,12 +8,6 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import joinedload
 
-from neurostore.exceptions.utils.error_helpers import (
-    abort_conflict,
-    abort_not_found,
-    abort_permission,
-    abort_unprocessable,
-)
 from neurostore.exceptions.utils.errors import ErrorDetail
 from neurostore.models import (
     BaseStudy,
@@ -26,10 +20,11 @@ from neurostore.models import (
     User,
 )
 from neurostore.models.review import SET_ASIDE_REASONS
-from neurostore.review.bundle import bundle, hidden, source_summary
-from neurostore.review.entities import index_rows
-from neurostore.review.ops import NO_INVERSE, OpError, ReviewState, apply_batch, inverse_ops
-from neurostore.review.validation import document_problems
+from neurostore.review.core.bundle import bundle, hidden, source_summary
+from neurostore.review.core.entities import index_rows
+from neurostore.review.core.ops import NO_INVERSE, OpError, ReviewState, apply_batch, inverse_ops
+from neurostore.review.core.validation import document_problems
+from neurostore.review.errors import Conflict, NotFound, Refused, Unprocessable
 
 #: Provenance states that count as a change in the paper list.
 CHANGED_STATES = ("edited", "added", "removed")
@@ -161,7 +156,7 @@ def start_review(session, source_id, user_id):
     """``(review summary, created)``: the reviewer's review of the source, started if new.
 
     Raises:
-        ConflictError (409) with each problem of the source's documents, code source_invalid,
+        Conflict (409) with each problem of the source's documents, code source_invalid,
         when a new review would start from documents that no longer validate.
     """
     source = _get_or_404(session, ReviewSource, source_id, "review source")
@@ -189,10 +184,10 @@ def _check_source(source):
     if source.coordinate_parse is not None:
         problems += document_problems("coordinate-parse", source.coordinate_parse)
     if problems:
-        abort_conflict(
+        raise Conflict(
             "The source no longer validates against study_schema; re-import the source.",
             errors=[
-                ErrorDetail(code="source_invalid", message=problem).to_dict()
+                ErrorDetail(code="source_invalid", message=problem)
                 for problem in problems
             ],
         )
@@ -215,18 +210,19 @@ def post_ops(session, review_id, user_id, body):
     of a full replay; flushes, never commits.
 
     Raises:
-        PermissionError (403) when the caller does not own the review.
-        NotFoundError (404) when the review does not exist.
-        ConflictError (409) for a closed review, a stale expected_last_seq or a partial replay.
-        UnprocessableEntityError (422) naming each op the core refuses.
+        Refused (403) when the caller does not own the review.
+        NotFound (404) when the review does not exist.
+        Conflict (409) for a closed review, a stale expected_last_seq or a partial replay.
+        Unprocessable (422) naming each op the core refuses.
     """
     review = _locked(session, review_id)
     if review.user_id != user_id:
-        abort_permission("Only the review's owner can edit it.")
+        raise Refused("Only the review's owner can edit it.")
     source = get_source(session, review.source_id)
     ops = body["ops"]
     client_op_ids = {op.get("client_op_id") for op in ops}
-    stored = session.scalars(
+    repeats = len(client_op_ids) < len(ops)
+    stored = [] if repeats else session.scalars(
         sa.select(ReviewOp)
         .where(ReviewOp.review_id == review_id, ReviewOp.client_op_id.in_(client_op_ids))
         .order_by(ReviewOp.seq)
@@ -236,11 +232,11 @@ def post_ops(session, review_id, user_id, body):
             review, [_stored(row, review.user_id) for row in stored], source.coordinate_parse
         )
     if stored:
-        abort_conflict("Some of the batch's ops are stored and some are not.")
+        raise Conflict("Some of the batch's ops are stored and some are not.")
     if review.state != "in_progress":
-        abort_conflict(f"The review is {review.state}; only in_progress takes ops.")
+        raise Conflict(f"The review is {review.state}; only in_progress takes ops.")
     if body["expected_last_seq"] != review.last_seq:
-        abort_conflict(
+        raise Conflict(
             "The review has changed since the batch was made.", last_seq=review.last_seq
         )
     now = datetime.now(timezone.utc)
@@ -253,9 +249,10 @@ def post_ops(session, review_id, user_id, body):
             at=_iso(now),
         )
     except OpError as error:
-        abort_unprocessable(
-            str(error), [_refusal(ops, index, problem) for index, problem in error.failures]
-        )
+        raise Unprocessable(
+            str(error),
+            errors=[_refusal(ops, index, problem) for index, problem in error.failures],
+        ) from error
     inserted = [
         ReviewOp(
             review_id=review.id,
@@ -281,22 +278,22 @@ def set_state(session, review_id, user_id, new_state, *, lead, reason=None, note
     until the review leaves that state; no other state takes either.
 
     Raises:
-        NotFoundError (404) when the review does not exist.
-        PermissionError (403) when a non-admin marks a reference, or a caller who does not
+        NotFound (404) when the review does not exist.
+        Refused (403) when a non-admin marks a reference, or a caller who does not
         own the review changes any other state.
-        ConflictError (409) when the review is already the reference, another review of its
+        Conflict (409) when the review is already the reference, another review of its
         source is, or the transition is not allowed.
-        UnprocessableEntityError (422) when a set_aside lacks its reason or note, or another
+        Unprocessable (422) when a set_aside lacks its reason or note, or another
         state is given one.
     """
     review = _locked(session, review_id)
     if new_state == "reference":
         if not lead:
-            abort_permission("Only an admin can mark the reference review.")
+            raise Refused("Only an admin can mark the reference review.")
         if review.state == "reference":
-            abort_conflict("The review is already the reference review.")
+            raise Conflict("The review is already the reference review.")
         if review.state == "set_aside":
-            abort_conflict("A set-aside review cannot be the reference review.")
+            raise Conflict("A set-aside review cannot be the reference review.")
         session.execute(
             sa.select(ReviewSource.id).where(ReviewSource.id == review.source_id).with_for_update()
         )
@@ -306,12 +303,12 @@ def set_state(session, review_id, user_id, new_state, *, lead, reason=None, note
             )
         )
         if references_of_source:
-            abort_conflict("The paper already has a reference review.")
+            raise Conflict("The paper already has a reference review.")
     else:
         if review.user_id != user_id:
-            abort_permission("Only the review's owner can change its state.")
+            raise Refused("Only the review's owner can change its state.")
         if (review.state, new_state) not in OWNER_TRANSITIONS:
-            abort_conflict(f"A review cannot go from {review.state} to {new_state}.")
+            raise Conflict(f"A review cannot go from {review.state} to {new_state}.")
     _check_set_aside(new_state, reason, note)
     review.state = new_state
     review.set_aside_reason = reason
@@ -323,11 +320,11 @@ def set_state(session, review_id, user_id, new_state, *, lead, reason=None, note
 def _check_set_aside(new_state, reason, note):
     if new_state != "set_aside":
         if reason is not None or note is not None:
-            abort_unprocessable(f"Only set_aside takes a reason or a note, not {new_state}.")
+            raise Unprocessable(f"Only set_aside takes a reason or a note, not {new_state}.")
     elif reason not in SET_ASIDE_REASONS:
-        abort_unprocessable(f"A review is set aside for one of {', '.join(SET_ASIDE_REASONS)}.")
+        raise Unprocessable(f"A review is set aside for one of {', '.join(SET_ASIDE_REASONS)}.")
     elif reason == "other" and not (note or "").strip():
-        abort_unprocessable("A review set aside for another reason needs a note.")
+        raise Unprocessable("A review set aside for another reason needs a note.")
 
 
 def _set_aside(review):
@@ -342,14 +339,14 @@ def assign(session, base_study_id, user_id, caller):
     never commits. Assigning an assigned user again changes nothing.
 
     Raises:
-        NotFoundError (404) when the base study does not exist.
-        PermissionError (403) when a caller who is not a lead names another user.
-        UnprocessableEntityError (422) when the user does not hold the admin-reviewer role.
+        NotFound (404) when the base study does not exist.
+        Refused (403) when a caller who is not a lead names another user.
+        Unprocessable (422) when the user does not hold the admin-reviewer role.
     """
     _base_study_or_404(session, base_study_id)
     _may_name(user_id, caller)
     if not _is_reviewer(session, user_id):
-        abort_unprocessable(f"{user_id} is not an admin-reviewer, so cannot be assigned a paper.")
+        raise Unprocessable(f"{user_id} is not an admin-reviewer, so cannot be assigned a paper.")
     created = session.scalar(
         insert(ReviewAssignment)
         .values(base_study_id=base_study_id, user_id=user_id, assigned_by_id=caller.id)
@@ -378,8 +375,8 @@ def release(session, base_study_id, user_id, caller):
     """Remove ``user_id``'s assignment to the paper, if any; flushes, never commits.
 
     Raises:
-        NotFoundError (404) when the base study does not exist.
-        PermissionError (403) when a caller who is not a lead names another user.
+        NotFound (404) when the base study does not exist.
+        Refused (403) when a caller who is not a lead names another user.
     """
     _base_study_or_404(session, base_study_id)
     _may_name(user_id, caller)
@@ -395,7 +392,7 @@ def assignees(session, base_study_id):
     """The users the paper is assigned to, oldest assignment first.
 
     Raises:
-        NotFoundError (404) when the base study does not exist.
+        NotFound (404) when the base study does not exist.
     """
     _base_study_or_404(session, base_study_id)
     return _assignment_rows(session, [base_study_id]).get(base_study_id, [])
@@ -413,7 +410,7 @@ def reviewers(session):
 
 def _may_name(user_id, caller):
     if user_id != caller.id and not caller.lead:
-        abort_permission("Only a lead reviewer can assign or release another user's paper.")
+        raise Refused("Only a lead reviewer can assign or release another user's paper.")
 
 
 def _is_reviewer(session, user_id):
@@ -428,7 +425,7 @@ def _is_reviewer(session, user_id):
 
 def _base_study_or_404(session, base_study_id):
     if session.get(BaseStudy, base_study_id) is None:
-        abort_not_found("base study", base_study_id)
+        raise NotFound("base study", base_study_id)
 
 
 def _assignment_rows(session, base_study_ids):
@@ -478,7 +475,7 @@ def summary(review):
 def _get_or_404(session, model, id, name):
     row = session.get(model, id)
     if row is None:
-        abort_not_found(name, id)
+        raise NotFound(name, id)
     return row
 
 
@@ -495,7 +492,7 @@ def get_source(session, source_id):
         .where(ReviewSource.id == source_id)
     )
     if source is None:
-        abort_not_found("review source", source_id)
+        raise NotFound("review source", source_id)
     return source
 
 
@@ -507,7 +504,7 @@ def _locked(session, review_id):
         .execution_options(populate_existing=True)
     )
     if review is None:
-        abort_not_found("review", review_id)
+        raise NotFound("review", review_id)
     return review
 
 

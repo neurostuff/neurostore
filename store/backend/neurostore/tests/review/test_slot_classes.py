@@ -8,7 +8,7 @@ UPDATE_GOLDEN=1 python -m pytest neurostore/tests/review/test_slot_classes.py
 import json
 import os
 
-from neurostore.review import defs, entities
+from neurostore.review.core import defs, entities
 from neurostore.study_schema_tools import DECLARED_KEYS, schema_errors
 from neurostore.tests.review import golden, records
 
