@@ -1,11 +1,11 @@
 import type { Schema } from '../inspector/schema';
-import { analysisFields, COORDINATE_SCHEMA, gridColumns, pointFields } from './schema';
+import { analysisFields, coordinateSchema, gridColumns, pointFields } from './schema';
 
 const STATISTICS = ['t', 'z', 'f', 'chi_square', 'd', 'g', 'r', 'beta', 'p', 'other'];
 
 describe('point fields from the coordinate-parse schema', () => {
     it('edits a point’s coordinates as three numbers, its values by kind and value, and its other attributes', () => {
-        expect(pointFields(COORDINATE_SCHEMA)).toEqual([
+        expect(pointFields(coordinateSchema())).toEqual([
             {
                 name: 'coordinates',
                 label: 'coordinates',
@@ -51,7 +51,7 @@ describe('point fields from the coordinate-parse schema', () => {
     });
 
     it('leaves out where a point was read from: its row, column group and text span', () => {
-        const names = pointFields(COORDINATE_SCHEMA).map((field) => field.name);
+        const names = pointFields(coordinateSchema()).map((field) => field.name);
         expect(names).not.toEqual(expect.arrayContaining(['row']));
         expect(names).not.toContain('column_group');
         expect(names).not.toContain('text_span');
@@ -97,7 +97,7 @@ describe('point fields from the coordinate-parse schema', () => {
 
 describe('the points grid', () => {
     it('shows x, y, z, the values, the cluster size and the label', () => {
-        expect(gridColumns(pointFields(COORDINATE_SCHEMA)).map((column) => column.label)).toEqual([
+        expect(gridColumns(pointFields(coordinateSchema())).map((column) => column.label)).toEqual([
             'x',
             'y',
             'z',
@@ -108,7 +108,7 @@ describe('the points grid', () => {
     });
 
     it('formats a point’s cells from its fields', () => {
-        const columns = gridColumns(pointFields(COORDINATE_SCHEMA));
+        const columns = gridColumns(pointFields(coordinateSchema()));
         const point = {
             coordinates: [-12, 4.5, 46],
             values: [
@@ -124,7 +124,7 @@ describe('the points grid', () => {
 
 describe('analysis fields', () => {
     it('offers the schema’s coordinate roles and reported spaces', () => {
-        expect(analysisFields(COORDINATE_SCHEMA)).toEqual({
+        expect(analysisFields(coordinateSchema())).toEqual({
             name: { kind: 'text' },
             role: { kind: 'enum', options: ['result', 'anchor', 'localization', 'reference', 'other'], open: true },
             coordinate_space: { kind: 'enum', options: ['MNI', 'TAL', 'OTHER'], open: false },

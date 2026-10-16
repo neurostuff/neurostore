@@ -1,9 +1,10 @@
 import type { MouseEvent } from 'react';
+import { fromSchema } from '../contract/schemas';
 import type { CoordinateAnalysis } from '../model/coordinates';
 import { useReviewStore } from '../store/context';
-import { COORDINATE_SCHEMA, gridColumns, pointFields } from './schema';
+import { gridColumns, pointFields } from './schema';
 
-const COLUMNS = gridColumns(pointFields(COORDINATE_SCHEMA));
+const columnsOf = fromSchema('coordinate-parse', (schema) => gridColumns(pointFields(schema)));
 
 /** The points of one analysis, a row each; click focuses a point, Shift+click selects it. */
 export function PointGrid({
@@ -17,6 +18,7 @@ export function PointGrid({
 }) {
     const focusAnalysis = useReviewStore((s) => s.focusAnalysis);
     const togglePoint = useReviewStore((s) => s.togglePoint);
+    const columns = columnsOf();
     const onRow = (index: number) => (event: MouseEvent) => {
         event.stopPropagation();
         focusAnalysis(analysis.key, index);
@@ -29,7 +31,7 @@ export function PointGrid({
                     <th role="columnheader" scope="col">
                         <span className="rv-visually-hidden">selected</span>
                     </th>
-                    {COLUMNS.map((column) => (
+                    {columns.map((column) => (
                         <th key={column.label} role="columnheader" scope="col">
                             {column.label}
                         </th>
@@ -48,7 +50,7 @@ export function PointGrid({
                         <td role="gridcell">
                             <span aria-hidden="true">{selected.includes(i) ? '✓' : ''}</span>
                         </td>
-                        {COLUMNS.map((column) => (
+                        {columns.map((column) => (
                             <td key={column.label} role="gridcell">
                                 {column.text(point)}
                             </td>

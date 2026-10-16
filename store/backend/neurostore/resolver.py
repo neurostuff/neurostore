@@ -13,6 +13,7 @@ REVIEW_HANDLERS = {
     ("GET", "/review/reviews/{id}/export"): "ReviewExportView.get",
     ("POST", "/review/exports/"): "ReviewExportsView.post",
     ("POST", "/review/imports/"): "ReviewImportsView.post",
+    ("GET", "/review/schemas/{name}"): "ReviewSchemasView.get",
 }
 
 

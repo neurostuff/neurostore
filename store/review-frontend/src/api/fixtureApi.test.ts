@@ -25,6 +25,12 @@ describe('fixtureApi', () => {
         expect(await fixtureApi('/review/').getBundle('P1')).toEqual(bundle);
         await expect(fixtureApi('/review/').getBundle('P2')).rejects.toThrow('P2.bundle.json: 404');
     });
+
+    it('loads a study_schema schema from fixtures/schemas', async () => {
+        const schema = { $id: 'https://neurostuff.org/schemas/neuroimaging-paper-parse', $defs: {} };
+        serve({ '/review/fixtures/schemas/coordinate-parse.schema.json': schema });
+        expect(await fixtureApi('/review/').getSchema('coordinate-parse')).toEqual(schema);
+    });
 });
 
 describe('fixtureApi reviews, kept in memory so the prototype saves offline', () => {

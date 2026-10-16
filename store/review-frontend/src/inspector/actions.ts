@@ -5,7 +5,7 @@ import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } f
 import { randomUUID } from '../model/uuid';
 import type { Panel, PanelKind, ReviewState } from '../store/reviewStore';
 import {
-    EXTRACTION_SCHEMA,
+    extractionSchema,
     type Schema,
     listClassesAt,
     referenceTarget,
@@ -66,8 +66,8 @@ export function slotSchema(s: Pick<State, 'bundle' | 'record'>, slot: SlotNode):
     if (!row) return undefined;
     const item = itemOf(s, slot.entity);
     return (
-        wrapperSchemaAt(EXTRACTION_SCHEMA, row.schema_class, slot.path, item) ??
-        wrapperSchemaAt(EXTRACTION_SCHEMA, row.entity_class, slot.path, item)
+        wrapperSchemaAt(extractionSchema(), row.schema_class, slot.path, item) ??
+        wrapperSchemaAt(extractionSchema(), row.entity_class, slot.path, item)
     );
 }
 
@@ -128,9 +128,9 @@ export function siblingClasses(s: Pick<State, 'bundle' | 'record' | 'focus'>): {
     const row = entityRow(s, s.focus.entity);
     const parent = row?.parent && entityRow(s, row.parent);
     if (!row?.parent || !row.list_path || !parent) return [];
-    return listClassesAt(EXTRACTION_SCHEMA, parent.schema_class, row.list_path, itemOf(s, row.parent)).map((name) => ({
+    return listClassesAt(extractionSchema(), parent.schema_class, row.list_path, itemOf(s, row.parent)).map((name) => ({
         name,
-        title: titleOf(EXTRACTION_SCHEMA, name),
+        title: titleOf(extractionSchema(), name),
     }));
 }
 
@@ -145,7 +145,7 @@ export function createSibling(s: Emitting, className?: string) {
         type: 'create_entity',
         parent: row.parent,
         list: row.list_path,
-        entity: requiredDefaults(EXTRACTION_SCHEMA, chosen),
+        entity: requiredDefaults(extractionSchema(), chosen),
     });
 }
 

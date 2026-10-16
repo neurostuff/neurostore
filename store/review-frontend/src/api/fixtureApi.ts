@@ -1,4 +1,5 @@
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
+import type { Schema } from '../inspector/schema';
 import { applyBatch, isLocalOp, OpRefused, type Documents } from '../model/applyOp';
 import type { CoordinateParse } from '../model/coordinates';
 import { codePointPaper } from '../model/offsets';
@@ -44,6 +45,8 @@ export function fixtureApi(base: string): ReviewApi {
 
     return {
         listPapers: () => getJson<PaperSummary[]>(url('index.json')),
+        // Served from src/test/golden/schemas by the Vite middleware, the same files GOLDEN_SCHEMAS imports.
+        getSchema: (name) => getJson<Schema>(url(`schemas/${name}.schema.json`)),
         async getBundle(id) {
             return reviewed.get(id) ?? load(id);
         },

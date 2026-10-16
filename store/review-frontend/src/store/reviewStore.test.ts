@@ -2,6 +2,9 @@ import { createHash } from 'node:crypto';
 import type { OpResult } from '../api/reviewApi';
 import type { Provenance, ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
+import type { Schema } from '../inspector/schema';
+import { setSchemas } from '../contract/schemas';
+import { GOLDEN_SCHEMAS } from '../test/goldenSchemas';
 import { validateOpBatch } from '../test/schemas';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
 import type { Json } from '../model/paths';
@@ -585,5 +588,29 @@ describe('offsets outside the Basic Multilingual Plane', () => {
         store.getState().focusSlot('slot:study:description');
         expect(store.getState().addEvidence(utf16('twenty'), 'new')).toBe(true);
         expect(store.getState().index.slot('slot:study:description')?.spans).toEqual([utf16('twenty')]);
+    });
+});
+
+describe('declared slots', () => {
+    it('follows the schema loaded last, not the one first read', () => {
+        setup();
+        const base = GOLDEN_SCHEMAS['extraction-record'] as Schema;
+        const defs = base.$defs as Record<string, { properties: Record<string, unknown> }>;
+        const group = defs.Group;
+        setSchemas({
+            ...GOLDEN_SCHEMAS,
+            'extraction-record': {
+                ...base,
+                $defs: {
+                    ...defs,
+                    Group: { ...group, properties: { ...group.properties, probe: group.properties.acquired_count } },
+                },
+            },
+        });
+        const slots = setup()
+            .getState()
+            .index.entity('grp_a')!
+            .slots.map((s) => s.key);
+        expect(slots).toContain('slot:grp_a:probe');
     });
 });

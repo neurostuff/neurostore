@@ -1,4 +1,5 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
+import type { Schema } from '../inspector/schema';
 import {
     ApiError,
     type OpResult,
@@ -62,5 +63,6 @@ export function httpApi(
                 options.keepalive
             ),
         setState: (reviewId, state) => request<ReviewSummary>('PATCH', `/review/reviews/${id(reviewId)}`, { state }),
+        getSchema: (name) => request<Schema>('GET', `/review/schemas/${id(name)}`),
     };
 }

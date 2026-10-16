@@ -6,11 +6,19 @@ const calls: Record<keyof ReviewApi, (api: ReviewApi) => Promise<unknown>> = {
     startReview: (api) => api.startReview('S1'),
     postOps: (api) => api.postOps('R1', 0, []),
     setState: (api) => api.setState('R1', 'submitted'),
+    getSchema: (api) => api.getSchema('coordinate-parse'),
 };
 
 function failingWith(error: unknown): ReviewApi {
     const reject = () => Promise.reject(error);
-    return { listPapers: reject, getBundle: reject, startReview: reject, postOps: reject, setState: reject };
+    return {
+        listPapers: reject,
+        getBundle: reject,
+        startReview: reject,
+        postOps: reject,
+        setState: reject,
+        getSchema: reject,
+    };
 }
 
 describe('watchForbidden', () => {

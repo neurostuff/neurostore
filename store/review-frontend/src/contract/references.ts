@@ -1,5 +1,5 @@
-import extractionSchema from './extraction-record.runtime.schema.json';
 import type { Schema } from '../inspector/schema';
+import { fromSchema } from './schemas';
 
 export interface Reference {
     class: string;
@@ -22,4 +22,4 @@ export function referenceSlotsOf(schema: Schema): Reference[] {
 }
 
 /** Each extraction-schema property that carries x-reference, with the class it links to. */
-export const REFERENCE_SLOTS: Reference[] = referenceSlotsOf(extractionSchema);
+export const referenceSlots = fromSchema('extraction-record', referenceSlotsOf);

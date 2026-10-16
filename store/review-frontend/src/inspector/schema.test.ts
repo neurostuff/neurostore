@@ -1,4 +1,4 @@
-import extractionSchema from '../contract/extraction-record.schema.json';
+import extractionSchema from '../test/golden/schemas/extraction-record.schema.json';
 import {
     classOf,
     editorFor,

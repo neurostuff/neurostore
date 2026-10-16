@@ -3,6 +3,7 @@ import { httpApi } from '../api/httpApi';
 import { judgeableKeys, memoryBackend, type OpBatch } from './memoryBackend';
 import { ApiError, type ReviewLifecycle } from '../api/reviewApi';
 import { fakeFetch, json, type SentRequest } from './fakeFetch';
+import { schemaByName } from './goldenSchemas';
 import { API_BASE } from './spec';
 
 /** Answers a request ahead of the server: a Response, a thrown error, or undefined to let it through. */
@@ -46,6 +47,12 @@ export function fakeServer(bundles: ReviewBundle[], { userId = 'me' }: { userId?
                     };
                 }),
             });
+        }
+        if ((m = route(request, /^\/review\/schemas\/([^/]+)$/, 'GET'))) {
+            const name = decodeURIComponent(m[1]);
+            const schema = schemaByName(name);
+            if (!schema) throw new ApiError(404, { title: 'Not Found', detail: `Record ${name} not found in schemas` });
+            return json(schema);
         }
         if ((m = route(request, /^\/review\/sources\/([^/]+)\/bundle$/, 'GET')))
             return json(await backend.getBundle(decodeURIComponent(m[1])));

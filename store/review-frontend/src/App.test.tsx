@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { ApiError, type ReviewApi } from './api/reviewApi';
 import { App, AppRoutes } from './App';
 import { ev, makeBundle } from './test/bundles';
+import { GOLDEN_SCHEMAS } from './test/goldenSchemas';
 import { theme } from './theme';
 
 const paper = (id: string, label: string, text: string) =>
@@ -28,6 +29,7 @@ const api: ReviewApi = {
     startReview: async (id) => ({ id: `R-${id}`, source_id: id, user_id: 'me', state: 'in_progress', last_seq: 0 }),
     postOps: () => Promise.reject(new Error('no saving in these tests')),
     setState: () => Promise.reject(new Error('no saving in these tests')),
+    getSchema: async (name) => GOLDEN_SCHEMAS[name],
 };
 
 function renderAt(path: string, routesApi: ReviewApi = api) {

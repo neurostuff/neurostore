@@ -33,8 +33,8 @@ export function PaperListPage() {
                 <Typography variant="h4" component="h1" gutterBottom>
                     Papers
                 </Typography>
-                <WhenLoaded query={papers}>
-                    {(list) => (
+                <WhenLoaded queries={[papers]}>
+                    {([list]) => (
                         <List>
                             {list.map((paper) => (
                                 <ListItemButton key={paper.id} component={RouterLink} to={`/papers/${paper.id}`}>

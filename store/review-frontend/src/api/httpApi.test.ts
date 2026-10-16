@@ -81,6 +81,15 @@ describe('httpApi', () => {
         expect(requests[0].body).toEqual({ state: 'submitted' });
     });
 
+    it('gets a study_schema schema by name', async () => {
+        const schema = { $id: 'https://neurostuff.org/schemas/neuroimaging-study-extraction', $defs: {} };
+        const { api, requests } = serve(() => json(schema));
+        expect(await api.getSchema('extraction-record')).toEqual(schema);
+        expect(requests).toMatchObject([
+            { method: 'GET', path: '/api/review/schemas/extraction-record', problems: [] },
+        ]);
+    });
+
     it('throws an ApiError carrying the ErrorResponse', async () => {
         const body = { status: 409, title: 'Conflict', detail: 'The review has changed', last_seq: 7 };
         const { api } = serve(() => json(body, 409));

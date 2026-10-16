@@ -35,7 +35,8 @@ import { entityKey, relationshipKey, slotTarget, targetKey } from '../model/targ
 import { addAnalysisPanel, coordinatePanelFor, focusedAnalysis } from '../coordinates/actions';
 import { clamp, coordinateSpans, firstAnalysis, nextFocus } from '../coordinates/focus';
 import { panelFor } from '../inspector/actions';
-import { declaredAttributes, EXTRACTION_SCHEMA, type DeclaredAttribute } from '../inspector/schema';
+import { fromSchemaKeyed } from '../contract/schemas';
+import { declaredAttributes } from '../inspector/schema';
 import { STEPS, type StepId } from '../review/steps';
 
 export type EvidenceMode = 'first' | 'new';
@@ -271,16 +272,11 @@ const toDomBundle = (bundle: ReviewBundle): ReviewBundle => {
     };
 };
 
-const declaredCache = new Map<string, DeclaredAttribute[]>();
+const declaredIn = fromSchemaKeyed('extraction-record', (schema, schemaClass: string) =>
+    declaredAttributes(schema, schemaClass).map(({ path, wrapper }) => ({ path, wrapper }))
+);
 /** The attributes a row's class declares, from the extraction record schema. */
-const declaredOf = (row: { schema_class: string }) => {
-    let declared = declaredCache.get(row.schema_class);
-    if (!declared) {
-        declared = declaredAttributes(EXTRACTION_SCHEMA, row.schema_class);
-        declaredCache.set(row.schema_class, declared);
-    }
-    return declared.map(({ path, wrapper }) => ({ path, wrapper }));
-};
+const declaredOf = (row: { schema_class: string }) => declaredIn(row.schema_class);
 
 const paperOf = (bundle: ReviewBundle, at: string): Paper => ({
     text: utf16Paper(bundle.text),

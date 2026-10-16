@@ -1,6 +1,7 @@
 import { List, ListItem, Stack, Typography } from '@mui/material';
 import { useId, useMemo, useState } from 'react';
 import type { CoordinateOp } from '../contract/generated/review-ops';
+import { fromSchema } from '../contract/schemas';
 import { ConfirmDialog, DanglingList, PickPanel } from '../inspector/panels';
 import { panelKeys } from '../inspector/panelKeys';
 import { ScalarField } from '../inspector/SlotEditor';
@@ -19,20 +20,22 @@ import {
     savePoint,
 } from './actions';
 import { PointEditor } from './PointEditor';
-import { analysisFields, COORDINATE_SCHEMA } from './schema';
+import { analysisFields } from './schema';
 
-const FIELDS = analysisFields(COORDINATE_SCHEMA);
-const closedChoice = (field: string) => {
-    const spec = FIELDS[field];
-    return spec?.kind === 'enum' ? { ...spec, open: false } : spec;
-};
-const ROLES = closedChoice('role');
-const SPACES = closedChoice('coordinate_space');
+const editorsOf = fromSchema('coordinate-parse', (schema) => {
+    const fields = analysisFields(schema);
+    const closedChoice = (field: string) => {
+        const spec = fields[field];
+        return spec?.kind === 'enum' ? { ...spec, open: false } : spec;
+    };
+    return { name: fields.name, roles: closedChoice('role'), spaces: closedChoice('coordinate_space') };
+});
 type Role = NonNullable<CoordinateOp['role']>;
 
 export function RelabelPanel({ analysis }: { analysis: CoordinateAnalysis }) {
     const store = useReviewStoreApi();
     const closePanel = useReviewStore((s) => s.closePanel);
+    const editors = editorsOf();
     const id = useId();
     const [role, setRole] = useState(analysis.role);
     const save = () => {
@@ -45,8 +48,16 @@ export function RelabelPanel({ analysis }: { analysis: CoordinateAnalysis }) {
             sx={{ py: 1 }}
             onKeyDown={panelKeys(save, closePanel)}
         >
-            {ROLES && (
-                <ScalarField id={id} label="role" spec={ROLES} value={role} error="" autoFocus onChange={setRole} />
+            {editors.roles && (
+                <ScalarField
+                    id={id}
+                    label="role"
+                    spec={editors.roles}
+                    value={role}
+                    error=""
+                    autoFocus
+                    onChange={setRole}
+                />
             )}
         </Stack>
     );
@@ -121,13 +132,14 @@ const tableSpace = (analyses: CoordinateAnalysis[], table: string) =>
 export function AddAnalysisPanel({ table }: { table: string }) {
     const store = useReviewStoreApi();
     const closePanel = useReviewStore((s) => s.closePanel);
+    const editors = editorsOf();
     const label = useReviewStore(
         (s) => (s.bundle.parsed_paper as ParsedPaperLayout).tables?.find((t) => t.table_id === table)?.label ?? table
     );
     const id = useId();
     const [name, setName] = useState('');
     const [nameError, setNameError] = useState('');
-    const [role, setRole] = useState(ROLES?.kind === 'enum' ? ROLES.options[0] : '');
+    const [role, setRole] = useState(editors.roles?.kind === 'enum' ? editors.roles.options[0] : '');
     const [space, setSpace] = useState(() => tableSpace(currentAnalyses(store.getState().bundle), table));
     const save = (point: CoordinatePoint) => {
         if (!name.trim()) return setNameError('required');
@@ -143,11 +155,11 @@ export function AddAnalysisPanel({ table }: { table: string }) {
             onSave={(point) => save(point as CoordinatePoint)}
             onCancel={closePanel}
         >
-            {FIELDS.name && (
+            {editors.name && (
                 <ScalarField
                     id={`${id}-name`}
                     label="name"
-                    spec={FIELDS.name}
+                    spec={editors.name}
                     value={name}
                     error={nameError}
                     autoFocus
@@ -157,22 +169,22 @@ export function AddAnalysisPanel({ table }: { table: string }) {
                     }}
                 />
             )}
-            {ROLES && (
+            {editors.roles && (
                 <ScalarField
                     id={`${id}-role`}
                     label="role"
-                    spec={ROLES}
+                    spec={editors.roles}
                     value={role}
                     error=""
                     autoFocus={false}
                     onChange={setRole}
                 />
             )}
-            {SPACES && (
+            {editors.spaces && (
                 <ScalarField
                     id={`${id}-space`}
                     label="coordinate space"
-                    spec={SPACES}
+                    spec={editors.spaces}
                     value={space}
                     error=""
                     autoFocus={false}

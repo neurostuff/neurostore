@@ -1,4 +1,5 @@
-import { classOf, EXTRACTION_SCHEMA, type Schema } from '../../inspector/schema';
+import { classOf, type Schema } from '../../inspector/schema';
+import extractionSchema from './schemas/extraction-record.schema.json';
 import { isObject, type Json } from '../../model/paths';
 
 export interface ClassRow {
@@ -23,7 +24,8 @@ const KEYED_BY: Record<string, string[]> = {
     FactorLevel: ['level'],
 };
 
-const defs = EXTRACTION_SCHEMA.$defs as Record<string, Schema>;
+const root = extractionSchema as Schema;
+const defs = root.$defs as Record<string, Schema>;
 const propertiesOf = (name: string): Record<string, Schema> => (defs[name]?.properties ?? {}) as Record<string, Schema>;
 const isEntity = (name: string) => 'local_id' in propertiesOf(name);
 const isWrapper = (name: string) => {
@@ -56,14 +58,14 @@ export function walkClasses(record: Json): Walked {
             if (!schema || value === null || value === undefined) continue;
             const here = joinPath(prefix, attribute);
             if (isObject(value)) {
-                const inner = classOf(EXTRACTION_SCHEMA, schema, value);
+                const inner = classOf(root, schema, value);
                 if (inner === undefined) continue;
                 found(entity, here, inner);
                 if (!isWrapper(inner)) visit(entity, inner, value, here);
             } else if (Array.isArray(value)) {
                 value.forEach((item, position) => {
                     if (!isObject(item)) return;
-                    const inner = classOf(EXTRACTION_SCHEMA, schema, item);
+                    const inner = classOf(root, schema, item);
                     if (inner === undefined) return;
                     if (isEntity(inner)) {
                         found(String(item.local_id), '', inner);

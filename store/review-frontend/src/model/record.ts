@@ -1,6 +1,7 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Evidence } from '../contract/generated/review-ops';
-import { REFERENCE_SLOTS } from '../contract/references';
+import { referenceSlotsOf } from '../contract/references';
+import { fromSchema } from '../contract/schemas';
 import { entityPath, getIn, isObject, parsePath, ROOT_ENTITY, type Json } from './paths';
 import { slotKey } from './targetKey';
 
@@ -47,8 +48,11 @@ export interface RecordIndex {
 
 type EntityRow = ReviewBundle['entities'][number];
 
-const classSlots = new Set(REFERENCE_SLOTS.map((r) => `${r.class}.${r.slot}`));
-const slotNames = new Set(REFERENCE_SLOTS.map((r) => r.slot));
+const classSlots = fromSchema(
+    'extraction-record',
+    (schema) => new Set(referenceSlotsOf(schema).map((r) => `${r.class}.${r.slot}`))
+);
+const slotNames = fromSchema('extraction-record', (schema) => new Set(referenceSlotsOf(schema).map((r) => r.slot)));
 const DOUBT_RANK: Record<Doubt, number> = { not_found: 0, generated: 1, ambiguous: 2, other: 3 };
 const NAME_SLOTS = ['name', 'label', 'caption', 'source_label'];
 const SKIPPED = new Set(['local_id', 'extraction_metadata']);
@@ -90,14 +94,15 @@ function referencesIn(value: unknown): string[] | null {
     return null;
 }
 
-/** Whether `attribute` of the entity `row` is a reference slot: nested slots by name, top-level ones by class (from REFERENCE_SLOTS, the x-reference annotations). */
+/** Whether `attribute` of the entity `row` is a reference slot: nested slots by name, top-level ones by class (from the x-reference annotations of the schema). */
 export function isReferenceSlot(
     row: Pick<EntityRow, 'entity_class' | 'schema_class'>,
     nested: boolean,
     attribute: string
 ) {
-    if (nested) return slotNames.has(attribute);
-    return classSlots.has(`${row.schema_class}.${attribute}`) || classSlots.has(`${row.entity_class}.${attribute}`);
+    if (nested) return slotNames().has(attribute);
+    const slots = classSlots();
+    return slots.has(`${row.schema_class}.${attribute}`) || slots.has(`${row.entity_class}.${attribute}`);
 }
 
 function slotNode(entity: string, path: string, slot: Pick<SlotNode, 'kind' | 'value' | 'references'>): SlotNode {

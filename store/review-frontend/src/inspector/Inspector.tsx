@@ -9,7 +9,7 @@ import type { Panel } from '../store/reviewStore';
 import { pendingStructure, setValue, slotSchema, unlink } from './actions';
 import { CreateDialog, DeleteDialog, LinkPanel, NotePanel, RejectPanel } from './panels';
 import { RemoveIcon } from './RemoveIcon';
-import { EXTRACTION_SCHEMA } from './schema';
+import { extractionSchema } from './schema';
 import { SlotEditor } from './SlotEditor';
 import { reviewStatus, statusColors, statusOf } from './status';
 import { StatusLabel } from './StatusLabel';
@@ -84,7 +84,7 @@ function SlotPanel({ panel, slot, label }: { panel: Panel; slot: SlotNode; label
                 <SlotEditor
                     label={slot.path}
                     schema={schema}
-                    root={EXTRACTION_SCHEMA}
+                    root={extractionSchema()}
                     value={slot.value}
                     mode={panel.kind}
                     onSave={(value) => {

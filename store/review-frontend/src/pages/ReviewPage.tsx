@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useApi, useBundle } from '../api/context';
+import { useApi, useBundle, useSchemas } from '../api/context';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { OpClientProvider, ReviewStoreProvider } from '../store/context';
@@ -27,6 +27,7 @@ function Review({ bundle }: { bundle: ReviewBundle }) {
 
 export function ReviewPage() {
     const { id = '' } = useParams();
+    const schemas = useSchemas();
     const bundle = useBundle(id);
-    return <WhenLoaded query={bundle}>{(value) => <Review key={id} bundle={value} />}</WhenLoaded>;
+    return <WhenLoaded queries={[schemas, bundle]}>{([, value]) => <Review key={id} bundle={value} />}</WhenLoaded>;
 }

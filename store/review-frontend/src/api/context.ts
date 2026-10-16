@@ -1,5 +1,6 @@
 import { QueryClient, useQuery } from '@tanstack/react-query';
 import { createContext, createElement, useContext, type ReactNode } from 'react';
+import { loadSchemas } from '../contract/schemas';
 import type { ReviewApi } from './reviewApi';
 
 const ApiContext = createContext<ReviewApi | null>(null);
@@ -22,6 +23,11 @@ export const createQueryClient = () =>
 export function usePapers() {
     const api = useApi();
     return useQuery({ queryKey: ['papers'], queryFn: () => api.listPapers() });
+}
+
+export function useSchemas() {
+    const api = useApi();
+    return useQuery({ queryKey: ['schemas'], gcTime: Infinity, queryFn: () => loadSchemas(api.getSchema) });
 }
 
 export function useBundle(id: string) {

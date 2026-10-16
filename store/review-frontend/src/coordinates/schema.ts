@@ -1,8 +1,8 @@
-import coordinateSchema from '../contract/coordinate-parse.runtime.schema.json';
+import { schemaOf } from '../contract/schemas';
 import { asSchema, branchesOf, scalarOf, textOf, type Scalar, type Schema } from '../inspector/schema';
 import { ANALYSES, ANALYSIS_EDITS, POINTS, READ_FROM } from '../model/coordinates';
 
-export const COORDINATE_SCHEMA = coordinateSchema as Schema;
+export const coordinateSchema = () => schemaOf('coordinate-parse');
 
 export type PointField =
     | { name: string; label: string; kind: 'vector'; axes: string[]; item: Scalar; required: boolean }
@@ -67,7 +67,7 @@ const rankOf = (field: PointField) =>
     field.kind === 'vector' ? 0 : field.kind === 'records' ? 1 : SCALAR_RANK[field.spec.kind];
 
 /** The fields a reviewer edits on a point, from the schema's point class: lists first, then numbers, choices, text and switches. */
-export function pointFields(root: Schema = COORDINATE_SCHEMA): PointField[] {
+export function pointFields(root: Schema = coordinateSchema()): PointField[] {
     const point = pointClass(root);
     const fields = propertiesOf(point).flatMap(([name, property]) => {
         const schema = asSchema(property);
@@ -107,7 +107,7 @@ export function gridColumns(fields: PointField[]): GridColumn[] {
 }
 
 /** The editors for what a reviewer gives an analysis, from the schema's analysis class. */
-export function analysisFields(root: Schema = COORDINATE_SCHEMA): Record<string, Scalar> {
+export function analysisFields(root: Schema = coordinateSchema()): Record<string, Scalar> {
     const analysis = analysisClass(root);
     const properties = asSchema(analysis?.properties) ?? {};
     return Object.fromEntries(

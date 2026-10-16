@@ -1,10 +1,11 @@
 import CancelIcon from '@mui/icons-material/Cancel';
 import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
 import { useId, useState, type ReactNode } from 'react';
+import { fromSchema } from '../contract/schemas';
 import { panelKeys } from '../inspector/panelKeys';
 import { parseScalar, textOf, type Parsed, type Scalar } from '../inspector/schema';
 import { ScalarField } from '../inspector/SlotEditor';
-import { COORDINATE_SCHEMA, pointFields, type PointField } from './schema';
+import { pointFields, type PointField } from './schema';
 
 type Point = Record<string, unknown>;
 
@@ -27,7 +28,7 @@ interface RecordRow {
     rest: Point;
 }
 
-const POINT_FIELDS = pointFields(COORDINATE_SCHEMA);
+const pointFieldsOf = fromSchema('coordinate-parse', pointFields);
 const REQUIRED = 'required';
 
 const axisKey = (name: string, i: number) => `${name}.${i}`;
@@ -121,8 +122,9 @@ export function PointEditor({
     children,
 }: PointEditorProps) {
     const id = useId();
-    const [texts, setTexts] = useState(() => initialTexts(POINT_FIELDS, point));
-    const [rows, setRows] = useState(() => initialRows(POINT_FIELDS, point));
+    const schemaFields = pointFieldsOf();
+    const [texts, setTexts] = useState(() => initialTexts(schemaFields, point));
+    const [rows, setRows] = useState(() => initialRows(schemaFields, point));
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const clearError = (key: string) =>
@@ -139,7 +141,7 @@ export function PointEditor({
         clearError(recordKey(name, id, field));
     };
     const save = () => {
-        const { next, errors: found } = pointFrom(POINT_FIELDS, point, texts, rows);
+        const { next, errors: found } = pointFrom(schemaFields, point, texts, rows);
         setErrors(found);
         if (Object.keys(found).length === 0) onSave(next);
     };
@@ -162,7 +164,7 @@ export function PointEditor({
             onKeyDown={panelKeys(save, onCancel)}
         >
             {children}
-            {POINT_FIELDS.map((field, order) => {
+            {schemaFields.map((field, order) => {
                 if (field.kind === 'vector') {
                     return (
                         <Stack key={field.name} direction="row" spacing={1}>

@@ -5,20 +5,23 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from connexion import request
 from connexion.lifecycle import ConnexionResponse
 
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import (
+    abort_not_found,
     abort_permission,
     abort_too_large,
     abort_unprocessable,
 )
-from neurostore.review import ReviewError, exports, imports, service
+from neurostore.review import ReviewError, exports, imports, schemas, service
 from neurostore.review.layout import LayoutError
 from neurostore.resources.utils import get_current_user, is_user_admin, user_has_role
 
 MAX_IMPORT_BYTES = 200 * 1024 * 1024
+SCHEMA_CACHE_CONTROL = "private, no-cache"
 
 
 def _reviewer():
@@ -81,6 +84,28 @@ def _commit(write):
         raise
     db.session.commit()
     return result, 200
+
+
+def _matches(if_none_match, etag):
+    tags = {tag.strip().removeprefix("W/") for tag in if_none_match.split(",")}
+    return "*" in tags or etag in tags
+
+
+class ReviewSchemasView:
+    def get(self, name):
+        _reviewer()
+        schema = schemas.served(name)
+        if schema is None:
+            abort_not_found("schemas", name)
+        headers = {"ETag": schema.etag, "Cache-Control": SCHEMA_CACHE_CONTROL}
+        if _matches(request.headers.get("If-None-Match", ""), schema.etag):
+            return ConnexionResponse(status_code=304, headers=headers)
+        return ConnexionResponse(
+            body=schema.body,
+            status_code=200,
+            content_type="application/json",
+            headers=headers,
+        )
 
 
 class ReviewSourcesView:

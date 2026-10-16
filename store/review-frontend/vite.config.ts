@@ -4,12 +4,13 @@ import { configDefaults, defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const fixturesDir = path.resolve(__dirname, 'fixtures');
+const schemasDir = path.resolve(__dirname, 'src/test/golden/schemas');
 const TIMED = ['src/review/performance.test.tsx', 'src/pages/ReviewPage.test.tsx'];
 
 function serveFixtures(): Plugin {
     const middleware = (req: { url?: string }, res: NodeJS.WritableStream & { statusCode: number; setHeader: (k: string, v: string) => void }, next: () => void) => {
-        const match = req.url?.match(/^\/review\/fixtures\/([A-Za-z0-9_.-]+\.json)$/);
-        const file = match && path.join(fixturesDir, match[1]);
+        const match = req.url?.match(/^\/review\/fixtures\/(schemas\/)?([A-Za-z0-9_.-]+\.json)$/);
+        const file = match && path.join(match[1] ? schemasDir : fixturesDir, match[2]);
         if (!file || !existsSync(file)) return next();
         res.setHeader('Content-Type', 'application/json');
         createReadStream(file).pipe(res);

@@ -1,6 +1,8 @@
 import type { ErrorBody, OpResult as GeneratedOpResult, ReviewSummary } from '../contract/generated/review-api';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
+import type { SchemaName } from '../contract/schemas';
+import type { Schema } from '../inspector/schema';
 
 export type { ErrorBody, ReviewSummary } from '../contract/generated/review-api';
 
@@ -63,6 +65,7 @@ export interface ReviewApi {
     startReview(sourceId: string): Promise<ReviewSummary>;
     postOps(reviewId: string, expectedLastSeq: number, ops: Op[], options?: SendOptions): Promise<OpResult>;
     setState(reviewId: string, state: ReviewLifecycle): Promise<ReviewSummary>;
+    getSchema(name: SchemaName): Promise<Schema>;
 }
 
 /** `api`, calling `onForbidden` whenever it answers 403. */
@@ -80,5 +83,6 @@ export function watchForbidden(api: ReviewApi, onForbidden: () => void): ReviewA
         startReview: watched(api.startReview),
         postOps: watched(api.postOps),
         setState: watched(api.setState),
+        getSchema: watched(api.getSchema),
     };
 }
