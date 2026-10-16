@@ -4,6 +4,7 @@ import { hasFixture, loadFixture } from '../test/bundles';
 import { registeredSpans } from '../test/highlights';
 import { renderWithStore } from '../test/render';
 import { ReviewScreen } from './ReviewScreen';
+import { buildPaletteIndex, searchPalette } from './search';
 
 const BUDGET_MS = 100;
 // A first coordinate focus builds a range for every point; jsdom builds each in about 5 ms where a
@@ -12,6 +13,7 @@ const FIRST_COORDINATE_FOCUS_MS = 200;
 const RUNS = 5;
 const HEAVY = '25Czf8TcaxDS';
 const RENDER_TIMEOUT_MS = 30_000;
+const KEYSTROKE_BUDGET_MS = 50;
 
 function timed(focus: () => void) {
     const started = performance.now();
@@ -93,6 +95,31 @@ describe.skipIf(!hasFixture(HEAVY))(`focus performance on ${HEAVY}’s heaviest 
                 expect(registeredSpans('rv-focus', textRoot())).toEqual(slot.spans);
                 expect(median(timings), `${slot.key}, ${slot.spans.length} spans`).toBeLessThan(BUDGET_MS);
             }
+        },
+        RENDER_TIMEOUT_MS
+    );
+});
+
+describe.skipIf(!hasFixture(HEAVY))(`command palette on ${HEAVY}`, () => {
+    it(
+        `answers each keystroke of a search within ${KEYSTROKE_BUDGET_MS} ms`,
+        () => {
+            const { store } = open(HEAVY);
+            const { index, bundle } = store.getState();
+            const palette = buildPaletteIndex(index, bundle.text);
+            const names = index.visible
+                .map((e) => e.name)
+                .filter((name) => name.length > 2)
+                .slice(0, RUNS);
+            const queries = names.flatMap((name) =>
+                Array.from({ length: name.length }, (_, i) => name.slice(0, i + 1))
+            );
+            const timings = queries.map((query) => {
+                const started = performance.now();
+                searchPalette(palette, query);
+                return performance.now() - started;
+            });
+            expect(Math.max(...timings), `${palette.entries.length} entries`).toBeLessThan(KEYSTROKE_BUDGET_MS);
         },
         RENDER_TIMEOUT_MS
     );

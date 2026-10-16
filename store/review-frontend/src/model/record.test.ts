@@ -196,3 +196,16 @@ describe('buildRecordIndex', () => {
         expect(index.allSpans).not.toContainEqual([170, 175]);
     });
 });
+
+describe('hidden entities in the view', () => {
+    const bundle = makeBundle(record, TEXT, { entities, hidden: { analyses: ['a_hidden'], entities: ['grp_b'] } });
+
+    it('leaves out the hidden analyses and what only they reach, until the view shows them', () => {
+        const index = buildRecordIndex(bundle);
+        expect(index.visible.map((e) => e.id)).not.toContain('a_hidden');
+        expect(index.visible.map((e) => e.id)).not.toContain('grp_b');
+        const shown = buildRecordIndex(bundle, undefined, true);
+        expect(shown.visible.map((e) => e.id)).toEqual(expect.arrayContaining(['a_hidden', 'grp_b']));
+        expect(shown.entity('grp_b')?.hidden).toBe(true);
+    });
+});

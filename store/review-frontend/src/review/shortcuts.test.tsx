@@ -58,9 +58,17 @@ describe('review shortcuts', () => {
         press('O', { shiftKey: true });
         expect(outline()).not.toBeInTheDocument();
         press('o');
-        fireEvent.click(screen.getByRole('button', { name: 'Controls' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Controls/ }));
         expect(store.getState().focus.entity).toBe('grp_b');
         expect(outline()).not.toBeInTheDocument();
+    });
+
+    it('Shift+V shows and hides all the evidence', () => {
+        const { store } = setup();
+        press('V', { shiftKey: true });
+        expect(store.getState().showAllEvidence).toBe(true);
+        press('V', { shiftKey: true });
+        expect(store.getState().showAllEvidence).toBe(false);
     });
 
     it('a letter typed with Caps Lock runs its Shift shortcut', () => {
@@ -110,6 +118,23 @@ describe('review shortcuts', () => {
         press('Enter', {}, button);
         expect(store.getState().panel).toBeNull();
         button.remove();
+    });
+
+    it('leaves Enter in the text pane to the text, which focuses the evidence under the cursor', () => {
+        const { store, container } = setup();
+        act(() => store.getState().focusSlot('slot:grp_a:name'));
+        const scroller = container.querySelector<HTMLElement>('[data-text-scroller]')!;
+        press('Enter', {}, scroller);
+        expect(store.getState().panel).toBeNull();
+    });
+
+    it('leaves Enter in the text pane to the text when no evidence is focused', () => {
+        const { store, container } = setup();
+        act(() => store.getState().focusSlot('slot:grp_a:name'));
+        act(() => store.setState({ focusedSpans: [] }));
+        const scroller = container.querySelector<HTMLElement>('[data-text-scroller]')!;
+        press('Enter', {}, scroller);
+        expect(store.getState().panel).toBeNull();
     });
 
     it('runs no shortcut while an inspector panel is open', () => {

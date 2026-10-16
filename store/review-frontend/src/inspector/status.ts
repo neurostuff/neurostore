@@ -1,6 +1,6 @@
 import { darken, type Palette } from '@mui/material/styles';
 import type { Provenance } from '../contract/generated/review-bundle';
-import type { SlotNode } from '../model/record';
+import { isDoubtful, type SlotNode } from '../model/record';
 
 export type Shape =
     | 'ring'
@@ -53,7 +53,7 @@ export const reviewStatus = (state: Provenance['state'] | undefined): StatusId =
 export function statusOf(slot: SlotNode): StatusId {
     if (slot.kind === 'reference') return 'reference';
     if (!slot.value) return 'absent';
-    if (slot.doubt !== 'other') return slot.doubt;
+    if (isDoubtful(slot)) return slot.doubt;
     if (slot.value?.extraction_status === 'not_reported') return 'not_reported';
     return slot.value?.evidence?.status === 'present' ? 'present' : 'not_found';
 }

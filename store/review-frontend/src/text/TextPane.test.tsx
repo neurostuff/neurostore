@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { registeredSpans } from '../test/highlights';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
 import { renderWithStore } from '../test/render';
@@ -127,6 +127,102 @@ describe('TextPane evidence navigation', () => {
         act(() => store.getState().stepEvidence(1));
         act(() => store.getState().focusSlot('slot:grp_b:age'));
         expect(screen.getByText('evidence 1 of 2')).toBeInTheDocument();
+        expect(scroller.scrollTop).toBe(at('Controls')[0]);
+    });
+});
+
+describe('TextPane clicks and Enter on highlights', () => {
+    const clickAt = (scroller: HTMLElement, root: HTMLElement, offset: number) => {
+        const range = TextIndex.build(root).toRange(offset, offset);
+        document.caretRangeFromPoint = () => range;
+        fireEvent.click(scroller, { clientX: 10, clientY: 10 });
+    };
+    const scrollerOf = (container: HTMLElement) => container.querySelector<HTMLElement>('[data-text-scroller]')!;
+
+    afterEach(() => {
+        delete (document as { caretRangeFromPoint?: unknown }).caretRangeFromPoint;
+    });
+
+    it('focuses the one item a clicked span supports', () => {
+        const { store, textRoot, container } = setup();
+        clickAt(scrollerOf(container), textRoot(), at('patients')[0] + 1);
+        expect(store.getState().focus.key).toBe('slot:grp_a:name');
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('does nothing when the click is on text no evidence uses', () => {
+        const { store, textRoot, container } = setup();
+        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        clickAt(scrollerOf(container), textRoot(), TEXT.indexOf('were'));
+        expect(store.getState().focus.key).toBe('slot:grp_a:n');
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('lists the items a clicked span supports in a menu, and focuses the one chosen', () => {
+        const { store, textRoot, container } = setup();
+        clickAt(scrollerOf(container), textRoot(), at('Controls')[0] + 1);
+        const items = screen.getAllByRole('menuitem');
+        expect(items.map((item) => item.textContent)).toEqual(['Controls · name', 'Controls · age']);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · age' }));
+        expect(store.getState().focus.key).toBe('slot:grp_b:age');
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('focuses the item under Enter on the evidence the cursor is on', () => {
+        const { store, container } = setup();
+        act(() => store.getState().focusEntity('grp_a'));
+        fireEvent.keyDown(scrollerOf(container), { key: 'Enter' });
+        expect(store.getState().focus.key).toBe('slot:grp_a:n');
+    });
+
+    it('lists the items under Enter in a menu when the cursor span supports several', () => {
+        const { store, container } = setup();
+        act(() => store.getState().focusSlot('slot:grp_b:age'));
+        fireEvent.keyDown(scrollerOf(container), { key: 'Enter' });
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · name' }));
+        expect(store.getState().focus.key).toBe('slot:grp_b:name');
+    });
+});
+
+describe('TextPane show all evidence', () => {
+    it('is off at first, and its button says so', () => {
+        setup();
+        expect(screen.getByRole('button', { name: 'show all evidence' })).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('fills every evidence span when on, and leaves the focused item’s spans where they are', () => {
+        const { store, textRoot } = setup();
+        act(() => store.getState().focusSlot('slot:grp_a:n'));
+        fireEvent.click(screen.getByRole('button', { name: 'show all evidence' }));
+        expect(screen.getByRole('button', { name: 'show all evidence' })).toHaveAttribute('aria-pressed', 'true');
+        expect(store.getState().showAllEvidence).toBe(true);
+        expect(styleText()).toContain('::highlight(rv-evidence){background-color:');
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('A paper'), at('twenty')]);
+        expect(registeredSpans('rv-evidence', textRoot())).toEqual([
+            at('scanned'),
+            at('patients'),
+            at('Controls'),
+            at('age'),
+        ]);
+    });
+
+    it('goes back to underlines when switched off', () => {
+        const { store } = setup();
+        fireEvent.click(screen.getByRole('button', { name: 'show all evidence' }));
+        fireEvent.click(screen.getByRole('button', { name: 'show all evidence' }));
+        expect(store.getState().showAllEvidence).toBe(false);
+        expect(styleText()).not.toContain('::highlight(rv-evidence){background-color:');
+    });
+});
+
+describe('TextPane scrolls to an item’s first evidence', () => {
+    it('scrolls to the first span, in reading order, of an entity focused by its id', () => {
+        const { store, textRoot, container } = setup();
+        const scroller = container.querySelector<HTMLElement>('[data-text-scroller]')!;
+        vi.spyOn(Range.prototype, 'getBoundingClientRect').mockImplementation(function (this: Range) {
+            return { top: TextIndex.build(textRoot()).fromRange(this)![0] - scroller.scrollTop } as DOMRect;
+        });
+        act(() => store.getState().focusEntity('grp_b'));
         expect(scroller.scrollTop).toBe(at('Controls')[0]);
     });
 });

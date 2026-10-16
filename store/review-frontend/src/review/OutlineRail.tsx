@@ -1,10 +1,26 @@
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
-import { Box, IconButton, List, ListItemButton, ListItemText, ListSubheader, Paper, Tooltip } from '@mui/material';
+import {
+    Box,
+    IconButton,
+    List,
+    ListItemButton,
+    ListItemText,
+    ListSubheader,
+    Paper,
+    ToggleButton,
+    ToggleButtonGroup,
+    Tooltip,
+} from '@mui/material';
 import { useMemo } from 'react';
+import { reviewStatus } from '../inspector/status';
+import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
+import { entityKey } from '../model/targetKey';
 import { useReviewStore } from '../store/context';
+import { notedKeys, outlineMatches, type OutlineFilter } from './outline';
 
 const RAIL_WIDTH = 48;
+const FILTERS: Exclude<OutlineFilter, 'all'>[] = ['unreviewed', 'changed', 'noted', 'doubtful'];
 
 function byClass(entities: EntityNode[]) {
     const groups = new Map<string, EntityNode[]>();
@@ -14,12 +30,50 @@ function byClass(entities: EntityNode[]) {
     return [...groups];
 }
 
+function FilterBar() {
+    const filter = useReviewStore((s) => s.outlineFilter);
+    const setOutlineFilter = useReviewStore((s) => s.setOutlineFilter);
+    return (
+        <ToggleButtonGroup
+            size="small"
+            exclusive
+            aria-label="filter the outline"
+            value={filter === 'all' ? null : filter}
+            onChange={(_, value: OutlineFilter | null) => setOutlineFilter(value ?? 'all')}
+            sx={{ flexWrap: 'wrap', m: 1 }}
+        >
+            {FILTERS.map((value) => (
+                <ToggleButton key={value} value={value} aria-label={value}>
+                    {value}
+                </ToggleButton>
+            ))}
+        </ToggleButtonGroup>
+    );
+}
+
 function Outline() {
     const entities = useReviewStore((s) => s.index.visible);
+    const provenance = useReviewStore((s) => s.provenance);
+    const ops = useReviewStore((s) => s.bundle.ops);
+    const pending = useReviewStore((s) => s.pending);
+    const filter = useReviewStore((s) => s.outlineFilter);
     const focused = useReviewStore((s) => s.focus.entity);
     const focusEntity = useReviewStore((s) => s.focusEntity);
     const toggleOutline = useReviewStore((s) => s.toggleOutline);
-    const groups = useMemo(() => byClass(entities), [entities]);
+    const noted = useMemo(() => notedKeys([...ops.map((s) => s.op), ...pending]), [ops, pending]);
+    const statuses = useMemo(
+        () => new Map(entities.map((entity) => [entity.id, reviewStatus(provenance[entityKey(entity.id)]?.state)])),
+        [entities, provenance]
+    );
+    const groups = useMemo(
+        () =>
+            byClass(
+                entities.filter((entity) =>
+                    outlineMatches(filter, entity, statuses.get(entity.id)!, noted.has(entityKey(entity.id)))
+                )
+            ),
+        [entities, statuses, filter, noted]
+    );
     return (
         <Paper
             component="nav"
@@ -28,6 +82,7 @@ function Outline() {
             square
             sx={{ position: 'absolute', top: 0, bottom: 0, left: RAIL_WIDTH, width: 300, overflow: 'auto', zIndex: 2 }}
         >
+            <FilterBar />
             <List dense>
                 {groups.map(([className, members]) => (
                     <li key={className}>
@@ -42,7 +97,11 @@ function Outline() {
                                         toggleOutline(false);
                                     }}
                                 >
-                                    <ListItemText primary={entity.name} />
+                                    <ListItemText
+                                        primary={entity.name}
+                                        secondary={<StatusLabel id={statuses.get(entity.id)!} />}
+                                        secondaryTypographyProps={{ component: 'div' }}
+                                    />
                                 </ListItemButton>
                             ))}
                         </ul>

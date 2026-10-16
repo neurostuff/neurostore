@@ -4,7 +4,7 @@ import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
 import { createOpClient } from '../store/opClient';
 import { theme } from '../theme';
-import { ev, makeBundle } from '../test/bundles';
+import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { renderWithStore } from '../test/render';
 import { ReviewAppBar } from './ReviewAppBar';
 import { SaveNotices } from './SaveNotices';
@@ -80,5 +80,38 @@ describe('save notices', () => {
         fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
         expect(store.getState().notices).toEqual([]);
+    });
+});
+
+describe('non-coordinate analyses', () => {
+    const withAnalysis = makeBundle(
+        { description: ev('A study', [[0, 4]]), analyses: [{ local_id: 'a_hidden', name: ev('Hidden') }] },
+        'Text of the paper.',
+        {
+            entities: entityRows(row('a_hidden', 'Analysis', 'analyses')),
+            hidden: { analyses: ['a_hidden'], entities: [] },
+        }
+    );
+
+    it('has a toggle that shows and hides them, as Shift+H does', () => {
+        const { store } = renderWithStore(<ReviewAppBar />, withAnalysis);
+        const toggle = screen.getByRole('button', { name: 'non-coordinate analyses' });
+        expect(toggle).toHaveAttribute('aria-pressed', 'false');
+        fireEvent.click(toggle);
+        expect(store.getState().showNonCoordinate).toBe(true);
+        expect(screen.getByRole('button', { name: 'non-coordinate analyses' })).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('counts reviewed coordinate items apart from the non-coordinate analyses, whether or not they are shown', () => {
+        const { store } = renderWithStore(<ReviewAppBar />, withAnalysis);
+        const progress = () => screen.getByText(/reviewed, plus/);
+        const coordinateSlots = store.getState().index.visible.flatMap((e) => e.slots);
+        const total = coordinateSlots.length;
+        expect(progress()).toHaveTextContent(`0 of ${total} reviewed, plus 1 non-coordinate analysis`);
+        act(() => store.getState().toggleNonCoordinate());
+        expect(progress()).toHaveTextContent(`0 of ${total} reviewed, plus 1 non-coordinate analysis`);
+        const reviewed = coordinateSlots[0].key;
+        act(() => store.setState({ provenance: { [reviewed]: { state: 'verified', user_id: 'u1', at: '' } } }));
+        expect(progress()).toHaveTextContent(`1 of ${total} reviewed, plus 1 non-coordinate analysis`);
     });
 });

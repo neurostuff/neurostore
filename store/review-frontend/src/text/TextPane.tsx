@@ -1,4 +1,4 @@
-import { Box, GlobalStyles, Typography } from '@mui/material';
+import { Box, Button, GlobalStyles, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useLayoutEffect, useRef } from 'react';
 import { useReviewStore, useReviewStoreApi } from '../store/context';
@@ -6,7 +6,9 @@ import { selectFocusedSlot, type ReviewState } from '../store/reviewStore';
 import { REVIEW_HIGHLIGHTS, type HighlightNames } from './highlights';
 import { layoutText, type ParsedPaperLayout } from './layout';
 import { SelectionBar } from './SelectionBar';
+import { SupportMenu } from './SupportMenu';
 import { TextBody, type Aside } from './TextBody';
+import { useSupportingFocus } from './supporting';
 import { useHighlights } from './useHighlights';
 import { TextIndexContext, useTextIndex } from './useTextIndex';
 
@@ -29,7 +31,17 @@ function EvidenceCounter() {
     );
 }
 
-function HighlightStyles({ names }: { names: HighlightNames }) {
+function ShowAllToggle() {
+    const showAll = useReviewStore((s) => s.showAllEvidence);
+    const toggleAllEvidence = useReviewStore((s) => s.toggleAllEvidence);
+    return (
+        <Button size="small" aria-pressed={showAll} onClick={() => toggleAllEvidence()}>
+            show all evidence
+        </Button>
+    );
+}
+
+function HighlightStyles({ names, showAll }: { names: HighlightNames; showAll: boolean }) {
     return (
         <GlobalStyles
             styles={(theme) => ({
@@ -37,6 +49,7 @@ function HighlightStyles({ names }: { names: HighlightNames }) {
                     backgroundColor: alpha(theme.palette.primary.main, 0.3),
                 },
                 [`::highlight(${names.evidence})`]: {
+                    ...(showAll && { backgroundColor: alpha(theme.palette.primary.main, 0.12) }),
                     textDecorationLine: 'underline',
                     textDecorationStyle: 'dotted',
                     textDecorationColor: alpha(theme.palette.primary.main, 0.45),
@@ -65,6 +78,8 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights
     const rootRef = useRef<HTMLDivElement>(null);
     const index = useTextIndex(rootRef);
     const layer = useHighlights(index, highlights);
+    const showAll = useReviewStore((s) => s.showAllEvidence);
+    const { onClick, onKeyDown, menu } = useSupportingFocus(index, layer);
 
     useLayoutEffect(() => {
         if (!layer) return;
@@ -77,13 +92,22 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights
     return (
         <TextIndexContext.Provider value={index}>
             <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
-                <HighlightStyles names={highlights} />
-                <Box sx={{ px: 3, py: 1, borderBottom: 1, borderColor: 'divider' }}>
+                <HighlightStyles names={highlights} showAll={showAll} />
+                <Stack
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                    sx={{ px: 3, py: 1, borderBottom: 1, borderColor: 'divider' }}
+                >
                     <EvidenceCounter />
-                </Box>
+                    <ShowAllToggle />
+                </Stack>
                 <Box
                     ref={scrollerRef}
                     data-text-scroller
+                    tabIndex={0}
+                    onClick={onClick}
+                    onKeyDown={onKeyDown}
                     sx={{ flex: 1, overflow: 'auto', position: 'relative', px: 3 }}
                 >
                     <Box ref={rootRef} data-text-root sx={textStyles}>
@@ -91,6 +115,7 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights
                     </Box>
                     <SelectionBar scrollerRef={scrollerRef} />
                 </Box>
+                <SupportMenu {...menu} />
             </Box>
         </TextIndexContext.Provider>
     );

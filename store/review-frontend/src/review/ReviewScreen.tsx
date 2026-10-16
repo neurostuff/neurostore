@@ -5,6 +5,7 @@ import { Inspector } from '../inspector/Inspector';
 import { useReviewStore, useReviewStoreApi } from '../store/context';
 import type { ReviewState } from '../store/reviewStore';
 import { TextPane } from '../text/TextPane';
+import { CommandPalette } from './CommandPalette';
 import { OutlineRail } from './OutlineRail';
 import { BlockedSave } from './BlockedSave';
 import { ReviewAppBar } from './ReviewAppBar';
@@ -14,7 +15,7 @@ import { SHORTCUTS, useShortcuts } from './shortcuts';
 import { StepBar } from './StepBar';
 import { SubmitStep } from './SubmitStep';
 
-const noDialogOpen = (s: ReviewState) => !s.helpOpen && !s.panel;
+const noDialogOpen = (s: ReviewState) => !s.helpOpen && !s.panel && !s.paletteOpen;
 const onCoordinates = (s: ReviewState) => s.coordinates !== null || s.panel?.kind === 'add_analysis';
 
 export function ReviewScreen() {
@@ -41,6 +42,7 @@ export function ReviewScreen() {
                 </Box>
             </Box>
             <ShortcutHelp />
+            <CommandPalette />
         </Box>
     );
 }

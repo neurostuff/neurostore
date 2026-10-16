@@ -40,7 +40,11 @@ export interface EntityNode {
 
 export interface RecordIndex {
     entities: EntityNode[];
+    /** The entities not hidden, whether or not the view shows the hidden ones. */
+    unhidden: EntityNode[];
+    /** The entities the view lists: all of them when `showHidden`, else the ones not hidden. */
     visible: EntityNode[];
+    showHidden: boolean;
     entity(id: string): EntityNode | undefined;
     slot(key: string): SlotNode | undefined;
     allSpans: SpanPair[];
@@ -79,6 +83,9 @@ export function doubtOf(value: ExtractedValue | undefined): Doubt {
     if (value.extraction_status === 'not_reported' && value.unreported_reason === 'ambiguous') return 'ambiguous';
     return 'other';
 }
+
+export const isDoubtful = (slot: SlotNode): slot is SlotNode & { doubt: Exclude<Doubt, 'other'> } =>
+    slot.doubt !== 'other';
 
 function displayName(item: Json, fallback: string): string {
     for (const slot of NAME_SLOTS) {
@@ -175,13 +182,16 @@ function absentSlots(row: EntityRow, present: SlotNode[], declared: Declared): S
 const byDoubt = (slots: SlotNode[]) => [...slots].sort((a, b) => DOUBT_RANK[a.doubt] - DOUBT_RANK[b.doubt]);
 const spansOf = (slots: SlotNode[]) => sortSpans(slots.flatMap((s) => s.spans));
 
-function indexOf(entities: EntityNode[]): RecordIndex {
+function indexOf(entities: EntityNode[], showHidden: boolean): RecordIndex {
     const byId = new Map(entities.map((e) => [e.id, e]));
     const bySlot = new Map(entities.flatMap((e) => e.slots.map((s) => [s.key, s] as const)));
-    const visible = entities.filter((e) => !e.hidden);
+    const unhidden = entities.filter((e) => !e.hidden);
+    const visible = showHidden ? entities : unhidden;
     return {
         entities,
+        unhidden,
         visible,
+        showHidden,
         entity: (id) => byId.get(id),
         slot: (key) => bySlot.get(key),
         allSpans: sortSpans(visible.flatMap((e) => e.spans)),
@@ -189,10 +199,17 @@ function indexOf(entities: EntityNode[]): RecordIndex {
 }
 
 function replaceEntity(index: RecordIndex, entity: EntityNode): RecordIndex {
-    return indexOf(index.entities.map((e) => (e.id === entity.id ? entity : e)));
+    return indexOf(
+        index.entities.map((e) => (e.id === entity.id ? entity : e)),
+        index.showHidden
+    );
 }
 
-export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () => []): RecordIndex {
+export function withHidden(index: RecordIndex, showHidden: boolean): RecordIndex {
+    return indexOf(index.entities, showHidden);
+}
+
+export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () => [], showHidden = false): RecordIndex {
     const record = bundle.record as Json;
     const hidden = new Set([...bundle.hidden.analyses, ...bundle.hidden.entities]);
     const items = itemsById(record);
@@ -216,7 +233,10 @@ export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () =
         ];
     });
     const classOrder = [...new Set(found.map((e) => e.entityClass))];
-    return indexOf(classOrder.flatMap((c) => found.filter((e) => e.entityClass === c)));
+    return indexOf(
+        classOrder.flatMap((c) => found.filter((e) => e.entityClass === c)),
+        showHidden
+    );
 }
 
 export function withSlotFrom(index: RecordIndex, record: Json, key: string): RecordIndex {

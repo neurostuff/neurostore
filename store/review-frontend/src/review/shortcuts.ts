@@ -163,6 +163,7 @@ export const SHORTCUTS: Shortcut[] = [
         label: 'show or hide the analyses with no coordinates',
         run: (s) => s.toggleNonCoordinate(),
     },
+    { keys: ['Shift+V'], label: 'show or hide all the evidence', run: (s) => s.toggleAllEvidence() },
     { keys: ['o', 'Shift+O'], label: 'toggle the outline', run: (s) => s.toggleOutline() },
     { keys: ['Ctrl+Z'], label: 'undo the last edit (Cmd for Ctrl on a Mac)', run: (s) => s.undo() },
     {
@@ -170,12 +171,17 @@ export const SHORTCUTS: Shortcut[] = [
         label: 'redo the last undone edit',
         run: (s) => s.redo(),
     },
+    {
+        keys: ['Ctrl+K'],
+        label: 'command palette: search entities, slots, values and the paper text',
+        run: (s) => s.togglePalette(true),
+    },
     { keys: ['?'], label: 'show these shortcuts', run: (s) => s.toggleHelp(true) },
 ];
 
 const TEXT_FIELD =
     'input:not([type="radio"]):not([type="checkbox"]), textarea, select, [contenteditable]:not([contenteditable="false"])';
-const CONTROL = 'button, a[href], [role="button"], [role="option"], [role="radio"]';
+const CONTROL = 'button, a[href], [role="button"], [role="option"], [role="radio"], [role="menuitem"]';
 
 const within = (target: EventTarget | null, selector: string) =>
     target instanceof Element && target.closest(selector) !== null;

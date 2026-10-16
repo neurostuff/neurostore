@@ -614,3 +614,15 @@ describe('declared slots', () => {
         expect(slots).toContain('slot:grp_a:probe');
     });
 });
+
+describe('non-coordinate analyses in the view', () => {
+    it('lists them in index.visible while the toggle is on, and hides them again', () => {
+        const store = setup();
+        const visible = () => store.getState().index.visible.map((e) => e.id);
+        expect(visible()).not.toContain('a_hidden');
+        store.getState().toggleNonCoordinate();
+        expect(visible()).toContain('a_hidden');
+        store.getState().toggleNonCoordinate();
+        expect(visible()).not.toContain('a_hidden');
+    });
+});

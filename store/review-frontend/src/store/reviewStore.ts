@@ -24,6 +24,7 @@ import { randomUUID } from '../model/uuid';
 import { entityPath, getIn, readPath, type Json } from '../model/paths';
 import {
     buildRecordIndex,
+    withHidden,
     withSlotFrom,
     withSlotOrderOf,
     withSlotsSorted,
@@ -38,6 +39,7 @@ import { panelFor } from '../inspector/actions';
 import { fromSchemaKeyed } from '../contract/schemas';
 import { declaredAttributes } from '../inspector/schema';
 import { STEPS, type StepId } from '../review/steps';
+import type { OutlineFilter } from '../review/outline';
 import {
     answerSteps,
     isReady,
@@ -136,7 +138,12 @@ export interface ReviewState {
     selection: SpanPair | null;
     step: StepId;
     outlineOpen: boolean;
+    /** The outline's filter for this session; in memory only, not saved. */
+    outlineFilter: OutlineFilter;
     helpOpen: boolean;
+    paletteOpen: boolean;
+    /** Whether every evidence span of the paper is filled, not only underlined. */
+    showAllEvidence: boolean;
     panel: Panel | null;
     /** The coordinate analysis in focus; null while a record item is. */
     coordinates: CoordinateFocus | null;
@@ -168,7 +175,12 @@ export interface ReviewState {
     minted(clientOpId: string): Promise<void>;
     setStep(step: StepId): void;
     toggleOutline(open?: boolean): void;
+    setOutlineFilter(filter: OutlineFilter): void;
     toggleHelp(open?: boolean): void;
+    toggleAllEvidence(on?: boolean): void;
+    togglePalette(open?: boolean): void;
+    /** Scrolls the text to `span`, as a focus does, without focusing anything. */
+    revealSpan(span: SpanPair): void;
     openPanel(kind: PanelKind): void;
     closePanel(): void;
     setSave(save: SaveStatus, message?: string): void;
@@ -351,7 +363,11 @@ function replay(
 const logged = ({ inverse, ...rest }: StoredOp): StoredOp => rest;
 
 function rebuiltIndex(bundle: ReviewBundle, record: Json, previous: RecordIndex, focus: Focus) {
-    return withSlotOrderOf(buildRecordIndex({ ...bundle, record }, declaredOf), previous, focus.entity);
+    return withSlotOrderOf(
+        buildRecordIndex({ ...bundle, record }, declaredOf, previous.showHidden),
+        previous,
+        focus.entity
+    );
 }
 
 export interface ReviewStoreOptions {
@@ -601,7 +617,10 @@ export function createReviewStore(
             selection: null,
             step: STEPS[0].id,
             outlineOpen: false,
+            outlineFilter: 'all',
             helpOpen: false,
+            paletteOpen: false,
+            showAllEvidence: false,
             panel: null,
             coordinates: initialCoordinates,
             merging: [],
@@ -657,7 +676,7 @@ export function createReviewStore(
             addAnalysisTo: (table) => set({ panel: addAnalysisPanel(table) }),
             toggleNonCoordinate: () => {
                 const showNonCoordinate = !get().showNonCoordinate;
-                set({ showNonCoordinate });
+                set({ showNonCoordinate, index: withHidden(get().index, showNonCoordinate) });
                 const { coordinates } = get();
                 if (coordinates && !guided().some((a) => a.key === coordinates.analysis)) {
                     focusCoordinates(firstAnalysis(currentAnalyses(get().bundle), showNonCoordinate));
@@ -738,7 +757,11 @@ export function createReviewStore(
                 }
             },
             toggleOutline: (open) => set((s) => ({ outlineOpen: open ?? !s.outlineOpen })),
+            setOutlineFilter: (outlineFilter) => set({ outlineFilter }),
             toggleHelp: (open) => set((s) => ({ helpOpen: open ?? !s.helpOpen })),
+            toggleAllEvidence: (on) => set((s) => ({ showAllEvidence: on ?? !s.showAllEvidence })),
+            togglePalette: (open) => set((s) => ({ paletteOpen: open ?? !s.paletteOpen })),
+            revealSpan: (span) => set((s) => ({ reveal: revealed(span, s.reveal) })),
             openPanel: (kind) => {
                 const state = get();
                 const panel = state.coordinates ? coordinatePanelFor(state, kind) : panelFor(state, kind);
