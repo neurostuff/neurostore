@@ -9,6 +9,7 @@ import type { EntityNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
 import { useReviewStore } from '../store/context';
 import type { ReviewState } from '../store/reviewStore';
+import { useEditorName } from './editor';
 
 /** What a step adds below its focused card. */
 export type CardDetail = ComponentType<{ entity: EntityNode }>;
@@ -22,6 +23,7 @@ const headStyles = (theme: Theme) => statusColors(theme.palette);
 const CardHead = memo(function CardHead({ entity, focused }: { entity: EntityNode; focused: boolean }) {
     const focusEntity = useReviewStore((s) => s.focusEntity);
     const state = useReviewStore((s) => judged(s, entity.id));
+    const editor = useEditorName(entityKey(entity.id));
     return (
         <ListItemButton
             data-card={entity.id}
@@ -35,7 +37,7 @@ const CardHead = memo(function CardHead({ entity, focused }: { entity: EntityNod
                 secondary={
                     <>
                         {`${entity.entityClass} · ${spanCount(entity.spans.length)} · `}
-                        <StatusLabel id={reviewStatus(state)} />
+                        <StatusLabel id={reviewStatus(state)} by={editor} />
                         {state && ' · done'}
                     </>
                 }

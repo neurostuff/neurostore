@@ -628,7 +628,7 @@ def reviewed_papers(session, tmp_path):
         ("s1", OTHER): edit(session, sources["s1"], OTHER, set_name("a1", "two")),
         ("s2", REVIEWER): edit(session, sources["s2"], REVIEWER, set_name("a1", "three")),
     }
-    service.set_state(session, reviews[("s1", REVIEWER)], REVIEWER, "submitted", is_admin=False)
+    service.set_state(session, reviews[("s1", REVIEWER)], REVIEWER, "submitted", lead=False)
     session.commit()
     return sources, reviews
 
@@ -639,7 +639,7 @@ def test_the_bulk_filters_select_sources_and_reviews(session, reviewers, tmp_pat
     _, unreviewed = load(session, tmp_path / "in", study_id="s3")
     review_one = edit(session, source_one, REVIEWER, set_name("a1", "one"))
     review_two = edit(session, source_two, OTHER, set_name("a1", "two"))
-    service.set_state(session, review_one, REVIEWER, "submitted", is_admin=False)
+    service.set_state(session, review_one, REVIEWER, "submitted", lead=False)
     session.commit()
     base_two = session.get(ReviewSource, source_two).fulltext.base_study_id
 

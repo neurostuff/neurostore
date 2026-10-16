@@ -42,6 +42,14 @@ const names = () =>
 const item = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}`) });
 
 describe('the outline rail’s status badges', () => {
+    it('names the reviewer who made each change, in the badge', () => {
+        const reviewers = [{ user_id: 'u1', name: 'Ana', state: 'in_progress' as const, op_count: 0, last_edit_at: null }];
+        const view = renderWithStore(<OutlineRail />, makeBundle(record, TEXT, { entities, reviewers }));
+        fireEvent.click(screen.getByRole('button', { name: 'toggle outline' }));
+        act(() => view.store.setState({ provenance: { 'entity:grp_b': provenance('edited') } }));
+        expect(within(item('Controls')).getByText('edited by Ana')).toBeInTheDocument();
+    });
+
     it('shows each entity’s review status, unchecked until a person has looked at it', () => {
         const { store } = setup();
         act(() =>
@@ -54,10 +62,10 @@ describe('the outline rail’s status badges', () => {
                 },
             })
         );
-        expect(within(item('Patients')).getByText('verified')).toBeInTheDocument();
-        expect(within(item('Controls')).getByText('edited')).toBeInTheDocument();
-        expect(within(item('Mixed')).getByText('added')).toBeInTheDocument();
-        expect(within(item('Ages')).getByText('rejected')).toBeInTheDocument();
+        expect(within(item('Patients')).getByText('verified by u1')).toBeInTheDocument();
+        expect(within(item('Controls')).getByText('edited by u1')).toBeInTheDocument();
+        expect(within(item('Mixed')).getByText('added by u1')).toBeInTheDocument();
+        expect(within(item('Ages')).getByText('rejected by u1')).toBeInTheDocument();
         expect(within(item('Left')).getByText('unchecked')).toBeInTheDocument();
     });
 });

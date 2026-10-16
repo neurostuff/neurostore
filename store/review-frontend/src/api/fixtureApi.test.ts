@@ -16,7 +16,24 @@ describe('fixtureApi', () => {
 
     it('lists the papers in fixtures/index.json under the app’s base', async () => {
         serve({ '/review/fixtures/index.json': [{ id: 'P1', label: 'A paper', total: 4 }] });
-        expect(await fixtureApi('/review/').listPapers()).toEqual([{ id: 'P1', label: 'A paper', total: 4 }]);
+        expect(await fixtureApi('/review/').listPapers()).toEqual([
+            { id: 'P1', base_study_id: 'P1', label: 'A paper', total: 4, assignees: [] },
+        ]);
+    });
+
+    it('keeps assignments in memory, filters the list to the caller’s papers, and releases them', async () => {
+        serve({
+            '/review/fixtures/index.json': [
+                { id: 'P1', label: 'A paper', total: 4 },
+                { id: 'P2', label: 'Another', total: 2 },
+            ],
+        });
+        const api = fixtureApi('/review/');
+        await api.assign('P1', 'me');
+        expect((await api.listPapers({ assigned: 'me' })).map((paper) => paper.id)).toEqual(['P1']);
+        expect((await api.listPapers())[0].assignees).toEqual([{ user_id: 'me', name: 'Me' }]);
+        await api.release('P1', 'me');
+        expect(await api.listPapers({ assigned: 'me' })).toEqual([]);
     });
 
     it('loads a paper’s bundle and fails clearly when it is missing', async () => {

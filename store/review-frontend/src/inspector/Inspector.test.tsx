@@ -51,6 +51,24 @@ const rowOf = (key: string) => rows().find((row) => row.getAttribute('data-slot-
 const shapeIn = (row: HTMLElement) => row.querySelector('[data-status-shape]');
 
 describe('Inspector', () => {
+    it('names the reviewer who made each change, on the slot’s badge and the entity’s', () => {
+        const view = setup();
+        act(() =>
+            view.store.setState({
+                bundle: {
+                    ...view.store.getState().bundle,
+                    reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }],
+                },
+                provenance: {
+                    'slot:a_1:name': { state: 'edited', user_id: 'u1', at: 'then' },
+                    'entity:a_1': { state: 'verified', user_id: 'u1', at: 'then' },
+                },
+            })
+        );
+        expect(rowOf('slot:a_1:name')).toHaveTextContent('edited by Ana');
+        expect(screen.getByText('verified by Ana')).toBeInTheDocument();
+    });
+
     it('shows the focused entity’s class, name and local id', () => {
         setup();
         const card = screen.getByRole('region', { name: 'Patients > Controls' });

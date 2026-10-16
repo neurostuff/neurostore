@@ -14,6 +14,11 @@ REVIEW_HANDLERS = {
     ("POST", "/review/exports/"): "ReviewExportsView.post",
     ("POST", "/review/imports/"): "ReviewImportsView.post",
     ("GET", "/review/schemas/{name}"): "ReviewSchemasView.get",
+    ("GET", "/review/base-studies/{id}/assignments"): "ReviewAssignmentsView.get",
+    ("PUT", "/review/base-studies/{id}/assignments/{user_id}"): "ReviewAssignmentsView.put",
+    ("DELETE", "/review/base-studies/{id}/assignments/{user_id}"): "ReviewAssignmentsView.delete",
+    ("GET", "/review/reviewers/"): "ReviewersView.get",
+    ("GET", "/review/me"): "ReviewMeView.get",
 }
 
 

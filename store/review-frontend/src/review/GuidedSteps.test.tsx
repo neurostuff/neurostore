@@ -116,6 +116,18 @@ describe('step 3, entities outward from the analyses', () => {
         expect(store.getState().focus.entity).toBe('acq_1');
     });
 
+    it('names the reviewer who checked each link', () => {
+        const { store } = setup('entities');
+        act(() =>
+            store.setState({
+                bundle: { ...store.getState().bundle, reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }] },
+                provenance: { 'relationship:a_1:acquisitions:acq_1': { state: 'verified', user_id: 'u1', at: 'then' } },
+            })
+        );
+        const links = screen.getByRole('list', { name: 'linked from' });
+        expect(within(links).getAllByRole('listitem')[0]).toHaveTextContent('verified by Ana');
+    });
+
     it('shows the analyses linked to the focused entity, so the links are checked there', () => {
         const { store } = setup('entities');
         const links = screen.getByRole('list', { name: 'linked from' });

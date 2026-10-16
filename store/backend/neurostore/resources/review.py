@@ -31,6 +31,10 @@ def _reviewer():
     return user
 
 
+def _caller(user):
+    return service.Caller(id=user.external_id, lead=is_user_admin(user))
+
+
 def _lead_reviewer():
     user = _reviewer()
     if not is_user_admin(user):
@@ -109,7 +113,7 @@ class ReviewSchemasView:
 
 
 class ReviewSourcesView:
-    def search(self, page=1, page_size=20, base_study_id=None, mine=False):
+    def search(self, page=1, page_size=20, base_study_id=None, mine=False, assigned=None):
         user = _reviewer()
         return service.list_sources(
             db.session,
@@ -118,7 +122,38 @@ class ReviewSourcesView:
             page_size=page_size,
             base_study_id=base_study_id,
             mine=mine,
+            assigned=assigned,
         )
+
+
+class ReviewMeView:
+    def get(self):
+        user = _reviewer()
+        return {"user_id": user.external_id, "name": user.name, "lead": is_user_admin(user)}
+
+
+class ReviewAssignmentsView:
+    def get(self, id):
+        _reviewer()
+        return {"results": service.assignees(db.session, id)}
+
+    def put(self, id, user_id):
+        user = _reviewer()
+        assignment, created = service.assign(db.session, id, user_id, _caller(user))
+        db.session.commit()
+        return assignment, 201 if created else 200
+
+    def delete(self, id, user_id):
+        user = _reviewer()
+        service.release(db.session, id, user_id, _caller(user))
+        db.session.commit()
+        return ConnexionResponse(status_code=204)
+
+
+class ReviewersView:
+    def get(self):
+        _reviewer()
+        return {"results": service.reviewers(db.session)}
 
 
 class ReviewBundlesView:
@@ -148,7 +183,7 @@ class ReviewsView:
                 id,
                 user.external_id,
                 body["state"],
-                is_admin=is_user_admin(user),
+                lead=is_user_admin(user),
                 reason=body.get("reason"),
                 note=body.get("note"),
             )

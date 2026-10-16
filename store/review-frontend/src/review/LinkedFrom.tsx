@@ -6,6 +6,7 @@ import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
 import { relationshipKey, relationshipTarget } from '../model/targetKey';
 import { useReviewStore, useReviewStoreApi } from '../store/context';
+import { useEditorName } from './editor';
 import { guidedCards, type Link } from './guided';
 
 const listStyles = (theme: Theme) => ({ px: 2, ...statusColors(theme.palette) });
@@ -13,13 +14,15 @@ const listStyles = (theme: Theme) => ({ px: 2, ...statusColors(theme.palette) })
 function LinkRow({ link, target }: { link: Link; target: string }) {
     const store = useReviewStoreApi();
     const { entity, slot } = link;
-    const state = useReviewStore((s) => s.provenance[relationshipKey(entity.id, slot.path, target)]?.state);
+    const key = relationshipKey(entity.id, slot.path, target);
+    const state = useReviewStore((s) => s.provenance[key]?.state);
+    const editor = useEditorName(key);
     const unlinking = useReviewStore((s) => pendingStructure(s).linksBySlot.get(slot.key)?.get(target) === 'unlink');
     return (
         <ListItem disableGutters sx={{ display: 'block' }}>
             <Typography variant="body2">{`${entity.name} · ${slot.path}`}</Typography>
             <Stack direction="row" spacing={1} alignItems="center">
-                <StatusLabel id={reviewStatus(state)} />
+                <StatusLabel id={reviewStatus(state)} by={editor} />
                 {unlinking ? (
                     <Typography variant="caption" color="text.secondary">
                         unlinking…

@@ -18,14 +18,15 @@ const SHAPES: Record<Shape, ReactElement> = {
     dot: <circle cx="5" cy="5" r="2" fill="currentColor" />,
 };
 
-export function StatusLabel({ id }: { id: StatusId }) {
+export function StatusLabel({ id, by }: { id: StatusId; by?: string }) {
     const { label, shape } = STATUSES[id];
+    const text = by ? `${label} by ${by}` : label;
     return (
-        <span className="rv-status" data-status={id} data-status-shape={shape}>
+        <span className="rv-status" data-status={id} data-status-shape={shape} title={by ? text : undefined}>
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                 {SHAPES[shape]}
             </svg>
-            {label}
+            {text}
         </span>
     );
 }

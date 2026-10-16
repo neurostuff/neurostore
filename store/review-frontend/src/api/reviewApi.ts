@@ -21,13 +21,35 @@ export interface ReviewerProgress {
     edited: number;
     verified: number;
     reviewed: number;
+    op_count: number;
+    last_edit_at: string | null;
+}
+
+/** A reviewer a paper is assigned to, or one who can be assigned a paper. */
+export interface Assignee {
+    user_id: string;
+    name: string | null;
 }
 
 export interface PaperSummary {
     id: string;
+    base_study_id: string;
     label: string;
     total: number;
+    assignees?: Assignee[];
     reviews?: ReviewerProgress[];
+}
+
+/** The caller as a reviewer; `lead` is true for an admin-reviewer who is also an admin. */
+export interface Me {
+    user_id: string;
+    name: string | null;
+    lead: boolean;
+}
+
+/** `assigned: 'me'` keeps the papers assigned to the caller. */
+export interface PaperFilter {
+    assigned?: 'me';
 }
 
 export type ReviewLifecycle = NonNullable<ReviewBundle['review']>['state'];
@@ -76,7 +98,14 @@ export interface SendOptions {
 }
 
 export interface ReviewApi {
-    listPapers(): Promise<PaperSummary[]>;
+    listPapers(filter?: PaperFilter): Promise<PaperSummary[]>;
+    /** Assigns the paper (base study) to `userId`; a reviewer may name only themselves. */
+    assign(baseStudyId: string, userId: string): Promise<void>;
+    /** Releases `userId`'s assignment of the paper; a reviewer may name only themselves. */
+    release(baseStudyId: string, userId: string): Promise<void>;
+    getMe(): Promise<Me>;
+    /** Every admin-reviewer, to assign papers to. */
+    listReviewers(): Promise<Assignee[]>;
     getBundle(id: string): Promise<ReviewBundle>;
     startReview(sourceId: string): Promise<ReviewSummary>;
     postOps(reviewId: string, expectedLastSeq: number, ops: Op[], options?: SendOptions): Promise<OpResult>;
@@ -96,6 +125,10 @@ export function watchForbidden(api: ReviewApi, onForbidden: () => void): ReviewA
             });
     return {
         listPapers: watched(api.listPapers),
+        assign: watched(api.assign),
+        release: watched(api.release),
+        getMe: watched(api.getMe),
+        listReviewers: watched(api.listReviewers),
         getBundle: watched(api.getBundle),
         startReview: watched(api.startReview),
         postOps: watched(api.postOps),

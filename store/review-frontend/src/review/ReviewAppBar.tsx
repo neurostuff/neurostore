@@ -1,5 +1,7 @@
 import { AppBar, Button, Chip, Toolbar, Typography } from '@mui/material';
 import { Brand } from '../Brand';
+import { editSummary } from '../format/editSummary';
+import { displayName } from '../format/people';
 import { useReviewStore } from '../store/context';
 import { selectIsBlocked, selectSaveLabel, type ReviewState } from '../store/reviewStore';
 
@@ -25,6 +27,8 @@ export function ReviewAppBar() {
     const toggleNonCoordinate = useReviewStore((s) => s.toggleNonCoordinate);
     const saved = useReviewStore(selectSaveLabel);
     const blocked = useReviewStore(selectIsBlocked);
+    const reviewers = useReviewStore((s) => s.bundle.reviewers);
+    const now = new Date();
     return (
         <AppBar position="static" elevation={0}>
             <Toolbar variant="dense" sx={{ gap: 2 }}>
@@ -43,6 +47,18 @@ export function ReviewAppBar() {
                 <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
                     {progress}
                 </Typography>
+                {reviewers.map((editor) =>
+                    editor.op_count > 0 && editor.last_edit_at ? (
+                        <Typography
+                            key={editor.user_id}
+                            variant="body2"
+                            sx={{ whiteSpace: 'nowrap' }}
+                            title={new Date(editor.last_edit_at).toLocaleString()}
+                        >
+                            {`${displayName(editor)}: ${editSummary(editor.op_count, editor.last_edit_at, now)}`}
+                        </Typography>
+                    ) : null
+                )}
                 <Button
                     size="small"
                     color="inherit"

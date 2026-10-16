@@ -64,6 +64,22 @@ describe('the coordinates step', () => {
         );
     });
 
+    it('names the reviewer who edited an analysis, on its card and in the inspector', () => {
+        const view = setup();
+        act(() =>
+            view.store.setState({
+                bundle: {
+                    ...view.store.getState().bundle,
+                    reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }],
+                },
+                provenance: { [`coordinate_analysis:${FACES.key}`]: { state: 'edited', user_id: 'u1', at: 'then' } },
+            })
+        );
+        expect(within(card(FACES.name)).getByText('edited by Ana')).toBeInTheDocument();
+        act(() => view.store.getState().focusAnalysis(FACES.key));
+        expect(within(screen.getByRole('region', { name: FACES.name })).getByText('edited by Ana')).toBeInTheDocument();
+    });
+
     it('shows each analysis’s name, role, status and points: x, y, z, the values, cluster size and label', () => {
         setup();
         const faces = card(FACES.name);
@@ -181,7 +197,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
             { client_op_id: expect.any(String), type: 'verdict', target: target(FACES.key), verdict: 'accept' },
         ]);
         expectValid(pending());
-        expect(within(card(FACES.name)).getByText('verified')).toBeInTheDocument();
+        expect(within(card(FACES.name)).getByText('verified by u1')).toBeInTheDocument();
     });
 
     it('the Accept button does the same', () => {
@@ -241,7 +257,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
             },
         ]);
         expectValid(pending());
-        expect(within(card(FACES.name)).getByText('rejected')).toBeInTheDocument();
+        expect(within(card(FACES.name)).getByText('rejected by u1')).toBeInTheDocument();
     });
 
     it('; adds a note to the focused analysis', () => {
@@ -468,7 +484,7 @@ describe('after a coordinate result', () => {
         );
         expect(screen.queryByRole('article', { name: FACES.name })).not.toBeInTheDocument();
         expect(card(first.name)).toHaveAttribute('aria-current', 'true');
-        expect(within(card(first.name)).getByText('added')).toBeInTheDocument();
+        expect(within(card(first.name)).getByText('added by u1')).toBeInTheDocument();
         expect(within(card(first.name)).queryByText('saving…')).not.toBeInTheDocument();
         expect(rowsOf(second.name)).toHaveLength(1);
         expect(state().coordinates).toEqual({ analysis: first.key, point: 0, selected: [] });

@@ -479,6 +479,8 @@ async def test_the_source_list_carries_each_reviewers_progress(clients, source, 
         "edited": 3,
         "verified": 2,
         "reviewed": 1,
+        "op_count": 0,
+        "last_edit_at": None,
     }
 
 
@@ -554,6 +556,8 @@ async def test_the_source_list_counts_the_judgeable_targets_a_review_has_reviewe
         "edited": 2,
         "verified": 2,
         "reviewed": 2,
+        "op_count": 0,
+        "last_edit_at": None,
     }
 
 
@@ -704,8 +708,12 @@ async def test_the_hidden_set_reads_the_revisions_keys(clients, source):
     assert "an_1" not in merged.json()["hidden"]["analyses"]
     shown = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
     assert shown["hidden"] == merged.json()["hidden"]
-    rejected = op("verdict", target={"kind": "coordinate_analysis", "analysis_key": merged_key},
-                  verdict="reject", reason="duplicate")
+    rejected = op(
+        "verdict",
+        target={"kind": "coordinate_analysis", "analysis_key": merged_key},
+        verdict="reject",
+        reason="duplicate",
+    )
     omitted = await clients[REVIEWER].post(ops_path, data=batch(1, rejected))
     assert omitted.status_code == 200, omitted.json()
     bundle = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
@@ -832,14 +840,19 @@ async def test_the_bundle_carries_the_record_as_loaded_beside_the_reviewed_one(c
     )
     assert merged.status_code == 200, merged.json()
     merged_key = merged.json()["coordinate_revision"]["analyses"][0]["key"]
-    rejected = op("verdict", target={"kind": "coordinate_analysis", "analysis_key": merged_key},
-                  verdict="reject", reason="duplicate")
+    rejected = op(
+        "verdict",
+        target={"kind": "coordinate_analysis", "analysis_key": merged_key},
+        verdict="reject",
+        reason="duplicate",
+    )
     assert (await clients[REVIEWER].post(ops_path, data=batch(2, rejected))).status_code == 200
 
     bundle = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
     assert [error.message for error in validator().iter_errors(bundle)] == []
     assert bundle["record"]["groups"][1]["name"]["value"] == "healthy controls"
-    assert bundle["review"]["provenance"][f"coordinate_analysis:{merged_key}"]["state"] == "removed"
+    provenance = bundle["review"]["provenance"]
+    assert provenance[f"coordinate_analysis:{merged_key}"]["state"] == "removed"
     assert bundle["hidden"]["analyses"] == ["an_1"]
     assert bundle["original"]["record"] == source.record
     assert bundle["original"]["record"]["groups"][1]["name"]["value"] == "controls"
@@ -1473,7 +1486,7 @@ async def test_two_concurrent_reference_marks_leave_one_reference(clients, sourc
     def mark_second():
         started.set()
         try:
-            service.set_state(second, theirs["id"], LEAD, "reference", is_admin=True)
+            service.set_state(second, theirs["id"], LEAD, "reference", lead=True)
             second.commit()
             outcome["second"] = "applied"
         except Exception as error:
@@ -1483,7 +1496,7 @@ async def test_two_concurrent_reference_marks_leave_one_reference(clients, sourc
             finished.set()
 
     try:
-        service.set_state(first, mine["id"], LEAD, "reference", is_admin=True)
+        service.set_state(first, mine["id"], LEAD, "reference", lead=True)
         thread = threading.Thread(target=mark_second)
         thread.start()
         assert started.wait(10)
@@ -1695,3 +1708,242 @@ async def test_starting_a_review_refuses_a_source_whose_record_no_longer_validat
     assert [error["code"] for error in body["errors"]] == ["source_invalid"]
     assert "extraction-record /regions/0: Additional properties" in body["errors"][0]["message"]
     assert session.scalar(sa.select(Review).where(Review.source_id == source.id)) is None
+
+
+# assignments
+
+
+def assignment_path(base_study_id, user_id=None):
+    path = f"/api/review/base-studies/{base_study_id}/assignments"
+    return path if user_id is None else f"{path}/{user_id}"
+
+
+async def assign(client, base_study_id, user_id):
+    return await client.put(assignment_path(base_study_id, user_id))
+
+
+async def release(client, base_study_id, user_id):
+    return await client.delete(assignment_path(base_study_id, user_id))
+
+
+async def assignees(client, base_study_id):
+    response = await client.get(assignment_path(base_study_id))
+    assert response.status_code == 200, response.json()
+    return [row["user_id"] for row in response.json()["results"]]
+
+
+async def test_a_reviewer_assigns_themselves_to_a_paper(clients, source):
+    base_study_id = source.fulltext.base_study_id
+    response = await assign(clients[REVIEWER], base_study_id, REVIEWER)
+
+    assert response.status_code == 201
+    assert response.json()["user_id"] == REVIEWER
+    assert response.json()["name"] == f"name of {REVIEWER}"
+    assert_matches_spec(response, "/review/base-studies/{id}/assignments/{user_id}", "put")
+    assert await assignees(clients[OTHER], base_study_id) == [REVIEWER]
+
+
+async def test_assigning_a_paper_again_to_the_same_user_is_idempotent(clients, source, session):
+    base_study_id = source.fulltext.base_study_id
+    first = await assign(clients[REVIEWER], base_study_id, REVIEWER)
+    again = await assign(clients[REVIEWER], base_study_id, REVIEWER)
+
+    assert (first.status_code, again.status_code) == (201, 200)
+    assert again.json() == first.json()
+    assert await assignees(clients[REVIEWER], base_study_id) == [REVIEWER]
+
+
+async def test_a_reviewer_releases_their_own_assignment(clients, source):
+    base_study_id = source.fulltext.base_study_id
+    await assign(clients[REVIEWER], base_study_id, REVIEWER)
+
+    response = await release(clients[REVIEWER], base_study_id, REVIEWER)
+
+    assert response.status_code == 204
+    assert_matches_spec(response, "/review/base-studies/{id}/assignments/{user_id}", "delete")
+    assert await assignees(clients[REVIEWER], base_study_id) == []
+
+
+async def test_a_reviewer_cannot_assign_or_release_another_user(clients, source, session):
+    base_study_id = source.fulltext.base_study_id
+    await assign(clients[LEAD], base_study_id, OTHER)
+
+    assigned = await assign(clients[REVIEWER], base_study_id, REVIEWER)
+    released = await release(clients[REVIEWER], base_study_id, OTHER)
+    other_assigned = await assign(clients[REVIEWER], base_study_id, OTHER)
+
+    assert assigned.status_code == 201
+    assert (released.status_code, other_assigned.status_code) == (403, 403)
+    assert_matches_spec(released, "/review/base-studies/{id}/assignments/{user_id}", "delete")
+    assert sorted(await assignees(clients[REVIEWER], base_study_id)) == sorted([OTHER, REVIEWER])
+
+
+async def test_a_lead_assigns_reassigns_and_releases_anyone(clients, source):
+    base_study_id = source.fulltext.base_study_id
+
+    to_reviewer = await assign(clients[LEAD], base_study_id, REVIEWER)
+    to_other = await assign(clients[LEAD], base_study_id, OTHER)
+    assert (to_reviewer.status_code, to_other.status_code) == (201, 201)
+    assert to_reviewer.json()["assigned_by_id"] == LEAD
+
+    reassigned = await release(clients[LEAD], base_study_id, REVIEWER)
+    assert reassigned.status_code == 204
+    assert await assignees(clients[LEAD], base_study_id) == [OTHER]
+
+    released = await release(clients[LEAD], base_study_id, OTHER)
+    assert released.status_code == 204
+    assert await assignees(clients[LEAD], base_study_id) == []
+
+
+async def test_releasing_an_assignment_that_is_not_there_is_not_an_error(clients, source):
+    response = await release(clients[LEAD], source.fulltext.base_study_id, OTHER)
+
+    assert response.status_code == 204
+
+
+async def test_assigning_a_user_without_the_admin_reviewer_role_is_refused(
+    clients, source, session, make_user
+):
+    make_user("newuser-id")
+    base_study_id = source.fulltext.base_study_id
+
+    plain = await assign(clients[LEAD], base_study_id, "newuser-id")
+    unknown = await assign(clients[LEAD], base_study_id, "nobody-id")
+
+    assert (plain.status_code, unknown.status_code) == (422, 422)
+    assert_matches_spec(plain, "/review/base-studies/{id}/assignments/{user_id}", "put")
+    assert "admin-reviewer" in plain.json()["detail"]
+    assert await assignees(clients[LEAD], base_study_id) == []
+
+
+async def test_the_assignment_routes_need_a_token_and_the_admin_reviewer_role(
+    clients, source, make_user
+):
+    base_study_id = source.fulltext.base_study_id
+    make_user(OTHER, "admin")
+    expected = {None: 401, "newuser-id": 403, OTHER: 403}
+    for user_id, status in expected.items():
+        client = clients[user_id]
+        responses = [
+            await assign(client, base_study_id, REVIEWER),
+            await release(client, base_study_id, REVIEWER),
+            await client.get(assignment_path(base_study_id)),
+        ]
+        assert [r.status_code for r in responses] == [status] * 3, user_id
+
+
+async def test_an_assignment_route_on_an_unknown_base_study_is_not_found(clients):
+    responses = [
+        await assign(clients[LEAD], "nope", REVIEWER),
+        await release(clients[LEAD], "nope", REVIEWER),
+        await clients[LEAD].get(assignment_path("nope")),
+    ]
+    assert [r.status_code for r in responses] == [404, 404, 404]
+    assert_matches_spec(responses[2], "/review/base-studies/{id}/assignments", "get")
+
+
+async def test_the_assignees_of_a_paper_list_their_names(clients, source):
+    base_study_id = source.fulltext.base_study_id
+    await assign(clients[LEAD], base_study_id, OTHER)
+    await assign(clients[LEAD], base_study_id, REVIEWER)
+
+    response = await clients[REVIEWER].get(assignment_path(base_study_id))
+
+    assert response.status_code == 200
+    assert_matches_spec(response, "/review/base-studies/{id}/assignments", "get")
+    assert {row["user_id"]: row["name"] for row in response.json()["results"]} == {
+        OTHER: f"name of {OTHER}",
+        REVIEWER: f"name of {REVIEWER}",
+    }
+
+
+async def test_the_source_list_carries_each_papers_assignees(clients, source, session):
+    await assign(clients[REVIEWER], source.fulltext.base_study_id, REVIEWER)
+
+    response = await clients[OTHER].get("/api/review/sources/")
+
+    [row] = response.json()["results"]
+    assert row["assignees"] == [{"user_id": REVIEWER, "name": f"name of {REVIEWER}"}]
+    assert_matches_spec(response, "/review/sources/", "get")
+
+
+async def test_the_source_list_filters_to_the_papers_assigned_to_the_caller(
+    clients, source, session
+):
+    other = add_source(session, label="Another paper")
+    await assign(clients[REVIEWER], source.fulltext.base_study_id, REVIEWER)
+    await assign(clients[LEAD], other.fulltext.base_study_id, OTHER)
+
+    response = await clients[REVIEWER].get("/api/review/sources/", params={"assigned": "me"})
+
+    assert [row["id"] for row in response.json()["results"]] == [source.id]
+    assert response.json()["metadata"] == {"total_count": 1}
+
+
+async def test_the_source_list_reads_the_assignees_in_one_query_per_page(
+    clients, session, statements
+):
+    async def list_queries():
+        with statements() as seen:
+            response = await clients[REVIEWER].get("/api/review/sources/")
+        assert response.status_code == 200
+        return sum("review_assignments" in s for s in seen), len(response.json()["results"])
+
+    first = add_source(session, label="paper 0")
+    await assign(clients[REVIEWER], first.fulltext.base_study_id, REVIEWER)
+    one, rows = await list_queries()
+    assert rows == 1
+    for n in range(1, 4):
+        more = add_source(session, label=f"paper {n}")
+        await assign(clients[LEAD], more.fulltext.base_study_id, OTHER)
+    four, rows = await list_queries()
+    assert rows == 4
+    assert one == four == 1
+
+
+async def test_the_source_list_carries_each_reviewers_last_edit_and_op_count(
+    clients, source
+):
+    review = await start(clients, source)
+    applied = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops",
+        data=batch(0, set_name("grp_b", "x"), set_name("grp_a", "y")),
+    )
+    assert applied.status_code == 200, applied.json()
+
+    response = await clients[REVIEWER].get("/api/review/sources/")
+
+    [progress] = response.json()["results"][0]["reviews"]
+    assert progress["op_count"] == 2
+    assert progress["last_edit_at"] is not None
+    assert_matches_spec(response, "/review/sources/", "get")
+
+
+async def test_a_reviewer_lists_the_admin_reviewers_to_assign(clients, make_user):
+    make_user("newuser-id")
+    response = await clients[REVIEWER].get("/api/review/reviewers/")
+
+    assert response.status_code == 200
+    assert_matches_spec(response, "/review/reviewers/", "get")
+    assert {row["user_id"] for row in response.json()["results"]} == {REVIEWER, OTHER, LEAD}
+    assert (await clients["newuser-id"].get("/api/review/reviewers/")).status_code == 403
+
+
+async def test_the_caller_gets_their_own_id_name_and_whether_they_lead(clients):
+    as_reviewer = await clients[REVIEWER].get("/api/review/me")
+    as_lead = await clients[LEAD].get("/api/review/me")
+
+    assert as_reviewer.status_code == 200
+    assert as_reviewer.json() == {
+        "user_id": REVIEWER,
+        "name": f"name of {REVIEWER}",
+        "lead": False,
+    }
+    assert as_lead.json() == {"user_id": LEAD, "name": f"name of {LEAD}", "lead": True}
+    assert_matches_spec(as_lead, "/review/me", "get")
+
+
+async def test_the_reviewer_list_is_only_the_reviewers(clients):
+    response = await clients[REVIEWER].get("/api/review/reviewers/")
+
+    assert set(response.json()) == {"results"}

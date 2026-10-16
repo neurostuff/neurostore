@@ -2,8 +2,11 @@ import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Schema } from '../inspector/schema';
 import {
     ApiError,
+    type Assignee,
     type OpResult,
+    type PaperFilter,
     type PaperSummary,
+    type Me,
     type ReviewApi,
     type ReviewerProgress,
     type ReviewSummary,
@@ -14,7 +17,14 @@ const PAGE_SIZE = 100;
 
 interface SourcePage {
     metadata: { total_count: number };
-    results: { id: string; label: string | null; total: number; reviews: ReviewerProgress[] }[];
+    results: {
+        id: string;
+        base_study_id: string;
+        label: string | null;
+        total: number;
+        assignees: Assignee[];
+        reviews: ReviewerProgress[];
+    }[];
 }
 
 /** A set-aside's reason, and its note when it has one, as the state patch takes them. */
@@ -45,19 +55,35 @@ export function httpApi(
     const id = encodeURIComponent;
 
     return {
-        listPapers: async () => {
+        listPapers: async (filter: PaperFilter = {}) => {
             const papers: PaperSummary[] = [];
+            const assigned = filter.assigned ? `&assigned=${filter.assigned}` : '';
             for (let page = 1; ; page += 1) {
                 const { metadata, results } = await request<SourcePage>(
                     'GET',
-                    `/review/sources/?page=${page}&page_size=${PAGE_SIZE}`
+                    `/review/sources/?page=${page}&page_size=${PAGE_SIZE}${assigned}`
                 );
                 papers.push(
-                    ...results.map((s) => ({ id: s.id, label: s.label ?? s.id, total: s.total, reviews: s.reviews }))
+                    ...results.map((s) => ({
+                        id: s.id,
+                        base_study_id: s.base_study_id,
+                        label: s.label ?? s.id,
+                        total: s.total,
+                        assignees: s.assignees,
+                        reviews: s.reviews,
+                    }))
                 );
                 if (results.length === 0 || papers.length >= metadata.total_count) return papers;
             }
         },
+        assign: async (baseStudyId, userId) => {
+            await request('PUT', `/review/base-studies/${id(baseStudyId)}/assignments/${id(userId)}`);
+        },
+        release: async (baseStudyId, userId) => {
+            await request('DELETE', `/review/base-studies/${id(baseStudyId)}/assignments/${id(userId)}`);
+        },
+        getMe: () => request<Me>('GET', '/review/me'),
+        listReviewers: async () => (await request<{ results: Assignee[] }>('GET', '/review/reviewers/')).results,
         getBundle: (sourceId) => request<ReviewBundle>('GET', `/review/sources/${id(sourceId)}/bundle`),
         startReview: (sourceId) => request<ReviewSummary>('PUT', `/review/sources/${id(sourceId)}/review`),
         postOps: (reviewId, expectedLastSeq, ops, options = {}) =>

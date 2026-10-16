@@ -4,6 +4,7 @@ import { memo, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import type { EntityNode, SlotNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
 import { ActionToolbar } from '../review/ActionToolbar';
+import { useEditorName } from '../review/editor';
 import { useReviewStore, useReviewStoreApi } from '../store/context';
 import type { Panel } from '../store/reviewStore';
 import { pendingStructure, setValue, slotSchema, unlink } from './actions';
@@ -107,6 +108,7 @@ const SlotRow = memo(function SlotRow({
 }) {
     const focusSlot = useReviewStore((s) => s.focusSlot);
     const reviewed = useReviewStore((s) => s.provenance[slot.key]?.state);
+    const slotEditor = useEditorName(slot.key);
     const panelLabel = useReviewStore((s) => {
         const target = panel?.target;
         if (target?.kind !== 'relationship') return slot.path;
@@ -132,7 +134,7 @@ const SlotRow = memo(function SlotRow({
             <div className="rv-slot-head">
                 <span className="rv-slot-path">{slot.path}</span>
                 <StatusLabel id={statusOf(slot)} />
-                {reviewed && <StatusLabel id={reviewStatus(reviewed)} />}
+                {reviewed && <StatusLabel id={reviewStatus(reviewed)} by={slotEditor} />}
             </div>
             {!editing &&
                 (slot.kind === 'reference' ? (
@@ -164,6 +166,7 @@ const slotStyles = (theme: Theme) => ({
 export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
     const panel = useReviewStore((s) => s.panel);
     const reviewed = useReviewStore((s) => s.provenance[entityKey(entity.id)]?.state);
+    const entityEditor = useEditorName(entityKey(entity.id));
     const deleting = useReviewStore((s) => pendingStructure(s).deleting.has(entity.id));
     const panelSlot = useReviewStore((s) => s.panel?.slot);
     const classLabel =
@@ -179,7 +182,7 @@ export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focuse
                     <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
                         {entity.localId}
                     </Typography>
-                    {reviewed && <StatusLabel id={reviewStatus(reviewed)} />}
+                    {reviewed && <StatusLabel id={reviewStatus(reviewed)} by={entityEditor} />}
                     {deleting && (
                         <Typography variant="caption" color="error">
                             deleting…

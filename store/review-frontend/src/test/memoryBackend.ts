@@ -258,6 +258,8 @@ export function memoryBackend(
                     ...(r.set_aside && { set_aside: r.set_aside }),
                     last_seq: r.last_seq,
                     updated_at: null,
+                    op_count: r.ops.length,
+                    last_edit_at: r.ops.at(-1)?.created_at ?? null,
                     edited: states.filter((state) => state === 'edited').length,
                     verified: states.filter((state) => state === 'verified').length,
                     reviewed: [...judgeable].filter((key) => REVIEWED_STATES.has(provenance[key]?.state)).length,

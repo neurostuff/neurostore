@@ -5,6 +5,7 @@ import { reviewStatus } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import { targetKey } from '../model/targetKey';
 import { ActionToolbar } from '../review/ActionToolbar';
+import { useEditorName } from '../review/editor';
 import { useReviewStore } from '../store/context';
 import { analysisTarget, coordinatePending, focusedAnalysis } from './actions';
 import { AddAnalysisPanel, MergeDialog, MovePanel, PointPanel, RelabelPanel } from './panels';
@@ -34,6 +35,7 @@ export function CoordinatesInspector() {
     const reviewed = useReviewStore((s) =>
         analysis ? s.provenance[targetKey(analysisTarget(analysis.key))]?.state : undefined
     );
+    const editor = useEditorName(analysis ? targetKey(analysisTarget(analysis.key)) : '');
     const place = analysis?.table_id ?? analysis?.origin;
     return (
         <>
@@ -47,7 +49,7 @@ export function CoordinatesInspector() {
                     <CardHead overline="coordinate analysis" title={analysis.name}>
                         <Stack direction="row" spacing={1.5} alignItems="center" useFlexGap flexWrap="wrap">
                             <Chip size="small" variant="outlined" label={analysis.role} />
-                            <StatusLabel id={reviewStatus(reviewed)} />
+                            <StatusLabel id={reviewStatus(reviewed)} by={editor} />
                             <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
                                 {analysis.key}
                             </Typography>

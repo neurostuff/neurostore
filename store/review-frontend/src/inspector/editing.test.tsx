@@ -163,7 +163,7 @@ describe('verdicts and notes', () => {
         });
         expectValid(last());
         const card = screen.getByRole('region', { name: 'Controls' });
-        expect(within(card).getByText('verified')).toBeInTheDocument();
+        expect(within(card).getByText('verified by u1')).toBeInTheDocument();
     });
 
     it('A accepts the focused link', () => {
@@ -332,7 +332,7 @@ describe('the status a review gives an entity', () => {
             })
         );
         act(() => store.getState().focusEntity('grp_b'));
-        expect(within(screen.getByRole('region', { name: 'Controls' })).getByText('added')).toBeInTheDocument();
+        expect(within(screen.getByRole('region', { name: 'Controls' })).getByText('added by u1')).toBeInTheDocument();
     });
 });
 

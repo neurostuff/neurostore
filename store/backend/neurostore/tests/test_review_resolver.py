@@ -10,11 +10,14 @@ from starlette.testclient import TestClient
 
 from neurostore.resolver import ReviewResolver
 from neurostore.resources.review import (
+    ReviewAssignmentsView,
     ReviewBundlesView,
     ReviewExportsView,
     ReviewExportView,
     ReviewImportsView,
+    ReviewMeView,
     ReviewOpsView,
+    ReviewersView,
     ReviewSchemasView,
     ReviewsView,
     ReviewSourcesView,
@@ -36,6 +39,11 @@ REVIEW_ROUTES = [
     ("POST", "/review/exports/", ReviewExportsView, "post"),
     ("POST", "/review/imports/", ReviewImportsView, "post"),
     ("GET", "/review/schemas/{name}", ReviewSchemasView, "get"),
+    ("GET", "/review/base-studies/{id}/assignments", ReviewAssignmentsView, "get"),
+    ("PUT", "/review/base-studies/{id}/assignments/{user_id}", ReviewAssignmentsView, "put"),
+    ("DELETE", "/review/base-studies/{id}/assignments/{user_id}", ReviewAssignmentsView, "delete"),
+    ("GET", "/review/reviewers/", ReviewersView, "get"),
+    ("GET", "/review/me", ReviewMeView, "get"),
 ]
 
 

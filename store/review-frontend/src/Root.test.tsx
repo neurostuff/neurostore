@@ -58,7 +58,7 @@ describe('Root', () => {
         render(<Root env={ENV} />);
         expect(await screen.findByRole('link', { name: /^A paper/ })).toBeInTheDocument();
         expect(auth.getAccessTokenSilently).toHaveBeenCalled();
-        expect(server.requests).toMatchObject([{ path: '/api/review/sources/', problems: [] }]);
+        expect(server.requests[0]).toMatchObject({ path: '/api/review/sources/', problems: [] });
     });
 
     it('sends the token Auth0 gives as the bearer token', async () => {

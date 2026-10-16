@@ -5,7 +5,9 @@ import type { CoordinateParse } from '../model/coordinates';
 import { codePointPaper } from '../model/offsets';
 import type { Json } from '../model/paths';
 import {
+    type Assignee,
     type OpResult,
+    type PaperFilter,
     type PaperSummary,
     refusedOp,
     type ReviewApi,
@@ -33,6 +35,7 @@ export function fixtureApi(base: string): ReviewApi {
     const url = (file: string) => `${base}fixtures/${file}`;
     const sources = new Map<string, Promise<ReviewBundle>>();
     const reviewed = new Map<string, ReviewBundle>();
+    const assigned = new Map<string, Assignee[]>();
 
     const load = (id: string) => {
         if (!sources.has(id)) sources.set(id, getJson<ReviewBundle>(url(`${encodeURIComponent(id)}.bundle.json`)));
@@ -45,7 +48,36 @@ export function fixtureApi(base: string): ReviewApi {
     };
 
     return {
-        listPapers: () => getJson<PaperSummary[]>(url('index.json')),
+        async listPapers(filter: PaperFilter = {}) {
+            const papers = await getJson<Omit<PaperSummary, 'base_study_id' | 'assignees'>[]>(url('index.json'));
+            const listed: PaperSummary[] = papers.map((paper) => ({
+                ...paper,
+                base_study_id: paper.id,
+                assignees: assigned.get(paper.id) ?? [],
+            }));
+            return filter.assigned
+                ? listed.filter((paper) => paper.assignees?.some((a) => a.user_id === 'me'))
+                : listed;
+        },
+        async assign(baseStudyId, userId) {
+            const current = assigned.get(baseStudyId) ?? [];
+            if (!current.some((a) => a.user_id === userId)) {
+                assigned.set(baseStudyId, [...current, { user_id: userId, name: userId === 'me' ? 'Me' : userId }]);
+            }
+        },
+        async release(baseStudyId, userId) {
+            assigned.set(
+                baseStudyId,
+                (assigned.get(baseStudyId) ?? []).filter((a) => a.user_id !== userId)
+            );
+        },
+        // The fixture reviewer is the lead, so every paper can be assigned to them.
+        async getMe() {
+            return { user_id: 'me', name: 'Me', lead: true };
+        },
+        async listReviewers() {
+            return [{ user_id: 'me', name: 'Me' }];
+        },
         // Served from src/test/golden/schemas by the Vite middleware, the same files GOLDEN_SCHEMAS imports.
         getSchema: (name) => getJson<Schema>(url(`schemas/${name}.schema.json`)),
         async getBundle(id) {

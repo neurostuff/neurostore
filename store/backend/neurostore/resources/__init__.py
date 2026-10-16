@@ -10,12 +10,15 @@ from neurostore.resources.pipeline import (
     PipelinesView,
 )
 from neurostore.resources.review import (
+    ReviewAssignmentsView,
     ReviewBundlesView,
     ReviewExportsView,
     ReviewExportView,
     ReviewImportsView,
+    ReviewMeView,
     ReviewOpsView,
     ReviewSourcesView,
+    ReviewersView,
     ReviewsView,
     SourceReviewsView,
 )
@@ -32,6 +35,9 @@ __all__ = [
     "NeurostoreStudysetReleasesView",
     "StudySchemaUploadsView",
     "ReviewSourcesView",
+    "ReviewersView",
+    "ReviewAssignmentsView",
+    "ReviewMeView",
     "ReviewBundlesView",
     "SourceReviewsView",
     "ReviewsView",

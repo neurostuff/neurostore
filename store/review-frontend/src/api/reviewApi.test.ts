@@ -2,6 +2,10 @@ import { ApiError, watchForbidden, withState, type ReviewApi } from './reviewApi
 
 const calls: Record<keyof ReviewApi, (api: ReviewApi) => Promise<unknown>> = {
     listPapers: (api) => api.listPapers(),
+    assign: (api) => api.assign('B1', 'me'),
+    release: (api) => api.release('B1', 'me'),
+    getMe: (api) => api.getMe(),
+    listReviewers: (api) => api.listReviewers(),
     getBundle: (api) => api.getBundle('S1'),
     startReview: (api) => api.startReview('S1'),
     postOps: (api) => api.postOps('R1', 0, []),
@@ -13,6 +17,10 @@ function failingWith(error: unknown): ReviewApi {
     const reject = () => Promise.reject(error);
     return {
         listPapers: reject,
+        assign: reject,
+        release: reject,
+        getMe: reject,
+        listReviewers: reject,
         getBundle: reject,
         startReview: reject,
         postOps: reject,

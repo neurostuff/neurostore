@@ -19,9 +19,13 @@ const bundles = {
 
 const api: ReviewApi = {
     listPapers: async () => [
-        { id: 'P1', label: 'First paper', total: 0 },
-        { id: 'P2', label: 'Second paper', total: 0 },
+        { id: 'P1', base_study_id: 'P1', label: 'First paper', total: 0 },
+        { id: 'P2', base_study_id: 'P2', label: 'Second paper', total: 0 },
     ],
+    assign: async () => {},
+    release: async () => {},
+    getMe: async () => ({ user_id: 'me', name: 'Me', lead: false }),
+    listReviewers: async () => [],
     getBundle: async (id) => {
         if (!(id in bundles)) throw new Error(`no bundle ${id}`);
         return bundles[id as keyof typeof bundles];

@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from datetime import datetime, timezone
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert
@@ -14,7 +15,16 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_unprocessable,
 )
 from neurostore.exceptions.utils.errors import ErrorDetail
-from neurostore.models import Fulltext, Review, ReviewOp, ReviewSource, User
+from neurostore.models import (
+    BaseStudy,
+    Fulltext,
+    Review,
+    ReviewAssignment,
+    ReviewOp,
+    ReviewSource,
+    Role,
+    User,
+)
 from neurostore.models.review import SET_ASIDE_REASONS
 from neurostore.review.bundle import bundle, hidden, source_summary
 from neurostore.review.entities import index_rows
@@ -35,8 +45,24 @@ OWNER_TRANSITIONS = {
 }
 
 
-def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, mine=False):
-    """A page of sources, newest first, each with every review's progress."""
+#: The role a user needs to be assigned a paper, and to be listed among the reviewers.
+REVIEWER_ROLE = "admin-reviewer"
+
+
+class Caller(NamedTuple):
+    id: str
+    lead: bool
+
+
+def list_sources(
+    session, user_id, *, page=1, page_size=20, base_study_id=None, mine=False, assigned=None
+):
+    """A page of sources, newest first, each with its paper's assignees and every review's
+    progress.
+
+    ``mine`` keeps the sources the caller has reviewed; ``assigned="me"`` keeps the sources
+    whose paper is assigned to the caller. The two filters are independent.
+    """
     query = sa.select(
         ReviewSource.id,
         Fulltext.base_study_id,
@@ -51,6 +77,13 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
         query = query.where(
             sa.exists().where(Review.source_id == ReviewSource.id, Review.user_id == user_id)
         )
+    if assigned == "me":
+        query = query.where(
+            sa.exists().where(
+                ReviewAssignment.base_study_id == Fulltext.base_study_id,
+                ReviewAssignment.user_id == user_id,
+            )
+        )
     total = session.scalar(sa.select(sa.func.count()).select_from(query.subquery()))
     rows = session.execute(
         query.order_by(ReviewSource.created_at.desc(), ReviewSource.id)
@@ -58,6 +91,7 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
         .offset((page - 1) * page_size)
     ).all()
     judgeable = {row.id: row.judgeable_keys for row in rows}
+    by_base_study = _assignment_rows(session, list({row.base_study_id for row in rows}))
     progress = defaultdict(list)
     for review in _review_rows(session, [row.id for row in rows]):
         states = [entry.get("state") for entry in review.provenance.values()]
@@ -68,6 +102,8 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
             **_set_aside(review),
             "last_seq": review.last_seq,
             "updated_at": _iso(review.updated_at),
+            "op_count": review.op_count,
+            "last_edit_at": _iso(review.last_edit_at),
             "edited": sum(state in CHANGED_STATES for state in states),
             "verified": states.count("verified"),
             "reviewed": sum(
@@ -85,6 +121,7 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
                 "origin": row.origin,
                 "created_at": _iso(row.created_at),
                 "total": len(judgeable[row.id]),
+                "assignees": by_base_study.get(row.base_study_id, []),
                 "reviews": progress[row.id],
             }
             for row in rows
@@ -237,7 +274,7 @@ def post_ops(session, review_id, user_id, body):
     return _op_result(review, [_stored(row, user_id) for row in inserted], source.coordinate_parse)
 
 
-def set_state(session, review_id, user_id, new_state, *, is_admin, reason=None, note=None):
+def set_state(session, review_id, user_id, new_state, *, lead, reason=None, note=None):
     """Move a review to ``new_state``; flushes, never commits.
 
     ``set_aside`` takes a ``reason`` and an optional ``note`` (required with ``other``), kept
@@ -254,7 +291,7 @@ def set_state(session, review_id, user_id, new_state, *, is_admin, reason=None, 
     """
     review = _locked(session, review_id)
     if new_state == "reference":
-        if not is_admin:
+        if not lead:
             abort_permission("Only an admin can mark the reference review.")
         if review.state == "reference":
             abort_conflict("The review is already the reference review.")
@@ -298,6 +335,122 @@ def _set_aside(review):
     if review.state != "set_aside":
         return {}
     return {"set_aside": {"reason": review.set_aside_reason, "note": review.set_aside_note}}
+
+
+def assign(session, base_study_id, user_id, caller):
+    """``(assignment, created)``: the paper assigned to ``user_id`` by ``caller``; flushes,
+    never commits. Assigning an assigned user again changes nothing.
+
+    Raises:
+        NotFoundError (404) when the base study does not exist.
+        PermissionError (403) when a caller who is not a lead names another user.
+        UnprocessableEntityError (422) when the user does not hold the admin-reviewer role.
+    """
+    _base_study_or_404(session, base_study_id)
+    _may_name(user_id, caller)
+    if not _is_reviewer(session, user_id):
+        abort_unprocessable(f"{user_id} is not an admin-reviewer, so cannot be assigned a paper.")
+    created = session.scalar(
+        insert(ReviewAssignment)
+        .values(base_study_id=base_study_id, user_id=user_id, assigned_by_id=caller.id)
+        .on_conflict_do_nothing(constraint="uq_review_assignments_base_study_user")
+        .returning(ReviewAssignment.id)
+    )
+    session.flush()
+    row = session.execute(
+        sa.select(ReviewAssignment.assigned_by_id, User.name)
+        .join(User, User.external_id == ReviewAssignment.user_id)
+        .where(
+            ReviewAssignment.base_study_id == base_study_id,
+            ReviewAssignment.user_id == user_id,
+        )
+    ).one()
+    assignment = {
+        "base_study_id": base_study_id,
+        "user_id": user_id,
+        "name": row.name,
+        "assigned_by_id": row.assigned_by_id,
+    }
+    return assignment, created is not None
+
+
+def release(session, base_study_id, user_id, caller):
+    """Remove ``user_id``'s assignment to the paper, if any; flushes, never commits.
+
+    Raises:
+        NotFoundError (404) when the base study does not exist.
+        PermissionError (403) when a caller who is not a lead names another user.
+    """
+    _base_study_or_404(session, base_study_id)
+    _may_name(user_id, caller)
+    session.execute(
+        sa.delete(ReviewAssignment).where(
+            ReviewAssignment.base_study_id == base_study_id, ReviewAssignment.user_id == user_id
+        )
+    )
+    session.flush()
+
+
+def assignees(session, base_study_id):
+    """The users the paper is assigned to, oldest assignment first.
+
+    Raises:
+        NotFoundError (404) when the base study does not exist.
+    """
+    _base_study_or_404(session, base_study_id)
+    return _assignment_rows(session, [base_study_id]).get(base_study_id, [])
+
+
+def reviewers(session):
+    """Every admin-reviewer, by name."""
+    rows = session.execute(
+        sa.select(User.external_id, User.name)
+        .where(User.roles.any(Role.id == REVIEWER_ROLE))
+        .order_by(User.name, User.external_id)
+    ).all()
+    return [{"user_id": row.external_id, "name": row.name} for row in rows]
+
+
+def _may_name(user_id, caller):
+    if user_id != caller.id and not caller.lead:
+        abort_permission("Only a lead reviewer can assign or release another user's paper.")
+
+
+def _is_reviewer(session, user_id):
+    return session.scalar(
+        sa.select(
+            sa.exists().where(
+                User.external_id == user_id, User.roles.any(Role.id == REVIEWER_ROLE)
+            )
+        )
+    )
+
+
+def _base_study_or_404(session, base_study_id):
+    if session.get(BaseStudy, base_study_id) is None:
+        abort_not_found("base study", base_study_id)
+
+
+def _assignment_rows(session, base_study_ids):
+    """``{base_study_id: [{"user_id", "name"}]}`` for the base studies, oldest assignment first."""
+    rows = (
+        session.execute(
+            sa.select(
+                ReviewAssignment.base_study_id,
+                ReviewAssignment.user_id,
+                User.name,
+            )
+            .join(User, User.external_id == ReviewAssignment.user_id)
+            .where(ReviewAssignment.base_study_id.in_(base_study_ids))
+            .order_by(ReviewAssignment.created_at, ReviewAssignment.user_id)
+        ).all()
+        if base_study_ids
+        else []
+    )
+    by_base_study = defaultdict(list)
+    for row in rows:
+        by_base_study[row.base_study_id].append({"user_id": row.user_id, "name": row.name})
+    return by_base_study
 
 
 def review_source_count(session, base_study_id):

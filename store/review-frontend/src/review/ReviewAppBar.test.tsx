@@ -115,3 +115,19 @@ describe('non-coordinate analyses', () => {
         expect(progress()).toHaveTextContent(`1 of ${total} reviewed, plus 1 non-coordinate analysis`);
     });
 });
+
+describe('the reviewers who have edited the paper', () => {
+    it('lists each reviewer with ops, their op count and last edit, and the exact time on hover', () => {
+        const lastEdit = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const edited = makeBundle({ description: ev('A study', [[0, 4]]) }, 'Text of the paper.', {
+            reviewers: [
+                { user_id: 'ana', name: 'Ana', state: 'in_progress', op_count: 3, last_edit_at: lastEdit },
+                { user_id: 'ben', name: 'Ben', state: 'in_progress', op_count: 0, last_edit_at: null },
+            ],
+        });
+        renderWithStore(<ReviewAppBar />, edited);
+        const line = screen.getByText('Ana: last edit 2 h ago, 3 ops');
+        expect(line).toHaveAttribute('title', new Date(lastEdit).toLocaleString());
+        expect(screen.queryByText(/^Ben:/)).not.toBeInTheDocument();
+    });
+});

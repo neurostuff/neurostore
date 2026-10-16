@@ -103,3 +103,66 @@ describe('httpApi', () => {
         await expect(api.getBundle('S1')).rejects.toMatchObject({ status: 502 });
     });
 });
+
+describe('assignments and reviewers', () => {
+    it('lists the papers assigned to the caller, with the base study, assignees and each reviewer’s last edit', async () => {
+        const { api, requests } = serve(() =>
+            json({
+                metadata: { total_count: 1 },
+                results: [
+                    {
+                        id: 'S1',
+                        base_study_id: 'B1',
+                        label: 'Paper',
+                        total: 4,
+                        assignees: [{ user_id: 'me', name: 'Me' }],
+                        reviews: [
+                            {
+                                user_id: 'me',
+                                user_name: 'Me',
+                                state: 'in_progress',
+                                edited: 1,
+                                verified: 0,
+                                reviewed: 1,
+                                op_count: 2,
+                                last_edit_at: '2026-10-16T10:00:00+00:00',
+                            },
+                        ],
+                    },
+                ],
+            })
+        );
+        const [paper] = await api.listPapers({ assigned: 'me' });
+        expect(requests[0].url).toContain('assigned=me');
+        expect(paper.base_study_id).toBe('B1');
+        expect(paper.assignees).toEqual([{ user_id: 'me', name: 'Me' }]);
+        expect(paper.reviews?.[0]).toMatchObject({ op_count: 2, last_edit_at: '2026-10-16T10:00:00+00:00' });
+    });
+
+    it('assigns a paper to a reviewer and releases it, each on its own route', async () => {
+        const { api, requests } = serve(({ method }) =>
+            method === 'DELETE'
+                ? new Response(null, { status: 204 })
+                : json({ base_study_id: 'B 1', user_id: 'me', name: 'Me', assigned_by_id: 'me' }, 201)
+        );
+        await api.assign('B 1', 'me');
+        await api.release('B 1', 'me');
+        expect(requests.map((r) => [r.method, r.path])).toEqual([
+            ['PUT', '/api/review/base-studies/B%201/assignments/me'],
+            ['DELETE', '/api/review/base-studies/B%201/assignments/me'],
+        ]);
+        expect(requests.flatMap((r) => r.problems)).toEqual([]);
+    });
+
+    it('lists the admin-reviewers', async () => {
+        const { api, requests } = serve(() => json({ results: [{ user_id: 'ana', name: 'Ana' }] }));
+        expect(await api.listReviewers()).toEqual([{ user_id: 'ana', name: 'Ana' }]);
+        expect(requests[0].path).toBe('/api/review/reviewers/');
+    });
+
+    it('says who the caller is, and whether they lead', async () => {
+        const { api, requests } = serve(() => json({ user_id: 'me', name: 'Me', lead: true }));
+        expect(await api.getMe()).toEqual({ user_id: 'me', name: 'Me', lead: true });
+        expect(requests[0].path).toBe('/api/review/me');
+    });
+});

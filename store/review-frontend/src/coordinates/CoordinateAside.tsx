@@ -5,6 +5,7 @@ import { reviewStatus, statusColors } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import { analysesBeside, currentAnalyses, guidedOrder, hasPoints, type CoordinateAnalysis } from '../model/coordinates';
 import { targetKey } from '../model/targetKey';
+import { useEditorName } from '../review/editor';
 import { useReviewStore } from '../store/context';
 import type { ReviewState } from '../store/reviewStore';
 import { layoutText, type Block, type ParsedPaperLayout } from '../text/layout';
@@ -39,6 +40,7 @@ const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: Coordi
     const merging = useReviewStore((s) => s.merging.includes(analysis.key));
     const saving = useReviewStore((s) => pendingKeys(s).has(analysis.key));
     const reviewed = useReviewStore((s) => s.provenance[targetKey(analysisTarget(analysis.key))]?.state);
+    const editor = useEditorName(targetKey(analysisTarget(analysis.key)));
     const focusAnalysis = useReviewStore((s) => s.focusAnalysis);
     const toggleMerge = useReviewStore((s) => s.toggleMerge);
     const nonCoordinate = !hasPoints(analysis);
@@ -58,7 +60,7 @@ const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: Coordi
                     {analysis.name}
                 </Typography>
                 <Chip size="small" variant="outlined" label={analysis.role} />
-                <StatusLabel id={reviewStatus(reviewed)} />
+                <StatusLabel id={reviewStatus(reviewed)} by={editor} />
                 {nonCoordinate && <Chip size="small" label="non-coordinate" />}
                 {merging && (
                     <Typography variant="caption" color="primary">

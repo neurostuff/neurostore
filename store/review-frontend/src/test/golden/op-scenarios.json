@@ -41,6 +41,7 @@
                 "origin": "upload",
                 "created_at": "<iso>",
                 "total": 38,
+                "assignees": [],
                 "reviews": []
               }
             ]
@@ -67,6 +68,7 @@
                 "origin": "upload",
                 "created_at": "<iso>",
                 "total": 38,
+                "assignees": [],
                 "reviews": [
                   {
                     "user_id": "user1-id",
@@ -74,6 +76,8 @@
                     "state": "in_progress",
                     "last_seq": 0,
                     "updated_at": null,
+                    "op_count": 0,
+                    "last_edit_at": null,
                     "edited": 0,
                     "verified": 0,
                     "reviewed": 0

@@ -43,6 +43,8 @@ export function fakeServer(bundles: ReviewBundle[], { userId = 'me' }: { userId?
                         origin: source.origin,
                         created_at: new Date().toISOString(),
                         total: judgeable.size,
+                        // The test server keeps no assignments.
+                        assignees: [],
                         reviews: backend.reviewSummaries(source.id, judgeable),
                     };
                 }),

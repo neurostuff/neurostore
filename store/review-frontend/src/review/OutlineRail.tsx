@@ -18,6 +18,7 @@ import type { EntityNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
 import { useReviewStore } from '../store/context';
 import { selectDiff } from '../store/diffSelectors';
+import { editorName } from './editor';
 import { notedKeys, outlineMatches, type OutlineFilter } from './outline';
 
 const RAIL_WIDTH = 48;
@@ -56,6 +57,7 @@ function FilterBar() {
 function Outline() {
     const entities = useReviewStore((s) => s.index.visible);
     const provenance = useReviewStore((s) => s.provenance);
+    const reviewers = useReviewStore((s) => s.bundle.reviewers);
     const ops = useReviewStore((s) => s.bundle.ops);
     const pending = useReviewStore((s) => s.pending);
     const filter = useReviewStore((s) => s.outlineFilter);
@@ -67,6 +69,10 @@ function Outline() {
     const statuses = useMemo(
         () => new Map(entities.map((entity) => [entity.id, reviewStatus(provenance[entityKey(entity.id)]?.state)])),
         [entities, provenance]
+    );
+    const editors = useMemo(
+        () => new Map(entities.map((entity) => [entity.id, editorName(reviewers, provenance[entityKey(entity.id)])])),
+        [entities, provenance, reviewers]
     );
     const groups = useMemo(
         () =>
@@ -108,7 +114,7 @@ function Outline() {
                                 >
                                     <ListItemText
                                         primary={entity.name}
-                                        secondary={<StatusLabel id={statuses.get(entity.id)!} />}
+                                        secondary={<StatusLabel id={statuses.get(entity.id)!} by={editors.get(entity.id)} />}
                                         secondaryTypographyProps={{ component: 'div' }}
                                     />
                                 </ListItemButton>
