@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from neurostore.review.layout import (
+from neurostore.review.core.layout import (
     LayoutError,
     Paper,
     check_paper,
@@ -76,7 +76,7 @@ def test_read_paper_missing_file_raises_layout_error_naming_it(tmp_path, missing
     [
         ("corpus/s1/parse/parsed_paper.json", b"{", "corpus/s1/parse/parsed_paper.json is not"),
         ("run/records/s1.extraction.json", b"[]", "run/records/s1.extraction.json is not"),
-        ("corpus/s1/text/paper.txt", b"caf\xe9", "corpus/s1/text/paper.txt is not UTF-8"),
+        ("corpus/s1/text/paper.txt", b"\xc3\x28", "corpus/s1/text/paper.txt is not UTF-8"),
     ],
 )
 def test_read_paper_unreadable_file_raises_layout_error_naming_it(
