@@ -3,6 +3,7 @@
 import json
 
 import pytest
+from starlette.requests import ClientDisconnect
 
 from neurostore.resources import body_limit
 
@@ -208,7 +209,7 @@ async def test_a_refusal_is_an_error_response_carrying_the_request_id(monkeypatc
     assert body["timestamp"]
 
 
-async def test_the_import_route_is_not_capped(monkeypatch):
+async def test_the_import_route_is_not_held_to_the_review_cap(monkeypatch):
     sent, app = await run(
         monkeypatch,
         limit=100,
@@ -230,3 +231,124 @@ async def test_a_post_outside_the_review_routes_is_not_capped(monkeypatch):
 
     assert status(sent) == 200
     assert app.calls == 1
+
+
+IMPORTS = "/api/review/imports/"
+MAX_REVIEW_BODY = body_limit.MAX_REVIEW_BODY_BYTES
+
+
+async def run_import(monkeypatch, *, limit, headers=(), receive=None, chunks=(), app=None):
+    monkeypatch.setattr(body_limit, "MAX_IMPORT_BYTES", limit)
+    return await run(
+        monkeypatch,
+        limit=MAX_REVIEW_BODY,
+        app=app,
+        scope=scope_for(path=IMPORTS, headers=headers),
+        receive=receive,
+        chunks=chunks,
+    )
+
+
+async def test_the_import_cap_is_200_mib():
+    assert body_limit.MAX_IMPORT_BYTES == 200 * 1024 * 1024
+
+
+async def test_a_declared_import_over_the_import_cap_is_refused_without_being_read(monkeypatch):
+    sent, app = await run_import(
+        monkeypatch, limit=100, headers=declared(101), receive=forbidden_receive
+    )
+
+    assert status(sent) == 413
+    assert json_body(sent)["title"] == "Payload Too Large"
+    assert app.calls == 0
+
+
+async def test_a_declared_import_at_the_import_cap_reaches_the_route(monkeypatch):
+    sent, app = await run_import(
+        monkeypatch, limit=100, headers=declared(100), chunks=[b"x" * 60, b"x" * 40]
+    )
+
+    assert status(sent) == 200
+    assert app.body() == b"x" * 100
+
+
+async def test_an_undeclared_import_over_the_cap_is_refused_as_it_streams_in(monkeypatch):
+    sent, app = await run_import(monkeypatch, limit=100, chunks=[b"x" * 60, b"x" * 41])
+
+    assert [m["status"] for m in sent if m["type"] == "http.response.start"] == [413]
+    assert json_body(sent)["title"] == "Payload Too Large"
+    assert app.body() == b"x" * 60
+    assert app.read[-1] == {"type": "http.disconnect"}
+
+
+async def test_an_import_whose_content_length_lies_is_refused_past_the_cap(monkeypatch):
+    sent, app = await run_import(
+        monkeypatch, limit=100, headers=declared(50), chunks=[b"x" * 100, b"x"]
+    )
+
+    assert [m["status"] for m in sent if m["type"] == "http.response.start"] == [413]
+    assert app.body() == b"x" * 100
+
+
+async def test_an_import_reaches_the_route_as_it_streams_in(monkeypatch):
+    arrived = []
+    queue = messages([b"a" * 10, b"b" * 10, b"c" * 10])
+
+    async def receive():
+        arrived.append(queue[0])
+        return queue.pop(0)
+
+    class FirstChunk(Recorder):
+        async def __call__(self, scope, receive, send):
+            first = await receive()
+            self.arrived_with_first = len(arrived)
+            self.read.append(first)
+            await super().__call__(scope, receive, send)
+
+    app = FirstChunk()
+    sent, _ = await run_import(monkeypatch, limit=100, receive=receive, app=app)
+
+    assert status(sent) == 200
+    assert app.arrived_with_first == 1
+    assert app.body() == b"a" * 10 + b"b" * 10 + b"c" * 10
+
+
+async def test_an_import_that_passes_the_cap_after_its_response_started_gets_no_413(monkeypatch):
+    class Answers(Recorder):
+        async def __call__(self, scope, receive, send):
+            self.read.append(await receive())
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+            self.read.append(await receive())
+            await send({"type": "http.response.body", "body": b"late"})
+
+    app = Answers()
+
+    sent, _ = await run_import(monkeypatch, limit=100, chunks=[b"x" * 60, b"x" * 41], app=app)
+
+    assert sent == [{"type": "http.response.start", "status": 200, "headers": []}]
+    assert app.read[-1] == {"type": "http.disconnect"}
+
+
+async def test_a_client_disconnect_the_route_raises_with_nothing_refused_is_re_raised(
+    monkeypatch,
+):
+    class Disconnected(Recorder):
+        async def __call__(self, scope, receive, send):
+            raise ClientDisconnect()
+
+    with pytest.raises(ClientDisconnect):
+        await run_import(monkeypatch, limit=100, chunks=[b"x" * 10], app=Disconnected())
+
+
+async def test_a_client_disconnect_the_route_raises_after_a_refusal_is_swallowed(monkeypatch):
+    class ReadsThenDisconnects(Recorder):
+        async def __call__(self, scope, receive, send):
+            await receive()
+            await receive()
+            raise ClientDisconnect()
+
+    sent, _ = await run_import(
+        monkeypatch, limit=100, chunks=[b"x" * 60, b"x" * 41], app=ReadsThenDisconnects()
+    )
+
+    assert status(sent) == 413

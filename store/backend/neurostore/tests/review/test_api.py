@@ -1958,6 +1958,64 @@ async def test_the_source_list_carries_each_reviewers_last_edit_and_op_count(
     assert_matches_spec(response, "/review/sources/", "get")
 
 
+async def test_the_source_list_takes_the_last_edit_from_the_latest_batch(clients, source):
+    review = await start(clients, source)
+    url = f"/api/review/reviews/{review['id']}/ops"
+    await clients[REVIEWER].post(url, data=batch(0, set_name("grp_b", "x")))
+    second = await clients[REVIEWER].post(
+        url, data=batch(1, set_name("grp_a", "y"), set_name("grp_b", "z"))
+    )
+    assert second.status_code == 200, second.json()
+
+    response = await clients[REVIEWER].get("/api/review/sources/")
+
+    [progress] = response.json()["results"][0]["reviews"]
+    assert progress["op_count"] == 3
+    assert progress["last_edit_at"] == second.json()["ops"][-1]["created_at"]
+
+    inverse = with_ids(second.json()["ops"][-1]["inverse"])
+    undone = await clients[REVIEWER].post(url, data=batch(3, *inverse))
+    assert undone.status_code == 200, undone.json()
+
+    response = await clients[REVIEWER].get("/api/review/sources/")
+
+    [progress] = response.json()["results"][0]["reviews"]
+    assert progress["op_count"] == 4
+    assert progress["last_edit_at"] == undone.json()["ops"][-1]["created_at"]
+    assert progress["last_edit_at"] != second.json()["ops"][-1]["created_at"]
+
+
+async def test_a_refused_batch_changes_neither_the_op_count_nor_the_last_edit(
+    clients, source
+):
+    review = await start(clients, source)
+    url = f"/api/review/reviews/{review['id']}/ops"
+    applied = await clients[REVIEWER].post(url, data=batch(0, set_name("grp_b", "x")))
+    refused = await clients[REVIEWER].post(url, data=batch(1, set_name("nope", "y")))
+    assert refused.status_code == 422
+
+    response = await clients[REVIEWER].get("/api/review/sources/")
+
+    [progress] = response.json()["results"][0]["reviews"]
+    assert progress["op_count"] == 1
+    assert progress["last_edit_at"] == applied.json()["ops"][0]["created_at"]
+
+
+async def test_the_source_list_never_reads_the_op_log(clients, source, statements):
+    review = await start(clients, source)
+    applied = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, set_name("grp_b", "x"))
+    )
+    assert applied.status_code == 200, applied.json()
+
+    with statements() as seen:
+        response = await clients[REVIEWER].get("/api/review/sources/")
+
+    assert response.status_code == 200
+    assert response.json()["results"][0]["reviews"][0]["op_count"] == 1
+    assert [s for s in seen if "review_ops" in s] == []
+
+
 async def test_a_reviewer_lists_the_admin_reviewers_to_assign(clients, make_user):
     make_user("newuser-id")
     response = await clients[REVIEWER].get("/api/review/reviewers/")

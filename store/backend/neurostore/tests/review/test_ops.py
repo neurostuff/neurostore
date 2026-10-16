@@ -202,6 +202,31 @@ def test_set_value_on_something_that_is_not_an_extracted_value_is_an_error():
     assert "not an extracted value" in errors[0]
 
 
+@pytest.mark.parametrize(
+    "refused",
+    [
+        op("set_value", target=slot("grp_a", "absent.items[#0]"),
+           value={"extraction_status": "extracted", "value": "x"}),
+        op("set_evidence", target=slot("grp_a", "absent.items[#0]"),
+           evidence={"status": "not_found"}),
+    ],
+)
+def test_a_slot_path_selecting_from_an_absent_list_is_refused_naming_the_selection(refused):
+    errors = errors_of(state(), refused)
+    assert errors == ["op 0: field path 'absent.items[#0]' selects an item of a non-list"]
+
+
+@pytest.mark.parametrize("kind", ["link", "unlink"])
+def test_link_and_unlink_through_a_path_that_does_not_resolve_are_refused_with_the_same_message(
+    kind,
+):
+    target = relationship("an_1", "absent.items[#0]", "reg_1")
+
+    assert errors_of(state(), op(kind, target=target)) == [
+        "op 0: 'absent.items[#0]' on 'an_1' goes through a missing object"
+    ]
+
+
 # set_evidence
 
 

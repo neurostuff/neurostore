@@ -34,6 +34,7 @@ from neurostore.review.core import entities
 REVIEW_TABLES = (Fulltext, ReviewSource, Review, ReviewOp, ReviewAssignment)
 PREVIOUS_REVISION = "a7d3e9c1b5f2"
 REVIEW_REVISION = "c5d8e2f4a6b1"
+POINTER_INDEX_REVISION = "d4b7e1f9a3c2"
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
 OPENAPI = (
     Path(schemas.__file__).resolve().parents[1] / "openapi" / "neurostore-openapi.yml"
@@ -124,6 +125,45 @@ def test_the_full_text_sources_are_ranked_by_preference():
 def test_an_unknown_source_is_refused():
     with pytest.raises(ValueError, match="nonsense"):
         Fulltext(source="nonsense")
+
+
+def core_insert_text(session, base_study, source, n=0):
+    session.execute(
+        sa.insert(Fulltext.__table__).values(
+            id=f"core-{n}",
+            base_study_id=base_study.id,
+            source=source,
+            sha256=f"{n:064d}",
+            text=f"text {n}",
+        )
+    )
+
+
+def test_a_core_insert_with_an_unknown_source_is_refused_by_the_database(session, paper):
+    with pytest.raises(IntegrityError, match="ck_fulltexts_source"):
+        core_insert_text(session, paper[0], "nonsense")
+    session.rollback()
+
+
+def test_a_core_insert_of_each_ranked_source_is_accepted(session, paper):
+    for n, source in enumerate(fulltext_model.FULLTEXT_SOURCE_PREFERENCE):
+        core_insert_text(session, paper[0], source, n)
+    session.commit()
+
+    stored = session.scalars(sa.select(Fulltext.source).order_by(Fulltext.id)).all()
+    assert sorted(stored) == sorted(fulltext_model.FULLTEXT_SOURCE_PREFERENCE)
+
+
+def test_the_source_check_constraint_lists_exactly_the_ranked_sources(session):
+    definition = session.scalar(
+        sa.text(
+            "SELECT pg_get_constraintdef(oid) FROM pg_constraint"
+            " WHERE conname = 'ck_fulltexts_source'"
+        )
+    )
+
+    listed = set(re.findall(r"'([^']+)'::", definition))
+    assert listed == set(fulltext_model.FULLTEXT_SOURCE_PREFERENCE)
 
 
 def test_a_full_text_has_no_tier_column():
@@ -531,20 +571,40 @@ def test_deleting_a_base_study_deletes_its_assignments(session, paper):
 # The migration
 
 
-def test_the_review_migration_is_the_only_head():
+def test_the_pointer_index_migration_is_the_only_head_and_follows_the_review_migration():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [REVIEW_REVISION]
+    assert script.get_heads() == [POINTER_INDEX_REVISION]
+    assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
+
+
+def test_the_pointer_index_migration_adds_the_index_and_its_downgrade_drops_it(session):
+    def pointer_indexes():
+        return [
+            index["column_names"]
+            for index in sa.inspect(session.bind).get_indexes("base_studies")
+            if index["name"] == "ix_base_studies_fulltext_id"
+        ]
+
+    session.remove()
+    try:
+        service_migrations.downgrade(REVIEW_REVISION)
+        assert pointer_indexes() == []
+    finally:
+        service_migrations.upgrade("heads")
+
+    assert pointer_indexes() == [["fulltext_id"]]
 
 
 def test_the_migrated_review_tables_match_the_models(db):
     def in_review_scope(obj, name, type_, reflected, compare_to):
         if type_ == "table":
-            return name in REVIEW_TABLE_NAMES
+            return name in REVIEW_TABLE_NAMES or name == "base_studies"
         if obj.table.name in REVIEW_TABLE_NAMES:
             return True
         return obj.table.name == "base_studies" and name in {
             "fulltext_id",
             "fk_base_studies_fulltext_id",
+            "ix_base_studies_fulltext_id",
         }
 
     with db.engine.connect() as conn:
@@ -608,6 +668,28 @@ def test_the_migration_seeds_the_role_and_downgrade_removes_everything(session, 
     assert ("admin-reviewer", "admin-reviewer") in [tuple(role) for role in roles]
 
 
+def test_every_foreign_key_the_review_branch_adds_leads_an_index(session):
+    unindexed = session.execute(
+        sa.text(
+            """
+            SELECT c.conrelid::regclass::text, a.attname
+            FROM pg_constraint c
+            JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
+            WHERE c.contype = 'f'
+              AND (c.conrelid::regclass::text = ANY (:tables) OR c.conname = :pointer)
+              AND NOT EXISTS (
+                  SELECT 1 FROM pg_index i
+                  WHERE i.indrelid = c.conrelid AND i.indkey[0] = a.attnum
+              )
+            ORDER BY 1, 2
+            """
+        ),
+        {"tables": sorted(REVIEW_TABLE_NAMES), "pointer": "fk_base_studies_fulltext_id"},
+    ).all()
+
+    assert [tuple(row) for row in unindexed] == []
+
+
 def test_the_review_migration_creates_the_final_columns_and_indexes(session):
     inspector = sa.inspect(session.bind)
     fulltext_columns = {c["name"] for c in inspector.get_columns("fulltexts")}
@@ -618,6 +700,11 @@ def test_the_review_migration_creates_the_final_columns_and_indexes(session):
     source_columns = {c["name"]: c["nullable"] for c in inspector.get_columns("review_sources")}
     assert "origin" not in source_columns
     assert source_columns["judgeable_keys"] is False
+    review_columns = {c["name"]: c for c in inspector.get_columns("reviews")}
+    assert "last_edit_at" in review_columns
+    assert review_columns["last_edit_at"]["nullable"] is True
+    assert isinstance(review_columns["last_edit_at"]["type"], sa.DateTime)
+    assert review_columns["last_edit_at"]["type"].timezone is True
     assert "ck_review_sources_origin" not in {
         c["name"] for c in inspector.get_check_constraints("review_sources")
     }

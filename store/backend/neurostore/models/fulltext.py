@@ -34,6 +34,9 @@ class Fulltext(BaseMixin, db.Model):
     __table_args__ = (
         sa.UniqueConstraint("base_study_id", "sha256", name="uq_fulltexts_base_study_sha256"),
         sa.Index("ix_fulltexts_base_study_created", "base_study_id", "created_at"),
+        sa.CheckConstraint(
+            source.in_(FULLTEXT_SOURCE_PREFERENCE), name="ck_fulltexts_source"
+        ),
     )
 
     base_study = relationship("BaseStudy", foreign_keys=[base_study_id])

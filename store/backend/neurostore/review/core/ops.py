@@ -448,13 +448,9 @@ class _Applier:
 
     def _note_slot_change(self, target):
         """Note the part of a slot or relationship ``target``'s entity at the target's path as
-        changed: the whole entity while the path does not resolve."""
+        changed."""
         entity = self._entity(target["entity"])
-        try:
-            below = paths.location(entity.item, target["path"])
-        except ReviewError:
-            below = ()
-        self.changes.part(entity.local_id, below)
+        self.changes.part(entity.local_id, paths.location(entity.item, target["path"]))
 
     def _mark(self, key, state):
         self.state.provenance[key] = {"state": state, "user_id": self.user_id, "at": self.at}

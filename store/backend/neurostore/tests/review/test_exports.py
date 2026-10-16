@@ -1,10 +1,15 @@
 """Exporting reviews as study_schema layouts: one review, bulk trees, the routes and the CLI."""
 
+import gc
 import io
 import json
+import os
+import tempfile
+import tracemalloc
 import zipfile
 from datetime import datetime, timezone
 
+import anyio
 import pytest
 import sqlalchemy as sa
 from click.testing import CliRunner
@@ -14,7 +19,14 @@ from study_schema.models.paper_parse import CoordinateParse
 from neurostore import cli
 from neurostore.database import db
 from neurostore.ingest.study_schema import _check_verdicts, ingest_upload
-from neurostore.models import BaseStudy, FieldClaim, ReviewOp, ReviewSource, StudyEntity
+from neurostore.models import (
+    BaseStudy,
+    FieldClaim,
+    Fulltext,
+    ReviewOp,
+    ReviewSource,
+    StudyEntity,
+)
 from neurostore.models.data import study_entity_hash
 from neurostore.review.app import exports, imports, service
 from neurostore.review.core.layout import dumped, read_layout
@@ -28,6 +40,7 @@ from neurostore.tests.review.layouts import (
     OTHER,
     REVIEWER,
     TEXT,
+    TOKENS,
     assert_binary_matches_spec,
     assert_matches_spec,
     documents,
@@ -902,6 +915,226 @@ async def test_the_bulk_export_route_round_trip_reads_back_and_reimports(
         )
         assert session.get(ReviewSource, loaded["source_id"]).record == exported
         assert loaded["source_id"] not in sources.values()
+
+
+def files_under(root):
+    """Each file under ``root`` by its posix path, in the order the zip lists them."""
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in sorted(root.rglob("*"))
+        if path.is_file()
+    }
+
+
+async def test_the_bulk_export_zip_holds_exactly_the_tree_the_export_writes(
+    clients, session, reviewers, tmp_path
+):
+    reviewed_papers(session, tmp_path)
+    exports.export_bulk(session, tmp_path / "direct", include_unreviewed=True)
+    expected = files_under(tmp_path / "direct")
+
+    response = await clients[LEAD].post("/api/review/exports/", data={"include_unreviewed": True})
+
+    assert response.status_code == 200
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    assert archive.testzip() is None
+    assert archive.namelist() == list(expected)
+    assert {name: archive.read(name) for name in archive.namelist()} == expected
+
+
+PADDING = 1024 * 1024
+
+
+def twenty_large_papers(session, tmp_path):
+    """Twenty papers as loaded, each with a full text over 1 MiB."""
+    for number in range(20):
+        load(session, tmp_path / f"in-{number}", study_id=f"s{number}")
+    texts = Fulltext.__table__
+    session.execute(sa.update(texts).values(text=texts.c.text + " " * PADDING))
+    session.commit()
+
+
+async def call_export(app, receive, send, spec_version="2.4"):
+    body = json.dumps({"include_unreviewed": True}).encode()
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": spec_version},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/review/exports/",
+        "raw_path": b"/api/review/exports/",
+        "root_path": "",
+        "query_string": b"",
+        "headers": [
+            (b"host", b"testserver"),
+            (b"authorization", f"Bearer {TOKENS[LEAD]}".encode()),
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(body)).encode()),
+        ],
+        "server": ("testserver", 80),
+        "client": ("127.0.0.1", 1234),
+    }
+    messages = [{"type": "http.request", "body": body, "more_body": False}]
+    await app.asgi_app(scope, receive(messages), send)
+
+
+def then_wait(messages):
+    async def receive():
+        if messages:
+            return messages.pop(0)
+        await anyio.sleep_forever()
+
+    return receive
+
+
+async def test_a_bulk_export_is_sent_without_holding_the_zip_in_memory(
+    app, clients, session, reviewers, tmp_path
+):
+    twenty_large_papers(session, tmp_path)
+    started, sizes = [], []
+
+    async def send(message):
+        if message["type"] == "http.response.start":
+            started.append(message["status"])
+            gc.collect()
+            tracemalloc.reset_peak()
+        else:
+            sizes.append(len(message.get("body", b"")))
+
+    gc.collect()
+    tracemalloc.start()
+    try:
+        await call_export(app, then_wait, send)
+        peak = tracemalloc.get_traced_memory()[1]
+    finally:
+        tracemalloc.stop()
+
+    assert started == [200]
+    assert sum(sizes) > 20 * PADDING
+    assert peak < 4 * 1024 * 1024
+
+
+def leftover(directory):
+    return [path.name for path in directory.iterdir()]
+
+
+@pytest.fixture
+def temporary(tmp_path, monkeypatch):
+    """The directory every temporary file and directory goes in during the test."""
+    directory = tmp_path / "tmp"
+    directory.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(directory))
+    return directory
+
+
+@pytest.fixture
+def cleanups(monkeypatch):
+    """The explicit cleanup() calls on temporary directories, with what each held when called.
+
+    The directory's weakref finalizer never calls cleanup(), so a call recorded here while the
+    response is still alive is the export's own.
+    """
+    calls = []
+    original = tempfile.TemporaryDirectory.cleanup
+
+    def recording(self):
+        calls.append(os.listdir(self.name))
+        original(self)
+
+    monkeypatch.setattr(tempfile.TemporaryDirectory, "cleanup", recording)
+    return calls
+
+
+async def test_the_export_leaves_no_temporary_files_once_sent(
+    clients, session, reviewers, tmp_path, temporary, cleanups
+):
+    load(session, tmp_path / "in")
+
+    response = await clients[LEAD].post("/api/review/exports/", data={"include_unreviewed": True})
+
+    assert response.status_code == 200
+    assert cleanups == [["layout"]]
+    assert leftover(temporary) == []
+
+
+async def test_the_export_leaves_no_temporary_files_when_the_client_goes_away(
+    app, clients, session, reviewers, tmp_path, temporary, cleanups
+):
+    twenty_large_papers(session, tmp_path)
+
+    async def send(message):
+        if message["type"] == "http.response.body":
+            assert leftover(temporary) != []
+            raise OSError("the client went away")
+
+    await call_export(app, then_wait, send)
+
+    assert cleanups == [["layout"]]
+    assert leftover(temporary) == []
+
+
+async def test_the_export_leaves_no_temporary_files_when_told_of_a_disconnect(
+    app, clients, session, reviewers, tmp_path, temporary, cleanups
+):
+    twenty_large_papers(session, tmp_path)
+    bodies = []
+
+    def disconnect_after(messages):
+        async def receive():
+            if messages:
+                return messages.pop(0)
+            while not bodies:
+                await anyio.sleep(0)
+            return {"type": "http.disconnect"}
+
+        return receive
+
+    async def send(message):
+        if message["type"] == "http.response.body":
+            bodies.append(message.get("more_body", False))
+            await anyio.sleep(0.01)
+
+    await call_export(app, disconnect_after, send, spec_version="2.3")
+
+    assert bodies and False not in bodies
+    assert cleanups == [["layout"]]
+    assert leftover(temporary) == []
+
+
+async def test_the_export_leaves_no_temporary_files_when_the_request_is_cancelled(
+    app, clients, session, reviewers, tmp_path, temporary, cleanups
+):
+    twenty_large_papers(session, tmp_path)
+
+    with anyio.CancelScope() as request:
+
+        async def send(message):
+            if message["type"] == "http.response.body":
+                request.cancel()
+                await anyio.sleep(0)
+
+        await call_export(app, then_wait, send)
+
+    assert request.cancelled_caught
+    assert cleanups == [["layout"]]
+    assert leftover(temporary) == []
+
+
+async def test_a_refused_export_leaves_no_temporary_files(
+    clients, session, reviewers, tmp_path, temporary, cleanups
+):
+    _, source_id = load(session, tmp_path / "in")
+    source = session.get(ReviewSource, source_id)
+    header = {k: v for k, v in source.parsed_paper["header"].items() if k != "article_id"}
+    source.parsed_paper = {**source.parsed_paper, "header": header}
+    session.commit()
+
+    response = await clients[LEAD].post("/api/review/exports/", data={"include_unreviewed": True})
+
+    assert response.status_code == 422
+    assert len(cleanups) == 1
+    assert leftover(temporary) == []
 
 
 @pytest.fixture

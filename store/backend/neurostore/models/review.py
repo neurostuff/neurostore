@@ -77,6 +77,8 @@ class Review(BaseMixin, db.Model):
         JSONB, nullable=False, default=dict, server_default=sa.text("'{}'::jsonb")
     )
     last_seq = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    #: When the last batch of ops was stored.
+    last_edit_at = db.Column(db.DateTime(timezone=True), nullable=True)
     #: Set while the review is set aside, and only then.
     set_aside_reason = db.Column(db.Text, nullable=True)
     set_aside_note = db.Column(db.Text, nullable=True)
@@ -141,7 +143,7 @@ class ReviewAssignment(BaseMixin, db.Model):
     user_id = db.Column(
         db.Text, db.ForeignKey("users.external_id"), nullable=False, index=True
     )
-    assigned_by_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    assigned_by_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
 
     __table_args__ = (
         sa.UniqueConstraint(

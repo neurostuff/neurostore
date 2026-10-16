@@ -267,6 +267,7 @@ def post_ops(session, review_id, user_id, body):
     ]
     session.add_all(inserted)
     _save_state(review, state)
+    review.last_edit_at = now
     session.flush()
     return _op_result(review, [_stored(row, user_id) for row in inserted], source.coordinate_parse)
 
@@ -540,16 +541,8 @@ def _refusal(ops, index, problem):
 
 
 def _review_rows(session, source_ids):
-    """Every review of the sources, with its user's name, op count and last edit time."""
-    edits = (
-        sa.select(
-            ReviewOp.review_id,
-            sa.func.count(ReviewOp.id).label("op_count"),
-            sa.func.max(ReviewOp.created_at).label("last_edit_at"),
-        )
-        .group_by(ReviewOp.review_id)
-        .subquery()
-    )
+    """Every review of the sources, with its user's name, last edit time and an op count taken
+    from last_seq."""
     return session.execute(
         sa.select(
             Review.id,
@@ -562,11 +555,10 @@ def _review_rows(session, source_ids):
             Review.last_seq,
             Review.updated_at,
             Review.provenance,
-            sa.func.coalesce(edits.c.op_count, 0).label("op_count"),
-            edits.c.last_edit_at,
+            Review.last_seq.label("op_count"),
+            Review.last_edit_at,
         )
         .outerjoin(User, User.external_id == Review.user_id)
-        .outerjoin(edits, edits.c.review_id == Review.id)
         .where(Review.source_id.in_(source_ids))
         .order_by(Review.created_at, Review.id)
     ).all()

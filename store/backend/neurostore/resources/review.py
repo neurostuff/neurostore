@@ -2,23 +2,18 @@
 
 import shutil
 import tempfile
-import zipfile
 from pathlib import Path
 
 from connexion import request
 from connexion.lifecycle import ConnexionResponse
 
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import (
-    abort_not_found,
-    abort_permission,
-    abort_too_large,
-)
+from neurostore.exceptions.utils.error_helpers import abort_not_found, abort_permission
 from neurostore.resources.utils import get_current_user, is_user_admin, user_has_role
 from neurostore.review.app import exports, imports, service
+from neurostore.review.app.zip_stream import stream_zip
 from neurostore.review.core import schemas
 
-MAX_IMPORT_BYTES = 200 * 1024 * 1024
 SCHEMA_CACHE_CONTROL = "private, no-cache"
 
 
@@ -40,41 +35,9 @@ def _lead_reviewer():
     return user
 
 
-def _size(upload):
-    if upload.size is not None:
-        return upload.size
-    upload.file.seek(0, 2)
-    size = upload.file.tell()
-    upload.file.seek(0)
-    return size
-
-
 def _spool(upload, destination):
     with destination.open("wb") as copy:
         shutil.copyfileobj(upload.file, copy)
-
-
-def _zipped(write, filename):
-    """The zip of the layout ``write(root)`` writes, as an attachment named ``filename``.
-
-    The whole zip is built in memory before the response is sent.
-    """
-    with tempfile.TemporaryDirectory() as directory:
-        root = Path(directory) / "layout"
-        write(root)
-        with tempfile.TemporaryFile() as archive:
-            with zipfile.ZipFile(archive, "w") as zipped:
-                for path in sorted(root.rglob("*")):
-                    if path.is_file():
-                        zipped.write(path, path.relative_to(root).as_posix())
-            archive.seek(0)
-            data = archive.read()
-    return ConnexionResponse(
-        body=data,
-        status_code=200,
-        content_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
 
 
 def _commit(write):
@@ -198,7 +161,7 @@ class ReviewOpsView:
 class ReviewExportView:
     def get(self, id):
         _reviewer()
-        return _zipped(
+        return stream_zip(
             lambda root: exports.export_review(db.session, id, root), f"review-{id}.zip"
         )
 
@@ -206,7 +169,7 @@ class ReviewExportView:
 class ReviewExportsView:
     def post(self, body=None):
         _reviewer()
-        return _zipped(
+        return stream_zip(
             lambda root: exports.export_bulk(db.session, root, **(body or {})),
             "review-exports.zip",
         )
@@ -215,8 +178,6 @@ class ReviewExportsView:
 class ReviewImportsView:
     def post(self, file):
         user = _lead_reviewer()
-        if _size(file) > MAX_IMPORT_BYTES:
-            abort_too_large(f"The file is over {MAX_IMPORT_BYTES} bytes.")
         with tempfile.TemporaryDirectory() as directory:
             layout = Path(directory) / "layout.zip"
             _spool(file, layout)

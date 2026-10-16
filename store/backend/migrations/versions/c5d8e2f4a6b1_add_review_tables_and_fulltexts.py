@@ -34,6 +34,10 @@ def upgrade():
         sa.ForeignKeyConstraint(["base_study_id"], ["base_studies.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("base_study_id", "sha256", name="uq_fulltexts_base_study_sha256"),
+        sa.CheckConstraint(
+            "source IN ('pubget', 'pmc', 'europepmc', 'elsevier', 'springer', 'ace', 'pdf')",
+            name="ck_fulltexts_source",
+        ),
     )
     _index_base_columns("fulltexts")
     op.create_index(
@@ -85,6 +89,7 @@ def upgrade():
         sa.Column("provenance", JSONB(), nullable=False, server_default=EMPTY_JSONB),
         sa.Column("annotations", JSONB(), nullable=False, server_default=EMPTY_JSONB),
         sa.Column("last_seq", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("last_edit_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("set_aside_reason", sa.Text(), nullable=True),
         sa.Column("set_aside_note", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(["source_id"], ["review_sources.id"]),
@@ -147,7 +152,7 @@ def upgrade():
         ),
     )
     _index_base_columns("review_assignments")
-    _index("review_assignments", ["user_id"])
+    _index("review_assignments", ["user_id", "assigned_by_id"])
 
     op.execute(
         """

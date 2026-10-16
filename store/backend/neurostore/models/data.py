@@ -226,6 +226,7 @@ class BaseStudy(BaseMixin, db.Model):
             use_alter=True,
         ),
         nullable=True,
+        index=True,
     )
     fulltext = relationship("Fulltext", foreign_keys=[fulltext_id], lazy="raise", viewonly=True)
     is_active = db.Column(

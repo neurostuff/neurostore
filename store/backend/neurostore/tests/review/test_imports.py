@@ -2,6 +2,7 @@
 
 import json
 
+import httpx
 import pytest
 import sqlalchemy as sa
 from click.testing import CliRunner
@@ -12,7 +13,6 @@ from neurostore import cli
 from neurostore.database import db
 from neurostore.models import BaseStudy, Fulltext, ReviewSource
 from neurostore.resources import body_limit
-from neurostore.resources import review as review_resources
 from neurostore.review.app import imports
 from neurostore.review.core import entities
 from neurostore.review.core.layout import LayoutError
@@ -23,6 +23,7 @@ from neurostore.tests.review.layouts import (
     OTHER,
     REVIEWER,
     TEXT,
+    TOKENS,
     assert_matches_spec,
     documents,
     write_layout,
@@ -670,25 +671,53 @@ async def test_an_imported_paper_can_be_started_and_its_bundle_matches_the_uploa
     assert body["record"]["analyses"] == record["analyses"]
 
 
-async def test_the_import_route_refuses_a_file_over_the_limit(clients, tmp_path, monkeypatch):
-    monkeypatch.setattr(review_resources, "MAX_IMPORT_BYTES", 10)
+def multipart(path):
+    """The body and content type the client sends when it uploads ``path``."""
+    request = httpx.Request("POST", "http://testserver/", files=upload(path))
+    return request.read(), request.headers["content-type"]
+
+
+async def post_declaring(client, path, length):
+    """Upload ``path`` in 1 KiB chunks under a Content-Length of ``length``."""
+    body, content_type = multipart(path)
+
+    async def chunks():
+        for start in range(0, len(body), 1024):
+            yield body[start:start + 1024]
+
+    return await client.client.post(
+        "/api/review/imports/",
+        content=chunks(),
+        headers={
+            "Authorization": f"Bearer {TOKENS[LEAD]}",
+            "Content-Type": content_type,
+            "Content-Length": str(length),
+        },
+    )
+
+
+async def test_the_import_route_refuses_a_file_over_the_limit(
+    clients, tmp_path, monkeypatch, session
+):
+    monkeypatch.setattr(body_limit, "MAX_IMPORT_BYTES", 10)
 
     response = await post_zip(clients[LEAD], zipped_clean_paper(tmp_path))
 
     assert response.status_code == 413
     assert_matches_spec(response, "/review/imports/", "post")
+    assert count(session, ReviewSource) == 0
 
 
-async def test_a_file_exactly_at_the_limit_is_accepted_and_one_byte_more_is_refused(
+async def test_an_upload_exactly_at_the_limit_is_accepted_and_one_byte_more_is_refused(
     clients, tmp_path, monkeypatch, session
 ):
     add_base_study(session, pmid="1001")
     zipped = zipped_clean_paper(tmp_path)
-    size = zipped.stat().st_size
+    size = len(multipart(zipped)[0])
 
-    monkeypatch.setattr(review_resources, "MAX_IMPORT_BYTES", size)
+    monkeypatch.setattr(body_limit, "MAX_IMPORT_BYTES", size)
     accepted = await post_zip(clients[LEAD], zipped)
-    monkeypatch.setattr(review_resources, "MAX_IMPORT_BYTES", size - 1)
+    monkeypatch.setattr(body_limit, "MAX_IMPORT_BYTES", size - 1)
     refused = await post_zip(clients[LEAD], zipped)
 
     assert accepted.status_code == 200, accepted.json()
@@ -696,8 +725,42 @@ async def test_a_file_exactly_at_the_limit_is_accepted_and_one_byte_more_is_refu
     assert_matches_spec(refused, "/review/imports/", "post")
 
 
-def test_the_import_limit_is_200_mb():
-    assert review_resources.MAX_IMPORT_BYTES == 200 * 1024 * 1024
+async def test_an_upload_whose_content_length_lies_is_refused_once_it_streams_past_the_limit(
+    clients, tmp_path, monkeypatch, session
+):
+    add_base_study(session, pmid="1001")
+    zipped = zipped_clean_paper(tmp_path)
+    size = len(multipart(zipped)[0])
+    monkeypatch.setattr(body_limit, "MAX_IMPORT_BYTES", size - 1)
+
+    response = await post_declaring(clients[LEAD], zipped, size // 2)
+
+    assert response.status_code == 413
+    assert response.json()["title"] == "Payload Too Large"
+    assert_matches_spec(response, "/review/imports/", "post")
+    assert count(session, ReviewSource) == 0
+
+
+async def test_a_chunked_upload_with_no_content_length_is_refused_before_it_is_read(
+    clients, tmp_path, session
+):
+    body, content_type = multipart(zipped_clean_paper(tmp_path))
+
+    async def chunks():
+        for start in range(0, len(body), 1024):
+            yield body[start:start + 1024]
+
+    response = await clients[LEAD].client.post(
+        "/api/review/imports/",
+        content=chunks(),
+        headers={"Authorization": f"Bearer {TOKENS[LEAD]}", "Content-Type": content_type},
+    )
+
+    # connexion answers a body with no Content-Length with 400 before the route reads it, so
+    # the import cap never sees the stream: this is not a 413.
+    assert response.status_code == 400
+    assert "RequestBody is required" in response.text
+    assert count(session, ReviewSource) == 0
 
 
 async def test_the_import_route_refuses_a_file_that_is_not_a_zip(clients, tmp_path):
