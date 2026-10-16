@@ -935,7 +935,13 @@ describe('a refetch and a 400', () => {
         const { store, client } = await open();
         server.intercept(() =>
             json(
-                { type: 'about:blank', title: 'Bad Request', detail: "[] should be non-empty - 'ops'", status: 400 },
+                {
+                    type: 'about:blank',
+                    title: 'Bad Request',
+                    detail: 'The request body is not valid.',
+                    status: 400,
+                    errors: [{ field: 'ops', code: 'minItems', message: 'failed the minItems rule' }],
+                },
                 400
             )
         );
@@ -944,7 +950,18 @@ describe('a refetch and a 400', () => {
         await vi.advanceTimersByTimeAsync(60_000);
         expect(posts(server)).toHaveLength(1);
         expect(store.getState().pending).toHaveLength(1);
-        expect(selectSaveLabel(store.getState())).toBe("[] should be non-empty - 'ops'");
+        expect(selectSaveLabel(store.getState())).toBe('ops: failed the minItems rule');
+    });
+
+    it('falls back to the detail of a 400 that carries no errors', async () => {
+        const { store, client } = await open();
+        server.intercept(() =>
+            json({ type: 'about:blank', title: 'Bad Request', detail: 'Request body must not be empty', status: 400 }, 400)
+        );
+        edit(store, 'description', 'Twenty patients');
+        await client.flush();
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(selectSaveLabel(store.getState())).toBe('Request body must not be empty');
     });
 });
 

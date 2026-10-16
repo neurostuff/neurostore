@@ -11,8 +11,9 @@ from study_schema.jsonschema import load
 from neurostore import cli
 from neurostore.database import db
 from neurostore.models import BaseStudy, Fulltext, ReviewSource
+from neurostore.resources import body_limit
 from neurostore.resources import review as review_resources
-from neurostore.review import imports
+from neurostore.review import entities, imports
 from neurostore.review.layout import LayoutError
 from neurostore.study_schema_tools import sha256_of
 from neurostore.tests.review.layouts import (
@@ -140,7 +141,7 @@ def test_a_clean_paper_loads_with_its_text_and_documents(session, make_user, tmp
         "skipped": [],
         "failed": [],
     }
-    assert (fulltext.base_study_id, fulltext.source, fulltext.tier) == (base_study.id, "pubget", 1)
+    assert (fulltext.base_study_id, fulltext.source) == (base_study.id, "pubget")
     assert (fulltext.sha256, fulltext.text) == (DIGEST, TEXT)
     assert source.fulltext_id == fulltext.id
     assert (source.origin, source.label, source.run_id) == ("upload", "A paper", "run-7")
@@ -151,6 +152,7 @@ def test_a_clean_paper_loads_with_its_text_and_documents(session, make_user, tmp
         record,
     )
     assert source.record_sha256 == sha256_of(record)
+    assert source.judgeable_keys == entities.judgeable_keys(record, coordinate_parse)
     assert source.schema_versions == {
         "paper_parse": paper["header"]["schema_version"],
         "coordinate_parse": coordinate_parse["header"]["schema_version"],
@@ -158,11 +160,9 @@ def test_a_clean_paper_loads_with_its_text_and_documents(session, make_user, tmp
     }
 
 
-@pytest.mark.parametrize(
-    "source, tier", [("pubget", 1), ("ace", 2), ("pdf", 3)], ids=["tier-1", "tier-2", "tier-3"]
-)
-def test_the_fulltext_takes_the_tier_of_its_parsed_paper_source(
-    session, make_user, tmp_path, source, tier
+@pytest.mark.parametrize("source", ["pubget", "ace", "pdf", "springer"])
+def test_the_fulltext_keeps_the_source_of_its_parsed_paper(
+    session, make_user, tmp_path, source
 ):
     make_user(REVIEWER, "admin-reviewer")
     add_base_study(session, pmid="1001")
@@ -173,7 +173,7 @@ def test_the_fulltext_takes_the_tier_of_its_parsed_paper_source(
     imports.import_layout(session, tmp_path, user_id=REVIEWER)
 
     fulltext = session.scalar(sa.select(Fulltext))
-    assert (fulltext.source, fulltext.tier) == (source, tier)
+    assert fulltext.source == source
 
 
 def test_a_second_import_of_the_same_files_skips_with_the_same_source(
@@ -194,6 +194,53 @@ def test_a_second_import_of_the_same_files_skips_with_the_same_source(
         "failed": [],
     }
     assert count(session, ReviewSource) == 1
+
+
+def write_wrapper(root, study_id, review_id):
+    wrapper = {
+        "record_path": f"run/records/{study_id}.extraction.json",
+        "source": {
+            "kind": "review",
+            "review_id": review_id,
+            "user_id": REVIEWER,
+            "state": "submitted",
+        },
+        "reviewed": True,
+        "edited": False,
+    }
+    path = root / f"run/provenance/{study_id}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(json.dumps(wrapper).encode("utf-8"))
+
+
+def test_a_reimport_of_the_same_record_and_wrapper_is_skipped(session, make_user, tmp_path):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    write_layout(tmp_path, "1001", *clean("1001"))
+    write_wrapper(tmp_path, "1001", review_id=7)
+    first = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    second = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert [entry["reason"] for entry in second["skipped"]] == ["already loaded"]
+    assert second["skipped"][0]["source_id"] == first["loaded"][0]["source_id"]
+    assert count(session, ReviewSource) == 1
+
+
+def test_an_unedited_review_of_a_loaded_record_loads_as_its_own_source(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    write_layout(tmp_path, "1001", *clean("1001"))
+    imports.import_layout(session, tmp_path, user_id=REVIEWER)
+    write_wrapper(tmp_path, "1001", review_id=7)
+
+    report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert [entry["study_id"] for entry in report["loaded"]] == ["1001"]
+    assert report["skipped"] == []
+    assert count(session, ReviewSource) == 2
 
 
 def test_a_second_record_with_identical_text_reuses_the_fulltext(session, make_user, tmp_path):
@@ -495,10 +542,23 @@ def test_the_cli_records_the_user_and_the_run_it_is_given(session, make_user, tm
         assert (source.loaded_by_id, source.run_id) == (REVIEWER, "run-9")
 
 
+def test_the_cli_refuses_to_load_without_a_user_id(session, make_user, tmp_path, run_cli):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    write_layout(tmp_path, "1001", *clean("1001"))
+
+    result = run_cli(str(tmp_path))
+
+    assert result.exit_code != 0
+    assert "--user-id" in result.output
+    with Session(session.bind) as fresh:
+        assert count(fresh, ReviewSource) == 0
+
+
 def test_the_cli_exits_1_for_a_directory_that_is_not_a_layout(session, tmp_path, run_cli):
     (tmp_path / "empty").mkdir()
 
-    result = run_cli(str(tmp_path / "empty"))
+    result = run_cli(str(tmp_path / "empty"), "--user-id", REVIEWER)
 
     assert result.exit_code == 1
     assert "no corpus/" in result.output
@@ -656,3 +716,155 @@ async def test_a_zip_with_no_corpus_is_refused_as_unprocessable(clients, tmp_pat
 
     assert response.status_code == 422
     assert_matches_spec(response, "/review/imports/", "post")
+
+
+@pytest.mark.parametrize("field", ["schema_version", "article_id"])
+def test_a_parsed_paper_without_a_required_header_field_fails_naming_the_field(
+    session, make_user, tmp_path, field
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, coordinate_parse, record = clean("1001")
+    del paper["header"][field]
+    write_layout(tmp_path, "1001", paper, coordinate_parse, record)
+
+    report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert report["loaded"] == []
+    [failure] = report["failed"]
+    assert failure["problems"] == [f"parsed_paper at header: '{field}' is a required property"]
+    assert count(session, ReviewSource) == 0
+    assert count(session, Fulltext) == 0
+
+
+def provenance_document(source, reviewed=True):
+    return {
+        "record_path": "run/records/1001.extraction.json",
+        "source": source,
+        "reviewed": reviewed,
+        "edited": False,
+    }
+
+
+SOURCE_WRAPPER = {"kind": "source", "source_id": 3, "origin": "base_study", "run_id": None}
+PIPELINE_WRAPPER = {"kind": "source", "source_id": 4, "origin": "pipeline_run", "run_id": "run-1"}
+REVIEW_WRAPPER = {"kind": "review", "review_id": 7, "user_id": REVIEWER, "state": "in_progress"}
+
+
+def write_provenance(root, study_id, content):
+    path = root / f"run/provenance/{study_id}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not isinstance(content, bytes):
+        content = json.dumps(content).encode("utf-8")
+    path.write_bytes(content)
+
+
+@pytest.mark.parametrize("wrapper", [SOURCE_WRAPPER, PIPELINE_WRAPPER], ids=["source", "pipeline"])
+def test_a_record_with_a_source_wrapper_is_skipped_as_already_loaded(
+    session, make_user, tmp_path, wrapper
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    write_layout(tmp_path, "1001", *clean("1001"))
+    first = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+    write_provenance(tmp_path, "1001", provenance_document(wrapper, reviewed=False))
+
+    second = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert second == {
+        "loaded": [],
+        "skipped": [
+            {"study_id": "1001", "source_id": first["loaded"][0]["source_id"],
+             "reason": "already loaded"}
+        ],
+        "failed": [],
+    }
+    assert count(session, ReviewSource) == 1
+
+
+def test_a_review_wrapper_that_is_not_reviewed_is_a_review_and_loads_as_its_own_source(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    write_layout(tmp_path, "1001", *clean("1001"))
+    first = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+    write_provenance(tmp_path, "1001", provenance_document(REVIEW_WRAPPER, reviewed=False))
+
+    second = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+    third = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert [entry["study_id"] for entry in second["loaded"]] == ["1001"]
+    assert second["loaded"][0]["source_id"] != first["loaded"][0]["source_id"]
+    assert third["skipped"] == [
+        {"study_id": "1001", "source_id": second["loaded"][0]["source_id"],
+         "reason": "already loaded"}
+    ]
+    assert count(session, ReviewSource) == 2
+
+
+@pytest.mark.parametrize(
+    "content, problem",
+    [(b"{not json", "is not JSON"), (b"[1, 2]", "is not a JSON object")],
+    ids=["not_json", "not_an_object"],
+)
+def test_a_provenance_wrapper_that_is_not_a_json_object_fails_its_paper_with_the_reason(
+    session, make_user, tmp_path, content, problem
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    write_layout(tmp_path, "1001", *clean("1001"))
+    write_provenance(tmp_path, "1001", content)
+
+    report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert report["loaded"] == []
+    [failed] = report["failed"]
+    assert failed["study_id"] == "1001"
+    assert any(
+        problem in line and "run/provenance/1001.json" in line for line in failed["problems"]
+    )
+    assert count(session, ReviewSource) == 0
+
+
+def test_a_zip_layout_reads_its_provenance_wrapper(session, make_user, tmp_path):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    files = write_layout(tmp_path / "layout", "1001", *clean("1001"))
+    files["run/provenance/1001.json"] = json.dumps(
+        provenance_document(REVIEW_WRAPPER)
+    ).encode("utf-8")
+    archive = zip_layout(files, tmp_path / "layout.zip")
+
+    report = imports.import_layout(session, archive, user_id=REVIEWER)
+
+    assert [entry["study_id"] for entry in report["loaded"]] == ["1001"]
+    again = imports.import_layout(session, archive, user_id=REVIEWER)
+    assert again["skipped"][0]["source_id"] == report["loaded"][0]["source_id"]
+
+
+def test_a_zip_layout_with_a_provenance_wrapper_that_is_not_an_object_fails_its_paper(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    files = write_layout(tmp_path / "layout", "1001", *clean("1001"))
+    files["run/provenance/1001.json"] = b'"just a string"'
+    archive = zip_layout(files, tmp_path / "layout.zip")
+
+    report = imports.import_layout(session, archive, user_id=REVIEWER)
+
+    assert report["loaded"] == []
+    [failed] = report["failed"]
+    assert any("is not a JSON object" in line for line in failed["problems"])
+
+
+async def test_the_import_route_is_not_held_to_the_review_body_limit(
+    clients, tmp_path, session, monkeypatch
+):
+    add_base_study(session, pmid="1001")
+    monkeypatch.setattr(body_limit, "MAX_REVIEW_BODY_BYTES", 10)
+
+    response = await post_zip(clients[LEAD], zipped_clean_paper(tmp_path))
+
+    assert response.status_code == 200, response.json()

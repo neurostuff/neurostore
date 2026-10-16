@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import anyio
 from connexion.exceptions import ProblemException
 from connexion.lifecycle import ConnexionResponse
+from jsonschema import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 
@@ -19,6 +20,13 @@ from neurostore.observability.request_id import (
 from neurostore.observability.sentry import capture_exception
 
 logger = logging.getLogger(__name__)
+
+REVIEW_PATH_PREFIX = "/api/review/"
+UPLOAD_PATH_PREFIX = "/api/review/imports/"
+
+
+def is_review_path(path: str) -> bool:
+    return path.startswith(REVIEW_PATH_PREFIX)
 
 
 def _timestamp() -> str:
@@ -122,7 +130,52 @@ async def neurostore_exception_handler(request: Request, exc: NeuroStoreExceptio
     )
 
 
+def error_response(
+    request,
+    status: int,
+    title: str,
+    detail: str,
+    *,
+    errors: list[ErrorDetail] | None = None,
+    exc=None,
+) -> ConnexionResponse:
+    """An ErrorResponse for a failure that no NeuroStoreException carries."""
+    request_id = _log_error_response(request, status, title, detail, exc=exc)
+    err = ErrorResponse(
+        status=status, title=title, detail=detail, errors=errors, request_id=request_id
+    )
+    return _json_response(
+        err.to_dict(), status, headers=_with_request_id(None, request_id)
+    )
+
+
+def _review_bad_request(request, exc: ProblemException) -> ConnexionResponse:
+    """One error per refused review body, naming its rule and field, never its value.
+
+    Connexion raises its 400 while it handles the jsonschema error, so that error is the
+    exception's context.
+    """
+    cause = exc.__context__
+    if isinstance(cause, ValidationError):
+        field = ".".join(str(part) for part in cause.absolute_path) or None
+        error = ErrorDetail(
+            field=field, code=cause.validator, message=f"failed the {cause.validator} rule"
+        )
+        return error_response(
+            request,
+            400,
+            "Bad Request",
+            "The request body is not valid.",
+            errors=[error],
+            exc=exc,
+        )
+    error = ErrorDetail(code="invalid_request", message=exc.detail or "The request is not valid.")
+    return error_response(request, 400, "Bad Request", error.message, errors=[error], exc=exc)
+
+
 async def problem_exception_handler(request: Request, exc: ProblemException):
+    if exc.status == 400 and is_review_path(request.url.path):
+        return _review_bad_request(request, exc)
     body = {
         "type": exc.type or "about:blank",
         "title": exc.title,

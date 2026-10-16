@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { hasFixture, loadFixture } from '../src/test/bundles';
@@ -44,7 +44,11 @@ function makeLayout() {
     const root = mkdtempSync(path.join(tmpdir(), 'review-layout-'));
     const paper = path.join(root, 'corpus', 'P1');
     writeJson(path.join(paper, 'parse', 'parsed_paper.json'), {
-        header: { schema_version: '0.6.0', identifiers: { neurostore_base_study_id: 'BS1' } },
+        header: {
+            schema_version: '0.6.0',
+            article_id: 'art-P1',
+            identifiers: { neurostore_base_study_id: 'BS1' },
+        },
         text_path: 'processed/text.txt',
         bibliography: { title: 'A Title' },
     });
@@ -111,5 +115,32 @@ describe('make-fixtures.py', () => {
     it.each(['22fv2dADxHqR', '25Czf8TcaxDS'].filter(hasFixture))('wrote the fixture %s to the bundle schema', (id) => {
         validateBundle(loadFixture(id));
         expect(validateBundle.errors ?? []).toEqual([]);
+    });
+});
+
+describe('make-fixtures.py without a required header field', () => {
+    it.each([
+        ['schema_version', 'missing'],
+        ['article_id', 'missing'],
+        ['schema_version', 'empty'],
+        ['article_id', 'empty'],
+    ])('fails naming the %s when it is %s and writes no bundle', (field, state) => {
+        const layout = makeLayout();
+        const parsedPath = path.join(layout, 'corpus', 'P1', 'parse', 'parsed_paper.json');
+        const parsed = JSON.parse(readFileSync(parsedPath, 'utf8'));
+        if (state === 'missing') {
+            delete parsed.header[field];
+        } else {
+            parsed.header[field] = '';
+        }
+        writeFileSync(parsedPath, JSON.stringify(parsed));
+        const out = mkdtempSync(path.join(tmpdir(), 'review-fixtures-'));
+        const run = () =>
+            execFileSync('python3', ['-s', script, layout, out, 'P1'], {
+                env: { ...process.env, PYTHONPATH: stubBackend() },
+                stdio: 'pipe',
+            });
+        expect(run).toThrow(`P1: parsed_paper header has no ${field}`);
+        expect(existsSync(path.join(out, 'P1.bundle.json'))).toBe(false);
     });
 });

@@ -34,6 +34,7 @@ from neurostore.tests.review.layouts import (
     dump,
     dump_unusual,
     write_layout,
+    zip_layout,
 )
 
 pytestmark = pytest.mark.anyio
@@ -165,25 +166,17 @@ def test_the_round_trip_gives_back_every_source_file_as_loaded(
     assert not (tmp_path / "out" / "unreviewed" / "run" / "revisions").exists()
 
 
-def test_a_paper_without_an_article_id_exports_under_its_base_study_id(
+def test_a_paper_without_an_article_id_fails_the_export_naming_the_source(
     session, reviewers, tmp_path
 ):
-    files, source_id = load(session, tmp_path / "in")
+    _, source_id = load(session, tmp_path / "in")
     source = session.get(ReviewSource, source_id)
     header = {k: v for k, v in source.parsed_paper["header"].items() if k != "article_id"}
     source.parsed_paper = {**source.parsed_paper, "header": header}
     session.commit()
-    base_study_id = source.fulltext.base_study_id
 
-    manifest = exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
-
-    root = tmp_path / "out" / "unreviewed"
-    assert [entry["path"] for entry in manifest] == [
-        f"unreviewed/run/records/{base_study_id}.extraction.json"
-    ]
-    assert (root / f"corpus/{base_study_id}/text/paper.txt").read_bytes() == TEXT.encode("utf-8")
-    record = json.loads((root / f"run/records/{base_study_id}.extraction.json").read_text())
-    assert record == json.loads(files["run/records/s1.extraction.json"])
+    with pytest.raises(ReviewError, match=f"{source_id}.*article_id"):
+        exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
 
 
 def test_an_unedited_review_exports_its_documents_and_an_empty_ops_file(
@@ -770,6 +763,29 @@ async def test_any_reviewer_gets_the_review_export_as_a_zip(
     assert_binary_matches_spec(response, "/review/reviews/{id}/export", "get")
 
 
+async def test_a_review_whose_paper_has_no_article_id_is_refused_naming_the_source(
+    clients, session, reviewers, tmp_path
+):
+    _, source_id = load(session, tmp_path / "in")
+    review_id = edit(session, source_id, REVIEWER, set_name("a1", "one"))
+    source = session.get(ReviewSource, source_id)
+    header = {k: v for k, v in source.parsed_paper["header"].items() if k != "article_id"}
+    source.parsed_paper = {**source.parsed_paper, "header": header}
+    session.commit()
+
+    response = await clients[OTHER].get(f"/api/review/reviews/{review_id}/export")
+
+    assert response.status_code == 422
+    assert source_id in response.json()["detail"]
+    assert_matches_spec(response, "/review/reviews/{id}/export", "get")
+
+    bulk = await clients[LEAD].post("/api/review/exports/", data={})
+
+    assert bulk.status_code == 422
+    assert source_id in bulk.json()["detail"]
+    assert_matches_spec(bulk, "/review/exports/", "post")
+
+
 async def test_an_unknown_review_export_is_not_found(clients):
     response = await clients[REVIEWER].get("/api/review/reviews/nope/export")
 
@@ -1137,3 +1153,46 @@ def test_an_export_ingested_again_carries_claims_orphans_the_rejected_and_keeps_
     assert layouts.check_revision(
         CoordinateParse.model_validate(parse), CoordinateParse.model_validate(revision)
     ) == []
+
+
+async def test_an_export_reimports_as_the_reviews_then_skips_everything(
+    clients, session, reviewers, tmp_path
+):
+    sources, _ = reviewed_papers(session, tmp_path)
+    response = await clients[LEAD].post("/api/review/exports/", data={"include_unreviewed": True})
+    extracted = tmp_path / "zip"
+    zipfile.ZipFile(io.BytesIO(response.content)).extractall(extracted)
+    files = {
+        path.relative_to(extracted / tree).as_posix(): path.read_bytes()
+        for tree in (REVIEWER, exports.UNREVIEWED_DIR)
+        for path in (extracted / tree).rglob("*")
+        if path.is_file()
+    }
+    archive = zip_layout(files, tmp_path / "layout.zip")
+
+    async def post_archive():
+        with archive.open("rb") as file:
+            response = await clients[LEAD].post(
+                "/api/review/imports/",
+                data={"file": ("layout.zip", file.read(), "application/zip")},
+                content_type="multipart/form-data",
+            )
+        assert response.status_code == 200, response.json()
+        return response.json()
+
+    first = await post_archive()
+
+    loaded = {entry["study_id"]: entry["source_id"] for entry in first["loaded"]}
+    assert first["failed"] == []
+    assert set(loaded) == {PAPER_ID, "art-s2"}
+    assert not set(loaded.values()) & set(sources.values())
+    assert [(entry["study_id"], entry["source_id"]) for entry in first["skipped"]] == [
+        ("art-s3", sources["s3"])
+    ]
+
+    second = await post_archive()
+
+    assert second["loaded"] == []
+    assert sorted((e["study_id"], e["source_id"]) for e in second["skipped"]) == sorted(
+        [(PAPER_ID, loaded[PAPER_ID]), ("art-s2", loaded["art-s2"]), ("art-s3", sources["s3"])]
+    )

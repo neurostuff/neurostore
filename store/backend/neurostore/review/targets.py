@@ -1,4 +1,4 @@
-"""The provenance key of a review target, shared by the ops and the coordinate verdicts."""
+"""The provenance keys of review targets: one key per target."""
 
 
 def target_key(target):

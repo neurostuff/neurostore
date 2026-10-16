@@ -3,12 +3,14 @@
 import copy
 import itertools
 import json
+import re
 import threading
 import time
 from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from jsonschema import Draft202012Validator
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -21,14 +23,17 @@ from neurostore.models import (
     ReviewOp,
     ReviewSource,
 )
+from neurostore.resources import body_limit
 from neurostore.resources.base import ObjectView
 from neurostore.review import bundle as review_bundle
 from neurostore.review import entities, exports, service
 from neurostore.review.bundle import validator
+from neurostore.review.ops import OPS_SCHEMA
 from neurostore.study_schema_tools import sha256_of
 from neurostore.tests import study_schema_fixtures as fx
+from neurostore.tests.request_utils import AsyncClient
 from neurostore.tests.review import records
-from neurostore.tests.review.layouts import LEAD, OTHER, REVIEWER, assert_matches_spec
+from neurostore.tests.review.layouts import LEAD, OTHER, REVIEWER, TOKENS, assert_matches_spec
 
 pytestmark = pytest.mark.anyio
 
@@ -74,6 +79,7 @@ def add_source(
         label=label,
         schema_versions={"paper_parse": "0.6.0", "extraction": "0.5.0"},
         record_sha256=sha256_of({"label": label, "record": record}),
+        judgeable_keys=entities.judgeable_keys(record, records.coordinate_parse()),
     )
     session.add(source)
     session.commit()
@@ -162,6 +168,265 @@ async def test_every_route_needs_the_admin_reviewer_role(clients, source, sessio
     assert op_count(session) == 0
 
 
+async def test_a_401_on_a_review_route_is_an_error_response(clients, source):
+    response = await clients[None].get("/api/review/sources/")
+
+    assert response.status_code == 401
+    body = response.json()
+    assert body["status"] == 401
+    assert body["title"] == "Unauthorized"
+    assert body["detail"]
+    assert body["request_id"]
+    assert body["timestamp"]
+    assert_matches_spec(response, "/review/sources/", "get")
+
+
+@pytest.fixture(params=["debug_off", "debug_on"])
+async def reviewer(request, clients):
+    """The reviewer's client on the app as it runs without DEBUG, and on one run with it."""
+    if request.param == "debug_off":
+        yield clients[REVIEWER]
+        return
+    client = AsyncClient(
+        token=TOKENS[REVIEWER],
+        asgi_app=request.getfixturevalue("debug_app"),
+        username=REVIEWER,
+    )
+    yield client
+    await client.aclose()
+
+
+@pytest.fixture(scope="module")
+def debug_app(app):
+    from neurostore import create_asgi_app
+
+    return create_asgi_app({**app.config, "DEBUG": True})
+
+
+async def test_a_400_on_a_review_route_is_an_error_response_that_does_not_echo_the_batch(
+    reviewer, source, session
+):
+    review = add_review(session, source, REVIEWER)
+    too_many = [accept(f"grp_marker_{n}") for n in range(501)]
+
+    response = await reviewer.post(
+        f"/api/review/reviews/{review.id}/ops", data=batch(0, *too_many)
+    )
+
+    assert response.status_code == 400
+    body = response.json()
+    assert body["status"] == 400
+    assert body["title"] == "Bad Request"
+    assert body["request_id"]
+    assert body["timestamp"]
+    assert body["errors"] == [
+        {"field": "ops", "code": "maxItems", "message": "failed the maxItems rule"}
+    ]
+    assert_matches_spec(response, "/review/reviews/{id}/ops", "post")
+    assert "grp_marker_" not in response.text
+    assert op_count(session) == 0
+
+
+@pytest.mark.parametrize("body", [b"{\"ops\": [", b""], ids=["invalid_json", "empty_body"])
+async def test_a_body_that_is_not_json_or_is_empty_is_a_400_error_response(
+    reviewer, source, session, body
+):
+    review = add_review(session, source, REVIEWER)
+
+    response = await reviewer.post(
+        f"/api/review/reviews/{review.id}/ops",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        json_dump=False,
+    )
+
+    assert response.status_code == 400
+    error = response.json()
+    assert error["status"] == 400
+    assert len(error["errors"]) == 1
+    assert error["errors"][0]["message"]
+    assert_matches_spec(response, "/review/reviews/{id}/ops", "post")
+    assert op_count(session) == 0
+
+
+def compact(document):
+    return json.dumps(document, separators=(",", ":")).encode()
+
+
+async def post_streamed(client, path, body):
+    async def chunks():
+        for start in range(0, len(body), 16):
+            yield body[start:start + 16]
+
+    return await client.client.post(
+        path,
+        content=chunks(),
+        headers={
+            "Authorization": f"Bearer {TOKENS[REVIEWER]}",
+            "Content-Type": "application/json",
+        },
+    )
+
+
+async def test_a_review_body_over_the_cap_is_refused_with_413_before_it_is_read(
+    clients, source, session, monkeypatch
+):
+    monkeypatch.setattr(body_limit, "MAX_REVIEW_BODY_BYTES", 100)
+    review = add_review(session, source, REVIEWER)
+    oversized = json.dumps(batch(0, accept("grp_a"), accept("grp_b"), accept("grp_c"))).encode()
+
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review.id}/ops",
+        data=oversized,
+        headers={"Content-Type": "application/json"},
+        json_dump=False,
+    )
+
+    assert response.status_code == 413
+    body = response.json()
+    assert body["status"] == 413
+    assert body["title"] == "Payload Too Large"
+    assert body["request_id"]
+    assert_matches_spec(response, "/review/reviews/{id}/ops", "post")
+    assert op_count(session) == 0
+
+
+async def test_a_streamed_review_body_over_the_cap_is_refused_with_413(
+    clients, source, session, monkeypatch
+):
+    monkeypatch.setattr(body_limit, "MAX_REVIEW_BODY_BYTES", 100)
+    review = add_review(session, source, REVIEWER)
+
+    async def chunks():
+        for _ in range(10):
+            yield b"x" * 20
+
+    response = await clients[REVIEWER].client.post(
+        f"/api/review/reviews/{review.id}/ops",
+        content=chunks(),
+        headers={
+            "Authorization": f"Bearer {TOKENS[REVIEWER]}",
+            "Content-Type": "application/json",
+        },
+    )
+
+    assert response.status_code == 413
+    body = response.json()
+    assert body["status"] == 413
+    assert body["title"] == "Payload Too Large"
+    assert body["request_id"]
+    assert op_count(session) == 0
+
+
+async def test_a_review_body_at_the_cap_is_read(clients, source, session, monkeypatch):
+    review = add_review(session, source, REVIEWER)
+    body = compact(batch(0, accept("grp_a")))
+    monkeypatch.setattr(body_limit, "MAX_REVIEW_BODY_BYTES", len(body))
+
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review.id}/ops",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        json_dump=False,
+    )
+
+    assert response.status_code == 200, response.json()
+
+
+async def test_a_declared_review_body_one_byte_over_the_cap_is_refused(
+    clients, source, session, monkeypatch
+):
+    review = add_review(session, source, REVIEWER)
+    body = compact(batch(0, accept("grp_a")))
+    monkeypatch.setattr(body_limit, "MAX_REVIEW_BODY_BYTES", len(body) - 1)
+
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review.id}/ops",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        json_dump=False,
+    )
+
+    assert response.status_code == 413
+    assert op_count(session) == 0
+
+
+async def test_a_streamed_review_body_at_the_cap_is_read(clients, source, session, monkeypatch):
+    review = add_review(session, source, REVIEWER)
+    body = compact(batch(0, accept("grp_a")))
+    monkeypatch.setattr(body_limit, "MAX_REVIEW_BODY_BYTES", len(body))
+
+    response = await post_streamed(clients[REVIEWER], f"/api/review/reviews/{review.id}/ops", body)
+
+    assert response.status_code == 200, response.json()
+
+
+async def test_a_streamed_review_body_one_byte_over_the_cap_is_refused(
+    clients, source, session, monkeypatch
+):
+    review = add_review(session, source, REVIEWER)
+    body = compact(batch(0, accept("grp_a")))
+    monkeypatch.setattr(body_limit, "MAX_REVIEW_BODY_BYTES", len(body) - 1)
+
+    response = await post_streamed(clients[REVIEWER], f"/api/review/reviews/{review.id}/ops", body)
+
+    assert response.status_code == 413
+    assert op_count(session) == 0
+
+
+async def test_a_malformed_content_length_on_a_review_route_is_not_a_500(
+    clients, source, session, monkeypatch
+):
+    review = add_review(session, source, REVIEWER)
+    monkeypatch.setattr(body_limit, "MAX_REVIEW_BODY_BYTES", 100)
+    oversized = compact(batch(0, accept("grp_a"), accept("grp_b"), accept("grp_c")))
+
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review.id}/ops",
+        data=oversized,
+        headers={"Content-Type": "application/json", "Content-Length": "lots"},
+        json_dump=False,
+    )
+
+    assert response.status_code == 413
+    assert op_count(session) == 0
+
+
+def test_a_maximal_schema_valid_batch_fits_under_the_review_body_limit():
+    note = "n" * 10000
+    maximal = batch(
+        0,
+        *[
+            {
+                "client_op_id": f"max-{n:06d}",
+                "type": "note",
+                "target": {"kind": "entity", "entity": "grp_a"},
+                "note": note,
+            }
+            for n in range(500)
+        ],
+    )
+    schema = json.loads(OPS_SCHEMA.read_text("utf-8"))
+
+    assert list(Draft202012Validator(schema).iter_errors({"ops": maximal["ops"]})) == []
+    assert len(compact(maximal)) <= body_limit.MAX_REVIEW_BODY_BYTES
+
+
+async def test_a_403_on_a_review_route_is_an_error_response(clients, source, make_user):
+    make_user("newuser-id", "admin")
+
+    response = await clients["newuser-id"].get("/api/review/sources/")
+
+    assert response.status_code == 403
+    body = response.json()
+    assert body["status"] == 403
+    assert body["title"] == "Forbidden"
+    assert body["detail"]
+    assert body["request_id"]
+    assert body["timestamp"]
+    assert_matches_spec(response, "/review/sources/", "get")
+
+
 # listing sources
 
 
@@ -236,12 +501,36 @@ async def test_the_source_list_gives_each_source_its_judgeable_total(clients, se
         fx.table_analysis("t1", [1], "patients > controls", [fx.point((10, 20, 30))]),
         fx.table_analysis("t2", [2], "controls > patients", [fx.point((1, 2, 3))]),
     ])
+    full.judgeable_keys = entities.judgeable_keys(full.record, full.coordinate_parse)
     empty = add_source(session, label="Empty paper", record={"local_id": "study-2"})
     empty.coordinate_parse = fx.parse([])
+    empty.judgeable_keys = entities.judgeable_keys(empty.record, empty.coordinate_parse)
     session.commit()
     response = await clients[REVIEWER].get("/api/review/sources/")
     totals = {row["id"]: row["total"] for row in response.json()["results"]}
     assert totals == {full.id: 5, empty.id: 0}
+
+
+async def test_the_source_list_totals_the_judgeable_keys_stored_with_the_source(
+    clients, source, session
+):
+    source.judgeable_keys = ["slot:only:name"]
+    session.commit()
+    response = await clients[REVIEWER].get("/api/review/sources/")
+    [row] = response.json()["results"]
+    assert row["total"] == 1
+
+
+def test_the_source_list_never_selects_a_records_body(session, statements, make_user):
+    make_user(REVIEWER)
+    source = add_source(session, label="Large paper")
+    add_review(session, source, REVIEWER)
+    session.expunge_all()
+    with statements() as seen:
+        service.list_sources(session, REVIEWER)
+    assert not any(re.search(r"\.(record|coordinate_parse)\b", s) for s in seen)
+    page = [s for s in seen if re.search(r"\bLIMIT\b", s)]
+    assert any("review_sources.judgeable_keys" in s.split(" FROM ")[0] for s in page)
 
 
 async def test_the_source_list_counts_the_judgeable_targets_a_review_has_reviewed(

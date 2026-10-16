@@ -144,7 +144,7 @@ def rehash_entities_command(base_study_id, batch_size):
 
 @main.command("review-import")
 @click.argument("path", type=click.Path(exists=True, path_type=Path))
-@click.option("--user-id", default=None, help="the reviewer who loads the papers")
+@click.option("--user-id", required=True, help="the reviewer who loads the papers")
 @click.option("--run-id", default=None, help="the pipeline run the records came from")
 def review_import_command(path, user_id, run_id):
     """Load the papers of a study_schema layout directory or zip for review.

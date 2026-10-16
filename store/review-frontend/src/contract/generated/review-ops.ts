@@ -71,7 +71,7 @@ export type LinkOp = OpBase & {
     type: 'link' | 'unlink';
     target: RelationshipTarget;
     /**
-     * Position in the list; appended when absent.
+     * Position in the list; appended when absent. Link only.
      */
     index?: number;
 };

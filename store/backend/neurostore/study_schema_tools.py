@@ -34,8 +34,8 @@ CHILD_LISTS = {
     "ModelEstimation": (("terms", "ModelTerm"),),
 }
 
-#: The slots of each storage class's first unique key, which selectors use: the only nested
-#: lists a claim path may index.
+#: The first x-unique-keys entry per storage class, which selectors use: the only nested lists
+#: a claim path may index.
 DECLARED_KEYS = {cls: slots[0] for cls, slots in unique_keys("storage-study").items()}
 
 

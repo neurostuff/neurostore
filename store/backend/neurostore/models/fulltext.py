@@ -1,21 +1,20 @@
 import hashlib
 
 import sqlalchemy as sa
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, validates
 
 from neurostore.database import db
 from neurostore.models.data import BaseMixin, BaseStudy
 
-#: Tier of each ingestion source; lower is better: 1 JATS/XML, 2 ACE's HTML scrape, 3 PDF text.
-FULLTEXT_SOURCE_TIERS = {
-    "pubget": 1,
-    "pmc": 1,
-    "europepmc": 1,
-    "elsevier": 1,
-    "springer": 1,
-    "ace": 2,
-    "pdf": 3,
+#: The ingestion sources a full text may come from, each with its preference; lower wins.
+FULLTEXT_SOURCE_PREFERENCE = {
+    "pubget": 0,
+    "pmc": 0,
+    "europepmc": 0,
+    "elsevier": 0,
+    "springer": 0,
+    "ace": 1,
+    "pdf": 2,
 }
 
 
@@ -29,30 +28,20 @@ class Fulltext(BaseMixin, db.Model):
     )
     source = db.Column(db.Text, nullable=False)
     source_version = db.Column(db.Text)
-    _tier = db.Column("tier", db.SmallInteger, nullable=False)
     sha256 = db.Column(db.String(64), nullable=False)
     text = db.Column(db.Text, nullable=False)
 
     __table_args__ = (
-        sa.CheckConstraint(
-            _tier.in_(sorted(set(FULLTEXT_SOURCE_TIERS.values()))), name="ck_fulltexts_tier"
-        ),
         sa.UniqueConstraint("base_study_id", "sha256", name="uq_fulltexts_base_study_sha256"),
-        sa.Index("ix_fulltexts_base_study_tier_created", "base_study_id", "tier", "created_at"),
+        sa.Index("ix_fulltexts_base_study_created", "base_study_id", "created_at"),
     )
 
     base_study = relationship("BaseStudy", foreign_keys=[base_study_id])
 
-    @hybrid_property
-    def tier(self):
-        return self._tier
-
     @validates("source")
-    def _set_tier(self, key, source):
-        try:
-            self._tier = FULLTEXT_SOURCE_TIERS[source]
-        except KeyError:
-            raise ValueError(f"Unknown full text source: {source!r}") from None
+    def _check_source(self, key, source):
+        if source not in FULLTEXT_SOURCE_PREFERENCE:
+            raise ValueError(f"Unknown full text source: {source!r}")
         return source
 
     @validates("text")
@@ -62,11 +51,15 @@ class Fulltext(BaseMixin, db.Model):
 
 
 def refresh_fulltext_pointer(connection, base_study_id):
-    """Point the base study at its best full text: lowest tier, then newest."""
+    """Point the base study at its most preferred full text, then its newest."""
     best = (
         sa.select(Fulltext.id)
         .where(Fulltext.base_study_id == base_study_id)
-        .order_by(Fulltext.tier, Fulltext.created_at.desc(), Fulltext.id)
+        .order_by(
+            sa.case(FULLTEXT_SOURCE_PREFERENCE, value=Fulltext.source),
+            Fulltext.created_at.desc(),
+            Fulltext.id,
+        )
         .limit(1)
         .scalar_subquery()
     )

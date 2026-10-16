@@ -126,7 +126,7 @@
           "description": "Client-minted op id, unique within a review.",
           "type": "string",
           "minLength": 8,
-          "maxLength": 64
+          "maxLength": 128
         },
         "note": {"type": ["string", "null"], "maxLength": 10000}
       }
@@ -232,9 +232,11 @@
         "note": true,
         "type": {"enum": ["link", "unlink"]},
         "target": {"$ref": "#/$defs/RelationshipTarget"},
-        "index": {"description": "Position in the list; appended when absent.", "type": "integer", "minimum": 0}
+        "index": {"description": "Position in the list; appended when absent. Link only.", "type": "integer", "minimum": 0}
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "if": {"properties": {"type": {"const": "unlink"}}, "required": ["type"]},
+      "then": {"not": {"required": ["index"]}}
     },
     "CoordinateOp": {
       "description": "An edit of the coordinate parse. The server applies it to the reviewer's revision, computes every key itself, and derives each original analysis's verdict from the analyses the revision then holds. The record's Analysis entities change in the same op.",

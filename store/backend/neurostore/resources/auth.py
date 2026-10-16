@@ -7,23 +7,26 @@ from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
 from jose import jwt
 
+from neurostore.exceptions.handlers import error_response, is_review_path
+
 
 def _oauth_problem(detail):
     return OAuthProblem(detail=detail)
 
 
 async def asgi_oauth_problem_handler(request, exc):
-    status_code = getattr(exc, "status_code", 401)
+    if is_review_path(request.url.path):
+        return error_response(request, exc.status_code, "Unauthorized", exc.detail, exc=exc)
     return ConnexionResponse(
         body=json.dumps(
             {
                 "type": "about:blank",
-                "title": "Unauthorized" if status_code == 401 else "Error",
-                "detail": getattr(exc, "detail", str(exc)),
-                "status": status_code,
+                "title": "Unauthorized",
+                "detail": exc.detail,
+                "status": exc.status_code,
             }
         ),
-        status_code=status_code,
+        status_code=exc.status_code,
         mimetype="application/json",
     )
 

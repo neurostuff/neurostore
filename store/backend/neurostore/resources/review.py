@@ -135,9 +135,12 @@ class ReviewOpsView:
 class ReviewExportView:
     def get(self, id):
         _reviewer()
-        return _zipped(
-            lambda root: exports.export_review(db.session, id, root), f"review-{id}.zip"
-        )
+        try:
+            return _zipped(
+                lambda root: exports.export_review(db.session, id, root), f"review-{id}.zip"
+            )
+        except ReviewError as error:
+            abort_unprocessable(str(error))
 
 
 class ReviewExportsView:

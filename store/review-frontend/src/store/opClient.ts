@@ -68,6 +68,12 @@ export function isRetryable(error: unknown): boolean {
     return error instanceof ApiError && (error.status >= 500 || error.status === 429);
 }
 
+function saveMessage(error: unknown): string {
+    const [first] = error instanceof ApiError ? error.body.errors ?? [] : [];
+    if (first) return first.field ? `${first.field}: ${first.message}` : first.message;
+    return error instanceof Error ? error.message : 'the save failed';
+}
+
 function needsSignIn(error: unknown): boolean {
     if (error instanceof ApiError) return error.status === 401;
     return SIGN_IN_CODES.includes((error as { error?: string } | null)?.error ?? '');
@@ -108,7 +114,7 @@ export function createOpClient(store: ReviewStore, api: ReviewApi) {
         if (needsSignIn(error)) state().setSave('signin');
         else if (error instanceof ApiError && error.status === 403) state().setSave('failed', ROLE_MESSAGE);
         else if (error instanceof ApiError && error.status === 404) state().setSave('failed', 'the review is gone');
-        else state().setSave('failed', error instanceof Error ? error.message : 'the save failed');
+        else state().setSave('failed', saveMessage(error));
         return false;
     }
 

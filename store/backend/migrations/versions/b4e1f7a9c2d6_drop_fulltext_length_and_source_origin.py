@@ -1,8 +1,6 @@
-"""drop fulltexts.length and review_sources.origin
+"""Drops fulltexts.length and review_sources.origin (derived in the models).
 
-Nothing reads the length; a source's origin is pipeline_run when it names both a pipeline config
-and a run, and upload otherwise, so the models derive it. The downgrade restores both columns
-from the stored text and the source's pipeline columns.
+The downgrade restores both from the text and the pipeline columns.
 
 Revision ID: b4e1f7a9c2d6
 Revises: c5d8e2f4a6b1

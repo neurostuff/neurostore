@@ -50,6 +50,10 @@ def _escapes_paper(text_path):
     return path.is_absolute() or ".." in path.parts
 
 
+def _provenance_path(study_id):
+    return f"run/provenance/{study_id}.json"
+
+
 def _revision_path(study_id):
     return f"run/revisions/{study_id}.coordinate_parse.json"
 
@@ -95,6 +99,21 @@ def paper_from_documents(study_id, parsed_paper, coordinate_parse, record, text)
         record=record,
         text=text,
     )
+
+
+def read_provenance(root: Path | zipfile.Path, study_id: str) -> dict | None:
+    """The provenance wrapper beside a paper's record, or None when the layout has none."""
+    relative = _provenance_path(study_id)
+    if not (root / relative).is_file():
+        return None
+    raw = _read(root, [relative])
+    try:
+        document = json.loads(raw[relative])
+    except ValueError as error:
+        raise LayoutError([f"{relative} is not JSON: {error}"]) from error
+    if not isinstance(document, dict):
+        raise LayoutError([f"{relative} is not a JSON object"])
+    return document
 
 
 def read_paper(root: Path | zipfile.Path, study_id: str) -> Paper:

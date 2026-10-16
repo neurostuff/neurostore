@@ -28,13 +28,21 @@ def read_json(path):
         return json.load(f)
 
 
+def require_header_fields(parsed_paper, paper_id):
+    header = parsed_paper.get("header", {})
+    for field in ("schema_version", "article_id"):
+        if not header.get(field):
+            raise SystemExit(f"{paper_id}: parsed_paper header has no {field}")
+    return header
+
+
 def make_bundle(layout, paper_id):
     paper_dir = layout / "corpus" / paper_id
     parsed_paper = read_json(paper_dir / "parse" / "parsed_paper.json")
+    header = require_header_fields(parsed_paper, paper_id)
     coordinate_parse = read_json(paper_dir / "parse" / "coordinate_parse.json")
     record = read_json(layout / "run" / "records" / f"{paper_id}.extraction.json")
     raw = (paper_dir / parsed_paper["text_path"]).read_bytes()
-    header = parsed_paper.get("header", {})
     metadata = record.get("extraction_metadata", {})
     return {
         "source": {
@@ -46,7 +54,7 @@ def make_bundle(layout, paper_id):
             "origin": "upload",
             "text_sha256": hashlib.sha256(raw).hexdigest(),
             "schema_versions": {
-                "paper_parse": header.get("schema_version", ""),
+                "paper_parse": header["schema_version"],
                 "extraction": metadata.get("schema_version", ""),
             },
         },

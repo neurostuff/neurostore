@@ -327,7 +327,7 @@ export function parseScalar(spec: Scalar, raw: string): Parsed {
     }
 }
 
-/** The class a reference slot links to, from the extraction-record x-reference annotations, by the rule record.ts gives the slot. */
+/** The class a reference slot links to, from REFERENCE_SLOTS (the x-reference annotations), by the rule record.ts gives the slot. */
 export function referenceTarget(row: { entity_class: string; schema_class: string }, path: string): string | undefined {
     const steps = parsePath(path);
     const attribute = steps.filter((step): step is string => typeof step === 'string').at(-1);

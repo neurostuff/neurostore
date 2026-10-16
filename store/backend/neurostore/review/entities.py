@@ -75,6 +75,19 @@ def index_rows(record):
     ]
 
 
+def judgeable_keys(record, parse):
+    """The sorted provenance keys a reviewer can judge in a source: each extracted value of its
+    record's entities, and each analysis of its coordinate parse."""
+    values = {
+        f"slot:{wrapper['entity']}:{wrapper['path']}" for wrapper in walk(record)["wrappers"]
+    }
+    analyses = {
+        f"coordinate_analysis:{analysis['key']}"
+        for analysis in (parse or {}).get("analyses") or []
+    }
+    return sorted(values | analyses)
+
+
 def table_key(analysis):
     """The coordinate-parse key an Analysis item's source_table_analysis names, or None."""
     slot = analysis.get("source_table_analysis")

@@ -21,4 +21,5 @@ export function referenceSlotsOf(schema: Schema): Reference[] {
         .sort((a, b) => a.class.localeCompare(b.class) || a.slot.localeCompare(b.slot));
 }
 
+/** Each extraction-schema property that carries x-reference, with the class it links to. */
 export const REFERENCE_SLOTS: Reference[] = referenceSlotsOf(extractionSchema);

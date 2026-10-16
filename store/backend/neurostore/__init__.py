@@ -33,6 +33,7 @@ from neurostore.observability.sentry import configure_sentry
 from neurostore.resolver import ReviewResolver
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler
+from neurostore.resources.body_limit import ReviewBodyLimitMiddleware
 from neurostore.settings import load_settings
 
 
@@ -259,7 +260,9 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
     app = _SettingsMiddleware(
-        _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs)),
+        _DatabaseSessionMiddleware(
+            CORSMiddleware(ReviewBodyLimitMiddleware(app), **cors_kwargs)
+        ),
         settings,
         _logger,
     )

@@ -993,3 +993,20 @@ def test_a_mixed_batch_writes_provenance_and_annotations_the_bundle_schema_accep
         provenance.validate(entry)
     for key in after.annotations:
         target_key.validate(key)
+
+
+def test_a_client_op_id_of_128_characters_is_accepted_and_129_refused():
+    long_id = "x" * 128
+    _, stored = apply(state(), {**SET_N, "client_op_id": long_id})
+    assert [entry["op"]["client_op_id"] for entry in stored] == [long_id]
+    errors = errors_of(state(), {**SET_N, "client_op_id": "x" * 129})
+    assert errors[0].startswith("op 0:") and "client_op_id" in errors[0]
+
+
+def test_unlink_refuses_an_index():
+    errors = errors_of(
+        state(),
+        op("link", target=relationship("an_1", "regions", "reg_1")),
+        op("unlink", target=relationship("an_1", "regions", "reg_1"), index=0),
+    )
+    assert errors[0].startswith("op 1:") and "index" in errors[0]

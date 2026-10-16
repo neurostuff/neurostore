@@ -142,7 +142,9 @@ def _write_review(root, source, review, taken):
 
 def _paper_id(source, taken):
     """The article id, or ``<article id>~<source id>`` when an earlier source took it."""
-    article_id = source.parsed_paper["header"].get("article_id") or source.fulltext.base_study_id
+    article_id = source.parsed_paper["header"].get("article_id")
+    if not article_id:
+        raise ReviewError(f"review source {source.id} has no article_id in its parsed paper")
     paper_id = article_id if article_id not in taken else f"{article_id}~{source.id}"
     taken.add(paper_id)
     return paper_id

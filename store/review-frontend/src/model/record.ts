@@ -90,7 +90,7 @@ function referencesIn(value: unknown): string[] | null {
     return null;
 }
 
-/** Whether `attribute` of the entity `row` is a reference slot: nested slots by name, top-level ones by class (the extraction-record x-reference annotations). */
+/** Whether `attribute` of the entity `row` is a reference slot: nested slots by name, top-level ones by class (from REFERENCE_SLOTS, the x-reference annotations). */
 export function isReferenceSlot(
     row: Pick<EntityRow, 'entity_class' | 'schema_class'>,
     nested: boolean,

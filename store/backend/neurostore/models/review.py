@@ -22,6 +22,7 @@ class ReviewSource(BaseMixin, db.Model):
     parsed_paper = db.Column(JSONB)
     coordinate_parse = db.Column(JSONB)
     record = db.Column(JSONB, nullable=False)
+    judgeable_keys = db.Column(JSONB, nullable=False)
     pipeline_config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id"), nullable=True, index=True
     )
