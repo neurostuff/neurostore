@@ -38,6 +38,16 @@ import { panelFor } from '../inspector/actions';
 import { fromSchemaKeyed } from '../contract/schemas';
 import { declaredAttributes } from '../inspector/schema';
 import { STEPS, type StepId } from '../review/steps';
+import {
+    answerSteps,
+    isReady,
+    NOT_UNDONE,
+    revertedBy,
+    settled,
+    undoing,
+    type InverseOp,
+    type UndoStep,
+} from './undoSteps';
 
 export type EvidenceMode = 'first' | 'new';
 
@@ -92,7 +102,7 @@ export interface Blocked {
 }
 
 export interface Notice {
-    kind: 'conflict' | 'refused' | 'dangling' | 'split';
+    kind: 'conflict' | 'refused' | 'dangling' | 'split' | 'undo' | 'redo';
     slot: string;
     message: string;
 }
@@ -175,8 +185,16 @@ export interface ReviewState {
     dismissNotices(): void;
     /** Puts an op in pending: applied at once when it is local, held unapplied when the server applies it. */
     emit(op: Op): boolean;
-    /** Puts server-applied ops in pending as one batch, sent in one request whatever the save timing. */
+    /** Puts the ops of one intent in pending as one batch, sent in one request whatever the save timing. */
     emitBatch(ops: Op[]): boolean;
+    undoStack: UndoStep[];
+    redoStack: UndoStep[];
+    /** The undo or redo asked for while the step it takes was unconfirmed, run once the server confirms it. */
+    waitingTo: 'undo' | 'redo' | null;
+    /** Sends the inverse of the last user intent as one batch, and moves it to the redo stack. */
+    undo(): void;
+    /** Sends the inverse of the last undo as one batch, and moves it back to the undo stack. */
+    redo(): void;
 }
 
 export type ReviewStore = ReturnType<typeof createReviewStore>;
@@ -236,6 +254,12 @@ export const selectCanAddEvidence = (s: Pick<ReviewState, 'index' | 'focus'>): b
 };
 
 export const selectIsBlocked = (s: Pick<ReviewState, 'blocked'>): boolean => s.blocked != null;
+
+export const selectCanUndo = (s: Pick<ReviewState, 'blocked' | 'undoStack'>): boolean =>
+    !selectIsBlocked(s) && s.undoStack.length > 0;
+
+export const selectCanRedo = (s: Pick<ReviewState, 'blocked' | 'redoStack'>): boolean =>
+    !selectIsBlocked(s) && s.redoStack.length > 0;
 
 export function selectSaveLabel({
     save,
@@ -321,6 +345,10 @@ function replay(
     }
     return { documents, pending, notices };
 }
+
+/** A stored op as the bundle logs it: without the inverse an op result adds. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const logged = ({ inverse, ...rest }: StoredOp): StoredOp => rest;
 
 function rebuiltIndex(bundle: ReviewBundle, record: Json, previous: RecordIndex, focus: Focus) {
     return withSlotOrderOf(buildRecordIndex({ ...bundle, record }, declaredOf), previous, focus.entity);
@@ -414,7 +442,8 @@ export function createReviewStore(
             pending: Op[],
             notices: Notice[] = [],
             touched: string[] | null = null,
-            carry?: (record: Json, op: Op) => Op
+            carry?: (record: Json, op: Op) => Op,
+            answers = new Map<string, InverseOp[]>()
         ) => {
             const state = get();
             const replayed = replay(next, documentsOf(next), pending, now(), 'conflict', carry);
@@ -448,35 +477,86 @@ export function createReviewStore(
                 focusedSpans,
                 evidenceCursor: clamp(state.evidenceCursor, Math.max(focusedSpans.length - 1, 0)),
                 notices: [...state.notices, ...notices, ...replayed.notices],
+                ...settled(
+                    answerSteps({ undoStack: state.undoStack, redoStack: state.redoStack }, answers),
+                    new Set(replayed.pending.map((op) => op.client_op_id)),
+                    new Set(next.ops.map((s) => s.op.client_op_id))
+                ),
             });
         };
 
-        /** Puts `op` in pending, applied at once unless it waits for the server; false when the core refuses it. */
-        const push = (op: Op, extra?: (state: ReviewState) => Partial<ReviewState>): boolean => {
+        /**
+         * Puts `ops` in pending as one batch, in the update that makes `also`: applied at once when none waits for
+         * the server, else held unapplied. False, with a notice of `kind`, when the core refuses one.
+         */
+        const pushBatch = (ops: Op[], kind: Notice['kind'], also: Partial<ReviewState>): boolean => {
             const state = get();
-            if (waits(state.pending, op)) {
-                set({ pending: [...state.pending, op] });
-            } else {
-                const replayed = replay(state.bundle, state, [op], now(), 'refused');
-                if (replayed.notices.length > 0) {
-                    set({ notices: [...state.notices, ...replayed.notices] });
-                    return false;
-                }
-                const { documents } = replayed;
-                const key = 'target' in op ? targetKey(op.target) : '';
-                const index =
-                    key.startsWith('slot:') && !state.index.slot(key)
-                        ? rebuiltIndex(state.bundle, documents.record, state.index, state.focus)
-                        : withSlotFrom(state.index, documents.record, key);
-                set({
-                    ...documents,
-                    index,
-                    focusedSpans: spansNow(state.bundle, index, state.focus, state.coordinates),
-                    pending: [...state.pending, op],
-                });
+            const pending = [...state.pending, ...ops];
+            const groupOf =
+                ops.length > 1
+                    ? {
+                          ...state.groupOf,
+                          ...Object.fromEntries(ops.map((op) => [op.client_op_id, ops[0].client_op_id])),
+                      }
+                    : state.groupOf;
+            if (ops.some((op) => waits(state.pending, op))) {
+                set({ pending, groupOf, ...also });
+                return true;
             }
-            if (extra) set(extra(get()));
+            const replayed = replay(state.bundle, state, ops, now(), kind);
+            if (replayed.notices.length > 0) {
+                set({ notices: [...state.notices, ...replayed.notices] });
+                return false;
+            }
+            const { documents } = replayed;
+            const index = ops.reduce((view, op) => {
+                const key = 'target' in op ? targetKey(op.target) : '';
+                return key.startsWith('slot:') && !view.slot(key)
+                    ? rebuiltIndex(state.bundle, documents.record, view, state.focus)
+                    : withSlotFrom(view, documents.record, key);
+            }, state.index);
+            set({
+                ...documents,
+                index,
+                focusedSpans: spansNow(state.bundle, index, state.focus, state.coordinates),
+                pending,
+                groupOf,
+                ...also,
+            });
             return true;
+        };
+
+        /** Puts the ops of one user intent in pending, as one undo step; false when the core refuses them. */
+        const pushEdit = (ops: Op[]): boolean => {
+            const { undoStack, redoStack } = get();
+            const undone = ops.filter((op) => !NOT_UNDONE.has(op.type)).map((op) => op.client_op_id);
+            return pushBatch(ops, 'refused', {
+                undoStack: undone.length ? [...undoStack, { ops: undone, inverses: {} }] : undoStack,
+                redoStack: redoStack.length ? [] : redoStack,
+                waitingTo: null,
+            });
+        };
+
+        /** Sends the inverse of the top step of `from`, moving the step to the other stack once sent. */
+        const sendInverse = (from: 'undo' | 'redo') => {
+            const state = get();
+            const top = (from === 'undo' ? state.undoStack : state.redoStack).at(-1);
+            if (!top || selectIsBlocked(state)) {
+                set({ waitingTo: null });
+                return;
+            }
+            if (!isReady(top)) {
+                set({ waitingTo: from });
+                return;
+            }
+            const ops = undoing(top);
+            const sent: UndoStep = { ops: ops.map((op) => op.client_op_id), inverses: {}, reverts: top };
+            const { undoStack, redoStack } = state;
+            const moved =
+                from === 'undo'
+                    ? { undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, sent] }
+                    : { redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, sent] };
+            if (!pushBatch(ops, from, { ...moved, waitingTo: null })) set({ waitingTo: null });
         };
 
         const mints = new Map<string, Promise<void>>();
@@ -527,6 +607,9 @@ export function createReviewStore(
             merging: [],
             showNonCoordinate: false,
             offer: null,
+            undoStack: [],
+            redoStack: [],
+            waitingTo: null,
 
             focusAnalysis: (key, point = null) => {
                 const { bundle: current, coordinates } = get();
@@ -634,13 +717,15 @@ export function createReviewStore(
                     target: slotTarget(slot.entity, slot.path),
                     evidence: withSpan(slot.value?.evidence, intent.span, intent.set_index),
                 };
-                return push(op, (s) => ({
+                if (!pushEdit([op])) return false;
+                set((s) => ({
                     intents: { ...s.intents, [op.client_op_id]: intent },
                     evidenceCursor: Math.max(
                         s.focusedSpans.findIndex(([start, end]) => start === span[0] && end === span[1]),
                         0
                     ),
                 }));
+                return true;
             },
             minted: (clientOpId) => mints.get(clientOpId) ?? Promise.resolve(),
             setStep: (step) => {
@@ -700,6 +785,11 @@ export function createReviewStore(
                     annotations: dom.annotations,
                 };
                 const rest = pending.filter((op) => !sentIds.has(op.client_op_id));
+                const inverses = new Map(
+                    result.ops.flatMap((s) =>
+                        s.inverse ? [[s.op.client_op_id, spansToUtf16(current.text, s.inverse as InverseOp[])]] : []
+                    )
+                );
                 const touched = [...sent, ...rest].flatMap((op) => ('target' in op ? [targetKey(op.target)] : []));
                 const linked = (after: Record<string, unknown>, field: string, kind: Notice['kind']): Notice[] =>
                     Array.isArray(after[field])
@@ -723,11 +813,13 @@ export function createReviewStore(
                         hidden: result.hidden,
                         entities: (result.entities as ReviewBundle['entities'] | undefined) ?? current.entities,
                         review,
-                        ops: [...ops, ...result.ops.filter((s) => !seqs.has(s.seq))],
+                        ops: [...ops, ...result.ops.filter((s) => !seqs.has(s.seq)).map(logged)],
                     },
                     rest,
                     dangling,
-                    sent.every(isLocalOp) ? touched : null
+                    sent.every(isLocalOp) ? touched : null,
+                    undefined,
+                    inverses
                 );
                 const created = sent.flatMap((op) =>
                     op.type === 'create_entity' && typeof (op.entity as Json).local_id === 'string'
@@ -736,6 +828,8 @@ export function createReviewStore(
                 );
                 refocus(current.entities, created.at(-1));
                 refocusCoordinates(before, sent);
+                const { waitingTo } = get();
+                if (waitingTo) sendInverse(waitingTo);
             },
             rebase: (fresh) => {
                 const stored = new Set(fresh.ops.map((s) => s.op.client_op_id));
@@ -752,11 +846,17 @@ export function createReviewStore(
                 refocusCoordinates(before, []);
             },
             refuse: (refusals) => {
+                const { undoStack, redoStack, bundle: current, pending } = get();
                 const refused = new Set(refusals.map((r) => r.op.client_op_id));
+                const { kinds, dropped } = revertedBy({ undoStack, redoStack }, refused);
                 withDocuments(
-                    get().bundle,
-                    get().pending.filter((op) => !refused.has(op.client_op_id)),
-                    refusals.map(({ op, message }) => ({ kind: 'refused', slot: slotLabel(op), message }))
+                    current,
+                    pending.filter((op) => !dropped.has(op.client_op_id)),
+                    refusals.map(({ op, message }) => ({
+                        kind: kinds[op.client_op_id] ?? 'refused',
+                        slot: slotLabel(op),
+                        message,
+                    }))
                 );
             },
             setLifecycle: (state) => {
@@ -767,17 +867,11 @@ export function createReviewStore(
             dismissNotices: () => set({ notices: [] }),
             emit: (op) => {
                 if (op.type === 'create_entity' && !(op.entity as Json).local_id) mintInto(op);
-                return push(op);
+                return pushEdit([op]);
             },
-            emitBatch: (ops) => {
-                if (ops.length === 0) return false;
-                const group = ops[0].client_op_id;
-                set({
-                    pending: [...get().pending, ...ops],
-                    groupOf: { ...get().groupOf, ...Object.fromEntries(ops.map((op) => [op.client_op_id, group])) },
-                });
-                return true;
-            },
+            emitBatch: (ops) => ops.length > 0 && pushEdit(ops),
+            undo: () => sendInverse('undo'),
+            redo: () => sendInverse('redo'),
         };
     });
 }

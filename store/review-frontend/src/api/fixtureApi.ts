@@ -114,6 +114,7 @@ export function fixtureApi(base: string): ReviewApi {
                 review: { ...review, last_seq, provenance, annotations },
             };
             reviewed.set(bundle.source.id, next);
+            // The stored ops carry no inverses, so fixture mode has no undo.
             return {
                 ops: stored,
                 last_seq,

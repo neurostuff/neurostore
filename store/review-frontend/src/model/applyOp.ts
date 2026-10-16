@@ -165,10 +165,23 @@ function accepted(context: ApplyContext, key: string): ProvenanceMap {
     return state === 'edited' || state === 'added' ? context.provenance : marked(context, key, 'verified');
 }
 
+/** The provenance after a verdict: a clear drops the target's entry, a restore puts back the one it carries. */
+function judged(context: ApplyContext, key: string, op: VerdictOp): ProvenanceMap {
+    switch (op.verdict) {
+        case 'accept':
+            return accepted(context, key);
+        case 'reject':
+            return marked(context, key, 'removed');
+        case 'clear':
+            return Object.fromEntries(Object.entries(context.provenance).filter(([k]) => k !== key));
+        case 'restore':
+            return { ...context.provenance, [key]: op.previous as Provenance };
+    }
+}
+
 function verdict(record: Json, op: VerdictOp, context: ApplyContext): Documents {
     check(record, op.target, context);
-    const key = targetKey(op.target);
-    const provenance = op.verdict === 'accept' ? accepted(context, key) : marked(context, key, 'removed');
+    const provenance = judged(context, targetKey(op.target), op);
     return { record, provenance, annotations: context.annotations };
 }
 

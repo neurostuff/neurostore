@@ -164,6 +164,12 @@ export const SHORTCUTS: Shortcut[] = [
         run: (s) => s.toggleNonCoordinate(),
     },
     { keys: ['o', 'Shift+O'], label: 'toggle the outline', run: (s) => s.toggleOutline() },
+    { keys: ['Ctrl+Z'], label: 'undo the last edit (Cmd for Ctrl on a Mac)', run: (s) => s.undo() },
+    {
+        keys: ['Ctrl+Shift+Z', 'Ctrl+Y'],
+        label: 'redo the last undone edit',
+        run: (s) => s.redo(),
+    },
     { keys: ['?'], label: 'show these shortcuts', run: (s) => s.toggleHelp(true) },
 ];
 
@@ -178,12 +184,16 @@ export const isTextField = (target: EventTarget | null) => within(target, TEXT_F
 export const isControl = (target: EventTarget | null) => within(target, CONTROL);
 
 /** The key as the table names it: a letter or named key pressed with Shift is `Shift+` and its name. */
-const keyName = (event: KeyboardEvent) =>
+const plainKeyName = (event: KeyboardEvent) =>
     event.shiftKey && /^[a-z]$/i.test(event.key)
         ? `Shift+${event.key.toUpperCase()}`
         : event.shiftKey && event.key.length > 1
           ? `Shift+${event.key}`
           : event.key;
+
+/** A letter pressed with Ctrl or Cmd as the table names it, `Ctrl+`, then `Shift+` if pressed, then the letter; '' for any other key. */
+const ctrlKeyName = (event: KeyboardEvent) =>
+    /^[a-z]$/i.test(event.key) ? `Ctrl+${event.shiftKey ? 'Shift+' : ''}${event.key.toUpperCase()}` : '';
 
 export function useShortcuts(store: ReviewStore, table: Shortcut[], enabled: (state: ReviewState) => boolean) {
     useEffect(() => {
@@ -192,13 +202,14 @@ export function useShortcuts(store: ReviewStore, table: Shortcut[], enabled: (st
             for (const key of shortcut.keys) byKey.set(key, [...(byKey.get(key) ?? []), shortcut]);
         }
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.ctrlKey || event.metaKey || event.altKey || isTextField(event.target)) return;
+            if (event.altKey || isTextField(event.target)) return;
             if ((event.key === 'Enter' || event.key === ' ') && isControl(event.target)) return;
+            const withCtrl = event.ctrlKey || event.metaKey;
             const state = store.getState();
             const scope: Scope = state.coordinates ? 'coordinates' : 'record';
             const inScope = (key: string) => byKey.get(key)?.find((s) => (s.scope ?? scope) === scope);
-            const capsLock = /^[A-Z]$/.test(event.key) ? inScope(`Shift+${event.key}`) : undefined;
-            const shortcut = inScope(keyName(event)) ?? capsLock;
+            const capsLock = !withCtrl && /^[A-Z]$/.test(event.key) ? inScope(`Shift+${event.key}`) : undefined;
+            const shortcut = inScope(withCtrl ? ctrlKeyName(event) : plainKeyName(event)) ?? capsLock;
             if (!shortcut || !enabled(state)) return;
             event.preventDefault();
             shortcut.run(state);

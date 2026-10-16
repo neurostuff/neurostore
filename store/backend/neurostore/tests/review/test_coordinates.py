@@ -473,6 +473,48 @@ def test_a_merge_marks_each_merged_analysis_edited_and_the_result_added():
 # inverses
 
 
+def test_undoing_an_accept_with_a_note_restores_the_export_it_had_before_the_accept():
+    edit_op = edit(K0, [fx.point((10, 20, 32))])
+    review, _ = apply(state(), edit_op)
+    new = review.coordinate_revision["analyses"][0]["key"]
+    accept = verdict(new, "accept", note="checked edit")
+    accepted, stored = apply(review, accept)
+    undo = inverse(stored[0], "undo-0001")
+    undone, _ = apply(accepted, *undo)
+    before = coordinates.judged(PARSE, review.coordinate_revision, review.provenance, [edit_op])
+    after = coordinates.judged(
+        PARSE, undone.coordinate_revision, undone.provenance, [edit_op, accept, *undo]
+    )
+    assert undone.coordinate_revision == review.coordinate_revision
+    assert after == before
+
+
+def test_undoing_a_reject_with_a_note_restores_the_export_it_had_before_the_reject():
+    reject = verdict(K2, "reject", note="duplicate of another")
+    review, stored = apply(state(), reject)
+    undo = inverse(stored[0], "undo-0001")
+    undone, _ = apply(review, *undo)
+    before = coordinates.judged(PARSE, None, {}, [])
+    after = coordinates.judged(
+        PARSE, undone.coordinate_revision, undone.provenance, [reject, *undo]
+    )
+    assert after == before
+
+
+@pytest.mark.parametrize("kind", ["accept", "reject"])
+def test_undoing_a_verdict_on_a_coordinate_analysis_restores_the_export(kind):
+    judgement = verdict(K1, kind)
+    review, stored = apply(state(), judgement)
+    undo = inverse(stored[0], "undo-0001")
+    undone, _ = apply(review, *undo)
+    before = coordinates.judged(PARSE, None, {}, [])
+    after = coordinates.judged(
+        PARSE, undone.coordinate_revision, undone.provenance, [judgement, *undo]
+    )
+    assert undone.coordinate_revision == state().coordinate_revision
+    assert after == before
+
+
 def _split_part(review):
     return review.coordinate_revision["analyses"][1]["key"]
 

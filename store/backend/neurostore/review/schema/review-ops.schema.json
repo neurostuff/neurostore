@@ -132,7 +132,13 @@
       }
     },
     "VerdictOp": {
-      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "allOf": [
+        {"$ref": "#/$defs/OpBase"},
+        {"if": {"properties": {"verdict": {"const": "reject"}}}, "then": {"required": ["reason"]}},
+        {"if": {"properties": {"verdict": {"const": "restore"}}}, "then": {"required": ["previous"]}},
+        {"if": {"properties": {"verdict": {"enum": ["accept", "reject"]}}},
+         "then": {"not": {"required": ["previous"]}}}
+      ],
       "type": "object",
       "required": ["type", "target", "verdict"],
       "properties": {
@@ -140,12 +146,24 @@
         "note": true,
         "type": {"const": "verdict"},
         "target": {"$ref": "#/$defs/AnyTarget"},
-        "verdict": {"enum": ["accept", "reject"]},
-        "reason": {"enum": ["wrong_value", "not_in_text", "wrong_entity", "duplicate", "other"]}
+        "verdict": {
+          "description": "clear removes the reviewer's judgement of the target; restore puts back the judgement in previous, as an undo of a verdict gives it.",
+          "enum": ["accept", "reject", "clear", "restore"]
+        },
+        "reason": {"enum": ["wrong_value", "not_in_text", "wrong_entity", "duplicate", "other"]},
+        "previous": {
+          "description": "The provenance entry a restore puts back, exactly as it was.",
+          "type": "object",
+          "required": ["state", "user_id", "at"],
+          "additionalProperties": false,
+          "properties": {
+            "state": {"enum": ["verified", "edited", "added", "removed"]},
+            "user_id": {"type": "string"},
+            "at": {"type": "string"}
+          }
+        }
       },
-      "additionalProperties": false,
-      "if": {"properties": {"verdict": {"const": "reject"}}},
-      "then": {"required": ["reason"]}
+      "additionalProperties": false
     },
     "SetValueOp": {
       "allOf": [{"$ref": "#/$defs/OpBase"}],

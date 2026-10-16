@@ -85,6 +85,11 @@ def annotate(parse, revision, op):
     return work.document()
 
 
+def reasons(parse, revision):
+    """The reason each original judged in ``revision`` carries, by key."""
+    return _Revision(parse, revision).effective_reasons()
+
+
 def revise(parse, revision, op):
     """``(revision, before, after, marks, replacements)`` after the coordinate ``op``.
 

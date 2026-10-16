@@ -7,8 +7,19 @@ export type VerdictOp = OpBase & {
     note?: unknown;
     type: 'verdict';
     target: AnyTarget;
-    verdict: 'accept' | 'reject';
+    /**
+     * clear removes the reviewer's judgement of the target; restore puts back the judgement in previous, as an undo of a verdict gives it.
+     */
+    verdict: 'accept' | 'reject' | 'clear' | 'restore';
     reason?: 'wrong_value' | 'not_in_text' | 'wrong_entity' | 'duplicate' | 'other';
+    /**
+     * The provenance entry a restore puts back, exactly as it was.
+     */
+    previous?: {
+        state: 'verified' | 'edited' | 'added' | 'removed';
+        user_id: string;
+        at: string;
+    };
 };
 export type AnyTarget = SlotTarget | EntityTarget | RelationshipTarget | CoordinateTarget | PaperTarget;
 /**

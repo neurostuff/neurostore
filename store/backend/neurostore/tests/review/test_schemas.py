@@ -30,7 +30,7 @@ def path(name):
     return f"/api/review/schemas/{name}"
 
 
-def test_strip_descriptions_drops_description_strings_at_any_depth_and_keeps_a_property_named_description():
+def test_strip_descriptions_drops_any_depth_and_keeps_a_property_named_description():
     value = {
         "description": "top",
         "properties": {"description": {"type": "string", "description": "nested"}},

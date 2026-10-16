@@ -24,6 +24,8 @@ VALUE_FIELDS = ("extraction_status", "value", "value_source", "unreported_reason
 COORDINATE_JUDGEMENTS_REFUSED = ("accept", "omit", "reject")
 #: Evidence that clears an entity's or a relationship's annotation.
 NO_EVIDENCE = {"status": "not_applicable"}
+#: The op types no inverse undoes.
+NO_INVERSE = {"note"}
 #: How apply_batch finds the problems of the documents ops leave: "incremental" validates the
 #: parts the ops changed, "full" the whole documents. Tests switch it.
 VALIDATION = "incremental"
@@ -236,17 +238,33 @@ class _Applier:
         self._check(target)
         key = target_key(target)
         before = copy.deepcopy(self.state.provenance.get(key))
-        if op["verdict"] == "reject":
+        verdict = op["verdict"]
+        reasons = {}
+        if verdict == "clear":
+            self.state.provenance.pop(key, None)
+        elif verdict == "restore":
+            self.state.provenance[key] = copy.deepcopy(op["previous"])
+        elif verdict == "reject":
             self._mark(key, "removed")
         else:
             self._accept(key)
             if op.get("note") and target["kind"] == "coordinate_analysis" and (
                 self.state.provenance[key]["state"] in ("edited", "added")
             ):
-                self.state.coordinate_revision = coordinates.annotate(
-                    self.state.coordinate_parse, self.state.coordinate_revision, op
-                )
-        return before, copy.deepcopy(self.state.provenance[key])
+                reasons = self._annotate(op)
+        after = copy.deepcopy(self.state.provenance.get(key))
+        if target["kind"] == "coordinate_analysis":
+            return {"provenance": before, "reasons": reasons}, after
+        return before, after
+
+    def _annotate(self, op):
+        """Gives accept verdict ``op``'s note as the reason of its analysis's originals; returns
+        the reasons those originals had, by key, where the note changed them."""
+        parse, revision = self.state.coordinate_parse, self.state.coordinate_revision
+        held = coordinates.reasons(parse, revision)
+        self.state.coordinate_revision = coordinates.annotate(parse, revision, op)
+        now = coordinates.reasons(parse, self.state.coordinate_revision)
+        return {k: held.get(k) for k in held.keys() | now.keys() if held.get(k) != now.get(k)}
 
     def apply_coordinate(self, op):
         revision, before, after, marks, replacements = coordinates.revise(
@@ -515,6 +533,18 @@ def _wrapper_at(item, target, allow_absent):
 
 def inverse(stored, client_op_id):
     """The ops that undo ``stored``; ``client_op_id`` names them (suffixed when several)."""
+    ops = inverse_ops(stored)
+    if len(ops) == 1:
+        return [{"client_op_id": client_op_id, **ops[0]}]
+    return [{"client_op_id": f"{client_op_id}-{n}", **o} for n, o in enumerate(ops, 1)]
+
+
+def inverse_ops(stored):
+    """The ops that undo ``stored``, without client_op_ids.
+
+    Raises:
+        ReviewError for an op type no op undoes: a note.
+    """
     op, before, after = stored["op"], stored["before"], stored["after"]
     kind, target = op["type"], op.get("target")
     if kind == "set_value":
@@ -550,15 +580,33 @@ def inverse(stored, client_op_id):
     elif kind == "delete_entity":
         ops = [{"type": "create_entity", "parent": before["parent"], "list": before["list"],
                 "index": before["index"], "entity": before["entity"]}]
+    elif kind == "verdict" and target["kind"] == "coordinate_analysis":
+        ops = [_judgement_back(target, before["provenance"])]
+        if before["reasons"]:
+            ops.append(_reasons_back(before["reasons"]))
+    elif kind == "verdict":
+        ops = [_judgement_back(target, before)]
     elif kind == "coordinate":
         restore = coordinates.restore_op(before, after)
         restore["payload"]["record"] = {"remove": after["entities"], "insert": before["entities"]}
         ops = [restore]
     else:
         raise ReviewError(f"a {kind} op has no inverse")
-    if len(ops) == 1:
-        return [{"client_op_id": client_op_id, **ops[0]}]
-    return [{"client_op_id": f"{client_op_id}-{n}", **o} for n, o in enumerate(ops, 1)]
+    return ops
+
+
+def _judgement_back(target, before):
+    """The verdict that restores provenance entry ``before``, or clears it if there was none."""
+    if before is None:
+        return {"type": "verdict", "target": target, "verdict": "clear"}
+    return {"type": "verdict", "target": target, "verdict": "restore", "previous": before}
+
+
+def _reasons_back(reasons):
+    """The coordinate op that puts back the reasons ``reasons`` holds, by key; None clears one."""
+    return {"type": "coordinate", "target": {"kind": "coordinate_parse"}, "action": "restore",
+            "payload": {"remove": [], "insert": [], "reasons": reasons,
+                        "record": {"remove": [], "insert": []}}}
 
 
 def _op_evidence(evidence):

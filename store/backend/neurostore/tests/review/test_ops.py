@@ -907,13 +907,48 @@ def test_the_inverse_is_applied_as_new_ops():
 
 
 @pytest.mark.parametrize(
-    "change",
+    "setup, change",
     [
-        op("verdict", target=entity("grp_a"), verdict="accept"),
-        op("note", target=entity("grp_a"), note="see methods"),
+        ([], op("verdict", target=entity("grp_a"), verdict="accept")),
+        ([], op("verdict", target=entity("grp_a"), verdict="reject", reason="duplicate")),
+        ([SET_N], op("verdict", target=slot("an_1", "groups[group=grp_a].n"), verdict="reject",
+                     reason="wrong_value")),
+        ([op("verdict", target=entity("grp_b"), verdict="reject", reason="duplicate")],
+         op("verdict", target=entity("grp_b"), verdict="accept")),
+        ([op("verdict", target=entity("grp_b"), verdict="accept")],
+         op("verdict", target=entity("grp_b"), verdict="reject", reason="wrong_entity")),
     ],
 )
-def test_verdicts_and_notes_have_no_inverse(change):
+def test_applying_the_inverse_of_a_verdict_restores_its_provenance(setup, change):
+    review = apply(state(), *setup)[0] if setup else state()
+    changed, stored = apply(review, change)
+    assert changed.provenance != review.provenance
+    restored, _ = apply(changed, *inverse(stored[0], "undo-0001"))
+    assert restored.provenance == review.provenance
+    assert restored.record == review.record
+
+
+def test_the_inverse_of_a_first_verdict_clears_the_judgement():
+    changed, stored = apply(state(), op("verdict", target=entity("grp_a"), verdict="accept"))
+    undo = inverse(stored[0], "undo-0001")
+    assert [o["verdict"] for o in undo] == ["clear"]
+    restored, _ = apply(changed, *undo)
+    assert "entity:grp_a" not in restored.provenance
+
+
+def test_the_inverse_of_a_verdict_restores_the_replaced_judgement():
+    review, _ = apply(
+        state(), op("verdict", target=entity("grp_b"), verdict="reject", reason="duplicate")
+    )
+    changed, stored = apply(review, op("verdict", target=entity("grp_b"), verdict="accept"))
+    undo = inverse(stored[0], "undo-0001")
+    assert [o["verdict"] for o in undo] == ["restore"]
+    restored, _ = apply(changed, *undo)
+    assert restored.provenance["entity:grp_b"] == {"state": "removed", "user_id": "u1", "at": AT}
+
+
+@pytest.mark.parametrize("change", [op("note", target=entity("grp_a"), note="see methods")])
+def test_notes_have_no_inverse(change):
     _, stored = apply(state(), change)
     with pytest.raises(ReviewError, match=f"a {change['type']} op has no inverse"):
         inverse(stored[0], "undo-0001")

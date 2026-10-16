@@ -197,6 +197,63 @@ def batch(expected_last_seq, *ops):
     return {"expected_last_seq": expected_last_seq, "ops": list(ops)}
 
 
+UNDO_ROUND = "undo round on a slot with a source"
+AGE_SPAN = {
+    "start_char": records.TEXT.index(records.AGE),
+    "end_char": records.TEXT.index(records.AGE) + len(records.AGE),
+}
+UNDO_VALUE = {
+    "client_op_id": "scenario-undo-value",
+    "type": "set_value",
+    "target": {"kind": "slot", "entity": "grp_a", "path": "age_mean"},
+    "value": {"extraction_status": "extracted", "value": 41.5, "value_source": "reported"},
+}
+UNDO_EVIDENCE = {
+    "client_op_id": "scenario-undo-evidence",
+    "type": "set_evidence",
+    "target": {"kind": "slot", "entity": "grp_a", "path": "age_mean"},
+    "evidence": {"status": "present", "sets": [{"spans": [AGE_SPAN]}]},
+}
+
+UNDO_ROUND_BARE = "undo round on a not reported slot, an absent slot and a bare entity"
+
+
+def grp_b(path):
+    return {"kind": "slot", "entity": "grp_b", "path": path}
+
+
+UNDO_BARE_OPS = [
+    {
+        "client_op_id": "scenario-bare-reported",
+        "type": "set_value",
+        "target": grp_b("age_mean"),
+        "value": {"extraction_status": "extracted", "value": 41.0, "value_source": "reported"},
+    },
+    {
+        "client_op_id": "scenario-bare-absent",
+        "type": "set_value",
+        "target": grp_b("age_median"),
+        "value": {"extraction_status": "extracted", "value": 30.0, "value_source": "reported"},
+    },
+    {
+        "client_op_id": "scenario-bare-evidence",
+        "type": "set_evidence",
+        "target": {"kind": "entity", "entity": "grp_b"},
+        "evidence": {"status": "present", "sets": [{"spans": [AGE_SPAN]}]},
+    },
+]
+
+
+def inverted(previous):
+    """The batch that applies the inverses of the ops ``previous`` returned, last op first, each
+    under a new client_op_id."""
+    inverses = [inv for entry in reversed(previous["ops"]) for inv in reversed(entry["inverse"])]
+    return batch(previous["last_seq"], *(
+        {"client_op_id": f"scenario-undo-after-{previous['last_seq']}-{n}", **inv}
+        for n, inv in enumerate(inverses, 1)
+    ))
+
+
 #: Each scenario's steps: (who, method, path template, body, expected status).
 SCENARIOS = {
     "sources, paged": [
@@ -363,6 +420,20 @@ SCENARIOS = {
         (STRANGER, "get", BUNDLE, None, 403),
         (STRANGER, "post", OPS, batch(0, ACCEPT), 403),
     ],
+    UNDO_ROUND: [
+        START,
+        (REVIEWER, "post", OPS, batch(0, UNDO_VALUE, UNDO_EVIDENCE), 200),
+        (REVIEWER, "post", OPS, lambda raw: inverted(raw[-1]), 200),
+        (REVIEWER, "post", OPS, lambda raw: inverted(raw[-1]), 200),
+        (REVIEWER, "get", BUNDLE, None, 200),
+    ],
+    UNDO_ROUND_BARE: [
+        START,
+        (REVIEWER, "get", BUNDLE, None, 200),
+        (REVIEWER, "post", OPS, batch(0, *UNDO_BARE_OPS), 200),
+        (REVIEWER, "post", OPS, lambda raw: inverted(raw[-1]), 200),
+        (REVIEWER, "get", BUNDLE, None, 200),
+    ],
 }
 
 
@@ -396,7 +467,7 @@ def _mask_field(key, value, ids):
 async def _play(clients, session, steps, name=None):
     if name in COORDINATE_RECORD:
         record = records.linked_analyses()
-    elif name == "sources, paged":
+    elif name in ("sources, paged", UNDO_ROUND, UNDO_ROUND_BARE):
         record = records.golden()
     else:
         record = records.hidden_reach()
@@ -410,14 +481,17 @@ async def _play(clients, session, steps, name=None):
     }
     review = None
     recorded = []
+    raw = []
     for who, method, template, body, status in steps:
         path = template.format(source=source.id, review=review)
-        response = await getattr(clients[who], method)(path, data=body)
+        data = body(raw) if callable(body) else body
+        response = await getattr(clients[who], method)(path, data=data)
         assert response.status_code == status, (path, response.json())
+        raw.append(response.json())
         if template == SOURCE_REVIEW and method == "put":
             review = response.json()["id"]
             ids[review] = "<review_id>"
-        recorded.append(_step(method, path, body, response, ids))
+        recorded.append(_step(method, path, data, response, ids))
     return recorded
 
 
@@ -447,6 +521,38 @@ async def test_a_link_that_reaches_a_hidden_entity_changes_the_hidden_set(client
     assert "reg_1" in bundle_hidden["entities"]
     assert applied_hidden != bundle_hidden
     assert "reg_1" not in applied_hidden["entities"]
+
+
+async def test_an_undo_round_restores_the_record_and_logs_its_three_batches_in_order(
+    clients, session
+):
+    steps = await _play(clients, session, SCENARIOS[UNDO_ROUND], UNDO_ROUND)
+    edited, undone, redone = (steps[n]["response"]["body"] for n in (1, 2, 3))
+    bundle = steps[-1]["response"]["body"]
+    assert undone["record"] != edited["record"]
+    assert bundle["record"] == edited["record"]
+    assert redone["record"] == edited["record"]
+    assert [entry["seq"] for entry in bundle["ops"]] == [1, 2, 3, 4, 5, 6]
+    assert [entry["op"]["client_op_id"] for entry in bundle["ops"]] == [
+        "scenario-undo-value", "scenario-undo-evidence",
+        "scenario-undo-after-2-1", "scenario-undo-after-2-2",
+        "scenario-undo-after-4-1", "scenario-undo-after-4-2",
+    ]
+
+
+async def test_undoing_a_not_reported_and_absent_slots_leaves_the_record_as_it_was(
+    clients, session
+):
+    steps = await _play(clients, session, SCENARIOS[UNDO_ROUND_BARE], UNDO_ROUND_BARE)
+    started, edited, undone, bundle = (steps[n]["response"]["body"] for n in (1, 2, 3, 4))
+    assert edited["record"] != started["record"]
+    group = next(g for g in undone["record"]["groups"] if g["local_id"] == "grp_b")
+    assert group["age_mean"] == next(
+        g for g in started["record"]["groups"] if g["local_id"] == "grp_b"
+    )["age_mean"]
+    assert group["age_median"]["extraction_status"] == "not_reported"
+    assert "entity:grp_b" not in undone["annotations"]
+    assert bundle["record"] == undone["record"]
 
 
 COORDINATE_SCENARIOS = [

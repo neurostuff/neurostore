@@ -1,9 +1,11 @@
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
-import type { Op } from '../contract/generated/review-ops';
-import { applyBatch, OpRefused, type Documents } from '../model/applyOp';
+import type { Evidence, Op } from '../contract/generated/review-ops';
+import { applyBatch, OpRefused, type ApplyContext, type Documents } from '../model/applyOp';
 import type { CoordinateParse } from '../model/coordinates';
 import { codePointPaper } from '../model/offsets';
-import type { Json } from '../model/paths';
+import { entityPath, getIn, readPath, type Json } from '../model/paths';
+import { targetKey } from '../model/targetKey';
+import type { InverseOp } from '../store/undoSteps';
 import { ApiError, type OpResult, refusedOp, type ReviewLifecycle, type ReviewSummary } from '../api/reviewApi';
 import { walkClasses } from './golden/schemaWalk';
 
@@ -14,6 +16,8 @@ interface Review extends ReviewSummary {
     provenance: NonNullable<ReviewBundle['review']>['provenance'];
     annotations: NonNullable<ReviewBundle['review']>['annotations'];
     ops: StoredOp[];
+    /** The inverse of each stored op that has one, by client_op_id; the op result carries it, the bundle does not. */
+    inverses: Record<string, InverseOp[]>;
 }
 
 const REVIEWED_STATES = new Set(['verified', 'edited', 'added', 'removed']);
@@ -25,6 +29,90 @@ export function judgeableKeys(record: unknown, parse: unknown): Set<string> {
         (analysis) => `coordinate_analysis:${analysis.key}`
     );
     return new Set([...values, ...analyses]);
+}
+
+type Wrapper = { evidence?: Evidence } & Record<string, unknown>;
+
+/** `evidence` as a set_evidence op writes it: spans by offset only. */
+const opEvidence = (evidence: Evidence | undefined): Evidence =>
+    evidence
+        ? {
+              ...evidence,
+              ...(evidence.sets && {
+                  sets: evidence.sets.map((set) => ({
+                      ...set,
+                      spans: set.spans.map(({ start_char, end_char }) => ({ start_char, end_char })),
+                  })) as Evidence['sets'],
+              }),
+          }
+        : { status: 'not_applicable' };
+
+const wrapperAt = (record: Json, entity: string, path: string) =>
+    readPath(getIn(record, entityPath(record, entity) ?? []), path) as Wrapper | undefined;
+
+/** The ops that undo a set_value or set_evidence `op` applied to `before`, as the backend's ops.inverse gives them. */
+export function inverseOf(op: Op, before: Documents, after: Documents): InverseOp[] | undefined {
+    if (op.type === 'set_value') {
+        const was = wrapperAt(before.record, op.target.entity, op.target.path) ?? {};
+        const now = wrapperAt(after.record, op.target.entity, op.target.path) ?? {};
+        const value = {
+            extraction_status: was.extraction_status ?? 'not_reported',
+            ...('value' in was && { value: was.value }),
+            ...(was.value_source != null && { value_source: was.value_source }),
+            ...(was.unreported_reason != null && { unreported_reason: was.unreported_reason }),
+        };
+        const undo = [{ type: 'set_value', target: op.target, value } as InverseOp];
+        if (was.evidence && JSON.stringify(was.evidence) !== JSON.stringify(now.evidence))
+            undo.push({ type: 'set_evidence', target: op.target, evidence: opEvidence(was.evidence) });
+        return undo;
+    }
+    if (op.type === 'set_evidence') {
+        const was =
+            op.target.kind === 'slot'
+                ? wrapperAt(before.record, op.target.entity, op.target.path)?.evidence
+                : (before.annotations[targetKey(op.target)] as Evidence | undefined);
+        return [{ type: 'set_evidence', target: op.target, evidence: opEvidence(was) }];
+    }
+    if (op.type === 'verdict') {
+        const was = before.provenance[targetKey(op.target)];
+        return [
+            was
+                ? { type: 'verdict', target: op.target, verdict: 'restore', previous: was }
+                : { type: 'verdict', target: op.target, verdict: 'clear' },
+        ];
+    }
+    return undefined;
+}
+
+/** What `op` replaces or writes in `documents`, as the backend logs it; null where nothing is there. */
+function loggedOf(op: Op, documents: Documents): unknown {
+    if (op.type === 'set_value') return wrapperAt(documents.record, op.target.entity, op.target.path) ?? null;
+    if (op.type === 'set_evidence')
+        return (
+            (op.target.kind === 'slot'
+                ? wrapperAt(documents.record, op.target.entity, op.target.path)?.evidence
+                : documents.annotations[targetKey(op.target)]) ?? null
+        );
+    if (op.type === 'verdict') {
+        const entry = documents.provenance[targetKey(op.target)] ?? null;
+        return op.target.kind === 'coordinate_analysis' ? { provenance: entry, reasons: {} } : entry;
+    }
+    return {};
+}
+
+/** Each op's inverse and logged before and after, applying `ops` one at a time to `documents`. */
+function stepsOf(documents: Documents, ops: Op[], paper: Omit<ApplyContext, 'provenance' | 'annotations'>) {
+    let before = documents;
+    return ops.map((op) => {
+        const after = applyBatch(before, [op], paper);
+        const step = {
+            undo: inverseOf(op, before, after),
+            before: loggedOf(op, before) as StoredOp['before'],
+            after: (loggedOf(op, after) ?? (op.type === 'set_evidence' ? op.evidence : null)) as StoredOp['after'],
+        };
+        before = after;
+        return step;
+    });
 }
 
 export interface OpBatch {
@@ -81,7 +169,10 @@ export function memoryBackend(
 
     function result(r: Review, ops: StoredOp[]): OpResult {
         return {
-            ops,
+            ops: ops.map((stored) => {
+                const inverse = r.inverses[stored.op.client_op_id];
+                return inverse ? { ...stored, inverse } : stored;
+            }),
             last_seq: r.last_seq,
             record: r.record,
             coordinate_revision: null,
@@ -98,10 +189,20 @@ export function memoryBackend(
             const r = reviewOf(sourceId);
             if (!r) return bundle;
             const { record, provenance, annotations, ops } = r;
+            const last = ops.at(-1);
             return {
                 ...bundle,
                 record,
                 ops,
+                reviewers: [
+                    {
+                        user_id: r.user_id,
+                        name: userName(r.user_id),
+                        state: r.state,
+                        op_count: ops.length,
+                        last_edit_at: last?.created_at ?? null,
+                    },
+                ],
                 review: { id: r.id, user_id: r.user_id, state: r.state, last_seq: r.last_seq, provenance, annotations },
             };
         },
@@ -143,6 +244,7 @@ export function memoryBackend(
                 provenance: {},
                 annotations: {},
                 ops: [],
+                inverses: {},
             };
             reviews.set(id, r);
             return { summary: summary(r), created: true };
@@ -159,31 +261,34 @@ export function memoryBackend(
                 throw conflict('The review has changed since the batch was made.', { last_seq: r.last_seq });
             const { text, coordinate_parse, entities } = sources.get(r.source_id)!;
             const at = now();
+            const before: Documents = { record: r.record, provenance: r.provenance, annotations: r.annotations };
+            const paper = {
+                text: codePointPaper(text),
+                userId,
+                at,
+                coordinateParse: coordinate_parse as CoordinateParse,
+                entities,
+            };
             let documents: Documents;
             try {
-                documents = applyBatch(
-                    { record: r.record, provenance: r.provenance, annotations: r.annotations },
-                    batch.ops,
-                    {
-                        text: codePointPaper(text),
-                        userId,
-                        at,
-                        coordinateParse: coordinate_parse as CoordinateParse,
-                        entities,
-                    }
-                );
+                documents = applyBatch(before, batch.ops, paper);
             } catch (error) {
                 if (error instanceof OpRefused) throw refusedOp(error.index, error.clientOpId, error.message);
                 throw error;
             }
+            const steps = stepsOf(before, batch.ops, paper);
             const applied = batch.ops.map((op, index): StoredOp => ({
                 seq: r.last_seq + index + 1,
                 op,
-                before: {},
-                after: {},
+                before: steps[index].before,
+                after: steps[index].after,
                 user_id: userId,
                 created_at: at,
             }));
+            batch.ops.forEach((op, index) => {
+                const undo = steps[index].undo;
+                if (undo) r.inverses[op.client_op_id] = undo;
+            });
             Object.assign(r, { ...documents, last_seq: r.last_seq + applied.length, ops: [...r.ops, ...applied] });
             return result(r, applied);
         },

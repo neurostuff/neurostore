@@ -7,6 +7,8 @@ const REASONS: Record<Notice['kind'], string> = {
     refused: 'the server refused this edit',
     dangling: 'left dangling by a delete or a merge',
     split: 'kept on the first part of a split',
+    undo: 'could not be undone',
+    redo: 'could not be redone',
 };
 
 export function SaveNotices() {

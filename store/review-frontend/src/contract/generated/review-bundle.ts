@@ -5,8 +5,19 @@ export type VerdictOp = OpBase & {
     note?: unknown;
     type: 'verdict';
     target: SlotTarget | EntityTarget | RelationshipTarget | CoordinateTarget | PaperTarget;
-    verdict: 'accept' | 'reject';
+    /**
+     * clear removes the reviewer's judgement of the target; restore puts back the judgement in previous, as an undo of a verdict gives it.
+     */
+    verdict: 'accept' | 'reject' | 'clear' | 'restore';
     reason?: 'wrong_value' | 'not_in_text' | 'wrong_entity' | 'duplicate' | 'other';
+    /**
+     * The provenance entry a restore puts back, exactly as it was.
+     */
+    previous?: {
+        state: 'verified' | 'edited' | 'added' | 'removed';
+        user_id: string;
+        at: string;
+    };
 };
 export type SetValueOp = OpBase & {
     client_op_id?: unknown;
@@ -221,6 +232,12 @@ export interface StoredOp {
     };
     user_id: string;
     created_at: string;
+    /**
+     * In an op result only: the ops that undo this one, in order, each an Op without its client_op_id. Absent for a verdict or a note.
+     */
+    inverse?: {
+        type: string;
+    }[];
 }
 export interface OpBase {
     /**

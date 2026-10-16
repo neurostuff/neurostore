@@ -17,7 +17,7 @@ from neurostore.exceptions.utils.errors import ErrorDetail
 from neurostore.models import Fulltext, Review, ReviewOp, ReviewSource, User
 from neurostore.review.bundle import bundle, hidden, source_summary
 from neurostore.review.entities import index_rows
-from neurostore.review.ops import OpError, ReviewState, apply_batch
+from neurostore.review.ops import NO_INVERSE, OpError, ReviewState, apply_batch, inverse_ops
 from neurostore.review.validation import document_problems
 
 #: Provenance states that count as a change in the paper list.
@@ -415,9 +415,16 @@ def _stored(row, user_id):
     }
 
 
+def _undoable(stored):
+    """``stored`` with ``inverse``, the ops that undo it, unless no op undoes its type."""
+    if stored["op"]["type"] in NO_INVERSE:
+        return stored
+    return {**stored, "inverse": inverse_ops(stored)}
+
+
 def _op_result(review, ops, coordinate_parse):
     return {
-        "ops": ops,
+        "ops": [_undoable(stored) for stored in ops],
         "last_seq": review.last_seq,
         "record": review.record,
         "coordinate_revision": review.coordinate_revision,

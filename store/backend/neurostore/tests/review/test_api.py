@@ -781,6 +781,11 @@ async def test_starting_a_review_is_idempotent(clients, source, session):
 # a full round
 
 
+def logged(ops):
+    """Stored ops as the bundle and the review carry them: without the op result's inverses."""
+    return [{k: v for k, v in stored.items() if k != "inverse"} for stored in ops]
+
+
 async def test_a_full_round_of_editing_a_review(clients, source, session):
     review = await start(clients, source)
     ops_path = f"/api/review/reviews/{review['id']}/ops"
@@ -799,7 +804,7 @@ async def test_a_full_round_of_editing_a_review(clients, source, session):
     assert bundle["record"]["groups"][1]["name"]["value"] == "healthy controls"
     assert bundle["review"]["id"] == review["id"]
     assert bundle["review"]["last_seq"] == 1
-    assert bundle["ops"] == result["ops"]
+    assert bundle["ops"] == logged(result["ops"])
     assert bundle["reviewers"][0]["op_count"] == 1
     assert bundle["reviewers"][0]["last_edit_at"] == result["ops"][0]["created_at"]
 
@@ -833,7 +838,7 @@ async def test_a_full_round_of_editing_a_review(clients, source, session):
     assert read.status_code == 200
     assert read.json()["record"] == result["record"]
     assert read.json()["provenance"] == result["provenance"]
-    assert read.json()["ops"] == result["ops"]
+    assert read.json()["ops"] == logged(result["ops"])
     assert read.json()["state"] == "submitted"
 
 
@@ -906,6 +911,249 @@ async def test_the_op_result_carries_the_entity_index_of_the_new_record(clients,
     result = response.json()
     assert result["entities"] == entities.index_rows(result["record"])
     assert "grp_new" in [row["local_id"] for row in result["entities"]]
+
+
+# undo
+
+
+def k(n):
+    return records.coordinate_parse()["analyses"][n]["key"]
+
+
+AGE_SLOT = {"kind": "slot", "entity": "grp_a", "path": "age_mean"}
+UNDOABLE = {
+    "set_value": (lambda: set_name("grp_b", "healthy controls"), ["set_value"]),
+    "set_evidence": (
+        lambda: op("set_evidence", target=AGE_SLOT, evidence={
+            "status": "present", "sets": [{"spans": [{"start_char": 0, "end_char": 15}]}]
+        }),
+        ["set_evidence"],
+    ),
+    "link": (
+        lambda: op("link", target={"kind": "relationship", "entity": "an_1", "path": "regions",
+                                   "target_entity": "reg_1"}),
+        ["unlink"],
+    ),
+    "unlink": (
+        lambda: op("unlink", target={"kind": "relationship", "entity": "an_1", "path": "tasks",
+                                     "target_entity": "tsk_1"}),
+        ["link"],
+    ),
+    "create_entity": (
+        lambda: op("create_entity", parent="study", list="groups",
+                   entity=records.item("Group", "grp_new", name=fx.extracted("new group"))),
+        ["delete_entity"],
+    ),
+    "delete_entity": (
+        lambda: op("delete_entity", target={"kind": "entity", "entity": "grp_a"}),
+        ["create_entity"],
+    ),
+    "coordinate": (
+        lambda: coordinate(k(0), "edit_points", payload={
+            "points": [*records.coordinate_parse()["analyses"][0]["points"],
+                       fx.point((1, 2, 3))]
+        }),
+        ["coordinate"],
+    ),
+}
+
+
+def with_ids(ops):
+    return [{"client_op_id": f"api-{next(_ids):06d}", **o} for o in ops]
+
+
+@pytest.mark.parametrize("kind", UNDOABLE)
+async def test_each_stored_op_in_the_op_result_carries_its_inverse(clients, source, kind):
+    review = await start(clients, source)
+    change, inverse_types = UNDOABLE[kind]
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, change())
+    )
+    assert response.status_code == 200, response.json()
+    [stored] = response.json()["ops"]
+    assert [o["type"] for o in stored["inverse"]] == inverse_types
+    assert all("client_op_id" not in o for o in stored["inverse"])
+
+
+async def test_a_verdict_carries_an_inverse_that_clears_a_first_judgement(clients, source):
+    review = await start(clients, source)
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, accept("grp_a"))
+    )
+    assert response.status_code == 200, response.json()
+    [stored] = response.json()["ops"]
+    assert [o["verdict"] for o in stored["inverse"]] == ["clear"]
+
+
+async def test_applying_a_rejects_inverse_restores_the_judgement_it_replaced(clients, source):
+    review = await start(clients, source)
+    ops_path = f"/api/review/reviews/{review['id']}/ops"
+    first = await clients[REVIEWER].post(ops_path, data=batch(0, accept("grp_a")))
+    assert first.status_code == 200, first.json()
+    reject = op("verdict", target={"kind": "entity", "entity": "grp_a"}, verdict="reject",
+                reason="duplicate")
+    rejected = await clients[REVIEWER].post(ops_path, data=batch(1, reject))
+    assert rejected.status_code == 200, rejected.json()
+    [stored] = rejected.json()["ops"]
+    assert [o["verdict"] for o in stored["inverse"]] == ["restore"]
+    undone = await clients[REVIEWER].post(ops_path, data=batch(2, *with_ids(stored["inverse"])))
+    assert undone.status_code == 200, undone.json()
+    assert undone.json()["provenance"] == first.json()["provenance"]
+    assert [s["seq"] for s in undone.json()["ops"]] == [3]
+
+
+@pytest.mark.parametrize("kind", UNDOABLE)
+async def test_applying_the_returned_inverse_restores_the_record_and_parse(clients, source, kind):
+    review = await start(clients, source)
+    ops_path = f"/api/review/reviews/{review['id']}/ops"
+    before = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
+    changed = await clients[REVIEWER].post(ops_path, data=batch(0, UNDOABLE[kind][0]()))
+    assert changed.status_code == 200, changed.json()
+    assert (changed.json()["record"], changed.json()["coordinate_revision"]) != (
+        before["record"], before["coordinate_revision"]
+    )
+    [stored] = changed.json()["ops"]
+    undone = await clients[REVIEWER].post(ops_path, data=batch(1, *with_ids(stored["inverse"])))
+    assert undone.status_code == 200, undone.json()
+    assert undone.json()["record"] == before["record"]
+    assert undone.json()["coordinate_revision"] == before["coordinate_revision"]
+
+
+async def undone_after(clients, source, setup, change):
+    """The record before ``change`` and after its stored inverses are posted, last op first."""
+    review = await start(clients, source)
+    ops_path = f"/api/review/reviews/{review['id']}/ops"
+    if setup:
+        prepared = await clients[REVIEWER].post(ops_path, data=batch(0, *setup))
+        assert prepared.status_code == 200, prepared.json()
+    before = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
+    changed = await clients[REVIEWER].post(ops_path, data=batch(len(setup), change))
+    assert changed.status_code == 200, changed.json()
+    inverses = [o for stored in reversed(changed.json()["ops"]) for o in stored["inverse"]]
+    undone = await clients[REVIEWER].post(
+        ops_path, data=batch(len(setup) + 1, *with_ids(inverses))
+    )
+    assert undone.status_code == 200, undone.json()
+    return before["record"], undone.json()["record"], inverses
+
+
+def slot_of(record, group, name):
+    return next(g for g in record["groups"] if g["local_id"] == group)[name]
+
+
+async def test_the_inverse_of_an_evidence_edit_restores_a_sets_source(clients, source):
+    change = op("set_evidence", target=AGE_SLOT, evidence={
+        "status": "present", "sets": [{"spans": [{"start_char": 0, "end_char": 15}]}]
+    })
+    before, after, _ = await undone_after(clients, source, [], change)
+    [restored] = slot_of(after, "grp_a", "age_mean")["evidence"]["sets"]
+    assert restored["source"] == "model_quote"
+    assert after == before
+
+
+async def test_the_inverse_of_an_evidence_edit_restores_unlocated_quotes(clients, source):
+    setup = op("set_evidence", target=AGE_SLOT,
+               evidence={"status": "not_found", "unlocated_quotes": 2})
+    change = op("set_evidence", target=AGE_SLOT, evidence={
+        "status": "present", "sets": [{"spans": [{"start_char": 0, "end_char": 15}]}]
+    })
+    before, after, _ = await undone_after(clients, source, [setup], change)
+    assert slot_of(after, "grp_a", "age_mean")["evidence"] == {
+        "status": "not_found", "unlocated_quotes": 2
+    }
+    assert after == before
+
+
+async def test_the_inverse_of_setting_a_not_reported_slot_restores_its_reason(clients, source):
+    change = op("set_value", target={"kind": "slot", "entity": "grp_b", "path": "age_mean"},
+                value={"extraction_status": "extracted", "value": 41.0,
+                       "value_source": "reported"})
+    before, after, _ = await undone_after(clients, source, [], change)
+    assert slot_of(before, "grp_b", "age_mean")["unreported_reason"] == "ambiguous"
+    assert slot_of(after, "grp_b", "age_mean") == slot_of(before, "grp_b", "age_mean")
+    assert after == before
+
+
+async def test_the_inverse_of_setting_an_absent_slot_marks_it_not_reported(clients, source):
+    median = {"kind": "slot", "entity": "grp_b", "path": "age_median"}
+    change = op("set_value", target=median,
+                value={"extraction_status": "extracted", "value": 30.0,
+                       "value_source": "reported"})
+    before, after, inverses = await undone_after(clients, source, [], change)
+    group_b = next(g for g in before["groups"] if g["local_id"] == "grp_b")
+    assert "age_median" not in group_b
+    assert [o["value"] for o in inverses] == [{"extraction_status": "not_reported"}]
+    assert slot_of(after, "grp_b", "age_median") == {
+        "extraction_status": "not_reported",
+        "evidence": {"status": "not_applicable"},
+    }
+
+
+async def test_the_inverse_of_a_set_value_that_drops_evidence_is_the_value_then_the_evidence(
+    clients, source
+):
+    change = op("set_value", target=AGE_SLOT, value={"extraction_status": "not_reported"})
+    before, after, inverses = await undone_after(clients, source, [], change)
+    assert [o["type"] for o in inverses] == ["set_value", "set_evidence"]
+    assert slot_of(after, "grp_a", "age_mean") == slot_of(before, "grp_a", "age_mean")
+    assert after == before
+
+
+async def test_the_log_holds_the_edit_then_the_appended_inverse(clients, source):
+    review = await start(clients, source)
+    ops_path = f"/api/review/reviews/{review['id']}/ops"
+    edit = set_name("grp_b", "healthy controls")
+    changed = await clients[REVIEWER].post(ops_path, data=batch(0, edit))
+    [stored] = changed.json()["ops"]
+    [undo] = with_ids(stored["inverse"])
+    undone = await clients[REVIEWER].post(ops_path, data=batch(1, undo))
+    assert undone.status_code == 200, undone.json()
+    log = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()["ops"]
+    assert [entry["seq"] for entry in log] == [1, 2]
+    assert [entry["op"] for entry in log] == [edit, undo]
+    assert all("inverse" not in entry for entry in log)
+
+
+async def test_a_note_carries_no_inverse(clients, source):
+    review = await start(clients, source)
+    note = op("note", target={"kind": "entity", "entity": "grp_a"}, note="see methods")
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, note)
+    )
+    assert response.status_code == 200, response.json()
+    [stored] = response.json()["ops"]
+    assert "inverse" not in stored
+
+
+async def test_a_replayed_batch_carries_its_inverses(clients, source):
+    review = await start(clients, source)
+    ops_path = f"/api/review/reviews/{review['id']}/ops"
+    body = batch(0, set_name("grp_b", "healthy controls"))
+    first = await clients[REVIEWER].post(ops_path, data=body)
+    replay = await clients[REVIEWER].post(ops_path, data=body)
+    assert replay.status_code == 200
+    assert replay.json()["ops"][0]["inverse"] == first.json()["ops"][0]["inverse"]
+
+
+async def test_a_coordinate_inverse_after_a_later_edit_of_the_analysis_is_refused(clients, source):
+    review = await start(clients, source)
+    ops_path = f"/api/review/reviews/{review['id']}/ops"
+    split = coordinate(k(1), "split", payload={"parts": [{"indices": [0]}, {"indices": [1]}]})
+    first = await clients[REVIEWER].post(ops_path, data=batch(0, split))
+    assert first.status_code == 200, first.json()
+    part = first.json()["coordinate_revision"]["analyses"][1]["key"]
+    later = await clients[REVIEWER].post(
+        ops_path, data=batch(1, coordinate(part, "edit_points", payload={
+            "points": [fx.point((5, 5, 5))]
+        }))
+    )
+    assert later.status_code == 200, later.json()
+    undo = with_ids(first.json()["ops"][0]["inverse"])
+    refused = await clients[REVIEWER].post(ops_path, data=batch(2, *undo))
+    assert refused.status_code == 422, refused.json()
+    [error] = refused.json()["errors"]
+    assert error["context"] == {"op_index": 0, "client_op_id": undo[0]["client_op_id"]}
+    assert "has changed since" in error["message"]
 
 
 async def test_only_the_owner_posts_ops(clients, source):

@@ -163,7 +163,17 @@
         "before": {"description": "What the op replaced; its shape depends on the op type."},
         "after": {"description": "What the op wrote; its shape depends on the op type."},
         "user_id": {"type": "string"},
-        "created_at": {"type": "string", "format": "date-time"}
+        "created_at": {"type": "string", "format": "date-time"},
+        "inverse": {
+          "description": "In an op result only: the ops that undo this one, in order, each an Op without its client_op_id. Absent for a verdict or a note.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {"type": {"type": "string"}},
+            "not": {"required": ["client_op_id"]}
+          }
+        }
       }
     }
   }
