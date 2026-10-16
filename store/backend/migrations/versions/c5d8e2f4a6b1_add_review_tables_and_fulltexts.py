@@ -85,11 +85,22 @@ def upgrade():
         sa.Column("provenance", JSONB(), nullable=False, server_default=EMPTY_JSONB),
         sa.Column("annotations", JSONB(), nullable=False, server_default=EMPTY_JSONB),
         sa.Column("last_seq", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("set_aside_reason", sa.Text(), nullable=True),
+        sa.Column("set_aside_note", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(["source_id"], ["review_sources.id"]),
         sa.ForeignKeyConstraint(["user_id"], ["users.external_id"]),
         sa.PrimaryKeyConstraint("id"),
         sa.CheckConstraint(
-            "state IN ('in_progress', 'submitted', 'reference')", name="ck_reviews_state"
+            "state IN ('in_progress', 'submitted', 'reference', 'set_aside')",
+            name="ck_reviews_state",
+        ),
+        sa.CheckConstraint(
+            "(state = 'set_aside') = (set_aside_reason IS NOT NULL)", name="ck_reviews_set_aside"
+        ),
+        sa.CheckConstraint(
+            "set_aside_reason IN "
+            "('no_usable_text', 'out_of_scope', 'no_results', 'duplicate', 'other')",
+            name="ck_reviews_set_aside_reason",
         ),
         sa.UniqueConstraint("source_id", "user_id", name="uq_reviews_source_user"),
     )

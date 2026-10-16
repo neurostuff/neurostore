@@ -3,13 +3,19 @@ import { Link as RouterLink } from 'react-router-dom';
 import { usePapers } from '../api/context';
 import type { PaperSummary, ReviewerProgress } from '../api/reviewApi';
 import { Brand } from '../Brand';
+import { SET_ASIDE_REASONS } from '../review/asideReasons';
 import { WhenLoaded } from './WhenLoaded';
 
 const reviewedShare = (reviewed: number, total: number) =>
     total === 0 ? '—' : `${Math.round((reviewed / total) * 100)}%`;
 
+const stateLabel = (review: ReviewerProgress) => {
+    const state = review.state.replace('_', ' ');
+    return review.set_aside ? `${state} (${SET_ASIDE_REASONS[review.set_aside.reason]})` : state;
+};
+
 const reviewerLine = (review: ReviewerProgress, total: number) =>
-    `${review.user_name ?? review.user_id}: ${review.state.replace('_', ' ')}, ${review.edited} edited, ${review.verified} verified, ${reviewedShare(review.reviewed, total)} reviewed`;
+    `${review.user_name ?? review.user_id}: ${stateLabel(review)}, ${review.edited} edited, ${review.verified} verified, ${reviewedShare(review.reviewed, total)} reviewed`;
 
 function progressOf(paper: PaperSummary) {
     if (!paper.reviews?.length) return 'not started';

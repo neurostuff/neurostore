@@ -379,6 +379,27 @@ def test_a_review_state_is_checked(session, review):
         session.commit()
 
 
+def test_a_review_is_set_aside_with_a_reason_and_only_then_has_one(session, review):
+    review.state = "set_aside"
+    with pytest.raises(IntegrityError):
+        session.commit()
+    session.rollback()
+    review.set_aside_reason = "duplicate"
+    with pytest.raises(IntegrityError):
+        session.commit()
+    session.rollback()
+    review.state = "set_aside"
+    review.set_aside_reason = "duplicate"
+    session.commit()
+
+
+def test_a_set_aside_reason_is_one_of_the_known_reasons(session, review):
+    review.state = "set_aside"
+    review.set_aside_reason = "bored"
+    with pytest.raises(IntegrityError):
+        session.commit()
+
+
 def test_one_review_per_source_and_user(session, review):
     refused(session, Review(source_id=review.source_id, user_id=review.user_id, record={}))
 

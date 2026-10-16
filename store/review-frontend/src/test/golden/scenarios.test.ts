@@ -132,6 +132,8 @@ const GAPS: Record<string, string> = {
         'structural ops are applied by the server only (D49), not by the test server',
     'delete a group that an analysis still references':
         'structural ops are applied by the server only (D49), not by the test server',
+    'merge an assessment into another, then undo the merge':
+        'link, unlink and structural ops are applied by the server only (D49), not by the test server',
     'refused batch with two failing ops': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 fails after op 0 would apply': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 leaves an invalid document': 'the 422 message is the backend’s, not the test server’s',

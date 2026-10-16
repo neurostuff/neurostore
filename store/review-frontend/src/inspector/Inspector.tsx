@@ -193,7 +193,7 @@ export function CardHead({ overline, title, children }: { overline: string; titl
     );
 }
 
-function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
+export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
     const panel = useReviewStore((s) => s.panel);
     const reviewed = useReviewStore((s) => s.provenance[entityKey(entity.id)]?.state);
     const deleting = useReviewStore((s) => pendingStructure(s).deleting.has(entity.id));
@@ -247,9 +247,8 @@ function PendingChanges() {
     );
 }
 
-export function Inspector() {
-    const entity = useReviewStore((s) => s.index.entity(s.focus.entity));
-    const focusedSlot = useReviewStore((s) => s.focus.slot);
+/** The inspector's toolbar, pending changes and dialogs around `children`. */
+export function InspectorFrame({ children }: { children?: ReactNode }) {
     const deleting = useReviewStore((s) =>
         s.panel?.kind === 'delete' && s.panel.target.kind === 'entity' ? s.panel.target.entity : null
     );
@@ -258,9 +257,15 @@ export function Inspector() {
         <>
             <ActionToolbar scope="record" label="review actions" />
             <PendingChanges />
-            {entity && <EntityCard entity={entity} focusedSlot={focusedSlot} />}
+            {children}
             {deleting && <DeleteDialog entity={deleting} />}
             {creating && <CreateDialog />}
         </>
     );
+}
+
+export function Inspector() {
+    const entity = useReviewStore((s) => s.index.entity(s.focus.entity));
+    const focusedSlot = useReviewStore((s) => s.focus.slot);
+    return <InspectorFrame>{entity && <EntityCard entity={entity} focusedSlot={focusedSlot} />}</InspectorFrame>;
 }

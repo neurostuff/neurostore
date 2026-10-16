@@ -76,4 +76,30 @@ describe('the paper list', () => {
         const row = await screen.findByRole('link', { name: /Fourth paper/ });
         expect(within(row).getByText('Ana: in progress, 0 edited, 2 verified, 67% reviewed')).toBeInTheDocument();
     });
+
+    it('shows a set-aside review as set aside, with its reason, so it can be found and resumed', async () => {
+        renderList([
+            {
+                id: 'P5',
+                label: 'Fifth paper',
+                total: 4,
+                reviews: [
+                    {
+                        user_id: 'ana',
+                        user_name: 'Ana',
+                        state: 'set_aside',
+                        set_aside: { reason: 'no_usable_text', note: null },
+                        edited: 0,
+                        verified: 1,
+                        reviewed: 1,
+                    },
+                ],
+            },
+        ]);
+        const row = await screen.findByRole('link', { name: /Fifth paper/ });
+        expect(row).toHaveAttribute('href', '/papers/P5');
+        expect(
+            within(row).getByText('Ana: set aside (no usable text), 0 edited, 1 verified, 25% reviewed')
+        ).toBeInTheDocument();
+    });
 });

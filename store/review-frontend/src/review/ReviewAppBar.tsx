@@ -3,7 +3,12 @@ import { Brand } from '../Brand';
 import { useReviewStore } from '../store/context';
 import { selectIsBlocked, selectSaveLabel, type ReviewState } from '../store/reviewStore';
 
-const STATES = { in_progress: 'in progress', submitted: 'submitted', reference: 'reference' } as const;
+const STATES = {
+    in_progress: 'in progress',
+    submitted: 'submitted',
+    reference: 'reference',
+    set_aside: 'set aside',
+} as const;
 
 function selectProgress(s: ReviewState): string {
     const slots = s.index.unhidden.flatMap((e) => e.slots);

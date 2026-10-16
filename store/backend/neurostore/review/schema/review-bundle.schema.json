@@ -40,7 +40,17 @@
           "properties": {
             "id": {"type": "string"},
             "user_id": {"type": "string"},
-            "state": {"enum": ["in_progress", "submitted", "reference"]},
+            "state": {"enum": ["in_progress", "submitted", "reference", "set_aside"]},
+            "set_aside": {
+              "description": "Why the paper was set aside; present only while the review is.",
+              "type": "object",
+              "required": ["reason", "note"],
+              "additionalProperties": false,
+              "properties": {
+                "reason": {"enum": ["no_usable_text", "out_of_scope", "no_results", "duplicate", "other"]},
+                "note": {"type": ["string", "null"]}
+              }
+            },
             "last_seq": {"type": "integer", "minimum": 0},
             "provenance": {
               "description": "Target key -> what a person did to it. A target with no entry is unchecked.",
@@ -95,7 +105,7 @@
         "properties": {
           "user_id": {"type": "string"},
           "name": {"type": ["string", "null"]},
-          "state": {"enum": ["in_progress", "submitted", "reference"]},
+          "state": {"enum": ["in_progress", "submitted", "reference", "set_aside"]},
           "op_count": {"type": "integer", "minimum": 0},
           "last_edit_at": {"type": ["string", "null"], "format": "date-time"}
         }

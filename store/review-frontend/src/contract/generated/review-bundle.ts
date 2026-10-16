@@ -141,7 +141,14 @@ export interface ReviewBundle {
     review: null | {
         id: string;
         user_id: string;
-        state: 'in_progress' | 'submitted' | 'reference';
+        state: 'in_progress' | 'submitted' | 'reference' | 'set_aside';
+        /**
+         * Why the paper was set aside; present only while the review is.
+         */
+        set_aside?: {
+            reason: 'no_usable_text' | 'out_of_scope' | 'no_results' | 'duplicate' | 'other';
+            note: string | null;
+        };
         last_seq: number;
         /**
          * Target key -> what a person did to it. A target with no entry is unchecked.
@@ -180,7 +187,7 @@ export interface ReviewBundle {
     reviewers: {
         user_id: string;
         name: string | null;
-        state: 'in_progress' | 'submitted' | 'reference';
+        state: 'in_progress' | 'submitted' | 'reference' | 'set_aside';
         op_count: number;
         last_edit_at: string | null;
     }[];

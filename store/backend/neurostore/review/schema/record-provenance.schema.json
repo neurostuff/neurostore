@@ -57,7 +57,7 @@
             "kind": {"const": "review"},
             "review_id": {"type": "string", "minLength": 1},
             "user_id": {"type": "string", "minLength": 1},
-            "state": {"enum": ["in_progress", "submitted", "reference"]}
+            "state": {"enum": ["in_progress", "submitted", "reference", "set_aside"]}
           }
         },
         {

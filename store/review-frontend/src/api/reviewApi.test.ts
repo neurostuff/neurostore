@@ -1,4 +1,4 @@
-import { ApiError, watchForbidden, type ReviewApi } from './reviewApi';
+import { ApiError, watchForbidden, withState, type ReviewApi } from './reviewApi';
 
 const calls: Record<keyof ReviewApi, (api: ReviewApi) => Promise<unknown>> = {
     listPapers: (api) => api.listPapers(),
@@ -39,5 +39,18 @@ describe('watchForbidden', () => {
             await expect(calls[method](watched)).rejects.toMatchObject({ status });
         }
         expect(onForbidden).not.toHaveBeenCalled();
+    });
+});
+
+describe('withState', () => {
+    const review = { state: 'in_progress' as const, last_seq: 3 };
+
+    it('moves the review to the state, with the set-aside reason only while set aside', () => {
+        const aside = withState(review, 'set_aside', { reason: 'duplicate', note: null });
+        expect(aside).toEqual({ state: 'set_aside', last_seq: 3, set_aside: { reason: 'duplicate', note: null } });
+        const resumed = withState(aside, 'in_progress');
+        expect(resumed).toEqual(review);
+        expect('set_aside' in resumed).toBe(false);
+        expect(review).toEqual({ state: 'in_progress', last_seq: 3 });
     });
 });

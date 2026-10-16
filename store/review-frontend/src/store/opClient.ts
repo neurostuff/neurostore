@@ -1,4 +1,4 @@
-import { ApiError, ROLE_MESSAGE, type ReviewApi, type ReviewLifecycle } from '../api/reviewApi';
+import { ApiError, ROLE_MESSAGE, type ReviewApi, type ReviewLifecycle, type SetAside } from '../api/reviewApi';
 import type { Op } from '../contract/generated/review-ops';
 import { isLocalOp } from '../model/applyOp';
 import { spansToCodePoints } from '../model/offsets';
@@ -135,7 +135,7 @@ export function createOpClient(store: ReviewStore, api: ReviewApi) {
             try {
                 const fresh = await api.getBundle(state().bundle.source.id);
                 if (fresh.review && fresh.review.state !== 'in_progress') {
-                    state().setLifecycle(fresh.review.state);
+                    state().setLifecycle(fresh.review.state, fresh.review.set_aside);
                     state().setSave('closed');
                     return false;
                 }
@@ -220,13 +220,13 @@ export function createOpClient(store: ReviewStore, api: ReviewApi) {
         },
         flush,
         /** Saves what is pending, then moves the review to `next`. */
-        async changeState(next: ReviewLifecycle) {
+        async changeState(next: ReviewLifecycle, setAside?: SetAside) {
             await flush();
             if (selectIsBlocked(state())) return;
             const { review } = state().bundle;
             if (!review) return;
-            const summary = await api.setState(review.id, next);
-            state().setLifecycle(summary.state);
+            const summary = await api.setState(review.id, next, setAside);
+            state().setLifecycle(summary.state, summary.set_aside);
             state().setSave(summary.state === 'in_progress' ? 'idle' : 'closed');
             if (summary.state === 'in_progress') void flush();
         },

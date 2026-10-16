@@ -144,7 +144,13 @@ class ReviewsView:
         user = _reviewer()
         return _commit(
             lambda: service.set_state(
-                db.session, id, user.external_id, body["state"], is_admin=is_user_admin(user)
+                db.session,
+                id,
+                user.external_id,
+                body["state"],
+                is_admin=is_user_admin(user),
+                reason=body.get("reason"),
+                note=body.get("note"),
             )
         )
 

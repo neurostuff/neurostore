@@ -32,6 +32,8 @@ export interface EntityNode {
     localId: string;
     entityClass: string;
     schemaClass: string;
+    /** The entity this one is nested in, if any. */
+    parent: string | null;
     name: string;
     hidden: boolean;
     slots: SlotNode[];
@@ -225,6 +227,7 @@ export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () =
                 localId,
                 entityClass: row.entity_class,
                 schemaClass: row.schema_class,
+                parent: row.parent,
                 name: displayName(item, row.local_id === ROOT_ENTITY ? 'Study' : localId),
                 hidden: hidden.has(row.local_id),
                 slots,

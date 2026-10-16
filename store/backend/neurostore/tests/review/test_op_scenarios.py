@@ -183,6 +183,27 @@ DELETE_GROUP = {
     "type": "delete_entity",
     "target": {"kind": "entity", "entity": "grp_a"},
 }
+
+
+def instrument(op_type, entity, target_entity):
+    return {
+        "client_op_id": f"scenario-merge-{op_type}-{entity}-{target_entity}",
+        "type": op_type,
+        "target": {"kind": "relationship", "entity": entity, "path": "diagnostic_instrument",
+                   "target_entity": target_entity},
+    }
+
+
+MERGE_ASSESSMENT = [
+    instrument("unlink", "grp_a", "asm_2"),
+    instrument("link", "grp_a", "asm_1"),
+    instrument("unlink", "grp_b", "asm_2"),
+    {
+        "client_op_id": "scenario-merge-delete-asm_2",
+        "type": "delete_entity",
+        "target": {"kind": "entity", "entity": "asm_2"},
+    },
+]
 MANY_OPS = [{"client_op_id": f"scenario-many-{n}"} for n in range(501)]
 STRANGER = "newuser-id"
 SOURCES = "/api/review/sources/"
@@ -215,6 +236,7 @@ UNDO_EVIDENCE = {
     "evidence": {"status": "present", "sets": [{"spans": [AGE_SPAN]}]},
 }
 
+MERGE_ROUND = "merge an assessment into another, then undo the merge"
 UNDO_ROUND_BARE = "undo round on a not reported slot, an absent slot and a bare entity"
 
 
@@ -427,6 +449,13 @@ SCENARIOS = {
         (REVIEWER, "post", OPS, lambda raw: inverted(raw[-1]), 200),
         (REVIEWER, "get", BUNDLE, None, 200),
     ],
+    MERGE_ROUND: [
+        START,
+        (REVIEWER, "get", BUNDLE, None, 200),
+        (REVIEWER, "post", OPS, batch(0, *MERGE_ASSESSMENT), 200),
+        (REVIEWER, "post", OPS, lambda raw: inverted(raw[-1]), 200),
+        (REVIEWER, "get", BUNDLE, None, 200),
+    ],
     UNDO_ROUND_BARE: [
         START,
         (REVIEWER, "get", BUNDLE, None, 200),
@@ -467,6 +496,8 @@ def _mask_field(key, value, ids):
 async def _play(clients, session, steps, name=None):
     if name in COORDINATE_RECORD:
         record = records.linked_analyses()
+    elif name == MERGE_ROUND:
+        record = records.merge_assessments()
     elif name in ("sources, paged", UNDO_ROUND, UNDO_ROUND_BARE):
         record = records.golden()
     else:
@@ -644,3 +675,22 @@ async def test_a_deleted_group_lists_the_references_it_leaves_dangling(clients, 
     assert stored["after"]["references"] == [
         {"entity": "an_1", "path": "groups[group=grp_a].group", "target_entity": "grp_a"},
     ]
+
+
+async def test_undoing_a_merge_restores_the_links_and_the_deleted_entity(clients, session):
+    steps = await _play(clients, session, SCENARIOS[MERGE_ROUND], MERGE_ROUND)
+    started, merged, undone, bundle = (_result(steps, n) for n in (1, 2, 3, 4))
+
+    def uses(result):
+        return {
+            g["local_id"]: g["diagnostic_instrument"] for g in result["record"]["groups"]
+        }
+
+    assert uses(started) == {"grp_a": ["asm_2"], "grp_b": ["asm_1", "asm_2"]}
+    assert uses(merged) == {"grp_a": ["asm_1"], "grp_b": ["asm_1"]}
+    assert [a["local_id"] for a in merged["record"]["assessments"]] == ["asm_1"]
+    assert "asm_2" not in {r["local_id"] for r in merged["entities"]}
+    assert undone["record"] == started["record"]
+    assert bundle["record"] == started["record"]
+    assert bundle["entities"] == started["entities"]
+    assert [entry["seq"] for entry in bundle["ops"]] == list(range(1, 9))

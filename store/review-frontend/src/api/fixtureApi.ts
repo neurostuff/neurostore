@@ -11,6 +11,7 @@ import {
     type ReviewApi,
     type ReviewLifecycle,
     type ReviewSummary,
+    withState,
 } from './reviewApi';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -20,8 +21,8 @@ async function getJson<T>(url: string): Promise<T> {
 }
 
 const summary = (bundle: ReviewBundle): ReviewSummary => {
-    const { id, user_id, state, last_seq } = bundle.review!;
-    return { id, source_id: bundle.source.id, user_id, state, last_seq };
+    const { id, user_id, state, set_aside, last_seq } = bundle.review!;
+    return { id, source_id: bundle.source.id, user_id, state, ...(set_aside && { set_aside }), last_seq };
 };
 
 /**
@@ -126,9 +127,9 @@ export function fixtureApi(base: string): ReviewApi {
                 entities: bundle.entities,
             } satisfies OpResult;
         },
-        async setState(reviewId, state: ReviewLifecycle) {
+        async setState(reviewId, state: ReviewLifecycle, setAside) {
             const bundle = reviewOf(reviewId);
-            const next = { ...bundle, review: { ...bundle.review!, state } };
+            const next = { ...bundle, review: withState(bundle.review!, state, setAside) };
             reviewed.set(bundle.source.id, next);
             return summary(next);
         },

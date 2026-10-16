@@ -10,10 +10,14 @@ export type OpResult = Omit<GeneratedOpResult, 'hidden'> & { hidden: ReviewBundl
 
 export const ROLE_MESSAGE = 'You need the admin-reviewer role';
 
+/** Why and how a review was set aside, while it is. */
+export type SetAside = NonNullable<ReviewSummary['set_aside']>;
+
 export interface ReviewerProgress {
     user_id: string;
     user_name: string | null;
     state: ReviewLifecycle;
+    set_aside?: SetAside;
     edited: number;
     verified: number;
     reviewed: number;
@@ -27,6 +31,18 @@ export interface PaperSummary {
 }
 
 export type ReviewLifecycle = NonNullable<ReviewBundle['review']>['state'];
+
+/** `review` moved to `state`, with `setAside` as its set-aside reason while it is set aside. */
+export function withState<R extends { state: ReviewLifecycle; set_aside?: SetAside }>(
+    review: R,
+    state: ReviewLifecycle,
+    setAside?: SetAside
+): R {
+    const next = { ...review, state };
+    if (setAside) next.set_aside = setAside;
+    else delete next.set_aside;
+    return next;
+}
 
 export class ApiError extends Error {
     readonly status: number;
@@ -64,7 +80,8 @@ export interface ReviewApi {
     getBundle(id: string): Promise<ReviewBundle>;
     startReview(sourceId: string): Promise<ReviewSummary>;
     postOps(reviewId: string, expectedLastSeq: number, ops: Op[], options?: SendOptions): Promise<OpResult>;
-    setState(reviewId: string, state: ReviewLifecycle): Promise<ReviewSummary>;
+    /** Moves the review to `state`; a set_aside takes its reason and note. */
+    setState(reviewId: string, state: ReviewLifecycle, setAside?: SetAside): Promise<ReviewSummary>;
     getSchema(name: SchemaName): Promise<Schema>;
 }
 

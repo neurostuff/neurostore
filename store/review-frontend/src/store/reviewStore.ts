@@ -1,5 +1,5 @@
 import { createStore } from 'zustand';
-import type { OpResult, ReviewLifecycle } from '../api/reviewApi';
+import { withState, type OpResult, type ReviewLifecycle, type SetAside } from '../api/reviewApi';
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
 import type { AnyTarget, CreateEntityOp, Evidence, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
 import {
@@ -39,6 +39,7 @@ import { panelFor } from '../inspector/actions';
 import { fromSchemaKeyed } from '../contract/schemas';
 import { declaredAttributes } from '../inspector/schema';
 import { STEPS, type StepId } from '../review/steps';
+import { stepCards } from '../review/guided';
 import type { OutlineFilter } from '../review/outline';
 import {
     answerSteps,
@@ -85,7 +86,9 @@ export type PanelKind =
     | 'add_point'
     | 'move'
     | 'merge'
-    | 'add_analysis';
+    | 'add_analysis'
+    | 'link_analysis'
+    | 'merge_entity';
 
 /** An inspector panel: what it acts on, the slot row it sits in when it is on a slot or link, and the table an analysis is added to. */
 export interface Panel {
@@ -174,6 +177,8 @@ export interface ReviewState {
     /** Resolves once the local_id of a pending create_entity op is minted. */
     minted(clientOpId: string): Promise<void>;
     setStep(step: StepId): void;
+    /** Goes to the next or previous guided step, stopping at the ends. */
+    moveStep(delta: 1 | -1): void;
     toggleOutline(open?: boolean): void;
     setOutlineFilter(filter: OutlineFilter): void;
     toggleHelp(open?: boolean): void;
@@ -193,7 +198,8 @@ export interface ReviewState {
     confirm(result: OpResult, sent: Op[]): void;
     rebase(fresh: ReviewBundle): void;
     refuse(refusals: Refusal[]): void;
-    setLifecycle(state: ReviewLifecycle): void;
+    /** Sets the review's state, with its set-aside reason while it is set aside. */
+    setLifecycle(state: ReviewLifecycle, setAside?: SetAside): void;
     dismissNotices(): void;
     /** Puts an op in pending: applied at once when it is local, held unapplied when the server applies it. */
     emit(op: Op): boolean;
@@ -704,11 +710,10 @@ export function createReviewStore(
                 if (next !== at) focusOn({ entity: focus.entity, key: slots[next].key, slot: slots[next].key });
             },
             moveEntity: (delta) => {
-                const { visible } = get().index;
-                const at = visible.findIndex((e) => e.id === get().focus.entity);
-                const next = at === -1 ? 0 : clamp(at + delta, visible.length - 1);
-                if (visible[next] && next !== at)
-                    focusOn({ entity: visible[next].id, key: entityKey(visible[next].id) });
+                const cards = stepCards(get()) ?? get().index.visible;
+                const at = cards.findIndex((e) => e.id === get().focus.entity);
+                const next = at === -1 ? 0 : clamp(at + delta, cards.length - 1);
+                if (cards[next] && next !== at) focusOn({ entity: cards[next].id, key: entityKey(cards[next].id) });
             },
             stepEvidence: (delta) => {
                 const { focusedSpans, evidenceCursor, reveal } = get();
@@ -755,6 +760,15 @@ export function createReviewStore(
                     const first = firstAnalysis(currentAnalyses(current), showNonCoordinate);
                     if (first) focusCoordinates(first);
                 }
+                const cards = stepCards(get());
+                if (cards?.length && !cards.some((e) => e.id === get().focus.entity)) {
+                    focusOn({ entity: cards[0].id, key: entityKey(cards[0].id) });
+                }
+            },
+            moveStep: (delta) => {
+                const at = STEPS.findIndex((step) => step.id === get().step);
+                const next = STEPS[clamp(at + delta, STEPS.length - 1)].id;
+                if (next !== get().step) get().setStep(next);
             },
             toggleOutline: (open) => set((s) => ({ outlineOpen: open ?? !s.outlineOpen })),
             setOutlineFilter: (outlineFilter) => set({ outlineFilter }),
@@ -882,10 +896,10 @@ export function createReviewStore(
                     }))
                 );
             },
-            setLifecycle: (state) => {
+            setLifecycle: (state, setAside) => {
                 const { bundle: current } = get();
                 if (!current.review) return;
-                set({ bundle: { ...current, review: { ...current.review, state } } });
+                set({ bundle: { ...current, review: withState(current.review, state, setAside) } });
             },
             dismissNotices: () => set({ notices: [] }),
             emit: (op) => {

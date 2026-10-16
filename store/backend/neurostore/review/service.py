@@ -15,6 +15,7 @@ from neurostore.exceptions.utils.error_helpers import (
 )
 from neurostore.exceptions.utils.errors import ErrorDetail
 from neurostore.models import Fulltext, Review, ReviewOp, ReviewSource, User
+from neurostore.models.review import SET_ASIDE_REASONS
 from neurostore.review.bundle import bundle, hidden, source_summary
 from neurostore.review.entities import index_rows
 from neurostore.review.ops import NO_INVERSE, OpError, ReviewState, apply_batch, inverse_ops
@@ -26,7 +27,12 @@ CHANGED_STATES = ("edited", "added", "removed")
 #: Reviewed is counted only over the source's judgeable_keys.
 REVIEWED_STATES = ("verified", *CHANGED_STATES)
 #: The state changes a review's owner may make.
-OWNER_TRANSITIONS = {("in_progress", "submitted"), ("submitted", "in_progress")}
+OWNER_TRANSITIONS = {
+    ("in_progress", "submitted"),
+    ("submitted", "in_progress"),
+    ("in_progress", "set_aside"),
+    ("set_aside", "in_progress"),
+}
 
 
 def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, mine=False):
@@ -59,6 +65,7 @@ def list_sources(session, user_id, *, page=1, page_size=20, base_study_id=None, 
             "user_id": review.user_id,
             "user_name": review.user_name,
             "state": review.state,
+            **_set_aside(review),
             "last_seq": review.last_seq,
             "updated_at": _iso(review.updated_at),
             "edited": sum(state in CHANGED_STATES for state in states),
@@ -94,7 +101,12 @@ def get_bundle(session, source_id, user_id):
         summary, ops = None, []
     else:
         state = _state(review, source)
-        summary = {"id": review.id, "user_id": review.user_id, "state": review.state}
+        summary = {
+            "id": review.id,
+            "user_id": review.user_id,
+            "state": review.state,
+            **_set_aside(review),
+        }
         ops = _stored_ops(session, review)
     return bundle(
         source=source_summary(source),
@@ -224,8 +236,11 @@ def post_ops(session, review_id, user_id, body):
     return _op_result(review, [_stored(row, user_id) for row in inserted], source.coordinate_parse)
 
 
-def set_state(session, review_id, user_id, new_state, *, is_admin):
+def set_state(session, review_id, user_id, new_state, *, is_admin, reason=None, note=None):
     """Move a review to ``new_state``; flushes, never commits.
+
+    ``set_aside`` takes a ``reason`` and an optional ``note`` (required with ``other``), kept
+    until the review leaves that state; no other state takes either.
 
     Raises:
         NotFoundError (404) when the review does not exist.
@@ -233,6 +248,8 @@ def set_state(session, review_id, user_id, new_state, *, is_admin):
         own the review changes any other state.
         ConflictError (409) when the review is already the reference, another review of its
         source is, or the transition is not allowed.
+        UnprocessableEntityError (422) when a set_aside lacks its reason or note, or another
+        state is given one.
     """
     review = _locked(session, review_id)
     if new_state == "reference":
@@ -240,6 +257,8 @@ def set_state(session, review_id, user_id, new_state, *, is_admin):
             abort_permission("Only an admin can mark the reference review.")
         if review.state == "reference":
             abort_conflict("The review is already the reference review.")
+        if review.state == "set_aside":
+            abort_conflict("A set-aside review cannot be the reference review.")
         session.execute(
             sa.select(ReviewSource.id).where(ReviewSource.id == review.source_id).with_for_update()
         )
@@ -255,9 +274,29 @@ def set_state(session, review_id, user_id, new_state, *, is_admin):
             abort_permission("Only the review's owner can change its state.")
         if (review.state, new_state) not in OWNER_TRANSITIONS:
             abort_conflict(f"A review cannot go from {review.state} to {new_state}.")
+    _check_set_aside(new_state, reason, note)
     review.state = new_state
+    review.set_aside_reason = reason
+    review.set_aside_note = note
     session.flush()
     return summary(review)
+
+
+def _check_set_aside(new_state, reason, note):
+    if new_state != "set_aside":
+        if reason is not None or note is not None:
+            abort_unprocessable(f"Only set_aside takes a reason or a note, not {new_state}.")
+    elif reason not in SET_ASIDE_REASONS:
+        abort_unprocessable(f"A review is set aside for one of {', '.join(SET_ASIDE_REASONS)}.")
+    elif reason == "other" and not (note or "").strip():
+        abort_unprocessable("A review set aside for another reason needs a note.")
+
+
+def _set_aside(review):
+    """The reason and note of a set-aside review, as its summary carries them; {} otherwise."""
+    if review.state != "set_aside":
+        return {}
+    return {"set_aside": {"reason": review.set_aside_reason, "note": review.set_aside_note}}
 
 
 def review_source_count(session, base_study_id):
@@ -275,6 +314,7 @@ def summary(review):
         "source_id": review.source_id,
         "user_id": review.user_id,
         "state": review.state,
+        **_set_aside(review),
         "last_seq": review.last_seq,
         "created_at": _iso(review.created_at),
         "updated_at": _iso(review.updated_at),
@@ -366,6 +406,8 @@ def _review_rows(session, source_ids):
             Review.user_id,
             User.name.label("user_name"),
             Review.state,
+            Review.set_aside_reason,
+            Review.set_aside_note,
             Review.last_seq,
             Review.updated_at,
             Review.provenance,

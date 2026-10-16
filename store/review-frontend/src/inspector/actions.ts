@@ -1,6 +1,6 @@
-import type { AnyTarget, Op, SetValueOp, VerdictOp } from '../contract/generated/review-ops';
+import type { AnyTarget, Op, SetEvidenceOp, SetValueOp, VerdictOp } from '../contract/generated/review-ops';
 import { entityPath, getIn, ROOT_ENTITY } from '../model/paths';
-import type { SlotNode } from '../model/record';
+import type { EntityNode, SlotNode } from '../model/record';
 import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } from '../model/targetKey';
 import { randomUUID } from '../model/uuid';
 import type { Panel, PanelKind, ReviewState } from '../store/reviewStore';
@@ -201,6 +201,8 @@ export function panelFor(s: Pick<State, 'index' | 'focus' | 'bundle' | 'record'>
                 ? { kind, target: slotTarget(slot.entity, slot.path), slot: slot.key }
                 : undefined;
         case 'delete':
+        case 'link_analysis':
+        case 'merge_entity':
             return canDelete(s) ? { kind, target: entity } : undefined;
         case 'create':
             return siblingClasses(s).length > 1 ? { kind, target: entity } : undefined;
@@ -228,4 +230,64 @@ export function pendingStructure(s: Pick<State, 'pending'>) {
         else if (op.type === 'create_entity') creating.push({ parent: op.parent, list: op.list });
     }
     return { linksBySlot, deleting, creating };
+}
+
+/** The entities `from` can be merged into: the others of its class. */
+export const mergeCandidates = (s: Pick<State, 'index'>, from: string): EntityNode[] => {
+    const merged = s.index.entity(from);
+    return s.index.visible.filter((e) => e.id !== from && e.entityClass === merged?.entityClass);
+};
+
+/** The value slots of `from` holding a value `into` has none for, which a merge can copy over. */
+export function mergeCopies(s: Pick<State, 'index'>, from: string, into: string): SlotNode[] {
+    const held = new Set(s.index.entity(into)?.slots.flatMap((slot) => (slot.value ? [slot.path] : [])));
+    return (s.index.entity(from)?.slots ?? []).filter(
+        (slot) => slot.kind === 'value' && slot.value && !held.has(slot.path)
+    );
+}
+
+/** The ops that copy a value slot, with its evidence, to the same path on `into`. */
+function copyOps(slot: SlotNode, into: string): NewOp[] {
+    const { extraction_status, value, value_source, unreported_reason, evidence } = slot.value!;
+    const target = slotTarget(into, slot.path);
+    const copied: NewOp = {
+        type: 'set_value',
+        target,
+        value: {
+            extraction_status,
+            ...(value !== undefined && { value }),
+            ...(value_source && { value_source }),
+            ...(unreported_reason && { unreported_reason }),
+        } as SetValueOp['value'],
+    };
+    if (!evidence?.sets?.length) return [copied];
+    const sets = evidence.sets.map((set) => ({
+        ...set,
+        spans: set.spans.map(({ start_char, end_char }) => ({ start_char, end_char })),
+    })) as NonNullable<SetEvidenceOp['evidence']['sets']>;
+    return [copied, { type: 'set_evidence', target, evidence: { ...evidence, sets } }];
+}
+
+/**
+ * Merges `from` into `into` as one batch: each link to `from` is re-pointed to `into`, the value slots at
+ * `copy` are copied over, then `from` is deleted.
+ */
+export function mergeInto(s: Pick<ReviewState, 'emitBatch' | 'index'>, from: string, into: string, copy: string[]) {
+    const merged = s.index.entity(from);
+    if (!merged || !s.index.entity(into) || from === into) return false;
+    const relinks = s.index.entities
+        .filter((entity) => entity.id !== from)
+        .flatMap((entity) =>
+            entity.slots.flatMap((slot): NewOp[] => {
+                if (slot.kind !== 'reference' || !slot.references.includes(from)) return [];
+                const unlinked: NewOp = { type: 'unlink', target: relationshipTarget(entity.id, slot.path, from) };
+                if (slot.references.includes(into) || entity.id === into) return [unlinked];
+                return [unlinked, { type: 'link', target: relationshipTarget(entity.id, slot.path, into) }];
+            })
+        );
+    const copies = merged.slots
+        .filter((slot) => copy.includes(slot.path) && slot.value)
+        .flatMap((slot) => copyOps(slot, into));
+    const ops: NewOp[] = [...relinks, ...copies, { type: 'delete_entity', target: { kind: 'entity', entity: from } }];
+    return s.emitBatch(ops.map((op) => ({ client_op_id: randomUUID(), ...op }) as Op));
 }

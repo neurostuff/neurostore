@@ -1299,6 +1299,94 @@ async def test_another_reviewer_cannot_change_the_state(clients, source):
     assert response.status_code == 403
 
 
+async def test_the_owner_sets_a_review_aside_with_a_reason_and_resumes_it(clients, source):
+    review = await start(clients, source)
+    reason = {"reason": "no_usable_text", "note": "the text is garbled"}
+    aside = await patch(clients[REVIEWER], review["id"], {"state": "set_aside", **reason})
+    assert aside.status_code == 200, aside.json()
+    assert_matches_spec(aside, "/review/reviews/{id}", "patch")
+    assert aside.json()["state"] == "set_aside"
+    assert aside.json()["set_aside"] == reason
+    bundle = await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")
+    assert_matches_spec(bundle, "/review/sources/{id}/bundle", "get")
+    assert bundle.json()["review"]["set_aside"] == reason
+    resumed = await patch(clients[REVIEWER], review["id"], {"state": "in_progress"})
+    assert resumed.status_code == 200
+    assert resumed.json()["state"] == "in_progress"
+    assert "set_aside" not in resumed.json()
+
+
+@pytest.mark.parametrize("body", [
+    {"state": "set_aside"},
+    {"state": "set_aside", "reason": "other"},
+    {"state": "submitted", "reason": "duplicate"},
+    {"state": "submitted", "note": "why"},
+    {"state": "set_aside", "reason": "other", "note": "  "},
+])
+async def test_a_set_aside_needs_its_reason_and_only_it_takes_one(clients, source, body):
+    review = await start(clients, source)
+    response = await patch(clients[REVIEWER], review["id"], body)
+    assert response.status_code == 422, response.json()
+
+
+async def test_an_unknown_review_is_not_found_before_its_reason_is_checked(clients):
+    response = await patch(clients[REVIEWER], "nope", {"state": "set_aside"})
+    assert response.status_code == 404
+    response = await patch(clients[REVIEWER], "nope", {"state": "submitted", "note": "why"})
+    assert response.status_code == 404
+
+
+async def test_another_reviewer_is_refused_before_the_reason_is_checked(clients, source):
+    review = await start(clients, source)
+    response = await patch(clients[OTHER], review["id"], {"state": "set_aside"})
+    assert response.status_code == 403
+
+
+async def test_a_submitted_review_is_reopened_before_it_is_set_aside(clients, source):
+    review = await start(clients, source)
+    await patch(clients[REVIEWER], review["id"], {"state": "submitted"})
+    body = {"state": "set_aside", "reason": "duplicate"}
+    response = await patch(clients[REVIEWER], review["id"], body)
+    assert response.status_code == 409
+
+
+async def test_a_set_aside_review_is_not_marked_the_reference(clients, source):
+    review = await start(clients, source)
+    await patch(clients[REVIEWER], review["id"], {"state": "set_aside", "reason": "duplicate"})
+    response = await patch(clients[LEAD], review["id"], {"state": "reference"})
+    assert response.status_code == 409
+
+
+async def test_a_note_does_not_outlive_the_set_aside_that_gave_it(clients, source):
+    review = await start(clients, source)
+    body = {"state": "set_aside", "reason": "duplicate"}
+    await patch(clients[REVIEWER], review["id"], {**body, "note": "same"})
+    await patch(clients[REVIEWER], review["id"], {"state": "in_progress"})
+    again = await patch(clients[REVIEWER], review["id"], body)
+    assert again.json()["set_aside"] == {"reason": "duplicate", "note": None}
+
+
+async def test_a_set_aside_review_takes_no_ops_and_is_not_submitted(clients, source):
+    review = await start(clients, source)
+    await patch(clients[REVIEWER], review["id"], {"state": "set_aside", "reason": "out_of_scope"})
+    posted = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, set_name("grp_b", "x"))
+    )
+    assert posted.status_code == 409
+    submitted = await patch(clients[REVIEWER], review["id"], {"state": "submitted"})
+    assert submitted.status_code == 409
+
+
+async def test_the_source_list_shows_a_set_aside_review_with_its_reason(clients, source):
+    review = await start(clients, source)
+    await patch(clients[REVIEWER], review["id"], {"state": "set_aside", "reason": "duplicate"})
+    response = await clients[REVIEWER].get("/api/review/sources/")
+    assert_matches_spec(response, "/review/sources/", "get")
+    [progress] = response.json()["results"][0]["reviews"]
+    assert progress["state"] == "set_aside"
+    assert progress["set_aside"] == {"reason": "duplicate", "note": None}
+
+
 async def test_only_a_lead_sets_one_reference_per_source(clients, source):
     mine = await start(clients, source)
     theirs = await start(clients, source, OTHER)

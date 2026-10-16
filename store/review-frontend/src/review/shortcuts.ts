@@ -158,6 +158,8 @@ export const SHORTCUTS: Shortcut[] = [
         button: { label: 'Add analysis' },
         run: (s) => s.openPanel('add_analysis'),
     }),
+    { keys: ['Alt+Shift+J'], label: 'next step', run: (s) => s.moveStep(1) },
+    { keys: ['Alt+Shift+K'], label: 'previous step', run: (s) => s.moveStep(-1) },
     {
         keys: ['Shift+H'],
         label: 'show or hide the analyses with no coordinates',
@@ -197,9 +199,19 @@ const plainKeyName = (event: KeyboardEvent) =>
           ? `Shift+${event.key}`
           : event.key;
 
+/** `Alt+Shift+` and the letter of the key pressed; '' for any other key. */
+const altKeyName = (event: KeyboardEvent) =>
+    event.shiftKey && /^Key[A-Z]$/.test(event.code) ? `Alt+Shift+${event.code.slice(3)}` : '';
+
 /** A letter pressed with Ctrl or Cmd as the table names it, `Ctrl+`, then `Shift+` if pressed, then the letter; '' for any other key. */
 const ctrlKeyName = (event: KeyboardEvent) =>
     /^[a-z]$/i.test(event.key) ? `Ctrl+${event.shiftKey ? 'Shift+' : ''}${event.key.toUpperCase()}` : '';
+
+/** The key as the table names it, by the modifiers held; '' for a combination the table has no name for. */
+function keyName(event: KeyboardEvent) {
+    if (event.ctrlKey || event.metaKey) return event.altKey ? '' : ctrlKeyName(event);
+    return event.altKey ? altKeyName(event) : plainKeyName(event);
+}
 
 export function useShortcuts(store: ReviewStore, table: Shortcut[], enabled: (state: ReviewState) => boolean) {
     useEffect(() => {
@@ -208,14 +220,14 @@ export function useShortcuts(store: ReviewStore, table: Shortcut[], enabled: (st
             for (const key of shortcut.keys) byKey.set(key, [...(byKey.get(key) ?? []), shortcut]);
         }
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.altKey || isTextField(event.target)) return;
+            if (isTextField(event.target)) return;
             if ((event.key === 'Enter' || event.key === ' ') && isControl(event.target)) return;
-            const withCtrl = event.ctrlKey || event.metaKey;
             const state = store.getState();
             const scope: Scope = state.coordinates ? 'coordinates' : 'record';
             const inScope = (key: string) => byKey.get(key)?.find((s) => (s.scope ?? scope) === scope);
-            const capsLock = !withCtrl && /^[A-Z]$/.test(event.key) ? inScope(`Shift+${event.key}`) : undefined;
-            const shortcut = inScope(withCtrl ? ctrlKeyName(event) : plainKeyName(event)) ?? capsLock;
+            const plain = !event.ctrlKey && !event.metaKey && !event.altKey;
+            const capsLock = plain && /^[A-Z]$/.test(event.key) ? inScope(`Shift+${event.key}`) : undefined;
+            const shortcut = inScope(keyName(event)) ?? capsLock;
             if (!shortcut || !enabled(state)) return;
             event.preventDefault();
             shortcut.run(state);

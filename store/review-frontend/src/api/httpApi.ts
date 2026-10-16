@@ -7,6 +7,7 @@ import {
     type ReviewApi,
     type ReviewerProgress,
     type ReviewSummary,
+    type SetAside,
 } from './reviewApi';
 
 const PAGE_SIZE = 100;
@@ -15,6 +16,10 @@ interface SourcePage {
     metadata: { total_count: number };
     results: { id: string; label: string | null; total: number; reviews: ReviewerProgress[] }[];
 }
+
+/** A set-aside's reason, and its note when it has one, as the state patch takes them. */
+const patchOf = (setAside?: SetAside) =>
+    setAside && { reason: setAside.reason, ...(setAside.note ? { note: setAside.note } : {}) };
 
 export function httpApi(
     base: string,
@@ -62,7 +67,8 @@ export function httpApi(
                 { expected_last_seq: expectedLastSeq, ops },
                 options.keepalive
             ),
-        setState: (reviewId, state) => request<ReviewSummary>('PATCH', `/review/reviews/${id(reviewId)}`, { state }),
+        setState: (reviewId, state, setAside) =>
+            request<ReviewSummary>('PATCH', `/review/reviews/${id(reviewId)}`, { state, ...patchOf(setAside) }),
         getSchema: (name) => request<Schema>('GET', `/review/schemas/${id(name)}`),
     };
 }

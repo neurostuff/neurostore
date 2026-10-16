@@ -1,17 +1,18 @@
 import { Box } from '@mui/material';
 import { CoordinateAside } from '../coordinates/CoordinateAside';
 import { CoordinatesInspector } from '../coordinates/CoordinatesInspector';
-import { Inspector } from '../inspector/Inspector';
 import { useReviewStore, useReviewStoreApi } from '../store/context';
 import type { ReviewState } from '../store/reviewStore';
 import { TextPane } from '../text/TextPane';
 import { CommandPalette } from './CommandPalette';
+import { StepInspector } from './GuidedSteps';
 import { OutlineRail } from './OutlineRail';
 import { BlockedSave } from './BlockedSave';
 import { ReviewAppBar } from './ReviewAppBar';
 import { SaveNotices } from './SaveNotices';
 import { ShortcutHelp } from './ShortcutHelp';
 import { SHORTCUTS, useShortcuts } from './shortcuts';
+import { SetAsideBanner, SetAsideButton } from './SetAside';
 import { StepBar } from './StepBar';
 import { SubmitStep } from './SubmitStep';
 
@@ -25,7 +26,13 @@ export function ReviewScreen() {
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
             <ReviewAppBar />
-            <StepBar />
+            <Box sx={{ display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <StepBar />
+                </Box>
+                <SetAsideButton />
+            </Box>
+            <SetAsideBanner />
             {submitting && <SubmitStep />}
             <BlockedSave />
             <SaveNotices />
@@ -38,7 +45,7 @@ export function ReviewScreen() {
                     component="aside"
                     sx={{ flex: '2 1 0', minWidth: 0, overflow: 'auto', borderLeft: 1, borderColor: 'divider' }}
                 >
-                    {coordinates ? <CoordinatesInspector /> : <Inspector />}
+                    {coordinates ? <CoordinatesInspector /> : <StepInspector />}
                 </Box>
             </Box>
             <ShortcutHelp />

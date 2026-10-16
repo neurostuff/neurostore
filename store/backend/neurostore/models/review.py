@@ -7,7 +7,9 @@ from neurostore.database import db
 from neurostore.models.data import BaseMixin
 from neurostore.models.fulltext import Fulltext
 
-REVIEW_STATES = ("in_progress", "submitted", "reference")
+REVIEW_STATES = ("in_progress", "submitted", "reference", "set_aside")
+#: Why a reviewer sets a paper aside; ``other`` needs a note.
+SET_ASIDE_REASONS = ("no_usable_text", "out_of_scope", "no_results", "duplicate", "other")
 
 
 class ReviewSource(BaseMixin, db.Model):
@@ -75,9 +77,18 @@ class Review(BaseMixin, db.Model):
         JSONB, nullable=False, default=dict, server_default=sa.text("'{}'::jsonb")
     )
     last_seq = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    #: Set while the review is set aside, and only then.
+    set_aside_reason = db.Column(db.Text, nullable=True)
+    set_aside_note = db.Column(db.Text, nullable=True)
 
     __table_args__ = (
         sa.CheckConstraint(state.in_(REVIEW_STATES), name="ck_reviews_state"),
+        sa.CheckConstraint(
+            "(state = 'set_aside') = (set_aside_reason IS NOT NULL)", name="ck_reviews_set_aside"
+        ),
+        sa.CheckConstraint(
+            set_aside_reason.in_(SET_ASIDE_REASONS), name="ck_reviews_set_aside_reason"
+        ),
         sa.UniqueConstraint("source_id", "user_id", name="uq_reviews_source_user"),
         sa.Index(
             "uq_reviews_one_reference_per_source",

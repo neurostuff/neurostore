@@ -6,7 +6,17 @@ export interface ReviewSummary {
     id: string;
     source_id: string;
     user_id: string;
-    state: 'in_progress' | 'submitted' | 'reference';
+    state: 'in_progress' | 'submitted' | 'reference' | 'set_aside';
+    /**
+     * Present only while the review is set aside.
+     */
+    set_aside?: {
+        /**
+         * Why the paper was set aside; other needs a note.
+         */
+        reason: 'no_usable_text' | 'out_of_scope' | 'no_results' | 'duplicate' | 'other';
+        note: string | null;
+    };
     last_seq: number;
     created_at?: string;
     updated_at?: string | null;

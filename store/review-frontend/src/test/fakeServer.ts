@@ -1,7 +1,7 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { httpApi } from '../api/httpApi';
 import { judgeableKeys, memoryBackend, type OpBatch } from './memoryBackend';
-import { ApiError, type ReviewLifecycle } from '../api/reviewApi';
+import { ApiError, type ReviewLifecycle, type SetAside } from '../api/reviewApi';
 import { fakeFetch, json, type SentRequest } from './fakeFetch';
 import { schemaByName } from './goldenSchemas';
 import { API_BASE } from './spec';
@@ -62,8 +62,14 @@ export function fakeServer(bundles: ReviewBundle[], { userId = 'me' }: { userId?
         }
         if ((m = route(request, /^\/review\/reviews\/([^/]+)\/ops$/, 'POST')))
             return json(backend.postOps(decodeURIComponent(m[1]), request.body as OpBatch));
-        if ((m = route(request, /^\/review\/reviews\/([^/]+)$/, 'PATCH')))
-            return json(backend.setState(decodeURIComponent(m[1]), (request.body as { state: ReviewLifecycle }).state));
+        if ((m = route(request, /^\/review\/reviews\/([^/]+)$/, 'PATCH'))) {
+            const { state, reason, note } = request.body as {
+                state: ReviewLifecycle;
+                reason?: SetAside['reason'];
+                note?: string;
+            };
+            return json(backend.setState(decodeURIComponent(m[1]), state, reason, note));
+        }
         return json({ status: 404, detail: `no route for ${request.method} ${request.path}` }, 404);
     }
 

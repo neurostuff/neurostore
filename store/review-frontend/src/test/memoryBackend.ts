@@ -6,7 +6,16 @@ import { codePointPaper } from '../model/offsets';
 import { entityPath, getIn, readPath, type Json } from '../model/paths';
 import { targetKey } from '../model/targetKey';
 import type { InverseOp } from '../store/undoSteps';
-import { ApiError, type OpResult, refusedOp, type ReviewLifecycle, type ReviewSummary } from '../api/reviewApi';
+import {
+    ApiError,
+    type OpResult,
+    refusedOp,
+    type ReviewLifecycle,
+    type ReviewSummary,
+    type SetAside,
+    withState,
+} from '../api/reviewApi';
+import { SET_ASIDE_REASONS } from '../review/asideReasons';
 import { walkClasses } from './golden/schemaWalk';
 
 interface Review extends ReviewSummary {
@@ -19,6 +28,16 @@ interface Review extends ReviewSummary {
     /** The inverse of each stored op that has one, by client_op_id; the op result carries it, the bundle does not. */
     inverses: Record<string, InverseOp[]>;
 }
+
+/** The state changes a review's owner may make, as the backend's OWNER_TRANSITIONS. */
+const OWNER_TRANSITIONS: [ReviewLifecycle, ReviewLifecycle][] = [
+    ['in_progress', 'submitted'],
+    ['submitted', 'in_progress'],
+    ['in_progress', 'set_aside'],
+    ['set_aside', 'in_progress'],
+];
+
+const unprocessable = (detail: string) => new ApiError(422, { title: 'Unprocessable Entity', detail });
 
 const REVIEWED_STATES = new Set(['verified', 'edited', 'added', 'removed']);
 
@@ -157,11 +176,21 @@ export function memoryBackend(
         return found;
     }
 
-    const summary = ({ id, source_id, user_id, state, last_seq, created_at, updated_at }: Review): ReviewSummary => ({
+    const summary = ({
         id,
         source_id,
         user_id,
         state,
+        set_aside,
+        last_seq,
+        created_at,
+        updated_at,
+    }: Review): ReviewSummary => ({
+        id,
+        source_id,
+        user_id,
+        state,
+        ...(set_aside && { set_aside }),
         last_seq,
         created_at,
         updated_at,
@@ -203,7 +232,15 @@ export function memoryBackend(
                         last_edit_at: last?.created_at ?? null,
                     },
                 ],
-                review: { id: r.id, user_id: r.user_id, state: r.state, last_seq: r.last_seq, provenance, annotations },
+                review: {
+                    id: r.id,
+                    user_id: r.user_id,
+                    state: r.state,
+                    ...(r.set_aside && { set_aside: r.set_aside }),
+                    last_seq: r.last_seq,
+                    provenance,
+                    annotations,
+                },
             };
         },
 
@@ -218,6 +255,7 @@ export function memoryBackend(
                     user_id: r.user_id,
                     user_name: userName(r.user_id),
                     state: r.state,
+                    ...(r.set_aside && { set_aside: r.set_aside }),
                     last_seq: r.last_seq,
                     updated_at: null,
                     edited: states.filter((state) => state === 'edited').length,
@@ -293,12 +331,21 @@ export function memoryBackend(
             return result(r, applied);
         },
 
-        setState(reviewId: string, state: ReviewLifecycle): ReviewSummary {
+        setState(reviewId: string, state: ReviewLifecycle, reason?: SetAside['reason'], note?: string): ReviewSummary {
             const r = review(reviewId);
-            const allowed = { in_progress: 'submitted', submitted: 'in_progress' } as Record<string, string>;
-            if (allowed[r.state] !== state) throw conflict(`A review cannot go from ${r.state} to ${state}.`);
-            Object.assign(r, { state, updated_at: now() });
-            return summary(r);
+            if (!OWNER_TRANSITIONS.some(([from, to]) => from === r.state && to === state))
+                throw conflict(`A review cannot go from ${r.state} to ${state}.`);
+            if (state !== 'set_aside') {
+                if (reason !== undefined || note !== undefined)
+                    throw unprocessable(`Only set_aside takes a reason or a note, not ${state}.`);
+            } else if (reason === undefined || !Object.keys(SET_ASIDE_REASONS).includes(reason)) {
+                throw unprocessable('A review is set aside with a reason.');
+            } else if (reason === 'other' && !note?.trim()) {
+                throw unprocessable('A review set aside for another reason needs a note.');
+            }
+            const next = withState({ ...r, updated_at: now() }, state, reason && { reason, note: note ?? null });
+            reviews.set(r.id, next);
+            return summary(next);
         },
     };
 }

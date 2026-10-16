@@ -109,6 +109,19 @@ def hidden_reach():
     return record
 
 
+def merge_assessments():
+    """golden() plus asm_2, a described assessment that grp_a and grp_b use; grp_b uses asm_1
+    too."""
+    record = golden()
+    record["assessments"].append(
+        item("Assessment", "asm_2", name=fx.extracted("Beck Depression Inventory"),
+             description=fx.extracted("depression scale"))
+    )
+    record["groups"][0]["diagnostic_instrument"] = ["asm_2"]
+    record["groups"][1]["diagnostic_instrument"] = ["asm_1", "asm_2"]
+    return record
+
+
 def linked_analyses():
     """golden() (an_1 reads the first parse analysis) plus an_2, reading the second, which
     an_1 names as its mirror."""
