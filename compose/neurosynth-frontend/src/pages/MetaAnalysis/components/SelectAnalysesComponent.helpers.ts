@@ -5,6 +5,9 @@ import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnal
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { DEFAULT_REFERENCE_DATASETS, MULTIGROUP_ALGORITHMS } from './SelectAnalysesComponent.types';
 
+export const LARGE_ALE_SUBTRACTION_REFERENCE_STUDY_COUNT = 1000;
+export const NEUROSTORE_REFERENCE_DATASET_ID = 'neurostore';
+
 // TODO: instead of hardcoding this, we should add a property to the meta-analysis spec with something like: "multi-group" or something similar
 
 export const isMultiGroupAlgorithm = (estimator: IAutocompleteObject | null | undefined) => {
@@ -110,4 +113,33 @@ export const selectedReferenceDatasetIsDefaultDataset = (selectedReferenceDatase
     if (!selectedReferenceDataset) return false;
 
     return DEFAULT_REFERENCE_DATASETS.some((x) => x.id === selectedReferenceDataset);
+};
+
+// For specifications using default reference datasets, we can get the reference dataset from database_studyset.
+// For specifications where the base selection column and reference dataset is selected by the user, we can get the reference dataset from the conditions array:
+//     "conditions": [ "abc", "ghu" ]. "abc" is the base selection column, "ghu" is the reference dataset.
+export const getSpecificationReferenceDataset = (
+    databaseStudyset: string | null | undefined,
+    conditions: ReadonlyArray<string | boolean> | null | undefined
+): string | undefined => {
+    if (databaseStudyset) return databaseStudyset;
+
+    const referenceCondition = conditions?.[1];
+    if (referenceCondition === undefined || referenceCondition === null) return undefined;
+    return `${referenceCondition}`;
+};
+
+export const isLargeAleSubtractionReference = ({
+    estimatorLabel,
+    referenceDataset,
+    referenceStudyCount,
+}: {
+    estimatorLabel: string | undefined;
+    referenceDataset: string | undefined;
+    referenceStudyCount: number;
+}): boolean => {
+    if (estimatorLabel !== 'ALESubtraction' || !referenceDataset) return false;
+    if (referenceDataset === NEUROSTORE_REFERENCE_DATASET_ID) return true;
+    if (selectedReferenceDatasetIsDefaultDataset(referenceDataset)) return false;
+    return referenceStudyCount >= LARGE_ALE_SUBTRACTION_REFERENCE_STUDY_COUNT;
 };
