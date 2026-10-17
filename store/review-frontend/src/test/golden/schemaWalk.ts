@@ -1,5 +1,5 @@
 import { classOf, type Schema } from '../../model/schema';
-import extractionSchema from './schemas/extraction-record.schema.json';
+import extractionSchema from './schemas/extraction-record.schema.json' with { type: 'json' };
 import { isObject, type Json } from '../../model/paths';
 
 export interface ClassRow {

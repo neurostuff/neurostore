@@ -149,3 +149,59 @@ export function coordinateResult(
         entities,
     };
 }
+
+/** A paper whose one analysis is read from a sentence, with no spans of its own, as the producer emits it. */
+export const PROSE_TEXT = [
+    'Title\n',
+    '## Results\n',
+    'There was an effect of diagnosis: peak coordinate in MNI space: X = 26, Y = − 8, Z = 0; p = 0.022.\n',
+    'We did not find other effects.\n',
+    '## Discussion\n',
+    'The putamen matters.\n',
+].join('');
+export const proseAt = (phrase: string): [number, number] => [
+    PROSE_TEXT.indexOf(phrase),
+    PROSE_TEXT.indexOf(phrase) + phrase.length,
+];
+export const PROSE_SENTENCE = proseAt(
+    'There was an effect of diagnosis: peak coordinate in MNI space: X = 26, Y = − 8, Z = 0; p = 0.022.'
+);
+export const PROSE_OTHER = proseAt('We did not find other effects.');
+
+export const PROSE: CoordinateAnalysis = {
+    key: key(0x7e),
+    origin: 'text',
+    name: 'SAD > HC',
+    role: 'result',
+    coordinate_space: 'MNI',
+    points: [point([26, -8, 0])],
+};
+
+export function proseBundle({
+    sets = true,
+    named = true,
+    nameSpans = true,
+    coordinates = PROSE.points![0].coordinates,
+} = {}) {
+    const analysis = { ...PROSE, points: [point(coordinates)] };
+    const record = {
+        analyses: named
+            ? [
+                  {
+                      local_id: 'a_prose',
+                      name: ev('SAD > HC', nameSpans ? [PROSE_OTHER] : []),
+                      source_table_analysis: ev(PROSE.key),
+                  },
+              ]
+            : [],
+        coordinate_sets: sets ? [{ local_id: PROSE.key, role: ev('result', [PROSE_SENTENCE], 'generated') }] : [],
+    };
+    return makeBundle(record, PROSE_TEXT, {
+        entities: entityRows(
+            ...(named ? [row('a_prose', 'Analysis', 'analyses')] : []),
+            ...(sets ? [row(PROSE.key, 'CoordinateSet', 'coordinate_sets')] : [])
+        ),
+        coordinate_parse: { analyses: [analysis] } as ReviewBundle['coordinate_parse'],
+        review: { ...REVIEW },
+    });
+}

@@ -9,6 +9,10 @@ import { RelationshipAudit } from './RelationshipAudit';
 import { ReviewScreen } from './ReviewScreen';
 import { buildPaletteIndex, searchPalette } from './search';
 
+// Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
+vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
+vi.mock('handsontable/registry', () => ({ registerAllModules: () => {} }));
+
 const BUDGET_MS = 100;
 // A first coordinate focus builds a range for every point; jsdom builds each in about 5 ms where a
 // browser takes well under one, so this guards against regressions and N2 is checked in a browser.

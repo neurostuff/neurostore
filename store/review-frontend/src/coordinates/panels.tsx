@@ -1,65 +1,130 @@
 import { List, ListItem, Stack, Typography } from '@mui/material';
 import { useId, useMemo, useState } from 'react';
 import type { CoordinateOp } from '../contract/generated/review-ops';
-import { fromSchema } from '../contract/schemas';
 import { ConfirmDialog, DanglingList, PickPanel } from '../inspector/panels';
 import { panelKeys } from '../inspector/panelKeys';
 import { ScalarField } from '../inspector/SlotEditor';
-import { currentAnalyses, type CoordinateAnalysis, type CoordinatePoint } from '../model/coordinates';
+import {
+    currentAnalyses,
+    NULL_OUTCOME,
+    printedCoordinates,
+    RECORD_OUTCOME,
+    RECORD_SCOPE,
+    type CoordinateAnalysis,
+    type CoordinatePoint,
+} from '../model/coordinates';
 import { useReviewStores, useSession, useView } from '../store/context';
 import type { ParsedPaperLayout } from '../model/layout';
 import {
     addAnalysis,
+    editAnalysis,
+    type AnalysisEdit,
+    type AnalysisSource,
     mergeAnalyses,
     mergePreview,
-    mergeSet,
     movePoints,
-    moveTargets,
-    movingPoints,
     relabelAnalysis,
-    savePoint,
 } from './actions';
+import { mergeSet, moveTargets, movingPoints } from './availability';
 import { PointEditor } from './PointEditor';
-import { analysisFields } from './schema';
+import { analysisEditors, recordAnalysisChoices } from './schema';
 
-const editorsOf = fromSchema('coordinate-parse', (schema) => {
-    const fields = analysisFields(schema);
-    const closedChoice = (field: string) => {
-        const spec = fields[field];
-        return spec?.kind === 'enum' ? { ...spec, open: false } : spec;
-    };
-    return { name: fields.name, roles: closedChoice('role'), spaces: closedChoice('coordinate_space') };
-});
 type Role = NonNullable<CoordinateOp['role']>;
 
-export function RelabelPanel({ analysis }: { analysis: CoordinateAnalysis }) {
-    const stores = useReviewStores();
+type AnalysisField = 'name' | 'space' | 'role';
+
+/**
+ * A form for those of an analysis's name, coordinate space and role that `fields` lists, the first focused; Enter
+ * hands `save` the edit, and the form closes once it is sent.
+ */
+function AnalysisForm({
+    analysis,
+    fields,
+    label,
+    save,
+}: {
+    analysis: CoordinateAnalysis;
+    fields: AnalysisField[];
+    label: string;
+    save: (edit: AnalysisEdit) => boolean;
+}) {
     const closePanel = useView((s) => s.closePanel);
-    const editors = editorsOf();
+    const editors = analysisEditors();
     const id = useId();
+    const [name, setName] = useState(analysis.name);
+    const [nameError, setNameError] = useState('');
+    const [space, setSpace] = useState(analysis.coordinate_space ?? '');
     const [role, setRole] = useState(analysis.role);
-    const save = () => {
-        if (role === analysis.role || relabelAnalysis(stores, role as Role)) closePanel();
+    const submit = () => {
+        if (!name.trim()) return setNameError('required');
+        if (save({ name: name.trim(), role, coordinate_space: space || null })) closePanel();
     };
+    const first = (field: AnalysisField) => fields[0] === field;
     return (
-        <Stack
-            role="group"
-            aria-label={`relabel ${analysis.name}`}
-            sx={{ py: 1 }}
-            onKeyDown={panelKeys(save, closePanel)}
-        >
-            {editors.roles && (
+        <Stack role="group" aria-label={label} spacing={1.5} sx={{ py: 1 }} onKeyDown={panelKeys(submit, closePanel)}>
+            {fields.includes('name') && editors.name && (
                 <ScalarField
-                    id={id}
+                    id={`${id}-name`}
+                    label="name"
+                    spec={editors.name}
+                    value={name}
+                    error={nameError}
+                    autoFocus={first('name')}
+                    onChange={(next) => {
+                        setName(next);
+                        setNameError('');
+                    }}
+                />
+            )}
+            {fields.includes('space') && editors.spaces && (
+                <ScalarField
+                    id={`${id}-space`}
+                    label="coordinate space"
+                    spec={editors.spaces}
+                    value={space}
+                    error=""
+                    autoFocus={first('space')}
+                    optional
+                    onChange={setSpace}
+                />
+            )}
+            {fields.includes('role') && editors.roles && (
+                <ScalarField
+                    id={`${id}-role`}
                     label="role"
                     spec={editors.roles}
                     value={role}
                     error=""
-                    autoFocus
+                    autoFocus={first('role')}
                     onChange={setRole}
                 />
             )}
         </Stack>
+    );
+}
+
+/** Change role: the Edit analysis form with only the role, sent as a relabel. */
+export function RelabelPanel({ analysis }: { analysis: CoordinateAnalysis }) {
+    const stores = useReviewStores();
+    return (
+        <AnalysisForm
+            analysis={analysis}
+            fields={['role']}
+            label={`change the role of ${analysis.name}`}
+            save={({ role }) => role === analysis.role || relabelAnalysis(stores, role as Role)}
+        />
+    );
+}
+
+export function EditAnalysisPanel({ analysis }: { analysis: CoordinateAnalysis }) {
+    const stores = useReviewStores();
+    return (
+        <AnalysisForm
+            analysis={analysis}
+            fields={['name', 'space', 'role']}
+            label={`edit analysis ${analysis.name}`}
+            save={(edit) => editAnalysis(stores, analysis.key, edit)}
+        />
     );
 }
 
@@ -121,51 +186,53 @@ export function MovePanel() {
     );
 }
 
-export function PointPanel({ analysis, index }: { analysis: CoordinateAnalysis; index: number | null }) {
-    const stores = useReviewStores();
-    const closePanel = useView((s) => s.closePanel);
-    const point = index === null ? null : (analysis.points?.[index] ?? null);
-    return (
-        <PointEditor
-            label={index === null ? `a new point of ${analysis.name}` : `point ${index + 1} of ${analysis.name}`}
-            point={point}
-            onSave={(next) => {
-                if (savePoint(stores, index, next as CoordinatePoint)) closePanel();
-            }}
-            onCancel={closePanel}
-        />
-    );
+/** The space an analysis added from `source` starts with: that of the first analysis of its table, or of the paper, that states one. */
+function startingSpace(analyses: CoordinateAnalysis[], source: AnalysisSource) {
+    const from = 'table' in source ? analyses.filter((a) => a.table_id === source.table) : analyses;
+    return from.find((a) => a.coordinate_space)?.coordinate_space ?? '';
 }
 
-/** The space an analysis added to `table` starts with: that of the table's first analysis that states one. */
-const tableSpace = (analyses: CoordinateAnalysis[], table: string) =>
-    analyses.find((a) => a.table_id === table && a.coordinate_space)?.coordinate_space ?? '';
+const NULL_SWITCH = { kind: 'boolean' } as const;
 
-export function AddAnalysisPanel({ table }: { table: string }) {
+export function AddAnalysisPanel({ source }: { source: AnalysisSource }) {
     const stores = useReviewStores();
     const closePanel = useView((s) => s.closePanel);
-    const editors = editorsOf();
-    const label = useSession(
-        (s) => (s.bundle.parsed_paper as ParsedPaperLayout).tables?.find((t) => t.table_id === table)?.label ?? table
+    const editors = analysisEditors();
+    const label = useSession((s) =>
+        'table' in source
+            ? `in ${(s.bundle.parsed_paper as ParsedPaperLayout).tables?.find((t) => t.table_id === source.table)?.label ?? source.table}`
+            : 'from the selected text'
     );
+    const [point] = useState(() => {
+        if ('table' in source) return null;
+        const coordinates = printedCoordinates(stores.session.getState().bundle.text.slice(...source.span));
+        return coordinates ? { coordinates } : null;
+    });
     const id = useId();
     const [name, setName] = useState('');
     const [nameError, setNameError] = useState('');
     const [role, setRole] = useState(editors.roles?.kind === 'enum' ? editors.roles.options[0] : '');
-    const [space, setSpace] = useState(() => tableSpace(currentAnalyses(stores.session.getState().bundle), table));
-    const save = (point: CoordinatePoint) => {
+    const [space, setSpace] = useState(() => startingSpace(currentAnalyses(stores.session.getState().bundle), source));
+    const [isNull, setNull] = useState(false);
+    const [scope, setScope] = useState('');
+    const scopes = useSession((s) =>
+        recordAnalysisChoices({ entities: s.bundle.entities, record: s.record }, RECORD_SCOPE)
+    );
+    const save = (next: CoordinatePoint | null) => {
         if (!name.trim()) return setNameError('required');
         const fields = { name: name.trim(), role, ...(space ? { coordinate_space: space } : {}) };
-        if (addAnalysis(stores, table, fields, point)) closePanel();
+        const record = { ...(isNull && { [RECORD_OUTCOME]: NULL_OUTCOME }), ...(scope && { [RECORD_SCOPE]: scope }) };
+        if (addAnalysis(stores, source, fields, isNull ? null : next, record)) closePanel();
     };
     return (
         <PointEditor
-            label={`the first point of a new analysis in ${label}`}
-            point={null}
+            label={`the first point of a new analysis ${label}`}
+            point={point}
             saveLabel="Add analysis"
             autoFocus={false}
-            onSave={(point) => save(point as CoordinatePoint)}
+            onSave={(next) => save(next as CoordinatePoint | null)}
             onCancel={closePanel}
+            withoutPoint={isNull}
         >
             {editors.name && (
                 <ScalarField
@@ -204,6 +271,27 @@ export function AddAnalysisPanel({ table }: { table: string }) {
                     onChange={setSpace}
                 />
             )}
+            {scopes && (
+                <ScalarField
+                    id={`${id}-scope`}
+                    label="spatial scope"
+                    spec={scopes}
+                    value={scope}
+                    error=""
+                    autoFocus={false}
+                    optional
+                    onChange={setScope}
+                />
+            )}
+            <ScalarField
+                id={`${id}-null`}
+                label="no significant result: no points"
+                spec={NULL_SWITCH}
+                value={String(isNull)}
+                error=""
+                autoFocus={false}
+                onChange={(next) => setNull(next === 'true')}
+            />
         </PointEditor>
     );
 }

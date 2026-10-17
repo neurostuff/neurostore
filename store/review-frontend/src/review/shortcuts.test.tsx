@@ -8,6 +8,10 @@ import { answerPending, withoutIds } from '../test/undoHelpers';
 import { ReviewScreen } from './ReviewScreen';
 import { focusedSpans } from '../test/stores';
 
+// Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
+vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
+vi.mock('handsontable/registry', () => ({ registerAllModules: () => {} }));
+
 const TEXT = 'We scanned twenty patients and twenty controls on a 3 T scanner.';
 const at = (word: string): [number, number] => [TEXT.indexOf(word), TEXT.indexOf(word) + word.length];
 

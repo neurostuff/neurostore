@@ -9,9 +9,15 @@ import { useEditorName } from '../review/editor';
 import { useSession, useView } from '../store/context';
 import { focusedAnalysis } from '../model/coordinateFocus';
 import { analysisTarget } from '../model/targetKey';
-import { coordinatePending } from './actions';
+import { coordinatePending } from './availability';
+import { AnalysisName } from './AnalysisName';
+import { AddAnalysisChooser } from './AddAnalysisChooser';
 import { AuthorshipChip } from './AuthorshipChip';
-import { AddAnalysisPanel, MergeDialog, MovePanel, PointPanel, RelabelPanel } from './panels';
+import { NamedBy } from './RecordLinks';
+import { PointsView } from './PointsView';
+import { analysisSummary } from './summary';
+import { AddAnalysisPanel, EditAnalysisPanel, MergeDialog, MovePanel, RelabelPanel } from './panels';
+
 
 function Offer() {
     const offer = useView((s) => s.offer);
@@ -39,7 +45,7 @@ export function CoordinatesInspector() {
         analysis ? s.provenance[targetKey(analysisTarget(analysis.key))]?.state : undefined
     );
     const editor = useEditorName(analysis ? targetKey(analysisTarget(analysis.key)) : '');
-    const place = analysis?.table_id ?? analysis?.origin;
+    const summary = useSession((s) => (analysis ? analysisSummary(s.bundle, s.index, analysis) : ''));
     return (
         <>
             <ActionToolbar scope="coordinates" label="coordinate actions" />
@@ -49,46 +55,45 @@ export function CoordinatesInspector() {
             <Offer />
             {analysis && coordinates && (
                 <Box component="section" aria-label={analysis.name}>
-                    <CardHead overline="coordinate analysis" title={analysis.name}>
+                    <CardHead
+                        overline="coordinate analysis"
+                        title={analysis.name}
+                        heading={<AnalysisName analysis={analysis} variant="h6" component="h2" />}
+                    >
                         <Stack direction="row" spacing={1.5} alignItems="center" useFlexGap flexWrap="wrap">
                             <Chip size="small" variant="outlined" label={analysis.role} />
-                            <AuthorshipChip analysis={analysis} />
+                            <AuthorshipChip analysis={analysis} judged={reviewed !== undefined} />
                             <StatusLabel id={reviewStatus(reviewed)} by={editor} />
-                            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                                {analysis.key}
-                            </Typography>
-                            {place && (
-                                <Typography variant="caption" color="text.secondary">
-                                    {place}
-                                </Typography>
-                            )}
                         </Stack>
                         <Typography variant="caption" color="text.secondary" component="div">
                             {[
-                                `${analysis.points?.length ?? 0} points`,
+                                summary,
                                 coordinates.selected.length ? `${coordinates.selected.length} selected` : '',
                                 merging ? `${merging} selected for merge` : '',
                             ]
                                 .filter(Boolean)
                                 .join(' · ')}
                         </Typography>
+                        <NamedBy analysis={analysis} />
                         {panel?.kind === 'note' && <NotePanel target={panel.target} label={analysis.name} />}
+                        {panel?.kind === 'edit_analysis' && <EditAnalysisPanel analysis={analysis} />}
                         {panel?.kind === 'relabel' && <RelabelPanel analysis={analysis} />}
                         {panel?.kind === 'move' && <MovePanel />}
-                        {(panel?.kind === 'edit_point' || panel?.kind === 'add_point') && (
-                            <PointPanel
-                                analysis={analysis}
-                                index={panel.kind === 'edit_point' ? coordinates.point : null}
-                            />
-                        )}
                         {panel?.kind === 'reject' && <RejectPanel target={panel.target} label={analysis.name} />}
                         {panel?.kind === 'merge' && <MergeDialog />}
                     </CardHead>
+                    <Box sx={{ px: 2, py: 1 }}>
+                        <PointsView analysis={analysis} />
+                    </Box>
                 </Box>
             )}
-            {panel?.kind === 'add_analysis' && panel.table && (
+            <AddAnalysisChooser />
+            {panel?.kind === 'add_analysis' && (panel.table || panel.span) && (
                 <Box sx={{ px: 2 }}>
-                    <AddAnalysisPanel table={panel.table} />
+                    <AddAnalysisPanel
+                        key={panel.table ?? panel.span!.join(':')}
+                        source={panel.table ? { table: panel.table } : { span: panel.span! }}
+                    />
                 </Box>
             )}
         </>

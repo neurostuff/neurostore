@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
-import { acceptAnalysis, removePoint, splitAnalysis } from '../coordinates/actions';
+import { acceptAnalysis, addSelectionToAnalysis, editPoint, removePoint, splitAnalysis } from '../coordinates/actions';
+import { COORDINATE_UNAVAILABLE as NOT } from '../coordinates/availability';
 import { accept, acceptCard, createOn } from '../inspector/actions';
 import type { ReviewStores } from '../store/reviewStores';
+import type { SessionState } from '../store/sessionStore';
 import type { ViewState } from '../store/viewStore';
 import { addSelection } from '../text/addSelection';
 import { removeCursorSpan, stepCursorSpan } from '../text/spanEdits';
@@ -16,6 +18,8 @@ export interface Shortcut {
     scope?: Scope;
     /** The toolbar button that runs the shortcut, if it has one. */
     button?: { label: string; color?: 'error' };
+    /** Why the shortcut does not apply to the focus now; undefined when it does. */
+    unavailable?(session: Pick<SessionState, 'bundle' | 'pending'>, view: ViewState): string | undefined;
     run(stores: ReviewStores): void;
 }
 
@@ -131,34 +135,51 @@ export const SHORTCUTS: Shortcut[] = [
     coordinates({ keys: ['Shift+J'], label: 'next analysis', run: (s) => view(s).moveAnalysis(1) }),
     coordinates({ keys: ['Shift+K'], label: 'previous analysis', run: (s) => view(s).moveAnalysis(-1) }),
     coordinates({
+        keys: ['e'],
+        label: 'add the selection to the evidence of the record Analysis naming the focused analysis',
+        run: (s) => void addSelectionToAnalysis(s),
+    }),
+    coordinates({
         keys: ['a'],
         label: 'accept the focused analysis',
         button: { label: 'Accept' },
+        unavailable: NOT.judge,
         run: (s) => void acceptAnalysis(s),
     }),
     coordinates({
         keys: ['Shift+Backspace'],
         label: 'reject the focused analysis: with a reason (1–5) and an optional note',
         button: { label: 'Reject', color: 'error' },
+        unavailable: NOT.judge,
         run: (s) => openPanelOn(s, 'reject'),
     }),
     coordinates({
         keys: [';'],
         label: 'add a note to the focused analysis',
         button: { label: 'Note' },
+        unavailable: NOT.note,
         run: (s) => openPanelOn(s, 'note'),
     }),
     coordinates({
+        keys: ['n'],
+        label: 'edit the focused analysis: its name, coordinate space and role',
+        button: { label: 'Edit analysis' },
+        unavailable: NOT.judge,
+        run: (s) => openPanelOn(s, 'edit_analysis'),
+    }),
+    coordinates({
         keys: ['r'],
-        label: 'relabel the focused analysis with another role',
-        button: { label: 'Relabel' },
+        label: 'change the focused analysis’s role',
+        button: { label: 'Change role' },
+        unavailable: NOT.judge,
         run: (s) => openPanelOn(s, 'relabel'),
     }),
     coordinates({
         keys: ['Enter'],
-        label: 'edit the focused point; Enter saves, Esc cancels',
+        label: 'edit the points in the grid, from the focused point or the first',
         button: { label: 'Edit point' },
-        run: (s) => openPanelOn(s, 'edit_point'),
+        unavailable: NOT.editPoint,
+        run: (s) => void editPoint(s),
     }),
     coordinates({
         keys: [' '],
@@ -166,39 +187,36 @@ export const SHORTCUTS: Shortcut[] = [
         run: (s) => view(s).togglePoint(),
     }),
     coordinates({
-        keys: ['p'],
-        label: 'add a point to the focused analysis',
-        button: { label: 'Add point' },
-        run: (s) => openPanelOn(s, 'add_point'),
-    }),
-    coordinates({
         keys: ['Backspace'],
         label: 'remove the focused point',
-        button: { label: 'Remove point' },
         run: (s) => void removePoint(s),
     }),
     coordinates({
         keys: ['m'],
         label: 'move the selected points, or the focused one, to another analysis',
         button: { label: 'Move' },
+        unavailable: NOT.move,
         run: (s) => openPanelOn(s, 'move'),
     }),
     coordinates({
         keys: ['s'],
         label: 'split the focused analysis: the selected points, then the rest',
         button: { label: 'Split' },
+        unavailable: NOT.split,
         run: (s) => void splitAnalysis(s),
     }),
     coordinates({
         keys: ['g'],
         label: 'merge the analyses selected for a merge with the focused one, after confirming',
         button: { label: 'Merge' },
+        unavailable: NOT.merge,
         run: (s) => openPanelOn(s, 'merge'),
     }),
     coordinates({
         keys: ['c'],
         label: 'add an analysis to the focused analysis’s table',
         button: { label: 'Add analysis' },
+        unavailable: NOT.addAnalysis,
         run: (s) => openPanelOn(s, 'add_analysis'),
     }),
     { keys: ['Alt+Shift+J'], label: 'next step', run: (s) => view(s).moveStep(1) },
@@ -233,6 +251,10 @@ const CONTROL = 'button, a[href], [role="button"], [role="option"], [role="radio
 const within = (target: EventTarget | null, selector: string) =>
     target instanceof Element && target.closest(selector) !== null;
 
+/** A spreadsheet, whose keys are its own but undo and redo. */
+const GRID = '[data-coordinate-table]';
+const THROUGH_GRID = new Set(['Ctrl+Z', 'Ctrl+Shift+Z', 'Ctrl+Y']);
+
 export const isTextField = (target: EventTarget | null) => within(target, TEXT_FIELD);
 export const isControl = (target: EventTarget | null) => within(target, CONTROL);
 
@@ -266,6 +288,7 @@ export function useShortcuts(stores: ReviewStores, table: Shortcut[], enabled: (
         }
         const onKeyDown = (event: KeyboardEvent) => {
             if (isTextField(event.target)) return;
+            if (within(event.target, GRID) && !THROUGH_GRID.has(keyName(event))) return;
             if ((event.key === 'Enter' || event.key === ' ') && isControl(event.target)) return;
             const scope: Scope = view(stores).coordinates ? 'coordinates' : 'record';
             const inScope = (key: string) => byKey.get(key)?.find((s) => (s.scope ?? scope) === scope);

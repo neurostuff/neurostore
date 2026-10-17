@@ -55,6 +55,13 @@ export const POINTS = 'points';
 export const READ_FROM = ['row', 'column_group', 'text_span'];
 /** The record slot naming the coordinate analysis an entity reports. */
 export const RECORD_LINK = 'source_table_analysis';
+/** The record's list of analyses. */
+export const RECORD_ANALYSES = 'analyses';
+/** The record Analysis slots saying whether an analysis found an effect, and over how much of the brain. */
+export const RECORD_OUTCOME = 'outcome';
+export const RECORD_SCOPE = 'spatial_scope';
+/** The outcome of an analysis that found no effect: a null result. */
+export const NULL_OUTCOME = 'no_significant_effect';
 /** What a reviewer gives an analysis they add or relabel. */
 export const ANALYSIS_EDITS = ['name', 'role', 'coordinate_space'];
 
@@ -102,12 +109,16 @@ function placeOf(blocks: Block[], analysis: CoordinateAnalysis): number | undefi
     return blocks.find((block) => block.start <= first.start_char && first.start_char < block.end)?.start;
 }
 
-/** The analyses beside each block, by the block's start; those the text cannot place are under 'end'. */
-export function analysesBeside(blocks: Block[], analyses: CoordinateAnalysis[]) {
+/** The analyses beside each block, by the block's start, each where `place` puts it; those it cannot place are under 'end'. */
+export function analysesBeside(
+    blocks: Block[],
+    analyses: CoordinateAnalysis[],
+    place: (analysis: CoordinateAnalysis) => number | undefined = (analysis) => placeOf(blocks, analysis)
+) {
     const beside = new Map<number | 'end', CoordinateAnalysis[]>();
     for (const analysis of analyses) {
-        const place = placeOf(blocks, analysis) ?? 'end';
-        beside.set(place, [...(beside.get(place) ?? []), analysis]);
+        const at = place(analysis) ?? 'end';
+        beside.set(at, [...(beside.get(at) ?? []), analysis]);
     }
     return beside;
 }
@@ -133,6 +144,53 @@ export function pointSpan(
     return row && [row.start, row.cells[row.cells.length - 1].contentEnd];
 }
 
+const PRINTED_NUMBER = /(?:[-\u2212\u2012\u2013\u2014\uFE63\uFF0D]\s?)?\d+(?:\.\d+)?/g;
+/** The most text between two of a point's printed coordinates, as in "X = 26, Y = − 8". */
+const COORDINATE_GAP = 12;
+
+/** The numbers `text` prints, with where. */
+function printedNumbers(text: string) {
+    return [...text.matchAll(PRINTED_NUMBER)].map((m) => ({
+        value: Number(m[0].replace(MINUS, '-').replace(/\s/g, '')),
+        start: m.index,
+        end: m.index + m[0].length,
+    }));
+}
+
+type Printed = ReturnType<typeof printedNumbers>;
+
+/** Whether the numbers `run` sits close together, as one point's coordinates are printed. */
+const together = (run: Printed) => run.every((n, i) => i === 0 || n.start - run[i - 1].end <= COORDINATE_GAP);
+
+/**
+ * The numbers each paper's text prints, by its bundle: a focus looks up every point of an analysis in the whole
+ * text, so the text is read once per bundle rather than once per point.
+ */
+const printedIn = new WeakMap<Pick<ReviewBundle, 'text'>, Printed>();
+
+/** The span of the paper's text printing `coordinates` in order, close together; the first such, if any. */
+export function textPointSpan(paper: Pick<ReviewBundle, 'text'>, coordinates: number[]): [number, number] | undefined {
+    let numbers = printedIn.get(paper);
+    if (!numbers) printedIn.set(paper, (numbers = printedNumbers(paper.text)));
+    for (let at = 0; at + coordinates.length <= numbers.length; at++) {
+        const run = numbers.slice(at, at + coordinates.length);
+        if (run.every((n, i) => n.value === coordinates[i]) && together(run)) {
+            return [run[0].start, run[run.length - 1].end];
+        }
+    }
+    return undefined;
+}
+
+/** The first three numbers `text` prints close together, read as a point's x, y and z. */
+export function printedCoordinates(text: string): [number, number, number] | undefined {
+    const numbers = printedNumbers(text);
+    for (let at = 0; at + 3 <= numbers.length; at++) {
+        const run = numbers.slice(at, at + 3);
+        if (together(run)) return run.map((n) => n.value) as [number, number, number];
+    }
+    return undefined;
+}
+
 /** The originals an analysis comes from: those it is derived from, or itself when it is carried over. */
 export const originsOf = (analysis: CoordinateAnalysis) =>
     analysis.derived_from?.length ? analysis.derived_from : [analysis.key];
@@ -147,9 +205,29 @@ export function successor(before: CoordinateAnalysis[], after: CoordinateAnalysi
     return after.find((analysis) => !known.has(analysis.key) && originsOf(analysis).some((k) => origins.has(k)))?.key;
 }
 
-/** The record's entities that name the coordinate analysis `key`. */
+const NONE: EntityNode[] = [];
+/**
+ * The record entities naming each coordinate analysis, by the index's entity list: every card asks for its
+ * analysis's on each render, and the list is replaced whenever an entity changes.
+ */
+const naming = new WeakMap<RecordIndex['entities'], Map<unknown, EntityNode[]>>();
+
+/** The record's entities that name the coordinate analysis `key`; the same list for the same index. */
 export function entitiesNaming(index: Pick<RecordIndex, 'entities'>, key: string): EntityNode[] {
-    return index.entities.filter((entity) =>
-        entity.slots.some((slot) => slot.path === RECORD_LINK && slot.value?.value === key)
-    );
+    let byKey = naming.get(index.entities);
+    if (!byKey) {
+        byKey = new Map();
+        for (const entity of index.entities) {
+            const named = entity.slots.find((slot) => slot.path === RECORD_LINK)?.value?.value;
+            if (named !== undefined) byKey.set(named, [...(byKey.get(named) ?? []), entity]);
+        }
+        naming.set(index.entities, byKey);
+    }
+    return byKey.get(key) ?? NONE;
+}
+
+/** The coordinate analysis among `analyses` that the record entity `entity` names. */
+export function analysisNamedBy(entity: EntityNode | undefined, analyses: CoordinateAnalysis[]) {
+    const key = entity?.slots.find((slot) => slot.path === RECORD_LINK)?.value?.value;
+    return typeof key === 'string' ? analyses.find((analysis) => analysis.key === key) : undefined;
 }

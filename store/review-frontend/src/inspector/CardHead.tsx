@@ -13,15 +13,28 @@ const headStyles = (theme: Theme) => ({
 });
 
 /** The head of a card: its overline and title, then whatever else the head holds. */
-export function CardHead({ overline, title, children }: { overline: string; title: string; children?: ReactNode }) {
+export function CardHead({
+    overline,
+    title,
+    heading,
+    children,
+}: {
+    overline: string;
+    title: string;
+    /** Rendered in place of the title's heading. */
+    heading?: ReactNode;
+    children?: ReactNode;
+}) {
     return (
         <Box sx={headStyles}>
             <Typography variant="overline" color="primary" component="div">
                 {overline}
             </Typography>
-            <Typography variant="h6" component="h2">
-                {title}
-            </Typography>
+            {heading ?? (
+                <Typography variant="h6" component="h2">
+                    {title}
+                </Typography>
+            )}
             {children}
         </Box>
     );

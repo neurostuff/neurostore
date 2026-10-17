@@ -17,6 +17,7 @@ import {
 } from '../api/reviewApi';
 import { SET_ASIDE_REASONS } from '../review/asideReasons';
 import { walkClasses } from './golden/schemaWalk';
+import { applyCoordinate } from './memoryCoordinates';
 
 interface Review extends ReviewSummary {
     created_at: string;
@@ -27,6 +28,8 @@ interface Review extends ReviewSummary {
     ops: StoredOp[];
     /** The inverse of each stored op that has one, by client_op_id; the op result carries it, the bundle does not. */
     inverses: Record<string, InverseOp[]>;
+    /** The coordinate revision, null until a coordinate op changes the parse. */
+    revision: CoordinateParse | null;
 }
 
 /** The state changes a review's owner may make, as the backend's OWNER_TRANSITIONS. */
@@ -204,7 +207,7 @@ export function memoryBackend(
             }),
             last_seq: r.last_seq,
             record: r.record,
-            coordinate_revision: null,
+            coordinate_revision: r.revision,
             provenance: r.provenance,
             annotations: r.annotations,
             hidden: sources.get(r.source_id)!.hidden,
@@ -222,6 +225,7 @@ export function memoryBackend(
             return {
                 ...bundle,
                 record,
+                coordinate_revision: r.revision,
                 ops,
                 reviewers: [
                     {
@@ -285,6 +289,7 @@ export function memoryBackend(
                 annotations: {},
                 ops: [],
                 inverses: {},
+                revision: null,
             };
             reviews.set(id, r);
             return { summary: summary(r), created: true };
@@ -309,14 +314,27 @@ export function memoryBackend(
                 coordinateParse: coordinate_parse as CoordinateParse,
                 entities,
             };
-            let documents: Documents;
-            try {
-                documents = applyBatch(before, batch.ops, paper);
-            } catch (error) {
-                if (error instanceof OpRefused) throw refusedOp(error.index, error.clientOpId, error.message);
-                throw error;
+            const parse = coordinate_parse as CoordinateParse;
+            let documents = before;
+            let revision = r.revision;
+            const steps: ReturnType<typeof stepsOf> = [];
+            for (const [index, op] of batch.ops.entries()) {
+                try {
+                    if (op.type === 'coordinate') {
+                        const step = applyCoordinate(revision ?? parse, documents.record, op);
+                        revision = { ...(revision ?? parse), analyses: step.analyses };
+                        documents = { ...documents, record: step.record };
+                        steps.push({ undo: step.undo, before: {}, after: {} });
+                    } else {
+                        const at = { ...paper, coordinateRevision: revision };
+                        steps.push(...stepsOf(documents, [op], at));
+                        documents = applyBatch(documents, [op], at);
+                    }
+                } catch (error) {
+                    if (error instanceof OpRefused) throw refusedOp(index, error.clientOpId, error.message);
+                    throw refusedOp(index, op.client_op_id, (error as Error).message);
+                }
             }
-            const steps = stepsOf(before, batch.ops, paper);
             const applied = batch.ops.map((op, index): StoredOp => ({
                 seq: r.last_seq + index + 1,
                 op,
@@ -329,7 +347,12 @@ export function memoryBackend(
                 const undo = steps[index].undo;
                 if (undo) r.inverses[op.client_op_id] = undo;
             });
-            Object.assign(r, { ...documents, last_seq: r.last_seq + applied.length, ops: [...r.ops, ...applied] });
+            Object.assign(r, {
+                ...documents,
+                revision,
+                last_seq: r.last_seq + applied.length,
+                ops: [...r.ops, ...applied],
+            });
             return result(r, applied);
         },
 

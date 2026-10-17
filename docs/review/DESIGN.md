@@ -32,6 +32,7 @@ The role check is `user_has_role(user, "admin-reviewer")` in `store/backend/neur
 | CLI | `store/backend/neurostore/cli.py` (`review-import`, `review-import-run`, `review-export`) |
 | Front end | `store/review-frontend/` (Vite, React 19, MUI, zustand), served under `/review/` |
 | Shared theme | `packages/neurosynth-theme/` |
+| Shared coordinate grid | `packages/coordinate-table/` (`README.md` there) |
 
 ## Data model
 
@@ -163,6 +164,12 @@ Pure logic lives in `src/model/`, with no React and no stores. `src/layering.tes
 
 **The text pane and highlights** (`src/text/`). `model/layout.ts` splits the text into blocks: section headings from `#` markers, and tables found as a line equal to the table's label followed by tab-separated rows. `TextBody.tsx` renders the text once. Highlights are CSS Custom Highlight API ranges (`text/highlights.ts`, `useHighlights.ts`), so changing focus changes only which ranges are registered, never the DOM. The focused item's spans are filled, other evidence is underlined, and the original's spans are dashed in the diff. `TextIndex.ts` maps offsets to DOM ranges and skips the cards set beside blocks. `SpanTicks.tsx` marks focused spans on the scrollbar. `SpanHandles.tsx` and `snap.ts` move a span by its handles, snapping to word edges. A move or removal is one `set_evidence` built from a replace intent.
 
+**The coordinates step** (`src/coordinates/`). Each analysis has a card beside the table or paragraph it is read from (`CoordinateAside.tsx`), and the focused one is in the inspector (`CoordinatesInspector.tsx`). Whether a toolbar action, its key and its panel apply to the focus is read from one table, `COORDINATE_UNAVAILABLE` in `coordinates/availability.ts`, which also gives the disabled button's tooltip. The add-analysis bar under the inspector (`AddAnalysisChooser.tsx`) adds an analysis to a table, or from the selected text, which the selection bar also offers. A text analysis is added with the selection as its span and the x, y and z printed there as its first point, or with no points as a null result, whose record Analysis then gets its outcome and spatial scope once the server has made it. Renaming an analysis from its card, the inspector, the Edit analysis form or its record Analysis's name slot sends one batch, `renamePair` in `coordinates/actions.ts`: the record names' `set_value`s and the analysis's `edit_points`, so one undo restores both.
+
+**The point grid** (`coordinates/PointsTable.tsx`, over `packages/coordinate-table`). The focused analysis's points are a Handsontable 18 spreadsheet of compose's CBMA columns, mapped to the coordinate-parse schema's point fields (`coordinates/pointRows.ts`). A focused analysis's points first show as a plain read-only table laid out as the grid is (`StaticTable`, from `@neurosynth/coordinate-table/static`, which loads no Handsontable), so moving the focus draws no grid. A click, Enter, a typed character, a paste or the table's add and delete buttons mount the grid in its place (`coordinates/PointsView.tsx`), and the grid carries on what began there: the cell selected, the character in its editor, the paste, the row added. Once mounted the grid stays, hidden while another analysis's table shows, and an edit still open is committed when it is hidden; the view store's `gridEngagement` says whether it is shown, and an op result that replaces the focused analysis keeps it shown. The grid and Handsontable are a chunk of their own, fetched as soon as the review loads. Each committed change (a cell edit on Enter or blur, a paste, a fill, a row added or deleted) is one `edit_points` carrying the whole point list. Nothing is sent while a cell is invalid. Coordinate ops are applied by the server only, so until the result lands the grid shows what was sent and takes no edits, and a refusal brings the analysis's points back.
+
+**Where a coordinate focus is in the text** (`model/coordinateFocus.ts`, `coordinateSpans`). The focused point, or every point of the focused analysis, is found by the first of three steps that finds anything: the spans the analysis carries (each point's text span or table row, and the analysis's own spans); then where the record reports it (the evidence of its `coordinate_sets` entry, keyed by its key or an original's, else the spans of the record Analysis naming it); then, for a text analysis only, the text printing the point's x, y and z. A card with no span says that its source sentence is unknown and how to add it.
+
 **Screens.** `src/pages/PaperListPage.tsx` is the paper list, with assignees, each reviewer's progress and an "assigned to me" filter. `src/pages/ReviewPage.tsx` holds the review screen (`src/review/`): guided steps 1 to 6 (`GuidedSteps.tsx`, `model/guided.ts`), the coordinates step (`src/coordinates/`), the inspector (`src/inspector/`), the outline rail, the Ctrl+K palette, the diff against the original (D) and the submit summary. `?` shows the keyboard shortcuts (`review/shortcuts.ts`).
 
 ## API routes
@@ -208,9 +215,13 @@ The one documented way to regenerate them is in `store/review-frontend/README.md
 2. Run `UPDATE_GOLDEN=1 npm run test` for `ops.json`.
 3. Run the backend tests again without the flag.
 
+**The memory backend** (`src/test/memoryBackend.ts`, `memoryCoordinates.ts`). Front-end integration tests run against an in-memory review server with the real one's `last_seq`, replay and 409 rules (`src/test/fakeServer.ts` puts the HTTP routes over it). It applies `edit_points` and `restore` as the server does, with a stand-in for study_schema's key rule, and gives each a `restore` inverse, so undo works in those tests.
+
+**The grid in tests.** Handsontable does not lay out in jsdom. A test file that renders the point grid mocks `@handsontable/react-wrapper` with the package's stand-in (`@neurosynth/coordinate-table/testing`), which edits rows in place and runs the hooks the grid uses as Handsontable does. The end-to-end suite (`store/review-frontend/e2e/`, `npm run test:e2e`, Playwright) checks those hooks against the real grid in Chromium: it serves `e2e/index.html`, which mounts the app over the HTTP API, and answers the API with the memory backend over a synthetic paper (`e2e/fixtures/P1.bundle.json`, the unit tests' coordinate paper), recording the op batches the app posts.
+
 **Timing tests run apart.** The backend's (`test_coordinate_batch_speed.py`) are skipped unless pytest gets `--performance`. The front end's (`*.perf.test.tsx`) run only under `npm run test:perf`. Their functional checks stay in the default suites.
 
-**CI.** The `review_frontend` job in `.github/workflows/workflow.yml` runs `npm ci`, `check:types`, `typecheck`, `lint`, `test` and `build` in `store/review-frontend`. The backend review tests run in the existing store job.
+**CI.** The `review_frontend` job in `.github/workflows/workflow.yml` runs `npm ci`, `check:types`, `typecheck`, `lint`, `test`, the end-to-end suite (after `npx playwright install --with-deps chromium`) and `build` in `store/review-frontend`. The backend review tests run in the existing store job.
 
 ## Not built yet / follow-ups
 
@@ -220,6 +231,7 @@ The one documented way to regenerate them is in `store/review-frontend/README.md
 - **Undo across a reload.** The undo stacks live in memory and are not kept with the offline queue.
 - **Alias table** for renamed entities, so a later run naming the old name and a reviewer's new name both match the entity.
 - **Two-column diff in the coordinates inspector.** The record inspector has one, but the coordinates step does not.
+- **Compose's switch to the coordinate grid package.** Compose's CBMA points table is still its own; `packages/coordinate-table/README.md` says how it would use the package.
 - **Compose's switch to the shared theme.** `compose/neurosynth-frontend/src/index.tsx` still holds its own copy of the palette that `packages/neurosynth-theme` holds.
 - **Deployment.** `store/nginx/nginx.conf` has no location serving the built front end at `/review/`.
 - Also designed but not built: promotion of a reference review into the truth layer, comparison with another reviewer or another extraction, and audit mode.

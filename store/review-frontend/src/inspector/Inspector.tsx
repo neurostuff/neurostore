@@ -7,7 +7,9 @@ import { ActionToolbar } from '../review/ActionToolbar';
 import { useEditorName } from '../review/editor';
 import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
 import type { Panel } from '../store/viewStore';
-import { pendingStructure, setValue, slotSchema, unlink } from './actions';
+import { saveSlotValue } from '../coordinates/actions';
+import { CoordinatesOf } from '../coordinates/RecordLinks';
+import { pendingStructure, slotSchema, unlink } from './actions';
 import { CreateDialog, DeleteDialog, LinkPanel, NotePanel, RejectPanel } from './panels';
 import { RemoveIcon } from './RemoveIcon';
 import { extractionSchema } from '../model/schema';
@@ -84,7 +86,7 @@ function SlotPanel({ panel, slot, label }: { panel: Panel; slot: SlotNode; label
                     value={slot.value}
                     mode={panel.kind}
                     onSave={(value) => {
-                        if (setValue(stores, slot, value)) closePanel();
+                        if (saveSlotValue(stores, slot, value)) closePanel();
                     }}
                     onCancel={closePanel}
                 />
@@ -192,6 +194,7 @@ export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focuse
                         </Typography>
                     )}
                 </Stack>
+                <CoordinatesOf entity={entity} />
                 {entityPanel?.kind === 'reject' && <RejectPanel target={entityPanel.target} label={entity.name} />}
                 {entityPanel?.kind === 'note' && <NotePanel target={entityPanel.target} label={entity.name} />}
             </CardHead>

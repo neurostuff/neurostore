@@ -1,3 +1,4 @@
+import { AddAnalysisChooser } from '../coordinates/AddAnalysisChooser';
 import { Inspector } from '../inspector/FocusedCard';
 import { useShown, useView } from '../store/context';
 import { guidedCards } from '../model/guided';
@@ -33,6 +34,13 @@ export function StepInspector() {
             return <LeftoversStep />;
         case 'relationships':
             return <RelationshipAudit />;
+        case 'coordinates':
+            return (
+                <>
+                    <AddAnalysisChooser />
+                    <Inspector />
+                </>
+            );
         default:
             return <Inspector />;
     }

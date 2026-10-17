@@ -11,6 +11,10 @@ import { coordinateOpErrors } from '../test/schemas';
 import { API_BASE } from '../test/spec';
 import { ReviewScreen } from './ReviewScreen';
 
+// Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
+vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
+vi.mock('handsontable/registry', () => ({ registerAllModules: () => {} }));
+
 // These tests render the whole review screen and query it by role, which takes 1.5–3 s each in
 // jsdom and more under the full parallel suite.
 vi.setConfig({ testTimeout: 15_000 });

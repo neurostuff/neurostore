@@ -109,14 +109,17 @@ function tableBlock(text: string, table: ParsedTable, rowLines: Line[]): TableBl
     return { kind: 'table', start, end, contentEnd: end, tableId: table.table_id, rows };
 }
 
-let laidOut: { text: string; parsedPaper: ParsedPaperLayout; blocks: Block[] } | null = null;
+/**
+ * The blocks of each paper's text, by its parsed paper: the text pane, the cards and every coordinate focus lay
+ * out the same text, many times for each change.
+ */
+const laidOut = new WeakMap<ParsedPaperLayout, { text: string; blocks: Block[] }>();
 
 /** The blocks of `text` as laid out under `parsedPaper`; laid out once for each text and paper, then shared. */
 export function layoutText(text: string, parsedPaper: ParsedPaperLayout): Block[] {
-    if (laidOut?.text !== text || laidOut.parsedPaper !== parsedPaper) {
-        laidOut = { text, parsedPaper, blocks: layoutBlocks(text, parsedPaper) };
-    }
-    return laidOut.blocks;
+    let held = laidOut.get(parsedPaper);
+    if (held?.text !== text) laidOut.set(parsedPaper, (held = { text, blocks: layoutBlocks(text, parsedPaper) }));
+    return held.blocks;
 }
 
 function layoutBlocks(text: string, parsedPaper: ParsedPaperLayout): Block[] {

@@ -42,6 +42,16 @@ function reached(sources: Sources, file: string): Set<string> {
     return seen;
 }
 
+/** The packages `file`, and every module of `sources` it reaches, import by name, each once, in order. */
+function packagesReached(sources: Sources, file: string): string[] {
+    const names = [file, ...reached(sources, file)].flatMap((module) =>
+        [...(sources.get(module) ?? '').matchAll(IMPORT)]
+            .map(([, from, dynamic]) => from ?? dynamic)
+            .filter((specifier) => !specifier.startsWith('.'))
+    );
+    return [...new Set(names)].sort();
+}
+
 /** The modules of the `forbidden` layers under `root` that `file` reaches, relative to `root`. */
 function crossings(sources: Sources, root: string, file: string, forbidden: string[]): string[] {
     return [...reached(sources, file)]
@@ -81,6 +91,62 @@ describe('the import walk', () => {
         expect(crossings(graph, root, `${root}/model/clean.ts`, ['inspector'])).toEqual(['inspector/bad.ts']);
         expect(crossings(graph, root, `${root}/store/b.ts`, ['text'])).toEqual([]);
     });
+});
+
+describe('the bare imports', () => {
+    const root = '/app/src';
+    const graph: Sources = new Map([
+        [`${root}/store/a.ts`, "import { b } from './b';\nimport { create } from 'zustand';"],
+        [`${root}/store/b.ts`, "import { CoordinateTable } from '@neurosynth/coordinate-table';"],
+    ]);
+
+    it('are the packages a module and every module it reaches import by name', () => {
+        expect(packagesReached(graph, `${root}/store/a.ts`)).toEqual(['@neurosynth/coordinate-table', 'zustand']);
+    });
+});
+
+/** The packages only the inspector's and coordinates' components may use. */
+const UI_PACKAGES = ['@neurosynth/coordinate-table', '@handsontable/react-wrapper', 'handsontable'];
+
+describe.each(['store', 'model', 'api'])('a %s module', (layer) => {
+    const sources: Sources = new Map(modulesUnder(SRC).map((file) => [file, readFileSync(file, 'utf8')]));
+    it.each(modulesUnder(path.join(SRC, layer)).map((file) => [path.relative(SRC, file), file]))(
+        `%s reaches no grid package`,
+        (_, file) => {
+            const reachedPackages = packagesReached(sources, file);
+            expect(
+                reachedPackages.filter((name) => UI_PACKAGES.some((ui) => name === ui || name.startsWith(`${ui}/`)))
+            ).toEqual([]);
+        }
+    );
+});
+
+describe('the coordinate-table package', () => {
+    const at = path.resolve(SRC, '../../../packages/coordinate-table/src');
+    const sources: Sources = new Map(modulesUnder(at).map((file) => [file, readFileSync(file, 'utf8')]));
+    it.each(modulesUnder(at).map((file) => [path.relative(at, file), file]))(
+        '%s imports only its own modules and its peer dependencies',
+        (_, file) => {
+            const relative = [...(sources.get(file) ?? '').matchAll(IMPORT)]
+                .map(([, from, dynamic]) => from ?? dynamic)
+                .filter((specifier) => specifier.startsWith('.'));
+            expect(relative.filter((specifier) => !path.resolve(path.dirname(file), specifier).startsWith(at))).toEqual(
+                []
+            );
+            const peers = [
+                'react',
+                '@mui/material',
+                '@mui/icons-material',
+                'handsontable',
+                '@handsontable/react-wrapper',
+            ];
+            expect(
+                packagesReached(sources, file).filter(
+                    (name) => !peers.some((peer) => name === peer || name.startsWith(`${peer}/`))
+                )
+            ).toEqual([]);
+        }
+    );
 });
 
 describe.each(Object.entries(FORBIDDEN))('a %s module', (layer, forbidden) => {

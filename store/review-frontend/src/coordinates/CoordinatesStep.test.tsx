@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
+import { fakeHotIn } from '@neurosynth/coordinate-table/testing';
 import type { Op } from '../contract/generated/review-ops';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { ev, row } from '../test/bundles';
@@ -24,6 +25,10 @@ import { coordinateOpErrors } from '../test/schemas';
 
 // These tests render the whole review screen and query it by role, which takes 1.5–3 s each in
 // jsdom and more under the full parallel suite.
+// Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
+vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
+vi.mock('handsontable/registry', () => ({ registerAllModules: () => {} }));
+
 vi.setConfig({ testTimeout: 15_000 });
 
 function setup(bundle = coordinateBundle()) {
@@ -90,7 +95,10 @@ describe('the coordinates step', () => {
         const asResult = { ...LOCALIZER, role: 'result' };
         act(() =>
             view.stores.session.setState({
-                bundle: { ...view.session().bundle, coordinate_revision: revision([FACES, relabelled, asResult, SCRAMBLED]) },
+                bundle: {
+                    ...view.session().bundle,
+                    coordinate_revision: revision([FACES, relabelled, asResult, SCRAMBLED]),
+                },
             })
         );
         expect(within(card(HOUSES.name)).getByText('model')).toBeInTheDocument();
@@ -102,7 +110,8 @@ describe('the coordinates step', () => {
                 provenance: { [`coordinate_analysis:${FACES.key}`]: { state: 'verified', user_id: 'u1', at: 'then' } },
             })
         );
-        expect(within(card(FACES.name)).getByText('reviewer')).toBeInTheDocument();
+        expect(within(card(FACES.name)).getByText('verified by u1')).toBeInTheDocument();
+        expect(within(card(FACES.name)).queryByText('reviewer')).toBeNull();
         act(() => view.stores.view.getState().focusAnalysis(HOUSES.key));
         expect(within(screen.getByRole('region', { name: HOUSES.name })).getByText('model')).toBeInTheDocument();
     });
@@ -183,7 +192,8 @@ describe('the coordinates step', () => {
                 'Shift+Backspace',
                 'Enter',
                 'Space',
-                'p',
+                'n',
+                'e',
                 'Backspace',
                 'm',
                 's',
@@ -203,10 +213,9 @@ describe('the coordinates step', () => {
             'Accept',
             'Reject',
             'Note',
-            'Relabel',
+            'Edit analysis',
+            'Change role',
             'Edit point',
-            'Add point',
-            'Remove point',
             'Move',
             'Split',
             'Merge',
@@ -298,13 +307,17 @@ describe('coordinate actions, each emitted as the server applies it', () => {
         ]);
     });
 
-    it('Enter edits the focused point and emits edit_points with the whole list', () => {
+    it('Enter puts the focused point’s row in the grid, where an edit emits edit_points with the whole list', async () => {
         const { pending } = setup();
         press('j');
         press('Enter');
-        const editor = screen.getByRole('group', { name: `edit point 1 of ${FACES.name}` });
-        fireEvent.change(within(editor).getByRole('spinbutton', { name: 'z' }), { target: { value: '42' } });
-        press('Enter');
+        const points = await screen.findByRole(
+            'group',
+            { name: `edit the points of ${FACES.name}` },
+            { timeout: 10_000 }
+        );
+        expect(fakeHotIn(points).selection).toEqual([0, 0, 0, 0]);
+        act(() => fakeHotIn(points).edit(0, 'z', 42));
         expect(pending()).toEqual([
             expect.objectContaining({
                 action: 'edit_points',
@@ -315,17 +328,17 @@ describe('coordinate actions, each emitted as the server applies it', () => {
         expectValid(pending());
     });
 
-    it('P adds a point, and Backspace removes the focused one, each as edit_points', () => {
+    it('a row added in the grid and filled in, and Backspace on the focused point, are each one edit_points', async () => {
         const { pending, session } = setup();
-        press('p');
-        const editor = screen.getByRole('group', { name: `edit a new point of ${FACES.name}` });
-        for (const [axis, value] of [
-            ['x', '1'],
-            ['y', '2'],
-            ['z', '3'],
-        ])
-            fireEvent.change(within(editor).getByRole('spinbutton', { name: axis }), { target: { value } });
-        press('Enter');
+        fireEvent.click(screen.getByRole('button', { name: 'Add row' }));
+        const points = await screen.findByRole(
+            'group',
+            { name: `edit the points of ${FACES.name}` },
+            { timeout: 10_000 }
+        );
+        expect(fakeHotIn(points).getSourceData()).toHaveLength(3);
+        expect(pending()).toEqual([]);
+        act(() => fakeHotIn(points).paste(2, 0, [['1', '2', '3']]));
         expect(pending()).toEqual([
             expect.objectContaining({
                 action: 'edit_points',

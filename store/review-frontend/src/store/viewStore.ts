@@ -1,14 +1,29 @@
 import { createStore } from 'zustand';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { AnyTarget, Op } from '../contract/generated/review-ops';
-import { clamp, firstAnalysis, focusedAnalysis, nextFocus, type CoordinateFocus } from '../model/coordinateFocus';
-import { currentAnalyses, entitiesNaming, guidedOrder, type CoordinateAnalysis } from '../model/coordinates';
+import {
+    clamp,
+    firstAnalysis,
+    focusedAnalysis,
+    placeReveal,
+    nextFocus,
+    type CoordinateFocus,
+} from '../model/coordinateFocus';
+import {
+    currentAnalyses,
+    entitiesNaming,
+    guidedOrder,
+    hasPoints,
+    successor,
+    type CoordinateAnalysis,
+} from '../model/coordinates';
+import { randomUUID } from '../model/uuid';
 import { analysisItemFor, diffTarget, nextChange, resolveTarget, visibleItems } from '../model/diff';
 import { stepCards } from '../model/guided';
 import type { Json } from '../model/paths';
 import type { RecordIndex, SpanPair } from '../model/record';
 import { STEPS, type StepId } from '../model/steps';
-import { entityKey, relationshipKey } from '../model/targetKey';
+import { entityKey, relationshipKey, slotTarget } from '../model/targetKey';
 import { isFocused, selectDiff } from './diffSelectors';
 import { selectIsEditable, type Replaced, type SessionStore } from './sessionStore';
 import { selectEvidenceCursor, selectFocusedSpans, selectShown } from './viewSelectors';
@@ -33,21 +48,24 @@ export type PanelKind =
     | 'link'
     | 'delete'
     | 'create'
+    | 'edit_analysis'
     | 'relabel'
-    | 'edit_point'
-    | 'add_point'
     | 'move'
     | 'merge'
     | 'add_analysis'
     | 'link_analysis'
     | 'merge_entity';
 
-/** An inspector panel: what it acts on, the slot row it sits in when it is on a slot or link, and the table an analysis is added to. */
+/**
+ * An inspector panel: what it acts on, the slot row it sits in when it is on a slot or link, and the table, or the
+ * span of the text, an analysis is added from.
+ */
 export interface Panel {
     kind: PanelKind;
     target: AnyTarget;
     slot?: string;
     table?: string;
+    span?: SpanPair;
 }
 
 export type OutlineFilter = 'all' | 'unreviewed' | 'changed' | 'noted' | 'doubtful';
@@ -78,6 +96,14 @@ export interface ViewState {
     diffOn: boolean;
     /** The record entity an added analysis made, offered for focus. */
     offer: { entity: string } | null;
+    /** Gives the record entity the add `clientOpId` makes the slot values `values`, once the server has made it. */
+    setOnMade(clientOpId: string, values: Record<string, string>): void;
+    /**
+     * How many times the reviewer has asked for the focused analysis's point grid, in place of its static table;
+     * null while the table is static. Focusing another analysis makes it static again.
+     */
+    gridEngagement: number | null;
+    engageGrid(): void;
     toggleDiff(on?: boolean): void;
     /** Focuses the next or previous changed item of the diff. */
     moveChange(delta: 1 | -1): void;
@@ -150,6 +176,13 @@ export function createViewStore(session: SessionStore) {
         let seq = 0;
         const revealed = (span: SpanPair | undefined, current: Reveal | null) =>
             span ? { span, seq: ++seq } : current;
+        /** The coordinate focus the step had when the review last left it. */
+        let left: CoordinateFocus | null = null;
+        const shownAt = (coordinates: CoordinateFocus | null) =>
+            coordinates
+                ? (selectFocusedSpans(documents(), { focus: initial, coordinates })[0] ??
+                  placeReveal(documents().bundle, coordinates.analysis))
+                : undefined;
         const shown = () => selectShown(documents(), get());
         const spans = () => selectFocusedSpans(documents(), get());
 
@@ -168,10 +201,17 @@ export function createViewStore(session: SessionStore) {
             });
         };
 
-        const focusCoordinates = (coordinates: CoordinateFocus | null) => {
-            const { focus, reveal } = get();
-            const focused = selectFocusedSpans(documents(), { focus, coordinates });
-            set({ coordinates, evidenceCursor: 0, reveal: revealed(focused[0], reveal), panel: null });
+        /** Focuses `coordinates`; the point grid stays engaged on the same analysis, or on the one `kept` replaced. */
+        const focusCoordinates = (coordinates: CoordinateFocus | null, kept = false) => {
+            const { reveal, gridEngagement } = get();
+            const same = kept || coordinates?.analysis === get().coordinates?.analysis;
+            set({
+                coordinates,
+                evidenceCursor: 0,
+                reveal: revealed(shownAt(coordinates), reveal),
+                panel: null,
+                gridEngagement: same ? gridEngagement : null,
+            });
         };
 
         const guided = () => guidedOrder(currentAnalyses(documents().bundle), get().showNonCoordinate);
@@ -182,13 +222,35 @@ export function createViewStore(session: SessionStore) {
             if (merging.some((k) => !keys.has(k))) set({ merging: merging.filter((k) => keys.has(k)) });
         };
 
-        /** The analysis an add in `sent` made, and the record entity naming it, offered for focus. */
+        /** The slot values each add, by client_op_id, gives the record entity it makes. */
+        const onMade = new Map<string, Record<string, string>>();
+
+        /** Sets the values an add asked for on the record entity it made, as one batch. */
+        const fillMade = (entity: string, values: Record<string, string>) => {
+            const ops = Object.entries(values).map(([path, value]): Op => ({
+                client_op_id: randomUUID(),
+                type: 'set_value',
+                target: slotTarget(entity, path),
+                value: { extraction_status: 'extracted', value, value_source: 'reported' },
+            }));
+            session.getState().emitBatch(ops);
+        };
+
+        /**
+         * The analysis an add in `sent` made, shown even when it has no points, and the record entity naming it,
+         * offered for focus and given the values the add asked for.
+         */
         const offerAdded = (before: CoordinateAnalysis[], sent: Op[]) => {
-            if (!sent.some((op) => op.type === 'coordinate' && op.action === 'add')) return undefined;
+            const add = sent.find((op) => op.type === 'coordinate' && op.action === 'add');
+            if (!add) return undefined;
             const known = new Set(before.map((a) => a.key));
             const added = currentAnalyses(documents().bundle).find((a) => !known.has(a.key) && !a.derived_from?.length);
+            if (added && !hasPoints(added) && !get().showNonCoordinate) set({ showNonCoordinate: true });
             const made = added && entitiesNaming(documents().index, added.key)[0];
             if (made) set({ offer: { entity: made.id } });
+            const values = onMade.get(add.client_op_id);
+            onMade.delete(add.client_op_id);
+            if (made && values) fillMade(made.id, values);
             return added;
         };
 
@@ -196,9 +258,10 @@ export function createViewStore(session: SessionStore) {
         const refocusCoordinates = (before: CoordinateAnalysis[], added: CoordinateAnalysis | undefined) => {
             const { coordinates, showNonCoordinate } = get();
             if (!coordinates) return;
-            const next = nextFocus(before, currentAnalyses(documents().bundle), coordinates, showNonCoordinate, added);
+            const after = currentAnalyses(documents().bundle);
+            const next = nextFocus(before, after, coordinates, showNonCoordinate, added);
             if (next?.analysis === coordinates.analysis) return set({ coordinates: next });
-            focusCoordinates(next);
+            focusCoordinates(next, !added && next?.analysis === successor(before, after, coordinates.analysis));
         };
 
         /** Focuses `created` once it is in the index, else the nearest ancestor of a focused entity that is gone. */
@@ -228,7 +291,7 @@ export function createViewStore(session: SessionStore) {
         return {
             ...landed(initial),
             evidenceCursor: 0,
-            reveal: null,
+            reveal: revealed(shownAt(initialCoordinates), null),
             selection: null,
             step: STEPS[0].id,
             outlineOpen: false,
@@ -242,7 +305,10 @@ export function createViewStore(session: SessionStore) {
             showNonCoordinate: false,
             diffOn: false,
             offer: null,
+            gridEngagement: null,
 
+            engageGrid: () => set((s) => ({ gridEngagement: (s.gridEngagement ?? 0) + 1 })),
+            setOnMade: (clientOpId, values) => void onMade.set(clientOpId, values),
             focusAnalysis: (key, point = null) => {
                 const { coordinates } = get();
                 const analysis = currentAnalyses(documents().bundle).find((a) => a.key === key);
@@ -340,9 +406,13 @@ export function createViewStore(session: SessionStore) {
             setStep: (step) => {
                 set({ step });
                 const { coordinates, showNonCoordinate } = get();
-                if (step !== 'coordinates' && coordinates) focusCoordinates(null);
+                if (step !== 'coordinates' && coordinates) {
+                    left = coordinates;
+                    focusCoordinates(null);
+                }
                 if (step === 'coordinates' && !coordinates) {
-                    const first = firstAnalysis(currentAnalyses(documents().bundle), showNonCoordinate);
+                    const kept = left && guided().some((a) => a.key === left?.analysis) ? left : null;
+                    const first = kept ?? firstAnalysis(currentAnalyses(documents().bundle), showNonCoordinate);
                     if (first) focusCoordinates(first);
                 }
                 const cards = stepCards({ index: shown(), step });

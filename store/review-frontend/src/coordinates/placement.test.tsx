@@ -4,6 +4,10 @@ import { ReviewScreen } from '../review/ReviewScreen';
 import { coordinateBundle, FACES, HOUSES } from '../test/coordinates';
 import { renderWithStores } from '../test/render';
 
+// Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
+vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
+vi.mock('handsontable/registry', () => ({ registerAllModules: () => {} }));
+
 vi.mock('../model/coordinates', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../model/coordinates')>();
     return { ...actual, analysesBeside: vi.fn(actual.analysesBeside) };

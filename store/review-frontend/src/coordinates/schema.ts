@@ -1,7 +1,9 @@
-import { schemaOf } from '../contract/schemas';
+import { fromSchema, schemaOf } from '../contract/schemas';
 import { scalarOf, textOf, type Scalar } from '../inspector/schema';
-import { asSchema, branchesOf, type Schema } from '../model/schema';
-import { ANALYSES, ANALYSIS_EDITS, POINTS, READ_FROM } from '../model/coordinates';
+import type { ReviewBundle } from '../contract/generated/review-bundle';
+import { wrapperSpec } from '../inspector/schema';
+import { asSchema, branchesOf, extractionSchema, listClassesAt, wrapperSchemaAt, type Schema } from '../model/schema';
+import { ANALYSES, ANALYSIS_EDITS, POINTS, READ_FROM, RECORD_ANALYSES } from '../model/coordinates';
 
 export const coordinateSchema = () => schemaOf('coordinate-parse');
 
@@ -118,3 +120,26 @@ export function analysisFields(root: Schema = coordinateSchema()): Record<string
         })
     );
 }
+
+/** The closed choices of the slot `path` of the record's analyses, from the extraction record schema. */
+export function recordAnalysisChoices(
+    bundle: Pick<ReviewBundle, 'entities' | 'record'>,
+    path: string
+): Scalar | undefined {
+    const root = extractionSchema();
+    const study = bundle.entities.find((row) => row.parent === null);
+    const [className] = study ? listClassesAt(root, study.schema_class, RECORD_ANALYSES, bundle.record) : [];
+    const wrapper = className ? wrapperSchemaAt(root, className, path) : undefined;
+    const spec = wrapper && wrapperSpec(root, wrapper).value;
+    return spec?.kind === 'enum' ? { ...spec, open: false } : undefined;
+}
+
+/** The editors of an analysis's name, role and coordinate space; the role and space take only the schema's choices. */
+export const analysisEditors = fromSchema('coordinate-parse', (schema) => {
+    const fields = analysisFields(schema);
+    const closedChoice = (field: string) => {
+        const spec = fields[field];
+        return spec?.kind === 'enum' ? { ...spec, open: false } : spec;
+    };
+    return { name: fields.name, roles: closedChoice('role'), spaces: closedChoice('coordinate_space') };
+});

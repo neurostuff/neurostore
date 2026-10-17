@@ -1,0 +1,56 @@
+import { Button, Stack, Typography } from '@mui/material';
+import type { ParsedPaperLayout } from '../model/layout';
+import { useIsEditable, useSession, useView } from '../store/context';
+import { addAnalysisPanel, textAnalysisPanel } from './actions';
+import { coordinatePending } from './availability';
+
+const NO_TABLES: NonNullable<ParsedPaperLayout['tables']> = [];
+
+/** Where a new analysis can come from: the selected text, or any table of the paper. */
+export function AddAnalysisChooser() {
+    const editable = useIsEditable();
+    const pending = useSession(coordinatePending);
+    const selection = useView((s) => s.selection);
+    const openPanel = useView((s) => s.openPanel);
+    const tables = useSession((s) => (s.bundle.parsed_paper as ParsedPaperLayout).tables ?? NO_TABLES);
+    return (
+        <Stack
+            role="group"
+            aria-label="add an analysis"
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap="wrap"
+            alignItems="center"
+            sx={{ px: 2, py: 1, borderTop: 1, borderColor: 'divider' }}
+            onMouseDown={(event) => event.preventDefault()}
+        >
+            <Typography variant="overline" component="h3">
+                Add an analysis
+            </Typography>
+            <Button
+                size="small"
+                variant="outlined"
+                disabled={!editable || pending || !selection}
+                onClick={() => selection && openPanel(textAnalysisPanel(selection))}
+            >
+                From the selected text
+            </Button>
+            {!selection && (
+                <Typography variant="caption" color="text.secondary">
+                    select its sentence in the paper first
+                </Typography>
+            )}
+            {tables.map((table) => (
+                <Button
+                    key={table.table_id}
+                    size="small"
+                    disabled={!editable || pending}
+                    onClick={() => openPanel(addAnalysisPanel(table.table_id))}
+                >
+                    {`To ${table.label ?? table.table_id}`}
+                </Button>
+            ))}
+        </Stack>
+    );
+}

@@ -14,6 +14,10 @@ import {
 import { renderWithStores } from '../test/render';
 import { PointGrid } from './PointGrid';
 
+// Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
+vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
+vi.mock('handsontable/registry', () => ({ registerAllModules: () => {} }));
+
 vi.mock('./PointGrid', async (importOriginal) => {
     const actual = await importOriginal<typeof import('./PointGrid')>();
     return { PointGrid: vi.fn(actual.PointGrid) };

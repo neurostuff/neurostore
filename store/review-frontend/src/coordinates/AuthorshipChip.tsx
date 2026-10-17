@@ -8,13 +8,13 @@ const TITLES = {
     reviewer: 'a reviewer edited or judged this analysis',
 };
 
-/** Who made the analysis what it is, unless it is as the parse read it. */
-export function AuthorshipChip({ analysis }: { analysis: CoordinateAnalysis }) {
+/** Who made the analysis what it is, unless it is as the parse read it, or `judged` says the status names the reviewer. */
+export function AuthorshipChip({ analysis, judged = false }: { analysis: CoordinateAnalysis; judged?: boolean }) {
     const parse = useSession((s) => parseOf(s.bundle).parse);
     const loaded = useSession((s) => parseOf(s.bundle).loaded);
     const provenance = useSession((s) => s.provenance);
     const by = authorship(analysis, parse, loaded, provenance);
-    if (!by) return null;
+    if (!by || (by === 'reviewer' && judged)) return null;
     return (
         <Chip
             size="small"

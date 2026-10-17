@@ -124,6 +124,32 @@ describe('non-coordinate analyses', () => {
         expect(screen.getByRole('button', { name: 'non-coordinate analyses' })).toHaveAttribute('aria-pressed', 'true');
     });
 
+    it('says what the toggle and the counter mean, and shows the toggle filled while on', () => {
+        const { stores } = renderWithStores(<ReviewAppBar />, withAnalysis);
+        const toggle = screen.getByRole('button', { name: 'non-coordinate analyses' });
+        expect(toggle.parentElement).toHaveAttribute(
+            'title',
+            'Show or hide the 1 analysis with no coordinates, on the Coordinates and Analyses steps (Shift+H)'
+        );
+        expect(toggle).toHaveClass('MuiButton-outlined');
+        act(() => stores.view.getState().toggleNonCoordinate());
+        expect(screen.getByRole('button', { name: 'non-coordinate analyses' })).toHaveClass('MuiButton-contained');
+        expect(screen.getByText(/reviewed, plus/)).toHaveAttribute(
+            'title',
+            'Slots of the record you have accepted, rejected or edited; analyses with no coordinates are counted apart'
+        );
+    });
+
+    it('is greyed out, still saying what it does, when the paper has none', () => {
+        renderWithStores(<ReviewAppBar />, makeBundle({ description: ev('A study', [[0, 4]]) }, 'Text of the paper.'));
+        const toggle = screen.getByRole('button', { name: 'non-coordinate analyses' });
+        expect(toggle).toBeDisabled();
+        expect(toggle.parentElement).toHaveAttribute(
+            'title',
+            'This paper has no analyses without coordinates; when one has, this shows or hides them (Shift+H)'
+        );
+    });
+
     it('counts reviewed coordinate items apart from the non-coordinate analyses, whether or not they are shown', () => {
         const { stores } = renderWithStores(<ReviewAppBar />, withAnalysis);
         const progress = () => screen.getByText(/reviewed, plus/);

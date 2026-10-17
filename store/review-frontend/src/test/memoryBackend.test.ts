@@ -1,6 +1,10 @@
 import type { SetAside } from '../api/reviewApi';
 import { entityRows, ev, makeBundle, row } from './bundles';
+import type { Op } from '../contract/generated/review-ops';
+import type { CoordinateAnalysis } from '../model/coordinates';
+import { coordinateBundle, FACES, INSULA, PARSE, PRECUNEUS, RECORD } from './coordinates';
 import { fakeServer } from './fakeServer';
+import { coordinateOpErrors } from './schemas';
 
 describe('the memory backend', () => {
     it('keeps the provenance and annotations a batch leaves on the review', async () => {
@@ -85,5 +89,39 @@ describe('the memory backend', () => {
                 expect.objectContaining({ status: 409 })
             );
         });
+    });
+});
+
+describe('the memory backend’s coordinate ops', () => {
+    const edit = (key: string, points: unknown[], id = 'c-1') => ({
+        client_op_id: id,
+        type: 'coordinate' as const,
+        target: { kind: 'coordinate_analysis' as const, analysis_key: key },
+        action: 'edit_points' as const,
+        payload: { points } as never,
+    });
+
+    it('applies edit_points as the server does: a new key, the record following, and a restore as its inverse', async () => {
+        const server = fakeServer([coordinateBundle()]);
+        const { summary } = await server.backend.startReview('P1');
+        const moved = [{ ...PRECUNEUS, coordinates: [4, -60, 42] }, INSULA];
+        const result = server.backend.postOps(summary.id, { expected_last_seq: 0, ops: [edit(FACES.key, moved)] });
+        const analyses = (result.coordinate_revision as { analyses: CoordinateAnalysis[] }).analyses;
+        const edited = analyses[0];
+        expect(edited).toMatchObject({ name: FACES.name, points: moved, derived_from: [FACES.key] });
+        expect(edited.key).not.toBe(FACES.key);
+        expect(analyses.slice(1)).toEqual(PARSE.analyses.slice(1));
+        expect((result.record as typeof RECORD).analyses[0].source_table_analysis.value).toBe(edited.key);
+        const [{ inverse }] = result.ops;
+        expect(coordinateOpErrors((inverse ?? []).map((op, i) => ({ ...op, client_op_id: `undo-000${i}` })))).toEqual(
+            []
+        );
+        const undone = server.backend.postOps(summary.id, {
+            expected_last_seq: 1,
+            ops: (inverse ?? []).map((op, i) => ({ ...op, client_op_id: `undo-000${i}` }) as Op),
+        });
+        expect((undone.coordinate_revision as { analyses: CoordinateAnalysis[] }).analyses).toEqual(PARSE.analyses);
+        expect((undone.record as typeof RECORD).analyses[0].source_table_analysis.value).toBe(FACES.key);
+        expect((await server.backend.getBundle('P1')).coordinate_revision).toEqual(undone.coordinate_revision);
     });
 });

@@ -1,5 +1,7 @@
 node_modules/
 dist/
-fixtures/
+/fixtures/
 .env*
 !.env.example
+test-results/
+playwright-report/

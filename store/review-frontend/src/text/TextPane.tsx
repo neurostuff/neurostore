@@ -28,7 +28,9 @@ function EvidenceCounter() {
     const cursor = useSessionView(selectEvidenceCursor);
     const focused = useView((s) => s.focus.key);
     const notReported = useSession((s) => s.index.slot(focused)?.value?.extraction_status === 'not_reported');
-    const counter = spans > 0 ? `evidence ${cursor + 1} of ${spans}` : notReported ? 'not reported' : 'no evidence';
+    const onAnalysis = useView((s) => s.coordinates !== null);
+    const empty = onAnalysis ? 'source sentence unknown' : notReported ? 'not reported' : 'no evidence';
+    const counter = spans > 0 ? `evidence ${cursor + 1} of ${spans}` : empty;
     return (
         <Typography variant="body2" color="text.secondary" data-evidence-counter>
             {counter}
@@ -116,6 +118,8 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights
 
     useLayoutEffect(() => {
         if (!layer) return;
+        const opening = stores.view.getState().reveal;
+        if (opening) scrollToRange(scrollerRef.current!, layer.range(opening.span));
         let timer: ReturnType<typeof setTimeout> | undefined;
         const unsubscribe = stores.view.subscribe(({ reveal }, prev) => {
             if (!reveal || reveal.seq === prev.reveal?.seq) return;

@@ -12,6 +12,14 @@ const STATES = {
     set_aside: 'set aside',
 } as const;
 
+const PROGRESS_MEANS =
+    'Slots of the record you have accepted, rejected or edited; analyses with no coordinates are counted apart';
+
+const toggleMeans = (count: number) =>
+    count === 0
+        ? 'This paper has no analyses without coordinates; when one has, this shows or hides them (Shift+H)'
+        : `Show or hide the ${count} ${count === 1 ? 'analysis' : 'analyses'} with no coordinates, on the Coordinates and Analyses steps (Shift+H)`;
+
 function selectProgress(s: Pick<SessionState, 'index' | 'provenance' | 'bundle'>): string {
     const slots = s.index.unhidden.flatMap((e) => e.slots);
     const reviewed = slots.filter((slot) => slot.key in s.provenance).length;
@@ -24,6 +32,7 @@ export function ReviewAppBar() {
     const state = useSession((s) => (s.bundle.review ? STATES[s.bundle.review.state] : 'new review'));
     const progress = useSession(selectProgress);
     const showing = useView((s) => s.showNonCoordinate);
+    const nonCoordinate = useSession((s) => s.bundle.hidden.analyses.length);
     const toggleNonCoordinate = useView((s) => s.toggleNonCoordinate);
     const saved = useSession(selectSaveLabel);
     const blocked = useSession(selectIsBlocked);
@@ -44,7 +53,7 @@ export function ReviewAppBar() {
                     sx={{ color: 'inherit', borderColor: 'currentColor' }}
                     variant="outlined"
                 />
-                <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+                <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }} title={PROGRESS_MEANS}>
                     {progress}
                 </Typography>
                 {reviewers.map((editor) =>
@@ -59,17 +68,19 @@ export function ReviewAppBar() {
                         </Typography>
                     ) : null
                 )}
-                <Button
-                    size="small"
-                    color="inherit"
-                    variant="outlined"
-                    aria-pressed={showing}
-                    title="Shift+H"
-                    sx={{ whiteSpace: 'nowrap' }}
-                    onClick={() => toggleNonCoordinate()}
-                >
-                    non-coordinate analyses
-                </Button>
+                <span title={toggleMeans(nonCoordinate)}>
+                    <Button
+                        size="small"
+                        color="inherit"
+                        variant={showing ? 'contained' : 'outlined'}
+                        aria-pressed={showing}
+                        disabled={nonCoordinate === 0}
+                        sx={{ whiteSpace: 'nowrap', '&.Mui-disabled': { color: 'inherit', opacity: 0.5 } }}
+                        onClick={() => toggleNonCoordinate()}
+                    >
+                        non-coordinate analyses
+                    </Button>
+                </span>
                 <Typography
                     variant="body2"
                     color={blocked ? 'error' : undefined}
