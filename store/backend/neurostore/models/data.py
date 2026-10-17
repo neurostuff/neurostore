@@ -219,7 +219,7 @@ class BaseStudy(BaseMixin, db.Model):
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    #: Legacy; fulltexts holds the reviewed text (see the PRD).
+    #: Legacy; fulltexts holds the reviewed text (docs/adr/0005-fulltexts-table.md).
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
     fulltext_id = db.Column(
