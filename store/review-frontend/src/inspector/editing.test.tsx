@@ -355,6 +355,25 @@ describe('links and entities', () => {
         expect(within(rowOf('slot:a_1:acquisitions')).getByText('Scan B · linking')).toBeInTheDocument();
     });
 
+    it('the link type-ahead names an entity by its new name once renamed, before the server confirms', () => {
+        const { session, viewState } = setup();
+        act(
+            () =>
+                void session().emit({
+                    client_op_id: 'rename-1',
+                    type: 'set_value',
+                    target: { kind: 'slot', entity: 'acq_2', path: 'name' },
+                    value: { extraction_status: 'extracted', value: 'Scan Z', value_source: 'reported' },
+                })
+        );
+        act(() => viewState().focusSlot('slot:a_1:acquisitions'));
+        press('l', {}, document.body);
+        fireEvent.change(screen.getByRole('combobox', { name: 'link acquisitions to' }), {
+            target: { value: 'Scan' },
+        });
+        expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Scan Z']);
+    });
+
     it('a chip’s remove button emits unlink, shown pending', () => {
         const { last, viewState } = setup();
         act(() => viewState().focusEntity('a_1'));

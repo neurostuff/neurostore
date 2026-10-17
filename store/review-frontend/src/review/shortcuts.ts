@@ -4,6 +4,7 @@ import { accept, acceptCard, createOn } from '../inspector/actions';
 import type { ReviewStores } from '../store/reviewStores';
 import type { ViewState } from '../store/viewStore';
 import { addSelection } from '../text/addSelection';
+import { removeCursorSpan, stepCursorSpan } from '../text/spanEdits';
 import { openPanelOn } from '../inspector/openPanel';
 
 /** Where a shortcut acts: on a record item, on a coordinate analysis, or (unscoped) anywhere. */
@@ -52,6 +53,27 @@ export const SHORTCUTS: Shortcut[] = [
     { keys: ['['], label: 'previous evidence span', run: (s) => view(s).stepEvidence(-1) },
     record({ keys: ['e'], label: 'add the selection to the slot’s evidence', run: (s) => addSelection(s, 'first') }),
     record({ keys: ['Shift+E'], label: 'add the selection as a new evidence set', run: (s) => addSelection(s, 'new') }),
+    record({
+        keys: [','],
+        label: 'move the focused evidence span’s end a word back',
+        run: (s) => stepCursorSpan(s, 'end', -1),
+    }),
+    record({
+        keys: ['.'],
+        label: 'move the focused evidence span’s end a word on',
+        run: (s) => stepCursorSpan(s, 'end', 1),
+    }),
+    record({
+        keys: ['<'],
+        label: 'move the focused evidence span’s start a word back',
+        run: (s) => stepCursorSpan(s, 'start', -1),
+    }),
+    record({
+        keys: ['>'],
+        label: 'move the focused evidence span’s start a word on',
+        run: (s) => stepCursorSpan(s, 'start', 1),
+    }),
+    record({ keys: ['Backspace'], label: 'remove the focused evidence span', run: removeCursorSpan }),
     record({
         keys: ['a'],
         label: 'accept the focused slot, entity or link',

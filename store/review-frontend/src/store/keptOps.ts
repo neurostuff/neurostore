@@ -25,7 +25,7 @@ function inReadingOrder(spans: Span[]): EvidenceSet['spans'] {
     return unique.sort((a, b) => a.start_char - b.start_char || a.end_char - b.end_char) as EvidenceSet['spans'];
 }
 
-export function withSpan(evidence: Evidence | undefined, span: Span, setIndex: number | 'new'): Evidence {
+function withSpan(evidence: Evidence | undefined, span: Span, setIndex: number | 'new'): Evidence {
     const sets = (evidence?.sets ?? []).map(withoutText);
     if (setIndex === 'new' || setIndex >= sets.length) {
         return { ...evidence, status: 'present', sets: [...sets, { spans: [span] }] };
@@ -37,12 +37,40 @@ export function withSpan(evidence: Evidence | undefined, span: Span, setIndex: n
     };
 }
 
+/** The evidence with the span `from` replaced by `to`, or left out when `to` is null; null when it has no span `from`. */
+function replacingSpan(evidence: Evidence | undefined, from: Span, to: Span | null): Evidence | null {
+    const { sets: given = [], ...rest } = evidence ?? { status: 'not_found' };
+    const sets = given.map(withoutText);
+    const at = sets.findIndex((set) => set.spans.some((s) => spanKey(s) === spanKey(from)));
+    if (at === -1) return null;
+    const kept = sets[at].spans.filter((s) => spanKey(s) !== spanKey(from));
+    const spans = to ? [...kept, to] : kept;
+    const next = sets.flatMap((set, i) =>
+        i !== at ? [set] : spans.length ? [{ ...set, spans: inReadingOrder(spans) }] : []
+    );
+    return next.length ? { ...rest, status: 'present', sets: next } : { ...rest, status: 'not_found' };
+}
+
+export const SPAN_GONE = 'the evidence span this edit moves or removes is no longer there';
+
+/** The evidence `intent` makes of a slot's `evidence`, or why it no longer applies. */
+export function evidenceFor(
+    evidence: Evidence | undefined,
+    intent: EvidenceIntent
+): { evidence: Evidence } | { refused: string } {
+    if (intent.kind === 'add_span') return { evidence: withSpan(evidence, intent.span, intent.set_index) };
+    const replaced = replacingSpan(evidence, intent.from, intent.span);
+    return replaced ? { evidence: replaced } : { refused: SPAN_GONE };
+}
+
 /** The set_evidence op an intent makes on top of `record`; other ops pass through. */
 function carried(record: Json, op: Op, intent: EvidenceIntent | undefined): Op {
     if (!intent || op.type !== 'set_evidence' || op.target.kind !== 'slot') return op;
     const item = getIn(record, entityPath(record, op.target.entity) ?? []);
     const wrapper = readPath(item, op.target.path) as { evidence?: Evidence } | undefined;
-    return { ...op, evidence: withSpan(wrapper?.evidence, intent.span, intent.set_index) };
+    const intended = evidenceFor(wrapper?.evidence, intent);
+    if ('refused' in intended) throw new Error(intended.refused);
+    return { ...op, evidence: intended.evidence };
 }
 
 export const carrying = (intents: Record<string, EvidenceIntent>) => (record: Json, op: Op) =>
@@ -76,7 +104,7 @@ export const waits = (before: Op[], op: Op) => !isLocalOp(op) || before.some((p)
 
 /**
  * The ops kept pending, in order, with the documents after the ones applied: an op that waits is kept unapplied,
- * and one the core refuses is dropped with a notice of `kind` and listed in `refused`. `carry` may rewrite an op
+ * and one the core or `carry` refuses is dropped with a notice of `kind` and listed in `refused`. `carry` may rewrite an op
  * before it is applied.
  */
 export function replay(
@@ -96,8 +124,8 @@ export function replay(
             pending.push(op);
             continue;
         }
-        const sent = carry(documents.record, op);
         try {
+            const sent = carry(documents.record, op);
             documents = applyBatch(documents, [sent], paperOf(bundle, at));
             pending.push(sent);
         } catch (error) {

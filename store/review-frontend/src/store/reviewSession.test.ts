@@ -222,6 +222,40 @@ describe('the offline queue', () => {
         });
     });
 
+    it('keeps a moved span across a reload, restores it on the record another tab changed since, and sends it once', async () => {
+        server.backend.postOps(reviewId, { expected_last_seq: 0, ops: [evidence('seed', 'description', 'Twenty')] });
+        const queue = await openDeviceQueue(indexedDB, () => {});
+        const first = await openTab();
+        server.intercept(networkDown);
+        server.intercept(networkDown);
+        const key = slotKey('study', 'description');
+        expect(first.stores.session.getState().moveEvidence(key, at('Twenty'), at('Twenty patients'))).toBe(true);
+        const [moved] = first.stores.session.getState().pending;
+        await vi.advanceTimersByTimeAsync(1000);
+        await first.client.settled();
+        first.close();
+        await first.client.settled();
+        const intent = { kind: 'replace_span', slot: key, from: spanOf('Twenty'), span: spanOf('Twenty patients') };
+        expect((await queue.read(reviewId))?.intents).toEqual({ [moved.client_op_id]: intent });
+        server.backend.postOps(reviewId, {
+            expected_last_seq: 1,
+            ops: [
+                {
+                    ...evidence('elsewhere', 'description', 'Twenty'),
+                    evidence: { status: 'present', sets: [{ spans: [spanOf('Twenty')] }, { spans: [spanOf('fMRI')] }] },
+                } as Op,
+            ],
+        });
+
+        const second = await openTab();
+        await vi.advanceTimersByTimeAsync(5000);
+        await second.client.settled();
+        expect(sentIds().slice(2)).toEqual([[moved.client_op_id]]);
+        expect(await storedIds()).toEqual(['seed', 'elsewhere', moved.client_op_id]);
+        expect(second.stores.session.getState().pending).toEqual([]);
+        expect(second.stores.session.getState().index.slot(key)?.spans).toEqual([at('Twenty patients'), at('fMRI')]);
+    });
+
     it('blocks saving on kept edits the rebase refuses, sending nothing until they are undone', async () => {
         const first = await openTab();
         server.intercept(networkDown);

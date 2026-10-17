@@ -386,3 +386,87 @@ describe('undo and redo keys', () => {
         expect(help.textContent?.match(/Cmd/g)).toHaveLength(1);
     });
 });
+
+describe('evidence span keys', () => {
+    const NAME = 'slot:grp_a:name';
+    const SPAN_KEYS: [string, KeyboardEventInit][] = [
+        [',', {}],
+        ['.', {}],
+        ['<', { shiftKey: true }],
+        ['>', { shiftKey: true }],
+        ['Backspace', {}],
+    ];
+    const spans = (stores: ReturnType<typeof setup>['stores']) => stores.session.getState().index.slot(NAME)?.spans;
+    const focusName = () => {
+        const view = setup();
+        act(() => view.stores.view.getState().focusSlot(NAME));
+        return view;
+    };
+
+    it('< and > move the start a word, comma and full stop the end, one edit a press', () => {
+        const { stores } = focusName();
+        press('<', { shiftKey: true });
+        expect(spans(stores)).toEqual([[at('twenty')[0], at('patients')[1]]]);
+        press('.');
+        expect(spans(stores)).toEqual([[at('twenty')[0], at('and')[1]]]);
+        press(',');
+        expect(spans(stores)).toEqual([[at('twenty')[0], at('patients')[1]]]);
+        press('>', { shiftKey: true });
+        expect(spans(stores)).toEqual([at('patients')]);
+        expect(stores.session.getState().undoStack).toHaveLength(4);
+    });
+
+    it('never moves one end past the other', () => {
+        const { stores } = focusName();
+        press('>', { shiftKey: true });
+        press(',');
+        expect(spans(stores)).toEqual([at('patients')]);
+        expect(stores.session.getState().pending).toEqual([]);
+    });
+
+    it('Backspace removes the focused span, in one edit', () => {
+        const { stores } = focusName();
+        press('Backspace');
+        expect(spans(stores)).toEqual([]);
+        expect(stores.session.getState().undoStack).toHaveLength(1);
+    });
+
+    it('does nothing in a tab another one holds the review in', () => {
+        const { stores } = focusName();
+        act(() => stores.session.getState().setDevice('readonly'));
+        press('Backspace');
+        press('.');
+        expect(spans(stores)).toEqual([at('patients')]);
+    });
+
+    it('does nothing while no span is focused', () => {
+        const { stores } = setup();
+        act(() => stores.view.getState().focusEntity('grp_a'));
+        for (const [key, init] of SPAN_KEYS) press(key, init);
+        expect(stores.session.getState().pending).toEqual([]);
+        expect(stores.view.getState().focus).toEqual({ entity: 'grp_a', key: 'entity:grp_a' });
+        expect(stores.view.getState().panel).toBeNull();
+        expect(spans(stores)).toEqual([at('patients')]);
+    });
+
+    it.each([
+        ['an input', 'input'],
+        ['a textarea', 'textarea'],
+    ])('ignores the span keys typed into %s', (_, tag) => {
+        const { stores } = focusName();
+        const field = document.body.appendChild(document.createElement(tag));
+        for (const [key, init] of SPAN_KEYS) press(key, init, field);
+        expect(stores.session.getState().pending).toEqual([]);
+        expect(spans(stores)).toEqual([at('patients')]);
+        field.remove();
+    });
+
+    it('lists the span keys in the help', () => {
+        setup();
+        press('?', { shiftKey: true });
+        const keys = within(screen.getByRole('dialog', { name: 'Keyboard shortcuts' }))
+            .getAllByRole('row')
+            .map((row) => row.firstElementChild?.textContent);
+        expect(keys).toEqual(expect.arrayContaining(SPAN_KEYS.map(([key]) => key)));
+    });
+});

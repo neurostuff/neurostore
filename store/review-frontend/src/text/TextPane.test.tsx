@@ -262,3 +262,56 @@ describe('TextPane while the diff is shown', () => {
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('twenty'), at('scanner')]);
     });
 });
+
+describe('TextPane jump pulse', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+    });
+
+    it('pulses the span a focus or a step scrolls to once, then takes the pulse away', () => {
+        vi.useFakeTimers();
+        const { stores, textRoot } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
+        expect(registeredSpans('rv-pulse', textRoot())).toEqual([at('A paper')]);
+        act(() => stores.view.getState().stepEvidence(1));
+        expect(registeredSpans('rv-pulse', textRoot())).toEqual([at('twenty')]);
+        act(() => vi.advanceTimersByTime(600));
+        expect(registeredSpans('rv-pulse', textRoot())).toEqual([]);
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('A paper'), at('twenty')]);
+        expect(styleText()).toMatch(/::highlight\(rv-pulse\)\{background-color:/);
+    });
+
+    it('pulses a step for its full 600 ms, though an earlier jump’s pulse was still running', () => {
+        vi.useFakeTimers();
+        const { stores, textRoot } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
+        act(() => vi.advanceTimersByTime(400));
+        act(() => stores.view.getState().stepEvidence(1));
+        act(() => vi.advanceTimersByTime(300));
+        expect(registeredSpans('rv-pulse', textRoot())).toEqual([at('twenty')]);
+        act(() => vi.advanceTimersByTime(299));
+        expect(registeredSpans('rv-pulse', textRoot())).toEqual([at('twenty')]);
+        act(() => vi.advanceTimersByTime(1));
+        expect(registeredSpans('rv-pulse', textRoot())).toEqual([]);
+    });
+
+    it('takes the pulse away when the pane goes mid-pulse', () => {
+        vi.useFakeTimers();
+        const { stores, unmount } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
+        expect(CSS.highlights.has('rv-pulse')).toBe(true);
+        unmount();
+        expect(CSS.highlights.has('rv-pulse')).toBe(false);
+        act(() => vi.advanceTimersByTime(600));
+        expect(CSS.highlights.has('rv-pulse')).toBe(false);
+    });
+
+    it('does not pulse while the reviewer asks for reduced motion, and keeps the focus highlight', () => {
+        vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(prefers-reduced-motion: reduce)' }));
+        const { stores, textRoot } = setup();
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
+        expect(registeredSpans('rv-pulse', textRoot())).toEqual([]);
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('A paper'), at('twenty')]);
+    });
+});

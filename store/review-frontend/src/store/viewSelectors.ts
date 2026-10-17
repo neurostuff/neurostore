@@ -18,7 +18,7 @@ export function selectShown({ index }: Pick<SessionState, 'index'>, view: Shown)
     return shown;
 }
 
-const NO_SPANS: SpanPair[] = [];
+export const NO_SPANS: SpanPair[] = [];
 
 const pointSpans = new WeakMap<ReviewBundle, Map<string, SpanPair[]>>();
 
@@ -45,3 +45,13 @@ export const selectEvidenceCursor = (
     session: Pick<SessionState, 'bundle' | 'index'>,
     view: Pick<ViewState, 'focus' | 'coordinates' | 'evidenceCursor'>
 ): number => clamp(view.evidenceCursor, Math.max(selectFocusedSpans(session, view).length - 1, 0));
+
+/** The span the evidence cursor is on while a value slot is focused: the one its handles, keys and remove control act on. */
+export function selectCursorSpan(
+    session: Pick<SessionState, 'bundle' | 'index'>,
+    view: Pick<ViewState, 'focus' | 'coordinates' | 'evidenceCursor'>
+): SpanPair | null {
+    const { focus, coordinates } = view;
+    if (coordinates || focus.slot !== focus.key || session.index.slot(focus.key)?.kind !== 'value') return null;
+    return selectFocusedSpans(session, view)[selectEvidenceCursor(session, view)] ?? null;
+}

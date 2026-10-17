@@ -11,6 +11,10 @@ if (isDom && !Range.prototype.getBoundingClientRect) {
     Range.prototype.getBoundingClientRect = () => new DOMRect();
 }
 
+if (isDom && !Range.prototype.getClientRects) {
+    Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+}
+
 beforeEach(() => {
     setSchemas(GOLDEN_SCHEMAS);
     if (isDom) installHighlightAdapter();

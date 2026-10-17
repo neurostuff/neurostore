@@ -11,11 +11,15 @@ describe('HighlightLayer', () => {
             focus: 'left-focus',
             evidence: 'left-evidence',
             original: 'left-original',
+            pulse: 'left-pulse',
+            moving: 'left-moving',
         });
         const right = new HighlightLayer(index, {
             focus: 'right-focus',
             evidence: 'right-evidence',
             original: 'right-original',
+            pulse: 'right-pulse',
+            moving: 'right-moving',
         });
         left.update([[0, 3]], [[4, 7]], []);
         right.update([[8, 13]], [[14, 18]], []);

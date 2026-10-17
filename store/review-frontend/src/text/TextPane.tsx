@@ -6,11 +6,17 @@ import { selectEvidenceCursor, selectFocusedSpans } from '../store/viewSelectors
 import { REVIEW_HIGHLIGHTS, type HighlightNames } from './highlights';
 import { layoutText, type ParsedPaperLayout } from '../model/layout';
 import { SelectionBar } from './SelectionBar';
+import { SpanHandles } from './SpanHandles';
+import { SpanTicks } from './SpanTicks';
 import { SupportMenu } from './SupportMenu';
 import { TextBody, type Aside } from './TextBody';
 import { useSupportingFocus } from './supporting';
 import { useHighlights } from './useHighlights';
 import { TextIndexContext, useTextIndex } from './useTextIndex';
+
+const PULSE_MS = 600;
+
+const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 function scrollToRange(scroller: HTMLElement, range: Range) {
     const top = range.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
@@ -63,6 +69,12 @@ function HighlightStyles({ names, showAll }: { names: HighlightNames; showAll: b
                 [`::highlight(${names.focus})`]: {
                     backgroundColor: alpha(theme.palette.primary.main, 0.3),
                 },
+                [`::highlight(${names.pulse})`]: {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.6),
+                },
+                [`::highlight(${names.moving})`]: {
+                    backgroundColor: alpha(theme.palette.secondary.main, 0.35),
+                },
                 [`::highlight(${names.original})`]: {
                     textDecorationLine: 'underline',
                     textDecorationStyle: 'dashed',
@@ -104,10 +116,20 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights
 
     useLayoutEffect(() => {
         if (!layer) return;
-        return stores.view.subscribe(({ reveal }, prev) => {
-            if (reveal && reveal.seq !== prev.reveal?.seq)
-                scrollToRange(scrollerRef.current!, layer.range(reveal.span));
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const unsubscribe = stores.view.subscribe(({ reveal }, prev) => {
+            if (!reveal || reveal.seq === prev.reveal?.seq) return;
+            scrollToRange(scrollerRef.current!, layer.range(reveal.span));
+            if (prefersReducedMotion()) return;
+            clearTimeout(timer);
+            layer.pulse(reveal.span);
+            timer = setTimeout(() => layer.pulse(null), PULSE_MS);
         });
+        return () => {
+            unsubscribe();
+            clearTimeout(timer);
+            layer.pulse(null);
+        };
     }, [stores, layer]);
 
     return (
@@ -124,18 +146,22 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights
                     <ShowAllToggle />
                     <DiffLegend />
                 </Stack>
-                <Box
-                    ref={scrollerRef}
-                    data-text-scroller
-                    tabIndex={0}
-                    onClick={onClick}
-                    onKeyDown={onKeyDown}
-                    sx={{ flex: 1, overflow: 'auto', position: 'relative', px: 3 }}
-                >
-                    <Box ref={rootRef} data-text-root sx={textStyles}>
-                        <TextBody text={text} blocks={blocks} aside={aside} />
+                <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
+                    <Box
+                        ref={scrollerRef}
+                        data-text-scroller
+                        tabIndex={0}
+                        onClick={onClick}
+                        onKeyDown={onKeyDown}
+                        sx={{ flex: 1, overflow: 'auto', position: 'relative', px: 3 }}
+                    >
+                        <Box ref={rootRef} data-text-root sx={textStyles}>
+                            <TextBody text={text} blocks={blocks} aside={aside} />
+                        </Box>
+                        <SpanHandles scrollerRef={scrollerRef} textRef={rootRef} layer={layer} />
+                        <SelectionBar scrollerRef={scrollerRef} />
                     </Box>
-                    <SelectionBar scrollerRef={scrollerRef} />
+                    <SpanTicks scrollerRef={scrollerRef} textRef={rootRef} layer={layer} />
                 </Box>
                 <SupportMenu {...menu} />
             </Box>

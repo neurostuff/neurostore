@@ -100,6 +100,8 @@ function displayName(item: Json, fallback: string): string {
     return fallback;
 }
 
+const nameFallback = (id: string, fallbackName: string) => (id === ROOT_ENTITY ? 'Study' : fallbackName);
+
 function referencesIn(value: unknown): string[] | null {
     if (typeof value === 'string') return [value];
     if (Array.isArray(value) && value.every((v) => typeof v === 'string')) return value;
@@ -243,7 +245,7 @@ export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () =
                 entityClass: row.entity_class,
                 schemaClass: row.schema_class,
                 parent: row.parent,
-                name: displayName(item, row.local_id === ROOT_ENTITY ? 'Study' : localId),
+                name: displayName(item, nameFallback(row.local_id, localId)),
                 hidden: hidden.has(row.local_id),
                 slots,
                 spans: spansOf(slots),
@@ -268,7 +270,8 @@ export function withSlotFrom(index: RecordIndex, record: Json, key: string): Rec
         position: slot.position,
     });
     const slots = byDoubt(inRecordOrder(entity.slots.map((s) => (s.key === key ? next : s))));
-    const edited = { ...entity, slots, spans: spansOf(slots) };
+    const name = displayName(getIn(record, at) as Json, nameFallback(entity.id, entity.localId));
+    const edited = { ...entity, name, slots, spans: spansOf(slots) };
     return indexOf(index.entities.map((e) => (e.id === entity.id ? edited : e)));
 }
 

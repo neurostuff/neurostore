@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 import type { OpResult } from '../api/reviewApi';
 import type { Provenance, ReviewBundle } from '../contract/generated/review-bundle';
-import type { Op } from '../contract/generated/review-ops';
+import type { Evidence, Op, SetEvidenceOp } from '../contract/generated/review-ops';
 import type { Schema } from '../model/schema';
 import { setSchemas } from '../contract/schemas';
 import { GOLDEN_SCHEMAS } from '../test/goldenSchemas';
 import { validateOpBatch } from '../test/schemas';
 import { ev, makeBundle, row } from '../test/bundles';
 import type { Json } from '../model/paths';
+import { KEPT_REFUSED } from './keptOps';
 import { createReviewStores } from './reviewStores';
 import { focusedSpans, shownIndex } from '../test/stores';
 import { TEXT, record, entities, storedOp, setup } from '../test/storeFixture';
@@ -391,6 +392,141 @@ describe('emitting ops', () => {
         expect(store.session.getState().notices).toEqual([
             { kind: 'dangling', slot: 'an_1 groups[group=grp_b].n', message: 'it points at grp_b' },
         ]);
+    });
+});
+
+describe('moving and removing evidence', () => {
+    const DESCRIPTION = 'slot:grp_a:description';
+    const spansOf = (store: ReturnType<typeof setup>, key: string) => store.session.getState().index.slot(key)?.spans;
+
+    it('moves a span within its set, in one set_evidence op, keeping the other set, the source and the unlocated quotes', () => {
+        const store = setup();
+        expect(store.session.getState().moveEvidence(DESCRIPTION, [90, 95], [88, 97])).toBe(true);
+        const { pending, undoStack } = store.session.getState();
+        expect(validateOpBatch({ ops: pending })).toBe(true);
+        expect(pending).toEqual([
+            {
+                client_op_id: expect.any(String),
+                type: 'set_evidence',
+                target: { kind: 'slot', entity: 'grp_a', path: 'description' },
+                evidence: {
+                    status: 'present',
+                    sets: [
+                        { source: 'model_quote', spans: [{ start_char: 88, end_char: 97 }] },
+                        { source: null, spans: [{ start_char: 5, end_char: 9 }] },
+                    ],
+                    unlocated_quotes: 1,
+                },
+            },
+        ]);
+        expect(undoStack).toHaveLength(1);
+        expect(spansOf(store, DESCRIPTION)).toEqual([
+            [5, 9],
+            [88, 97],
+        ]);
+    });
+
+    it('removes a span, dropping a set it empties, and leaves not_found once the last span goes', () => {
+        const store = setup();
+        expect(store.session.getState().removeEvidence(DESCRIPTION, [5, 9])).toBe(true);
+        expect(store.session.getState().pending[0]).toMatchObject({
+            evidence: {
+                status: 'present',
+                sets: [{ source: 'model_quote', spans: [{ start_char: 90, end_char: 95 }] }],
+            },
+        });
+        expect(store.session.getState().removeEvidence('slot:grp_a:name', [50, 58])).toBe(true);
+        expect((store.session.getState().pending[1] as SetEvidenceOp).evidence).toEqual({ status: 'not_found' });
+        expect(validateOpBatch({ ops: store.session.getState().pending })).toBe(true);
+        expect(spansOf(store, 'slot:grp_a:name')).toEqual([]);
+    });
+
+    it('refuses a span the slot does not have, sending nothing', () => {
+        const store = setup();
+        expect(store.session.getState().moveEvidence(DESCRIPTION, [91, 95], [88, 97])).toBe(false);
+        expect(store.session.getState().removeEvidence(DESCRIPTION, [91, 95])).toBe(false);
+        expect(store.session.getState().pending).toEqual([]);
+    });
+
+    it('refuses to move or remove a span in a read-only tab', () => {
+        const store = setup();
+        store.session.getState().setDevice('readonly');
+        expect(store.session.getState().moveEvidence(DESCRIPTION, [90, 95], [88, 97])).toBe(false);
+        expect(store.session.getState().removeEvidence(DESCRIPTION, [90, 95])).toBe(false);
+        expect(store.session.getState().pending).toEqual([]);
+        expect(spansOf(store, DESCRIPTION)).toEqual([
+            [5, 9],
+            [90, 95],
+        ]);
+    });
+
+    it('moves the span again on a rebase that changed the slot’s other set, rather than overwriting it', () => {
+        const store = setup();
+        store.session.getState().moveEvidence(DESCRIPTION, [90, 95], [88, 97]);
+        const fresh = structuredClone(store.session.getState().bundle);
+        const grpA = (fresh.record as { groups: { description: { evidence: Evidence } }[] }).groups[0];
+        grpA.description.evidence.sets![1].spans = [{ start_char: 5, end_char: 12 }];
+        store.session.getState().rebase(fresh);
+        expect(spansOf(store, DESCRIPTION)).toEqual([
+            [5, 12],
+            [88, 97],
+        ]);
+    });
+
+    describe('whose span another tab took away', () => {
+        type Fresh = { record: { groups: { description: { evidence?: Evidence } }[] } };
+        const cases = [
+            {
+                name: 'the slot keeps evidence without the span',
+                edit: (store: ReturnType<typeof setup>) =>
+                    store.session.getState().moveEvidence(DESCRIPTION, [90, 95], [88, 97]),
+                theirs: (fresh: Fresh) => {
+                    fresh.record.groups[0].description.evidence!.sets![0].spans = [{ start_char: 100, end_char: 110 }];
+                },
+                shown: [
+                    [5, 9],
+                    [100, 110],
+                ],
+            },
+            {
+                name: 'the slot has no evidence',
+                edit: (store: ReturnType<typeof setup>) =>
+                    store.session.getState().removeEvidence(DESCRIPTION, [90, 95]),
+                theirs: (fresh: Fresh) => {
+                    delete fresh.record.groups[0].description.evidence;
+                },
+                shown: [],
+            },
+        ];
+
+        const editedThenTaken = (c: (typeof cases)[number]) => {
+            const store = setup();
+            expect(c.edit(store)).toBe(true);
+            const fresh = structuredClone(store.session.getState().bundle);
+            c.theirs(fresh as unknown as Fresh);
+            return { store, fresh };
+        };
+
+        it.each(cases)('is dropped on a rebase with a conflict notice and its undo step, when $name', (c) => {
+            const { store, fresh } = editedThenTaken(c);
+            store.session.getState().rebase(fresh);
+            const { pending, undoStack, notices } = store.session.getState();
+            expect(pending).toEqual([]);
+            expect(undoStack).toEqual([]);
+            expect(notices).toEqual([{ kind: 'conflict', slot: 'grp_a description', message: expect.any(String) }]);
+            expect(spansOf(store, DESCRIPTION)).toEqual(c.shown);
+        });
+
+        it.each(cases)('blocks saving when restored from the device, when $name', (c) => {
+            const { store, fresh } = editedThenTaken(c);
+            const { pending, groupOf, intents } = store.session.getState();
+            const reloaded = createReviewStores(fresh);
+            reloaded.session.getState().restore({ ops: pending, groupOf, intents });
+            const state = reloaded.session.getState();
+            expect(state.blocked).toMatchObject({ clientOpIds: [pending[0].client_op_id], reason: KEPT_REFUSED });
+            expect(state.pending).toEqual(pending);
+            expect(spansOf(reloaded, DESCRIPTION)).toEqual(c.shown);
+        });
     });
 });
 

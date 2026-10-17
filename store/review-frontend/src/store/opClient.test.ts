@@ -1196,6 +1196,27 @@ describe('offsets outside the Basic Multilingual Plane', () => {
         const [op] = (posts(server)[0].body as { ops: SetEvidenceOp[] }).ops;
         expect(op.evidence).toMatchObject({ sets: [{ spans: [{ start_char: 16, end_char: 22 }] }] });
     });
+
+    it('sends a moved span in code points, and one undo puts the span back where it was', async () => {
+        const twenty: [number, number] = [16, 22];
+        server = fakeServer([makeBundle({ description: ev('A study', [twenty]) }, WIDE, { source: source.source })]);
+        const { store, client } = await open();
+        const key = slotKey('study', 'description');
+        const start = WIDE.indexOf('twenty');
+        const end = WIDE.indexOf('patients') + 'patients'.length;
+        expect(store.session.getState().index.slot(key)?.spans).toEqual([[start, start + 6]]);
+        expect(store.session.getState().moveEvidence(key, [start, start + 6], [start, end])).toBe(true);
+        await vi.advanceTimersByTimeAsync(1000);
+        await client.settled();
+        const [moved] = (posts(server)[0].body as { ops: SetEvidenceOp[] }).ops;
+        expect(moved.evidence).toMatchObject({ sets: [{ spans: [{ start_char: 16, end_char: 31 }] }] });
+        store.session.getState().undo();
+        await vi.advanceTimersByTimeAsync(1000);
+        await client.settled();
+        expect(posts(server)).toHaveLength(2);
+        expect(store.session.getState().index.slot(key)?.spans).toEqual([[start, start + 6]]);
+        expect(store.session.getState().undoStack).toEqual([]);
+    });
 });
 
 describe('a batch of coordinate ops', () => {
