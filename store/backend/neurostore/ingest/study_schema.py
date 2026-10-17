@@ -59,7 +59,7 @@ from study_schema.jsonschema import load as load_json_schema
 from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
-from neurostore.base_studies import find_base_study
+from neurostore.base_studies import VERSION_OF_RECORD_IDS, find_base_study
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore.exceptions.factories import create_unprocessable_error, make_field_error
@@ -114,6 +114,7 @@ from neurostore.study_schema_tools import (
     refs,
     schema_errors,
     sha256_of,
+    version_mismatch,
 )
 
 DEFAULT_RECORD_PIPELINE = "pondie"
@@ -335,6 +336,18 @@ def _validate(name, document):
                 for error in errors[:_MAX_REPORTED_ERRORS]
             ],
         )
+    mismatch = version_mismatch(name, document)
+    if mismatch:
+        abort_unprocessable(
+            f"The {name} is not at the schema version this server takes.",
+            [
+                make_field_error(
+                    f"{name}/header/schema_version",
+                    {"schema_version": mismatch[0], "pinned": mismatch[1]},
+                    code="SCHEMA_VERSION",
+                )
+            ],
+        )
 
 
 def _check_keys(parse):
@@ -414,10 +427,9 @@ def _check_verdicts(revision, revised):
 
 
 def _resolve_base_study(body, parse, parsed_paper, create):
-    identifiers = {}
-    if parse is not None:
-        identifiers = parse["header"]["identifiers"] or {}
-    base_study_id = body.get("base_study_id") or identifiers.get("neurostore_base_study_id")
+    header = {} if parse is None else parse["header"]
+    identifiers = header.get("identifiers") or {}
+    base_study_id = body.get("base_study_id") or header.get("neurostore_base_study_id")
     if base_study_id:
         base_study = db.session.get(BaseStudy, base_study_id)
         if base_study is None:
@@ -425,7 +437,7 @@ def _resolve_base_study(body, parse, parsed_paper, create):
         return base_study
 
     _lock_identifiers(identifiers)
-    base_study = find_base_study(db.session, identifiers)
+    base_study = find_base_study(db.session, header)
     if base_study is not None:
         return base_study
 
@@ -434,15 +446,14 @@ def _resolve_base_study(body, parse, parsed_paper, create):
             "A record uploaded alone must name its base study.",
             [make_field_error("base_study_id", None, code="MISSING")],
         )
-    if not any(identifiers.get(field) for field in ("doi", "pmid", "pmcid")):
+    created_from = {field: identifiers.get(field) for field in VERSION_OF_RECORD_IDS}
+    if not any(created_from.values()):
         abort_validation(
-            "The parse names no identifier to find or create its base study by.",
+            "The parse names no version-of-record identifier to create its base study from.",
             [make_field_error("coordinate_parse/header/identifiers", identifiers)],
         )
     base_study = BaseStudy(
-        doi=identifiers.get("doi"),
-        pmid=identifiers.get("pmid"),
-        pmcid=identifiers.get("pmcid"),
+        **created_from,
         level="group",
         **_bibliography(parsed_paper),
     )
@@ -452,14 +463,15 @@ def _resolve_base_study(body, parse, parsed_paper, create):
 
 
 def _lock_identifiers(identifiers):
-    """Serialize lookups of one paper until commit.
+    """Locks the ids a base study is created from; preprint ids only find.
 
-    BaseStudy has no unique doi/pmid/pmcid, so two first uploads of a paper would each
-    create one. Locks are taken in one order, so uploads sharing identifiers cannot deadlock.
+    Serializes lookups of one paper until commit. BaseStudy has no unique doi/pmid/pmcid, so
+    two first uploads of a paper would each create one. Locks are taken in one order, so
+    uploads sharing identifiers cannot deadlock.
     """
     for key in sorted(
         f"{field}:{identifiers[field]}"
-        for field in ("doi", "pmid", "pmcid")
+        for field in VERSION_OF_RECORD_IDS
         if identifiers.get(field)
     ):
         db.session.execute(

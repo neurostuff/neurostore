@@ -49,9 +49,7 @@ def make_bundle(layout, paper_id):
     return {
         "source": {
             "id": paper_id,
-            "base_study_id": (
-                header.get("identifiers", {}).get("neurostore_base_study_id") or paper_id
-            ),
+            "base_study_id": header.get("neurostore_base_study_id") or paper_id,
             "label": parsed_paper.get("bibliography", {}).get("title") or paper_id,
             "origin": "upload",
             "text_sha256": hashlib.sha256(raw).hexdigest(),

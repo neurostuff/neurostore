@@ -1,6 +1,7 @@
 import { AppBar, Button, Chip, Toolbar, Typography } from '@mui/material';
 import { Brand } from '../Brand';
 import { editSummary } from '../format/editSummary';
+import { copyNote, type TextCopy } from '../format/textCopy';
 import { displayName } from '../format/people';
 import { useSession, useView } from '../store/context';
 import { selectIsBlocked, selectSaveLabel, type SessionState } from '../store/sessionStore';
@@ -27,8 +28,14 @@ function selectProgress(s: Pick<SessionState, 'index' | 'provenance' | 'bundle'>
     return `${reviewed} of ${slots.length} reviewed, plus ${analyses} non-coordinate ${analyses === 1 ? 'analysis' : 'analyses'}`;
 }
 
+function selectTextCopy(s: Pick<SessionState, 'bundle'>): TextCopy | undefined {
+    return (s.bundle.parsed_paper as { text_copy?: TextCopy }).text_copy;
+}
+
 export function ReviewAppBar() {
     const label = useSession((s) => s.bundle.source.label);
+    const textCopy = useSession(selectTextCopy);
+    const copyLabel = textCopy ? copyNote(textCopy) : null;
     const state = useSession((s) => (s.bundle.review ? STATES[s.bundle.review.state] : 'new review'));
     const progress = useSession(selectProgress);
     const showing = useView((s) => s.showNonCoordinate);
@@ -45,6 +52,16 @@ export function ReviewAppBar() {
                 <Typography variant="body1" noWrap sx={{ flex: 1, minWidth: 0 }} title={label}>
                     {label}
                 </Typography>
+                {textCopy && copyLabel ? (
+                    <Typography
+                        variant="caption"
+                        sx={{ whiteSpace: 'nowrap' }}
+                        title={textCopy.license?.stated_as ?? undefined}
+                        aria-label={`text copy: ${copyLabel}`}
+                    >
+                        {copyLabel}
+                    </Typography>
+                ) : null}
                 <Chip
                     size="small"
                     label={state}

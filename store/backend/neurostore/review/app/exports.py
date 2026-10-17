@@ -129,6 +129,7 @@ def _write_review(root, source, review, taken):
             review.provenance,
             [entry["op"] for entry in ops],
         )
+    # Every text is written whatever its text_copy's licence: /review's exports are internal.
     paper = paper_from_documents(
         paper_id,
         source.parsed_paper,

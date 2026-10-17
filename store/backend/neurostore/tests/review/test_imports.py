@@ -121,7 +121,7 @@ def unknown_text_source(study_id):
 
 def no_base_study(study_id):
     paper, coordinate_parse, record = clean(study_id)
-    paper["header"]["identifiers"] = {"pmid": "9999"}
+    paper["header"]["identifiers"] = fx.identifiers(pmid="9999")
     return paper, coordinate_parse, record
 
 
@@ -239,6 +239,21 @@ def test_the_fulltext_keeps_the_source_of_its_parsed_paper(
     assert fulltext.source == source
 
 
+def test_the_fulltext_keeps_the_text_copy_of_its_parsed_paper(session, make_user, tmp_path):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, coordinate_parse, record = clean("1001")
+    paper["text_copy"] = fx.text_copy(version="submitted", license=fx.ALL_RIGHTS_RESERVED)
+    paper["text_copy"]["preprint_server"] = "biorxiv"
+    paper["text_copy"]["route"] = "preprint_server"
+    write_layout(tmp_path, "1001", paper, coordinate_parse, record)
+
+    imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    fulltext = session.scalar(sa.select(Fulltext))
+    assert fulltext.text_copy == paper["text_copy"]
+
+
 def test_a_second_import_of_the_same_files_skips_with_the_same_source(
     session, make_user, tmp_path
 ):
@@ -312,7 +327,7 @@ def test_a_second_record_with_identical_text_reuses_the_fulltext(session, make_u
     paper, coordinate_parse, record = clean("1001")
     write_layout(tmp_path, "1001", paper, coordinate_parse, record)
     other_paper, other_parse, other_record = clean("1002")
-    other_paper["header"]["identifiers"] = {"pmid": "1001"}
+    other_paper["header"]["identifiers"] = fx.identifiers(pmid="1001")
     other_record["local_id"] = "study-2"
     write_layout(tmp_path, "1002", other_paper, other_parse, other_record)
 
@@ -323,6 +338,25 @@ def test_a_second_record_with_identical_text_reuses_the_fulltext(session, make_u
     assert [entry["study_id"] for entry in report["loaded"]] == ["1001", "1002"]
     assert [fulltext.base_study_id for fulltext in fulltexts] == [base_study.id]
     assert len({source.fulltext_id for source in sources}) == 1
+
+
+def test_a_second_paper_with_the_same_text_keeps_the_first_papers_text_copy(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, coordinate_parse, record = clean("1001")
+    write_layout(tmp_path, "1001", paper, coordinate_parse, record)
+    other_paper, other_parse, other_record = clean("1002")
+    other_paper["header"]["identifiers"] = fx.identifiers(pmid="1001")
+    other_paper["text_copy"] = fx.text_copy(version="am", license=fx.ALL_RIGHTS_RESERVED)
+    other_record["local_id"] = "study-2"
+    write_layout(tmp_path, "1002", other_paper, other_parse, other_record)
+
+    report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert len(report["loaded"]) == 2
+    assert session.scalar(sa.select(Fulltext)).text_copy == paper["text_copy"]
 
 
 def test_the_same_text_on_two_base_studies_gives_a_fulltext_on_each(session, make_user, tmp_path):
@@ -406,11 +440,8 @@ def test_the_neurostore_base_study_id_beats_a_matching_doi(session, make_user, t
     by_doi = add_base_study(session, doi="10.1/one")
     named = add_base_study(session)
     paper, coordinate_parse, record = clean("1001")
-    paper["header"]["identifiers"] = {
-        "pmid": "1001",
-        "doi": "10.1/one",
-        "neurostore_base_study_id": named.id,
-    }
+    paper["header"]["identifiers"] = fx.identifiers(pmid="1001", doi="10.1/one")
+    paper["header"]["neurostore_base_study_id"] = named.id
     write_layout(tmp_path, "1001", paper, coordinate_parse, record)
 
     report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
@@ -426,7 +457,7 @@ def test_a_named_base_study_that_is_unknown_falls_through_to_the_identifiers(
     make_user(REVIEWER, "admin-reviewer")
     by_pmid = add_base_study(session, pmid="1001")
     paper, coordinate_parse, record = clean("1001")
-    paper["header"]["identifiers"] = {"pmid": "1001", "neurostore_base_study_id": "missing"}
+    paper["header"]["neurostore_base_study_id"] = "missing"
     write_layout(tmp_path, "1001", paper, coordinate_parse, record)
 
     report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
@@ -439,7 +470,7 @@ def test_a_doi_beats_a_pmid_on_another_base_study(session, make_user, tmp_path):
     by_doi = add_base_study(session, doi="10.1/one")
     add_base_study(session, pmid="1001")
     paper, coordinate_parse, record = clean("1001")
-    paper["header"]["identifiers"] = {"pmid": "1001", "doi": "10.1/one"}
+    paper["header"]["identifiers"] = fx.identifiers(pmid="1001", doi="10.1/one")
     write_layout(tmp_path, "1001", paper, coordinate_parse, record)
 
     report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
@@ -451,12 +482,159 @@ def test_a_pmcid_alone_finds_its_base_study(session, make_user, tmp_path):
     make_user(REVIEWER, "admin-reviewer")
     by_pmcid = add_base_study(session, pmcid="PMC1001")
     paper, coordinate_parse, record = clean("1001")
-    paper["header"]["identifiers"] = {"pmcid": "PMC1001"}
+    paper["header"]["identifiers"] = fx.identifiers(pmcid="PMC1001")
     write_layout(tmp_path, "1001", paper, coordinate_parse, record)
 
     report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
 
     assert report["loaded"][0]["base_study_id"] == by_pmcid.id
+
+
+PREPRINT_DOI = {"doi": "10.1101/2025.01.01.000001", "server": "biorxiv"}
+
+
+def import_with_identifiers(session, tmp_path, **ids):
+    paper, coordinate_parse, record = clean("1001")
+    paper["header"]["identifiers"] = fx.identifiers(**ids)
+    write_layout(tmp_path, "1001", paper, coordinate_parse, record)
+    return imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+
+def test_a_version_of_record_id_beats_a_preprint_id_on_an_older_base_study(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, doi=PREPRINT_DOI["doi"])
+    by_pmid = add_base_study(session, pmid="1001")
+
+    report = import_with_identifiers(session, tmp_path, pmid="1001", preprint_dois=[PREPRINT_DOI])
+
+    assert report["loaded"][0]["base_study_id"] == by_pmid.id
+
+
+@pytest.mark.parametrize(
+    "column, value, ids",
+    [
+        ("doi", PREPRINT_DOI["doi"], {"preprint_dois": [PREPRINT_DOI]}),
+        ("pmid", "40000001", {"preprint_pmid": "40000001"}),
+        ("pmcid", "PMC40000001", {"preprint_pmcid": "PMC40000001"}),
+    ],
+)
+def test_a_preprint_finds_the_base_study_first_seen_as_that_preprint(
+    session, make_user, tmp_path, column, value, ids
+):
+    make_user(REVIEWER, "admin-reviewer")
+    first_seen = add_base_study(session, **{column: value})
+
+    report = import_with_identifiers(session, tmp_path, **ids)
+
+    assert report["loaded"][0]["base_study_id"] == first_seen.id
+
+
+OTHER_PREPRINT_DOI = {"doi": "10.1101/2025.02.02.000002", "server": "medrxiv"}
+
+
+@pytest.mark.parametrize(
+    "column, value, ids",
+    [
+        ("pmid", "1001", {"pmid": "1001"}),
+        ("pmid", "40000001", {"preprint_pmid": "40000001"}),
+        ("doi", PREPRINT_DOI["doi"], {"preprint_dois": [PREPRINT_DOI]}),
+    ],
+)
+def test_the_oldest_base_study_within_a_step_is_matched(
+    session, make_user, tmp_path, column, value, ids
+):
+    make_user(REVIEWER, "admin-reviewer")
+    oldest = add_base_study(session, **{column: value})
+    add_base_study(session, **{column: value})
+
+    report = import_with_identifiers(session, tmp_path, **ids)
+
+    assert report["loaded"][0]["base_study_id"] == oldest.id
+
+
+def test_the_first_preprint_doi_with_a_base_study_is_matched(session, make_user, tmp_path):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, doi=OTHER_PREPRINT_DOI["doi"])
+    by_first = add_base_study(session, doi=PREPRINT_DOI["doi"])
+
+    report = import_with_identifiers(
+        session, tmp_path, preprint_dois=[PREPRINT_DOI, OTHER_PREPRINT_DOI]
+    )
+
+    assert report["loaded"][0]["base_study_id"] == by_first.id
+
+
+def test_a_later_preprint_doi_is_tried_when_the_first_has_no_base_study(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    by_second = add_base_study(session, doi=OTHER_PREPRINT_DOI["doi"])
+
+    report = import_with_identifiers(
+        session, tmp_path, preprint_dois=[PREPRINT_DOI, OTHER_PREPRINT_DOI]
+    )
+
+    assert report["loaded"][0]["base_study_id"] == by_second.id
+
+
+def test_a_preprint_doi_beats_a_preprint_pmid_and_pmcid_on_an_older_base_study(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="40000001")
+    add_base_study(session, pmcid="PMC40000001")
+    by_doi = add_base_study(session, doi=PREPRINT_DOI["doi"])
+
+    report = import_with_identifiers(
+        session,
+        tmp_path,
+        preprint_pmid="40000001",
+        preprint_pmcid="PMC40000001",
+        preprint_dois=[PREPRINT_DOI],
+    )
+
+    assert report["loaded"][0]["base_study_id"] == by_doi.id
+
+
+def test_a_preprint_pmid_beats_a_preprint_pmcid_on_an_older_base_study(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmcid="PMC40000001")
+    by_pmid = add_base_study(session, pmid="40000001")
+
+    report = import_with_identifiers(
+        session, tmp_path, preprint_pmid="40000001", preprint_pmcid="PMC40000001"
+    )
+
+    assert report["loaded"][0]["base_study_id"] == by_pmid.id
+
+
+def test_a_paper_matching_no_base_study_names_every_identifier_searched_in_order(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, doi="10.1/another")
+    paper, coordinate_parse, record = clean("1001")
+    paper["header"]["neurostore_base_study_id"] = "missing"
+    paper["header"]["identifiers"] = fx.identifiers(
+        pmid="1001",
+        preprint_pmcid="PMC40000001",
+        preprint_pmid="40000001",
+        preprint_dois=[PREPRINT_DOI, {"doi": "10.1101/2025.02.02.000002", "server": "medrxiv"}],
+    )
+    write_layout(tmp_path, "1001", paper, coordinate_parse, record)
+
+    report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert report["loaded"] == []
+    assert report["failed"][0]["problems"] == [
+        "no base study for neurostore_base_study_id=missing, pmid=1001, "
+        f"preprint_doi={PREPRINT_DOI['doi']}, preprint_doi=10.1101/2025.02.02.000002, "
+        "preprint_pmid=40000001, preprint_pmcid=PMC40000001"
+    ]
 
 
 def test_an_inactive_base_study_is_not_matched_and_none_is_created(session, make_user, tmp_path):
@@ -875,6 +1053,29 @@ def test_a_parsed_paper_without_a_required_header_field_fails_naming_the_field(
     assert failure["problems"] == [f"parsed_paper at header: '{field}' is a required property"]
     assert count(session, ReviewSource) == 0
     assert count(session, Fulltext) == 0
+
+
+@pytest.mark.parametrize("label", ["parsed_paper", "coordinate_parse"])
+def test_a_document_whose_header_is_not_the_pinned_version_fails_naming_it(
+    session, make_user, tmp_path, label
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, coordinate_parse, record = clean("1001")
+    {"parsed_paper": paper, "coordinate_parse": coordinate_parse}[label]["header"][
+        "schema_version"
+    ] = "0.6.0"
+    write_layout(tmp_path, "1001", paper, coordinate_parse, record)
+
+    report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert report["loaded"] == []
+    [failure] = report["failed"]
+    pinned = load(label.replace("_", "-"))["version"]
+    assert failure["problems"] == [
+        f"{label} at header.schema_version: is 0.6.0, not the pinned {pinned}"
+    ]
+    assert count(session, ReviewSource) == 0
 
 
 def provenance_document(source, reviewed=True):

@@ -6396,15 +6396,6 @@
             "null"
           ]
         },
-        "language": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
         "local_id": {
           "type": "string"
         },
@@ -6458,15 +6449,6 @@
           "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
           "type": [
             "string",
-            "null"
-          ]
-        },
-        "study_type": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
             "null"
           ]
         },
@@ -7083,15 +7065,6 @@
         "null"
       ]
     },
-    "language": {
-      "items": {
-        "type": "string"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
     "local_id": {
       "type": "string"
     },
@@ -7148,15 +7121,6 @@
         "null"
       ]
     },
-    "study_type": {
-      "items": {
-        "type": "string"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
     "tables": {
       "items": {
         "$ref": "#/$defs/Table"
@@ -7182,5 +7146,5 @@
   ],
   "title": "neuroimaging-study-extraction",
   "type": "object",
-  "version": "0.5.0"
+  "version": "0.6.0"
 }

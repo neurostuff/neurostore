@@ -7,7 +7,7 @@ from functools import partial
 import sqlalchemy as sa
 from sqlalchemy.exc import DBAPIError
 
-from neurostore.base_studies import find_base_study
+from neurostore.base_studies import find_base_study, searched_identifiers
 from neurostore.models import (
     ExtractionEntityLink,
     Fulltext,
@@ -152,10 +152,10 @@ def _uploaded_papers(session, root, report):
         except LayoutError as error:
             report["failed"].append({"study_id": study_id, "problems": error.problems})
             continue
-        identifiers = (parsed_paper.get("header") or {}).get("identifiers") or {}
-        base_study = find_base_study(session, identifiers)
+        header = parsed_paper.get("header") or {}
+        base_study = find_base_study(session, header)
         if base_study is None:
-            problem = _no_base_study(identifiers)
+            problem = _no_base_study(header)
         elif base_study.id in uploaded:
             first = uploaded[base_study.id][0]
             problem = f"{first} is already the uploaded paper of the same base study"
@@ -166,8 +166,8 @@ def _uploaded_papers(session, root, report):
     return uploaded
 
 
-def _no_base_study(identifiers):
-    named = ", ".join(f"{field}={value}" for field, value in identifiers.items() if value)
+def _no_base_study(header):
+    named = ", ".join(f"{label}={value}" for label, value in searched_identifiers(header))
     return f"no base study for {named}"
 
 
@@ -212,10 +212,10 @@ def _build_source(
     problems = _positional_problems(paper.record)
     if problems:
         raise PaperRefused(problems)
-    identifiers = paper.parsed_paper["header"]["identifiers"]
-    base_study = find_base_study(session, identifiers)
+    header = paper.parsed_paper["header"]
+    base_study = find_base_study(session, header)
     if base_study is None:
-        raise PaperRefused([_no_base_study(identifiers)])
+        raise PaperRefused([_no_base_study(header)])
     fulltext = _fulltext(session, base_study, paper)
     bare = without_stable_ids(paper.record)
     digest = sha256_of(bare if wrapper is None else {"record": bare, **wrapper})
@@ -348,7 +348,12 @@ def _fulltext(session, base_study, paper):
         )
     )
     if fulltext is None:
-        fulltext = Fulltext(base_study_id=base_study.id, source=source, text=paper.text)
+        fulltext = Fulltext(
+            base_study_id=base_study.id,
+            source=source,
+            text=paper.text,
+            text_copy=paper.parsed_paper["text_copy"],
+        )
         session.add(fulltext)
         session.flush()
     return fulltext

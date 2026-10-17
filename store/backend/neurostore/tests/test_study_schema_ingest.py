@@ -47,6 +47,8 @@ from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review import records
 
+PREPRINT_DOI = {"doi": "10.1101/2025.01.01.000001", "server": "biorxiv"}
+
 # Table 1 of one paper: rows 0-3 are one contrast with both signs, rows 4-7 two more.
 GAIN = fx.table_analysis(
     "tbl1",
@@ -149,6 +151,57 @@ def test_parse_alone_stores_skeleton_keyed_by_content(session):
     again = ingest_upload({"coordinate_parse": ORIGINAL})
     assert again["skeleton"]["created"] == 0
     assert again["skeleton"]["updated"] == 4
+
+
+def test_a_parse_whose_header_names_a_base_study_is_stored_on_it(session):
+    named = BaseStudy(name="Named", level="group")
+    session.add(named)
+    session.commit()
+    parse = copy.deepcopy(ORIGINAL)
+    parse["header"]["neurostore_base_study_id"] = named.id
+
+    summary = ingest_upload({"coordinate_parse": parse})
+
+    assert summary["base_study_id"] == named.id
+
+
+def test_a_parse_with_paper_parse_0_6_0_identifiers_is_refused(session):
+    old = copy.deepcopy(ORIGINAL)
+    old["header"]["schema_version"] = "0.6.0"
+    old["header"]["identifiers"] = {
+        "pmid": "12345678",
+        "pmcid": None,
+        "doi": None,
+        "neurostore_base_study_id": None,
+    }
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": old})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA", "coordinate-parse/header/identifiers")
+    }
+
+
+def test_a_parse_whose_header_is_not_the_pinned_version_is_refused(session):
+    old = copy.deepcopy(ORIGINAL)
+    old["header"]["schema_version"] = "0.6.0"
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": old})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA_VERSION", "coordinate-parse/header/schema_version")
+    }
+
+
+def test_a_parsed_paper_whose_header_is_not_the_pinned_version_is_refused(session):
+    paper = fx.parsed_paper()
+    paper["header"]["schema_version"] = "0.6.0"
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": copy.deepcopy(ORIGINAL), "parsed_paper": paper})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA_VERSION", "parsed-paper/header/schema_version")
+    }
 
 
 def test_parse_with_a_wrong_key_is_refused(session):
@@ -1009,6 +1062,43 @@ def test_base_study_lookup_holds_an_advisory_lock(session):
         )
     ).scalar()
     # The parse names a pmid only: one lock, held until the upload's transaction ends.
+    assert locks == 1
+
+
+def preprint_parse(**ids):
+    parse = copy.deepcopy(ORIGINAL)
+    parse["header"]["identifiers"] = fx.identifiers(**ids)
+    return parse
+
+
+def test_a_preprint_only_parse_matching_no_base_study_is_refused(session):
+    parse = preprint_parse(preprint_pmid="40000001", preprint_dois=[PREPRINT_DOI])
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": parse})
+    assert "names no version-of-record identifier to create its base study from" in str(
+        error.value.detail
+    )
+    assert session.scalar(sa.select(sa.func.count()).select_from(BaseStudy)) == 0
+
+
+def test_a_parse_with_only_preprint_dois_finds_the_base_study_of_that_doi(session):
+    first_seen = BaseStudy(name="Preprint", doi=PREPRINT_DOI["doi"], level="group")
+    session.add(first_seen)
+    session.commit()
+
+    summary = ingest_upload({"coordinate_parse": preprint_parse(preprint_dois=[PREPRINT_DOI])})
+
+    assert summary["base_study_id"] == first_seen.id
+
+
+def test_the_base_study_lookup_locks_version_of_record_ids_only(session):
+    ingest_upload({"coordinate_parse": preprint_parse(pmid="12345678", preprint_pmid="40000001")})
+    locks = session.execute(
+        sa.text(
+            "SELECT count(*) FROM pg_locks "
+            "WHERE locktype = 'advisory' AND pid = pg_backend_pid()"
+        )
+    ).scalar()
     assert locks == 1
 
 

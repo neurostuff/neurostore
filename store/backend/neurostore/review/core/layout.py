@@ -10,7 +10,7 @@ from pathlib import Path, PurePosixPath
 from pydantic import ValidationError
 
 from neurostore.review.errors import Unprocessable
-from neurostore.study_schema_tools import expected_key, schema_errors
+from neurostore.study_schema_tools import expected_key, schema_errors, version_mismatch
 
 
 class LayoutError(Unprocessable):
@@ -173,10 +173,16 @@ def _dotted(path):
 
 
 def _schema_problems(label, name, document):
-    return [
+    problems = [
         f"{label} at {_dotted(e.path) or '(root)'}: {e.message}"
         for e in schema_errors(name, document)
     ]
+    mismatch = version_mismatch(name, document)
+    if mismatch:
+        problems.append(
+            f"{label} at header.schema_version: is {mismatch[0]}, not the pinned {mismatch[1]}"
+        )
+    return problems
 
 
 def _hash_problems(paper):

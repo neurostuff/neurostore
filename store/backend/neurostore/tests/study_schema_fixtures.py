@@ -12,6 +12,7 @@ from study_schema.jsonschema import load
 from study_schema.models.paper_parse import ParsedAnalysis
 
 from neurostore import study_schema_tools
+from neurostore.base_studies import VERSION_OF_RECORD_IDS
 
 SCHEMA_VERSION = load("coordinate-parse")["version"]
 
@@ -67,13 +68,34 @@ def text_analysis(spans, name, points=(), role="result", space="MNI"):
     })
 
 
+CC_BY = {
+    "license_id": "cc-by",
+    "determination": "stated",
+    "stated_by": "jats",
+    "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+}
+ALL_RIGHTS_RESERVED = {"license_id": "all-rights-reserved", "determination": "assumed"}
+
+
+def identifiers(**ids):
+    """Header identifiers with the publication_status ``ids`` give."""
+    published = any(ids.get(field) for field in VERSION_OF_RECORD_IDS)
+    preprint = any(value for field, value in ids.items() if field.startswith("preprint_"))
+    status = "preprint" if preprint and not published else "published"
+    return {**ids, "publication_status": status}
+
+
+def text_copy(version="vor", license=CC_BY, route="pmc", access="public"):
+    return {"route": route, "version": version, "access": access, "license": license}
+
+
 def parse(analyses, pmid="12345678", revision_of=None, verdicts=None, producer="ingestion"):
     document = {
         "header": {
             "artifact_kind": "coordinate_parse",
             "schema_version": SCHEMA_VERSION,
             "article_id": f"art-{pmid}",
-            "identifiers": {"pmid": pmid},
+            "identifiers": identifiers(pmid=pmid),
             "producer": {"name": producer, "version": "1.0.0", "stage": "analyses"},
         },
         "parse_id": hashlib.sha256(
@@ -137,8 +159,10 @@ def parsed_paper(pmid="12345678", corrections=None):
     """A minimal parsed paper; ``corrections`` are its bibliography's notices."""
     schema = load("parsed-paper")
     document = minimal(schema, schema["$defs"])
-    document["header"]["identifiers"] = {"pmid": pmid}
-    document["bibliography"] = {"title": "A paper"}
+    document["header"]["schema_version"] = SCHEMA_VERSION
+    document["header"]["identifiers"] = identifiers(pmid=pmid)
+    document["text_copy"] = text_copy()
+    document["bibliography"] = {"title": "A paper", "license": ALL_RIGHTS_RESERVED}
     if corrections is not None:
         document["bibliography"]["corrections"] = corrections
     return document

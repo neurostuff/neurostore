@@ -122,16 +122,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -144,10 +160,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -1356,16 +1373,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -1378,10 +1411,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -6021,16 +6055,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -6043,10 +6093,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -7867,16 +7918,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -7889,10 +7956,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -10944,10 +11012,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -12478,10 +12547,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -13555,10 +13625,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -15501,10 +15572,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -17084,10 +17156,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -18641,10 +18714,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -19366,10 +19440,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -20452,10 +20527,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -21571,10 +21647,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -22562,10 +22639,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0",
+                "schema_version": "0.8.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -30243,16 +30321,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -30265,10 +30359,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -31733,16 +31828,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -31755,10 +31866,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -34452,16 +34564,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -34474,10 +34602,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -35932,16 +36061,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -35954,10 +36099,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {
@@ -38518,16 +38664,32 @@
                 },
                 "article_id": "x",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "x"
+                "schema_version": "0.8.0"
               },
               "source": "pmc",
+              "text_copy": {
+                "route": "pmc",
+                "access": "public",
+                "license": {
+                  "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+                  "stated_by": "jats",
+                  "license_id": "cc-by",
+                  "determination": "stated"
+                },
+                "version": "vor"
+              },
               "text_path": "x",
               "text_sha256": "x",
               "bibliography": {
-                "title": "A paper"
+                "title": "A paper",
+                "license": {
+                  "license_id": "all-rights-reserved",
+                  "determination": "assumed"
+                }
               },
               "is_meta_analysis": false
             },
@@ -38540,10 +38702,11 @@
                 },
                 "article_id": "art-12345678",
                 "identifiers": {
-                  "pmid": "12345678"
+                  "pmid": "12345678",
+                  "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.6.0"
+                "schema_version": "0.8.0"
               },
               "analyses": [
                 {

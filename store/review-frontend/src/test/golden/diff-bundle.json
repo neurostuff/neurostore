@@ -14,10 +14,11 @@
   "parsed_paper": {
     "header": {
       "artifact_kind": "parsed_paper",
-      "schema_version": "x",
+      "schema_version": "0.8.0",
       "article_id": "x",
       "identifiers": {
-        "pmid": "12345678"
+        "pmid": "12345678",
+        "publication_status": "published"
       },
       "producer": {
         "name": "x",
@@ -25,20 +26,36 @@
       }
     },
     "source": "pmc",
+    "text_copy": {
+      "route": "pmc",
+      "version": "vor",
+      "access": "public",
+      "license": {
+        "license_id": "cc-by",
+        "determination": "stated",
+        "stated_by": "jats",
+        "stated_as": "https://creativecommons.org/licenses/by/4.0/"
+      }
+    },
     "text_path": "x",
     "text_sha256": "x",
     "bibliography": {
-      "title": "A paper"
+      "title": "A paper",
+      "license": {
+        "license_id": "all-rights-reserved",
+        "determination": "assumed"
+      }
     },
     "is_meta_analysis": false
   },
   "coordinate_parse": {
     "header": {
       "artifact_kind": "coordinate_parse",
-      "schema_version": "0.6.0",
+      "schema_version": "0.8.0",
       "article_id": "art-12345678",
       "identifiers": {
-        "pmid": "12345678"
+        "pmid": "12345678",
+        "publication_status": "published"
       },
       "producer": {
         "name": "ingestion",
@@ -521,10 +538,11 @@
   "coordinate_revision": {
     "header": {
       "artifact_kind": "coordinate_parse",
-      "schema_version": "0.6.0",
+      "schema_version": "0.8.0",
       "article_id": "art-12345678",
       "identifiers": {
-        "pmid": "12345678"
+        "pmid": "12345678",
+        "publication_status": "published"
       },
       "producer": {
         "name": "neurostore-review",

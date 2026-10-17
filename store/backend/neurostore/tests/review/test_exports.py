@@ -203,6 +203,31 @@ def test_the_round_trip_gives_back_every_source_file_as_loaded(
     assert not (tmp_path / "out" / "unreviewed" / "run" / "revisions").exists()
 
 
+def write_unredistributable(root, study_id="s1", dumps=dump):
+    paper, coordinate_parse, record = documents(study_id)
+    paper["source"] = "pubget"
+    paper["header"]["article_id"] = f"art-{study_id}"
+    paper["text_copy"] = fx.text_copy(
+        version="am", license=fx.ALL_RIGHTS_RESERVED, access="tdm_grant"
+    )
+    return write_layout(root, study_id, paper, coordinate_parse, record, dumps=dumps)
+
+
+def test_a_text_that_may_not_be_redistributed_is_exported_with_its_text_copy(
+    session, reviewers, tmp_path
+):
+    files, source_id = load(session, tmp_path / "in", writer=write_unredistributable)
+    review_id = edit(session, source_id, REVIEWER)
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    assert_as_loaded(tmp_path / "out", files)
+    exported = json.loads(
+        (tmp_path / "out" / f"corpus/{PAPER_ID}/parse/parsed_paper.json").read_text("utf-8")
+    )
+    assert exported["text_copy"]["license"] == fx.ALL_RIGHTS_RESERVED
+
+
 def test_a_paper_without_an_article_id_fails_the_export_naming_the_source(
     session, reviewers, tmp_path
 ):

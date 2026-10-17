@@ -181,3 +181,46 @@ describe('the reviewers who have edited the paper', () => {
         expect(screen.queryByText(/^Ben:/)).not.toBeInTheDocument();
     });
 });
+
+describe('the copy the text was read from', () => {
+    const withCopy = (text_copy: unknown) =>
+        makeBundle({ description: ev('A study', [[0, 4]]) }, 'Text of the paper.', {
+            parsed_paper: { bibliography: { title: 'A paper' }, text_copy },
+        });
+
+    it.each([
+        [{ version: 'vor', license: { license_id: 'cc-by', determination: 'stated' } }, 'VoR · CC-BY'],
+        [
+            { version: 'submitted', license: { license_id: 'all-rights-reserved', determination: 'assumed' } },
+            'submitted manuscript · all rights reserved',
+        ],
+        [
+            { version: 'am', license: { license_id: 'cc-by-nc-nd', determination: 'stated' } },
+            'accepted manuscript · CC-BY-NC-ND',
+        ],
+        [{ license: { license_id: 'cc0', determination: 'stated' } }, 'version unknown · CC0'],
+        [{ version: 'vor' }, 'VoR · licence unknown'],
+        [{ version: 'vor', license: { determination: 'assumed' } }, 'VoR · licence unknown'],
+        [{ version: 'vor', license: { license_id: 'public-domain' } }, 'VoR · public domain'],
+        [{ version: 'vor', license: { license_id: 'other' } }, 'VoR · other licence'],
+    ])('names its version and licence', (copy, note) => {
+        renderWithStores(<ReviewAppBar />, withCopy(copy));
+        expect(screen.getByLabelText(/^text copy/)).toHaveTextContent(note);
+    });
+
+    it('shows the licence as the paper states it on hover', () => {
+        const stated_as = 'https://creativecommons.org/licenses/by/4.0/';
+        renderWithStores(<ReviewAppBar />, withCopy({ version: 'vor', license: { license_id: 'cc-by', stated_as } }));
+        expect(screen.getByLabelText(/^text copy/)).toHaveAttribute('title', stated_as);
+    });
+
+    it('has no hover text when the licence is not stated as anything', () => {
+        renderWithStores(<ReviewAppBar />, withCopy({ version: 'vor', license: { license_id: 'cc-by', stated_as: null } }));
+        expect(screen.getByLabelText(/^text copy/)).not.toHaveAttribute('title');
+    });
+
+    it('is not named when the parsed paper has no copy', () => {
+        renderWithStores(<ReviewAppBar />, bundle);
+        expect(screen.queryByLabelText(/^text copy/)).not.toBeInTheDocument();
+    });
+});

@@ -50,6 +50,14 @@ def schema_errors(name, document):
     return sorted(_validator(name).iter_errors(document), key=lambda e: list(e.path))
 
 
+def version_mismatch(name, document):
+    """(stated, pinned) when ``document``'s header states a schema_version other than the one
+    study_schema's ``name`` schema is at; None when it matches or states none."""
+    stated = (document.get("header") or {}).get("schema_version")
+    pinned = load(name)["version"]
+    return None if stated in (None, pinned) else (stated, pinned)
+
+
 def schema(name):
     """The schema of study_schema's ``name`` document, as study_schema loads it."""
     return _validator(name).schema

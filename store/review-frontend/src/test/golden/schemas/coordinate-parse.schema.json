@@ -92,12 +92,6 @@
             "null"
           ]
         },
-        "neurostore_base_study_id": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "pmcid": {
           "type": [
             "string",
@@ -109,8 +103,35 @@
             "string",
             "null"
           ]
+        },
+        "preprint_dois": {
+          "items": {
+            "$ref": "#/$defs/PreprintDoi"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "preprint_pmcid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preprint_pmid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "publication_status": {
+          "$ref": "#/$defs/PublicationStatus"
         }
       },
+      "required": [
+        "publication_status"
+      ],
       "title": "ArticleIdentifiers",
       "type": "object"
     },
@@ -139,6 +160,12 @@
           },
           "type": [
             "array",
+            "null"
+          ]
+        },
+        "neurostore_base_study_id": {
+          "type": [
+            "string",
             "null"
           ]
         },
@@ -182,11 +209,49 @@
     },
     "Bibliography": {
       "additionalProperties": false,
+      "else": {
+        "properties": {
+          "abstract_provider": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/MetadataSource"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "abstract": {
+            "anyOf": [
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "abstract"
+        ]
+      },
       "properties": {
         "abstract": {
+          "pattern": "\\S",
           "type": [
             "string",
             "null"
+          ]
+        },
+        "abstract_provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetadataSource"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "authors": {
@@ -238,15 +303,16 @@
           ]
         },
         "license": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "$ref": "#/$defs/License"
         },
-        "open_access": {
-          "type": [
-            "boolean",
-            "null"
+        "oa_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OaStatus"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "pages": {
@@ -256,14 +322,25 @@
           ]
         },
         "provider": {
-          "type": [
-            "string",
-            "null"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetadataSource"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "publication_types": {
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StudyType"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
           "type": [
             "array",
@@ -271,6 +348,7 @@
           ]
         },
         "publication_year": {
+          "minimum": 1600,
           "type": [
             "integer",
             "null"
@@ -287,8 +365,23 @@
         }
       },
       "required": [
-        "title"
+        "title",
+        "license"
       ],
+      "then": {
+        "properties": {
+          "abstract_provider": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/MetadataSource"
+              }
+            ]
+          }
+        },
+        "required": [
+          "abstract_provider"
+        ]
+      },
       "title": "Bibliography",
       "type": "object"
     },
@@ -480,6 +573,115 @@
       "title": "CoordinateRole",
       "type": "string"
     },
+    "Copy": {
+      "additionalProperties": false,
+      "else": {
+        "properties": {
+          "preprint_server": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PreprintServer"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "route": {
+            "const": "preprint_server"
+          }
+        },
+        "required": [
+          "route"
+        ]
+      },
+      "properties": {
+        "license": {
+          "$ref": "#/$defs/License"
+        },
+        "preprint_server": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreprintServer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CopyVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "route",
+        "license"
+      ],
+      "then": {
+        "properties": {
+          "preprint_server": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PreprintServer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "preprint_server"
+        ]
+      },
+      "title": "Copy",
+      "type": "object"
+    },
+    "CopyAccess": {
+      "enum": [
+        "public",
+        "tdm_grant",
+        "unrecorded"
+      ],
+      "title": "CopyAccess",
+      "type": "string"
+    },
+    "CopyRoute": {
+      "enum": [
+        "pmc",
+        "publisher",
+        "repository",
+        "preprint_server",
+        "unrecorded"
+      ],
+      "title": "CopyRoute",
+      "type": "string"
+    },
+    "CopyVersion": {
+      "enum": [
+        "vor",
+        "am",
+        "submitted"
+      ],
+      "title": "CopyVersion",
+      "type": "string"
+    },
     "Correction": {
       "additionalProperties": false,
       "properties": {
@@ -616,6 +818,90 @@
       "title": "FunctionalForm",
       "type": "string"
     },
+    "HeldCopy": {
+      "additionalProperties": false,
+      "else": {
+        "properties": {
+          "preprint_server": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PreprintServer"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "route": {
+            "const": "preprint_server"
+          }
+        },
+        "required": [
+          "route"
+        ]
+      },
+      "properties": {
+        "access": {
+          "$ref": "#/$defs/CopyAccess"
+        },
+        "license": {
+          "$ref": "#/$defs/License"
+        },
+        "preprint_server": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreprintServer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CopyVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "access",
+        "route",
+        "license"
+      ],
+      "then": {
+        "properties": {
+          "preprint_server": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PreprintServer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "preprint_server"
+        ]
+      },
+      "title": "HeldCopy",
+      "type": "object"
+    },
     "InferenceTarget": {
       "enum": [
         "connectivity_parameter",
@@ -647,6 +933,121 @@
       ],
       "title": "InputRef",
       "type": "object"
+    },
+    "License": {
+      "additionalProperties": false,
+      "else": {
+        "properties": {
+          "license_id": {
+            "const": "all-rights-reserved"
+          },
+          "stated_as": {
+            "not": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "stated_by": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/MetadataSource"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "determination": {
+            "const": "stated"
+          }
+        },
+        "required": [
+          "determination"
+        ]
+      },
+      "properties": {
+        "determination": {
+          "$ref": "#/$defs/LicenseDetermination"
+        },
+        "license_id": {
+          "$ref": "#/$defs/LicenseId"
+        },
+        "stated_as": {
+          "pattern": "\\S",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stated_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetadataSource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "license_id",
+        "determination"
+      ],
+      "then": {
+        "properties": {
+          "stated_as": {
+            "anyOf": [
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "stated_by": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/MetadataSource"
+              }
+            ]
+          }
+        },
+        "required": [
+          "stated_by",
+          "stated_as"
+        ]
+      },
+      "title": "License",
+      "type": "object"
+    },
+    "LicenseDetermination": {
+      "enum": [
+        "stated",
+        "assumed"
+      ],
+      "title": "LicenseDetermination",
+      "type": "string"
+    },
+    "LicenseId": {
+      "enum": [
+        "cc-by",
+        "cc-by-sa",
+        "cc-by-nc",
+        "cc-by-nc-sa",
+        "cc-by-nd",
+        "cc-by-nc-nd",
+        "cc0",
+        "public-domain",
+        "all-rights-reserved",
+        "other"
+      ],
+      "title": "LicenseId",
+      "type": "string"
     },
     "MapQuantity": {
       "enum": [
@@ -706,6 +1107,20 @@
       "title": "MetaAnalysisBasis",
       "type": "string"
     },
+    "MetadataSource": {
+      "enum": [
+        "jats",
+        "elsevier",
+        "pmc_cloud",
+        "pubmed",
+        "crossref",
+        "openalex",
+        "semantic_scholar",
+        "europepmc"
+      ],
+      "title": "MetadataSource",
+      "type": "string"
+    },
     "ModelFamily": {
       "enum": [
         "glm",
@@ -732,6 +1147,18 @@
         "conjunction_null"
       ],
       "title": "NullHypothesis",
+      "type": "string"
+    },
+    "OaStatus": {
+      "enum": [
+        "gold",
+        "diamond",
+        "hybrid",
+        "bronze",
+        "green",
+        "closed"
+      ],
+      "title": "OaStatus",
       "type": "string"
     },
     "OmittedAnalysis": {
@@ -992,6 +1419,15 @@
             "null"
           ]
         },
+        "reported_copies": {
+          "items": {
+            "$ref": "#/$defs/ReportedCopy"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "sections": {
           "items": {
             "$ref": "#/$defs/Section"
@@ -1035,6 +1471,9 @@
             "null"
           ]
         },
+        "text_copy": {
+          "$ref": "#/$defs/HeldCopy"
+        },
         "text_length": {
           "minimum": 0,
           "type": [
@@ -1052,6 +1491,7 @@
       "required": [
         "header",
         "source",
+        "text_copy",
         "text_path",
         "text_sha256",
         "bibliography",
@@ -1312,6 +1752,60 @@
       "title": "PolaritySemantics",
       "type": "string"
     },
+    "PreprintDoi": {
+      "additionalProperties": false,
+      "properties": {
+        "doi": {
+          "type": "string"
+        },
+        "server": {
+          "$ref": "#/$defs/PreprintServer"
+        }
+      },
+      "required": [
+        "doi",
+        "server"
+      ],
+      "title": "PreprintDoi",
+      "type": "object"
+    },
+    "PreprintServer": {
+      "enum": [
+        "biorxiv",
+        "medrxiv",
+        "arxiv",
+        "researchsquare",
+        "osf_preprints",
+        "arabixiv",
+        "metaarxiv",
+        "engrxiv",
+        "focus_archive",
+        "frenxiv",
+        "ina_rxiv",
+        "lawarxiv",
+        "lis_scholarship_archive",
+        "marxiv",
+        "mindrxiv",
+        "nutrixiv",
+        "paleorxiv",
+        "psyarxiv",
+        "socarxiv",
+        "sportrxiv",
+        "africarxiv",
+        "mediarxiv",
+        "bodoarxiv",
+        "edarxiv",
+        "biohackrxiv",
+        "ssrn",
+        "preprints_org",
+        "authorea",
+        "techrxiv",
+        "chemrxiv",
+        "jmir_preprints"
+      ],
+      "title": "PreprintServer",
+      "type": "string"
+    },
     "Prespecification": {
       "enum": [
         "preregistered",
@@ -1355,6 +1849,14 @@
       ],
       "title": "Producer",
       "type": "object"
+    },
+    "PublicationStatus": {
+      "enum": [
+        "published",
+        "preprint"
+      ],
+      "title": "PublicationStatus",
+      "type": "string"
     },
     "Reference": {
       "additionalProperties": false,
@@ -1434,6 +1936,90 @@
       ],
       "title": "ReferenceProvider",
       "type": "string"
+    },
+    "ReportedCopy": {
+      "additionalProperties": false,
+      "else": {
+        "properties": {
+          "preprint_server": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PreprintServer"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "route": {
+            "const": "preprint_server"
+          }
+        },
+        "required": [
+          "route"
+        ]
+      },
+      "properties": {
+        "license": {
+          "$ref": "#/$defs/License"
+        },
+        "preprint_server": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreprintServer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reported_by": {
+          "$ref": "#/$defs/MetadataSource"
+        },
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CopyVersion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "reported_by",
+        "route",
+        "license"
+      ],
+      "then": {
+        "properties": {
+          "preprint_server": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PreprintServer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "preprint_server"
+        ]
+      },
+      "title": "ReportedCopy",
+      "type": "object"
     },
     "ReportedSpace": {
       "enum": [
@@ -1618,6 +2204,28 @@
         "other"
       ],
       "title": "StatisticKind",
+      "type": "string"
+    },
+    "StudyType": {
+      "enum": [
+        "Journal Article",
+        "Meta-Analysis",
+        "Systematic Review",
+        "Review",
+        "Randomized Controlled Trial",
+        "Clinical Trial",
+        "Observational Study",
+        "Comparative Study",
+        "Multicenter Study",
+        "Validation Study",
+        "Case Reports",
+        "Editorial",
+        "Letter",
+        "Comment",
+        "Preprint",
+        "Retracted Publication"
+      ],
+      "title": "StudyType",
       "type": "string"
     },
     "Supplement": {
@@ -2008,5 +2616,5 @@
   ],
   "title": "neuroimaging-paper-parse",
   "type": "object",
-  "version": "0.6.0"
+  "version": "0.8.0"
 }

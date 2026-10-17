@@ -46,9 +46,10 @@ function makeLayout() {
     const paper = path.join(root, 'corpus', 'P1');
     writeJson(path.join(paper, 'parse', 'parsed_paper.json'), {
         header: {
-            schema_version: '0.6.0',
+            schema_version: '0.8.0',
             article_id: 'art-P1',
-            identifiers: { neurostore_base_study_id: 'BS1' },
+            identifiers: { pmid: '1', publication_status: 'published' },
+            neurostore_base_study_id: 'BS1',
         },
         text_path: 'processed/text.txt',
         bibliography: { title: 'A Title' },
@@ -103,7 +104,7 @@ describe('make-fixtures.py', () => {
             label: 'A Title',
             origin: 'upload',
             text_sha256: createHash('sha256').update(TEXT, 'utf8').digest('hex'),
-            schema_versions: { paper_parse: '0.6.0', extraction: '' },
+            schema_versions: { paper_parse: '0.8.0', extraction: '' },
         });
         expect(bundle).toMatchObject({ review: null, ops: [], reviewers: [], coordinate_revision: null });
     });

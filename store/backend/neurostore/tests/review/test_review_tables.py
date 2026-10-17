@@ -11,6 +11,7 @@ import sqlalchemy as sa
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from starlette.applications import Starlette
@@ -36,6 +37,7 @@ PREVIOUS_REVISION = "a7d3e9c1b5f2"
 REVIEW_REVISION = "c5d8e2f4a6b1"
 POINTER_INDEX_REVISION = "d4b7e1f9a3c2"
 STABLE_ID_REVISION = "f2b4d6e8a0c3"
+TEXT_COPY_REVISION = "a3c5e7f9b1d4"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
 OPENAPI = (
@@ -53,13 +55,14 @@ def paper(session, make_user):
     return base_study, user
 
 
-def add_text(session, base_study, source, text, created_at=T0):
+def add_text(session, base_study, source, text, created_at=T0, version=None):
     fulltext = Fulltext(
         base_study_id=base_study.id,
         source=source,
         source_version="1.0",
         text=text,
         created_at=created_at,
+        text_copy=None if version is None else {"version": version},
     )
     session.add(fulltext)
     session.commit()
@@ -206,7 +209,11 @@ def test_fulltexts_schema_and_base_study_pointer(session):
     columns = {c["name"] for c in inspector.get_columns("fulltexts")}
     assert columns >= {
         "id", "base_study_id", "source", "source_version", "sha256", "text", "created_at",
+        "text_copy",
     }
+    text_copy = {c["name"]: c for c in inspector.get_columns("fulltexts")}["text_copy"]
+    assert isinstance(text_copy["type"], JSONB)
+    assert text_copy["nullable"] is True
     assert "tier" not in columns
     indexed = [i["column_names"] for i in inspector.get_indexes("fulltexts")]
     assert ["base_study_id", "created_at"] in indexed
@@ -286,6 +293,59 @@ def test_the_pointer_breaks_a_tie_by_the_smaller_id(session, paper):
     )
     session.commit()
     assert pointer(session, base_study) == "ft-a"
+
+
+@pytest.mark.parametrize("vor_first", [True, False])
+def test_the_version_of_record_beats_a_preprint_added_in_either_order(
+    session, paper, vor_first
+):
+    base_study = paper[0]
+    versions = ["vor", "submitted"] if vor_first else ["submitted", "vor"]
+    added = {
+        version: add_text(session, base_study, "pubget", version, T0 + timedelta(days=n), version)
+        for n, version in enumerate(versions)
+    }
+    assert pointer(session, base_study) == added["vor"].id
+
+
+def test_the_copy_version_comes_before_the_source_preference(session, paper):
+    base_study = paper[0]
+    pdf_vor = add_text(session, base_study, "pdf", "pdf vor", T0, "vor")
+    add_text(session, base_study, "pubget", "jats preprint", T0 + timedelta(days=1), "submitted")
+    assert pointer(session, base_study) == pdf_vor.id
+
+
+def test_changing_a_copys_version_refreshes_the_pointer(session, paper):
+    base_study = paper[0]
+    vor = add_text(session, base_study, "pubget", "vor", T0, "vor")
+    later = add_text(session, base_study, "pubget", "later", T0 + timedelta(days=1), "submitted")
+    assert pointer(session, base_study) == vor.id
+
+    later.text_copy = {"version": "vor"}
+    session.commit()
+    assert pointer(session, base_study) == later.id
+
+
+def test_a_copy_of_unknown_version_sits_between_the_vor_and_a_preprint(session, paper):
+    base_study = paper[0]
+    add_text(session, base_study, "pubget", "preprint", T0 + timedelta(days=2), "submitted")
+    unknown = add_text(session, base_study, "pubget", "unknown", T0)
+    assert pointer(session, base_study) == unknown.id
+
+    vor = add_text(session, base_study, "pubget", "vor", T0 - timedelta(days=1), "vor")
+    assert pointer(session, base_study) == vor.id
+
+
+def test_an_accepted_manuscript_ranks_below_an_unstated_copy_and_above_a_submitted_one(
+    session, paper
+):
+    base_study = paper[0]
+    add_text(session, base_study, "pubget", "submitted", T0 + timedelta(days=2), "submitted")
+    accepted = add_text(session, base_study, "pubget", "accepted", T0 + timedelta(days=1), "am")
+    assert pointer(session, base_study) == accepted.id
+
+    unstated = add_text(session, base_study, "pubget", "unstated", T0)
+    assert pointer(session, base_study) == unstated.id
 
 
 # 10. a base study with a review source is refused; one with only a text goes with it
@@ -578,9 +638,10 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_stable_id_migration_is_the_only_head_and_follows_the_pointer_index_migration():
+def test_the_text_copy_migration_is_the_only_head_and_follows_the_stable_id_migration():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [STABLE_ID_REVISION]
+    assert script.get_heads() == [TEXT_COPY_REVISION]
+    assert script.get_revision(TEXT_COPY_REVISION).down_revision == STABLE_ID_REVISION
     assert script.get_revision(STABLE_ID_REVISION).down_revision == POINTER_INDEX_REVISION
 
 
@@ -661,6 +722,30 @@ def test_the_pointer_index_migration_adds_the_index_and_its_downgrade_drops_it(s
         service_migrations.upgrade("heads")
 
     assert pointer_indexes() == [["fulltext_id"]]
+
+
+def test_the_text_copy_migration_adds_the_column_and_its_downgrade_drops_it(session, paper):
+    kept = add_text(session, paper[0], "pubget", "Kept text.", version="vor")
+    kept_id = kept.id
+    session.remove()
+
+    def text_copy_column():
+        columns = sa.inspect(session.bind).get_columns("fulltexts")
+        return "text_copy" in {c["name"] for c in columns}
+
+    def texts():
+        with session.bind.connect() as conn:
+            return conn.execute(sa.text("SELECT id, text FROM fulltexts")).all()
+
+    try:
+        service_migrations.downgrade(STABLE_ID_REVISION)
+        assert text_copy_column() is False
+        assert [tuple(row) for row in texts()] == [(kept_id, "Kept text.")]
+    finally:
+        service_migrations.upgrade("heads")
+
+    assert text_copy_column() is True
+    assert [tuple(row) for row in texts()] == [(kept_id, "Kept text.")]
 
 
 def test_the_migrated_review_tables_match_the_models(db):
