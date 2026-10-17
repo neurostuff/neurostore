@@ -157,6 +157,16 @@ describe('review shortcuts', () => {
         expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveTextContent('next slot');
     });
 
+    it('lists j and Shift+J as different keys in the help', () => {
+        setup();
+        press('?', { shiftKey: true });
+        const keys = within(screen.getByRole('dialog', { name: 'Keyboard shortcuts' }))
+            .getAllByRole('row')
+            .map((row) => row.firstElementChild?.textContent);
+        expect(keys).toEqual(expect.arrayContaining(['j', 'k', 'e', 'Shift+J', 'Shift+K', 'Shift+E']));
+        expect(keys).not.toContain('J');
+    });
+
     it('lists the editing keys in the help', () => {
         setup();
         press('?', { shiftKey: true });
@@ -164,7 +174,7 @@ describe('review shortcuts', () => {
             .getAllByRole('row')
             .map((row) => row.firstElementChild?.textContent);
         expect(keys).toEqual(
-            expect.arrayContaining(['A', 'Shift+A', 'R', 'Enter', 'N', 'L', 'C', 'Shift+Backspace', ';'])
+            expect.arrayContaining(['a', 'Shift+A', 'r', 'Enter', 'n', 'l', 'c', 'Shift+Backspace', ';'])
         );
     });
 

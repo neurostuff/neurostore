@@ -176,19 +176,19 @@ describe('the coordinates step', () => {
             .map((row) => row.firstElementChild?.textContent);
         expect(coordinateKeys).toEqual(
             expect.arrayContaining([
-                'J',
+                'j',
                 'Shift+J',
-                'A',
-                'R',
+                'a',
+                'r',
                 'Shift+Backspace',
                 'Enter',
                 'Space',
-                'P',
+                'p',
                 'Backspace',
-                'M',
-                'S',
-                'G',
-                'C',
+                'm',
+                's',
+                'g',
+                'c',
                 ';',
             ])
         );

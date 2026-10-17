@@ -19,11 +19,11 @@ export interface Shortcut {
     run(stores: ReviewStores): void;
 }
 
-/** The key as the table names it: a letter is upper case, a named key is as written, Space is spelt out. */
+/** The key as pressed: a letter is as written, a shifted one `Shift+` and its capital, a named key is as written, Space is spelt out. */
 export const keyLabel = (key: string) => {
     if (key === ' ') return 'Space';
     if (key.length > 1) return key;
-    return key !== key.toLowerCase() ? `Shift+${key}` : key.toUpperCase();
+    return key !== key.toLowerCase() ? `Shift+${key}` : key;
 };
 
 const record = (shortcut: Omit<Shortcut, 'scope'>): Shortcut => ({ ...shortcut, scope: 'record' });

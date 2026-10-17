@@ -65,6 +65,18 @@ describe('scrollbar ticks', () => {
         expect(stores.view.getState().reveal?.span).toEqual(at('twenty'));
     });
 
+    it('merges ticks closer than the minimum spacing into one, labelled with the count, that reveals the first', () => {
+        const { stores, scroller, scale } = setup();
+        Object.defineProperty(scroller, 'clientHeight', { configurable: true, get: () => 500 });
+        scale.by = 0.1;
+        act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
+        act(() => stores.view.getState().toggleAllEvidence(true));
+        expect(ticks(/^evidence/)).toHaveLength(1);
+        expect(ticks('other evidence (4 spans)')).toHaveLength(1);
+        fireEvent.click(screen.getByRole('button', { name: 'evidence 1 (2 spans)' }));
+        expect(stores.view.getState().reveal?.span).toEqual(at('A paper'));
+    });
+
     /** Stands in for ResizeObserver, keeping every observer made and the elements each observes. */
     function observeResizes() {
         const observers: { callback: () => void; elements: Element[] }[] = [];

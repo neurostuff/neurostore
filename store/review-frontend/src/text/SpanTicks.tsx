@@ -8,9 +8,15 @@ import type { HighlightLayer } from './highlights';
 import { inContent } from './placement';
 import { useResized } from './useResized';
 
+/** Ticks nearer than this, in pixels of the rail, are drawn as one. */
+const MIN_TICK_SPACING = 6;
+
 interface Tick {
+    /** The first span the tick stands for, with its place in the list measured. */
     span: SpanPair;
+    index: number;
     top: number;
+    count: number;
 }
 
 interface Ticks {
@@ -22,11 +28,21 @@ interface Ticks {
 function measure(scroller: HTMLElement, layer: HighlightLayer, spans: SpanPair[]): Tick[] {
     const height = scroller.scrollHeight;
     if (!height) return [];
-    return spans.flatMap((span) => {
+    const spacing = MIN_TICK_SPACING / (scroller.clientHeight || height);
+    const ticks = spans.flatMap((span, index) => {
         const [rect] = layer.range(span).getClientRects();
-        return rect ? [{ span, top: inContent(scroller, rect).top / height }] : [];
+        return rect ? [{ span, index, top: inContent(scroller, rect).top / height, count: 1 }] : [];
     });
+    const merged: Tick[] = [];
+    for (const tick of ticks.sort((a, b) => a.top - b.top)) {
+        const last = merged[merged.length - 1];
+        if (last && tick.top - last.top < spacing) last.count += 1;
+        else merged.push(tick);
+    }
+    return merged;
 }
+
+const labelled = (label: string, count: number) => (count > 1 ? `${label} (${count} spans)` : label);
 
 /** A rail beside the text's scrollbar, with a tick at each focused span and, while all evidence is shown, a faint one at every other. */
 export function SpanTicks({
@@ -63,13 +79,18 @@ export function SpanTicks({
     };
     return (
         <Box data-span-ticks sx={{ position: 'relative', width: 10, flexShrink: 0 }}>
-            {ticks.others.map(({ span, top }) => (
-                <TickMark key={span.join(':')} label="other evidence" top={top} onClick={() => jump(span, false)} />
-            ))}
-            {ticks.focused.map(({ span, top }, i) => (
+            {ticks.others.map(({ span, top, count }) => (
                 <TickMark
                     key={span.join(':')}
-                    label={`evidence ${i + 1}`}
+                    label={labelled('other evidence', count)}
+                    top={top}
+                    onClick={() => jump(span, false)}
+                />
+            ))}
+            {ticks.focused.map(({ span, index, top, count }) => (
+                <TickMark
+                    key={span.join(':')}
+                    label={labelled(`evidence ${index + 1}`, count)}
                     top={top}
                     focused
                     onClick={() => jump(span, true)}

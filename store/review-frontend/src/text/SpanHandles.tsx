@@ -5,7 +5,7 @@ import type { SpanPair } from '../model/record';
 import { useIsEditable, useReviewStores, useSession, useSessionView } from '../store/context';
 import { selectCursorSpan } from '../store/viewSelectors';
 import type { HighlightLayer } from './highlights';
-import { place, samePlaced, type Placed } from './placement';
+import { place, REMOVE_SIZE, samePlaced, type Placed } from './placement';
 import { moveEdge, type Edge } from './snap';
 import { moveCursorSpan, removeCursorSpan } from './spanEdits';
 import { offsetAtPoint } from './supporting';
@@ -37,9 +37,10 @@ export function SpanHandles({
     useLayoutEffect(() => {
         const scroller = scrollerRef.current;
         const shown = from !== undefined && to !== undefined && layer && scroller;
-        const next = shown ? place(scroller, layer.range([from, to])) : null;
+        const columnRight = (textRef.current ?? scroller)?.getBoundingClientRect().right ?? 0;
+        const next = shown ? place(scroller, layer.range([from, to]), columnRight) : null;
         setPlaced((prev) => (samePlaced(prev, next) ? prev : next));
-    }, [scrollerRef, layer, from, to, resizes]);
+    }, [scrollerRef, textRef, layer, from, to, resizes]);
 
     if (!span || !placed) return null;
 
@@ -109,8 +110,14 @@ export function SpanHandles({
                     event.stopPropagation();
                     removeCursorSpan(stores, span);
                 }}
-                style={{ left: placed.end.left + 4, top: placed.end.top - 24 }}
-                sx={{ position: 'absolute', p: 0.25, bgcolor: 'background.paper' }}
+                style={{ left: placed.remove.left, top: placed.remove.top }}
+                sx={{
+                    position: 'absolute',
+                    width: REMOVE_SIZE,
+                    height: REMOVE_SIZE,
+                    p: 0.25,
+                    bgcolor: 'background.paper',
+                }}
             >
                 <CloseIcon fontSize="inherit" />
             </IconButton>

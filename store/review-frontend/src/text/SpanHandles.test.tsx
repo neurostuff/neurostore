@@ -71,7 +71,42 @@ afterEach(() => {
     delete (document as { caretRangeFromPoint?: unknown }).caretRangeFromPoint;
 });
 
+const remove = () => screen.getByRole('button', { name: 'remove this evidence span' });
+
+/** Wraps every span onto two lines, ending mid-line at x = 64 on the second, in a text column ending at `columnRight` inside a scroller `scrollerWidth` wide. */
+function wrapRects(columnRight: number, scrollerWidth: number) {
+    vi.spyOn(Range.prototype, 'getClientRects').mockImplementation(
+        () => [new DOMRect(200, 20, 100, 16), new DOMRect(0, 40, 64, 16)] as unknown as DOMRectList
+    );
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute('data-text-root') ? new DOMRect(0, 0, columnRight, 100) : new DOMRect(0, 0, 0, 0);
+    });
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute('data-text-scroller') ? scrollerWidth : 0;
+    });
+}
+
 describe('span handles', () => {
+    it('puts the remove control in the margin at the text column’s edge, on the row of the span’s end', () => {
+        const view = renderWithStores(
+            <TextPane />,
+            makeBundle(record, TEXT, { entities, parsed_paper: PAPER, review: { ...review } })
+        );
+        wrapRects(400, 440);
+        act(() => view.stores.view.getState().focusSlot('slot:grp_a:name'));
+        expect(remove()).toHaveStyle({ left: '404px', top: '38px' });
+    });
+
+    it('shrinks the gap where the margin is narrow, keeping the remove control outside the text column', () => {
+        const view = renderWithStores(
+            <TextPane />,
+            makeBundle(record, TEXT, { entities, parsed_paper: PAPER, review: { ...review } })
+        );
+        wrapRects(400, 412);
+        act(() => view.stores.view.getState().focusSlot('slot:grp_a:name'));
+        expect(remove()).toHaveStyle({ left: '400px', top: '38px' });
+    });
+
     it('puts a start and an end handle at the ends of the focused span', () => {
         setup();
         expect(handle('start')).toHaveStyle({ left: `${at('patients')[0] * 8}px`, top: '20px' });
