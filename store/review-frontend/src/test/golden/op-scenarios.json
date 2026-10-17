@@ -10155,7 +10155,8 @@
                             "status": "not_found"
                           },
                           "extraction_status": "extracted"
-                        }
+                        },
+                        "stable_id": "3068478e-4815-5798-99f8-bc5d866c5ece"
                       }
                     }
                   ]
@@ -10418,7 +10419,8 @@
                                   "status": "not_found"
                                 },
                                 "extraction_status": "extracted"
-                              }
+                              },
+                              "stable_id": "3068478e-4815-5798-99f8-bc5d866c5ece"
                             }
                           }
                         ],
@@ -10836,7 +10838,8 @@
                       "status": "not_found"
                     },
                     "extraction_status": "extracted"
-                  }
+                  },
+                  "stable_id": "3068478e-4815-5798-99f8-bc5d866c5ece"
                 }
               ],
               "local_id": "study-1",
@@ -11686,7 +11689,8 @@
                             "status": "not_found"
                           },
                           "extraction_status": "extracted"
-                        }
+                        },
+                        "stable_id": "f4216e28-566d-5925-99b6-8c26354d144d"
                       }
                     }
                   ]
@@ -11949,7 +11953,8 @@
                                   "status": "not_found"
                                 },
                                 "extraction_status": "extracted"
-                              }
+                              },
+                              "stable_id": "f4216e28-566d-5925-99b6-8c26354d144d"
                             }
                           }
                         ],
@@ -12367,7 +12372,8 @@
                       "status": "not_found"
                     },
                     "extraction_status": "extracted"
-                  }
+                  },
+                  "stable_id": "f4216e28-566d-5925-99b6-8c26354d144d"
                 }
               ],
               "local_id": "study-1",
@@ -13418,6 +13424,7 @@
                   },
                   "measure": "x",
                   "local_id": "rv_59bb447eabfe",
+                  "stable_id": "f4216e28-566d-5925-99b6-8c26354d144d",
                   "definition": {
                     "evidence": {
                       "status": "not_applicable"
@@ -19868,7 +19875,8 @@
                           "evidence": {
                             "status": "not_found"
                           }
-                        }
+                        },
+                        "stable_id": "6225c839-14d2-59fe-a6d4-013df88962fb"
                       }
                     }
                   ]
@@ -19975,7 +19983,8 @@
                                 "evidence": {
                                   "status": "not_found"
                                 }
-                              }
+                              },
+                              "stable_id": "6225c839-14d2-59fe-a6d4-013df88962fb"
                             }
                           }
                         ],
@@ -20337,7 +20346,8 @@
                     "evidence": {
                       "status": "not_found"
                     }
-                  }
+                  },
+                  "stable_id": "6225c839-14d2-59fe-a6d4-013df88962fb"
                 }
               ],
               "local_id": "study-1",
@@ -20984,7 +20994,8 @@
                           "evidence": {
                             "status": "not_found"
                           }
-                        }
+                        },
+                        "stable_id": "2f08571b-5a33-59ef-afac-d30192174439"
                       }
                     }
                   ]
@@ -21091,7 +21102,8 @@
                                 "evidence": {
                                   "status": "not_found"
                                 }
-                              }
+                              },
+                              "stable_id": "2f08571b-5a33-59ef-afac-d30192174439"
                             }
                           }
                         ],
@@ -21453,7 +21465,8 @@
                     "evidence": {
                       "status": "not_found"
                     }
-                  }
+                  },
+                  "stable_id": "2f08571b-5a33-59ef-afac-d30192174439"
                 }
               ],
               "local_id": "study-1",
@@ -22418,6 +22431,7 @@
                   },
                   "measure": "",
                   "local_id": "rv_ea20005db0c5",
+                  "stable_id": "2f08571b-5a33-59ef-afac-d30192174439",
                   "definition": {
                     "evidence": {
                       "status": "not_applicable"
@@ -23055,7 +23069,8 @@
                       "evidence": {
                         "status": "not_applicable"
                       }
-                    }
+                    },
+                    "stable_id": "ffc8dcd2-46b7-5ec2-9764-28393ddd76d2"
                   }
                 },
                 "user_id": "user1-id",
@@ -23221,7 +23236,8 @@
                     "evidence": {
                       "status": "not_applicable"
                     }
-                  }
+                  },
+                  "stable_id": "ffc8dcd2-46b7-5ec2-9764-28393ddd76d2"
                 }
               ],
               "devices": [
@@ -23862,7 +23878,8 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "rv_1530318ddf94"
+                  "local_id": "rv_1530318ddf94",
+                  "stable_id": "ffc8dcd2-46b7-5ec2-9764-28393ddd76d2"
                 }
               ],
               "devices": [
@@ -24367,7 +24384,8 @@
                       "evidence": {
                         "status": "not_applicable"
                       }
-                    }
+                    },
+                    "stable_id": "3a61be60-5444-5d2e-987a-89df47b8a8b5"
                   }
                 },
                 "user_id": "user1-id",
@@ -24533,7 +24551,8 @@
                     "evidence": {
                       "status": "not_applicable"
                     }
-                  }
+                  },
+                  "stable_id": "3a61be60-5444-5d2e-987a-89df47b8a8b5"
                 }
               ],
               "devices": [
@@ -25035,7 +25054,8 @@
                       "evidence": {
                         "status": "not_applicable"
                       }
-                    }
+                    },
+                    "stable_id": "bad550ec-6cef-5440-9e86-0fe99de2920a"
                   }
                 },
                 "user_id": "user1-id",
@@ -25433,7 +25453,8 @@
                         "evidence": {
                           "status": "not_applicable"
                         }
-                      }
+                      },
+                      "stable_id": "bad550ec-6cef-5440-9e86-0fe99de2920a"
                     }
                   ],
                   "local_id": "mdl_1",
@@ -31863,6 +31884,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "tsk_1",
+                  "stable_id": "b1297f28-7733-5e1a-bc7e-1fa764c68a0b",
                   "conditions": [
                     {
                       "name": {
@@ -31871,7 +31893,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "cnd_1"
+                      "local_id": "cnd_1",
+                      "stable_id": "effd6bb3-cc29-5201-926f-331ae17e938e"
                     },
                     {
                       "name": {
@@ -31880,7 +31903,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "cnd_2"
+                      "local_id": "cnd_2",
+                      "stable_id": "473865eb-a83b-5424-8031-0efbea76e6db"
                     }
                   ]
                 }
@@ -31900,7 +31924,8 @@
                       },
                       "extraction_status": "not_reported"
                     },
-                    "local_id": "arm_1"
+                    "local_id": "arm_1",
+                    "stable_id": "c074b86f-410c-5ef7-836a-7bf90a8f8ac0"
                   }
                 ],
                 "timepoints": [
@@ -31912,6 +31937,7 @@
                       "extraction_status": "not_reported"
                     },
                     "local_id": "tp_1",
+                    "stable_id": "9096c84d-1046-5e73-96e5-5e1926fa3d97",
                     "relation_to_intervention": {
                       "evidence": {
                         "status": "not_applicable"
@@ -31964,6 +31990,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "grp_a",
+                  "stable_id": "fcaec388-79c6-5756-a855-0bfdc733e42a",
                   "diagnostic_instrument": [
                     "asm_2"
                   ]
@@ -31990,6 +32017,7 @@
                     "unreported_reason": "ambiguous"
                   },
                   "local_id": "grp_b",
+                  "stable_id": "f78ba5ac-611e-5f5d-b3e1-ab4452483e4c",
                   "diagnostic_instrument": [
                     "asm_1",
                     "asm_2"
@@ -31998,7 +32026,8 @@
               ],
               "devices": [
                 {
-                  "local_id": "dev_1"
+                  "local_id": "dev_1",
+                  "stable_id": "dd77ef34-32e0-57f2-91ea-900e8d653c26"
                 }
               ],
               "regions": [
@@ -32010,6 +32039,7 @@
                     "extraction_status": "not_reported"
                   },
                   "local_id": "reg_1",
+                  "stable_id": "0d06d7d7-86f1-5f2a-bd41-4d824d72f363",
                   "definition_method": {
                     "evidence": {
                       "status": "not_applicable"
@@ -32076,6 +32106,7 @@
                   },
                   "measure": "msr_1",
                   "local_id": "an_1",
+                  "stable_id": "304845ed-6fda-595e-9abb-c5a9d7b113ba",
                   "definition": {
                     "evidence": {
                       "status": "not_applicable"
@@ -32122,9 +32153,11 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "msr_1"
+                  "local_id": "msr_1",
+                  "stable_id": "8c302c36-608e-51f1-bd2d-e30a81e0aa86"
                 }
               ],
+              "stable_id": "cc45085d-88b2-5571-b924-fe5e1cd0c99f",
               "assessments": [
                 {
                   "name": {
@@ -32133,7 +32166,8 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "asm_1"
+                  "local_id": "asm_1",
+                  "stable_id": "92901684-ac42-5c64-a8c6-2bc659de132f"
                 },
                 {
                   "name": {
@@ -32144,6 +32178,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "asm_2",
+                  "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                   "description": {
                     "value": "depression scale",
                     "evidence": {
@@ -32170,6 +32205,7 @@
                     },
                     "extraction_status": "not_reported"
                   },
+                  "stable_id": "9174bb76-fa52-5b5c-8f90-44694b8ba2fd",
                   "acquisition_type": "MRI"
                 }
               ],
@@ -32195,10 +32231,12 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "trm_1"
+                      "local_id": "trm_1",
+                      "stable_id": "87a8272c-fa6b-5da6-a5a6-4cc59e724d50"
                     }
                   ],
                   "local_id": "mdl_1",
+                  "stable_id": "f17700e6-c760-5551-8af8-f5f9af025261",
                   "model_type": {
                     "evidence": {
                       "status": "not_applicable"
@@ -32365,6 +32403,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "tsk_1",
+                    "stable_id": "b1297f28-7733-5e1a-bc7e-1fa764c68a0b",
                     "conditions": [
                       {
                         "name": {
@@ -32373,7 +32412,8 @@
                           },
                           "extraction_status": "not_reported"
                         },
-                        "local_id": "cnd_1"
+                        "local_id": "cnd_1",
+                        "stable_id": "effd6bb3-cc29-5201-926f-331ae17e938e"
                       },
                       {
                         "name": {
@@ -32382,7 +32422,8 @@
                           },
                           "extraction_status": "not_reported"
                         },
-                        "local_id": "cnd_2"
+                        "local_id": "cnd_2",
+                        "stable_id": "473865eb-a83b-5424-8031-0efbea76e6db"
                       }
                     ]
                   }
@@ -32402,7 +32443,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "arm_1"
+                      "local_id": "arm_1",
+                      "stable_id": "c074b86f-410c-5ef7-836a-7bf90a8f8ac0"
                     }
                   ],
                   "timepoints": [
@@ -32414,6 +32456,7 @@
                         "extraction_status": "not_reported"
                       },
                       "local_id": "tp_1",
+                      "stable_id": "9096c84d-1046-5e73-96e5-5e1926fa3d97",
                       "relation_to_intervention": {
                         "evidence": {
                           "status": "not_applicable"
@@ -32466,6 +32509,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "grp_a",
+                    "stable_id": "fcaec388-79c6-5756-a855-0bfdc733e42a",
                     "diagnostic_instrument": [
                       "asm_2"
                     ]
@@ -32492,6 +32536,7 @@
                       "unreported_reason": "ambiguous"
                     },
                     "local_id": "grp_b",
+                    "stable_id": "f78ba5ac-611e-5f5d-b3e1-ab4452483e4c",
                     "diagnostic_instrument": [
                       "asm_1",
                       "asm_2"
@@ -32500,7 +32545,8 @@
                 ],
                 "devices": [
                   {
-                    "local_id": "dev_1"
+                    "local_id": "dev_1",
+                    "stable_id": "dd77ef34-32e0-57f2-91ea-900e8d653c26"
                   }
                 ],
                 "regions": [
@@ -32512,6 +32558,7 @@
                       "extraction_status": "not_reported"
                     },
                     "local_id": "reg_1",
+                    "stable_id": "0d06d7d7-86f1-5f2a-bd41-4d824d72f363",
                     "definition_method": {
                       "evidence": {
                         "status": "not_applicable"
@@ -32578,6 +32625,7 @@
                     },
                     "measure": "msr_1",
                     "local_id": "an_1",
+                    "stable_id": "304845ed-6fda-595e-9abb-c5a9d7b113ba",
                     "definition": {
                       "evidence": {
                         "status": "not_applicable"
@@ -32624,9 +32672,11 @@
                       },
                       "extraction_status": "not_reported"
                     },
-                    "local_id": "msr_1"
+                    "local_id": "msr_1",
+                    "stable_id": "8c302c36-608e-51f1-bd2d-e30a81e0aa86"
                   }
                 ],
+                "stable_id": "cc45085d-88b2-5571-b924-fe5e1cd0c99f",
                 "assessments": [
                   {
                     "name": {
@@ -32635,7 +32685,8 @@
                       },
                       "extraction_status": "not_reported"
                     },
-                    "local_id": "asm_1"
+                    "local_id": "asm_1",
+                    "stable_id": "92901684-ac42-5c64-a8c6-2bc659de132f"
                   },
                   {
                     "name": {
@@ -32646,6 +32697,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "asm_2",
+                    "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                     "description": {
                       "value": "depression scale",
                       "evidence": {
@@ -32672,6 +32724,7 @@
                       },
                       "extraction_status": "not_reported"
                     },
+                    "stable_id": "9174bb76-fa52-5b5c-8f90-44694b8ba2fd",
                     "acquisition_type": "MRI"
                   }
                 ],
@@ -32697,10 +32750,12 @@
                           },
                           "extraction_status": "not_reported"
                         },
-                        "local_id": "trm_1"
+                        "local_id": "trm_1",
+                        "stable_id": "87a8272c-fa6b-5da6-a5a6-4cc59e724d50"
                       }
                     ],
                     "local_id": "mdl_1",
+                    "stable_id": "f17700e6-c760-5551-8af8-f5f9af025261",
                     "model_type": {
                       "evidence": {
                         "status": "not_applicable"
@@ -33029,6 +33084,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "asm_2",
+                    "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                     "description": {
                       "value": "depression scale",
                       "evidence": {
@@ -33058,6 +33114,7 @@
                         "extraction_status": "extracted"
                       },
                       "local_id": "asm_2",
+                      "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                       "description": {
                         "value": "depression scale",
                         "evidence": {
@@ -33082,6 +33139,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "tsk_1",
+                  "stable_id": "b1297f28-7733-5e1a-bc7e-1fa764c68a0b",
                   "conditions": [
                     {
                       "name": {
@@ -33090,7 +33148,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "cnd_1"
+                      "local_id": "cnd_1",
+                      "stable_id": "effd6bb3-cc29-5201-926f-331ae17e938e"
                     },
                     {
                       "name": {
@@ -33099,7 +33158,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "cnd_2"
+                      "local_id": "cnd_2",
+                      "stable_id": "473865eb-a83b-5424-8031-0efbea76e6db"
                     }
                   ]
                 }
@@ -33119,7 +33179,8 @@
                       },
                       "extraction_status": "not_reported"
                     },
-                    "local_id": "arm_1"
+                    "local_id": "arm_1",
+                    "stable_id": "c074b86f-410c-5ef7-836a-7bf90a8f8ac0"
                   }
                 ],
                 "timepoints": [
@@ -33131,6 +33192,7 @@
                       "extraction_status": "not_reported"
                     },
                     "local_id": "tp_1",
+                    "stable_id": "9096c84d-1046-5e73-96e5-5e1926fa3d97",
                     "relation_to_intervention": {
                       "evidence": {
                         "status": "not_applicable"
@@ -33183,6 +33245,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "grp_a",
+                  "stable_id": "fcaec388-79c6-5756-a855-0bfdc733e42a",
                   "diagnostic_instrument": [
                     "asm_1"
                   ]
@@ -33209,6 +33272,7 @@
                     "unreported_reason": "ambiguous"
                   },
                   "local_id": "grp_b",
+                  "stable_id": "f78ba5ac-611e-5f5d-b3e1-ab4452483e4c",
                   "diagnostic_instrument": [
                     "asm_1"
                   ]
@@ -33216,7 +33280,8 @@
               ],
               "devices": [
                 {
-                  "local_id": "dev_1"
+                  "local_id": "dev_1",
+                  "stable_id": "dd77ef34-32e0-57f2-91ea-900e8d653c26"
                 }
               ],
               "regions": [
@@ -33228,6 +33293,7 @@
                     "extraction_status": "not_reported"
                   },
                   "local_id": "reg_1",
+                  "stable_id": "0d06d7d7-86f1-5f2a-bd41-4d824d72f363",
                   "definition_method": {
                     "evidence": {
                       "status": "not_applicable"
@@ -33294,6 +33360,7 @@
                   },
                   "measure": "msr_1",
                   "local_id": "an_1",
+                  "stable_id": "304845ed-6fda-595e-9abb-c5a9d7b113ba",
                   "definition": {
                     "evidence": {
                       "status": "not_applicable"
@@ -33340,9 +33407,11 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "msr_1"
+                  "local_id": "msr_1",
+                  "stable_id": "8c302c36-608e-51f1-bd2d-e30a81e0aa86"
                 }
               ],
+              "stable_id": "cc45085d-88b2-5571-b924-fe5e1cd0c99f",
               "assessments": [
                 {
                   "name": {
@@ -33351,7 +33420,8 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "asm_1"
+                  "local_id": "asm_1",
+                  "stable_id": "92901684-ac42-5c64-a8c6-2bc659de132f"
                 }
               ],
               "description": {
@@ -33371,6 +33441,7 @@
                     },
                     "extraction_status": "not_reported"
                   },
+                  "stable_id": "9174bb76-fa52-5b5c-8f90-44694b8ba2fd",
                   "acquisition_type": "MRI"
                 }
               ],
@@ -33396,10 +33467,12 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "trm_1"
+                      "local_id": "trm_1",
+                      "stable_id": "87a8272c-fa6b-5da6-a5a6-4cc59e724d50"
                     }
                   ],
                   "local_id": "mdl_1",
+                  "stable_id": "f17700e6-c760-5551-8af8-f5f9af025261",
                   "model_type": {
                     "evidence": {
                       "status": "not_applicable"
@@ -33596,6 +33669,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "asm_2",
+                  "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                   "description": {
                     "value": "depression scale",
                     "evidence": {
@@ -33661,6 +33735,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "asm_2",
+                    "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                     "description": {
                       "value": "depression scale",
                       "evidence": {
@@ -33683,6 +33758,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "asm_2",
+                    "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                     "description": {
                       "value": "depression scale",
                       "evidence": {
@@ -33813,6 +33889,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "tsk_1",
+                  "stable_id": "b1297f28-7733-5e1a-bc7e-1fa764c68a0b",
                   "conditions": [
                     {
                       "name": {
@@ -33821,7 +33898,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "cnd_1"
+                      "local_id": "cnd_1",
+                      "stable_id": "effd6bb3-cc29-5201-926f-331ae17e938e"
                     },
                     {
                       "name": {
@@ -33830,7 +33908,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "cnd_2"
+                      "local_id": "cnd_2",
+                      "stable_id": "473865eb-a83b-5424-8031-0efbea76e6db"
                     }
                   ]
                 }
@@ -33850,7 +33929,8 @@
                       },
                       "extraction_status": "not_reported"
                     },
-                    "local_id": "arm_1"
+                    "local_id": "arm_1",
+                    "stable_id": "c074b86f-410c-5ef7-836a-7bf90a8f8ac0"
                   }
                 ],
                 "timepoints": [
@@ -33862,6 +33942,7 @@
                       "extraction_status": "not_reported"
                     },
                     "local_id": "tp_1",
+                    "stable_id": "9096c84d-1046-5e73-96e5-5e1926fa3d97",
                     "relation_to_intervention": {
                       "evidence": {
                         "status": "not_applicable"
@@ -33914,6 +33995,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "grp_a",
+                  "stable_id": "fcaec388-79c6-5756-a855-0bfdc733e42a",
                   "diagnostic_instrument": [
                     "asm_2"
                   ]
@@ -33940,6 +34022,7 @@
                     "unreported_reason": "ambiguous"
                   },
                   "local_id": "grp_b",
+                  "stable_id": "f78ba5ac-611e-5f5d-b3e1-ab4452483e4c",
                   "diagnostic_instrument": [
                     "asm_1",
                     "asm_2"
@@ -33948,7 +34031,8 @@
               ],
               "devices": [
                 {
-                  "local_id": "dev_1"
+                  "local_id": "dev_1",
+                  "stable_id": "dd77ef34-32e0-57f2-91ea-900e8d653c26"
                 }
               ],
               "regions": [
@@ -33960,6 +34044,7 @@
                     "extraction_status": "not_reported"
                   },
                   "local_id": "reg_1",
+                  "stable_id": "0d06d7d7-86f1-5f2a-bd41-4d824d72f363",
                   "definition_method": {
                     "evidence": {
                       "status": "not_applicable"
@@ -34026,6 +34111,7 @@
                   },
                   "measure": "msr_1",
                   "local_id": "an_1",
+                  "stable_id": "304845ed-6fda-595e-9abb-c5a9d7b113ba",
                   "definition": {
                     "evidence": {
                       "status": "not_applicable"
@@ -34072,9 +34158,11 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "msr_1"
+                  "local_id": "msr_1",
+                  "stable_id": "8c302c36-608e-51f1-bd2d-e30a81e0aa86"
                 }
               ],
+              "stable_id": "cc45085d-88b2-5571-b924-fe5e1cd0c99f",
               "assessments": [
                 {
                   "name": {
@@ -34083,7 +34171,8 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "asm_1"
+                  "local_id": "asm_1",
+                  "stable_id": "92901684-ac42-5c64-a8c6-2bc659de132f"
                 },
                 {
                   "name": {
@@ -34094,6 +34183,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "asm_2",
+                  "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                   "description": {
                     "value": "depression scale",
                     "evidence": {
@@ -34120,6 +34210,7 @@
                     },
                     "extraction_status": "not_reported"
                   },
+                  "stable_id": "9174bb76-fa52-5b5c-8f90-44694b8ba2fd",
                   "acquisition_type": "MRI"
                 }
               ],
@@ -34145,10 +34236,12 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "trm_1"
+                      "local_id": "trm_1",
+                      "stable_id": "87a8272c-fa6b-5da6-a5a6-4cc59e724d50"
                     }
                   ],
                   "local_id": "mdl_1",
+                  "stable_id": "f17700e6-c760-5551-8af8-f5f9af025261",
                   "model_type": {
                     "evidence": {
                       "status": "not_applicable"
@@ -34510,6 +34603,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "tsk_1",
+                  "stable_id": "b1297f28-7733-5e1a-bc7e-1fa764c68a0b",
                   "conditions": [
                     {
                       "name": {
@@ -34518,7 +34612,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "cnd_1"
+                      "local_id": "cnd_1",
+                      "stable_id": "effd6bb3-cc29-5201-926f-331ae17e938e"
                     },
                     {
                       "name": {
@@ -34527,7 +34622,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "cnd_2"
+                      "local_id": "cnd_2",
+                      "stable_id": "473865eb-a83b-5424-8031-0efbea76e6db"
                     }
                   ]
                 }
@@ -34547,7 +34643,8 @@
                       },
                       "extraction_status": "not_reported"
                     },
-                    "local_id": "arm_1"
+                    "local_id": "arm_1",
+                    "stable_id": "c074b86f-410c-5ef7-836a-7bf90a8f8ac0"
                   }
                 ],
                 "timepoints": [
@@ -34559,6 +34656,7 @@
                       "extraction_status": "not_reported"
                     },
                     "local_id": "tp_1",
+                    "stable_id": "9096c84d-1046-5e73-96e5-5e1926fa3d97",
                     "relation_to_intervention": {
                       "evidence": {
                         "status": "not_applicable"
@@ -34611,6 +34709,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "grp_a",
+                  "stable_id": "fcaec388-79c6-5756-a855-0bfdc733e42a",
                   "diagnostic_instrument": [
                     "asm_2"
                   ]
@@ -34637,6 +34736,7 @@
                     "unreported_reason": "ambiguous"
                   },
                   "local_id": "grp_b",
+                  "stable_id": "f78ba5ac-611e-5f5d-b3e1-ab4452483e4c",
                   "diagnostic_instrument": [
                     "asm_1",
                     "asm_2"
@@ -34645,7 +34745,8 @@
               ],
               "devices": [
                 {
-                  "local_id": "dev_1"
+                  "local_id": "dev_1",
+                  "stable_id": "dd77ef34-32e0-57f2-91ea-900e8d653c26"
                 }
               ],
               "regions": [
@@ -34657,6 +34758,7 @@
                     "extraction_status": "not_reported"
                   },
                   "local_id": "reg_1",
+                  "stable_id": "0d06d7d7-86f1-5f2a-bd41-4d824d72f363",
                   "definition_method": {
                     "evidence": {
                       "status": "not_applicable"
@@ -34723,6 +34825,7 @@
                   },
                   "measure": "msr_1",
                   "local_id": "an_1",
+                  "stable_id": "304845ed-6fda-595e-9abb-c5a9d7b113ba",
                   "definition": {
                     "evidence": {
                       "status": "not_applicable"
@@ -34769,9 +34872,11 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "msr_1"
+                  "local_id": "msr_1",
+                  "stable_id": "8c302c36-608e-51f1-bd2d-e30a81e0aa86"
                 }
               ],
+              "stable_id": "cc45085d-88b2-5571-b924-fe5e1cd0c99f",
               "assessments": [
                 {
                   "name": {
@@ -34780,7 +34885,8 @@
                     },
                     "extraction_status": "not_reported"
                   },
-                  "local_id": "asm_1"
+                  "local_id": "asm_1",
+                  "stable_id": "92901684-ac42-5c64-a8c6-2bc659de132f"
                 },
                 {
                   "name": {
@@ -34791,6 +34897,7 @@
                     "extraction_status": "extracted"
                   },
                   "local_id": "asm_2",
+                  "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                   "description": {
                     "value": "depression scale",
                     "evidence": {
@@ -34817,6 +34924,7 @@
                     },
                     "extraction_status": "not_reported"
                   },
+                  "stable_id": "9174bb76-fa52-5b5c-8f90-44694b8ba2fd",
                   "acquisition_type": "MRI"
                 }
               ],
@@ -34842,10 +34950,12 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "trm_1"
+                      "local_id": "trm_1",
+                      "stable_id": "87a8272c-fa6b-5da6-a5a6-4cc59e724d50"
                     }
                   ],
                   "local_id": "mdl_1",
+                  "stable_id": "f17700e6-c760-5551-8af8-f5f9af025261",
                   "model_type": {
                     "evidence": {
                       "status": "not_applicable"
@@ -34988,6 +35098,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "asm_2",
+                    "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                     "description": {
                       "value": "depression scale",
                       "evidence": {
@@ -35019,6 +35130,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "asm_2",
+                    "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                     "description": {
                       "value": "depression scale",
                       "evidence": {
@@ -35042,6 +35154,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "asm_2",
+                    "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                     "description": {
                       "value": "depression scale",
                       "evidence": {
@@ -35255,6 +35368,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "tsk_1",
+                    "stable_id": "b1297f28-7733-5e1a-bc7e-1fa764c68a0b",
                     "conditions": [
                       {
                         "name": {
@@ -35263,7 +35377,8 @@
                           },
                           "extraction_status": "not_reported"
                         },
-                        "local_id": "cnd_1"
+                        "local_id": "cnd_1",
+                        "stable_id": "effd6bb3-cc29-5201-926f-331ae17e938e"
                       },
                       {
                         "name": {
@@ -35272,7 +35387,8 @@
                           },
                           "extraction_status": "not_reported"
                         },
-                        "local_id": "cnd_2"
+                        "local_id": "cnd_2",
+                        "stable_id": "473865eb-a83b-5424-8031-0efbea76e6db"
                       }
                     ]
                   }
@@ -35292,7 +35408,8 @@
                         },
                         "extraction_status": "not_reported"
                       },
-                      "local_id": "arm_1"
+                      "local_id": "arm_1",
+                      "stable_id": "c074b86f-410c-5ef7-836a-7bf90a8f8ac0"
                     }
                   ],
                   "timepoints": [
@@ -35304,6 +35421,7 @@
                         "extraction_status": "not_reported"
                       },
                       "local_id": "tp_1",
+                      "stable_id": "9096c84d-1046-5e73-96e5-5e1926fa3d97",
                       "relation_to_intervention": {
                         "evidence": {
                           "status": "not_applicable"
@@ -35356,6 +35474,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "grp_a",
+                    "stable_id": "fcaec388-79c6-5756-a855-0bfdc733e42a",
                     "diagnostic_instrument": [
                       "asm_2"
                     ]
@@ -35382,6 +35501,7 @@
                       "unreported_reason": "ambiguous"
                     },
                     "local_id": "grp_b",
+                    "stable_id": "f78ba5ac-611e-5f5d-b3e1-ab4452483e4c",
                     "diagnostic_instrument": [
                       "asm_1",
                       "asm_2"
@@ -35390,7 +35510,8 @@
                 ],
                 "devices": [
                   {
-                    "local_id": "dev_1"
+                    "local_id": "dev_1",
+                    "stable_id": "dd77ef34-32e0-57f2-91ea-900e8d653c26"
                   }
                 ],
                 "regions": [
@@ -35402,6 +35523,7 @@
                       "extraction_status": "not_reported"
                     },
                     "local_id": "reg_1",
+                    "stable_id": "0d06d7d7-86f1-5f2a-bd41-4d824d72f363",
                     "definition_method": {
                       "evidence": {
                         "status": "not_applicable"
@@ -35468,6 +35590,7 @@
                     },
                     "measure": "msr_1",
                     "local_id": "an_1",
+                    "stable_id": "304845ed-6fda-595e-9abb-c5a9d7b113ba",
                     "definition": {
                       "evidence": {
                         "status": "not_applicable"
@@ -35514,9 +35637,11 @@
                       },
                       "extraction_status": "not_reported"
                     },
-                    "local_id": "msr_1"
+                    "local_id": "msr_1",
+                    "stable_id": "8c302c36-608e-51f1-bd2d-e30a81e0aa86"
                   }
                 ],
+                "stable_id": "cc45085d-88b2-5571-b924-fe5e1cd0c99f",
                 "assessments": [
                   {
                     "name": {
@@ -35525,7 +35650,8 @@
                       },
                       "extraction_status": "not_reported"
                     },
-                    "local_id": "asm_1"
+                    "local_id": "asm_1",
+                    "stable_id": "92901684-ac42-5c64-a8c6-2bc659de132f"
                   },
                   {
                     "name": {
@@ -35536,6 +35662,7 @@
                       "extraction_status": "extracted"
                     },
                     "local_id": "asm_2",
+                    "stable_id": "5fb399ca-09a9-57f8-bb83-305ea2cccfc3",
                     "description": {
                       "value": "depression scale",
                       "evidence": {
@@ -35562,6 +35689,7 @@
                       },
                       "extraction_status": "not_reported"
                     },
+                    "stable_id": "9174bb76-fa52-5b5c-8f90-44694b8ba2fd",
                     "acquisition_type": "MRI"
                   }
                 ],
@@ -35587,10 +35715,12 @@
                           },
                           "extraction_status": "not_reported"
                         },
-                        "local_id": "trm_1"
+                        "local_id": "trm_1",
+                        "stable_id": "87a8272c-fa6b-5da6-a5a6-4cc59e724d50"
                       }
                     ],
                     "local_id": "mdl_1",
+                    "stable_id": "f17700e6-c760-5551-8af8-f5f9af025261",
                     "model_type": {
                       "evidence": {
                         "status": "not_applicable"

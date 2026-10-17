@@ -1,5 +1,6 @@
 import hashlib
 import json
+import uuid
 
 import shortuuid
 import sqlalchemy as sa
@@ -50,6 +51,10 @@ def _check_type(x):
 
 def generate_id():
     return shortuuid.ShortUUID().random(length=12)
+
+
+def generate_stable_id():
+    return str(uuid.uuid4())
 
 
 class BaseMixin(object):
@@ -1224,7 +1229,11 @@ class StudyEntity(BaseMixin, db.Model):
     __tablename__ = "study_entities"
     __table_args__ = (
         sa.UniqueConstraint("entity_hash", name="uq_study_entity__hash"),
+        sa.UniqueConstraint("stable_id", name="uq_study_entity__stable_id"),
     )
+
+    #: The id a record's entity carries as study_schema's ``stable_id``.
+    stable_id = db.Column(db.Text, nullable=False, default=generate_stable_id)
 
     base_study_id = db.Column(
         db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True

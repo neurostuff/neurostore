@@ -76,7 +76,8 @@ def add(analysis, **fields):
 
 
 def apply(review, *ops):
-    return apply_batch(review, {"ops": list(ops)}, text=records.TEXT, user_id="u1", at=AT)
+    return apply_batch(review, {"ops": list(ops)}, text=records.TEXT, user_id="u1", at=AT,
+                       stable_ids=records.minting())
 
 
 def refused(review, *ops):
@@ -397,7 +398,7 @@ def test_a_split_keeps_the_entity_on_the_first_part_and_copies_it_for_the_others
     assert an_2["source_table_analysis"]["value"] == first
     assert copied["local_id"].startswith("rv_")
     assert {**copied, "local_id": "an_2", "source_table_analysis": an_2["source_table_analysis"]
-            } == an_2
+            } == {**an_2, "stable_id": copied["stable_id"]}
     assert copied["source_table_analysis"]["value"] == second
     assert review.record["analyses"][0]["mirror_of"] == "an_2"
     assert stored[0]["after"]["links"] == [

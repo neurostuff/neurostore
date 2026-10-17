@@ -12,7 +12,7 @@ import pytest
 from neurostore.review.core.ops import OpError, ReviewState, apply_batch
 from neurostore.study_schema_tools import expected_key
 from neurostore.tests.conftest import performance_test
-from neurostore.tests.review import golden
+from neurostore.tests.review import golden, records
 
 ANALYSES, POINTS, RELABELS = 40, 220, 100
 LARGE = (120, 1980)
@@ -100,7 +100,7 @@ def _reviewed(analyses, points):
     text, parse, record = _paper(analyses, points, QUOTES)
     state = ReviewState(record=record, coordinate_parse=parse)
     state, _ = apply_batch(state, {"ops": [_relabel(parse["analyses"][0]["key"], 0)]},
-                           text=text, user_id="u1", at=AT)
+                           text=text, user_id="u1", at=AT, stable_ids=records.minting())
     return text, state
 
 
@@ -111,7 +111,8 @@ def _fastest(state, ops, text):
     for _ in range(RUNS):
         started = time.perf_counter()
         try:
-            outcome = apply_batch(state, {"ops": ops}, text=text, user_id="u1", at=AT)
+            outcome = apply_batch(state, {"ops": ops}, text=text, user_id="u1", at=AT,
+                                  stable_ids=records.minting())
         except OpError as error:
             outcome = error
         times.append(time.perf_counter() - started)
@@ -128,7 +129,8 @@ def test_a_hundred_relabels_on_a_paper_of_the_golden_size_apply_within_two_secon
     state = ReviewState(record=record, coordinate_parse=parse)
 
     started = time.perf_counter()
-    _, stored = apply_batch(state, batch, text=text, user_id="u1", at=AT)
+    _, stored = apply_batch(state, batch, text=text, user_id="u1", at=AT,
+                            stable_ids=records.minting())
     elapsed = time.perf_counter() - started
 
     assert len(stored) == RELABELS
@@ -177,7 +179,8 @@ def test_a_hundred_op_batch_whose_last_op_is_invalid_is_refused_naming_that_op_a
     text, state, ops = _hundred_ops_the_last_invalid()
 
     with pytest.raises(OpError) as raised:
-        apply_batch(state, {"ops": ops}, text=text, user_id="u1", at=AT)
+        apply_batch(state, {"ops": ops}, text=text, user_id="u1", at=AT,
+                    stable_ids=records.minting())
 
     _assert_refused_at_the_last_op(raised.value)
 

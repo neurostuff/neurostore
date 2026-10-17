@@ -83,7 +83,10 @@ def build_diff():
 
 def _build(source_id, base_study_id, label, review_ops):
     base = ReviewState(record=records.golden(), coordinate_parse=records.coordinate_parse())
-    state, stored = apply_batch(base, {"ops": review_ops}, text=records.TEXT, user_id=USER, at=AT)
+    state, stored = apply_batch(
+        base, {"ops": review_ops}, text=records.TEXT, user_id=USER, at=AT,
+        stable_ids=records.Minter(source_id).stable_ids(),
+    )
     document = bundle(
         source={
             "id": source_id,
@@ -137,7 +140,8 @@ def check_entry(bundle, entry):
     name, expect = entry["name"], entry["expect"]
     try:
         after, stored = apply_batch(
-            state, {"ops": entry["ops"]}, text=bundle["text"], user_id=review["user_id"], at=AT
+            state, {"ops": entry["ops"]}, text=bundle["text"], user_id=review["user_id"], at=AT,
+            stable_ids=records.minting(),
         )
     except ReviewError as error:
         problems = " ".join([str(error), *error.problems])

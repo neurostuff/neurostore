@@ -195,6 +195,17 @@ def entity_lists(record):
     yield from walk("Study", "", record)
 
 
+def entity_items(record):
+    """``(path, entity class, item)`` for the study ``record`` (path "") and each object item of
+    its entity lists, in entity_lists order."""
+    yield "", "Study", record
+    for owner_path, list_path, entity_class, items in entity_lists(record):
+        if isinstance(items, list):
+            for index, item in enumerate(items):
+                if isinstance(item, dict):
+                    yield item_path(owner_path, list_path, index), entity_class, item
+
+
 def _get(obj, dotted):
     for part in dotted.split("."):
         if not isinstance(obj, dict):

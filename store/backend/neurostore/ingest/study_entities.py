@@ -24,6 +24,7 @@ from neurostore.models.data import (
 )
 from neurostore.study_schema_tools import (
     CHILD_LISTS,
+    entity_items,
     entity_lists,
     extracted_value,
     item_path,
@@ -141,18 +142,26 @@ def record_entities(base_study_id, record, locate=None):
 def sync_record_entities(base_study, record, locate=None, config=None):
     """Find or create the entity of every item of ``record``; set each `.entity`.
 
-    An item reaches its entity by its hash. Anything else is a new entity,
-    and the entity the record stopped naming keeps its claims. When a new
-    item and an entity the record no longer names are each the only one in
-    their slot (see `_rename_candidates`), the pair is recorded as a
-    'renamed_by_extractor' StudyEntityCandidateLink for a curator to confirm.
+    An item reaches the entity its stable_id names, when it is identified by
+    name and the entity is of its class (see `stable_id_problems` for the ids
+    an upload refuses), else the entity its hash finds; a content-keyed item
+    reaches its entity by its content key alone. Its children are then hashed
+    under that entity. An item whose hash finds an entity another item reached
+    by stable_id is a duplicate, and so is each item below a duplicate.
+    Anything else is a new entity, taking the item's stable_id when no entity
+    of the base study has it, and the entity the record stopped naming keeps
+    its claims. When a new item and an entity the record no longer names are
+    each the only one in their slot (see `_rename_candidates`), the pair is
+    recorded as a 'renamed_by_extractor' StudyEntityCandidateLink for a
+    curator to confirm.
 
     Raises StaleEntityHashes while the base study's entities are still at an
     older ENTITY_HASH_VERSION: an item would miss its entity and create a
     second one. Run `rehash_entities` first.
 
-    Returns a dict: entities (RecordEntity list), created, matched,
-    rename_candidates ([{class, from, to, entity_id, candidate_id}]), and
+    Returns a dict: entities (the RecordEntity of each item given an
+    entity), created, matched, rename_candidates ([{class, from, to,
+    entity_id, candidate_id}]), and
     unlocated, unidentified and duplicates (see record_entities).
     """
     entities, unlocated, unidentified, duplicates = record_entities(
@@ -176,8 +185,10 @@ def sync_record_entities(base_study, record, locate=None, config=None):
             "ENTITY_HASH_VERSION; run rehash_entities() before ingesting"
         )
     by_hash = {e.entity_hash: e for e in existing}
+    by_stable_id = {e.stable_id: e for e in existing}
     chains = _rename_chains({e.id for e in existing})
     claimed = set()
+    linked = []
     result = {"created": 0, "matched": 0, "rename_candidates": []}
 
     def take(record_entity, entity):
@@ -187,16 +198,18 @@ def sync_record_entities(base_study, record, locate=None, config=None):
             entity.last_seen_config_id = config.id
 
     for depth in sorted({e.depth for e in entities}):
-        pending = []
-        for record_entity in (e for e in entities if e.depth == depth):
-            entity = by_hash.get(record_entity.entity_hash)
-            if entity is not None:
-                take(record_entity, entity)
-                result["matched"] += 1
-            else:
-                pending.append(record_entity)
+        level = [e for e in entities if e.depth == depth]
+        matched, pending, held = _match_level(
+            base_study.id, level, by_stable_id, by_hash, claimed
+        )
+        duplicates.extend(held)
+        for record_entity, entity in matched:
+            take(record_entity, entity)
+        result["matched"] += len(matched)
 
         for record_entity in pending:
+            carried = record_entity.item.get("stable_id")
+            stable_id = {"stable_id": carried} if carried and carried not in by_stable_id else {}
             entity = StudyEntity(
                 base_study_id=base_study.id,
                 entity_class=record_entity.entity_class,
@@ -204,12 +217,14 @@ def sync_record_entities(base_study, record, locate=None, config=None):
                 identity=record_entity.identity,
                 parent_id=record_entity.parent.entity.id if record_entity.parent else None,
                 first_seen_config_id=config.id if config is not None else None,
+                **stable_id,
             )
             db.session.add(entity)
             db.session.flush()
             by_hash[entity.entity_hash] = entity
             take(record_entity, entity)
             result["created"] += 1
+        linked.extend(e for e in level if e.entity is not None)
 
         for record_entity, old in _rename_candidates(pending, existing, claimed, chains):
             db.session.add(
@@ -232,12 +247,107 @@ def sync_record_entities(base_study, record, locate=None, config=None):
 
     db.session.flush()
     return {
-        "entities": entities,
+        "entities": linked,
         **result,
         "unlocated": unlocated,
         "unidentified": unidentified,
         "duplicates": duplicates,
     }
+
+
+def _match_level(base_study_id, level, by_stable_id, by_hash, claimed):
+    """``(matched, pending, duplicates)`` for the items of one depth, their parents matched or
+    created: the (item, entity) pairs its stable_id, else its hash, finds; the items no entity
+    is found for; and the paths of the items below a duplicate or whose hash finds an entity an
+    item took by stable_id. Adds each matched entity's id to ``claimed``."""
+    matched, unnamed, duplicates = [], [], []
+    for record_entity in level:
+        if record_entity.parent is not None and record_entity.parent.entity is None:
+            duplicates.append(record_entity.path)
+            continue
+        _rehash_under_linked_parent(base_study_id, record_entity)
+        entity = _named_entity(record_entity, by_stable_id)
+        if entity is None:
+            unnamed.append(record_entity)
+        else:
+            matched.append((record_entity, entity))
+            claimed.add(entity.id)
+    pending = []
+    for record_entity in unnamed:
+        entity = by_hash.get(record_entity.entity_hash)
+        if entity is None:
+            pending.append(record_entity)
+        elif entity.id in claimed:
+            duplicates.append(record_entity.path)
+        else:
+            matched.append((record_entity, entity))
+            claimed.add(entity.id)
+    return matched, pending, duplicates
+
+
+def _rehash_under_linked_parent(base_study_id, record_entity):
+    """Re-hash an item identified under its parent under the hash of the parent's entity, which
+    differs from the parent item's own when a stable_id linked the parent."""
+    parent = record_entity.parent
+    if parent is not None and parent.entity.entity_hash != parent.entity_hash:
+        record_entity.entity_hash = study_entity_hash(
+            base_study_id,
+            record_entity.entity_class,
+            record_entity.identity,
+            parent.entity.entity_hash,
+        )
+
+
+def _named_entity(record_entity, by_stable_id):
+    """The entity of the base study the item's stable_id names, when the item is identified
+    by name and the entity is of its class; None otherwise."""
+    if record_entity.entity_class in CONTENT_KEYED_CLASSES:
+        return None
+    entity = by_stable_id.get(record_entity.item.get("stable_id"))
+    # stable_id_problems refuses such an id on upload; this function also runs without it.
+    if entity is None or entity.entity_class != record_entity.entity_class:
+        return None
+    return entity
+
+
+def stable_id_problems(base_study_id, record):
+    """``(path, code, message)`` for each item of ``record`` whose stable_id an earlier item
+    carries (STABLE_ID_REPEATED), or names an entity of another base study or class
+    (STABLE_ID_MISMATCH). The study's path is "".
+
+    Every item is checked, content-keyed ones too, though matching ignores their ids: a
+    stable_id that names another paper's or class's entity is wrong wherever it is."""
+    carried = [
+        (path, entity_class, item["stable_id"])
+        for path, entity_class, item in entity_items(record)
+        if item.get("stable_id")
+    ]
+    problems, first = [], {}
+    for path, _, stable_id in carried:
+        holder = first.setdefault(stable_id, path)
+        if holder != path:
+            problems.append((
+                path,
+                "STABLE_ID_REPEATED",
+                f"{path or 'the study'} carries the stable_id {stable_id} that "
+                f"{holder or 'the study'} carries",
+            ))
+    known = {
+        entity.stable_id: entity
+        for entity in StudyEntity.query.filter(StudyEntity.stable_id.in_(list(first)))
+    } if first else {}
+    for path, entity_class, stable_id in carried:
+        entity = known.get(stable_id)
+        if entity is not None and (
+            entity.base_study_id != base_study_id or entity.entity_class != entity_class
+        ):
+            problems.append((
+                path,
+                "STABLE_ID_MISMATCH",
+                f"{path or 'the study'} is a {entity_class}, but its stable_id {stable_id} "
+                f"names a {entity.entity_class} of base study {entity.base_study_id}",
+            ))
+    return problems
 
 
 def _rename_chains(entity_ids):

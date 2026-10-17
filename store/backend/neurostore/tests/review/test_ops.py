@@ -5,8 +5,9 @@ import json
 import pytest
 from jsonschema import Draft202012Validator
 
-from neurostore.review.core import SCHEMA_DIR, ops
+from neurostore.review.core import SCHEMA_DIR, entities, ops
 from neurostore.review.core.ops import ReviewState, apply_batch, inverse
+from neurostore.review.core.stable_ids import StableIds
 from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests import study_schema_fixtures as fx
@@ -37,7 +38,8 @@ def state():
 
 
 def apply(review, *ops, text=records.TEXT, at=AT):
-    return apply_batch(review, {"ops": list(ops)}, text=text, user_id="u1", at=at)
+    return apply_batch(review, {"ops": list(ops)}, text=text, user_id="u1", at=at,
+                       stable_ids=records.minting())
 
 
 def errors_of(review, *ops):
@@ -90,7 +92,8 @@ def test_applying_never_mutates_the_batch():
            value={"extraction_status": "extracted", "value": 40.0}),
     ]}
     before = copy.deepcopy(batch)
-    after, _ = apply_batch(state(), batch, text=records.TEXT, user_id="u1", at=AT)
+    after, _ = apply_batch(state(), batch, text=records.TEXT, user_id="u1", at=AT,
+                           stable_ids=records.minting())
     assert batch == before
     assert after.record["groups"][2]["age_mean"]["value"] == 40.0
 
@@ -414,7 +417,10 @@ def test_create_entity_appends_to_the_list_on_its_parent():
     assert [g["local_id"] for g in after.record["groups"]] == ["grp_a", "grp_b", "grp_c"]
     assert after.record["tasks"][0]["conditions"][-1]["local_id"] == "cnd_3"
     assert after.record["design"]["arms"][-1]["local_id"] == "arm_2"
-    assert stored[0]["after"]["entity"] == group("grp_c")
+    assert stored[0]["after"]["entity"] == after.record["groups"][2]
+    assert after.record["groups"][2] == {
+        **group("grp_c"), "stable_id": after.record["groups"][2]["stable_id"],
+    }
     assert _validates(after.record)
 
 
@@ -463,7 +469,8 @@ def test_a_batch_that_repeats_a_client_op_id_is_refused_naming_the_repeat():
 
 def test_a_batch_without_ops_is_refused_with_a_batch_level_message_that_names_no_path():
     with pytest.raises(ops.OpError) as raised:
-        ops.apply_batch(state(), {}, text=records.TEXT, user_id="u1", at=AT)
+        ops.apply_batch(state(), {}, text=records.TEXT, user_id="u1", at=AT,
+                        stable_ids=records.minting())
     assert raised.value.failures == [(None, "batch: failed the required rule")]
 
 
@@ -717,7 +724,7 @@ def test_accepting_an_entity_the_batch_added_keeps_it_added():
 
 def test_stored_ops_and_provenance_record_the_user_who_applied_them():
     after, stored = apply_batch(state(), {"ops": [SET_N]}, text=records.TEXT, user_id="u2",
-                                at=AT)
+                                at=AT, stable_ids=records.minting())
     assert stored[0]["user_id"] == "u2"
     assert after.provenance["slot:an_1:groups[group=grp_a].n"]["user_id"] == "u2"
 
@@ -922,10 +929,13 @@ SET_VALUE_WITH_SOURCE = op("set_value", target=slot("grp_a", "age_mean"),
     ],
 )
 def test_applying_the_inverse_restores_the_state_before(setup, change):
-    review = apply(state(), *setup)[0] if setup else state()
+    loaded = ReviewState(record=stamped())
+    review = apply(loaded, *setup)[0] if setup else loaded
     changed, stored = apply(review, change)
     assert changed.record != review.record or changed.annotations != review.annotations
-    restored, _ = apply(changed, *inverse(stored[0], "undo-0001"))
+    restored, _ = apply_with(
+        changed, records.minting(loaded.record), *inverse(stored[0], "undo-0001")
+    )
     assert restored.record == review.record
     assert restored.annotations == review.annotations
 
@@ -1017,11 +1027,11 @@ def test_one_batch_or_several_give_the_same_review():
                               "analysis_key": review.coordinate_parse["analyses"][0]["key"]},
            verdict="reject", reason="duplicate"),
     ]
-    whole, whole_ops = apply(review, *sequence)
+    whole, whole_ops = apply_with(review, records.Minter().stable_ids(), *sequence)
     for size in (1, 4):
-        split, split_ops = review, []
+        split, split_ops, minter = review, [], records.Minter()
         for start in range(0, len(sequence), size):
-            split, stored = apply(split, *sequence[start:start + size])
+            split, stored = apply_with(split, minter.stable_ids(), *sequence[start:start + size])
             split_ops.extend(stored)
         assert split == whole
         assert split_ops == whole_ops
@@ -1087,3 +1097,278 @@ def test_unlink_refuses_an_index():
         op("unlink", target=relationship("an_1", "regions", "reg_1"), index=0),
     )
     assert errors[0].startswith("op 1:") and "index" in errors[0]
+
+
+# stable entity ids (D64)
+
+
+stable_id = records.stable_id
+
+
+def stamped():
+    return records.stamped(records.build())
+
+
+def held(record):
+    """``{local_id: stable_id}`` of every entity of ``record``."""
+    return {e.item["local_id"]: e.item.get("stable_id") for e in entities.index(record).values()}
+
+
+def mints(*names):
+    """A StableIds that mints ``stable_id(name)`` for each of ``names`` in turn."""
+    minted = iter(names)
+    return StableIds(mint=lambda: stable_id(next(minted)))
+
+
+def apply_with(review, stable_ids, *batch):
+    return apply_batch(
+        review, {"ops": list(batch)}, text=records.TEXT, user_id="u1", at=AT,
+        stable_ids=stable_ids,
+    )
+
+
+def test_create_entity_gives_the_entity_and_each_entity_inside_it_a_minted_stable_id():
+    task = records.item("Task", "tsk_2", name=fx.extracted("n-back"),
+                        conditions=[records.item("Condition", "cnd_9")])
+
+    after, stored = apply_with(
+        ReviewState(record=stamped()), mints("first", "second"),
+        op("create_entity", parent="study", list="tasks", entity=task),
+    )
+
+    assert held(after.record) == {
+        **held(stamped()), "tsk_2": stable_id("first"), "cnd_9": stable_id("second"),
+    }
+    created = stored[0]["after"]["entity"]
+    assert (created["stable_id"], created["conditions"][0]["stable_id"]) == (
+        stable_id("first"), stable_id("second"),
+    )
+    assert _validates(after.record)
+
+
+def test_create_entity_refuses_a_stable_id_the_review_has_never_held():
+    given = {**group("grp_c"), "stable_id": stable_id("from the client")}
+    with pytest.raises(ReviewError) as raised:
+        apply(ReviewState(record=stamped()),
+              op("create_entity", parent="study", list="groups", entity=given))
+    assert raised.value.problems == [
+        f"op 0: stable_id {stable_id('from the client')} is not one of the review's; "
+        "the server gives a new entity its stable_id",
+    ]
+
+
+def test_create_entity_refuses_a_stable_id_another_entity_carries():
+    given = {**group("grp_c"), "stable_id": stable_id("grp_a")}
+    errors = errors_of(ReviewState(record=stamped()),
+                       op("create_entity", parent="study", list="groups", entity=given))
+    assert errors == [f"op 0: stable_id {stable_id('grp_a')} is grp_a's"]
+
+
+def test_the_inverse_of_a_delete_restores_the_stable_ids_of_the_entity_and_its_children():
+    review = ReviewState(record=stamped())
+    deleted, stored = apply(review, op("delete_entity", target=entity("tsk_1")))
+    assert "tsk_1" not in held(deleted.record)
+    restorable = StableIds(mint=lambda: stable_id("unused"),
+                           restorable=frozenset(held(stamped()).values()))
+
+    restored, _ = apply_with(deleted, restorable, *inverse(stored[0], "undo-0001"))
+
+    assert restored.record == review.record
+    assert (held(restored.record)["tsk_1"], held(restored.record)["cnd_2"]) == (
+        stable_id("tsk_1"), stable_id("cnd_2"),
+    )
+
+
+def test_the_inverse_of_a_delete_needs_the_review_to_name_the_ids_it_held():
+    deleted, stored = apply(ReviewState(record=stamped()),
+                            op("delete_entity", target=entity("grp_b")))
+    with pytest.raises(ReviewError) as raised:
+        apply(deleted, *inverse(stored[0], "undo-0001"))
+    assert raised.value.problems == [
+        f"op 0: stable_id {stable_id('grp_b')} is not one of the review's; "
+        "the server gives a new entity its stable_id",
+    ]
+
+
+def test_a_delete_and_its_undo_in_one_batch_keep_the_stable_id():
+    review = ReviewState(record=stamped())
+    deleted, stored = apply(review, op("delete_entity", target=entity("grp_b")))
+    [undo] = inverse(stored[0], "undo-0001")
+
+    restored, _ = apply(review, op("delete_entity", target=entity("grp_b")), undo)
+
+    assert restored.record == review.record
+
+
+@pytest.mark.parametrize("kind, field", [("set_value", "value"), ("set_evidence", "evidence")])
+def test_a_slot_op_cannot_touch_a_stable_id(kind, field):
+    values = {
+        "value": {"extraction_status": "extracted", "value": stable_id("other")},
+        "evidence": {"status": "not_found"},
+    }
+    errors = errors_of(ReviewState(record=stamped()),
+                       op(kind, target=slot("grp_a", "stable_id"), **{field: values[field]}))
+    assert errors == ["op 0: stable_id is the entity's id, not a slot a review edits"]
+
+
+def test_the_other_ops_keep_every_stable_id():
+    review = ReviewState(record=stamped(), coordinate_parse=_parse())
+    after, _ = apply(
+        review,
+        SET_N,
+        op("set_value", target=slot("grp_a", "name"),
+           value={"extraction_status": "extracted", "value": "MDD patients"}),
+        op("set_evidence", target=entity("grp_a"), evidence=evidence([(0, 6)])),
+        op("link", target=relationship("an_1", "regions", "reg_1")),
+        op("unlink", target=relationship("an_1", "tasks", "tsk_1")),
+        op("verdict", target=entity("grp_b"), verdict="reject", reason="duplicate"),
+        op("note", target=entity("grp_a"), note="check"),
+        coordinate(review, 0, "relabel", role="other"),
+        op("delete_entity", target=entity("reg_1")),
+    )
+    assert held(after.record) == {
+        local_id: value for local_id, value in held(stamped()).items() if local_id != "reg_1"
+    }
+
+
+def split_review():
+    """stamped(), its analysis an_1 reading the two-point analysis of records.coordinate_parse()
+    and the split of that analysis in two."""
+    record, parse = stamped(), records.coordinate_parse()
+    record["analyses"][0]["source_table_analysis"] = fx.extracted(parse["analyses"][1]["key"])
+    review = ReviewState(record=record, coordinate_parse=parse)
+    parts = {"parts": [{"indices": [0]}, {"indices": [1]}]}
+    return review, coordinate(review, 1, "split", payload=parts)
+
+
+def test_a_split_keeps_the_stable_id_on_the_first_part_and_mints_one_for_the_copy():
+    review, split = split_review()
+
+    after, _ = apply_with(review, mints("copy"), split)
+
+    first, copied = after.record["analyses"]
+    assert (first["local_id"], first["stable_id"]) == ("an_1", stable_id("an_1"))
+    assert copied["local_id"].startswith("rv_")
+    assert copied["stable_id"] == stable_id("copy")
+
+
+def test_an_added_result_analysis_gets_a_minted_stable_id():
+    review = ReviewState(record=stamped(), coordinate_parse=_parse())
+    added = {"origin": "table", "table_id": "t9", "cells": fx.cells(2), "name": "missed",
+             "coordinate_space": "MNI", "role": "result", "points": [fx.point((12, -40, 6))]}
+
+    after, _ = apply_with(
+        review, mints("added"),
+        op("coordinate", target={"kind": "coordinate_parse"}, action="add",
+           payload={"analysis": added}),
+    )
+
+    assert after.record["analyses"][-1].get("stable_id") == stable_id("added")
+    assert held(after.record)["an_1"] == stable_id("an_1")
+
+
+def test_undoing_a_split_restores_the_record_with_its_stable_ids():
+    review, split = split_review()
+    after, stored = apply_with(review, mints("copy"), split)
+
+    restored, _ = apply_with(after, mints(), *inverse(stored[0], "undo-0001"))
+
+    assert restored.record == review.record
+
+
+def test_a_restore_that_puts_back_a_stable_id_the_review_never_held_is_refused():
+    review, split = split_review()
+    after, stored = apply_with(review, mints("copy"), split)
+    [undo] = inverse(stored[0], "undo-0001")
+    undo["payload"]["record"]["insert"][0]["entity"]["stable_id"] = stable_id("forged")
+
+    with pytest.raises(ReviewError) as raised:
+        apply_with(after, mints(), undo)
+
+    assert raised.value.problems == [
+        f"op 0: stable_id {stable_id('forged')} is not one of the review's; "
+        "the server gives a new entity its stable_id",
+    ]
+
+
+def test_a_restore_that_puts_back_a_stable_id_another_entity_carries_is_refused():
+    review, split = split_review()
+    after, stored = apply_with(review, mints("copy"), split)
+    [undo] = inverse(stored[0], "undo-0001")
+    undo["payload"]["record"]["insert"][0]["entity"]["stable_id"] = stable_id("grp_a")
+
+    with pytest.raises(ReviewError) as raised:
+        apply_with(after, mints(), undo)
+
+    assert raised.value.problems == [f"op 0: stable_id {stable_id('grp_a')} is grp_a's"]
+
+
+def test_a_create_its_undo_and_its_redo_in_one_batch_keep_the_minted_stable_id():
+    created = op("create_entity", parent="study", list="groups", entity=group("grp_c"))
+    deleted = op("delete_entity", target=entity("grp_c"))
+    redone = op("create_entity", parent="study", list="groups",
+                entity={**group("grp_c"), "stable_id": stable_id("new")})
+
+    after, stored = apply_with(ReviewState(record=stamped()), mints("new"),
+                               created, deleted, redone)
+
+    assert [entry["op"]["type"] for entry in stored] == [
+        "create_entity", "delete_entity", "create_entity",
+    ]
+    assert held(after.record) == {**held(stamped()), "grp_c": stable_id("new")}
+
+
+def _schema_op_types():
+    schema = json.loads((SCHEMA_DIR / "review-ops.schema.json").read_text("utf-8"))
+    defs = schema["$defs"]
+    types = set()
+    for branch in defs["Op"]["oneOf"]:
+        kind = defs[branch["$ref"].rsplit("/", 1)[-1]]["properties"]["type"]
+        types.update(kind.get("enum", [kind.get("const")]))
+    return types
+
+
+def _stable_ids_in(value):
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "stable_id":
+                yield item
+            else:
+                yield from _stable_ids_in(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _stable_ids_in(item)
+
+
+def test_only_the_entity_adding_op_types_mint_and_each_stores_its_minted_ids_in_its_after():
+    review, split = split_review()
+    task = records.item("Task", "tsk_2", name=fx.extracted("n-back"),
+                        conditions=[records.item("Condition", "cnd_9")])
+    added = {"origin": "table", "table_id": "t9", "cells": fx.cells(2), "name": "missed",
+             "coordinate_space": "MNI", "role": "result", "points": [fx.point((12, -40, 6))]}
+    samples = [
+        SET_N,
+        op("set_evidence", target=entity("grp_a"), evidence=evidence([(0, 6)])),
+        op("link", target=relationship("an_1", "regions", "reg_1")),
+        op("unlink", target=relationship("an_1", "tasks", "tsk_1")),
+        op("verdict", target=entity("grp_b"), verdict="reject", reason="duplicate"),
+        op("note", target=entity("grp_a"), note="check"),
+        op("create_entity", parent="study", list="tasks", entity=task),
+        op("delete_entity", target=entity("reg_1")),
+        split,
+        op("coordinate", target={"kind": "coordinate_parse"}, action="add",
+           payload={"analysis": added}),
+    ]
+    assert {sample["type"] for sample in samples} == _schema_op_types()
+
+    minting = {}
+    for sample in samples:
+        minter = records.Minter()
+        _, stored = apply_with(review, minter.stable_ids(), sample)
+        if minter.minted:
+            minting.setdefault(sample["type"], []).append(
+                set(minter.minted) <= set(_stable_ids_in(stored[0]["after"]))
+            )
+
+    assert minting == {"create_entity": [True], "coordinate": [True, True]}
+    assert set(minting) == set(ops.ENTITY_ADDING_OPS)

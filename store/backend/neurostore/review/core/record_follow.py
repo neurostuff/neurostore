@@ -10,23 +10,24 @@ from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import minimal
 
 
-def follow(record, replacements, mint):
+def follow(record, replacements, mint, new_stable_id):
     """Make the record's Analysis entities follow a coordinate op's ``replacements``.
 
     Each replacement is ``(old keys, new analyses)``, the target's key first. With no old key
     the op added an analysis, which gets an entity when it is a result. Otherwise the target's
     entities point at the first new analysis, copies of them point at the others, and the
     entities of the other old keys are deleted; with no new analyses the entities are kept.
-    ``mint(*parts)`` gives a local_id. Returns the links a split leaves on its first part and
-    the references a merge leaves dangling.
+    ``mint(*parts)`` gives a local_id and ``new_stable_id()`` a new entity's stable_id. Returns
+    the links a split leaves on its first part and the references a merge leaves dangling.
     """
     reports = {}
     for old, new in replacements:
         if not old:
             if new[0]["role"] == "result":
-                record.setdefault("analyses", []).append(_new_entity(new[0], mint()))
+                item = {**_new_entity(new[0], mint()), "stable_id": new_stable_id()}
+                record.setdefault("analyses", []).append(item)
         elif new:
-            reports.update(_replace(record, old, new, mint))
+            reports.update(_replace(record, old, new, mint, new_stable_id))
     return reports
 
 
@@ -56,7 +57,7 @@ def marks(before, after):
     return found
 
 
-def _replace(record, old, new, mint):
+def _replace(record, old, new, mint, new_stable_id):
     items = record.get("analyses") or []
     pointing = _pointing(items, {old[0]})
     report = {}
@@ -73,6 +74,7 @@ def _replace(record, old, new, mint):
             copied = copy.deepcopy(item)
             _repoint_item(copied, part["key"])
             copied["local_id"] = mint(item["local_id"], n)
+            copied["stable_id"] = new_stable_id()
             copies.append(copied)
         position = items.index(item) + 1
         items[position:position] = copies

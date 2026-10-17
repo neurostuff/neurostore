@@ -6,12 +6,14 @@ front end's test server must reproduce. Regenerate it as store/review-frontend/R
 """
 
 import hashlib
+from unittest import mock
 
 import pytest
 from study_schema import keys
 from study_schema.models.paper_parse import ParsedPoint
 
 from neurostore.ingest.study_schema import _check_verdicts
+from neurostore.review.app import service
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests.review import golden, records
 from neurostore.tests.review.layouts import OTHER, REVIEWER
@@ -491,7 +493,8 @@ async def _play(clients, session, steps, name=None):
     if name in COORDINATE_RECORD:
         record = records.linked_analyses()
     elif name == MERGE_ROUND:
-        record = records.merge_assessments()
+        # The undo re-creates the merged-away assessment with the stable_id an import gave it.
+        record = records.stamped(records.merge_assessments())
     elif name in ("sources, paged", UNDO_ROUND, UNDO_ROUND_BARE):
         record = records.golden()
     else:
@@ -507,10 +510,12 @@ async def _play(clients, session, steps, name=None):
     review = None
     recorded = []
     raw = []
+    minter = records.Minter(name or "scenario")
     for who, method, template, body, status in steps:
         path = template.format(source=source.id, review=review)
         data = body(raw) if callable(body) else body
-        response = await getattr(clients[who], method)(path, data=data)
+        with mock.patch.object(service, "generate_stable_id", minter):
+            response = await getattr(clients[who], method)(path, data=data)
         assert response.status_code == status, (path, response.json())
         raw.append(response.json())
         if template == SOURCE_REVIEW and method == "put":

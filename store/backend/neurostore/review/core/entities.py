@@ -1,11 +1,19 @@
 """Every entity of an extraction record, indexed by local_id."""
 
+import copy
+from collections import defaultdict
 from dataclasses import dataclass
 
 from neurostore.review.core import paths
 from neurostore.review.core.defs import class_of, is_extracted
 from neurostore.review.errors import ReviewError
-from neurostore.study_schema_tools import CHILD_LISTS, DECLARED_KEYS, entity_lists, item_path
+from neurostore.study_schema_tools import (
+    CHILD_LISTS,
+    DECLARED_KEYS,
+    entity_items,
+    entity_lists,
+    item_path,
+)
 
 STUDY = "study"
 
@@ -74,6 +82,43 @@ def index_rows(record):
         }
         for e in index(record).values()
     ]
+
+
+def with_stable_ids(record, linked, mint):
+    """A copy of ``record`` in which each entity without a stable_id has the one ``linked``
+    holds for its local_id, or else ``mint()``."""
+    record = copy.deepcopy(record)
+    for item in _entity_items(record):
+        if not item.get("stable_id"):
+            item["stable_id"] = linked.get(item.get("local_id")) or mint()
+    return record
+
+
+def without_stable_ids(record):
+    """A copy of ``record`` with no entity's stable_id."""
+    record = copy.deepcopy(record)
+    for item in _entity_items(record):
+        item.pop("stable_id", None)
+    return record
+
+
+def stable_ids_of(record):
+    """The stable_ids the record's entities carry."""
+    return {item["stable_id"] for item in _entity_items(record) if item.get("stable_id")}
+
+
+def shared_stable_ids(record):
+    """``{stable_id: sorted local_ids}`` for each stable_id more than one entity carries."""
+    holders = defaultdict(list)
+    for item in _entity_items(record):
+        if item.get("stable_id"):
+            holders[item["stable_id"]].append(item.get("local_id"))
+    return {sid: sorted(ids) for sid, ids in holders.items() if len(ids) > 1}
+
+
+def _entity_items(record):
+    """The study and every object item of its entity lists, whatever their local_ids."""
+    return (item for _, _, item in entity_items(record))
 
 
 def judgeable_keys(record, parse):

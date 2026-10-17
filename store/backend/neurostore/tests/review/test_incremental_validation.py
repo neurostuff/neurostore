@@ -65,7 +65,8 @@ def _refusal_kind(op, problem):
 def _outcome(mode, state, batch):
     try:
         after, stored = apply_batch(
-            state, batch, text=records.TEXT, user_id="u1", at=AT, validate=MODES[mode]
+            state, batch, text=records.TEXT, user_id="u1", at=AT, validate=MODES[mode],
+            stable_ids=records.Minter().stable_ids(),
         )
     except OpError as error:
         return "refused", str(error), error.failures
@@ -89,7 +90,8 @@ def _start(rng, name):
         state, _ = apply_batch(state, {"ops": [
             _op("verdict", target=_analysis(keys[0]), verdict="accept"),
             _op("coordinate", target=_analysis(keys[2]), action="relabel", role="other"),
-        ]}, text=records.TEXT, user_id="u0", at=AT, validate=full_problems)
+        ]}, text=records.TEXT, user_id="u0", at=AT, validate=full_problems,
+            stable_ids=records.minting())
     if rng.random() < 0.25:
         state.coordinate_parse = {**state.coordinate_parse, "tables": "not a list"}
     return state
@@ -331,7 +333,8 @@ def _verdict(state, op):
     """What applying ``op`` alone to ``state`` gives, and the state it leaves."""
     try:
         after, _ = apply_batch(
-            state, {"ops": [op]}, text=records.TEXT, user_id="u1", at=AT, validate=full_problems
+            state, {"ops": [op]}, text=records.TEXT, user_id="u1", at=AT, validate=full_problems,
+            stable_ids=records.minting(),
         )
     except OpError as error:
         return ("invalid" if "invalid document" in str(error) else "cannot apply"), None
@@ -382,7 +385,7 @@ def test_a_batch_is_validated_only_where_it_changed_the_documents():
     rename = _op("set_value", target={"kind": "slot", "entity": "grp_b", "path": "name"},
                  value={"extraction_status": "extracted", "value": "siblings"})
     after, _ = apply_batch(ReviewState(record=record), {"ops": [rename]}, text=records.TEXT,
-                           user_id="u1", at=AT)
+                           user_id="u1", at=AT, stable_ids=records.minting())
     assert after.record["groups"][1]["name"]["value"] == "siblings"
 
 

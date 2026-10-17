@@ -1114,7 +1114,10 @@ async def test_applying_a_rejects_inverse_restores_the_judgement_it_replaced(cli
 
 
 @pytest.mark.parametrize("kind", UNDOABLE)
-async def test_applying_the_returned_inverse_restores_the_record_and_parse(clients, source, kind):
+async def test_applying_the_returned_inverse_restores_the_record_and_parse(
+    clients, session, kind
+):
+    source = add_source(session, record=stamped_golden())
     review = await start(clients, source)
     ops_path = f"/api/review/reviews/{review['id']}/ops"
     before = (await clients[REVIEWER].get(f"/api/review/sources/{source.id}/bundle")).json()
@@ -2119,3 +2122,148 @@ def test_an_assignment_whose_commit_fails_is_rolled_back(
         getattr(review_views.ReviewAssignmentsView(), method)(base_study_id, REVIEWER)
 
     assert session.scalars(sa.select(ReviewAssignment.user_id)).all() == before
+
+
+# stable entity ids (D64)
+
+LOWERCASE_UUID = records.LOWERCASE_UUID
+
+
+def stamped_golden():
+    return records.stamped(records.golden())
+
+
+def stable_ids(record):
+    return {e.item["local_id"]: e.item.get("stable_id") for e in entities.index(record).values()}
+
+
+async def post(clients, review, seq, *ops):
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(seq, *ops)
+    )
+    assert response.status_code == 200, response.json()
+    return response.json()
+
+
+async def test_a_created_entity_gets_a_stable_id_from_the_server(clients, session):
+    source = add_source(session, record=stamped_golden())
+    review = await start(clients, source)
+
+    result = await post(clients, review, 0, op(
+        "create_entity", parent="study", list="groups",
+        entity=records.item("Group", "grp_new", name=fx.extracted("new group")),
+    ))
+
+    ids = stable_ids(result["record"])
+    minted = ids.pop("grp_new")
+    assert LOWERCASE_UUID.fullmatch(minted or ""), minted
+    assert minted not in ids.values()
+    assert ids == stable_ids(stamped_golden())
+    assert result["ops"][0]["after"]["entity"]["stable_id"] == minted
+    stored = session.scalar(sa.select(Review).where(Review.id == review["id"]))
+    assert stable_ids(stored.record)["grp_new"] == minted
+
+
+async def test_a_created_entity_with_a_stable_id_from_the_client_is_refused(clients, session):
+    source = add_source(session, record=stamped_golden())
+    review = await start(clients, source)
+    given = {**records.item("Group", "grp_new", name=fx.extracted("new group")),
+             "stable_id": "11111111-2222-4333-8444-555555555555"}
+    created = op("create_entity", parent="study", list="groups", entity=given)
+
+    response = await clients[REVIEWER].post(
+        f"/api/review/reviews/{review['id']}/ops", data=batch(0, created)
+    )
+
+    assert response.status_code == 422
+    assert [(e["field"], e["message"]) for e in response.json()["errors"]] == [(
+        "ops/0",
+        "stable_id 11111111-2222-4333-8444-555555555555 is not one of the review's; "
+        "the server gives a new entity its stable_id",
+    )]
+    assert op_count(session) == 0
+
+
+async def test_undoing_a_delete_in_a_later_batch_restores_the_stable_id(clients, session):
+    source = add_source(session, record=stamped_golden())
+    review = await start(clients, source)
+    deleted = await post(clients, review, 0, op(
+        "delete_entity", target={"kind": "entity", "entity": "tsk_1"},
+    ))
+    assert "tsk_1" not in stable_ids(deleted["record"])
+
+    undone = await post(clients, review, 1, *with_ids(deleted["ops"][0]["inverse"]))
+
+    assert stable_ids(undone["record"]) == stable_ids(stamped_golden())
+
+
+async def test_redoing_an_undone_create_brings_back_its_minted_stable_id(clients, session):
+    source = add_source(session, record=stamped_golden())
+    review = await start(clients, source)
+    created = await post(clients, review, 0, op(
+        "create_entity", parent="study", list="groups",
+        entity=records.item("Group", "grp_new", name=fx.extracted("new group")),
+    ))
+    minted = stable_ids(created["record"])["grp_new"]
+    undone = await post(clients, review, 1, *with_ids(created["ops"][0]["inverse"]))
+    assert "grp_new" not in stable_ids(undone["record"])
+
+    redone = await post(clients, review, 2, *with_ids(undone["ops"][0]["inverse"]))
+
+    assert stable_ids(redone["record"])["grp_new"] == minted
+
+
+async def test_a_source_whose_record_carries_no_stable_ids_still_mints_one_for_a_created_entity(
+    clients, source
+):
+    review = await start(clients, source)
+
+    result = await post(clients, review, 0, op(
+        "create_entity", parent="study", list="groups",
+        entity=records.item("Group", "grp_new", name=fx.extracted("new group")),
+    ))
+
+    ids = stable_ids(result["record"])
+    assert LOWERCASE_UUID.fullmatch(ids.pop("grp_new") or "")
+    assert set(ids.values()) == {None}
+
+
+async def test_redoing_an_undone_split_in_a_later_batch_brings_back_the_copys_stable_id(
+    clients, session
+):
+    source = add_source(session, record=records.stamped(records.linked_analyses()))
+    review = await start(clients, source)
+    key = records.coordinate_parse()["analyses"][1]["key"]
+    split = await post(clients, review, 0, op(
+        "coordinate", target={"kind": "coordinate_analysis", "analysis_key": key},
+        action="split", payload={"parts": [{"indices": [0]}, {"indices": [1]}]},
+    ))
+    first, copied = split["record"]["analyses"][1:3]
+    assert first["stable_id"] == records.stable_id("an_2")
+    assert LOWERCASE_UUID.fullmatch(copied["stable_id"])
+    undone = await post(clients, review, 1, *with_ids(split["ops"][0]["inverse"]))
+    assert copied["local_id"] not in stable_ids(undone["record"])
+
+    redone = await post(clients, review, 2, *with_ids(undone["ops"][0]["inverse"]))
+
+    assert stable_ids(redone["record"]) == stable_ids(split["record"])
+
+
+async def test_redoing_an_undone_create_in_a_later_batch_brings_back_its_childrens_stable_ids(
+    clients, session
+):
+    source = add_source(session, record=stamped_golden())
+    review = await start(clients, source)
+    task = records.item("Task", "tsk_new", name=fx.extracted("n-back"),
+                        conditions=[records.item("Condition", "cnd_new")])
+    created = await post(clients, review, 0, op(
+        "create_entity", parent="study", list="tasks", entity=task,
+    ))
+    minted = stable_ids(created["record"])
+    assert LOWERCASE_UUID.fullmatch(minted["cnd_new"])
+    undone = await post(clients, review, 1, *with_ids(created["ops"][0]["inverse"]))
+    assert "cnd_new" not in stable_ids(undone["record"])
+
+    redone = await post(clients, review, 2, *with_ids(undone["ops"][0]["inverse"]))
+
+    assert stable_ids(redone["record"]) == minted

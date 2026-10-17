@@ -41,6 +41,13 @@
         },
         "modality": {
           "$ref": "#/$defs/ExtractedModality"
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -228,6 +235,13 @@
         "spatial_scope": {
           "$ref": "#/$defs/ExtractedSpatialScope"
         },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "tables": {
           "items": {
             "type": "string"
@@ -366,6 +380,13 @@
         },
         "name": {
           "$ref": "#/$defs/ExtractedString"
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -418,6 +439,13 @@
         },
         "name": {
           "$ref": "#/$defs/ExtractedString"
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -586,6 +614,13 @@
         },
         "name": {
           "$ref": "#/$defs/ExtractedString"
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "stimulus_content": {
           "anyOf": [
@@ -879,6 +914,13 @@
               "type": "null"
             }
           ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1016,6 +1058,13 @@
               "type": "null"
             }
           ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1124,6 +1173,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         }
       },
@@ -4156,6 +4212,13 @@
             }
           ]
         },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "wavelengths_nm": {
           "anyOf": [
             {
@@ -4631,6 +4694,13 @@
         },
         "species": {
           "$ref": "#/$defs/ExtractedSpecies"
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4775,6 +4845,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         },
         "tfce_parameters": {
@@ -5062,6 +5139,13 @@
               "type": "null"
             }
           ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -5126,6 +5210,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         },
         "type": {
@@ -5304,6 +5395,13 @@
             }
           ]
         },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "stage": {
           "$ref": "#/$defs/ExtractedString"
         },
@@ -5397,6 +5495,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         },
         "type": {
@@ -5560,6 +5665,13 @@
               "type": "null"
             }
           ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -5661,6 +5773,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         },
         "tracer_name": {
@@ -5838,6 +5957,13 @@
             }
           ]
         },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "steps": {
           "anyOf": [
             {
@@ -5904,6 +6030,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         }
       },
@@ -6321,6 +6454,13 @@
             }
           ]
         },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "study_type": {
           "items": {
             "type": "string"
@@ -6475,6 +6615,13 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         },
         "table_number": {
@@ -6634,6 +6781,13 @@
             }
           ]
         },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "stimuli": {
           "anyOf": [
             {
@@ -6737,6 +6891,13 @@
         },
         "relation_to_intervention": {
           "$ref": "#/$defs/ExtractedTimepointRelation"
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "time_from_intervention": {
           "anyOf": [
@@ -6978,6 +7139,13 @@
         {
           "type": "null"
         }
+      ]
+    },
+    "stable_id": {
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "type": [
+        "string",
+        "null"
       ]
     },
     "study_type": {

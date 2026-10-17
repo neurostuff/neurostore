@@ -1,5 +1,6 @@
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
 import type { Json } from './paths';
+import { declaredOf } from '../store/declared';
 import { buildRecordIndex, withHidden, withSlotFrom, withSlotOrder } from './record';
 
 const TEXT = 'x'.repeat(200);
@@ -108,6 +109,20 @@ describe('buildRecordIndex', () => {
         );
         expect(acquisitions.slot('slot:acq_1:modality')?.value).toBeUndefined();
         expect(acquisitions.entity('acq_1')?.slots).toHaveLength(3);
+    });
+
+    it('lists no slot for an entity’s stable_id, whether the record carries it or the schema declares it', () => {
+        const stableId = '3f2b8c1e-9a4d-4e7b-8c2a-1d5e6f7a8b90';
+        const stamped = buildRecordIndex(
+            makeBundle({ groups: [{ local_id: 'grp_a', stable_id: stableId, name: ev('Patients') }] }, TEXT, {
+                entities: entityRows(row('grp_a', 'Group', 'groups')),
+            }),
+            declaredOf
+        );
+        const paths = stamped.entity('grp_a')?.slots.map((s) => s.path) ?? [];
+        expect(paths).toContain('name');
+        expect(paths.filter((path) => path.startsWith('stable_id'))).toEqual([]);
+        expect(stamped.slot('slot:grp_a:stable_id')).toBeUndefined();
     });
 
     it('treats an object the entity index does not list as no entity', () => {

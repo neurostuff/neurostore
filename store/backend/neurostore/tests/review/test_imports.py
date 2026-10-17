@@ -1,5 +1,6 @@
 """Importing papers for review from study_schema layouts: the service, the CLI and the route."""
 
+import copy
 import hashlib
 import json
 
@@ -20,8 +21,11 @@ from neurostore.models import (
     Fulltext,
     Pipeline,
     PipelineConfig,
+    ExtractionEntityLink,
+    FieldClaim,
     PipelineStudyResult,
     ReviewSource,
+    StudyEntity,
 )
 from neurostore.resources import body_limit
 from neurostore.review.app import exports, imports, service
@@ -31,6 +35,7 @@ from neurostore.review.core.layout import LayoutError
 from neurostore.review.errors import Conflict, NotFound, Unprocessable
 from neurostore.study_schema_tools import schema_errors, sha256_of
 from neurostore.tests import study_schema_fixtures as fx
+from neurostore.tests.review import records
 from neurostore.tests.review.layouts import (
     DIGEST,
     LEAD,
@@ -120,6 +125,50 @@ def no_base_study(study_id):
     return paper, coordinate_parse, record
 
 
+LOWERCASE_UUID = records.LOWERCASE_UUID
+STABLE_STUDY = "0b8e5a52-6c1d-4f0e-9a3b-2d4c6e8f0a1b"
+STABLE_ANALYSIS = "7f3e1d2c-4b5a-4968-8776-655443322110"
+
+
+def is_uuid(value):
+    return isinstance(value, str) and LOWERCASE_UUID.fullmatch(value) is not None
+
+
+def stable_ids(record):
+    """``{local_id: stable_id}`` of the study and its analyses, the entities these records
+    hold."""
+    return {
+        item["local_id"]: item.get("stable_id")
+        for item in [record, *(record.get("analyses") or ())]
+    }
+
+
+def without_stable_ids(record):
+    record = copy.deepcopy(record)
+    for item in [record, *(record.get("analyses") or ())]:
+        item.pop("stable_id", None)
+    return record
+
+
+def entity_stable_ids(session, base_study):
+    """``{(class, identity as JSON): stable_id}`` of every StudyEntity of ``base_study``."""
+    return {
+        (entity.entity_class, json.dumps(entity.identity)): entity.stable_id
+        for entity in session.scalars(
+            sa.select(StudyEntity).where(StudyEntity.base_study_id == base_study.id)
+        )
+    }
+
+
+def with_unkeyed_analysis(record):
+    """``record`` plus a2, an analysis with no coordinate key, which ingest gives no entity."""
+    unkeyed = fx.record_analysis("a2", "unused", "Houses > Faces")
+    unkeyed["source_table_analysis"] = {
+        "extraction_status": "not_reported", "evidence": {"status": "not_applicable"},
+    }
+    return {**record, "analyses": [*record["analyses"], unkeyed]}
+
+
 FAILURES = [
     pytest.param(
         schema_error,
@@ -162,11 +211,9 @@ def test_a_clean_paper_loads_with_its_text_and_documents(session, make_user, tmp
     assert source.fulltext_id == fulltext.id
     assert (source.origin, source.label, source.run_id) == ("upload", "A paper", "run-7")
     assert source.loaded_by_id == REVIEWER
-    assert (source.parsed_paper, source.coordinate_parse, source.record) == (
-        paper,
-        coordinate_parse,
-        record,
-    )
+    assert (source.parsed_paper, source.coordinate_parse) == (paper, coordinate_parse)
+    assert without_stable_ids(source.record) == record
+    assert all(is_uuid(value) for value in stable_ids(source.record).values())
     assert source.record_sha256 == sha256_of(record)
     assert source.judgeable_keys == entities.judgeable_keys(record, coordinate_parse)
     assert source.schema_versions == {
@@ -682,7 +729,8 @@ async def test_an_imported_paper_can_be_started_and_its_bundle_matches_the_uploa
     assert body["text"] == TEXT
     assert body["source"]["label"] == paper["bibliography"]["title"]
     assert body["coordinate_parse"]["analyses"] == coordinate_parse["analyses"]
-    assert body["record"]["analyses"] == record["analyses"]
+    assert body["record"] == session.get(ReviewSource, source_id).record
+    assert without_stable_ids(body["record"]) == record
 
 
 def multipart(path):
@@ -1048,7 +1096,7 @@ def test_a_run_with_an_unrevised_parse_loads_its_parse_and_record(session, make_
         "failed": [],
     }
     assert (source.coordinate_parse, source.coordinate_revision) == (original, None)
-    assert (source.record, source.parsed_paper) == (record, paper)
+    assert (without_stable_ids(source.record), source.parsed_paper) == (record, paper)
     assert (source.origin, source.pipeline_config_id, source.run_id) == (
         "pipeline_run", config_id, "run-1"
     )
@@ -1286,6 +1334,11 @@ def test_a_review_does_not_start_from_a_pipeline_revision_that_no_longer_validat
 def pipeline_source(session, root, chain):
     """``(source_id, paper)``: the source a run with ``chain`` revisions imports as."""
     (paper, *_), config_id = ingest_run("1001", chain)
+    return pipeline_source_of(session, root, paper, config_id)
+
+
+def pipeline_source_of(session, root, paper, config_id):
+    """``(source_id, paper)``: the source the run of ``config_id`` imports as."""
     write_papers(root, "1001", paper)
     return import_run(session, root, config_id)["loaded"][0]["source_id"], paper
 
@@ -1600,3 +1653,399 @@ def test_the_coordinate_parse_pipelines_config_is_refused_as_holding_no_records(
 
     with pytest.raises(Unprocessable, match="stores coordinate parses, not extraction records"):
         import_run(session, tmp_path, parse_config)
+
+
+# stable entity ids (D64)
+
+
+def test_a_runs_entities_get_the_stable_ids_of_the_study_entities_the_run_linked(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    base_study = add_base_study(session, pmid="1001")
+    paper, original, record = clean("1001")
+    record = with_unkeyed_analysis(record)
+    summary = ingest_upload({
+        "coordinate_parse": original, "record": record, "parsed_paper": paper, "run_id": "run-1",
+    })
+    db.session.commit()
+    config_id = summary["provenance"]["record"]["config_id"]
+    write_papers(tmp_path, "1001", paper)
+    analysis_key = original["analyses"][0]["key"]
+    stored = entity_stable_ids(session, base_study)
+    assert sorted(stored) == [("Analysis", json.dumps(analysis_key)), ("Study", '""')]
+
+    import_run(session, tmp_path, config_id)
+
+    source = session.scalar(sa.select(ReviewSource))
+    ids = stable_ids(source.record)
+    assert ids["study-1"] == stored[("Study", '""')]
+    assert ids["a1"] == stored[("Analysis", json.dumps(analysis_key))]
+    assert is_uuid(ids["a2"])
+    assert ids["a2"] not in stored.values()
+    assert without_stable_ids(source.record) == record
+    assert source.record_sha256 == sha256_of(record)
+    assert source.judgeable_keys == entities.judgeable_keys(source.record, original)
+
+
+def test_a_record_no_run_stored_gets_a_new_stable_id_on_each_entity(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    _, _, record = clean("1001")
+    write_layout(tmp_path, "1001", *clean("1001"))
+
+    imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    source = session.scalar(sa.select(ReviewSource))
+    ids = stable_ids(source.record)
+    assert sorted(ids) == ["a1", "study-1"]
+    assert all(is_uuid(value) for value in ids.values()), ids
+    assert ids["a1"] != ids["study-1"]
+    assert count(session, StudyEntity) == 0
+    assert without_stable_ids(source.record) == record
+    assert source.record_sha256 == sha256_of(record)
+
+
+def test_a_file_holding_the_record_a_run_stored_gets_the_runs_stable_ids(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    base_study = add_base_study(session, pmid="1001")
+    (paper, original, _, record), _ = ingest_run("1001")
+    stored = entity_stable_ids(session, base_study)
+    write_layout(tmp_path, "1001", paper, original, record)
+
+    imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    source = session.scalar(sa.select(ReviewSource))
+    assert stable_ids(source.record) == {
+        "study-1": stored[("Study", '""')],
+        "a1": stored[("Analysis", json.dumps(original["analyses"][0]["key"]))],
+    }
+
+
+def test_an_entity_that_carries_a_stable_id_keeps_it_and_the_others_get_new_ones(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, coordinate_parse, record = clean("1001")
+    record["analyses"][0]["stable_id"] = STABLE_ANALYSIS
+    write_layout(tmp_path, "1001", paper, coordinate_parse, record)
+
+    imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    ids = stable_ids(session.scalar(sa.select(ReviewSource)).record)
+    assert ids["a1"] == STABLE_ANALYSIS
+    assert is_uuid(ids["study-1"])
+    assert ids["study-1"] != STABLE_ANALYSIS
+
+
+def test_a_record_whose_run_linked_an_entity_keeps_the_stable_id_it_carries(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    base_study = add_base_study(session, pmid="1001")
+    (paper, original, _, record), _ = ingest_run("1001")
+    stored = entity_stable_ids(session, base_study)
+    carried = {
+        **record,
+        "stable_id": STABLE_STUDY,
+        "extraction_metadata": {**record["extraction_metadata"], "extractor_model": "other"},
+    }
+    ingest_upload({
+        "coordinate_parse": original, "record": carried, "parsed_paper": paper, "run_id": "run-2",
+    })
+    db.session.commit()
+    assert entity_stable_ids(session, base_study) == stored
+    write_layout(tmp_path, "1001", paper, original, carried)
+
+    imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    ids = stable_ids(session.scalar(sa.select(ReviewSource)).record)
+    assert ids == {
+        "study-1": STABLE_STUDY,
+        "a1": stored[("Analysis", json.dumps(original["analyses"][0]["key"]))],
+    }
+    assert STABLE_STUDY not in stored.values()
+
+
+def test_a_record_whose_entities_share_a_stable_id_fails_naming_it(session, make_user, tmp_path):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, coordinate_parse, record = clean("1001")
+    record["stable_id"] = STABLE_STUDY
+    record["analyses"][0]["stable_id"] = STABLE_STUDY
+    write_layout(tmp_path, "1001", paper, coordinate_parse, record)
+
+    report = imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    assert report["failed"] == [{
+        "study_id": "1001",
+        "problems": [f"stable_id {STABLE_STUDY} is on more than one entity: a1, study-1"],
+    }]
+    assert count(session, ReviewSource) == 0
+
+
+def test_a_reimport_of_an_unreviewed_export_is_skipped_as_the_source_it_exported(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, coordinate_parse, record = clean("1001")
+    paper["header"]["article_id"] = "art-1001"
+    write_layout(tmp_path / "in", "1001", paper, coordinate_parse, record)
+    first = imports.import_layout(session, tmp_path / "in", user_id=REVIEWER)
+    source = session.get(ReviewSource, first["loaded"][0]["source_id"])
+    exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
+    exported = json.loads(
+        (tmp_path / "out/unreviewed/run/records/art-1001.extraction.json").read_text("utf-8")
+    )
+    assert exported == source.record
+    assert all(is_uuid(v) for v in stable_ids(exported).values())
+
+    second = imports.import_layout(session, tmp_path / "out/unreviewed", user_id=REVIEWER)
+
+    assert second["skipped"] == [
+        {"study_id": "art-1001", "source_id": source.id, "reason": "already loaded"}
+    ]
+    assert count(session, ReviewSource) == 1
+
+
+def test_a_reimported_review_export_keeps_its_stable_ids_and_a_second_reimport_is_skipped(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, coordinate_parse, record = clean("1001")
+    paper["header"]["article_id"] = "art-1001"
+    write_layout(tmp_path / "in", "1001", paper, coordinate_parse, record)
+    source_id = imports.import_layout(session, tmp_path / "in", user_id=REVIEWER)["loaded"][0][
+        "source_id"
+    ]
+    loaded_ids = stable_ids(session.get(ReviewSource, source_id).record)
+    review, _ = service.start_review(session, source_id, REVIEWER)
+    exports.export_review(session, review["id"], tmp_path / "out")
+
+    first = imports.import_layout(session, tmp_path / "out", user_id=REVIEWER)
+    second = imports.import_layout(session, tmp_path / "out", user_id=REVIEWER)
+
+    [loaded] = first["loaded"]
+    assert all(is_uuid(v) for v in loaded_ids.values()), loaded_ids
+    assert stable_ids(session.get(ReviewSource, loaded["source_id"]).record) == loaded_ids
+    assert [entry["source_id"] for entry in second["skipped"]] == [loaded["source_id"]]
+    assert count(session, ReviewSource) == 2
+
+
+def test_a_group_renamed_in_review_keeps_its_entity_and_claims_through_export_and_ingest(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    base_study = add_base_study(session, pmid="1001")
+    paper, original, record = clean("1001")
+    record["groups"] = [
+        records.item("Group", "g1", name=fx.extracted("patients"), age_mean=fx.extracted(34.2)),
+        records.item("Group", "g2", name=fx.extracted("controls")),
+    ]
+    ingested = ingest_upload({
+        "coordinate_parse": original, "record": record, "parsed_paper": paper, "run_id": "run-1",
+    })
+    db.session.commit()
+    config_id = ingested["provenance"]["record"]["config_id"]
+
+    def groups():
+        return {
+            entity.identity[0]: entity
+            for entity in session.scalars(sa.select(StudyEntity).where(
+                StudyEntity.base_study_id == base_study.id, StudyEntity.entity_class == "Group",
+            ))
+        }
+
+    def claims(entity_id):
+        return sorted(
+            (claim.field_path, json.dumps(claim.value))
+            for claim in session.scalars(
+                sa.select(FieldClaim).where(FieldClaim.entity_id == entity_id)
+            )
+        )
+
+    def links(config):
+        prefix = f"{base_study.id}:"
+        return {
+            link.local_id.removeprefix(prefix): link.entity_id
+            for link in session.scalars(
+                sa.select(ExtractionEntityLink).where(ExtractionEntityLink.config_id == config)
+            )
+        }
+
+    patients, controls = groups()["patients"], groups()["controls"]
+    before = {"patients": claims(patients.id), "controls": claims(controls.id)}
+    assert ("name", '"patients"') in before["patients"]
+    assert ("age_mean", "34.2") in before["patients"]
+    assert (links(config_id)["g1"], links(config_id)["g2"]) == (patients.id, controls.id)
+    source_id, _ = pipeline_source_of(session, tmp_path / "papers", paper, config_id)
+    rename = {
+        "client_op_id": "rename-g1", "type": "set_value",
+        "target": {"kind": "slot", "entity": "g1", "path": "name"},
+        "value": {"extraction_status": "extracted", "value": "MDD patients",
+                  "value_source": "reported"},
+    }
+    exported, revision = exported_review(
+        session, tmp_path / "out", source_id, REVIEWER,
+        rename, accept(original["analyses"][0]["key"]),
+    )
+    assert [(g["local_id"], g["name"]["value"], g["stable_id"]) for g in exported["groups"]] == [
+        ("g1", "MDD patients", patients.stable_id), ("g2", "controls", controls.stable_id),
+    ]
+
+    summary = ingest_upload(
+        {"coordinate_parse": revision, "record": exported, "parsed_paper": paper}
+    )
+    db.session.commit()
+
+    correction = summary["provenance"]["record"]["config_id"]
+    assert correction != config_id
+    assert {name: entity.id for name, entity in groups().items()} == {
+        "patients": patients.id, "controls": controls.id,
+    }
+    assert (links(correction)["g1"], links(correction)["g2"]) == (patients.id, controls.id)
+    assert (links(config_id)["g1"], links(config_id)["g2"]) == (patients.id, controls.id)
+    assert claims(patients.id) == sorted([*before["patients"], ("name", '"MDD patients"')])
+    assert claims(controls.id) == before["controls"]
+
+
+def with_groups(record, *names, model=None):
+    """``record`` with a Group g1, g2, ... for each of ``names``, from ``model`` if given."""
+    record = {
+        **record,
+        "groups": [
+            records.item("Group", f"g{n}", name=fx.extracted(name))
+            for n, name in enumerate(names, 1)
+        ],
+    }
+    if model is not None:
+        record["extraction_metadata"] = {**record["extraction_metadata"], "extractor_model": model}
+    return record
+
+
+def group_entities(session, base_study):
+    """``{name: StudyEntity}`` of the base study's groups."""
+    return {
+        entity.identity[0]: entity
+        for entity in session.scalars(sa.select(StudyEntity).where(
+            StudyEntity.base_study_id == base_study.id, StudyEntity.entity_class == "Group",
+        ))
+    }
+
+
+def entity_links(session, base_study, config_id):
+    """``{local_id: entity id}`` of the config's links for ``base_study``."""
+    prefix = f"{base_study.id}:"
+    return {
+        link.local_id.removeprefix(prefix): link.entity_id
+        for link in session.scalars(
+            sa.select(ExtractionEntityLink).where(ExtractionEntityLink.config_id == config_id)
+        )
+    }
+
+
+def test_a_file_record_no_run_stored_gets_new_ids_though_a_run_of_its_paper_shares_local_ids(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    base_study = add_base_study(session, pmid="1001")
+    paper, original, record = clean("1001")
+    ran = ingest_upload({
+        "coordinate_parse": original, "record": with_groups(record, "patients"),
+        "parsed_paper": paper, "run_id": "run-1",
+    })
+    db.session.commit()
+    run_config = ran["provenance"]["record"]["config_id"]
+    patients = group_entities(session, base_study)["patients"]
+    stored = entity_stable_ids(session, base_study)
+    write_layout(tmp_path, "1001", paper, original, with_groups(record, "controls"))
+
+    imports.import_layout(session, tmp_path, user_id=REVIEWER)
+
+    source = session.scalar(sa.select(ReviewSource))
+    g1 = source.record["groups"][0]["stable_id"]
+    assert is_uuid(g1)
+    assert g1 != patients.stable_id
+    assert g1 not in stored.values()
+    assert source.record["stable_id"] != stored[("Study", '""')]
+
+    summary = ingest_upload(
+        {"coordinate_parse": original, "record": source.record, "parsed_paper": paper}
+    )
+    db.session.commit()
+
+    groups = group_entities(session, base_study)
+    assert sorted(groups) == ["controls", "patients"]
+    assert (groups["patients"].id, groups["patients"].stable_id) == (
+        patients.id, patients.stable_id,
+    )
+    assert groups["controls"].stable_id == g1
+    assert summary["provenance"]["record"]["config_id"] == run_config
+    assert entity_links(session, base_study, run_config)["g1"] == groups["controls"].id
+
+
+def test_a_run_record_gets_the_stable_ids_its_own_config_linked_not_another_configs(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    base_study = add_base_study(session, pmid="1001")
+    paper, original, record = clean("1001")
+    configs = {}
+    for run_id, name, model in (("run-1", "patients", None), ("run-2", "controls", "other")):
+        summary = ingest_upload({
+            "coordinate_parse": original, "record": with_groups(record, name, model=model),
+            "parsed_paper": paper, "run_id": run_id,
+        })
+        db.session.commit()
+        configs[name] = (summary["provenance"]["record"]["config_id"], run_id)
+    assert configs["patients"][0] != configs["controls"][0]
+    groups = group_entities(session, base_study)
+    write_papers(tmp_path, "1001", paper)
+
+    loaded = {}
+    for name, (config_id, run_id) in configs.items():
+        [entry] = import_run(session, tmp_path, config_id, run_id)["loaded"]
+        loaded[name] = session.get(ReviewSource, entry["source_id"]).record["groups"][0]
+
+    assert {name: group["stable_id"] for name, group in loaded.items()} == {
+        "patients": groups["patients"].stable_id, "controls": groups["controls"].stable_id,
+    }
+    assert groups["patients"].stable_id != groups["controls"].stable_id
+
+
+def test_a_run_of_an_ingested_export_is_skipped_as_the_file_source_it_exported(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    paper, original, record = clean("1001")
+    write_layout(tmp_path / "files", "1001", paper, original, record)
+    [loaded] = imports.import_layout(session, tmp_path / "files", user_id=REVIEWER)["loaded"]
+    exported = session.get(ReviewSource, loaded["source_id"]).record
+    assert all(is_uuid(value) for value in stable_ids(exported).values())
+    summary = ingest_upload({
+        "coordinate_parse": original, "record": exported, "parsed_paper": paper,
+        "run_id": "run-2",
+    })
+    db.session.commit()
+    write_papers(tmp_path / "papers", "1001", paper)
+
+    report = import_run(
+        session, tmp_path / "papers", summary["provenance"]["record"]["config_id"], "run-2"
+    )
+
+    assert report == {
+        "loaded": [],
+        "skipped": [{
+            "study_id": "1001", "source_id": loaded["source_id"], "reason": "already loaded",
+        }],
+        "failed": [],
+    }
+    assert count(session, ReviewSource) == 1

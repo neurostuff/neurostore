@@ -4,6 +4,7 @@ import copy
 import dataclasses
 import hashlib
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cache
 
@@ -13,6 +14,7 @@ from jsonschema.exceptions import best_match
 from neurostore.review.core import (
     SCHEMA_DIR, coordinates, entities, lists, paths, record_follow, references, validation,
 )
+from neurostore.review.core.stable_ids import Guard, refuse_slot
 from neurostore.review.core.targets import target_key
 from neurostore.review.errors import ReviewError
 from neurostore.study_schema_tools import CHILD_LISTS
@@ -26,6 +28,11 @@ COORDINATE_JUDGEMENTS_REFUSED = ("accept", "omit", "reject")
 NO_EVIDENCE = {"status": "not_applicable"}
 #: The op types no inverse undoes.
 NO_INVERSE = {"note"}
+#: The op types that add entities, each with the stable_id it was minted in the stored op's
+#: ``after``: a create_entity's entity and the entities inside it, a coordinate op's added and
+#: split-off analyses. The service reads the minted ids back from these ops alone, so that an
+#: undo and redo can put them back.
+ENTITY_ADDING_OPS = ("create_entity", "coordinate")
 
 
 class OpError(ReviewError):
@@ -73,27 +80,34 @@ def full_problems(state, changed=None, revision_before=None):
     return problems
 
 
-def apply_batch(state, batch, *, text, user_id, at, validate=incremental_problems):
+def apply_batch(state, batch, *, text, user_id, at, stable_ids, validate=incremental_problems):
     """``(new state, stored ops)`` for ``batch`` applied in order to a copy of ``state``.
 
     ``state``'s documents must validate, as those of every state a batch leaves do.
     ``validate(state, changed, revision_before)`` gives the problems of the documents the ops
     leave, as ``changed`` and ``revision_before`` describe the batch: incremental_problems, the
     default, validates only the parts the batch changes, and full_problems the whole documents.
+    ``stable_ids`` (a StableIds) mints a stable_id for each entity an op adds and names the
+    ones an op may put back besides those of ``state``'s record. An op that adds an entity
+    carrying a stable_id neither names, or one another entity carries, is refused.
 
     Raises:
         ReviewError naming each failing op; the input state is never changed.
     """
     _check_batch(batch)
     ops = batch["ops"]
-    after, stored, failures, changed = _apply(state, ops, text, user_id, at)
+    context = _Context(
+        text, user_id, at, stable_ids.mint,
+        frozenset(entities.stable_ids_of(state.record)) | stable_ids.restorable,
+    )
+    after, stored, failures, changed = _apply(state, ops, context)
     if failures:
         indexes = sorted({index for index, _ in failures})
         named = ", ".join(str(index) for index in indexes)
         verb = "op" if len(indexes) == 1 else "ops"
         raise OpError(f"{verb} {named} cannot be applied", failures)
     if validate(after, changed, state.coordinate_revision):
-        index, problems = _first_invalid_op(state, ops, text, user_id, at, validate)
+        index, problems = _first_invalid_op(state, ops, context, validate)
         raise OpError(
             f"op {index} leaves an invalid document", [(index, problem) for problem in problems]
         )
@@ -159,21 +173,34 @@ def _check_batch(batch):
         raise OpError("the batch does not validate against review-ops", failures)
 
 
-def _apply(state, ops, text, user_id, at):
+@dataclass(frozen=True)
+class _Context:
+    """What a batch's ops are applied with, besides the state."""
+
+    text: str
+    user_id: str
+    at: str
+    mint_stable_id: Callable[[], str]
+    #: The stable_ids an op may put back: those of the batch's first record and the
+    #: restorable ones.
+    known_stable_ids: frozenset
+
+
+def _apply(state, ops, context):
     """``(state, stored ops, failures, changed)``: each op that applies, in order, on the ops
     before it. An op that cannot apply is left out and named in ``failures`` as (index,
     problem); ``changed`` is then None.
     """
     work = _copy_state(state)
-    applier = _Applier(work, text, user_id, at)
+    applier = _Applier(work, context)
     stored, failures = [], []
     for index, op in enumerate(ops):
         try:
             before, after = applier.apply(op)
         except ReviewError as error:
             failures.extend((index, problem) for problem in error.problems)
-            work = _replayed(state, [entry["op"] for entry in stored], text, user_id, at)
-            applier = _Applier(work, text, user_id, at)
+            work = _replayed(state, [entry["op"] for entry in stored], context)
+            applier = _Applier(work, context)
             continue
         work.last_seq += 1
         stored.append({
@@ -181,17 +208,17 @@ def _apply(state, ops, text, user_id, at):
             "op": copy.deepcopy(op),
             "before": before,
             "after": after,
-            "user_id": user_id,
-            "created_at": at,
+            "user_id": context.user_id,
+            "created_at": context.at,
         })
     return work, stored, failures, None if failures else applier.take_changes()
 
 
-def _replayed(state, ops, text, user_id, at):
+def _replayed(state, ops, context):
     """A copy of ``state`` with ``ops`` applied; the ops applied before a refused op, since the
     refused op may have part-changed the copy."""
     work = _copy_state(state)
-    applier = _Applier(work, text, user_id, at)
+    applier = _Applier(work, context)
     for op in ops:
         applier.apply(op)
         work.last_seq += 1
@@ -209,10 +236,10 @@ def _copy_state(state):
     )
 
 
-def _first_invalid_op(state, ops, text, user_id, at, validate):
+def _first_invalid_op(state, ops, context, validate):
     """``(index, problems)`` of the first op after which the documents are invalid, or None
     when every op leaves them valid."""
-    applier = _Applier(_copy_state(state), text, user_id, at)
+    applier = _Applier(_copy_state(state), context)
     for index, op in enumerate(ops):
         revision = applier.state.coordinate_revision
         applier.take_changes()
@@ -224,8 +251,11 @@ def _first_invalid_op(state, ops, text, user_id, at, validate):
 
 
 class _Applier:
-    def __init__(self, state, text, user_id, at):
-        self.state, self.text, self.user_id, self.at = state, text, user_id, at
+    def __init__(self, state, context):
+        self.state, self.text, self.user_id, self.at = (
+            state, context.text, context.user_id, context.at,
+        )
+        self.stable_ids = Guard(context.mint_stable_id, context.known_stable_ids)
         self.index = entities.index(state.record)
         self.changes = validation.RecordChanges()
         self.handlers = {
@@ -300,8 +330,15 @@ class _Applier:
         if op["action"] == "restore":
             record_follow.restore(self.state.record, op["payload"]["record"])
         else:
-            after.update(record_follow.follow(self.state.record, replacements, self._minter(op)))
+            after.update(record_follow.follow(
+                self.state.record, replacements, self._minter(op), self.stable_ids.mint
+            ))
         self.index = entities.index(self.state.record)
+        if op["action"] == "restore":
+            self.stable_ids.check_restored(
+                [entry["entity"]["local_id"] for entry in op["payload"]["record"]["insert"]],
+                self.index,
+            )
         record_after = self._analysis_items()
         before["entities"] = lists.indexed(record_before, record_after, "entity")
         after["entities"] = lists.indexed(record_after, record_before, "entity")
@@ -421,6 +458,7 @@ class _Applier:
         self.changes.membership(parent.local_id, op["list"])
         self.changes.part(item["local_id"])
         self.index = entities.index(self.state.record)
+        self.stable_ids.give([item["local_id"], *self._descendants(item["local_id"])], self.index)
         self._mark(f"entity:{item['local_id']}", "added")
         return None, {"parent": parent.local_id, "list": op["list"], "entity": copy.deepcopy(item)}
 
@@ -454,7 +492,8 @@ class _Applier:
 
     def _note_slot_change(self, target):
         """Note the part of a slot or relationship ``target``'s entity at the target's path as
-        changed."""
+        changed; a slot at stable_id is refused."""
+        refuse_slot(target)
         entity = self._entity(target["entity"])
         self.changes.part(entity.local_id, paths.location(entity.item, target["path"]))
 

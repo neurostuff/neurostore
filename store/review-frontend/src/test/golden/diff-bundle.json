@@ -328,7 +328,8 @@
           "evidence": {
             "status": "not_applicable"
           }
-        }
+        },
+        "stable_id": "f4ff7c61-0d1d-5686-add8-8467b6e0096d"
       }
     ],
     "tasks": [
@@ -864,7 +865,8 @@
             "evidence": {
               "status": "not_applicable"
             }
-          }
+          },
+          "stable_id": "f4ff7c61-0d1d-5686-add8-8467b6e0096d"
         }
       },
       "user_id": "golden-reviewer",

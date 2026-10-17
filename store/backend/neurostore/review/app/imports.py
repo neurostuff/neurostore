@@ -8,11 +8,24 @@ import sqlalchemy as sa
 from sqlalchemy.exc import DBAPIError
 
 from neurostore.base_studies import find_base_study
-from neurostore.models import Fulltext, PipelineConfig, PipelineStudyResult, ReviewSource
-from neurostore.models.data import PARSE_PIPELINE
+from neurostore.models import (
+    ExtractionEntityLink,
+    Fulltext,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    ReviewSource,
+    StudyEntity,
+)
+from neurostore.models.data import PARSE_PIPELINE, generate_stable_id
 from neurostore.models.fulltext import FULLTEXT_SOURCE_PREFERENCE
 from neurostore.review.core import coordinates, defs
-from neurostore.review.core.entities import judgeable_keys
+from neurostore.review.core.entities import (
+    judgeable_keys,
+    shared_stable_ids,
+    with_stable_ids,
+    without_stable_ids,
+)
 from neurostore.review.core.layout import (
     LayoutError,
     check_paper,
@@ -55,7 +68,7 @@ def import_layout(session, source, *, user_id, run_id=None):
                 _build_source,
                 session,
                 paper,
-                digest=_digest(paper.record, provenance),
+                wrapper=_wrapper(provenance),
                 user_id=user_id,
                 run_id=run_id,
             )
@@ -176,13 +189,10 @@ def _build_run_source(session, row, upload, chain, text_sha256, *, config_id, us
     revision = coordinates.from_chain(original, revisions) if revisions else None
     # Unrevised, the digest is the file import's, so a record already loaded from files
     # is skipped as that source (D65); a revision is part of what was loaded.
-    digest = sha256_of(row.result_data if revision is None else {
-        "record": row.result_data, "coordinate_revision": revision,
-    })
     return _build_source(
         session,
         paper,
-        digest=digest,
+        wrapper=None if revision is None else {"coordinate_revision": revision},
         user_id=user_id,
         run_id=row.run_id,
         pipeline_config_id=config_id,
@@ -191,8 +201,11 @@ def _build_run_source(session, row, upload, chain, text_sha256, *, config_id, us
 
 
 def _build_source(
-    session, paper, *, digest, user_id, run_id, pipeline_config_id=None, coordinate_revision=None
+    session, paper, *, wrapper, user_id, run_id, pipeline_config_id=None, coordinate_revision=None
 ):
+    """Load ``paper`` as a source, or skip it as the source loaded with the same digest: that of
+    its record without stable_ids, or, given a ``wrapper``, of the record and the wrapper's
+    fields."""
     problems = check_paper(paper)
     if problems:
         raise PaperRefused(problems)
@@ -204,6 +217,8 @@ def _build_source(
     if base_study is None:
         raise PaperRefused([_no_base_study(identifiers)])
     fulltext = _fulltext(session, base_study, paper)
+    bare = without_stable_ids(paper.record)
+    digest = sha256_of(bare if wrapper is None else {"record": bare, **wrapper})
     existing = session.scalar(
         sa.select(ReviewSource).where(
             ReviewSource.fulltext_id == fulltext.id, ReviewSource.record_sha256 == digest
@@ -215,14 +230,15 @@ def _build_source(
             "source_id": existing.id,
             "reason": "already loaded",
         }
+    record = _with_stable_ids(session, base_study, paper.record, pipeline_config_id)
     source = ReviewSource(
         fulltext_id=fulltext.id,
         parsed_paper=paper.parsed_paper,
         coordinate_parse=paper.coordinate_parse,
         coordinate_revision=coordinate_revision,
-        record=paper.record,
+        record=record,
         judgeable_keys=judgeable_keys(
-            paper.record, coordinates.current(paper.coordinate_parse, coordinate_revision)
+            record, coordinates.current(paper.coordinate_parse, coordinate_revision)
         ),
         label=paper.parsed_paper["bibliography"]["title"],
         schema_versions=_schema_versions(paper),
@@ -240,16 +256,73 @@ def _build_source(
     }
 
 
+def _with_stable_ids(session, base_study, record, config_id):
+    """``record`` with a stable_id on each entity: the one it carries, else that of the
+    StudyEntity its run linked its local_id to, else a new one.
+
+    A record from files is the run's when a run stored the same record for the base study.
+    """
+    if config_id is None:
+        config_id = _config_storing(session, base_study, record)
+    linked = {} if config_id is None else _linked_stable_ids(session, base_study, config_id)
+    record = with_stable_ids(record, linked, generate_stable_id)
+    shared = shared_stable_ids(record)
+    if shared:
+        raise PaperRefused([
+            f"stable_id {stable_id} is on more than one entity: {', '.join(local_ids)}"
+            for stable_id, local_ids in shared.items()
+        ])
+    return record
+
+
+def _config_storing(session, base_study, record):
+    """The config of the newest run that stored ``record`` for ``base_study``, or None.
+
+    The stored result_data (JSONB) must equal the whole record: one whose numbers differ in
+    form (1.0 against 1) is no run's, and its entities get new stable_ids."""
+    return session.scalar(
+        sa.select(PipelineStudyResult.config_id)
+        .join(PipelineConfig, PipelineStudyResult.config_id == PipelineConfig.id)
+        .join(Pipeline, PipelineConfig.pipeline_id == Pipeline.id)
+        .where(
+            PipelineStudyResult.base_study_id == base_study.id,
+            Pipeline.name != PARSE_PIPELINE,
+            PipelineStudyResult.result_data == record,
+        )
+        .order_by(
+            PipelineStudyResult.date_executed.desc().nulls_last(), PipelineStudyResult.id
+        )
+        .limit(1)
+    )
+
+
+def _linked_stable_ids(session, base_study, config_id):
+    """``{local_id: stable_id}`` of the StudyEntities the run of ``config_id`` linked the base
+    study's local_ids to."""
+    prefix = f"{base_study.id}:"
+    rows = session.execute(
+        sa.select(ExtractionEntityLink.local_id, StudyEntity.stable_id)
+        .join(StudyEntity, ExtractionEntityLink.entity_id == StudyEntity.id)
+        .where(
+            ExtractionEntityLink.config_id == config_id,
+            ExtractionEntityLink.local_id.startswith(prefix, autoescape=True),
+            StudyEntity.base_study_id == base_study.id,
+        )
+    )
+    return {local_id.removeprefix(prefix): stable_id for local_id, stable_id in rows}
+
+
 def _names_review(provenance):
     source = provenance.get("source")
     return isinstance(source, dict) and source.get("kind") == "review"
 
 
-def _digest(record, provenance):
-    """The record's digest; a wrapper that names a review is part of it."""
+def _wrapper(provenance):
+    """The part of a record's digest its provenance wrapper is: the wrapper when it names a
+    review, else None."""
     if provenance is None or not _names_review(provenance):
-        return sha256_of(record)
-    return sha256_of({"record": record, "provenance": provenance})
+        return None
+    return {"provenance": provenance}
 
 
 def _positional_problems(record):

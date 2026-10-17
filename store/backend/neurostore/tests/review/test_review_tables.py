@@ -35,6 +35,8 @@ REVIEW_TABLES = (Fulltext, ReviewSource, Review, ReviewOp, ReviewAssignment)
 PREVIOUS_REVISION = "a7d3e9c1b5f2"
 REVIEW_REVISION = "c5d8e2f4a6b1"
 POINTER_INDEX_REVISION = "d4b7e1f9a3c2"
+STABLE_ID_REVISION = "f2b4d6e8a0c3"
+LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
 OPENAPI = (
     Path(schemas.__file__).resolve().parents[1] / "openapi" / "neurostore-openapi.yml"
@@ -571,10 +573,76 @@ def test_deleting_a_base_study_deletes_its_assignments(session, paper):
 # The migration
 
 
-def test_the_pointer_index_migration_is_the_only_head_and_follows_the_review_migration():
+def test_the_pointer_index_migration_follows_the_review_migration():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [POINTER_INDEX_REVISION]
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
+
+
+def test_the_stable_id_migration_is_the_only_head_and_follows_the_pointer_index_migration():
+    script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
+    assert script.get_heads() == [STABLE_ID_REVISION]
+    assert script.get_revision(STABLE_ID_REVISION).down_revision == POINTER_INDEX_REVISION
+
+
+def test_the_stable_id_migration_gives_each_entity_its_own_id_and_its_downgrade_drops_them(
+    session, paper
+):
+    base_study_id = paper[0].id
+    session.remove()
+
+    def rows():
+        with session.bind.connect() as conn:
+            return conn.execute(
+                sa.text("SELECT * FROM study_entities ORDER BY id")
+            ).mappings().all()
+
+    def stable_id_column():
+        columns = sa.inspect(session.bind).get_columns("study_entities")
+        return {c["name"]: c["nullable"] for c in columns}.get("stable_id", "absent")
+
+    try:
+        service_migrations.downgrade(POINTER_INDEX_REVISION)
+        assert stable_id_column() == "absent"
+        with session.bind.begin() as conn:
+            for n in (1, 2, 3):
+                conn.execute(
+                    sa.text(
+                        "INSERT INTO study_entities (id, base_study_id, entity_class, "
+                        "entity_hash, identity) VALUES (:id, :base, 'Group', :hash, '[\"g\", 0]')"
+                    ),
+                    {"id": f"se-{n}", "base": base_study_id, "hash": f"{n:064d}"},
+                )
+
+        service_migrations.upgrade("heads")
+
+        assert stable_id_column() is False
+        upgraded = rows()
+        assert [(r["id"], r["entity_hash"]) for r in upgraded] == [
+            (f"se-{n}", f"{n:064d}") for n in (1, 2, 3)
+        ]
+        stable_ids = [r["stable_id"] for r in upgraded]
+        assert all(LOWERCASE_UUID.fullmatch(value) for value in stable_ids), stable_ids
+        assert len(set(stable_ids)) == 3
+        assert ["stable_id"] in [
+            c["column_names"]
+            for c in sa.inspect(session.bind).get_unique_constraints("study_entities")
+        ]
+        with pytest.raises(IntegrityError), session.bind.begin() as conn:
+            conn.execute(
+                sa.text("UPDATE study_entities SET stable_id = :taken WHERE id = 'se-2'"),
+                {"taken": stable_ids[0]},
+            )
+
+        service_migrations.downgrade(POINTER_INDEX_REVISION)
+
+        assert stable_id_column() == "absent"
+        assert [(r["id"], r["entity_hash"]) for r in rows()] == [
+            (f"se-{n}", f"{n:064d}") for n in (1, 2, 3)
+        ]
+    finally:
+        service_migrations.upgrade("heads")
+
+    assert stable_id_column() is False
 
 
 def test_the_pointer_index_migration_adds_the_index_and_its_downgrade_drops_it(session):

@@ -68,7 +68,12 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_unprocessable,
     abort_validation,
 )
-from neurostore.ingest.study_entities import CONTENT_KEYED_CLASSES, sync_record_entities
+from neurostore.exceptions.utils.errors import ErrorDetail
+from neurostore.ingest.study_entities import (
+    CONTENT_KEYED_CLASSES,
+    stable_id_problems,
+    sync_record_entities,
+)
 from neurostore.models.data import (
     HISTORY_SOURCE,
     PARSE_PIPELINE,
@@ -207,6 +212,8 @@ def ingest_upload(body, user=None):
         sa.select(BaseStudy.id).where(BaseStudy.id == base_study.id).with_for_update()
     )
     _check_entity_hashes(base_study)
+    if record is not None:
+        _check_stable_ids(base_study, record)
     _set_retraction(base_study, parsed_paper)
 
     summary = {
@@ -289,6 +296,23 @@ def _check_entity_hashes(base_study):
         abort_unprocessable(
             "This paper's entities are hashed under an older version; rehash them first.",
             [make_field_error("base_study_id", base_study.id, code="STALE_ENTITY_HASHES")],
+        )
+
+
+def _check_stable_ids(base_study, record):
+    """Refuse a record whose stable_ids repeat or name an entity of another paper or class."""
+    problems = stable_id_problems(base_study.id, record)
+    if problems:
+        abort_unprocessable(
+            "Each stable_id names one entity of the paper, of the item's class.",
+            [
+                ErrorDetail(
+                    field=f"record/{path}/stable_id" if path else "record/stable_id",
+                    code=code,
+                    message=message,
+                )
+                for path, code, message in problems
+            ],
         )
 
 

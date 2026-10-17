@@ -19,10 +19,19 @@ from neurostore.models import (
     Role,
     User,
 )
+from neurostore.models.data import generate_stable_id
 from neurostore.models.review import SET_ASIDE_REASONS
 from neurostore.review.core.bundle import bundle, hidden, source_summary
-from neurostore.review.core.entities import index_rows
-from neurostore.review.core.ops import NO_INVERSE, OpError, ReviewState, apply_batch, inverse_ops
+from neurostore.review.core.entities import index_rows, stable_ids_of
+from neurostore.review.core.ops import (
+    ENTITY_ADDING_OPS,
+    NO_INVERSE,
+    OpError,
+    ReviewState,
+    apply_batch,
+    inverse_ops,
+)
+from neurostore.review.core.stable_ids import StableIds
 from neurostore.review.core.validation import document_problems
 from neurostore.review.errors import Conflict, NotFound, Refused, Unprocessable
 
@@ -253,6 +262,7 @@ def post_ops(session, review_id, user_id, body):
             text=source.fulltext.text,
             user_id=user_id,
             at=_iso(now),
+            stable_ids=_stable_ids(session, review, source),
         )
     except OpError as error:
         raise Unprocessable(
@@ -531,6 +541,27 @@ def _state(review, source):
         provenance=review.provenance,
         annotations=review.annotations,
         last_seq=review.last_seq,
+    )
+
+
+#: The stable_ids the review's ENTITY_ADDING_OPS minted, at any depth of their ``after``.
+_MINTED_STABLE_IDS = sa.text(
+    """
+    SELECT DISTINCT minted #>> '{}'
+      FROM review_ops, jsonb_path_query(after, 'strict $.**.stable_id') AS minted
+     WHERE review_id = :review_id AND op ->> 'type' IN :types
+    """
+).bindparams(sa.bindparam("types", expanding=True))
+
+
+def _stable_ids(session, review, source):
+    """How the review's ops give entities stable_ids: minted, and restorable when the source's
+    record or one of the review's ENTITY_ADDING_OPS held them."""
+    minted = session.scalars(
+        _MINTED_STABLE_IDS, {"review_id": review.id, "types": list(ENTITY_ADDING_OPS)}
+    )
+    return StableIds(
+        mint=generate_stable_id, restorable=frozenset(stable_ids_of(source.record)) | set(minted)
     )
 
 

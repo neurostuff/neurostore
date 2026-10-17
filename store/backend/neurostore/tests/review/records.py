@@ -1,13 +1,59 @@
 """A small synthetic extraction record and paper text for the review core's tests."""
 
 import copy
+import re
+import uuid
 
+from neurostore.review.core import entities
+from neurostore.review.core.stable_ids import StableIds
 from neurostore.tests import study_schema_fixtures as fx
 
 TEXT = (
     "Twenty patients and eighteen controls performed a Stroop task during fMRI. "
     "Patients were 34.2 years old on average. Images were acquired on a 3T scanner."
 )
+
+
+LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+
+def stable_id(name):
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, name))
+
+
+def stamped(record):
+    """A copy of ``record`` with stable_id ``stable_id(local_id)`` on every entity, as an
+    import gives them."""
+    record = copy.deepcopy(record)
+    for entity in entities.index(record).values():
+        entity.item["stable_id"] = stable_id(entity.item["local_id"])
+    return record
+
+
+class Minter:
+    """Mints ``stable_id(f"{prefix}-{n}")`` for n = 1, 2, ... in turn, as the review service
+    mints stable_ids across a review's batches."""
+
+    def __init__(self, prefix="minted"):
+        self.prefix, self.minted = prefix, []
+
+    def __call__(self):
+        self.minted.append(stable_id(f"{self.prefix}-{len(self.minted) + 1}"))
+        return self.minted[-1]
+
+    def stable_ids(self, loaded=None):
+        """A batch's StableIds: it may put back the ids of ``loaded``, a source's record, and
+        each this Minter minted before."""
+        held = entities.stable_ids_of(loaded) if loaded is not None else set()
+        return StableIds(mint=self, restorable=frozenset(held | set(self.minted)))
+
+
+_MINTER = Minter()
+
+
+def minting(loaded=None):
+    """``Minter.stable_ids`` of one Minter shared by every test."""
+    return _MINTER.stable_ids(loaded)
 
 
 def item(cls, local_id, **fields):

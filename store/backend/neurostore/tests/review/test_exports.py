@@ -34,6 +34,7 @@ from neurostore.review.errors import NotFound, ReviewError
 from neurostore.study_schema_tools import expected_key as key_for
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests import study_schema_fixtures as fx
+from neurostore.tests.review import records
 from neurostore.tests.review.layouts import (
     DIGEST,
     LEAD,
@@ -140,13 +141,36 @@ def edit(session, source_id, user_id, *ops):
     return summary["id"]
 
 
+def without_stable_ids(document):
+    """``document`` with every ``stable_id`` key taken out, at any depth."""
+    if isinstance(document, dict):
+        return {k: without_stable_ids(v) for k, v in document.items() if k != "stable_id"}
+    if isinstance(document, list):
+        return [without_stable_ids(item) for item in document]
+    return document
+
+
+def entity_stable_ids(record):
+    """The stable_ids of the study and its analyses, the entities these records hold."""
+    return [item.get("stable_id") for item in [record, *record["analyses"]]]
+
+
 def assert_as_loaded(root, files, paper_id=PAPER_ID, study_id="s1"):
     """Every file of the paper under ``root``: each JSON document equal to the loaded one and
-    written as the layout dumps it, the text byte for byte."""
+    written as the layout dumps it, the text byte for byte. The record is the loaded one with
+    the stable_id import gave each entity."""
     for relative, data in files.items():
         exported = (root / exported_name(relative, paper_id, study_id)).read_bytes()
         if relative.endswith(".json"):
-            assert json.loads(exported) == json.loads(data), relative
+            document = json.loads(exported)
+            if relative.endswith(".extraction.json"):
+                ids = entity_stable_ids(document)
+                assert all(
+                    isinstance(i, str) and records.LOWERCASE_UUID.fullmatch(i) for i in ids
+                ), ids
+                assert len(set(ids)) == len(ids), ids
+                document = without_stable_ids(document)
+            assert document == json.loads(data), relative
             assert exported == dumped(json.loads(exported)), relative
         else:
             assert exported == data, relative
@@ -226,6 +250,41 @@ def test_an_edited_review_exports_its_record_untouched(session, reviewers, tmp_p
     assert record["analyses"][0]["name"]["value"] == "Faces versus houses"
     assert "repaired_by" not in record["extraction_metadata"]
     assert "extraction_date" not in record["extraction_metadata"]
+
+
+def test_an_edited_review_exports_the_stable_id_each_entity_was_loaded_with(
+    session, reviewers, tmp_path
+):
+    _, source_id = load(session, tmp_path / "in")
+    loaded = session.get(ReviewSource, source_id).record
+    review_id = edit(session, source_id, REVIEWER, set_name("a1", "Faces versus houses"))
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    record = json.loads((tmp_path / "out" / f"run/records/{PAPER_ID}.extraction.json").read_text())
+    exported = [record.get("stable_id"), record["analyses"][0].get("stable_id")]
+    assert exported == [loaded.get("stable_id"), loaded["analyses"][0].get("stable_id")]
+    assert all(isinstance(value, str) and len(value) == 36 for value in exported), exported
+    assert exported[0] != exported[1]
+
+
+def test_an_entity_the_review_created_exports_with_the_stable_id_the_server_gave_it(
+    session, reviewers, tmp_path
+):
+    _, source_id = load(session, tmp_path / "in")
+    group = fx.minimal(fx.defs["Group"])
+    group.update(local_id="g_new", name=fx.extracted("patients"))
+    created = {"client_op_id": "create-g_new", "type": "create_entity", "parent": "study",
+               "list": "groups", "entity": group}
+    review_id = edit(session, source_id, REVIEWER, created)
+
+    exports.export_review(session, review_id, tmp_path / "out")
+
+    record = json.loads((tmp_path / "out" / f"run/records/{PAPER_ID}.extraction.json").read_text())
+    [exported] = record["groups"]
+    minted = service.get_review(session, review_id)["record"]["groups"][0]["stable_id"]
+    assert exported["stable_id"] == minted
+    assert minted not in entity_stable_ids(record)
 
 
 def test_an_edited_review_writes_a_wrapper_beside_its_record(session, reviewers, tmp_path):
@@ -313,7 +372,8 @@ def test_a_review_that_only_omits_a_coordinate_exports_the_loaded_record(
     exports.export_review(session, review_id, tmp_path / "out")
 
     record = json.loads((tmp_path / "out" / f"run/records/{PAPER_ID}.extraction.json").read_text())
-    assert record == json.loads(files["run/records/s1.extraction.json"])
+    assert record == session.get(ReviewSource, source_id).record
+    assert without_stable_ids(record) == json.loads(files["run/records/s1.extraction.json"])
     assert wrapper_of(tmp_path / "out")["edited"] is False
 
 
