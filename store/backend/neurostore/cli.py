@@ -1,11 +1,15 @@
 """Service CLI for NeuroStore."""
 
+import json
 import time
+from pathlib import Path
 from types import SimpleNamespace
 
 import click
 from sqlalchemy.exc import OperationalError
 
+from neurostore.models.review import REVIEW_STATES
+from neurostore.review.errors import ReviewError
 from neurostore.scripts.transfer_ownership import (
     OwnershipTransferError,
     transfer_user_ownership,
@@ -46,6 +50,13 @@ def _load_shell_runtime():
         "models": importlib.import_module("neurostore.models"),
     }
     return namespace, db
+
+
+def _report(report):
+    """Print an import's report and exit 1 if any paper failed."""
+    click.echo(json.dumps(report, indent=2))
+    if report["failed"]:
+        raise SystemExit(1)
 
 
 @click.group()
@@ -136,6 +147,104 @@ def rehash_entities_command(base_study_id, batch_size):
         click.echo(f"rehashed {moved} entities")
 
     _run_with_runtime(_run)
+
+
+@main.command("review-import")
+@click.argument("path", type=click.Path(exists=True, path_type=Path))
+@click.option("--user-id", required=True, help="the reviewer who loads the papers")
+@click.option("--run-id", default=None, help="the pipeline run the records came from")
+def review_import_command(path, user_id, run_id):
+    """Load the papers of a study_schema layout directory or zip for review.
+
+    Prints the report as JSON and exits 1 if any paper failed.
+    """
+
+    def _run(_app, db):
+        from neurostore.review.app.imports import import_layout
+
+        try:
+            report = import_layout(db.session, path, user_id=user_id, run_id=run_id)
+        except ReviewError as error:
+            raise click.ClickException(str(error)) from error
+        db.session.commit()
+        return report
+
+    _report(_run_with_runtime(_run))
+
+
+@main.command("review-import-run")
+@click.option("--config-id", required=True, help="the pipeline config whose records to load")
+@click.option("--run-id", required=True, help="the run of that config")
+@click.option("--user-id", required=True, help="the reviewer who loads the papers")
+@click.option(
+    "--papers",
+    required=True,
+    type=click.Path(exists=True, path_type=Path),
+    help="a layout directory or zip with each paper's parsed paper and text",
+)
+def review_import_run_command(config_id, run_id, user_id, papers):
+    """Load the records a pipeline run stored in neurostore for review, with the parsed papers
+    and texts of ``--papers``.
+
+    Prints the report as JSON and exits 1 if any paper failed.
+    """
+
+    def _run(_app, db):
+        from neurostore.review.app.imports import import_pipeline_run
+
+        try:
+            report = import_pipeline_run(
+                db.session, config_id=config_id, run_id=run_id, user_id=user_id, papers=papers
+            )
+        except ReviewError as error:
+            raise click.ClickException(str(error)) from error
+        db.session.commit()
+        return report
+
+    _report(_run_with_runtime(_run))
+
+
+@main.command("review-export")
+@click.argument("out", type=click.Path(path_type=Path))
+@click.option("--source-id", "source_ids", multiple=True, help="only this review source")
+@click.option("--base-study-id", "base_study_ids", multiple=True, help="only this base study")
+@click.option("--user-id", "user_ids", multiple=True, help="only this reviewer's reviews")
+@click.option(
+    "--state",
+    "states",
+    multiple=True,
+    type=click.Choice(REVIEW_STATES),
+    help="only reviews in this state",
+)
+@click.option(
+    "--include-unreviewed",
+    is_flag=True,
+    help="also export the sources with no review, as loaded, under unreviewed/",
+)
+def review_export_command(out, source_ids, base_study_ids, user_ids, states, include_unreviewed):
+    """Write reviews as study_schema layout trees under OUT, one tree per reviewer.
+
+    Prints the manifest as JSON.
+    """
+
+    def _run(_app, db):
+        from neurostore.review.app.exports import export_bulk
+
+        return export_bulk(
+            db.session,
+            out,
+            source_ids=list(source_ids),
+            base_study_ids=list(base_study_ids),
+            user_ids=list(user_ids),
+            states=list(states),
+            include_unreviewed=include_unreviewed,
+        )
+
+    try:
+        manifest = _run_with_runtime(_run)
+    except ReviewError as error:
+        raise click.UsageError(str(error)) from error
+    click.echo(json.dumps(manifest, indent=2))
 
 
 @main.command("backfill-analysis-roles")

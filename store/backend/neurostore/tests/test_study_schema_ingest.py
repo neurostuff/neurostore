@@ -1,11 +1,13 @@
 """The study_schema ingester: a parse, a parse with a record, a record, a revision."""
 
 import copy
+import re
 from datetime import datetime, timezone
 
 import pytest
 import sqlalchemy as sa
 
+from neurostore.database import db
 from neurostore.exceptions.base import NeuroStoreException
 from neurostore.ingest.study_schema import (
     BOTH_DIRECTIONS,
@@ -31,6 +33,7 @@ from neurostore.models import (
     AnalysisConditions,
     BaseStudy,
     Condition,
+    ExtractionEntityLink,
     FieldClaim,
     PipelineAnalysisResult,
     PipelineConfig,
@@ -38,10 +41,13 @@ from neurostore.models import (
     Study,
     StudyEntity,
 )
-from neurostore.database import db
 from neurostore.models.data import is_result_analysis, study_entity_hash
+from neurostore.review.core.ops import ReviewState, apply_batch
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests import study_schema_fixtures as fx
+from neurostore.tests.review import records
+
+PREPRINT_DOI = {"doi": "10.1101/2025.01.01.000001", "server": "biorxiv"}
 
 # Table 1 of one paper: rows 0-3 are one contrast with both signs, rows 4-7 two more.
 GAIN = fx.table_analysis(
@@ -145,6 +151,57 @@ def test_parse_alone_stores_skeleton_keyed_by_content(session):
     again = ingest_upload({"coordinate_parse": ORIGINAL})
     assert again["skeleton"]["created"] == 0
     assert again["skeleton"]["updated"] == 4
+
+
+def test_a_parse_whose_header_names_a_base_study_is_stored_on_it(session):
+    named = BaseStudy(name="Named", level="group")
+    session.add(named)
+    session.commit()
+    parse = copy.deepcopy(ORIGINAL)
+    parse["header"]["neurostore_base_study_id"] = named.id
+
+    summary = ingest_upload({"coordinate_parse": parse})
+
+    assert summary["base_study_id"] == named.id
+
+
+def test_a_parse_with_paper_parse_0_6_0_identifiers_is_refused(session):
+    old = copy.deepcopy(ORIGINAL)
+    old["header"]["schema_version"] = "0.6.0"
+    old["header"]["identifiers"] = {
+        "pmid": "12345678",
+        "pmcid": None,
+        "doi": None,
+        "neurostore_base_study_id": None,
+    }
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": old})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA", "coordinate-parse/header/identifiers")
+    }
+
+
+def test_a_parse_whose_header_is_not_the_pinned_version_is_refused(session):
+    old = copy.deepcopy(ORIGINAL)
+    old["header"]["schema_version"] = "0.6.0"
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": old})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA_VERSION", "coordinate-parse/header/schema_version")
+    }
+
+
+def test_a_parsed_paper_whose_header_is_not_the_pinned_version_is_refused(session):
+    paper = fx.parsed_paper()
+    paper["header"]["schema_version"] = "0.6.0"
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": copy.deepcopy(ORIGINAL), "parsed_paper": paper})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA_VERSION", "parsed-paper/header/schema_version")
+    }
 
 
 def test_parse_with_a_wrong_key_is_refused(session):
@@ -629,6 +686,64 @@ def test_revision_versions_analyses_and_carries_claims(session):
     assert again["record"]["analyses"]["resolved"] == 3
 
 
+def _coordinate(action, payload, key=None):
+    target = (
+        {"kind": "coordinate_parse"}
+        if key is None
+        else {"kind": "coordinate_analysis", "analysis_key": key}
+    )
+    return {"client_op_id": f"ingest-{action}", "type": "coordinate", "target": target,
+            "action": action, "payload": payload}
+
+
+def test_a_revision_the_review_core_writes_is_ingested_with_its_claims_carried(session):
+    record = _record(GAIN, LOSS, RISK)
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL, "record": record})[
+        "base_study_id"
+    ]
+    added = {k: v for k, v in RISK.items() if k != "key"}
+    added.update(name="Risk > Loss", cells=fx.cells(8), points=[fx.point((7, 8, 9))])
+    reviewed, _ = apply_batch(
+        ReviewState(record=record, coordinate_parse=ORIGINAL),
+        {"ops": [
+            _coordinate("split", {"parts": [{"indices": [0, 1]}, {"indices": [2, 3]}]},
+                        GAIN["key"]),
+            _coordinate("merge", {"with": [RISK["key"]]}, LOSS["key"]),
+            _coordinate("add", {"analysis": added}),
+            _coordinate("edit_points", {"points": [fx.point((9, 9, 9))]}, SEED["key"]),
+        ]},
+        text="",
+        user_id="reviewer",
+        at="2026-10-15T12:00:00Z",
+        stable_ids=records.minting(),
+    )
+    revision = reviewed.coordinate_revision
+
+    summary = ingest_upload({"coordinate_parse": revision})
+
+    assert summary["kind"] == "revision"
+    assert summary["skeleton"]["orphaned_claims"] == []
+    assert {a.source_id for a in _current(base_study_id).analyses} == {
+        a["key"] for a in revision["analyses"]
+    }
+    verdicts = {v["key"]: v for v in revision["verdicts"]}
+    assert [v["verdict"] for v in revision["verdicts"]] == [
+        "split", "merge", "merge", "edit", "add",
+    ]
+    gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
+    assert gain_claims
+    for key in verdicts[GAIN["key"]]["replaced_by"]:
+        assert {c.carried_from for c in _claims(base_study_id, key)} == gain_claims
+    [merged] = verdicts[LOSS["key"]]["replaced_by"]
+    assert {c.carried_from for c in _claims(base_study_id, merged)} == {
+        c.id for c in _claims(base_study_id, LOSS["key"])
+    } | {c.id for c in _claims(base_study_id, RISK["key"])} - _shared_duplicates(base_study_id)
+
+    # The record the review core re-pointed reads the revision's analyses.
+    again = ingest_upload({"coordinate_parse": revision, "record": reviewed.record})
+    assert again["record"]["analyses"]["resolved"] == len(reviewed.record["analyses"]) == 4
+
+
 def test_a_revision_that_omits_an_analysis_reports_its_claims_as_not_carried(session):
     base_study_id = _ingested(ORIGINAL, GAIN)["base_study_id"]
     claims = _claims(base_study_id, GAIN["key"])
@@ -654,6 +769,63 @@ def test_a_revision_that_omits_an_analysis_reports_its_claims_as_not_carried(ses
             "reason": NOT_CARRIED,
         }
     ]
+
+
+def _edited_gain(*verdicts):
+    """A revision whose verdicts give Gain an edited first point; Loss, Risk and Seed kept."""
+    edited = fx.table_analysis(
+        "tbl1", [0, 1, 2, 3], "Gain > Neutral", [fx.point((11, 20, 30)), *GAIN["points"][1:]]
+    )
+    revision = fx.parse(
+        [edited, LOSS, RISK, SEED],
+        revision_of=ORIGINAL["parse_id"],
+        verdicts=[
+            *verdicts,
+            fx.verdict(LOSS["key"], "accept", [LOSS["key"]]),
+            fx.verdict(RISK["key"], "accept", [RISK["key"]]),
+            fx.verdict(SEED["key"], "accept", [SEED["key"]]),
+        ],
+    )
+    return revision, edited
+
+
+def test_an_edit_verdict_carries_the_claims_to_its_replacement(session):
+    base_study_id = _ingested(ORIGINAL, GAIN)["base_study_id"]
+    gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
+    edited = _edited_gain()[1]
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit", [edited["key"]]))
+
+    summary = ingest_upload({"coordinate_parse": revision})
+
+    assert summary["skeleton"]["orphaned_claims"] == []
+    assert gain_claims
+    assert {c.carried_from for c in _claims(base_study_id, edited["key"])} == gain_claims
+    assert summary["carried"]["claims"] == len(gain_claims)
+
+
+def test_a_record_of_the_parse_an_edit_revised_names_the_replacement(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    edited = _edited_gain()[1]
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit", [edited["key"]]))
+    ingest_upload({"coordinate_parse": revision})
+
+    summary = ingest_upload(
+        {"record": _record(GAIN), "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id}
+    )
+
+    [superseded] = summary["record"]["analyses"]["superseded"]
+    assert (superseded["key"], superseded["replaced_by"]) == (GAIN["key"], [edited["key"]])
+
+
+def test_an_edit_verdict_without_its_replacement_is_refused(session):
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit"))
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": revision})
+
+    assert error.value.status_code == 422
+    assert "coordinate_parse/verdicts/0/replaced_by" in str(error.value.errors)
 
 
 def test_orphaned_claim_reasons_are_codes():
@@ -783,6 +955,79 @@ def test_replaying_a_superseded_parse_is_refused(session):
     assert gains.count() == 1
 
 
+def _read_from(revised, *read, relabel=False):
+    """A revision of ``revised``: the pipeline's revision with Seed omitted, or relabelled, its
+    header inputs naming ``read`` as the parses it was read from (ADR 0013)."""
+    pipeline, *_ = _revision()
+    analyses = [a for a in pipeline["analyses"] if a["key"] != SEED["key"]]
+    verdicts = [v for v in pipeline["verdicts"] if v["key"] != SEED["key"]]
+    if relabel:
+        analyses.append({**SEED, "role": "localization"})
+        verdicts.append({**fx.verdict(SEED["key"], "relabel", [SEED["key"]]),
+                         "role": "localization"})
+    else:
+        verdicts.append(fx.verdict(SEED["key"], "omit"))
+    revision = fx.parse(analyses, revision_of=revised["parse_id"], verdicts=verdicts)
+    revision["header"]["inputs"] = [
+        {"artifact_kind": "parsed_paper", "fingerprint": revision["text_sha256"]},
+        *({"artifact_kind": "coordinate_parse", "fingerprint": p["parse_id"]} for p in read),
+    ]
+    return revision
+
+
+def _refused_not_current(body):
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(body)
+    assert error.value.status_code == 422
+    assert "NOT_CURRENT" in str(error.value.to_payload())
+
+
+def test_a_revision_of_the_original_read_from_the_current_parse_is_the_new_current(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+    reviewed = _read_from(ORIGINAL, ORIGINAL, pipeline)
+
+    summary = ingest_upload({"coordinate_parse": reviewed})
+
+    assert (summary["kind"], summary["parse_id"]) == ("revision", reviewed["parse_id"])
+    current = _current(base_study_id)
+    assert current.source_id == reviewed["parse_id"]
+    assert current.metadata_["coordinate_parse"]["revision_of"] == ORIGINAL["parse_id"]
+    assert {a.source_id for a in current.analyses} == {a["key"] for a in reviewed["analyses"]}
+
+
+def test_a_revision_read_from_a_parse_that_is_no_longer_current_is_refused(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+    ingest_upload({"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, pipeline)})
+    current = _current(base_study_id).source_id
+
+    _refused_not_current(
+        {"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, pipeline, relabel=True)}
+    )
+    assert _current(base_study_id).source_id == current
+
+
+def test_a_revision_that_names_no_parse_read_must_revise_the_current_one(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+
+    _refused_not_current({"coordinate_parse": _read_from(ORIGINAL)})
+    assert _current(base_study_id).source_id == pipeline["parse_id"]
+
+
+def test_a_revision_read_from_the_current_parse_must_revise_a_parse_it_came_from(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    reparse = fx.parse([GAIN, LOSS, RISK])
+    ingest_upload({"coordinate_parse": reparse})
+
+    _refused_not_current({"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, reparse)})
+    assert _current(base_study_id).source_id == reparse["parse_id"]
+
+
 def test_record_of_a_revised_parse_is_superseded_and_carried(session):
     base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
     revision, original, inverse, _ = _revision()
@@ -817,6 +1062,43 @@ def test_base_study_lookup_holds_an_advisory_lock(session):
         )
     ).scalar()
     # The parse names a pmid only: one lock, held until the upload's transaction ends.
+    assert locks == 1
+
+
+def preprint_parse(**ids):
+    parse = copy.deepcopy(ORIGINAL)
+    parse["header"]["identifiers"] = fx.identifiers(**ids)
+    return parse
+
+
+def test_a_preprint_only_parse_matching_no_base_study_is_refused(session):
+    parse = preprint_parse(preprint_pmid="40000001", preprint_dois=[PREPRINT_DOI])
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": parse})
+    assert "names no version-of-record identifier to create its base study from" in str(
+        error.value.detail
+    )
+    assert session.scalar(sa.select(sa.func.count()).select_from(BaseStudy)) == 0
+
+
+def test_a_parse_with_only_preprint_dois_finds_the_base_study_of_that_doi(session):
+    first_seen = BaseStudy(name="Preprint", doi=PREPRINT_DOI["doi"], level="group")
+    session.add(first_seen)
+    session.commit()
+
+    summary = ingest_upload({"coordinate_parse": preprint_parse(preprint_dois=[PREPRINT_DOI])})
+
+    assert summary["base_study_id"] == first_seen.id
+
+
+def test_the_base_study_lookup_locks_version_of_record_ids_only(session):
+    ingest_upload({"coordinate_parse": preprint_parse(pmid="12345678", preprint_pmid="40000001")})
+    locks = session.execute(
+        sa.text(
+            "SELECT count(*) FROM pg_locks "
+            "WHERE locktype = 'advisory' AND pid = pg_backend_pid()"
+        )
+    ).scalar()
     assert locks == 1
 
 
@@ -1899,3 +2181,339 @@ def test_a_revision_that_splits_a_relabelled_set_reports_the_relabel(session):
             "reason": RELABEL_REVISED_REASON,
         }
     ]
+
+
+# stable entity ids (ADR 0009)
+
+STABLE_ID = "5d1c7b0e-2f4a-4c8e-9b6d-3a5f7e9c1b20"
+
+
+def _group(local_id, name):
+    group = fx.minimal(fx.defs["Group"])
+    group.update(local_id=local_id, name=fx.extracted(name))
+    return group
+
+
+def _task(local_id, name, *conditions):
+    task = fx.minimal(fx.defs["Task"])
+    task.update(local_id=local_id, name=fx.extracted(name), conditions=list(conditions))
+    return task
+
+
+def _condition(local_id, name):
+    condition = fx.minimal(fx.defs["Condition"])
+    condition.update(local_id=local_id, name=fx.extracted(name))
+    return condition
+
+
+def _with(record, **lists):
+    return {**copy.deepcopy(record), **copy.deepcopy(lists)}
+
+
+def _upload_record(base_study_id, record):
+    return ingest_upload(
+        {"record": record, "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id}
+    )
+
+
+def _entities(base_study_id, entity_class):
+    """The base study's entities of ``entity_class``, by the name their identity holds."""
+    return sorted(
+        StudyEntity.query.filter_by(base_study_id=base_study_id, entity_class=entity_class),
+        key=lambda entity: entity.identity[0],
+    )
+
+
+def _links(config_id, base_study_id):
+    """``{local_id: entity id}`` of the config's ExtractionEntityLinks for the base study."""
+    prefix = f"{base_study_id}:"
+    return {
+        link.local_id.removeprefix(prefix): link.entity_id
+        for link in ExtractionEntityLink.query.filter_by(config_id=config_id)
+        if link.local_id.startswith(prefix)
+    }
+
+
+def _claim_rows(entity_ids, field_path=None):
+    """Sorted ``(entity id, field path, value)`` of the claims on ``entity_ids``."""
+    query = FieldClaim.query.filter(FieldClaim.entity_id.in_(entity_ids))
+    if field_path is not None:
+        query = query.filter_by(field_path=field_path)
+    return sorted((c.entity_id, c.field_path, _sortable(c.value)) for c in query)
+
+
+def _sortable(value):
+    return value if isinstance(value, str) else repr(value)
+
+
+def _first_upload(**lists):
+    summary = ingest_upload(
+        {"coordinate_parse": ORIGINAL, "record": _with(_record(GAIN), **lists)}
+    )
+    return summary["base_study_id"], summary["record"]["config_id"]
+
+
+def test_a_renamed_group_carrying_its_stable_id_keeps_its_entity_and_claims(session):
+    base_study_id, config_id = _first_upload(
+        groups=[_group("g1", "patients"), _group("g2", "controls")]
+    )
+    controls, patients = _entities(base_study_id, "Group")
+    assert [g.identity for g in (controls, patients)] == [["controls", 0], ["patients", 0]]
+    before = _claim_rows([patients.id])
+    assert (patients.id, "name", "patients") in before
+    renamed = _group("g1", "MDD patients")
+    renamed["stable_id"] = patients.stable_id
+
+    summary = _upload_record(
+        base_study_id, _with(_record(GAIN), groups=[renamed, _group("g2", "controls")])
+    )
+
+    assert summary["record"]["config_id"] == config_id
+    assert [e.id for e in _entities(base_study_id, "Group")] == [controls.id, patients.id]
+    assert _links(config_id, base_study_id)["g1"] == patients.id
+    assert _links(config_id, base_study_id)["g2"] == controls.id
+    assert _claim_rows([patients.id], "name") == [
+        (patients.id, "name", "MDD patients"),
+        (patients.id, "name", "patients"),
+    ]
+    assert set(before) <= set(_claim_rows([patients.id]))
+    assert summary["record"]["claims"]["entities"] == {"created": 0, "matched": 4}
+    assert summary["record"]["claims"]["rename_candidates"] == []
+    session.refresh(patients)
+    assert (patients.identity, patients.stable_id) == (["patients", 0], renamed["stable_id"])
+
+
+def test_a_renamed_group_without_a_stable_id_is_still_a_new_entity(session):
+    base_study_id, config_id = _first_upload(groups=[_group("g1", "patients")])
+    [patients] = _entities(base_study_id, "Group")
+
+    _upload_record(base_study_id, _with(_record(GAIN), groups=[_group("g1", "MDD patients")]))
+
+    renamed, _ = groups = _entities(base_study_id, "Group")
+    assert [g.identity for g in groups] == [["mddpatients", 0], ["patients", 0]]
+    assert renamed.id != patients.id
+    assert _links(config_id, base_study_id)["g1"] == renamed.id
+    assert _claim_rows([patients.id], "name") == [(patients.id, "name", "patients")]
+
+
+def test_a_stable_id_no_entity_has_becomes_the_new_entitys(session):
+    base_study_id, config_id = _first_upload()
+    group = _group("g1", "patients")
+    group["stable_id"] = STABLE_ID
+
+    _upload_record(base_study_id, _with(_record(GAIN), groups=[group]))
+
+    [entity] = _entities(base_study_id, "Group")
+    assert (entity.identity, entity.stable_id) == (["patients", 0], STABLE_ID)
+    assert _links(config_id, base_study_id)["g1"] == entity.id
+
+
+def test_a_stable_id_no_entity_has_on_an_item_its_hash_finds_keeps_the_found_entity(session):
+    base_study_id, config_id = _first_upload(groups=[_group("g1", "patients")])
+    [patients] = _entities(base_study_id, "Group")
+    group = _group("g1", "patients")
+    group["stable_id"] = STABLE_ID
+
+    _upload_record(base_study_id, _with(_record(GAIN), groups=[group]))
+
+    assert [(g.id, g.stable_id) for g in _entities(base_study_id, "Group")] == [
+        (patients.id, patients.stable_id)
+    ]
+    assert patients.stable_id != STABLE_ID
+    assert _links(config_id, base_study_id)["g1"] == patients.id
+
+
+def test_the_unnamed_children_of_a_renamed_task_keep_their_entities(session):
+    base_study_id, config_id = _first_upload(
+        tasks=[_task("t1", "Stroop", _condition("c1", "congruent"))]
+    )
+    [task] = _entities(base_study_id, "Task")
+    [condition] = _entities(base_study_id, "Condition")
+    renamed = _task("t1", "Colour Stroop", _condition("c1", "congruent"))
+    renamed["stable_id"] = task.stable_id
+
+    _upload_record(base_study_id, _with(_record(GAIN), tasks=[renamed]))
+
+    assert [e.id for e in _entities(base_study_id, "Task")] == [task.id]
+    assert [e.id for e in _entities(base_study_id, "Condition")] == [condition.id]
+    assert _links(config_id, base_study_id)["c1"] == condition.id
+    assert condition.parent_id == task.id
+
+
+def test_an_analysis_carrying_another_analysis_stable_id_is_found_by_its_key(session):
+    summary = ingest_upload({"coordinate_parse": ORIGINAL, "record": _record(GAIN, LOSS)})
+    base_study_id, config_id = summary["base_study_id"], summary["record"]["config_id"]
+    gain, loss = _entity(base_study_id, GAIN["key"]), _entity(base_study_id, LOSS["key"])
+    record = _record(GAIN, LOSS)
+    record["analyses"][1]["stable_id"] = gain.stable_id
+
+    _upload_record(base_study_id, record)
+
+    links = _links(config_id, base_study_id)
+    assert (links["a0"], links["a1"]) == (gain.id, loss.id)
+
+
+def test_a_group_named_by_a_renamed_groups_old_name_is_held_as_a_duplicate(session):
+    base_study_id, config_id = _first_upload(groups=[_group("g1", "patients")])
+    [patients] = _entities(base_study_id, "Group")
+    renamed = _group("g1", "MDD patients")
+    renamed["stable_id"] = patients.stable_id
+    created = _group("g9", "patients")
+    created["stable_id"] = STABLE_ID
+
+    summary = _upload_record(base_study_id, _with(_record(GAIN), groups=[renamed, created]))
+
+    assert [g.id for g in _entities(base_study_id, "Group")] == [patients.id]
+    assert summary["record"]["claims"]["duplicates"] == ["groups[1]"]
+    assert _links(config_id, base_study_id)["g1"] == patients.id
+    assert "g9" not in _links(config_id, base_study_id)
+    assert _claim_rows([patients.id], "name") == [
+        (patients.id, "name", "MDD patients"),
+        (patients.id, "name", "patients"),
+    ]
+
+
+def _refused(body):
+    claims = FieldClaim.query.count()
+    with pytest.raises(NeuroStoreException) as error, db.session.begin_nested():
+        ingest_upload(body)
+    assert error.value.status_code == 422
+    assert FieldClaim.query.count() == claims
+    return [(e.field, e.code, e.message) for e in error.value.errors]
+
+
+def test_a_stable_id_of_another_papers_entity_refuses_the_record(session):
+    other_id, _ = _first_upload(groups=[_group("g1", "patients")])
+    [theirs] = _entities(other_id, "Group")
+    parse = fx.parse([GAIN], pmid="87654321")
+    group = _group("g1", "patients")
+    group["stable_id"] = theirs.stable_id
+
+    errors = _refused({"coordinate_parse": parse, "record": _with(_record(GAIN), groups=[group])})
+
+    assert errors == [(
+        "record/groups[0]/stable_id",
+        "STABLE_ID_MISMATCH",
+        f"groups[0] is a Group, but its stable_id {theirs.stable_id} names a Group of "
+        f"base study {other_id}",
+    )]
+
+
+def test_a_stable_id_of_an_entity_of_another_class_refuses_the_record(session):
+    base_study_id, _ = _first_upload(groups=[_group("g1", "patients")])
+    [patients] = _entities(base_study_id, "Group")
+    task = _task("t1", "Stroop")
+    task["stable_id"] = patients.stable_id
+
+    errors = _refused({
+        "record": _with(_record(GAIN), groups=[_group("g1", "patients")], tasks=[task]),
+        "parse_id": ORIGINAL["parse_id"],
+        "base_study_id": base_study_id,
+    })
+
+    assert errors == [(
+        "record/tasks[0]/stable_id",
+        "STABLE_ID_MISMATCH",
+        f"tasks[0] is a Task, but its stable_id {patients.stable_id} names a Group of "
+        f"base study {base_study_id}",
+    )]
+
+
+def test_a_stable_id_on_two_entities_refuses_the_record(session):
+    base_study_id, _ = _first_upload()
+    first, second = _group("g1", "patients"), _group("g2", "controls")
+    first["stable_id"] = second["stable_id"] = STABLE_ID
+
+    errors = _refused({
+        "record": _with(_record(GAIN), groups=[first, second]),
+        "parse_id": ORIGINAL["parse_id"],
+        "base_study_id": base_study_id,
+    })
+
+    assert errors == [(
+        "record/groups[1]/stable_id",
+        "STABLE_ID_REPEATED",
+        f"groups[1] carries the stable_id {STABLE_ID} that groups[0] carries",
+    )]
+
+
+def test_a_new_analysis_carrying_a_known_entitys_stable_id_gets_one_of_its_own(session):
+    base_study_id, config_id = _first_upload()
+    gain = _entity(base_study_id, GAIN["key"])
+    record = _record(GAIN, LOSS)
+    record["analyses"][1]["stable_id"] = gain.stable_id
+
+    summary = _upload_record(base_study_id, record)
+
+    loss = _entity(base_study_id, LOSS["key"])
+    assert loss.id != gain.id
+    assert re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+                        loss.stable_id)
+    assert loss.stable_id != gain.stable_id
+    session.refresh(gain)
+    assert gain.stable_id == record["analyses"][1]["stable_id"]
+    links = _links(config_id, base_study_id)
+    assert (links["a0"], links["a1"]) == (gain.id, loss.id)
+    assert summary["record"]["claims"]["entities"] == {"created": 1, "matched": 2}
+
+
+def test_the_children_of_a_task_held_as_a_duplicate_are_held_too(session):
+    base_study_id, config_id = _first_upload(
+        tasks=[_task("t1", "Stroop", _condition("c1", "congruent"))]
+    )
+    [task] = _entities(base_study_id, "Task")
+    [condition] = _entities(base_study_id, "Condition")
+    renamed = _task("t1", "Colour Stroop", _condition("c1", "congruent"))
+    renamed["stable_id"] = task.stable_id
+    named_as_before = _task("t9", "Stroop", _condition("c9", "incongruent"))
+
+    summary = _upload_record(
+        base_study_id, _with(_record(GAIN), tasks=[renamed, named_as_before])
+    )
+
+    assert summary["record"]["claims"]["duplicates"] == ["tasks[1]", "tasks[1].conditions[0]"]
+    assert [e.id for e in _entities(base_study_id, "Task")] == [task.id]
+    assert [e.id for e in _entities(base_study_id, "Condition")] == [condition.id]
+    links = _links(config_id, base_study_id)
+    assert (links["t1"], links["c1"]) == (task.id, condition.id)
+    assert "t9" not in links and "c9" not in links
+
+
+def _study_entity(base_study_id):
+    return StudyEntity.query.filter_by(base_study_id=base_study_id, entity_class="Study").one()
+
+
+def test_a_study_stable_id_naming_another_papers_study_refuses_the_record(session):
+    other_id, _ = _first_upload()
+    theirs = _study_entity(other_id)
+    record = _record(GAIN)
+    record["stable_id"] = theirs.stable_id
+
+    errors = _refused(
+        {"coordinate_parse": fx.parse([GAIN], pmid="87654321"), "record": record}
+    )
+
+    assert errors == [(
+        "record/stable_id",
+        "STABLE_ID_MISMATCH",
+        f"the study is a Study, but its stable_id {theirs.stable_id} names a Study of "
+        f"base study {other_id}",
+    )]
+
+
+def test_a_group_carrying_the_studys_stable_id_refuses_the_record(session):
+    base_study_id, _ = _first_upload()
+    group = _group("g1", "patients")
+    group["stable_id"] = STABLE_ID
+    record = _with(_record(GAIN), groups=[group])
+    record["stable_id"] = STABLE_ID
+
+    errors = _refused({
+        "record": record, "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id,
+    })
+
+    assert errors == [(
+        "record/groups[0]/stable_id",
+        "STABLE_ID_REPEATED",
+        f"groups[0] carries the stable_id {STABLE_ID} that the study carries",
+    )]
