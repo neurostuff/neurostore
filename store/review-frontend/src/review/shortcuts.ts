@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { acceptAnalysis, removePoint, splitAnalysis } from '../coordinates/actions';
 import { accept, acceptCard, createOn } from '../inspector/actions';
-import type { ReviewStores } from '../store/context';
+import type { ReviewStores } from '../store/reviewStores';
 import type { ViewState } from '../store/viewStore';
 import { addSelection } from '../text/addSelection';
 import { openPanelOn } from '../inspector/openPanel';

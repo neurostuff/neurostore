@@ -3,7 +3,7 @@ import { entityPath, getIn, ROOT_ENTITY } from '../model/paths';
 import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
 import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } from '../model/targetKey';
 import { randomUUID } from '../model/uuid';
-import type { ReviewStores } from '../store/context';
+import type { ReviewStores } from '../store/reviewStores';
 import type { SessionState } from '../store/sessionStore';
 import type { Focus, Panel, PanelKind } from '../store/viewStore';
 import {

@@ -10,7 +10,7 @@ import {
 import { randomUUID } from '../model/uuid';
 import { focusedAnalysis } from '../model/coordinateFocus';
 import { analysisTarget } from '../model/targetKey';
-import type { ReviewStores } from '../store/context';
+import type { ReviewStores } from '../store/reviewStores';
 import type { SessionState } from '../store/sessionStore';
 import type { Panel, PanelKind, ViewState } from '../store/viewStore';
 

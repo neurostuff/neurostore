@@ -1,7 +1,7 @@
 import { act, fireEvent } from '@testing-library/react';
 import { currentAnalyses } from '../model/coordinates';
 import { selectDiff } from '../store/diffSelectors';
-import { createReviewStores } from '../store/context';
+import { createReviewStores } from '../store/reviewStores';
 import { hasFixture, loadFixture } from '../test/bundles';
 import { registeredSpans } from '../test/highlights';
 import { renderWithStores } from '../test/render';

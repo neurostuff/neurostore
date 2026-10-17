@@ -1,6 +1,6 @@
 import type { OpResult } from '../api/reviewApi';
 import type { Op } from '../contract/generated/review-ops';
-import type { ReviewStores } from '../store/context';
+import type { ReviewStores } from '../store/reviewStores';
 import type { InverseOp } from '../store/undoSteps';
 
 /** `ops` without their client_op_ids, as an undo step's inverses hold them. */

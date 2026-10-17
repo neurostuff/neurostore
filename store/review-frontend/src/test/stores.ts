@@ -1,4 +1,4 @@
-import type { ReviewStores } from '../store/context';
+import type { ReviewStores } from '../store/reviewStores';
 import { selectEvidenceCursor, selectFocusedSpans, selectShown } from '../store/viewSelectors';
 
 /** The spans the focus highlights now. */

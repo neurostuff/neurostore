@@ -1,4 +1,4 @@
-import type { ReviewStores } from '../store/context';
+import type { ReviewStores } from '../store/reviewStores';
 import type { EvidenceMode } from '../store/sessionStore';
 
 /** Adds the selection to the focused slot's evidence, and puts the evidence cursor on it. */

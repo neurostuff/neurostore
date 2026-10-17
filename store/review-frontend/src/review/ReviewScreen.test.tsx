@@ -4,9 +4,13 @@ import { MemoryRouter } from 'react-router-dom';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
 import { json } from '../test/fakeFetch';
-import { createReviewStores, OpClientProvider, type ReviewStores, ReviewStoresProvider } from '../store/context';
+import { OpClientProvider, ReviewStoresProvider } from '../store/context';
+import { createReviewStores, type ReviewStores } from '../store/reviewStores';
 import { createOpClient, type OpClient } from '../store/opClient';
 import { slotKey } from '../model/targetKey';
+import { openPanelOn } from '../inspector/openPanel';
+import { OTHER_TAB } from '../store/reviewSession';
+import { selectCanUndo } from '../store/sessionStore';
 import { theme } from '../theme';
 import { ReviewScreen } from './ReviewScreen';
 
@@ -102,4 +106,23 @@ describe('a save the server refuses without naming an op', () => {
             [at('fMRI')[0], at('fMRI')[1]],
         ]);
     }, 30_000);
+});
+
+describe('a tab another one holds the review in', () => {
+    it('disables its actions, opens no editor, takes no undo, and keeps the note', async () => {
+        const store = await renderScreen();
+        act(() => store.session.getState().setDevice('readonly', OTHER_TAB));
+        act(() => store.view.getState().focusSlot(slotKey('grp_a', 'age_mean')));
+        act(() => openPanelOn(store, 'edit'));
+        expect(screen.getByRole('note')).toHaveTextContent(OTHER_TAB);
+        const actions = within(screen.getByRole('toolbar', { name: 'review actions' })).getAllByRole('button');
+        expect(actions.length).toBeGreaterThan(0);
+        actions.forEach((button) => expect(button).toBeDisabled());
+        expect(store.view.getState().panel).toBeNull();
+        fireEvent.keyDown(window, { key: 'Enter' });
+        expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
+        expect(selectCanUndo(store.session.getState())).toBe(false);
+        fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        expect(store.session.getState().pending).toEqual([]);
+    });
 });

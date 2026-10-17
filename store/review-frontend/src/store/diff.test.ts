@@ -2,7 +2,7 @@ import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { coordinateBundle, FACES, HOUSES, key, LOCALIZER, RECORD, revision, SCRAMBLED } from '../test/coordinates';
 import type { Json } from '../model/paths';
 import { selectDiff, selectOriginalSpans } from './diffSelectors';
-import { createReviewStores } from './context';
+import { createReviewStores } from './reviewStores';
 
 const TEXT = '😀 We scanned twenty patients and twenty controls.';
 const at = (word: string): [number, number] => {

@@ -1,23 +1,28 @@
 import { createStore } from 'zustand';
 import { withState, type OpResult, type ReviewLifecycle, type SetAside } from '../api/reviewApi';
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
-import type { CreateEntityOp, Evidence, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
-import {
-    applyBatch,
-    isLocalOp,
-    type AnnotationMap,
-    type Documents,
-    type Paper,
-    type ProvenanceMap,
-} from '../model/applyOp';
+import type { CreateEntityOp, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
+import { isLocalOp, type AnnotationMap, type ProvenanceMap } from '../model/applyOp';
 import { currentAnalyses, keepUnchanged, type CoordinateParse } from '../model/coordinates';
-import { spansToUtf16, utf16Paper } from '../model/offsets';
+import { spansToUtf16 } from '../model/offsets';
 import { mintLocalId } from '../model/mint';
 import { randomUUID } from '../model/uuid';
-import { entityPath, getIn, readPath, type Json } from '../model/paths';
+import type { Json } from '../model/paths';
 import { buildRecordIndex, withSlotFrom, type RecordIndex, type SlotNode, type SpanPair } from '../model/record';
 import { slotTarget, targetKey } from '../model/targetKey';
 import { declaredOf } from './declared';
+import {
+    blockedFrom,
+    carrying,
+    documentsOf,
+    KEPT_REFUSED,
+    replay,
+    restored,
+    slotLabel,
+    unstored,
+    waits,
+    withSpan,
+} from './keptOps';
 import {
     answerSteps,
     isReady,
@@ -31,13 +36,20 @@ import {
 
 export type EvidenceMode = 'first' | 'new';
 
+/** How this tab keeps its pending ops: in memory only, loading them, on the device, or not at all (read-only). */
+export type DeviceStatus = 'memory' | 'loading' | 'kept' | 'readonly';
+
 export type SaveStatus = 'idle' | 'saving' | 'offline' | 'closed' | 'signin' | 'failed';
 
-/** A save the server refused without naming an op: its batch, and what the server said. */
+/** A save stopped on ops the server, or the replay of ops kept on this device, refused without naming one. */
 export interface Blocked {
     clientOpIds: string[];
     problems: string[];
+    /** Why saving stopped, in the reviewer's terms. */
+    reason: string;
 }
+
+const UNNAMED_REFUSAL = 'the server refused an edit and did not say which one';
 
 export interface Notice {
     kind: 'conflict' | 'refused' | 'dangling' | 'split' | 'undo' | 'redo';
@@ -58,6 +70,14 @@ export interface Replaced {
     sent: Op[];
 }
 
+/** Pending ops as this device keeps them: in order, with their emitBatch groups and evidence intents. */
+export interface KeptOps {
+    ops: Op[];
+    /** The client_op_id opening the emitBatch group of each op that came in one. */
+    groupOf: Record<string, string>;
+    intents: Record<string, EvidenceIntent>;
+}
+
 export interface SessionState {
     bundle: ReviewBundle;
     record: Json;
@@ -72,6 +92,8 @@ export interface SessionState {
     blocked: Blocked | null;
     save: SaveStatus;
     saveMessage: string;
+    device: DeviceStatus;
+    deviceNotice: string;
     notices: Notice[];
     undoStack: UndoStep[];
     redoStack: UndoStep[];
@@ -88,6 +110,7 @@ export interface SessionState {
     /** Resolves once the local_id of a pending create_entity op is minted. */
     minted(clientOpId: string): Promise<void>;
     setSave(save: SaveStatus, message?: string): void;
+    setDevice(device: DeviceStatus, notice?: string): void;
     /** Stops saving on a refused batch; its ops stay pending until the reviewer discards or undoes them. */
     block(batch: Op[], message: string, problems: string[]): void;
     /** Drops every pending op, rebuilding the record from the confirmed one. */
@@ -96,6 +119,8 @@ export interface SessionState {
     undoBlocked(): void;
     confirm(result: OpResult, sent: Op[]): void;
     rebase(fresh: ReviewBundle): void;
+    /** Puts ops kept on this device in pending, but those the bundle has stored, replayed as a rebase replays them. */
+    restore(kept: KeptOps): void;
     refuse(refusals: Refusal[]): void;
     /** Sets the review's state, with its set-aside reason while it is set aside. */
     setLifecycle(state: ReviewLifecycle, setAside?: SetAside): void;
@@ -108,76 +133,38 @@ export interface SessionState {
 
 export type SessionStore = ReturnType<typeof createSessionStore>;
 
-type EvidenceSet = NonNullable<Evidence['sets']>[number];
-
 const toSpan = ([start_char, end_char]: SpanPair): Span => ({ start_char, end_char });
-const spanKey = (s: Span) => `${s.start_char}:${s.end_char}`;
-
-function withoutText(set: EvidenceSet): EvidenceSet {
-    return {
-        ...set,
-        spans: set.spans.map(({ start_char, end_char }) => ({ start_char, end_char })) as EvidenceSet['spans'],
-    };
-}
-
-function inReadingOrder(spans: Span[]): EvidenceSet['spans'] {
-    const unique = [...new Map(spans.map((s) => [spanKey(s), s])).values()];
-    return unique.sort((a, b) => a.start_char - b.start_char || a.end_char - b.end_char) as EvidenceSet['spans'];
-}
-
-function withSpan(evidence: Evidence | undefined, span: Span, setIndex: number | 'new'): Evidence {
-    const sets = (evidence?.sets ?? []).map(withoutText);
-    if (setIndex === 'new' || setIndex >= sets.length) {
-        return { ...evidence, status: 'present', sets: [...sets, { spans: [span] }] };
-    }
-    return {
-        ...evidence,
-        status: 'present',
-        sets: sets.map((set, i) => (i === setIndex ? { ...set, spans: inReadingOrder([...set.spans, span]) } : set)),
-    };
-}
-
-/** The set_evidence op an intent makes on top of `record`; other ops pass through. */
-function carried(record: Json, op: Op, intent: EvidenceIntent | undefined): Op {
-    if (!intent || op.type !== 'set_evidence' || op.target.kind !== 'slot') return op;
-    const item = getIn(record, entityPath(record, op.target.entity) ?? []);
-    const wrapper = readPath(item, op.target.path) as { evidence?: Evidence } | undefined;
-    return { ...op, evidence: withSpan(wrapper?.evidence, intent.span, intent.set_index) };
-}
 
 export const canAddEvidence = (slot: SlotNode | undefined): slot is SlotNode =>
     slot?.kind === 'value' && slot.value?.extraction_status === 'extracted';
 
+export const selectIsLoading = (s: Pick<SessionState, 'device'>): boolean => s.device === 'loading';
+
+/** Whether edits are taken: not while the device's kept ops load, nor in a tab another one holds the review in. */
+export const selectIsEditable = (s: Pick<SessionState, 'device'>): boolean =>
+    !selectIsLoading(s) && s.device !== 'readonly';
+
 export const selectIsBlocked = (s: Pick<SessionState, 'blocked'>): boolean => s.blocked != null;
 
-export const selectCanUndo = (s: Pick<SessionState, 'blocked' | 'undoStack'>): boolean =>
-    !selectIsBlocked(s) && s.undoStack.length > 0;
+export const selectCanUndo = (s: Pick<SessionState, 'blocked' | 'undoStack' | 'device'>): boolean =>
+    selectIsEditable(s) && !selectIsBlocked(s) && s.undoStack.length > 0;
 
-export const selectCanRedo = (s: Pick<SessionState, 'blocked' | 'redoStack'>): boolean =>
-    !selectIsBlocked(s) && s.redoStack.length > 0;
+export const selectCanRedo = (s: Pick<SessionState, 'blocked' | 'redoStack' | 'device'>): boolean =>
+    selectIsEditable(s) && !selectIsBlocked(s) && s.redoStack.length > 0;
 
 export function selectSaveLabel({
     save,
     saveMessage,
     pending,
     blocked,
-}: Pick<SessionState, 'save' | 'saveMessage' | 'pending' | 'blocked'>): string {
+    device,
+}: Pick<SessionState, 'save' | 'saveMessage' | 'pending' | 'blocked' | 'device'>): string {
     if (save === 'failed' || blocked != null) return saveMessage;
     if (save === 'signin') return 'sign in to save';
-    if (save === 'saving' || save === 'offline') return save;
+    if (save === 'offline') return device === 'kept' ? 'offline; saved on this device' : save;
+    if (save === 'saving') return save;
     return pending.length ? `${pending.length} unsaved` : 'saved';
 }
-
-const slotLabel = (op: Op) => {
-    if (!('target' in op)) return op.type;
-    return op.target.kind === 'slot' ? `${op.target.entity} ${op.target.path}` : targetKey(op.target);
-};
-
-const documentsOf = (bundle: ReviewBundle): Documents => ({
-    record: bundle.record as Json,
-    provenance: bundle.review?.provenance ?? {},
-    annotations: bundle.review?.annotations ?? {},
-});
 
 /** The bundle with its span offsets in UTF-16 code units, as the DOM counts them. */
 const toDomBundle = (bundle: ReviewBundle): ReviewBundle => {
@@ -192,53 +179,33 @@ const toDomBundle = (bundle: ReviewBundle): ReviewBundle => {
     };
 };
 
-const paperOf = (bundle: ReviewBundle, at: string): Paper => ({
-    text: utf16Paper(bundle.text),
-    userId: bundle.review?.user_id ?? '',
-    at,
-    coordinateParse: bundle.coordinate_parse as CoordinateParse,
-    coordinateRevision: bundle.coordinate_revision as CoordinateParse | null,
-    entities: bundle.entities,
-});
-
-/** Whether `op` waits for the server: it is one the server applies, or one is pending before it. */
-const waits = (before: Op[], op: Op) => !isLocalOp(op) || before.some((p) => !isLocalOp(p));
-
-/**
- * The ops kept pending, in order, with the documents after the ones applied: an op that waits is kept
- * unapplied, and one the core refuses is dropped with a notice of `kind`. `carry` may rewrite an op
- * before it is applied.
- */
-function replay(
-    bundle: ReviewBundle,
-    base: Documents,
-    ops: Op[],
-    at: string,
-    kind: Notice['kind'],
-    carry: (record: Json, op: Op) => Op = (_, op) => op
-) {
-    let documents = base;
-    const pending: Op[] = [];
-    const notices: Notice[] = [];
-    for (const op of ops) {
-        if (waits(pending, op)) {
-            pending.push(op);
-            continue;
-        }
-        const sent = carry(documents.record, op);
-        try {
-            documents = applyBatch(documents, [sent], paperOf(bundle, at));
-            pending.push(sent);
-        } catch (error) {
-            notices.push({ kind, slot: slotLabel(op), message: (error as Error).message });
-        }
-    }
-    return { documents, pending, notices };
-}
-
 /** A stored op as the bundle logs it: without the inverse an op result adds. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const logged = ({ inverse, ...rest }: StoredOp): StoredOp => rest;
+
+/** The actions that make, drop or send edits: each does nothing, and returns false, while no edits are taken. */
+const EDITS = [
+    'emit',
+    'emitBatch',
+    'addEvidence',
+    'discardPending',
+    'undoBlocked',
+    'setLifecycle',
+    'undo',
+    'redo',
+] as const satisfies (keyof SessionState)[];
+
+function whileEditable<K extends keyof SessionState>(
+    state: SessionState,
+    names: readonly K[],
+    editable: () => boolean
+) {
+    const guarded = names.map((name) => {
+        const act = state[name] as (...args: unknown[]) => unknown;
+        return [name, (...args: unknown[]) => (editable() ? act(...args) : false)];
+    });
+    return Object.fromEntries(guarded) as Pick<SessionState, K>;
+}
 
 export interface SessionStoreOptions {
     now?: () => string;
@@ -390,7 +357,7 @@ export function createSessionStore(
             );
         };
 
-        return {
+        const initial: SessionState = {
             bundle,
             ...documentsOf(bundle),
             index: buildRecordIndex(bundle, declaredOf),
@@ -401,6 +368,8 @@ export function createSessionStore(
             blocked: null,
             save: 'idle',
             saveMessage: '',
+            device: 'memory',
+            deviceNotice: '',
             notices: [],
             undoStack: [],
             redoStack: [],
@@ -428,11 +397,15 @@ export function createSessionStore(
             },
             minted: (clientOpId) => mints.get(clientOpId) ?? Promise.resolve(),
             setSave: (save, message = '') => set({ save, saveMessage: message }),
+            setDevice: (device, notice) => {
+                if (notice === undefined) set({ device });
+                else set({ device, deviceNotice: notice });
+            },
             block: (batch, message, problems) =>
                 set({
                     save: 'failed',
                     saveMessage: message,
-                    blocked: { clientOpIds: batch.map((op) => op.client_op_id), problems },
+                    blocked: blockedFrom(batch, batch, get().groupOf, problems, UNNAMED_REFUSAL),
                 }),
             discardPending: () => {
                 withDocuments(get().bundle, []);
@@ -508,17 +481,24 @@ export function createSessionStore(
                 if (waitingTo) sendInverse(waitingTo);
             },
             rebase: (fresh) => {
-                const stored = new Set(fresh.ops.map((s) => s.op.client_op_id));
+                const next = toDomBundle(fresh);
                 const { pending, intents, bundle: current } = get();
-                withDocuments(
-                    toDomBundle(fresh),
-                    pending.filter((op) => !stored.has(op.client_op_id)),
-                    [],
-                    null,
-                    (record, op) => carried(record, op, intents[op.client_op_id]),
-                    undefined,
-                    { before: current, sent: [] }
-                );
+                withDocuments(next, unstored(next, pending), [], null, carrying(intents), undefined, {
+                    before: current,
+                    sent: [],
+                });
+            },
+            restore: (entry) => {
+                const { bundle: current } = get();
+                const { documents, blocked, ...kept } = restored(current, entry, now());
+                set({
+                    ...documents,
+                    ...kept,
+                    index: rebuiltIndex(current, documents.record),
+                    blocked,
+                    ...(blocked && { save: 'failed', saveMessage: KEPT_REFUSED }),
+                    replaced: { before: current, sent: [] },
+                });
             },
             refuse: (refusals) => {
                 const { undoStack, redoStack, bundle: current, pending } = get();
@@ -548,5 +528,6 @@ export function createSessionStore(
             undo: () => sendInverse('undo'),
             redo: () => sendInverse('redo'),
         };
+        return { ...initial, ...whileEditable(initial, EDITS, () => selectIsEditable(get())) };
     });
 }

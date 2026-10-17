@@ -12,6 +12,20 @@ const REASONS: Record<Notice['kind'], string> = {
 };
 
 export function SaveNotices() {
+    const deviceNotice = useSession((s) => s.deviceNotice);
+    return (
+        <>
+            {deviceNotice && (
+                <Alert role="note" severity="info" sx={{ borderRadius: 0 }}>
+                    {deviceNotice}
+                </Alert>
+            )}
+            <DroppedOps />
+        </>
+    );
+}
+
+function DroppedOps() {
     const notices = useSession((s) => s.notices);
     const dismiss = useSession((s) => s.dismissNotices);
     if (notices.length === 0) return null;

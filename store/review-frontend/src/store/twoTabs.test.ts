@@ -3,7 +3,7 @@ import { slotKey } from '../model/targetKey';
 import { ev, makeBundle } from '../test/bundles';
 import { fakeServer } from '../test/fakeServer';
 import { createOpClient } from './opClient';
-import { createReviewStores, type ReviewStores } from './context';
+import { createReviewStores, type ReviewStores } from './reviewStores';
 
 const TEXT = 'Twenty patients and eighteen controls performed a Stroop task during fMRI scanning at 3 T.';
 const at = (words: string): [number, number] => [TEXT.indexOf(words), TEXT.indexOf(words) + words.length];

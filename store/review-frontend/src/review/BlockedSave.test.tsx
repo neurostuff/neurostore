@@ -2,13 +2,15 @@ import { ThemeProvider } from '@mui/material';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReviewApi } from '../api/reviewApi';
-import { createReviewStores, OpClientProvider, type ReviewStores, ReviewStoresProvider } from '../store/context';
+import { OpClientProvider, ReviewStoresProvider } from '../store/context';
+import { createReviewStores, type ReviewStores } from '../store/reviewStores';
 import { createOpClient } from '../store/opClient';
 import { slotKey } from '../model/targetKey';
 import { ev, makeBundle } from '../test/bundles';
 import { theme } from '../theme';
 import { BlockedSave } from './BlockedSave';
 import type { SpanPair } from '../model/record';
+import { KEPT_REFUSED } from '../store/keptOps';
 import type { EvidenceMode } from '../store/sessionStore';
 
 const TEXT = 'Twenty patients performed a Stroop task during fMRI scanning.';
@@ -45,10 +47,25 @@ function setup() {
 
 afterEach(() => vi.restoreAllMocks());
 
+describe('kept edits the replay on load refused', () => {
+    it('says the edits kept on this device no longer apply, not that the server refused one', () => {
+        const { store } = setup();
+        act(() =>
+            store.session.setState({
+                blocked: { clientOpIds: [], problems: ['study description: set a value first'], reason: KEPT_REFUSED },
+            })
+        );
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent('Saving has stopped: edits kept on this device no longer apply');
+        expect(alert).not.toHaveTextContent('did not say which one');
+    });
+});
+
 describe('a refused save that names no op', () => {
     it('explains the refusal in the reviewer’s terms, with a link that focuses the slot', () => {
         const { store } = setup();
         const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent('Saving has stopped: the server refused an edit and did not say which one');
         expect(alert).toHaveTextContent('too long');
         expect(alert).not.toHaveTextContent('/description');
         act(() => fireEvent.click(within(alert).getByRole('button', { name: /description/ })));

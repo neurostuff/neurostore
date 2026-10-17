@@ -6,7 +6,7 @@ import { isChange, visibleItems, type DiffItem } from '../../model/diff';
 import { targetKey } from '../../model/targetKey';
 import { changeGroups, targetLabeller } from '../../review/summary';
 import { selectDiff, selectOriginalIndex } from '../../store/diffSelectors';
-import { createReviewStores } from '../../store/context';
+import { createReviewStores } from '../../store/reviewStores';
 
 const read = (name: string) => JSON.parse(readFileSync(path.resolve(__dirname, name), 'utf8'));
 const bundle: ReviewBundle = read('diff-bundle.json');

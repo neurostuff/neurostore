@@ -12,7 +12,7 @@ import { API_BASE } from '../test/spec';
 import { acceptCard, createSibling } from '../inspector/actions';
 import { movePoints } from '../coordinates/actions';
 import { createOpClient, type OpClient } from './opClient';
-import { createReviewStores, type ReviewStores } from './context';
+import { createReviewStores, type ReviewStores } from './reviewStores';
 import { selectSaveLabel } from './sessionStore';
 import { mintLocalId } from '../model/mint';
 import { slotKey } from '../model/targetKey';
@@ -578,6 +578,7 @@ describe('a 422', () => {
         expect(store.session.getState().blocked).toEqual({
             clientOpIds: store.session.getState().pending.map((op) => op.client_op_id),
             problems: ['the batch is too large'],
+            reason: 'the server refused an edit and did not say which one',
         });
         expect(selectSaveLabel(store.session.getState())).toBe('the batch leaves an invalid document');
         edit(store, 'description', 'Stroop task');
@@ -879,6 +880,60 @@ describe('a network error', () => {
         await vi.advanceTimersByTimeAsync(1);
         expect(posts(server)).toHaveLength(sent + 2);
     });
+
+    it('retries at once when the browser is back online, and drops the retry it had scheduled', async () => {
+        const { store, client } = await open();
+        server.intercept(networkDown);
+        server.intercept(networkDown);
+        edit(store, 'description', 'Twenty patients');
+        const op = store.session.getState().pending[0].client_op_id;
+        await client.flush();
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(posts(server)).toHaveLength(2);
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(posts(server)).toHaveLength(2);
+        window.dispatchEvent(new Event('online'));
+        await client.settled();
+        expect(sentIds(server)).toEqual([[op], [op], [op]]);
+        expect(store.session.getState().pending).toEqual([]);
+        expect(selectSaveLabel(store.session.getState())).toBe('saved');
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(posts(server)).toHaveLength(3);
+    });
+
+    it('takes no notice of the online event once stopped', async () => {
+        const { store, client } = await open();
+        server.intercept(networkDown);
+        server.intercept(networkDown);
+        edit(store, 'description', 'Twenty patients');
+        await client.flush();
+        client.stop();
+        await client.settled();
+        window.dispatchEvent(new Event('online'));
+        await client.settled();
+        expect(posts(server)).toHaveLength(2);
+        expect(store.session.getState().pending).toHaveLength(1);
+    });
+
+    it.each([
+        ['signin', 401, 'sign in to save'],
+        ['failed', 403, 'You need the admin-reviewer role'],
+    ])(
+        'leaves a save stopped at %s as it is on the offline event, and does not resend it when back online',
+        async (save, status, label) => {
+            const { store, client } = await open();
+            server.intercept(() => json({ status, title: 'Stopped', detail: 'no' }, status));
+            edit(store, 'description', 'Twenty patients');
+            await client.flush();
+            window.dispatchEvent(new Event('offline'));
+            expect(store.session.getState().save).toBe(save);
+            expect(selectSaveLabel(store.session.getState())).toBe(label);
+            window.dispatchEvent(new Event('online'));
+            await client.settled();
+            expect(store.session.getState().save).toBe(save);
+            expect(posts(server)).toHaveLength(1);
+        }
+    );
 
     it('after a lost response resends the same client_op_ids, which the server replays', async () => {
         const { store, client } = await open();

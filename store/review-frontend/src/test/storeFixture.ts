@@ -1,5 +1,5 @@
 import type { StoredOp } from '../contract/generated/review-bundle';
-import { createReviewStores } from '../store/context';
+import { createReviewStores } from '../store/reviewStores';
 import { entityRows, ev, makeBundle, notReported, row } from './bundles';
 
 export const TEXT = 'x'.repeat(300);

@@ -1,7 +1,8 @@
 import { ThemeProvider } from '@mui/material';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { createReviewStores, OpClientProvider, type ReviewStores, ReviewStoresProvider } from '../store/context';
+import { OpClientProvider, ReviewStoresProvider } from '../store/context';
+import { createReviewStores, type ReviewStores } from '../store/reviewStores';
 import { createOpClient, type OpClient } from '../store/opClient';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { fakeServer, type FakeServer } from '../test/fakeServer';

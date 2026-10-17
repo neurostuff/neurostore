@@ -7,7 +7,7 @@ import { StatusLabel } from '../inspector/StatusLabel';
 import { analysesBeside, currentAnalyses, guidedOrder, hasPoints, type CoordinateAnalysis } from '../model/coordinates';
 import { targetKey } from '../model/targetKey';
 import { useEditorName } from '../review/editor';
-import { useSession, useView } from '../store/context';
+import { useIsEditable, useSession, useView } from '../store/context';
 import { layoutText, type Block, type ParsedPaperLayout } from '../model/layout';
 import { ASIDE } from '../text/TextIndex';
 import { analysisTarget } from '../model/targetKey';
@@ -99,6 +99,7 @@ export function CoordinateAside({ block }: { block: Block | null }) {
     const beside = useSession((s) => besideBlocks(s.bundle, showNonCoordinate));
     const tables = useSession((s) => (s.bundle.parsed_paper as ParsedPaperLayout).tables);
     const openPanel = useView((s) => s.openPanel);
+    const editable = useIsEditable();
     if (step !== 'coordinates') return null;
     const analyses = beside.get(block?.start ?? 'end') ?? [];
     const table = block?.kind === 'table' ? block : undefined;
@@ -110,7 +111,7 @@ export function CoordinateAside({ block }: { block: Block | null }) {
                 <AnalysisCard key={analysis.key} analysis={analysis} />
             ))}
             {table && (
-                <Button size="small" onClick={() => openPanel(addAnalysisPanel(table.tableId))}>
+                <Button size="small" disabled={!editable} onClick={() => openPanel(addAnalysisPanel(table.tableId))}>
                     {`Add an analysis to ${label}`}
                 </Button>
             )}

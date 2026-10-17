@@ -15,7 +15,7 @@ import {
     RECORD,
 } from '../test/coordinates';
 import { evidenceCursor, focusedSpans, shownIndex } from '../test/stores';
-import { createReviewStores } from './context';
+import { createReviewStores } from './reviewStores';
 import { createSessionStore } from './sessionStore';
 import { createViewStore } from './viewStore';
 

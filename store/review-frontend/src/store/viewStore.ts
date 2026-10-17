@@ -10,7 +10,7 @@ import type { RecordIndex, SpanPair } from '../model/record';
 import { STEPS, type StepId } from '../model/steps';
 import { entityKey, relationshipKey } from '../model/targetKey';
 import { isFocused, selectDiff } from './diffSelectors';
-import type { Replaced, SessionStore } from './sessionStore';
+import { selectIsEditable, type Replaced, type SessionStore } from './sessionStore';
 import { selectEvidenceCursor, selectFocusedSpans, selectShown } from './viewSelectors';
 
 export interface Focus {
@@ -400,7 +400,9 @@ export function createViewStore(session: SessionStore) {
             toggleAllEvidence: (on) => set((s) => ({ showAllEvidence: on ?? !s.showAllEvidence })),
             togglePalette: (open) => set((s) => ({ paletteOpen: open ?? !s.paletteOpen })),
             revealSpan: (span) => set((s) => ({ reveal: revealed(span, s.reveal) })),
-            openPanel: (panel) => set({ panel }),
+            openPanel: (panel) => {
+                if (selectIsEditable(documents())) set({ panel });
+            },
             closePanel: () => set({ panel: null }),
         };
     });

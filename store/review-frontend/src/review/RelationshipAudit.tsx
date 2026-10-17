@@ -2,7 +2,7 @@ import { Box, ButtonBase, Table, TableBody, TableCell, TableHead, TableRow, Typo
 import { memo, useMemo } from 'react';
 import { link, pendingStructure, unlink } from '../inspector/actions';
 import { InspectorFrame } from '../inspector/Inspector';
-import { useReviewStores, useSession, useShown } from '../store/context';
+import { useIsEditable, useReviewStores, useSession, useShown } from '../store/context';
 import type { EntityNode } from '../model/record';
 import { auditMatrix, type AuditGroup, type AuditMatrix } from '../model/guided';
 
@@ -32,6 +32,7 @@ const LinkCell = memo(function LinkCell({
     busy: boolean;
 }) {
     const stores = useReviewStores();
+    const editable = useIsEditable();
     const toggle = () => {
         const node = slot === undefined ? undefined : stores.session.getState().index.slot(slot);
         if (node) (linked ? unlink : link)(stores, node, entity);
@@ -42,7 +43,7 @@ const LinkCell = memo(function LinkCell({
                 aria-label={label}
                 aria-pressed={linked}
                 aria-busy={busy || undefined}
-                disabled={slot === undefined || busy}
+                disabled={slot === undefined || busy || !editable}
                 title={label}
                 onClick={toggle}
                 sx={{

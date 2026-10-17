@@ -5,7 +5,7 @@ import { reviewStatus, statusColors } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
 import { relationshipKey, relationshipTarget } from '../model/targetKey';
-import { useReviewStores, useSession, useShown } from '../store/context';
+import { useIsEditable, useReviewStores, useSession, useShown } from '../store/context';
 import { useEditorName } from './editor';
 import { guidedCards, type Link } from '../model/guided';
 
@@ -13,6 +13,7 @@ const listStyles = (theme: Theme) => ({ px: 2, ...statusColors(theme.palette) })
 
 function LinkRow({ link, target }: { link: Link; target: string }) {
     const stores = useReviewStores();
+    const editable = useIsEditable();
     const { entity, slot } = link;
     const key = relationshipKey(entity.id, slot.path, target);
     const state = useSession((s) => s.provenance[key]?.state);
@@ -31,11 +32,17 @@ function LinkRow({ link, target }: { link: Link; target: string }) {
                     <>
                         <Button
                             size="small"
+                            disabled={!editable}
                             onClick={() => acceptTarget(stores, relationshipTarget(entity.id, slot.path, target))}
                         >
                             Accept link
                         </Button>
-                        <Button size="small" color="error" onClick={() => unlink(stores, slot, target)}>
+                        <Button
+                            size="small"
+                            color="error"
+                            disabled={!editable}
+                            onClick={() => unlink(stores, slot, target)}
+                        >
                             Unlink
                         </Button>
                     </>

@@ -5,7 +5,7 @@ import { fakeServer, type FakeServer } from '../test/fakeServer';
 import { answerPending, withoutIds } from '../test/undoHelpers';
 import { slotKey } from '../model/targetKey';
 import { createOpClient, type OpClient } from './opClient';
-import { createReviewStores, type ReviewStores } from './context';
+import { createReviewStores, type ReviewStores } from './reviewStores';
 import { selectCanRedo, selectCanUndo } from './sessionStore';
 import type { InverseOp } from './undoSteps';
 

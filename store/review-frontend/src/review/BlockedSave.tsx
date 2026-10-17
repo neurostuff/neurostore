@@ -25,7 +25,7 @@ export function BlockedSave() {
     return blocked != null ? <Banner blocked={blocked} /> : null;
 }
 
-function Banner({ blocked: { problems } }: { blocked: Blocked }) {
+function Banner({ blocked: { problems, reason } }: { blocked: Blocked }) {
     const stores = useReviewStores();
     const client = useOpClient();
     const pending = useSession((s) => s.pending);
@@ -33,7 +33,7 @@ function Banner({ blocked: { problems } }: { blocked: Blocked }) {
     const record = useSession((s) => s.record);
     return (
         <Alert severity="error" sx={{ borderRadius: 0 }}>
-            <AlertTitle>Saving has stopped: the server refused an edit and did not say which one</AlertTitle>
+            <AlertTitle>{`Saving has stopped: ${reason}`}</AlertTitle>
             <List dense disablePadding>
                 {problems.map((problem, i) => {
                     const { focus, label, message } = explain(problem, index, record);

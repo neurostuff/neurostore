@@ -31,7 +31,7 @@ describe('a refused save', () => {
         const { stores } = renderWithStores(<ReviewAppBar />, bundle);
         act(() =>
             stores.session.setState({
-                blocked: { clientOpIds: [], problems: ['the batch leaves an invalid document'] },
+                blocked: { clientOpIds: [], problems: ['the batch leaves an invalid document'], reason: 'refused' },
                 saveMessage: 'the batch leaves an invalid document',
             })
         );
@@ -80,6 +80,28 @@ describe('save notices', () => {
         fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
         expect(stores.session.getState().notices).toEqual([]);
+    });
+});
+
+describe('the device notice', () => {
+    it('says how this tab keeps its edits, apart from the dismissable notices', () => {
+        const { stores } = renderWithStores(<SaveNotices />, bundle);
+        act(() => stores.session.getState().setDevice('readonly', 'open in another tab: this one is read-only'));
+        expect(screen.getByRole('note')).toHaveTextContent('open in another tab: this one is read-only');
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+        act(() => stores.session.getState().setDevice('kept', ''));
+        expect(screen.queryByRole('note')).not.toBeInTheDocument();
+    });
+});
+
+describe('the save state while offline', () => {
+    it('says the edits are saved on this device when it keeps them', () => {
+        const { stores } = renderWithStores(<ReviewAppBar />, bundle);
+        act(() => {
+            stores.session.getState().setDevice('kept');
+            stores.session.getState().setSave('offline');
+        });
+        expect(screen.getByLabelText(/^save state/)).toHaveTextContent('offline; saved on this device');
     });
 });
 

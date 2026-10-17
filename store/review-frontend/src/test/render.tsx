@@ -3,7 +3,8 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
-import { createReviewStores, ReviewStoresProvider } from '../store/context';
+import { ReviewStoresProvider } from '../store/context';
+import { createReviewStores } from '../store/reviewStores';
 import type { SessionStoreOptions } from '../store/sessionStore';
 import { theme } from '../theme';
 

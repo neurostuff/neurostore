@@ -1,6 +1,6 @@
 import { Button, Paper, Typography } from '@mui/material';
 import { useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react';
-import { useReviewStores, useSession, useView } from '../store/context';
+import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
 import { canAddEvidence } from '../store/sessionStore';
 import { addSelection } from './addSelection';
 import { snapToWords } from './snap';
@@ -22,7 +22,8 @@ export function SelectionBar({ scrollerRef }: { scrollerRef: RefObject<HTMLEleme
     const text = useSession((s) => s.bundle.text);
     const selection = useView((s) => s.selection);
     const focused = useView((s) => s.focus.key);
-    const canAdd = useSession((s) => canAddEvidence(s.index.slot(focused)));
+    const editable = useIsEditable();
+    const canAdd = useSession((s) => canAddEvidence(s.index.slot(focused))) && editable;
     const needsValue = useSession((s) => s.index.slot(focused)?.value?.extraction_status === 'not_reported');
     const { offsets, rect } = useSelectionOffsets(useContext(TextIndexContext));
     const snapped = useMemo(() => offsets && snapToWords(text, offsets[0], offsets[1]), [text, offsets]);

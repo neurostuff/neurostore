@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { createReviewStores } from '../store/context';
+import { createReviewStores } from '../store/reviewStores';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { createSibling, danglingLinks, linkCandidates } from './actions';
 

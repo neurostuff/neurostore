@@ -121,3 +121,15 @@ describe('adding evidence from a text selection', () => {
         expect(bar()).toHaveStyle({ top: '84px', left: '35px' });
     });
 });
+
+describe('the selection bar in a read-only tab', () => {
+    it('disables adding evidence, and E adds none', () => {
+        const { stores, select } = setup();
+        act(() => stores.session.getState().setDevice('readonly'));
+        select(TEXT.indexOf('ontrol'), TEXT.indexOf('ontrol') + 3);
+        expect(screen.getByRole('button', { name: 'Add to evidence (E)' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'New evidence set (Shift+E)' })).toBeDisabled();
+        press('e');
+        expect(stores.session.getState().pending).toEqual([]);
+    });
+});

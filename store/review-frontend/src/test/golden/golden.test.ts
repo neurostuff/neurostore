@@ -10,7 +10,7 @@ import { codePointPaper } from '../../model/offsets';
 import type { Json } from '../../model/paths';
 import { slotKey } from '../../model/targetKey';
 import { ReviewScreen } from '../../review/ReviewScreen';
-import { createReviewStores, type ReviewStores } from '../../store/context';
+import { createReviewStores, type ReviewStores } from '../../store/reviewStores';
 import type { EvidenceMode } from '../../store/sessionStore';
 import { renderWithStores } from '../render';
 import { validateOpBatch } from '../schemas';

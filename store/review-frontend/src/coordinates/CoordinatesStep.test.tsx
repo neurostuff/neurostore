@@ -667,3 +667,25 @@ describe('while a coordinate op is pending', () => {
         expect(within(card(FACES.name)).getByText('saving…')).toBeInTheDocument();
     });
 });
+
+describe('the coordinates step in a read-only tab', () => {
+    it('keeps the inspector’s focus buttons working, and disables its edit actions and the panels they open', () => {
+        const { stores, viewState } = setup();
+        act(() => stores.session.getState().setDevice('readonly'));
+        act(() => stores.view.setState({ offer: { entity: 'ana_faces' } }));
+        const open = screen.getByRole('button', { name: /^Open the record’s card for / });
+        expect(open).toBeEnabled();
+        within(toolbar())
+            .getAllByRole('button')
+            .forEach((button) => expect(button).toBeDisabled());
+        screen
+            .getAllByRole('button', { name: /^Add an analysis to / })
+            .forEach((button) => expect(button).toBeDisabled());
+        press('r');
+        press('c');
+        expect(viewState().panel).toBeNull();
+        fireEvent.click(open);
+        expect(viewState().focus.entity).toBe('ana_faces');
+        expect(viewState().coordinates).toBeNull();
+    });
+});

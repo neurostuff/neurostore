@@ -8,7 +8,7 @@ import { GOLDEN_SCHEMAS } from '../test/goldenSchemas';
 import { validateOpBatch } from '../test/schemas';
 import { ev, makeBundle, row } from '../test/bundles';
 import type { Json } from '../model/paths';
-import { createReviewStores } from './context';
+import { createReviewStores } from './reviewStores';
 import { focusedSpans, shownIndex } from '../test/stores';
 import { TEXT, record, entities, storedOp, setup } from '../test/storeFixture';
 

@@ -4,7 +4,7 @@ import { withoutIds } from '../test/undoHelpers';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { renderWithStores } from '../test/render';
 import { ReviewScreen } from './ReviewScreen';
-import type { ReviewStores } from '../store/context';
+import type { ReviewStores } from '../store/reviewStores';
 import { focusedSpans } from '../test/stores';
 
 const TEXT = 'Twenty patients and twenty controls performed a Stroop task during a 3 T fMRI scan.';
@@ -542,5 +542,45 @@ describe('step 4, a leftover that something links to', () => {
         expect(within(dialog).queryByRole('radio', { name: 'dev_a' })).not.toBeInTheDocument();
         act(() => stores.session.getState().rebase(linkedBundle));
         expect(within(dialog).getByRole('radio', { name: 'dev_a' })).toBeInTheDocument();
+    });
+});
+
+describe('the steps in a read-only tab', () => {
+    const readOnly = (step: Parameters<typeof setup>[0]) => {
+        const view = setup(step);
+        act(() => view.stores.session.getState().setDevice('readonly'));
+        return view;
+    };
+
+    it('still focuses an entity from its card, and disables accepting and unlinking the links into it', () => {
+        const { stores } = readOnly('entities');
+        fireEvent.click(within(cardList('entities')).getByRole('button', { name: /^Patients/ }));
+        expect(stores.view.getState().focus.entity).toBe('grp_a');
+        fireEvent.click(within(cardList('entities')).getByRole('button', { name: /^fMRI/ }));
+        expect(stores.view.getState().focus.entity).toBe('acq_1');
+        const links = screen.getByRole('list', { name: 'linked from' });
+        [
+            ...within(links).getAllByRole('button', { name: 'Accept link' }),
+            ...within(links).getAllByRole('button', { name: 'Unlink' }),
+        ].forEach((button) => expect(button).toBeDisabled());
+    });
+
+    it('disables the audit’s link toggles', () => {
+        readOnly('relationships');
+        expect(screen.getByRole('button', { name: 'Patients > Controls → Controls' })).toBeDisabled();
+    });
+
+    it('disables the leftover actions', () => {
+        readOnly('leftovers');
+        within(screen.getByRole('toolbar', { name: 'leftover actions' }))
+            .getAllByRole('button')
+            .forEach((button) => expect(button).toBeDisabled());
+    });
+
+    it('offers no unlink on a reference', () => {
+        const { stores } = readOnly('analyses');
+        act(() => stores.view.getState().focusEntity('a_1'));
+        expect(screen.getByRole('button', { name: 'fMRI' })).toBeInTheDocument();
+        expect(screen.queryByLabelText('unlink fMRI')).not.toBeInTheDocument();
     });
 });

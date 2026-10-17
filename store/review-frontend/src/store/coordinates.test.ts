@@ -17,7 +17,7 @@ import {
     span,
 } from '../test/coordinates';
 import { linkedBundle, RECORDED } from '../test/linked';
-import { createReviewStores } from './context';
+import { createReviewStores } from './reviewStores';
 import { focusedSpans } from '../test/stores';
 
 const open = () => createReviewStores(coordinateBundle(), { now: () => 'now' });

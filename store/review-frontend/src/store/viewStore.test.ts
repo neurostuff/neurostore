@@ -1,5 +1,5 @@
 import { entityRows, makeBundle, row } from '../test/bundles';
-import { createReviewStores } from './context';
+import { createReviewStores } from './reviewStores';
 import { openPanelOn } from '../inspector/openPanel';
 import { evidenceCursor, focusedSpans, shownIndex } from '../test/stores';
 import { TEXT, record, setup } from '../test/storeFixture';

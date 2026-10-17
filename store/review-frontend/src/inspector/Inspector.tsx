@@ -5,7 +5,7 @@ import type { EntityNode, SlotNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
 import { ActionToolbar } from '../review/ActionToolbar';
 import { useEditorName } from '../review/editor';
-import { useReviewStores, useSession, useView } from '../store/context';
+import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
 import type { Panel } from '../store/viewStore';
 import { pendingStructure, setValue, slotSchema, unlink } from './actions';
 import { CreateDialog, DeleteDialog, LinkPanel, NotePanel, RejectPanel } from './panels';
@@ -19,6 +19,7 @@ import { StatusLabel } from './StatusLabel';
 
 function ReferenceChips({ slot }: { slot: SlotNode }) {
     const stores = useReviewStores();
+    const editable = useIsEditable();
     const index = useSession((s) => s.index);
     const pending = useSession((s) => s.pending);
     const focusEntity = useView((s) => s.focusEntity);
@@ -46,7 +47,7 @@ function ReferenceChips({ slot }: { slot: SlotNode }) {
                             event.stopPropagation();
                             focusEntity(id);
                         }}
-                        onDelete={unlinking ? undefined : () => void unlink(stores, slot, id)}
+                        onDelete={unlinking || !editable ? undefined : () => void unlink(stores, slot, id)}
                         deleteIcon={<RemoveIcon label={`unlink ${nameOf(id)}`} />}
                     />
                 );

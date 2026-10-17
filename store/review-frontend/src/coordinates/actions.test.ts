@@ -1,4 +1,4 @@
-import { createReviewStores } from '../store/context';
+import { createReviewStores } from '../store/reviewStores';
 import { coordinateBundle, FACES } from '../test/coordinates';
 import { relabelAnalysis } from './actions';
 

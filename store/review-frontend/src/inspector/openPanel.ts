@@ -1,6 +1,6 @@
 import { coordinatePanelFor } from '../coordinates/actions';
 import { panelFor } from './actions';
-import type { ReviewStores } from '../store/context';
+import type { ReviewStores } from '../store/reviewStores';
 import type { PanelKind } from '../store/viewStore';
 
 /** Opens the panel `kind` on the focused coordinate analysis or record item; nothing where it does not apply. */

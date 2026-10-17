@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { acceptTarget, link, mergeCandidates, mergeCopies, mergeInto } from '../inspector/actions';
 import { ConfirmDialog, PickPanel } from '../inspector/panels';
 import type { EntityNode } from '../model/record';
-import { useReviewStores, useShown, useView } from '../store/context';
+import { useIsEditable, useReviewStores, useShown, useView } from '../store/context';
 import type { PanelKind } from '../store/viewStore';
 import { analysisSlotsFor } from '../model/guided';
 import { openPanelOn } from '../inspector/openPanel';
@@ -93,6 +93,7 @@ function MergeDialog({ entity }: { entity: EntityNode }) {
 /** Step 4's actions on a leftover entity: keep, link from an analysis, merge into another, or delete. */
 export function LeftoverActions({ entity }: { entity: EntityNode }) {
     const stores = useReviewStores();
+    const editable = useIsEditable();
     const panel = useView((s) => s.panel?.kind);
     const openPanel = (kind: PanelKind) => openPanelOn(stores, kind);
     return (
@@ -101,17 +102,24 @@ export function LeftoverActions({ entity }: { entity: EntityNode }) {
                 <Button
                     size="small"
                     variant="outlined"
+                    disabled={!editable}
                     onClick={() => acceptTarget(stores, { kind: 'entity', entity: entity.id })}
                 >
                     Keep
                 </Button>
-                <Button size="small" variant="outlined" onClick={() => openPanel('link_analysis')}>
+                <Button size="small" variant="outlined" disabled={!editable} onClick={() => openPanel('link_analysis')}>
                     Link to an analysis
                 </Button>
-                <Button size="small" variant="outlined" onClick={() => openPanel('merge_entity')}>
+                <Button size="small" variant="outlined" disabled={!editable} onClick={() => openPanel('merge_entity')}>
                     Merge into…
                 </Button>
-                <Button size="small" variant="outlined" color="error" onClick={() => openPanel('delete')}>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    disabled={!editable}
+                    onClick={() => openPanel('delete')}
+                >
                     Delete
                 </Button>
             </Stack>

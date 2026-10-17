@@ -2,7 +2,7 @@ import { ApiError, ROLE_MESSAGE, type ReviewApi, type ReviewLifecycle, type SetA
 import { BATCH_MAX_OPS, type Op } from '../contract/generated/review-ops';
 import { isLocalOp } from '../model/applyOp';
 import { spansToCodePoints } from '../model/offsets';
-import { selectIsBlocked, type Refusal, type SessionStore } from './sessionStore';
+import { selectIsBlocked, selectIsEditable, type Refusal, type SessionStore } from './sessionStore';
 
 export const DEBOUNCE_MS = 1000;
 export const MAX_BACKOFF_MS = 30_000;
@@ -92,10 +92,17 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
     const state = () => store.getState();
     const editedSinceSend = () => debounce !== undefined;
 
+    /** Shows whether the network is up in the save status, leaving a save stopped for another reason as it is. */
+    function showNetwork(up: boolean) {
+        const { save, setSave } = state();
+        if (up && save === 'offline') setSave('idle');
+        if (!up && (save === 'idle' || save === 'saving')) setSave('offline');
+    }
+
     function retryLater(batch: Op[]) {
         unansweredBatch = batch;
         failures += 1;
-        state().setSave('offline');
+        showNetwork(false);
         if (stopped) return;
         const delay = Math.min(DEBOUNCE_MS * 2 ** (failures - 1), MAX_BACKOFF_MS);
         backoff = setTimeout(() => {
@@ -151,7 +158,14 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
         try {
             for (;;) {
                 const { save, pending, bundle } = state();
-                if (save === 'closed' || selectIsBlocked(state()) || backoff || !bundle.review) return;
+                if (
+                    save === 'closed' ||
+                    !selectIsEditable(state()) ||
+                    selectIsBlocked(state()) ||
+                    backoff ||
+                    !bundle.review
+                )
+                    return;
                 const hidden = document.visibilityState === 'hidden';
                 const { batch, sent, size } = unansweredBatch
                     ? measured(bundle.text, unansweredBatch)
@@ -186,6 +200,14 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
     const onVisibility = () => {
         if (document.visibilityState === 'hidden') flushNow();
     };
+    const onOnline = () => {
+        if (state().save !== 'offline') return;
+        clearTimeout(backoff);
+        backoff = undefined;
+        showNetwork(true);
+        flushNow();
+    };
+    const onOffline = () => showNetwork(false);
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
         if (state().pending.length === 0) return;
         event.preventDefault();
@@ -194,6 +216,7 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
 
     return {
         start() {
+            stopped = false;
             unsubscribe = store.subscribe((next, previous) => {
                 const last = next.pending.at(-1);
                 if (!last || previous.pending.some((op) => op.client_op_id === last.client_op_id)) return;
@@ -203,6 +226,9 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
             });
             window.addEventListener('blur', flushNow);
             window.addEventListener('beforeunload', onBeforeUnload);
+            window.addEventListener('online', onOnline);
+            window.addEventListener('offline', onOffline);
+            if (!navigator.onLine) onOffline();
             document.addEventListener('visibilitychange', onVisibility);
         },
         stop() {
@@ -214,12 +240,15 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
             unsubscribe();
             window.removeEventListener('blur', flushNow);
             window.removeEventListener('beforeunload', onBeforeUnload);
+            window.removeEventListener('online', onOnline);
+            window.removeEventListener('offline', onOffline);
             document.removeEventListener('visibilitychange', onVisibility);
             flushNow();
         },
         flush,
-        /** Saves what is pending, then moves the review to `next`. */
+        /** Saves what is pending, then moves the review to `next`; nothing while the session takes no edits. */
         async changeState(next: ReviewLifecycle, setAside?: SetAside) {
+            if (!selectIsEditable(state())) return;
             await flush();
             if (selectIsBlocked(state())) return;
             const { review } = state().bundle;
