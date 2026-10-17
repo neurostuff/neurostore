@@ -59,6 +59,7 @@ def upgrade():
         sa.Column("fulltext_id", sa.Text(), nullable=False),
         sa.Column("parsed_paper", JSONB(), nullable=True),
         sa.Column("coordinate_parse", JSONB(), nullable=True),
+        sa.Column("coordinate_revision", JSONB(), nullable=True),
         sa.Column("record", JSONB(), nullable=False),
         sa.Column("judgeable_keys", JSONB(), nullable=False),
         sa.Column("pipeline_config_id", sa.Text(), nullable=True),

@@ -23,6 +23,8 @@ class ReviewSource(BaseMixin, db.Model):
     )
     parsed_paper = db.Column(JSONB)
     coordinate_parse = db.Column(JSONB)
+    #: The pipeline's revision of coordinate_parse, which a review of the source starts from.
+    coordinate_revision = db.Column(JSONB, nullable=True)
     record = db.Column(JSONB, nullable=False)
     judgeable_keys = db.Column(JSONB, nullable=False)
     pipeline_config_id = db.Column(

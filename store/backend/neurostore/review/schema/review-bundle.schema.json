@@ -29,7 +29,7 @@
     "parsed_paper": {"type": "object"},
     "coordinate_parse": {"description": "The parse as loaded, unchanged.", "type": "object"},
     "record": {"description": "The extraction record with the reviewer's ops applied (the loaded record when there is no review yet).", "type": "object"},
-    "coordinate_revision": {"description": "The reviewer's revision of the coordinate parse, or null when coordinates are unchanged.", "type": ["object", "null"]},
+    "coordinate_revision": {"description": "The reviewer's revision of the coordinate parse, or null when coordinates are unchanged; before a review starts, the revision the source was loaded with.", "type": ["object", "null"]},
     "review": {
       "oneOf": [
         {"type": "null"},
@@ -72,12 +72,13 @@
     "entities": {"$ref": "#/$defs/EntityIndex"},
     "hidden": {"$ref": "#/$defs/HiddenSet"},
     "original": {
-      "description": "The extraction record as loaded, before any of the reviewer's ops, with its entity index and hidden set.",
+      "description": "The extraction record and coordinates as loaded, before any of the reviewer's ops, with the record's entity index and hidden set.",
       "type": "object",
-      "required": ["record", "entities", "hidden"],
+      "required": ["record", "coordinate_revision", "entities", "hidden"],
       "additionalProperties": false,
       "properties": {
         "record": {"type": "object"},
+        "coordinate_revision": {"description": "The pipeline's revision of the coordinate parse the source was loaded with, or null when it was loaded with the parse alone.", "type": ["object", "null"]},
         "entities": {"$ref": "#/$defs/EntityIndex"},
         "hidden": {"$ref": "#/$defs/HiddenSet"}
       }

@@ -52,6 +52,13 @@ def _load_shell_runtime():
     return namespace, db
 
 
+def _report(report):
+    """Print an import's report and exit 1 if any paper failed."""
+    click.echo(json.dumps(report, indent=2))
+    if report["failed"]:
+        raise SystemExit(1)
+
+
 @click.group()
 def main():
     """NeuroStore service management commands."""
@@ -162,10 +169,39 @@ def review_import_command(path, user_id, run_id):
         db.session.commit()
         return report
 
-    report = _run_with_runtime(_run)
-    click.echo(json.dumps(report, indent=2))
-    if report["failed"]:
-        raise SystemExit(1)
+    _report(_run_with_runtime(_run))
+
+
+@main.command("review-import-run")
+@click.option("--config-id", required=True, help="the pipeline config whose records to load")
+@click.option("--run-id", required=True, help="the run of that config")
+@click.option("--user-id", required=True, help="the reviewer who loads the papers")
+@click.option(
+    "--papers",
+    required=True,
+    type=click.Path(exists=True, path_type=Path),
+    help="a layout directory or zip with each paper's parsed paper and text",
+)
+def review_import_run_command(config_id, run_id, user_id, papers):
+    """Load the records a pipeline run stored in neurostore for review, with the parsed papers
+    and texts of ``--papers``.
+
+    Prints the report as JSON and exits 1 if any paper failed.
+    """
+
+    def _run(_app, db):
+        from neurostore.review.app.imports import import_pipeline_run
+
+        try:
+            report = import_pipeline_run(
+                db.session, config_id=config_id, run_id=run_id, user_id=user_id, papers=papers
+            )
+        except ReviewError as error:
+            raise click.ClickException(str(error)) from error
+        db.session.commit()
+        return report
+
+    _report(_run_with_runtime(_run))
 
 
 @main.command("review-export")

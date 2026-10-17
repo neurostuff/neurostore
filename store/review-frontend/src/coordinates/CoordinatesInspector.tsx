@@ -10,6 +10,7 @@ import { useSession, useView } from '../store/context';
 import { focusedAnalysis } from '../model/coordinateFocus';
 import { analysisTarget } from '../model/targetKey';
 import { coordinatePending } from './actions';
+import { AuthorshipChip } from './AuthorshipChip';
 import { AddAnalysisPanel, MergeDialog, MovePanel, PointPanel, RelabelPanel } from './panels';
 
 function Offer() {
@@ -51,6 +52,7 @@ export function CoordinatesInspector() {
                     <CardHead overline="coordinate analysis" title={analysis.name}>
                         <Stack direction="row" spacing={1.5} alignItems="center" useFlexGap flexWrap="wrap">
                             <Chip size="small" variant="outlined" label={analysis.role} />
+                            <AuthorshipChip analysis={analysis} />
                             <StatusLabel id={reviewStatus(reviewed)} by={editor} />
                             <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
                                 {analysis.key}

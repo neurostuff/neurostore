@@ -95,7 +95,7 @@ def _build(source_id, base_study_id, label, review_ops):
         },
         text=records.TEXT,
         parsed_paper=fx.parsed_paper(),
-        original=base.record,
+        original={"record": base.record, "coordinate_revision": None},
         state=state,
         review={"id": "golden-review-1", "user_id": USER, "state": "in_progress"},
         ops=stored,

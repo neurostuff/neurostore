@@ -59,7 +59,12 @@ describe('review shortcuts', () => {
             <ReviewScreen />,
             makeBundle(edited, TEXT, {
                 entities,
-                original: { record: { local_id: 'P1', ...record }, entities, hidden: { analyses: [], entities: [] } },
+                original: {
+                    record: { local_id: 'P1', ...record },
+                    coordinate_revision: null,
+                    entities,
+                    hidden: { analyses: [], entities: [] },
+                },
             })
         );
         expect(stores.view.getState().focus.key).toBe('entity:study');

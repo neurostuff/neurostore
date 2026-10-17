@@ -119,6 +119,62 @@ def revise(parse, revision, op):
     return document, before, after, marks, work.replacements
 
 
+def from_chain(parse, revisions):
+    """The revisions of ``parse`` a pipeline made, oldest first, each revising the one before,
+    as one revision of ``parse`` read from the last: the last one's analyses, each deriving
+    from the originals the chain's verdicts map to it.
+
+    An original takes the reason of the last revision that changed it, else of the last that
+    accepted it; an added analysis keeps the reason it was added with.
+    """
+    descendants, reasons = _trace_origins(parse, revisions)
+    return _assemble(parse, revisions[-1], descendants, reasons)
+
+
+def _trace_origins(parse, revisions):
+    """``(descendants, reasons)``: the keys each original of ``parse`` became along
+    ``revisions``, and the reason each original and each added analysis carries."""
+    descendants = {a["key"]: [a["key"]] for a in parse["analyses"]}
+    changed, accepted, added = {}, {}, {}
+    for revision in revisions:
+        by_key = {v["key"]: v for v in revision.get("verdicts") or ()}
+        for key, keys in descendants.items():
+            judged = [by_key[k] for k in keys if k in by_key]
+            if judged:
+                reason, changes = _reason_for(judged)
+                (changed if changes else accepted)[key] = reason
+            descendants[key] = list(
+                dict.fromkeys(new for k in keys for new in _successors(by_key.get(k), k))
+            )
+        added.update((v["key"], v["reason"]) for v in by_key.values() if v["verdict"] == "add")
+    return descendants, {**accepted, **changed, **added}
+
+
+def _reason_for(judged):
+    """``(reason, changes)`` for the verdicts one revision gave an original's analyses: the
+    reason of the first that changed one, else of the first accept."""
+    changing = [v for v in judged if v["verdict"] != "accept"]
+    return (changing or judged)[0]["reason"], bool(changing)
+
+
+def _assemble(parse, last, descendants, reasons):
+    """``last``'s analyses as a revision of ``parse`` read from ``last``, each deriving from
+    the originals whose ``descendants`` hold its key."""
+    origins = defaultdict(list)
+    for key, keys in descendants.items():
+        for new in keys:
+            origins[new].append(key)
+    analyses = []
+    for analysis in last["analyses"]:
+        analysis = {k: v for k, v in analysis.items() if k != "derived_from"}
+        derived = origins.get(analysis["key"], [])
+        if derived and derived != [analysis["key"]]:
+            analysis["derived_from"] = derived
+        analyses.append(analysis)
+    work = _Revision(parse, {"analyses": analyses}, reasons=reasons, read=[last["parse_id"]])
+    return work.document()
+
+
 def restore_op(before, after):
     """The coordinate op fields that undo an op which stored ``before`` and ``after``."""
     return {
@@ -141,15 +197,16 @@ def _analysis_validator():
 
 
 class _Revision:
-    def __init__(self, parse, revision):
+    def __init__(self, parse, revision, *, reasons=None, read=None):
         self.parse = parse
         self.order = {a["key"]: i for i, a in enumerate(parse["analyses"])}
         self.analyses = list((revision or parse)["analyses"])
-        self.reasons = {
+        self.reasons = reasons if reasons is not None else {
             v["key"]: v["reason"]
             for v in (revision or {}).get("verdicts") or ()
             if v["reason"] != UNJUDGED
         }
+        self.read = read if read is not None else _parses_read(parse, revision)
         self.replacements = []
 
     # the actions
@@ -361,6 +418,7 @@ class _Revision:
             "inputs": [
                 {"artifact_kind": "parsed_paper", "fingerprint": self.parse["text_sha256"]},
                 {"artifact_kind": "coordinate_parse", "fingerprint": self.parse["parse_id"]},
+                *({"artifact_kind": "coordinate_parse", "fingerprint": p} for p in self.read),
             ],
         }
         revision = {
@@ -384,6 +442,24 @@ def _reason(op):
     if op["verdict"] == "accept":
         return "reviewer accept"
     return f"reviewer reject ({op['reason']})"
+
+
+def _parses_read(parse, revision):
+    """The parses other than ``parse`` that ``revision``'s header inputs name."""
+    inputs = ((revision or {}).get("header") or {}).get("inputs") or ()
+    return [
+        entry["fingerprint"]
+        for entry in inputs
+        if entry["artifact_kind"] == "coordinate_parse"
+        and entry["fingerprint"] != parse["parse_id"]
+    ]
+
+
+def _successors(verdict, key):
+    """The keys ``key`` becomes under ``verdict``; itself when the verdict keeps it."""
+    if verdict is None or verdict["verdict"] in ("accept", "relabel"):
+        return [key]
+    return list(verdict.get("replaced_by") or ())
 
 
 def _content_key(analysis):

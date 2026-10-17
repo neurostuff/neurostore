@@ -39,7 +39,10 @@ run_id, same documents) returns the same results and adds none; the same run_id 
 different document for the paper is refused (RUN_ID_REUSED).
 
 Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
-refused (NOT_CURRENT). A record that read an older parse reports the keys that resolve to
+refused (NOT_CURRENT), and so is a revision of a parse that is not current, unless the
+current parse descends from the one it revises and the revision's header inputs name the
+current parse as one it read (a review of a pipeline's revision, exported as a revision of
+the original). A record that read an older parse reports the keys that resolve to
 history as ``superseded`` (a FAILURE row), and its claims are carried through the revisions
 since. The sign of a contrast lives on its condition weights: the inverse half of a sign
 split gets its original half's conditions, negated.
@@ -68,6 +71,7 @@ from neurostore.exceptions.utils.error_helpers import (
 from neurostore.ingest.study_entities import CONTENT_KEYED_CLASSES, sync_record_entities
 from neurostore.models.data import (
     HISTORY_SOURCE,
+    PARSE_PIPELINE,
     PIPELINE_STUDY_SOURCES,
     RECORD_SCHEMA_NAME,
     STUDY_SOURCE,
@@ -93,6 +97,7 @@ from neurostore.models import (
     Table,
 )
 from neurostore.services.has_media_flags import recompute_media_flags
+from neurostore.stored_parses import stored_parse, stored_parse_result
 from neurostore.study_schema_tools import (
     CHILD_LISTS,
     DECLARED_KEYS,
@@ -106,7 +111,6 @@ from neurostore.study_schema_tools import (
     sha256_of,
 )
 
-PARSE_PIPELINE = "coordinate-parse"
 DEFAULT_RECORD_PIPELINE = "pondie"
 
 # Every analysis of a parse is stored whatever its role (result, anchor, localization,
@@ -709,21 +713,11 @@ def _resolve_set_aside(base_study, new_keys):
 
 
 def _stored_parse_result(base_study, parse_id):
-    return (
-        PipelineStudyResult.query.join(PipelineConfig)
-        .join(Pipeline)
-        .filter(
-            Pipeline.name == PARSE_PIPELINE,
-            PipelineStudyResult.base_study_id == base_study.id,
-            PipelineStudyResult.result_data["parse_id"].astext == parse_id,
-        )
-        .first()
-    )
+    return stored_parse_result(db.session, base_study.id, parse_id)
 
 
 def _stored_parse(base_study, parse_id):
-    result = _stored_parse_result(base_study, parse_id)
-    return result.result_data if result is not None else None
+    return stored_parse(db.session, base_study.id, parse_id)
 
 
 def _iso(value):
@@ -763,9 +757,10 @@ def _apply_parse(study, parse, parsed_paper, user):
     base_study = study.base_study
     current_parse_id = study.source_id
     revision_of = parse.get("revision_of")
-    if revision_of and current_parse_id not in (None, parse["parse_id"], revision_of):
+    if revision_of and not _revises_current(base_study, study, parse):
         abort_unprocessable(
-            "A revision must revise the paper's current parse.",
+            "A revision must revise the paper's current parse, or a parse the current one "
+            "revises and name the current one in its inputs as the parse it was read from.",
             [
                 make_field_error(
                     "coordinate_parse/revision_of",
@@ -874,6 +869,20 @@ def _apply_parse(study, parse, parsed_paper, user):
     db.session.flush()
     _link_entities(base_study, study)
     return counts
+
+
+def _revises_current(base_study, study, revision):
+    """Whether ``revision`` revises the paper's current parse, or revises a parse the current
+    one descends from and its header inputs name the current one as a parse it read."""
+    current = study.source_id
+    if current in (None, revision["parse_id"], revision["revision_of"]):
+        return True
+    read = {
+        entry["fingerprint"]
+        for entry in revision["header"].get("inputs") or ()
+        if entry["artifact_kind"] == "coordinate_parse"
+    }
+    return current in read and bool(_revisions_since(base_study, revision["revision_of"], study))
 
 
 def _table(study, tables, t_id, source):

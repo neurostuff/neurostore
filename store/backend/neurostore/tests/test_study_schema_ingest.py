@@ -898,6 +898,79 @@ def test_replaying_a_superseded_parse_is_refused(session):
     assert gains.count() == 1
 
 
+def _read_from(revised, *read, relabel=False):
+    """A revision of ``revised``: the pipeline's revision with Seed omitted, or relabelled, its
+    header inputs naming ``read`` as the parses it was read from (D89)."""
+    pipeline, *_ = _revision()
+    analyses = [a for a in pipeline["analyses"] if a["key"] != SEED["key"]]
+    verdicts = [v for v in pipeline["verdicts"] if v["key"] != SEED["key"]]
+    if relabel:
+        analyses.append({**SEED, "role": "localization"})
+        verdicts.append({**fx.verdict(SEED["key"], "relabel", [SEED["key"]]),
+                         "role": "localization"})
+    else:
+        verdicts.append(fx.verdict(SEED["key"], "omit"))
+    revision = fx.parse(analyses, revision_of=revised["parse_id"], verdicts=verdicts)
+    revision["header"]["inputs"] = [
+        {"artifact_kind": "parsed_paper", "fingerprint": revision["text_sha256"]},
+        *({"artifact_kind": "coordinate_parse", "fingerprint": p["parse_id"]} for p in read),
+    ]
+    return revision
+
+
+def _refused_not_current(body):
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(body)
+    assert error.value.status_code == 422
+    assert "NOT_CURRENT" in str(error.value.to_payload())
+
+
+def test_a_revision_of_the_original_read_from_the_current_parse_is_the_new_current(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+    reviewed = _read_from(ORIGINAL, ORIGINAL, pipeline)
+
+    summary = ingest_upload({"coordinate_parse": reviewed})
+
+    assert (summary["kind"], summary["parse_id"]) == ("revision", reviewed["parse_id"])
+    current = _current(base_study_id)
+    assert current.source_id == reviewed["parse_id"]
+    assert current.metadata_["coordinate_parse"]["revision_of"] == ORIGINAL["parse_id"]
+    assert {a.source_id for a in current.analyses} == {a["key"] for a in reviewed["analyses"]}
+
+
+def test_a_revision_read_from_a_parse_that_is_no_longer_current_is_refused(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+    ingest_upload({"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, pipeline)})
+    current = _current(base_study_id).source_id
+
+    _refused_not_current(
+        {"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, pipeline, relabel=True)}
+    )
+    assert _current(base_study_id).source_id == current
+
+
+def test_a_revision_that_names_no_parse_read_must_revise_the_current_one(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+
+    _refused_not_current({"coordinate_parse": _read_from(ORIGINAL)})
+    assert _current(base_study_id).source_id == pipeline["parse_id"]
+
+
+def test_a_revision_read_from_the_current_parse_must_revise_a_parse_it_came_from(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    reparse = fx.parse([GAIN, LOSS, RISK])
+    ingest_upload({"coordinate_parse": reparse})
+
+    _refused_not_current({"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, reparse)})
+    assert _current(base_study_id).source_id == reparse["parse_id"]
+
+
 def test_record_of_a_revised_parse_is_superseded_and_carried(session):
     base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
     revision, original, inverse, _ = _revision()

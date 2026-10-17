@@ -98,6 +98,7 @@ describe('the submit summary', () => {
                 review: { ...review, last_seq: 2, provenance: { 'entity:a_1': verified, 'slot:grp_b:name': verified } },
                 original: {
                     record: { local_id: 'P1', ...original },
+                    coordinate_revision: null,
                     entities: originalRows,
                     hidden: { analyses: [], entities: [] },
                 },
@@ -239,6 +240,7 @@ describe('the submit summary by kind', () => {
                 review: { ...REVIEW, provenance },
                 original: {
                     record: { local_id: 'P1', ...original },
+                    coordinate_revision: null,
                     entities: originalRows,
                     hidden: { analyses: [], entities: [] },
                 },

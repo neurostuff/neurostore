@@ -43,7 +43,9 @@ const item = (name: string) => screen.getByRole('button', { name: new RegExp(`^$
 
 describe('the outline rail’s status badges', () => {
     it('names the reviewer who made each change, in the badge', () => {
-        const reviewers = [{ user_id: 'u1', name: 'Ana', state: 'in_progress' as const, op_count: 0, last_edit_at: null }];
+        const reviewers = [
+            { user_id: 'u1', name: 'Ana', state: 'in_progress' as const, op_count: 0, last_edit_at: null },
+        ];
         const view = renderWithStores(<OutlineRail />, makeBundle(record, TEXT, { entities, reviewers }));
         fireEvent.click(screen.getByRole('button', { name: 'toggle outline' }));
         act(() => view.stores.session.setState({ provenance: { 'entity:grp_b': provenance('edited') } }));
@@ -111,7 +113,12 @@ describe('the outline rail’s filters', () => {
             <OutlineRail />,
             makeBundle(edited, TEXT, {
                 entities,
-                original: { record: { local_id: 'P1', ...record }, entities, hidden: { analyses: [], entities: [] } },
+                original: {
+                    record: { local_id: 'P1', ...record },
+                    coordinate_revision: null,
+                    entities,
+                    hidden: { analyses: [], entities: [] },
+                },
             })
         );
         fireEvent.click(screen.getByRole('button', { name: 'toggle outline' }));
@@ -125,7 +132,12 @@ describe('the outline rail’s filters', () => {
             <OutlineRail />,
             makeBundle(edited, TEXT, {
                 entities: review,
-                original: { record: { local_id: 'P1', ...record }, entities, hidden: { analyses: [], entities: [] } },
+                original: {
+                    record: { local_id: 'P1', ...record },
+                    coordinate_revision: null,
+                    entities,
+                    hidden: { analyses: [], entities: [] },
+                },
             })
         );
         fireEvent.click(screen.getByRole('button', { name: 'toggle outline' }));
@@ -146,6 +158,7 @@ describe('the outline rail’s filters', () => {
                 entities: rows,
                 original: {
                     record: { local_id: 'P1', ...original },
+                    coordinate_revision: null,
                     entities: rows,
                     hidden: { analyses: [], entities: [] },
                 },

@@ -82,6 +82,31 @@ describe('the coordinates step', () => {
         expect(within(screen.getByRole('region', { name: FACES.name })).getByText('edited by Ana')).toBeInTheDocument();
     });
 
+    it('marks who made each analysis what it is, the model as loaded or the reviewer, on its card and in the inspector', () => {
+        const relabelled = { ...HOUSES, role: 'anchor' };
+        const loaded = revision([FACES, relabelled, LOCALIZER, SCRAMBLED]);
+        const base = coordinateBundle({ coordinate_revision: loaded });
+        const view = setup({ ...base, original: { ...base.original, coordinate_revision: loaded } });
+        const asResult = { ...LOCALIZER, role: 'result' };
+        act(() =>
+            view.stores.session.setState({
+                bundle: { ...view.session().bundle, coordinate_revision: revision([FACES, relabelled, asResult, SCRAMBLED]) },
+            })
+        );
+        expect(within(card(HOUSES.name)).getByText('model')).toBeInTheDocument();
+        expect(within(card(LOCALIZER.name)).queryByText('model')).toBeNull();
+        expect(within(card(FACES.name)).queryByText('model')).toBeNull();
+        expect(within(card(FACES.name)).queryByText('reviewer')).toBeNull();
+        act(() =>
+            view.stores.session.setState({
+                provenance: { [`coordinate_analysis:${FACES.key}`]: { state: 'verified', user_id: 'u1', at: 'then' } },
+            })
+        );
+        expect(within(card(FACES.name)).getByText('reviewer')).toBeInTheDocument();
+        act(() => view.stores.view.getState().focusAnalysis(HOUSES.key));
+        expect(within(screen.getByRole('region', { name: HOUSES.name })).getByText('model')).toBeInTheDocument();
+    });
+
     it('shows each analysis’s name, role, status and points: x, y, z, the values, cluster size and label', () => {
         setup();
         const faces = card(FACES.name);

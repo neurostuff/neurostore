@@ -1060,6 +1060,7 @@
         }
       }
     },
+    "coordinate_revision": null,
     "entities": [
       {
         "local_id": "study",

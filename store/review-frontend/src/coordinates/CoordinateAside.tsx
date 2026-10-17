@@ -12,6 +12,7 @@ import { layoutText, type Block, type ParsedPaperLayout } from '../model/layout'
 import { ASIDE } from '../text/TextIndex';
 import { analysisTarget } from '../model/targetKey';
 import { addAnalysisPanel, pendingKeys } from './actions';
+import { AuthorshipChip } from './AuthorshipChip';
 import { PointGrid } from './PointGrid';
 
 const asideStyles = (theme: Theme) => ({
@@ -61,6 +62,7 @@ const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: Coordi
                     {analysis.name}
                 </Typography>
                 <Chip size="small" variant="outlined" label={analysis.role} />
+                <AuthorshipChip analysis={analysis} />
                 <StatusLabel id={reviewStatus(reviewed)} by={editor} />
                 {nonCoordinate && <Chip size="small" label="non-coordinate" />}
                 {merging && (

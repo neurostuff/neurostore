@@ -118,8 +118,13 @@ describe('make-fixtures.py', () => {
         ]);
     });
 
-    it('carries the record as loaded as its original, with its entity index and hidden set', () => {
-        expect(bundle.original).toEqual({ record: bundle.record, entities: bundle.entities, hidden: bundle.hidden });
+    it('carries the record as loaded as its original, with no revision, its entity index and hidden set', () => {
+        expect(bundle.original).toEqual({
+            record: bundle.record,
+            coordinate_revision: null,
+            entities: bundle.entities,
+            hidden: bundle.hidden,
+        });
     });
 
     it('lists the bundles in index.json', () => {

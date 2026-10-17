@@ -1,17 +1,10 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { AnyTarget, Evidence } from '../contract/generated/review-ops';
 import type { ProvenanceMap } from './applyOp';
-import {
-    currentAnalyses,
-    hasPoints,
-    type AnalysisChange,
-    type AnalysisVerdict,
-    type CoordinateAnalysis,
-    type CoordinateParse,
-} from './coordinates';
+import type { AnalysisDiff } from './coordinateDiff';
+import { currentAnalyses } from './coordinates';
 import { isObject, type Json } from './paths';
 import {
-    sortSpans,
     type EntityNode,
     type ExtractedValue,
     type RecordIndex,
@@ -24,7 +17,7 @@ export type DiffStatus = 'same' | 'changed' | 'added' | 'removed' | 'rejected';
 
 export const isChange = (status: DiffStatus) => status !== 'same';
 
-interface Item {
+export interface Item {
     key: string;
     status: DiffStatus;
     hidden: boolean;
@@ -53,14 +46,8 @@ export interface RelationshipDiff extends Item {
     target: string;
 }
 
-export interface AnalysisDiff extends Item {
-    kind: 'analysis';
-    change: AnalysisChange;
-    before?: CoordinateAnalysis;
-    after: CoordinateAnalysis[];
-}
-
 export type RecordDiffItem = EntityDiff | SlotDiff | RelationshipDiff;
+export type { AnalysisDiff };
 export type DiffItem = RecordDiffItem | AnalysisDiff;
 
 export interface RecordSide {
@@ -185,7 +172,7 @@ function buildRecordDiff(original: RecordIndex, review: RecordIndex): RecordDiff
 }
 
 /** The value `map` holds for `key`, built and kept on the first ask. */
-function cached<K extends object, T>(map: WeakMap<K, T>, key: K, build: () => T): T {
+export function cached<K extends object, T>(map: WeakMap<K, T>, key: K, build: () => T): T {
     let value = map.get(key);
     if (value === undefined) map.set(key, (value = build()));
     return value;
@@ -197,84 +184,6 @@ const recordDiffs = new WeakMap<Json, WeakMap<Json, RecordDiffItem[]>>();
 export function diffRecords(original: RecordSide, review: RecordSide): RecordDiffItem[] {
     const ofOriginal = cached(recordDiffs, original.record, () => new WeakMap());
     return cached(ofOriginal, review.record, () => buildRecordDiff(original.index, review.index));
-}
-
-const analysisSpans = (analysis: CoordinateAnalysis | undefined): SpanPair[] =>
-    sortSpans(
-        [
-            ...(analysis?.text_spans ?? []),
-            ...(analysis?.points ?? []).flatMap((p) => (p.text_span ? [p.text_span] : [])),
-        ].map((s): SpanPair => [s.start_char, s.end_char])
-    );
-
-const omit = (analysis: CoordinateAnalysis, field: string) =>
-    Object.fromEntries(Object.entries(analysis).filter(([name]) => name !== field));
-const withoutOrigins = (analysis: CoordinateAnalysis) => omit(analysis, 'derived_from');
-
-function buildCoordinateDiff(
-    parse: CoordinateParse,
-    revision: CoordinateParse,
-    provenance: ProvenanceMap
-): AnalysisDiff[] {
-    const originals = parse.analyses ?? [];
-    const current = revision.analyses ?? [];
-    const byKey = new Map(current.map((a) => [a.key, a]));
-    const verdicts = new Map((revision.verdicts ?? []).map((v) => [v.key, v]));
-    const rejected = (key: string) =>
-        provenance[targetKey({ kind: 'coordinate_analysis', analysis_key: key })]?.state === 'removed';
-    const item = (
-        key: string,
-        status: DiffStatus,
-        change: AnalysisChange,
-        before: CoordinateAnalysis | undefined,
-        after: CoordinateAnalysis[]
-    ): AnalysisDiff => ({
-        kind: 'analysis',
-        key: targetKey({ kind: 'coordinate_analysis', analysis_key: key }),
-        status,
-        change,
-        hidden: !hasPoints(before ?? after[0]),
-        before,
-        after,
-        evidence: { before: analysisSpans(before), after: sortSpans(after.flatMap(analysisSpans)) },
-    });
-    const judged = originals.map((original) => {
-        const verdict: AnalysisVerdict = verdicts.get(original.key) ?? {
-            key: original.key,
-            verdict: byKey.has(original.key) ? 'accept' : 'omit',
-        };
-        const replacements = (verdict.replaced_by ?? [original.key]).flatMap((k) => byKey.get(k) ?? []);
-        if (verdict.verdict === 'omit') return item(original.key, 'removed', 'omit', original, []);
-        if (replacements.length > 0 && replacements.every((a) => rejected(a.key))) {
-            return item(original.key, 'removed', 'reject', original, []);
-        }
-        if (verdict.verdict !== 'accept') return item(original.key, 'changed', verdict.verdict, original, replacements);
-        const same = replacements.length === 1 && sameJson(withoutOrigins(original), withoutOrigins(replacements[0]));
-        return item(original.key, same ? 'same' : 'changed', same ? 'accept' : 'edit', original, replacements);
-    });
-    const known = new Set(originals.map((a) => a.key));
-    const added = current
-        .filter((a) => !known.has(a.key) && !a.derived_from?.length)
-        .map((a) => item(a.key, rejected(a.key) ? 'removed' : 'added', 'add', undefined, [a]));
-    return [...judged, ...added];
-}
-
-const coordinateDiffs = new WeakMap<
-    CoordinateParse,
-    WeakMap<CoordinateParse, WeakMap<ProvenanceMap, AnalysisDiff[]>>
->();
-
-/** Each original coordinate analysis as the revision and its verdicts judge it, then those the reviewer added; computed once per parse, revision and provenance. */
-export function diffCoordinates(
-    parse: CoordinateParse | null | undefined,
-    revision: CoordinateParse | null | undefined,
-    provenance: ProvenanceMap
-): AnalysisDiff[] {
-    if (!parse) return [];
-    const current = revision ?? parse;
-    const ofParse = cached(coordinateDiffs, parse, () => new WeakMap());
-    const ofRevision = cached(ofParse, current, () => new WeakMap());
-    return cached(ofRevision, provenance, () => buildCoordinateDiff(parse, current, provenance));
 }
 
 const diffs = new WeakMap<RecordDiffItem[], WeakMap<AnalysisDiff[], WeakMap<ProvenanceMap, ReviewDiff>>>();

@@ -175,12 +175,33 @@ class ReviewExportsView:
         )
 
 
+def _import_zip(file, load):
+    """``load(layout)``'s result, committed, with the uploaded zip spooled to ``layout``."""
+    with tempfile.TemporaryDirectory() as directory:
+        layout = Path(directory) / "layout.zip"
+        _spool(file, layout)
+        return _commit(lambda: load(layout))
+
+
 class ReviewImportsView:
     def post(self, file):
         user = _lead_reviewer()
-        with tempfile.TemporaryDirectory() as directory:
-            layout = Path(directory) / "layout.zip"
-            _spool(file, layout)
-            return _commit(
-                lambda: imports.import_layout(db.session, layout, user_id=user.external_id)
-            )
+        return _import_zip(
+            file,
+            lambda layout: imports.import_layout(db.session, layout, user_id=user.external_id),
+        )
+
+
+class ReviewPipelineImportsView:
+    def post(self, body, file):
+        user = _lead_reviewer()
+        return _import_zip(
+            file,
+            lambda layout: imports.import_pipeline_run(
+                db.session,
+                config_id=body["config_id"],
+                run_id=body["run_id"],
+                user_id=user.external_id,
+                papers=layout,
+            ),
+        )

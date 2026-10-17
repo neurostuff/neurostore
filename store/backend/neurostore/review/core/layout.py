@@ -128,16 +128,30 @@ def read_provenance(root: Path | zipfile.Path, study_id: str) -> dict | None:
     return document
 
 
-def read_paper(root: Path | zipfile.Path, study_id: str) -> Paper:
-    paths = _document_paths(study_id)
-    raw = _read(root, list(paths.values()))
-    documents = _parse_documents(paths, raw)
-    text_path = _text_path(study_id, documents["parsed_paper"])
+def _read_text(root, study_id, parsed_paper, raw):
+    text_path = _text_path(study_id, parsed_paper)
     raw.update(_read(root, [text_path]))
     try:
-        text = raw[text_path].decode("utf-8")
+        return raw[text_path].decode("utf-8")
     except UnicodeDecodeError as error:
         raise LayoutError([f"{text_path} is not UTF-8 text: {error}"]) from error
+
+
+def _read_documents(root, study_id, names=None):
+    """``(documents, text, raw)``: the paper's JSON documents ``names``, else all of them, and
+    the text its parsed paper names."""
+    paths = {
+        name: path
+        for name, path in _document_paths(study_id).items()
+        if names is None or name in names
+    }
+    raw = _read(root, list(paths.values()))
+    documents = _parse_documents(paths, raw)
+    return documents, _read_text(root, study_id, documents["parsed_paper"], raw), raw
+
+
+def read_paper(root: Path | zipfile.Path, study_id: str) -> Paper:
+    documents, text, raw = _read_documents(root, study_id)
     return Paper(
         study_id=study_id,
         parsed_paper=documents["parsed_paper"],
@@ -146,6 +160,12 @@ def read_paper(root: Path | zipfile.Path, study_id: str) -> Paper:
         text=text,
         raw=raw,
     )
+
+
+def read_parsed_paper(root: Path | zipfile.Path, study_id: str) -> tuple[dict, str]:
+    """A paper's parsed paper and the text it names, without its parse or record."""
+    documents, text, _ = _read_documents(root, study_id, ("parsed_paper",))
+    return documents["parsed_paper"], text
 
 
 def _dotted(path):
@@ -266,13 +286,23 @@ def open_layout(source: Path):
         raise LayoutError([f"{source} is neither a layout directory nor a zip"])
 
 
-def study_ids(root) -> list[str]:
-    """The ids of the papers under ``root`` that have a record, sorted."""
+def _ids_with(root, path_of):
+    """The ids of the papers under ``root`` that have the file ``path_of`` names, sorted."""
     return sorted(
         child.name
         for child in (root / "corpus").iterdir()
-        if child.is_dir() and (root / _record_path(child.name)).is_file()
+        if child.is_dir() and (root / path_of(child.name)).is_file()
     )
+
+
+def study_ids(root) -> list[str]:
+    """The ids of the papers under ``root`` that have a record, sorted."""
+    return _ids_with(root, _record_path)
+
+
+def parsed_paper_ids(root) -> list[str]:
+    """The ids of the papers under ``root`` that have a parsed paper, sorted."""
+    return _ids_with(root, lambda study_id: _document_paths(study_id)["parsed_paper"])
 
 
 def read_layout(source: Path) -> list[Paper]:

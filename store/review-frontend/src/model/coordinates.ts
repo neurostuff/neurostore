@@ -38,12 +38,13 @@ export interface CoordinateParse {
     verdicts?: AnalysisVerdict[];
 }
 
-/** A bundle's coordinate parse and revision, and the record as loaded, typed. */
+/** A bundle's coordinate parse and revision, and the record and revision as loaded, typed. */
 export function parseOf(bundle: Pick<ReviewBundle, 'coordinate_parse' | 'coordinate_revision' | 'original'>) {
     return {
         parse: bundle.coordinate_parse as CoordinateParse,
         revision: bundle.coordinate_revision as CoordinateParse | null,
         originalRecord: bundle.original.record as Json,
+        loaded: bundle.original.coordinate_revision as CoordinateParse | null,
     };
 }
 
@@ -133,7 +134,7 @@ export function pointSpan(
 }
 
 /** The originals an analysis comes from: those it is derived from, or itself when it is carried over. */
-const originsOf = (analysis: CoordinateAnalysis) =>
+export const originsOf = (analysis: CoordinateAnalysis) =>
     analysis.derived_from?.length ? analysis.derived_from : [analysis.key];
 
 /** The key of the analysis in `after` that takes the place of `key` in `before`: itself, else the first new analysis sharing its originals. */

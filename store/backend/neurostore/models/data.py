@@ -1416,6 +1416,8 @@ HISTORY_SOURCE = "study_schema:superseded"
 PIPELINE_STUDY_SOURCES = (STUDY_SOURCE, HISTORY_SOURCE)
 # The PipelineConfig schema name of a pondie extraction record (study_schema's record).
 RECORD_SCHEMA_NAME = "neuroimaging-study-extraction"
+# The pipeline whose PipelineStudyResults are the coordinate parses the ingester stored whole.
+PARSE_PIPELINE = "coordinate-parse"
 RESULT_ROLE = "result"
 
 

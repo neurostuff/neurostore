@@ -33,7 +33,7 @@ function reviewed() {
     return createReviewStores(
         makeBundle(record, TEXT, {
             entities,
-            original: { record: { local_id: 'P1', ...original }, entities, hidden },
+            original: { record: { local_id: 'P1', ...original }, coordinate_revision: null, entities, hidden },
         })
     );
 }
@@ -113,6 +113,23 @@ describe('the session’s diff against the original', () => {
         expect(coordinates.view.getState().coordinates).toBeNull();
     });
 
+    it('lines the coordinates up with the pipeline’s split the source was loaded with, its parts the same', () => {
+        const split = [
+            { ...FACES, key: key(0xe1), points: FACES.points!.slice(0, 1), derived_from: [FACES.key] },
+            { ...FACES, key: key(0xe2), points: FACES.points!.slice(1), derived_from: [FACES.key] },
+        ];
+        const loaded = {
+            ...revision([...split, HOUSES, LOCALIZER, SCRAMBLED]),
+            verdicts: [{ key: FACES.key, verdict: 'split', replaced_by: split.map((a) => a.key) }],
+        };
+        const base = coordinateBundle({ coordinate_revision: loaded });
+        const store = createReviewStores({ ...base, original: { ...base.original, coordinate_revision: loaded } });
+        const analyses = selectDiff(store.session.getState()).items.filter((item) => item.kind === 'analysis');
+        expect(analyses.map((item) => [item.key, item.status])).toEqual(
+            [...split, HOUSES, LOCALIZER, SCRAMBLED].map((a) => [`coordinate_analysis:${a.key}`, 'same'])
+        );
+    });
+
     it('steps onto a changed coordinate analysis by its key in the revision', () => {
         const split = [
             { ...FACES, key: key(0xe1), points: FACES.points!.slice(0, 1), derived_from: [FACES.key] },
@@ -169,6 +186,7 @@ function removals(showNonCoordinate = false) {
         hidden: { analyses: ['a_hidden'], entities: [] },
         original: {
             record: { local_id: 'P1', ...REMOVALS },
+            coordinate_revision: null,
             entities: REMOVAL_ROWS,
             hidden: { analyses: ['a_hidden'], entities: [] },
         },

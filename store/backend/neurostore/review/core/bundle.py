@@ -23,8 +23,8 @@ def validator():
 
 
 def bundle(*, source, text, parsed_paper, original, state, review, ops, reviewers):
-    """The review-bundle document; ``original`` is the record as loaded, ``review`` is
-    {id, user_id, state} or None."""
+    """The review-bundle document; ``original`` is {record, coordinate_revision} as loaded,
+    ``review`` is {id, user_id, state} or None."""
     index = entities.index(state.record)
     return {
         "source": source,
@@ -44,9 +44,11 @@ def bundle(*, source, text, parsed_paper, original, state, review, ops, reviewer
         "hidden": hidden(state.record, state.coordinate_parse, state.coordinate_revision,
                          state.provenance, index),
         "original": {
-            "record": original,
-            "entities": entities.index_rows(original),
-            "hidden": hidden(original, state.coordinate_parse, None, {}),
+            **original,
+            "entities": entities.index_rows(original["record"]),
+            "hidden": hidden(
+                original["record"], state.coordinate_parse, original["coordinate_revision"], {}
+            ),
         },
         "reviewers": reviewers,
     }

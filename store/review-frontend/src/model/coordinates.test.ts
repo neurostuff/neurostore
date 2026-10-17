@@ -1,3 +1,4 @@
+import type { ProvenanceMap } from './applyOp';
 import { layoutText, type ParsedPaperLayout, type TableBlock } from './layout';
 import {
     COORD_TEXT,
@@ -15,6 +16,7 @@ import {
     SCRAMBLED,
     span,
 } from '../test/coordinates';
+import { authorship } from './authorship';
 import { analysesBeside, currentAnalyses, guidedOrder, pointSpan, successor } from './coordinates';
 
 const bundle = coordinateBundle();
@@ -101,5 +103,37 @@ describe('the analysis that replaces the focused one', () => {
 
     it('is none when the analysis was omitted', () => {
         expect(successor(before, [HOUSES, LOCALIZER, SCRAMBLED], FACES.key)).toBeUndefined();
+    });
+});
+
+describe('who made an analysis what it is now', () => {
+    const relabelled = { ...LOCALIZER, role: 'result' };
+    const split = { ...FACES, key: key(0x2a1), derived_from: [FACES.key], points: [PRECUNEUS] };
+    const added = { ...HOUSES, key: key(0x5b2), name: 'Faces > Objects' };
+    const loaded = revision([split, HOUSES, relabelled, added]);
+    const touched = (analysisKey: string, state: ProvenanceMap[string]['state']) => ({
+        [`coordinate_analysis:${analysisKey}`]: { state, user_id: 'u1', at: 'then' },
+    });
+
+    it('is no one for an analysis no one changed, or one not loaded with a pipeline’s revision', () => {
+        expect(authorship(HOUSES, PARSE, loaded, {})).toBeNull();
+        expect(authorship(FACES, PARSE, null, {})).toBeNull();
+        const unparsed = { ...HOUSES, key: key(0x7c3), name: 'Not in the parse' };
+        expect(authorship(unparsed, PARSE, null, {})).toBeNull();
+    });
+
+    it('is the model for an analysis the pipeline’s revision split, relabelled, added or edited', () => {
+        expect(authorship(split, PARSE, loaded, {})).toBe('model');
+        expect(authorship(relabelled, PARSE, loaded, {})).toBe('model');
+        expect(authorship(added, PARSE, loaded, {})).toBe('model');
+        const resized = { ...HOUSES, points: [{ ...HOUSES.points![0], cluster_size: 99 }] };
+        expect(authorship(resized, PARSE, revision([FACES, resized, LOCALIZER, SCRAMBLED]), {})).toBe('model');
+    });
+
+    it('is the reviewer for an analysis the review edited or judged, whoever made it before', () => {
+        expect(authorship(HOUSES, PARSE, loaded, touched(HOUSES.key, 'verified'))).toBe('reviewer');
+        expect(authorship(split, PARSE, loaded, touched(split.key, 'edited'))).toBe('reviewer');
+        const made = { ...HOUSES, key: key(0x6b2), derived_from: [HOUSES.key] };
+        expect(authorship(made, PARSE, loaded, touched(made.key, 'added'))).toBe('reviewer');
     });
 });

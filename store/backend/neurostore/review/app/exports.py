@@ -119,7 +119,7 @@ def _write_review(root, source, review, taken):
     """
     paper_id = _paper_id(source, taken)
     if review is None:
-        record, revision, ops = source.record, None, None
+        record, revision, ops = source.record, source.coordinate_revision, None
     else:
         ops = _ops(review)
         record = review.record
@@ -136,6 +136,7 @@ def _write_review(root, source, review, taken):
         source.record,
         source.fulltext.text,
     )
+    # TODO(W26): write each analysis's authorship (model or reviewer) once study_schema has a slot.
     record_path = write_export(root, paper, record, revision, ops)
     _write_provenance(root, paper_id, record_path, source, review, ops)
     return record_path

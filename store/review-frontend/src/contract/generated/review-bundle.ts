@@ -145,7 +145,7 @@ export interface ReviewBundle {
      */
     record: {};
     /**
-     * The reviewer's revision of the coordinate parse, or null when coordinates are unchanged.
+     * The reviewer's revision of the coordinate parse, or null when coordinates are unchanged; before a review starts, the revision the source was loaded with.
      */
     coordinate_revision: {} | null;
     review: null | {
@@ -177,10 +177,14 @@ export interface ReviewBundle {
     entities: EntityIndex;
     hidden: HiddenSet;
     /**
-     * The extraction record as loaded, before any of the reviewer's ops, with its entity index and hidden set.
+     * The extraction record and coordinates as loaded, before any of the reviewer's ops, with the record's entity index and hidden set.
      */
     original: {
         record: {};
+        /**
+         * The pipeline's revision of the coordinate parse the source was loaded with, or null when it was loaded with the parse alone.
+         */
+        coordinate_revision: {} | null;
         entities: EntityIndex;
         hidden: HiddenSet;
     };

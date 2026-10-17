@@ -822,3 +822,187 @@ def test_an_original_takes_the_reason_of_the_last_verdict_on_its_parts():
     _, revision = exported(verdict(first, "reject", note="a"), verdict(second, "reject", note="b"),
                            verdict(first, "reject", note="c"), review=after)
     assert checked(revision)["verdicts"][1] == {"key": K1, "verdict": "omit", "reason": "c"}
+
+
+# a pipeline's revisions as the revision a review starts from (D74)
+
+
+def _pipeline_split():
+    """The pipeline's revision of PARSE: K1 split by point, K2 relabelled, K0 accepted."""
+    k1 = PARSE["analyses"][1]
+    left = fx.table_analysis("t1", [2], "controls > patients (left)", [P1A])
+    right = fx.table_analysis("t1", [3], "controls > patients (right)", [P1B])
+    seed = {**PARSE["analyses"][2], "role": "reference"}
+    revision = fx.parse(
+        [PARSE["analyses"][0], left, right, seed],
+        revision_of=PARSE["parse_id"],
+        verdicts=[
+            fx.verdict(K0, "accept", [K0]),
+            fx.verdict(k1["key"], "split", [left["key"], right["key"]], reason="model split"),
+            {"key": K2, "verdict": "relabel", "role": "reference", "reason": "model relabel"},
+        ],
+    )
+    return revision, left, right
+
+
+def test_a_pipeline_revision_becomes_a_revision_the_core_derives_the_same_verdicts_from():
+    revision, left, right = _pipeline_split()
+
+    loaded = checked(coordinates.from_chain(PARSE, [revision]))
+
+    assert loaded["revision_of"] == PARSE["parse_id"]
+    assert [a.get("derived_from") for a in loaded["analyses"]] == [None, [K1], [K1], None]
+    assert verdicts(loaded, "reason") == [
+        (K0, "accept", None, "audited"),
+        (K1, "split", [left["key"], right["key"]], "model split"),
+        (K2, "relabel", None, "model relabel"),
+    ]
+
+
+def test_a_chain_of_pipeline_revisions_collapses_into_one_revision_of_the_original():
+    first, left, right = _pipeline_split()
+    moved = fx.table_analysis("t1", [2], "controls > patients (left)", [fx.point((-4, 2, 9))])
+    second = fx.parse(
+        [first["analyses"][0], moved, right, first["analyses"][3]],
+        revision_of=first["parse_id"],
+        verdicts=[
+            fx.verdict(K0, "accept", [K0]),
+            fx.verdict(left["key"], "edit", [moved["key"]], reason="model moved"),
+            fx.verdict(right["key"], "accept", [right["key"]]),
+            fx.verdict(K2, "accept", [K2]),
+        ],
+    )
+
+    loaded = checked(coordinates.from_chain(PARSE, [first, second]))
+
+    assert [a["key"] for a in loaded["analyses"]] == [K0, moved["key"], right["key"], K2]
+    assert [a.get("derived_from") for a in loaded["analyses"]] == [None, [K1], [K1], None]
+    assert verdicts(loaded, "reason") == [
+        (K0, "accept", None, "audited"),
+        (K1, "split", [moved["key"], right["key"]], "model moved"),
+        (K2, "relabel", None, "model relabel"),
+    ]
+
+
+def test_an_analysis_the_pipeline_added_stays_added_with_its_reason():
+    revision = fx.parse(
+        [*PARSE["analyses"], fx.table_analysis(**_added_fields())],
+        revision_of=PARSE["parse_id"],
+        verdicts=[
+            *(fx.verdict(a["key"], "accept", [a["key"]]) for a in PARSE["analyses"]),
+        ],
+    )
+    added = revision["analyses"][-1]["key"]
+    revision["verdicts"].append({"key": added, "verdict": "add", "reason": "model add"})
+
+    loaded = checked(coordinates.from_chain(PARSE, [revision]))
+
+    assert verdicts(loaded, "reason")[-1] == (added, "add", None, "model add")
+
+
+def _added_fields():
+    return {"table_id": "t2", "rows": [2], "name": "missed contrast",
+            "points": [fx.point((12, -40, 6))]}
+
+
+def test_a_review_started_from_a_pipeline_revision_edits_the_pipelines_analyses():
+    revision, left, right = _pipeline_split()
+    start = ReviewState(record=records.linked_analyses(), coordinate_parse=PARSE,
+                        coordinate_revision=coordinates.from_chain(PARSE, [revision]))
+
+    review, revision_after = exported(merge(left["key"], right["key"]), review=start)
+
+    merged = review.coordinate_revision["analyses"][1]
+    assert merged["derived_from"] == [K1]
+    assert verdicts(checked(revision_after))[1] == (K1, "edit", [merged["key"]])
+
+
+def test_parts_a_later_revision_merges_back_derive_from_their_original_once():
+    first, left, right = _pipeline_split()
+    joined = fx.table_analysis("t1", [2, 3], "controls > patients", [P1A, P1B])
+    second = fx.parse(
+        [first["analyses"][0], joined, first["analyses"][3]],
+        revision_of=first["parse_id"],
+        verdicts=[
+            fx.verdict(K0, "accept", [K0]),
+            fx.verdict(left["key"], "merge", [K1]),
+            fx.verdict(right["key"], "merge", [K1]),
+            fx.verdict(K2, "accept", [K2]),
+        ],
+    )
+
+    loaded = checked(coordinates.from_chain(PARSE, [first, second]))
+
+    assert [a.get("derived_from") for a in loaded["analyses"]] == [None, None, None]
+    assert verdicts(loaded)[1] == (K1, "accept", None)
+
+
+def _accepting(revised, reason="audited"):
+    """A revision of ``revised`` that accepts every analysis, each with ``reason``."""
+    return fx.parse(
+        revised["analyses"],
+        revision_of=revised["parse_id"],
+        verdicts=[fx.verdict(a["key"], "accept", [a["key"]], reason=reason)
+                  for a in revised["analyses"]],
+    ) | {"parse_id": f"accepting-{revised['parse_id']}"}
+
+
+def test_an_original_only_accepted_along_the_chain_keeps_the_last_accepts_reason():
+    first = _accepting(PARSE, reason="first look")
+    second = _accepting(first, reason="second look")
+
+    loaded = checked(coordinates.from_chain(PARSE, [first, second]))
+
+    assert [r for *_, r in verdicts(loaded, "reason")] == ["second look"] * 3
+
+
+def test_an_original_changed_twice_along_the_chain_keeps_the_later_change_reason():
+    first, left, right = _pipeline_split()
+    moved = fx.table_analysis("t1", [2], "controls > patients (left)", [fx.point((-4, 2, 9))])
+    second = fx.parse(
+        [first["analyses"][0], moved, right, first["analyses"][3]],
+        revision_of=first["parse_id"],
+        verdicts=[
+            fx.verdict(K0, "accept", [K0]),
+            fx.verdict(left["key"], "edit", [moved["key"]], reason="model moved"),
+            fx.verdict(right["key"], "accept", [right["key"]]),
+            {"key": K2, "verdict": "relabel", "role": "reference", "reason": "relabel again"},
+        ],
+    )
+
+    loaded = checked(coordinates.from_chain(PARSE, [first, second, _accepting(second)]))
+
+    assert [r for *_, r in verdicts(loaded, "reason")] == [
+        "audited", "model moved", "relabel again",
+    ]
+
+
+def test_an_analysis_the_pipeline_added_keeps_its_add_reason_when_a_later_revision_accepts_it():
+    first = fx.parse(
+        [*PARSE["analyses"], fx.table_analysis(**_added_fields())],
+        revision_of=PARSE["parse_id"],
+        verdicts=[fx.verdict(a["key"], "accept", [a["key"]]) for a in PARSE["analyses"]],
+    )
+    added = first["analyses"][-1]["key"]
+    first["verdicts"].append({"key": added, "verdict": "add", "reason": "model add"})
+
+    loaded = checked(coordinates.from_chain(PARSE, [first, _accepting(first, "later look")]))
+
+    assert verdicts(loaded, "reason")[-1] == (added, "add", None, "model add")
+
+
+def test_the_collapsed_chain_names_the_pipelines_last_revision_as_the_parse_it_was_read_from():
+    first, left, right = _pipeline_split()
+    read = {"artifact_kind": "coordinate_parse", "fingerprint": first["parse_id"]}
+
+    loaded = coordinates.from_chain(PARSE, [first])
+    start = ReviewState(record=records.linked_analyses(), coordinate_parse=PARSE,
+                        coordinate_revision=loaded)
+    _, reviewed = exported(merge(left["key"], right["key"]), review=start)
+
+    for revision in (loaded, reviewed):
+        assert revision["header"]["inputs"] == [
+            {"artifact_kind": "parsed_paper", "fingerprint": PARSE["text_sha256"]},
+            {"artifact_kind": "coordinate_parse", "fingerprint": PARSE["parse_id"]},
+            read,
+        ]

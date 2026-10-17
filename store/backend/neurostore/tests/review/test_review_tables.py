@@ -700,6 +700,7 @@ def test_the_review_migration_creates_the_final_columns_and_indexes(session):
     source_columns = {c["name"]: c["nullable"] for c in inspector.get_columns("review_sources")}
     assert "origin" not in source_columns
     assert source_columns["judgeable_keys"] is False
+    assert source_columns.get("coordinate_revision") is True
     review_columns = {c["name"]: c for c in inspector.get_columns("reviews")}
     assert "last_edit_at" in review_columns
     assert review_columns["last_edit_at"]["nullable"] is True

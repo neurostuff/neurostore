@@ -18,6 +18,7 @@ REVIEW_HANDLERS = {
     ("GET", _review("reviews/{id}/export")): "ReviewExportView.get",
     ("POST", _review("exports/")): "ReviewExportsView.post",
     ("POST", _review("imports/")): "ReviewImportsView.post",
+    ("POST", _review("imports/pipeline")): "ReviewPipelineImportsView.post",
     ("GET", _review("schemas/{name}")): "ReviewSchemasView.get",
     ("GET", _review("base-studies/{id}/assignments")): "ReviewAssignmentsView.get",
     ("PUT", _review("base-studies/{id}/assignments/{user_id}")): "ReviewAssignmentsView.put",

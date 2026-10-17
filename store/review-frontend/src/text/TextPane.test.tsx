@@ -243,7 +243,12 @@ describe('TextPane while the diff is shown', () => {
             <TextPane />,
             makeBundle(moved, TEXT, {
                 entities,
-                original: { record: { local_id: 'P1', ...record }, entities, hidden: { analyses: [], entities: [] } },
+                original: {
+                    record: { local_id: 'P1', ...record },
+                    coordinate_revision: null,
+                    entities,
+                    hidden: { analyses: [], entities: [] },
+                },
             })
         );
 

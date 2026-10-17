@@ -61,7 +61,10 @@ export function makeBundle(record: Json, text: string, overrides: Partial<Review
         ...overrides,
     };
     const { record: loaded, entities, hidden } = bundle;
-    return { ...bundle, original: overrides.original ?? { record: loaded, entities, hidden } };
+    return {
+        ...bundle,
+        original: overrides.original ?? { record: loaded, coordinate_revision: null, entities, hidden },
+    };
 }
 
 const fixturesDir = path.resolve(__dirname, '../../fixtures');

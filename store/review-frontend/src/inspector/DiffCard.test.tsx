@@ -19,7 +19,12 @@ function setup() {
         <Inspector />,
         makeBundle(record, TEXT, {
             entities,
-            original: { record: { local_id: 'P1', ...original }, entities, hidden: { analyses: [], entities: [] } },
+            original: {
+                record: { local_id: 'P1', ...original },
+                coordinate_revision: null,
+                entities,
+                hidden: { analyses: [], entities: [] },
+            },
         })
     );
     act(() => view.stores.view.getState().focusEntity('grp_a'));
@@ -93,6 +98,7 @@ describe('the diff card’s rows for links, slots only the original has, and slo
                 entities: rows,
                 original: {
                     record: { local_id: 'P1', ...base },
+                    coordinate_revision: null,
                     entities: rows,
                     hidden: { analyses: [], entities: [] },
                 },

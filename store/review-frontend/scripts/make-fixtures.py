@@ -69,7 +69,12 @@ def make_bundle(layout, paper_id):
         "ops": [],
         "entities": entities,
         "hidden": hidden_set,
-        "original": {"record": record, "entities": entities, "hidden": hidden_set},
+        "original": {
+            "record": record,
+            "coordinate_revision": None,
+            "entities": entities,
+            "hidden": hidden_set,
+        },
         "reviewers": [],
     }
 

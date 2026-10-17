@@ -129,7 +129,11 @@ def get_bundle(session, source_id, user_id):
     source = get_source(session, source_id)
     review = _review_of(session, source_id, user_id)
     if review is None:
-        state = ReviewState(record=source.record, coordinate_parse=source.coordinate_parse)
+        state = ReviewState(
+            record=source.record,
+            coordinate_parse=source.coordinate_parse,
+            coordinate_revision=source.coordinate_revision,
+        )
         summary, ops = None, []
     else:
         state = _state(review, source)
@@ -144,7 +148,7 @@ def get_bundle(session, source_id, user_id):
         source=source_summary(source),
         text=source.fulltext.text,
         parsed_paper=source.parsed_paper or {},
-        original=source.record,
+        original={"record": source.record, "coordinate_revision": source.coordinate_revision},
         state=state,
         review=summary,
         ops=ops,
@@ -169,6 +173,7 @@ def start_review(session, source_id, user_id):
             user_id=user_id,
             state="in_progress",
             record=source.record,
+            coordinate_revision=source.coordinate_revision,
             provenance={},
             annotations={},
             last_seq=0,
@@ -181,8 +186,9 @@ def start_review(session, source_id, user_id):
 
 def _check_source(source):
     problems = document_problems("extraction-record", source.record)
-    if source.coordinate_parse is not None:
-        problems += document_problems("coordinate-parse", source.coordinate_parse)
+    for document in (source.coordinate_parse, source.coordinate_revision):
+        if document is not None:
+            problems += document_problems("coordinate-parse", document)
     if problems:
         raise Conflict(
             "The source no longer validates against study_schema; re-import the source.",

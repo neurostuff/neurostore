@@ -1,8 +1,8 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { parseOf } from '../model/coordinates';
+import { diffCoordinates } from '../model/coordinateDiff';
 import {
     analysisItemFor,
-    diffCoordinates,
     diffRecords,
     reviewDiff,
     type FocusIntent,
@@ -26,14 +26,14 @@ export function selectOriginalIndex(s: Pick<SessionState, 'bundle'>): RecordInde
     return index;
 }
 
-/** The review against the original: its record against the record as loaded, its coordinates against the parse. */
+/** The review against the original: its record against the record as loaded, its coordinates against the coordinates as loaded. */
 export function selectDiff(s: Pick<SessionState, 'bundle' | 'record' | 'index' | 'provenance'>): ReviewDiff {
-    const { parse, revision, originalRecord } = parseOf(s.bundle);
+    const { parse, revision, originalRecord, loaded } = parseOf(s.bundle);
     const records = diffRecords(
         { record: originalRecord, index: selectOriginalIndex(s) },
         { record: s.record, index: s.index }
     );
-    return reviewDiff(records, diffCoordinates(parse, revision, s.provenance), s.provenance);
+    return reviewDiff(records, diffCoordinates(loaded ?? parse, revision, s.provenance), s.provenance);
 }
 
 const NO_SPANS: SpanPair[] = [];

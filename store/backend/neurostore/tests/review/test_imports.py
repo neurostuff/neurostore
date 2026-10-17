@@ -1,5 +1,6 @@
 """Importing papers for review from study_schema layouts: the service, the CLI and the route."""
 
+import hashlib
 import json
 
 import httpx
@@ -8,15 +9,28 @@ import sqlalchemy as sa
 from click.testing import CliRunner
 from sqlalchemy.orm import Session
 from study_schema.jsonschema import load
+from study_schema.models.paper_parse import CoordinateParse
 
 from neurostore import cli
 from neurostore.database import db
-from neurostore.models import BaseStudy, Fulltext, ReviewSource
+from neurostore.exceptions.base import NeuroStoreException
+from neurostore.ingest.study_schema import PARSE_PIPELINE, ingest_upload
+from neurostore.models import (
+    BaseStudy,
+    Fulltext,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    ReviewSource,
+)
 from neurostore.resources import body_limit
-from neurostore.review.app import imports
-from neurostore.review.core import entities
+from neurostore.review.app import exports, imports, service
+from neurostore.review.core import coordinates, entities
+from neurostore.review.core.bundle import validator
 from neurostore.review.core.layout import LayoutError
-from neurostore.study_schema_tools import sha256_of
+from neurostore.review.errors import Conflict, NotFound, Unprocessable
+from neurostore.study_schema_tools import schema_errors, sha256_of
+from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.review.layouts import (
     DIGEST,
     LEAD,
@@ -946,3 +960,643 @@ async def test_the_import_route_is_not_held_to_the_review_body_limit(
     response = await post_zip(clients[LEAD], zipped_clean_paper(tmp_path))
 
     assert response.status_code == 200, response.json()
+
+
+# a pipeline run already in neurostore (R17, D74, D84)
+
+
+def moved_analysis(z=-16, name="Faces > Houses"):
+    return fx.table_analysis("t1", [1], name, [fx.point((20, -4, z))])
+
+
+def revision_of(revised, analyses, verdicts):
+    revision = fx.parse(
+        analyses, pmid=revised["header"]["identifiers"]["pmid"],
+        revision_of=revised["parse_id"], verdicts=verdicts,
+    )
+    revision["text_sha256"] = DIGEST
+    return revision
+
+
+def pipeline_documents(study_id, chain=0):
+    """``(paper, original, revisions, record)``: a run's parse, ``chain`` revisions of it, and
+    the record read from the last."""
+    paper, original, record = clean(study_id)
+    revisions, current = [], original
+    if chain >= 1:
+        moved = moved_analysis()
+        current = revision_of(original, [moved], [
+            fx.verdict(original["analyses"][0]["key"], "edit", [moved["key"]], "model edit"),
+        ])
+        revisions.append(current)
+    if chain >= 2:
+        added = fx.table_analysis("t1", [2], "Houses > Faces", [fx.point((-30, 2, 4))])
+        current = revision_of(current, [current["analyses"][0], added], [
+            fx.verdict(current["analyses"][0]["key"], "accept", [current["analyses"][0]["key"]]),
+            {"key": added["key"], "verdict": "add", "reason": "model add"},
+        ])
+        revisions.append(current)
+    record["analyses"][0]["source_table_analysis"] = fx.extracted(current["analyses"][0]["key"])
+    return paper, original, revisions, record
+
+
+def ingest_run(study_id, chain=0, run_id="run-1"):
+    """Ingest a pipeline run for ``study_id`` the way the pipeline does; returns its documents
+    and the record's config id."""
+    paper, original, revisions, record = pipeline_documents(study_id, chain)
+    uploads = [original, *revisions]
+    for parse in uploads[:-1]:
+        ingest_upload({"coordinate_parse": parse, "parsed_paper": paper})
+    summary = ingest_upload({
+        "coordinate_parse": uploads[-1], "record": record, "parsed_paper": paper,
+        "run_id": run_id,
+    })
+    db.session.commit()
+    config_id = summary["provenance"]["record"]["config_id"]
+    return (paper, original, revisions, record), config_id
+
+
+def write_papers(root, study_id, paper, text=TEXT):
+    """Write only the parsed paper and its text, as a pipeline import takes them."""
+    for relative, data in {
+        f"corpus/{study_id}/parse/parsed_paper.json": json.dumps(paper).encode("utf-8"),
+        f"corpus/{study_id}/{paper['text_path']}": text.encode("utf-8"),
+    }.items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+
+def import_run(session, root, config_id, run_id="run-1"):
+    return imports.import_pipeline_run(
+        session, config_id=config_id, run_id=run_id, user_id=REVIEWER, papers=root
+    )
+
+
+def test_a_run_with_an_unrevised_parse_loads_its_parse_and_record(session, make_user, tmp_path):
+    make_user(REVIEWER, "admin-reviewer")
+    base_study = add_base_study(session, pmid="1001")
+    (paper, original, _, record), config_id = ingest_run("1001")
+    write_papers(tmp_path, "1001", paper)
+
+    report = import_run(session, tmp_path, config_id)
+
+    source = session.scalar(sa.select(ReviewSource))
+    assert report == {
+        "loaded": [{"study_id": "1001", "source_id": source.id, "base_study_id": base_study.id}],
+        "skipped": [],
+        "failed": [],
+    }
+    assert (source.coordinate_parse, source.coordinate_revision) == (original, None)
+    assert (source.record, source.parsed_paper) == (record, paper)
+    assert (source.origin, source.pipeline_config_id, source.run_id) == (
+        "pipeline_run", config_id, "run-1"
+    )
+    assert source.judgeable_keys == entities.judgeable_keys(record, original)
+    assert source.fulltext.text == TEXT
+
+
+@pytest.mark.parametrize("chain", [1, 2])
+def test_a_run_read_from_a_revision_keeps_the_original_and_the_pipelines_revision(
+    session, make_user, tmp_path, chain
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, original, revisions, record), config_id = ingest_run("1001", chain)
+    write_papers(tmp_path, "1001", paper)
+
+    report = import_run(session, tmp_path, config_id)
+
+    assert report["failed"] == []
+    source = session.scalar(sa.select(ReviewSource))
+    assert source.coordinate_parse == original
+    loaded = source.coordinate_revision
+    assert loaded["revision_of"] == original["parse_id"]
+    first, moved = original["analyses"][0]["key"], revisions[0]["analyses"][0]["key"]
+    added = [a["key"] for a in revisions[-1]["analyses"][1:]]
+    assert [(a["key"], a.get("derived_from")) for a in loaded["analyses"]] == [
+        (moved, [first]), *((key, None) for key in added),
+    ]
+    assert [(v["key"], v["verdict"], v["reason"]) for v in loaded["verdicts"]] == [
+        (first, "edit", "model edit"), *((key, "add", "model add") for key in added),
+    ]
+    assert len(added) == chain - 1
+    assert {"artifact_kind": "coordinate_parse", "fingerprint": revisions[-1]["parse_id"]} in (
+        loaded["header"]["inputs"]
+    )
+    assert source.origin == "pipeline_run"
+    assert source.judgeable_keys == entities.judgeable_keys(record, source.coordinate_revision)
+
+
+def test_a_second_import_of_the_same_run_is_skipped(session, make_user, tmp_path):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, *_), config_id = ingest_run("1001", chain=1)
+    write_papers(tmp_path, "1001", paper)
+    first = import_run(session, tmp_path, config_id)
+
+    second = import_run(session, tmp_path, config_id)
+
+    assert second == {
+        "loaded": [],
+        "skipped": [{
+            "study_id": "1001", "source_id": first["loaded"][0]["source_id"],
+            "reason": "already loaded",
+        }],
+        "failed": [],
+    }
+    assert count(session, ReviewSource) == 1
+
+
+def test_a_pipeline_source_is_not_taken_for_the_same_record_loaded_from_files(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, original, revisions, record), config_id = ingest_run("1001", chain=1)
+    write_layout(tmp_path / "files", "1001", paper, original, record)
+    imports.import_layout(session, tmp_path / "files", user_id=REVIEWER)
+    write_papers(tmp_path / "papers", "1001", paper)
+
+    report = import_run(session, tmp_path / "papers", config_id)
+
+    assert [entry["study_id"] for entry in report["loaded"]] == ["1001"]
+    assert count(session, ReviewSource) == 2
+
+
+def test_an_unrevised_run_record_already_loaded_from_files_is_skipped_as_that_source(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, original, _, record), config_id = ingest_run("1001")
+    write_layout(tmp_path / "files", "1001", paper, original, record)
+    loaded = imports.import_layout(session, tmp_path / "files", user_id=REVIEWER)["loaded"]
+    write_papers(tmp_path / "papers", "1001", paper)
+
+    report = import_run(session, tmp_path / "papers", config_id)
+
+    assert report == {
+        "loaded": [],
+        "skipped": [{
+            "study_id": "1001", "source_id": loaded[0]["source_id"], "reason": "already loaded",
+        }],
+        "failed": [],
+    }
+    assert session.get(ReviewSource, loaded[0]["source_id"]).origin == "upload"
+    assert count(session, ReviewSource) == 1
+
+
+def test_a_text_the_run_did_not_read_fails_its_paper_and_the_others_load(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    add_base_study(session, pmid="1002")
+    (paper, *_), config_id = ingest_run("1001")
+    (other, *_), _ = ingest_run("1002")
+    write_papers(tmp_path, "1001", paper)
+    changed = TEXT + " A sentence the run never read."
+    other = {**other, "text_sha256": hashlib.sha256(changed.encode("utf-8")).hexdigest()}
+    write_papers(tmp_path, "1002", other, text=changed)
+
+    report = import_run(session, tmp_path, config_id)
+
+    assert [entry["study_id"] for entry in report["loaded"]] == ["1001"]
+    assert report["failed"] == [{
+        "study_id": "1002",
+        "problems": [f"the text's sha256 {other['text_sha256']} is not the {DIGEST} the run read"],
+    }]
+    assert count(session, ReviewSource) == 1
+
+
+def test_a_record_of_the_run_with_no_uploaded_paper_fails_and_the_others_load(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    missing = add_base_study(session, pmid="1002")
+    (paper, *_), config_id = ingest_run("1001")
+    (_, original, _, _), _ = ingest_run("1002")
+    write_papers(tmp_path, "1001", paper)
+
+    report = import_run(session, tmp_path, config_id)
+
+    assert [entry["study_id"] for entry in report["loaded"]] == ["1001"]
+    assert report["failed"] == [{
+        "study_id": original["header"]["article_id"],
+        "problems": [f"no uploaded paper for base study {missing.id}"],
+    }]
+
+
+def test_an_uploaded_paper_with_no_base_study_or_a_second_for_one_is_reported_failed(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, *_), config_id = ingest_run("1001")
+    write_papers(tmp_path, "1001", paper)
+    write_papers(tmp_path, "1001-again", paper)
+    stray, _, _ = clean("9999")
+    write_papers(tmp_path, "9999", stray)
+
+    report = import_run(session, tmp_path, config_id)
+
+    assert [entry["study_id"] for entry in report["loaded"]] == ["1001"]
+    assert report["failed"] == [
+        {"study_id": "1001-again",
+         "problems": ["1001 is already the uploaded paper of the same base study"]},
+        {"study_id": "9999", "problems": ["no base study for pmid=9999"]},
+    ]
+
+
+def test_an_unknown_config_or_run_is_refused_whole(session, make_user, tmp_path):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, *_), config_id = ingest_run("1001")
+    write_papers(tmp_path, "1001", paper)
+
+    with pytest.raises(NotFound, match="pipeline run run-2 not found"):
+        import_run(session, tmp_path, config_id, run_id="run-2")
+    with pytest.raises(NotFound, match="pipeline config nope not found"):
+        import_run(session, tmp_path, "nope")
+    assert count(session, ReviewSource) == 0
+
+
+def test_a_review_of_a_revision_carrying_source_starts_from_the_revision(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, *_), config_id = ingest_run("1001", chain=1)
+    write_papers(tmp_path, "1001", paper)
+    source_id = import_run(session, tmp_path, config_id)["loaded"][0]["source_id"]
+    source = session.get(ReviewSource, source_id)
+
+    review, created = service.start_review(session, source_id, REVIEWER)
+
+    assert created
+    stored = service.get_review(session, review["id"])
+    assert stored["coordinate_revision"] == source.coordinate_revision
+
+
+def test_the_bundle_of_a_revision_carrying_source_shows_the_revision_as_loaded(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, *_), config_id = ingest_run("1001", chain=1)
+    write_papers(tmp_path, "1001", paper)
+    source_id = import_run(session, tmp_path, config_id)["loaded"][0]["source_id"]
+    loaded = session.get(ReviewSource, source_id).coordinate_revision
+
+    before = service.get_bundle(session, source_id, REVIEWER)
+    service.start_review(session, source_id, REVIEWER)
+    after = service.get_bundle(session, source_id, REVIEWER)
+
+    for bundle in (before, after):
+        assert bundle["coordinate_revision"] == loaded
+        assert bundle["original"]["coordinate_revision"] == loaded
+        # The record names the pipeline's key, which the raw parse lacks.
+        assert bundle["hidden"] == bundle["original"]["hidden"] == {
+            "analyses": [], "entities": [],
+        }
+    assert list(validator().iter_errors(after)) == []
+
+
+def test_a_review_does_not_start_from_a_pipeline_revision_that_no_longer_validates(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, *_), config_id = ingest_run("1001", chain=1)
+    write_papers(tmp_path, "1001", paper)
+    source_id = import_run(session, tmp_path, config_id)["loaded"][0]["source_id"]
+    source = session.get(ReviewSource, source_id)
+    source.coordinate_revision = {**source.coordinate_revision, "analyses": "none"}
+    session.flush()
+
+    with pytest.raises(Conflict) as refused:
+        service.start_review(session, source_id, REVIEWER)
+
+    assert [error.code for error in refused.value.errors] == ["source_invalid"]
+    assert "analyses" in refused.value.errors[0].message
+
+
+def pipeline_source(session, root, chain):
+    """``(source_id, paper)``: the source a run with ``chain`` revisions imports as."""
+    (paper, *_), config_id = ingest_run("1001", chain)
+    write_papers(root, "1001", paper)
+    return import_run(session, root, config_id)["loaded"][0]["source_id"], paper
+
+
+def exported_review(session, out, source_id, user_id, *ops):
+    """``(record, revision)``: what the export of ``user_id``'s review with ``ops`` writes."""
+    review, _ = service.start_review(session, source_id, user_id)
+    if ops:
+        batch = {"expected_last_seq": 0, "ops": list(ops)}
+        service.post_ops(session, review["id"], user_id, batch)
+    session.commit()
+    exports.export_review(session, review["id"], out)
+    article = session.get(ReviewSource, source_id).parsed_paper["header"]["article_id"]
+    return tuple(
+        json.loads((out / relative).read_text("utf-8"))
+        for relative in (
+            f"run/records/{article}.extraction.json",
+            f"run/revisions/{article}.coordinate_parse.json",
+        )
+    )
+
+
+def accept(key):
+    return {
+        "client_op_id": f"accept-{key}", "type": "verdict",
+        "target": {"kind": "coordinate_analysis", "analysis_key": key}, "verdict": "accept",
+    }
+
+
+def test_the_export_of_an_unrevised_pipeline_source_ingests_as_a_revision_of_its_parse(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    _, original, _, _ = pipeline_documents("1001")
+
+    source_id, paper = pipeline_source(session, tmp_path / "papers", 0)
+    record, revision = exported_review(
+        session, tmp_path / "out", source_id, REVIEWER, accept(original["analyses"][0]["key"])
+    )
+
+    assert revision["revision_of"] == original["parse_id"]
+    summary = ingest_upload(
+        {"coordinate_parse": revision, "record": record, "parsed_paper": paper}
+    )
+    assert (summary["kind"], summary["parse_id"]) == ("revision", revision["parse_id"])
+
+
+@pytest.mark.parametrize("chain", [1, 2])
+def test_the_export_of_a_revision_carrying_source_is_a_checked_revision_of_the_original(
+    session, make_user, tmp_path, chain
+):
+    layouts = pytest.importorskip("study_schema.layouts", reason="needs study_schema[layouts]")
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    _, original, revisions, _ = pipeline_documents("1001", chain)
+    loaded = coordinates.from_chain(original, revisions)
+
+    source_id, _ = pipeline_source(session, tmp_path / "papers", chain)
+    _, unedited = exported_review(session, tmp_path / "a", source_id, REVIEWER)
+    make_user(OTHER, "admin-reviewer")
+    _, judged = exported_review(
+        session, tmp_path / "b", source_id, OTHER, accept(revisions[-1]["analyses"][0]["key"])
+    )
+
+    assert unedited == loaded
+    for revision in (unedited, judged):
+        assert schema_errors("coordinate-parse", revision) == []
+        assert layouts.check_revision(
+            CoordinateParse.model_validate(original), CoordinateParse.model_validate(revision)
+        ) == []
+    assert [v["verdict"] for v in judged["verdicts"]][0] == "edit"
+
+
+def refused_not_current(body):
+    with pytest.raises(NeuroStoreException) as refused, db.session.begin_nested():
+        ingest_upload(body)
+    assert "NOT_CURRENT" in str(refused.value.to_payload())
+
+
+def read_from(revision, parse_id):
+    """``revision`` with its header inputs naming ``parse_id`` as the parse it was read from."""
+    inputs = [
+        entry for entry in revision["header"]["inputs"]
+        if entry["fingerprint"] in (revision["revision_of"], revision["text_sha256"])
+    ]
+    inputs.append({"artifact_kind": "coordinate_parse", "fingerprint": parse_id})
+    return {**revision, "header": {**revision["header"], "inputs": inputs}}
+
+
+@pytest.mark.parametrize("chain", [1, 2])
+def test_the_export_of_a_revision_carrying_source_ingests_as_the_new_current_parse(
+    session, make_user, tmp_path, chain
+):
+    make_user(REVIEWER, "admin-reviewer")
+    make_user(OTHER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    _, original, revisions, _ = pipeline_documents("1001", chain)
+    source_id, paper = pipeline_source(session, tmp_path / "papers", chain)
+    record, unedited = exported_review(session, tmp_path / "a", source_id, REVIEWER)
+    other_record, judged = exported_review(
+        session, tmp_path / "b", source_id, OTHER, accept(revisions[-1]["analyses"][0]["key"])
+    )
+    stale = [original, *revisions][-2]["parse_id"]
+    refused_not_current({"coordinate_parse": read_from(judged, stale), "parsed_paper": paper})
+
+    summary = ingest_upload(
+        {"coordinate_parse": unedited, "record": record, "parsed_paper": paper}
+    )
+
+    assert (summary["kind"], summary["parse_id"]) == ("revision", unedited["parse_id"])
+    assert unedited["revision_of"] == original["parse_id"]
+    stored = session.scalar(
+        sa.select(PipelineStudyResult).join(PipelineConfig).join(Pipeline).where(
+            Pipeline.name == PARSE_PIPELINE,
+            PipelineStudyResult.id == summary["provenance"]["parse"]["result_id"],
+        )
+    )
+    assert stored.result_data == unedited
+    stored_record = session.get(PipelineStudyResult, summary["provenance"]["record"]["result_id"])
+    assert {"artifact_kind": "coordinate_parse", "fingerprint": unedited["parse_id"]} in (
+        stored_record.file_inputs
+    )
+    refused_not_current(
+        {"coordinate_parse": judged, "record": other_record, "parsed_paper": paper}
+    )
+
+
+def test_an_unreviewed_revision_carrying_source_exports_the_pipelines_revision(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    source_id, paper = pipeline_source(session, tmp_path / "papers", 1)
+
+    exports.export_bulk(session, tmp_path / "out", include_unreviewed=True)
+
+    article = paper["header"]["article_id"]
+    path = tmp_path / "out" / exports.UNREVIEWED_DIR / "run/revisions"
+    path = path / f"{article}.coordinate_parse.json"
+    assert path.is_file()
+    assert json.loads(path.read_text("utf-8")) == session.get(
+        ReviewSource, source_id
+    ).coordinate_revision
+
+
+@pytest.fixture
+def run_import_cli(monkeypatch):
+    monkeypatch.setattr(cli, "_run_with_runtime", lambda callback: callback(None, db))
+    return lambda *args: CliRunner().invoke(cli.main, ["review-import-run", *args])
+
+
+def test_the_run_cli_commits_the_sources_and_prints_the_report(
+    session, make_user, tmp_path, run_import_cli
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, *_), config_id = ingest_run("1001", chain=1)
+    write_papers(tmp_path, "1001", paper)
+
+    result = run_import_cli(
+        "--config-id", config_id, "--run-id", "run-1", "--user-id", REVIEWER,
+        "--papers", str(tmp_path),
+    )
+
+    assert result.exit_code == 0, result.output
+    assert [entry["study_id"] for entry in json.loads(result.output)["loaded"]] == ["1001"]
+    with Session(session.bind) as fresh:
+        source = fresh.scalar(sa.select(ReviewSource))
+        assert (source.origin, source.loaded_by_id) == ("pipeline_run", REVIEWER)
+
+
+def test_the_run_cli_exits_1_when_a_paper_fails_or_the_run_is_unknown(
+    session, make_user, tmp_path, run_import_cli
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    _, config_id = ingest_run("1001")
+    (tmp_path / "corpus").mkdir()
+
+    missing = run_import_cli(
+        "--config-id", config_id, "--run-id", "run-1", "--user-id", REVIEWER,
+        "--papers", str(tmp_path),
+    )
+    unknown = run_import_cli(
+        "--config-id", config_id, "--run-id", "run-9", "--user-id", REVIEWER,
+        "--papers", str(tmp_path),
+    )
+
+    # A failed paper and an unknown run share exit 1 on purpose: either way nothing the
+    # caller asked for loaded whole, and the output says which.
+    assert missing.exit_code == 1
+    assert json.loads(missing.output)["failed"][0]["problems"][0].startswith("no uploaded paper")
+    assert unknown.exit_code == 1
+    assert "pipeline run run-9 not found" in unknown.output
+
+
+async def post_run(client, path, config_id, run_id="run-1"):
+    return await client.client.post(
+        "/api/review/imports/pipeline",
+        data={"config_id": config_id, "run_id": run_id},
+        files=upload(path),
+        headers=client._get_headers(),
+    )
+
+
+def zipped_papers(tmp_path, chain=0):
+    add_base_study(db.session, pmid="1001")
+    (paper, *_), config_id = ingest_run("1001", chain)
+    write_papers(tmp_path / "papers", "1001", paper)
+    files = {
+        str(path.relative_to(tmp_path / "papers")): path.read_bytes()
+        for path in (tmp_path / "papers").rglob("*") if path.is_file()
+    }
+    return zip_layout(files, tmp_path / "papers.zip"), config_id
+
+
+@pytest.mark.parametrize("caller, status", [(None, 401), (OTHER, 403), ("newuser-id", 403)])
+async def test_the_pipeline_import_route_is_for_lead_reviewers_only(
+    clients, make_user, tmp_path, session, caller, status
+):
+    make_user("newuser-id", "admin")
+    archive, config_id = zipped_papers(tmp_path)
+
+    response = await post_run(clients[caller], archive, config_id)
+
+    assert response.status_code == status
+    assert count(session, ReviewSource) == 0
+
+
+async def test_a_lead_reviewer_gets_the_report_of_a_pipeline_import(clients, tmp_path, session):
+    archive, config_id = zipped_papers(tmp_path, chain=1)
+
+    response = await post_run(clients[LEAD], archive, config_id)
+
+    assert response.status_code == 200, response.json()
+    assert_matches_spec(response, "/review/imports/pipeline", "post")
+    assert [entry["study_id"] for entry in response.json()["loaded"]] == ["1001"]
+    source = session.scalar(sa.select(ReviewSource))
+    assert (source.origin, source.loaded_by_id) == ("pipeline_run", LEAD)
+    assert (source.pipeline_config_id, source.run_id) == (config_id, "run-1")
+    assert source.coordinate_revision is not None
+
+
+async def test_the_pipeline_import_route_answers_422_for_the_coordinate_parse_config(
+    clients, tmp_path, session
+):
+    archive, _ = zipped_papers(tmp_path)
+    parse_config = session.scalar(
+        sa.select(PipelineConfig.id).join(Pipeline).where(Pipeline.name == PARSE_PIPELINE)
+    )
+
+    response = await post_run(clients[LEAD], archive, parse_config)
+
+    assert response.status_code == 422
+    assert_matches_spec(response, "/review/imports/pipeline", "post")
+    assert count(session, ReviewSource) == 0
+
+
+@pytest.mark.parametrize("missing", ["config_id", "run_id"])
+async def test_the_pipeline_import_route_answers_400_without_a_config_or_run(
+    clients, tmp_path, session, missing
+):
+    archive, config_id = zipped_papers(tmp_path)
+    data = {"config_id": config_id, "run_id": "run-1"}
+    del data[missing]
+
+    response = await clients[LEAD].client.post(
+        "/api/review/imports/pipeline", data=data, files=upload(archive),
+        headers=clients[LEAD]._get_headers(),
+    )
+
+    assert response.status_code == 400
+    assert_matches_spec(response, "/review/imports/pipeline", "post")
+    assert count(session, ReviewSource) == 0
+
+
+async def test_the_pipeline_import_route_answers_404_for_an_unknown_run(
+    clients, tmp_path, session
+):
+    archive, config_id = zipped_papers(tmp_path)
+
+    response = await post_run(clients[LEAD], archive, config_id, run_id="run-9")
+
+    assert response.status_code == 404
+    assert_matches_spec(response, "/review/imports/pipeline", "post")
+
+
+async def test_the_pipeline_import_route_is_held_to_the_import_limit(
+    clients, tmp_path, monkeypatch, session
+):
+    archive, config_id = zipped_papers(tmp_path)
+    monkeypatch.setattr(body_limit, "MAX_IMPORT_BYTES", 10)
+
+    response = await post_run(clients[LEAD], archive, config_id)
+
+    assert response.status_code == 413
+    assert_matches_spec(response, "/review/imports/pipeline", "post")
+    assert count(session, ReviewSource) == 0
+
+
+def test_the_coordinate_parse_pipelines_config_is_refused_as_holding_no_records(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1001")
+    (paper, *_), _ = ingest_run("1001")
+    write_papers(tmp_path, "1001", paper)
+    parse_config = session.scalar(
+        sa.select(PipelineConfig.id).join(Pipeline).where(Pipeline.name == "coordinate-parse")
+    )
+
+    with pytest.raises(Unprocessable, match="stores coordinate parses, not extraction records"):
+        import_run(session, tmp_path, parse_config)

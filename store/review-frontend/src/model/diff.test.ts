@@ -2,9 +2,9 @@ import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { CUNEUS, FACES, HOUSES, key, LOCALIZER, PARSE, SCRAMBLED } from '../test/coordinates';
 import type { CoordinateAnalysis, CoordinateParse } from './coordinates';
+import { diffCoordinates } from './coordinateDiff';
 import {
     analysisItemFor,
-    diffCoordinates,
     diffRecords,
     diffTarget,
     isChange,
@@ -309,6 +309,53 @@ describe('the diff of the coordinate analyses against the original parse', () =>
     });
 });
 
+describe('the diff of the coordinate analyses against the revision the source was loaded with', () => {
+    const left = { ...FACES, key: key(0xe1), points: FACES.points!.slice(0, 1), derived_from: [FACES.key] };
+    const right = { ...FACES, key: key(0xe2), points: FACES.points!.slice(1), derived_from: [FACES.key] };
+    const loaded = revisionOf(
+        [left, right, HOUSES, LOCALIZER],
+        [verdict(FACES, 'split', [left.key, right.key]), ...accepted(HOUSES, LOCALIZER), verdict(SCRAMBLED, 'omit')]
+    );
+
+    it('finds the pipeline’s analyses the same while the review has not changed them', () => {
+        const items = diffCoordinates(loaded, loaded, {});
+        expect(items.map((i) => [i.key, i.status, i.change])).toEqual(
+            [left, right, HOUSES, LOCALIZER].map((a) => [analysisKey(a), 'same', 'accept'])
+        );
+    });
+
+    it('marks what the review did to them: an edit of a part, a relabel, an omit and an add', () => {
+        const moved = { ...left, key: key(0xe3), points: [{ coordinates: [1, 2, 3] as [number, number, number] }] };
+        const relabelled = { ...HOUSES, role: 'anchor' };
+        const added = {
+            ...SCRAMBLED,
+            key: key(0xf1),
+            points: [{ coordinates: [4, 5, 6] as [number, number, number] }],
+        };
+        const revision = revisionOf([moved, right, relabelled, added], []);
+        const items = diffCoordinates(loaded, revision, {});
+        expect(items.map((i) => [i.key, i.status, i.change])).toEqual([
+            [analysisKey(left), 'changed', 'edit'],
+            [analysisKey(right), 'same', 'accept'],
+            [analysisKey(HOUSES), 'changed', 'relabel'],
+            [analysisKey(LOCALIZER), 'removed', 'omit'],
+            [analysisKey(added), 'added', 'add'],
+        ]);
+        expect(byKey(items, analysisKey(left))).toMatchObject({ before: left, after: [moved] });
+    });
+
+    it('marks the pipeline’s parts merged back into one, and one part split again', () => {
+        const merged = { ...FACES, key: key(0xe4), derived_from: [FACES.key] };
+        const items = diffCoordinates(loaded, revisionOf([merged, HOUSES, LOCALIZER], []), {});
+        expect(byKey(items, analysisKey(left))).toMatchObject({ change: 'merge', after: [merged] });
+        expect(byKey(items, analysisKey(right))).toMatchObject({ change: 'merge', after: [merged] });
+        const a = { ...right, key: key(0xe5) };
+        const b = { ...right, key: key(0xe6) };
+        const again = diffCoordinates(loaded, revisionOf([left, a, b, HOUSES, LOCALIZER], []), {});
+        expect(byKey(again, analysisKey(right))).toMatchObject({ change: 'split', after: [a, b] });
+    });
+});
+
 describe('the whole diff', () => {
     it('holds the record’s and the coordinates’ items, the shown ones apart, and the same object for the same parts', () => {
         const records = diffRecords(ORIGINAL_SIDE, side(structuredClone(ORIGINAL)));
@@ -403,7 +450,8 @@ describe('the diff of the coordinate analyses: how a revision maps to the origin
         );
         expect(byKey(diffCoordinates(PARSE, revision, {}), analysisKey(FACES))).toMatchObject({
             status: 'changed',
-            change: 'edit',
+            change: 'split',
+            after: [FACES, extra],
         });
     });
 

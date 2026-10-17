@@ -1173,6 +1173,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
@@ -2413,6 +2414,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
@@ -7077,6 +7079,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
@@ -8930,6 +8933,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
@@ -31523,6 +31527,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
@@ -32715,6 +32720,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
@@ -35604,6 +35610,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
@@ -36748,6 +36755,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
@@ -39579,6 +39587,7 @@
                   "extractor_version": "1.0.0"
                 }
               },
+              "coordinate_revision": null,
               "entities": [
                 {
                   "local_id": "study",
