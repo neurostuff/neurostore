@@ -188,7 +188,7 @@ def _build_run_source(session, row, upload, chain, text_sha256, *, config_id, us
     paper = paper_from_documents(study_id, parsed_paper, original, row.result_data, text)
     revision = coordinates.from_chain(original, revisions) if revisions else None
     # Unrevised, the digest is the file import's, so a record already loaded from files
-    # is skipped as that source (D65); a revision is part of what was loaded.
+    # is skipped as that source; a revision is part of what was loaded.
     return _build_source(
         session,
         paper,
@@ -331,8 +331,8 @@ def _positional_problems(record):
         key = extracted_value(analysis.get("source_table_analysis"))
         if isinstance(key, str) and _POSITIONAL_KEY.fullmatch(key):
             problems.append(
-                f"positional coordinate key {key}; migrate it to content keys with "
-                "pondie/scripts/astra_to_study_schema.py (W21)"
+                f"positional coordinate key {key}; import takes content keys only, "
+                "as study_schema's coordinate parse keys analyses"
             )
     return problems
 

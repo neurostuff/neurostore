@@ -136,7 +136,7 @@ def _write_review(root, source, review, taken):
         source.record,
         source.fulltext.text,
     )
-    # TODO(W26): write each analysis's authorship (model or reviewer) once study_schema has a slot.
+    # TODO: write each analysis's authorship (model or reviewer) once study_schema has a slot.
     record_path = write_export(root, paper, record, revision, ops)
     _write_provenance(root, paper_id, record_path, source, review, ops)
     return record_path

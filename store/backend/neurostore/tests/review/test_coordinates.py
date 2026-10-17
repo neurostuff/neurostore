@@ -119,7 +119,7 @@ def states(review):
     return {key: entry["state"] for key, entry in review.provenance.items()}
 
 
-# the revision is the reviewer's set of analyses (D54)
+# the revision is the reviewer's set of analyses (ADR 0004)
 
 
 def test_verdicts_follow_the_parse_order_then_the_added_analyses():
@@ -359,7 +359,7 @@ def test_a_verdict_or_note_may_target_a_derived_analysis():
     assert stored[0]["after"] == {"state": "added", "user_id": "u1", "at": AT}
 
 
-# the record follows the revision (D58)
+# the record follows the revision
 
 
 def table_key(record, local_id):
@@ -654,7 +654,7 @@ def test_a_restore_with_a_key_its_content_does_not_give_is_refused():
     assert "is not the key its name, space and points give" in refused(review, *undo)
 
 
-# the blockers and majors the W13 tests review found
+# regression cases for coordinate revisions
 
 
 def _renamed(review):
@@ -783,7 +783,7 @@ def test_a_revision_header_names_the_producer_and_its_inputs():
     ]
 
 
-# one way to judge (W23)
+# one way to judge
 
 
 @pytest.mark.parametrize("action", ["accept", "omit", "reject"])
@@ -825,7 +825,7 @@ def test_an_original_takes_the_reason_of_the_last_verdict_on_its_parts():
     assert checked(revision)["verdicts"][1] == {"key": K1, "verdict": "omit", "reason": "c"}
 
 
-# a pipeline's revisions as the revision a review starts from (D74)
+# a pipeline's revisions as the revision a review starts from (ADR 0013)
 
 
 def _pipeline_split():

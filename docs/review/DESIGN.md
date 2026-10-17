@@ -51,7 +51,7 @@ All tables live in neurostore's database. None is read by the public API.
 
 **Reviews.** A review belongs to one user and one source (`uq_reviews_source_user`). Its states are `in_progress`, `submitted`, `reference` and `set_aside` (`REVIEW_STATES`, `ck_reviews_state`). The owner moves between in_progress and submitted, and between in_progress and set_aside (`OWNER_TRANSITIONS` in `review/app/service.py`). Only in_progress takes ops. A lead marks the reference, from in_progress or submitted. The reference state is terminal, and a partial unique index allows one per source ([ADR 0010](../adr/0010-one-reference-review.md)). A set-aside review carries a reason (`SET_ASIDE_REASONS`), and `ck_reviews_set_aside` ties the reason to the state.
 
-**Delete protection** ([ADR 0007](../adr/0007-restrict-delete.md)). `review_sources.fulltext_id` is `ON DELETE RESTRICT`, so a base study with a source cannot be deleted. `DELETE /base-studies/{id}` answers 409 with `under_review` instead.
+**Delete protection** ([ADR 0007](../adr/0007-restrict-delete.md)). `review_sources.fulltext_id` is `ON DELETE RESTRICT`, so a base study with a source cannot be deleted. `DELETE /base-studies/{id}` answers 409 instead, with `under_review` as a detail field of the 409 body.
 
 **Assignments** are per paper (base study), not per source. A reviewer assigns or releases themselves, and a lead may assign anyone who holds the role (`service.assign`, `service.release`).
 
@@ -215,7 +215,7 @@ The one documented way to regenerate them is in `store/review-frontend/README.md
 ## Not built yet / follow-ups
 
 - **Fulltexts backfill** from `pubget_fulltext` and `ace_fulltext`, switching their readers to `BaseStudy.fulltext_id` and dropping the columns: neurostuff/neurostore#1844. A bulk insert skips the ORM listeners, so the backfill must recompute pointers itself.
-- **Authorship export.** An analysis's authorship (model or reviewer) is shown but not exported, because study_schema has no slot for it (`TODO(W26)` in `review/app/exports.py`).
+- **Authorship export.** An analysis's authorship (model or reviewer) is shown but not exported, because study_schema has no slot for it (`TODO:` in `review/app/exports.py`).
 - **Note editing.** `;` adds a note but does not show or edit an existing one.
 - **Undo across a reload.** The undo stacks live in memory and are not kept with the offline queue.
 - **Alias table** for renamed entities, so a later run naming the old name and a reviewer's new name both match the entity.

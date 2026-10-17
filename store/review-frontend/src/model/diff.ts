@@ -57,7 +57,7 @@ export interface RecordSide {
 
 export interface ReviewDiff {
     items: DiffItem[];
-    /** The items whose entity or analysis R24 does not hide. */
+    /** The items whose entity or analysis is not in the hidden set (see DESIGN.md). */
     shown: DiffItem[];
     byKey: Map<string, DiffItem>;
 }
@@ -219,7 +219,7 @@ export function reviewDiff(
     );
 }
 
-/** The items J and K visit and the summary lists: all of them when the non-coordinate items are shown, else those R24 does not hide. */
+/** The items J and K visit and the summary lists: all of them when the non-coordinate items are shown, else those outside the hidden set (see DESIGN.md). */
 export const visibleItems = (diff: ReviewDiff, showNonCoordinate: boolean): DiffItem[] =>
     showNonCoordinate ? diff.items : diff.shown;
 

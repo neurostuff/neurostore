@@ -72,8 +72,8 @@ def count(session, model):
 
 def positional_message(key):
     return (
-        f"positional coordinate key {key}; migrate it to content keys with "
-        "pondie/scripts/astra_to_study_schema.py (W21)"
+        f"positional coordinate key {key}; import takes content keys only, "
+        "as study_schema's coordinate parse keys analyses"
     )
 
 
@@ -1010,7 +1010,7 @@ async def test_the_import_route_is_not_held_to_the_review_body_limit(
     assert response.status_code == 200, response.json()
 
 
-# a pipeline run already in neurostore (R17, D74, D84)
+# a pipeline run already in neurostore
 
 
 def moved_analysis(z=-16, name="Faces > Houses"):
@@ -1655,7 +1655,7 @@ def test_the_coordinate_parse_pipelines_config_is_refused_as_holding_no_records(
         import_run(session, tmp_path, parse_config)
 
 
-# stable entity ids (D64)
+# stable entity ids (ADR 0009)
 
 
 def test_a_runs_entities_get_the_stable_ids_of_the_study_entities_the_run_linked(

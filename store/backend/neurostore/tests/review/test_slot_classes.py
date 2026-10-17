@@ -1,5 +1,5 @@
 """The schema class of every entity and nested object of the golden records, as the front end's
-schema walk must reproduce it (D53).
+schema walk must reproduce it.
 
 Regenerate the golden file as store/review-frontend/README.md says.
 """

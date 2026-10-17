@@ -4,7 +4,7 @@ const target = { kind: 'coordinate_analysis', analysis_key: 'analysis#0000000000
 const op = (rest: object) => ({ client_op_id: 'coord-0001', type: 'coordinate', target, ...rest });
 const POINT = { coordinates: [1, 2, 3], values: [{ kind: 't', value: 4 }] };
 
-describe('the D55 coordinate op fixture', () => {
+describe('the coordinate op fixture', () => {
     it.each([
         ['relabel', op({ action: 'relabel', role: 'anchor' })],
         ['edit_points', op({ action: 'edit_points', payload: { points: [POINT] } })],
@@ -18,7 +18,7 @@ describe('the D55 coordinate op fixture', () => {
                 payload: { analysis: { origin: 'table', table_id: 't1', name: 'A', role: 'result', points: [POINT] } },
             }),
         ],
-    ])('takes %s as D55 shapes it', (_, shaped) => {
+    ])('takes %s as the op shapes it', (_, shaped) => {
         expect(coordinateOpErrors([shaped])).toEqual([]);
     });
 

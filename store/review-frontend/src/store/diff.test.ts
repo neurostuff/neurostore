@@ -264,7 +264,7 @@ describe('stepping between changes across items the review lost', () => {
     });
 });
 
-describe('the changes of the hidden analyses (R24)', () => {
+describe('the changes of the hidden analyses (the hidden set; see DESIGN.md)', () => {
     it('are not visited while the non-coordinate items are hidden, and are once they are shown', () => {
         expect(walk(removals(false), 1, 8)).not.toContain('entity:a_hidden');
         const store = removals(true);

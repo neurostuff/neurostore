@@ -123,17 +123,17 @@ const GAPS: Record<string, string> = {
     'link reaches a hidden entity': 'link ops and the hidden set are not modelled by the test server',
     'verdict accept of a coordinate analysis': 'verdict ops are not applied by the test server',
     'create an entity with a client local id, then set a value on it':
-        'structural ops are applied by the server only (D49), not by the test server',
+        'structural ops are applied by the server only (ADR 0002), not by the test server',
     'create an entity the server mints an id for':
-        'structural ops are applied by the server only (D49), not by the test server',
+        'structural ops are applied by the server only (ADR 0002), not by the test server',
     'create a term under a model estimation with a client local id':
-        'structural ops are applied by the server only (D49), not by the test server',
+        'structural ops are applied by the server only (ADR 0002), not by the test server',
     'link an analysis to an assessment of the record':
-        'structural ops are applied by the server only (D49), not by the test server',
+        'structural ops are applied by the server only (ADR 0002), not by the test server',
     'delete a group that an analysis still references':
-        'structural ops are applied by the server only (D49), not by the test server',
+        'structural ops are applied by the server only (ADR 0002), not by the test server',
     'merge an assessment into another, then undo the merge':
-        'link, unlink and structural ops are applied by the server only (D49), not by the test server',
+        'link, unlink and structural ops are applied by the server only (ADR 0002), not by the test server',
     'refused batch with two failing ops': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 fails after op 0 would apply': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 leaves an invalid document': 'the 422 message is the backend’s, not the test server’s',
@@ -168,7 +168,7 @@ async function answersOf(scenario: Scenario) {
     return answers;
 }
 
-const SERVER_APPLIED = 'coordinate ops are applied by the server only (D57), not by the test server';
+const SERVER_APPLIED = 'coordinate ops are applied by the server only (ADR 0002), not by the test server';
 
 /** Whether a scenario posts a coordinate op, which only the server applies. */
 const postsCoordinateOp = (scenario: Scenario) =>

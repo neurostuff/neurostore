@@ -904,7 +904,7 @@ def test_replaying_a_superseded_parse_is_refused(session):
 
 def _read_from(revised, *read, relabel=False):
     """A revision of ``revised``: the pipeline's revision with Seed omitted, or relabelled, its
-    header inputs naming ``read`` as the parses it was read from (D89)."""
+    header inputs naming ``read`` as the parses it was read from (ADR 0013)."""
     pipeline, *_ = _revision()
     analyses = [a for a in pipeline["analyses"] if a["key"] != SEED["key"]]
     verdicts = [v for v in pipeline["verdicts"] if v["key"] != SEED["key"]]
@@ -2093,7 +2093,7 @@ def test_a_revision_that_splits_a_relabelled_set_reports_the_relabel(session):
     ]
 
 
-# stable entity ids (D64)
+# stable entity ids (ADR 0009)
 
 STABLE_ID = "5d1c7b0e-2f4a-4c8e-9b6d-3a5f7e9c1b20"
 

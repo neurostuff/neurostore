@@ -823,7 +823,7 @@ async def test_starting_a_review_is_idempotent(clients, source, session):
     assert review.coordinate_revision is None
 
 
-# a full round
+# the ops a review has logged
 
 
 def logged(ops):
@@ -2124,7 +2124,7 @@ def test_an_assignment_whose_commit_fails_is_rolled_back(
     assert session.scalars(sa.select(ReviewAssignment.user_id)).all() == before
 
 
-# stable entity ids (D64)
+# stable entity ids (ADR 0009)
 
 LOWERCASE_UUID = records.LOWERCASE_UUID
 

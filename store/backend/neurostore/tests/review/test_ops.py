@@ -1099,7 +1099,7 @@ def test_unlink_refuses_an_index():
     assert errors[0].startswith("op 1:") and "index" in errors[0]
 
 
-# stable entity ids (D64)
+# stable entity ids (ADR 0009)
 
 
 stable_id = records.stable_id

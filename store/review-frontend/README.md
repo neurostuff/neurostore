@@ -4,6 +4,8 @@ The review app is served under `/review/`. It reuses the main site's Auth0 sessi
 
 ## Running in development
 
+The main app's first-time setup (`npm install`, `.env.dev`) is in `.github/copilot-instructions.md`.
+
 1. Start the review dev server (port 3001): `npm start`
 2. In `compose/neurosynth-frontend`, start the main app dev server (port 3000): `npm run start:dev`
 3. Open http://localhost:3000/review/
@@ -12,7 +14,7 @@ The main dev server proxies `/review/` to port 3001, including the HMR websocket
 
 ## Scripts
 
-- `npm run test`: unit tests (Vitest), without the timing tests (a bare `vitest run` is the same)
+- `npm run test`: unit tests (Vitest), without the timing tests
 - `npm run test:perf`: the timing tests (`src/**/*.perf.test.tsx`), on their own (`vitest run --mode perf`); CI does not run them
 - `npm run typecheck`: TypeScript without emit
 - `npm run lint`: ESLint
