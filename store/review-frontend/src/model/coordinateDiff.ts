@@ -58,14 +58,20 @@ function replacementsOf(base: CoordinateAnalysis[], current: CoordinateAnalysis[
     const fresh = current.filter((a) => !known.has(a.key));
     return base.map((before) => {
         if (current.some((a) => a.key === before.key)) {
-            return current.filter((a) => a.key === before.key || (fresh.includes(a) && originsOf(a).includes(before.key)));
+            return current.filter(
+                (a) => a.key === before.key || (fresh.includes(a) && originsOf(a).includes(before.key))
+            );
         }
         const origins = new Set(originsOf(before));
         return fresh.filter((a) => originsOf(a).some((k) => origins.has(k)));
     });
 }
 
-function buildCoordinateDiff(base: CoordinateParse, current: CoordinateParse, provenance: ProvenanceMap): AnalysisDiff[] {
+function buildCoordinateDiff(
+    base: CoordinateParse,
+    current: CoordinateParse,
+    provenance: ProvenanceMap
+): AnalysisDiff[] {
     const originals = base.analyses ?? [];
     const analyses = current.analyses ?? [];
     const rejected = (key: string) => provenance[analysisKey(key)]?.state === 'removed';

@@ -83,8 +83,8 @@ describe('one name for one analysis', () => {
         act(() => view.viewState().setStep('analyses'));
         act(() => view.viewState().focusSlot('slot:ana_faces:name'));
         press('Enter', {}, document.body);
-        fireEvent.change(screen.getByRole('textbox', { name: 'name' }), { target: { value: 'Faces > Places' } });
-        fireEvent.change(screen.getByRole('combobox', { name: 'value source' }), { target: { value: 'generated' } });
+        fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Faces > Places' } });
+        fireEvent.change(screen.getByRole('combobox', { name: 'The value is' }), { target: { value: 'generated' } });
         press('Enter');
         expect(view.pending()[0]).toMatchObject({
             type: 'set_value',
@@ -109,7 +109,7 @@ describe('one name for one analysis', () => {
         act(() => view.viewState().setStep('analyses'));
         act(() => view.viewState().focusSlot('slot:ana_faces:name'));
         press('Enter', {}, document.body);
-        fireEvent.change(screen.getByRole('textbox', { name: 'name' }), { target: { value: 'Faces > Places' } });
+        fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Faces > Places' } });
         press('Enter');
         expect(view.pending()).toEqual(RENAMED);
         oneIntent(view);
@@ -149,7 +149,7 @@ describe('one name for one analysis', () => {
         act(() => view.viewState().setStep('analyses'));
         act(() => view.viewState().focusSlot('slot:ana_faces:name'));
         press('Enter', {}, document.body);
-        fireEvent.change(screen.getByRole('textbox', { name: 'name' }), { target: { value: 'Faces > Places' } });
+        fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Faces > Places' } });
         press('Enter');
         undoesBoth(view);
     });

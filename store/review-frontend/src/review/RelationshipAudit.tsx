@@ -1,13 +1,46 @@
-import { Box, ButtonBase, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import {
+    Box,
+    ButtonBase,
+    IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    Typography,
+} from '@mui/material';
 import { memo, useMemo } from 'react';
-import { link, pendingStructure, unlink } from '../inspector/actions';
+import { acceptTarget, link, pendingStructure, unlink } from '../inspector/actions';
+import { targetKey } from '../model/targetKey';
+import { Hint } from './Hint';
+import { selectStepProgress } from './stepCount';
 import { InspectorFrame } from '../inspector/Inspector';
 import { useIsEditable, useReviewStores, useSession, useShown } from '../store/context';
 import type { EntityNode } from '../model/record';
-import { auditMatrix, type AuditGroup, type AuditMatrix } from '../model/guided';
+import { auditLinks, auditMatrix, type AuditGroup, type AuditMatrix } from '../model/guided';
 
 const cellStyles = { p: 0.25, textAlign: 'center' } as const;
 const headStyles = { px: 0.5, py: 0.5, whiteSpace: 'nowrap' } as const;
+/** The first column: the analysis names, kept in view while the matrix scrolls sideways. */
+const rowHeadStyles = {
+    ...headStyles,
+    position: 'sticky',
+    left: 0,
+    zIndex: 1,
+    bgcolor: 'background.paper',
+    maxWidth: 240,
+    borderRight: 1,
+    borderRightColor: 'divider',
+    '& .rv-row-name': {
+        display: 'inline-block',
+        maxWidth: 200,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        verticalAlign: 'middle',
+    },
+} as const;
+const cornerStyles = { ...rowHeadStyles, zIndex: 3 } as const;
 const nameStyles = {
     ...headStyles,
     writingMode: 'vertical-rl',
@@ -26,7 +59,7 @@ const LinkCell = memo(function LinkCell({
     busy,
 }: {
     label: string;
-    slot?: string;
+    slot: string;
     entity: string;
     linked: boolean;
     busy: boolean;
@@ -34,7 +67,7 @@ const LinkCell = memo(function LinkCell({
     const stores = useReviewStores();
     const editable = useIsEditable();
     const toggle = () => {
-        const node = slot === undefined ? undefined : stores.session.getState().index.slot(slot);
+        const node = stores.session.getState().index.slot(slot);
         if (node) (linked ? unlink : link)(stores, node, entity);
     };
     return (
@@ -43,7 +76,7 @@ const LinkCell = memo(function LinkCell({
                 aria-label={label}
                 aria-pressed={linked}
                 aria-busy={busy || undefined}
-                disabled={slot === undefined || busy || !editable}
+                disabled={busy || !editable}
                 title={label}
                 onClick={toggle}
                 sx={{
@@ -51,7 +84,7 @@ const LinkCell = memo(function LinkCell({
                     height: 22,
                     borderRadius: 1,
                     border: 1,
-                    borderColor: slot === undefined ? 'transparent' : 'divider',
+                    borderColor: 'divider',
                     bgcolor: linked ? 'primary.main' : 'transparent',
                     color: linked ? 'primary.contrastText' : 'text.secondary',
                     '&:hover': { borderColor: 'primary.main' },
@@ -80,8 +113,11 @@ const AuditRow = memo(
     }) {
         return (
             <TableRow hover>
-                <TableCell component="th" scope="row" sx={{ ...headStyles, maxWidth: 220 }}>
-                    {analysis.name}
+                <TableCell component="th" scope="row" sx={rowHeadStyles}>
+                    <span className="rv-row-name" title={analysis.name}>
+                        {analysis.name}
+                    </span>
+                    <AcceptRow analysis={analysis} />
                 </TableCell>
                 {matrix.groups.flatMap((group) =>
                     group.columns.map((entity) => {
@@ -90,10 +126,10 @@ const AuditRow = memo(
                             <LinkCell
                                 key={`${group.className}:${entity.id}`}
                                 label={`${analysis.name} → ${entity.name}`}
-                                slot={slot?.key}
+                                slot={slot.key}
                                 entity={entity.id}
                                 linked={holding !== undefined}
-                                busy={slot !== undefined && busy.has(`${slot.key} ${entity.id}`)}
+                                busy={busy.has(`${slot.key} ${entity.id}`)}
                             />
                         );
                     })
@@ -105,11 +141,44 @@ const AuditRow = memo(
         before.analysis === after.analysis && before.matrix === after.matrix && sameSet(before.busy, after.busy)
 );
 
+/** Accepts each link of the analysis's row that no one has judged yet. */
+function AcceptRow({ analysis }: { analysis: EntityNode }) {
+    const stores = useReviewStores();
+    const editable = useIsEditable();
+    const unjudged = useSession((s) => auditLinks(analysis).filter((t) => !s.provenance[targetKey(t)]).length);
+    const name = `accept the links of ${analysis.name}`;
+    return (
+        <Hint
+            title={
+                unjudged
+                    ? `Accept the ${unjudged} links of this row no one has judged yet`
+                    : 'Every link of this row is judged'
+            }
+        >
+            <span>
+                <IconButton
+                    size="small"
+                    aria-label={name}
+                    disabled={!editable || unjudged === 0}
+                    onClick={() => {
+                        const { provenance } = stores.session.getState();
+                        auditLinks(analysis)
+                            .filter((t) => !provenance[targetKey(t)])
+                            .forEach((t) => acceptTarget(stores, t));
+                    }}
+                >
+                    <DoneAllIcon fontSize="inherit" />
+                </IconButton>
+            </span>
+        </Hint>
+    );
+}
+
 const AuditHead = memo(function AuditHead({ groups }: { groups: AuditGroup[] }) {
     return (
         <TableHead>
             <TableRow>
-                <TableCell sx={headStyles} />
+                <TableCell sx={cornerStyles} />
                 {groups.map((group) => (
                     <TableCell
                         key={group.className}
@@ -121,7 +190,7 @@ const AuditHead = memo(function AuditHead({ groups }: { groups: AuditGroup[] }) 
                 ))}
             </TableRow>
             <TableRow>
-                <TableCell sx={headStyles}>analysis</TableCell>
+                <TableCell sx={cornerStyles}>analysis</TableCell>
                 {groups.flatMap((group) =>
                     group.columns.map((entity) => (
                         <TableCell key={`${group.className}:${entity.id}`} sx={nameStyles} title={entity.name}>
@@ -156,10 +225,11 @@ export function RelationshipAudit() {
     const pending = useSession((s) => s.pending);
     const index = useSession((s) => s.index);
     const busy = useMemo(() => busyByEntity(pendingStructure({ pending }).linksBySlot, index), [pending, index]);
+    const done = useSession((s) => selectStepProgress(s, 'relationships').text);
     return (
         <InspectorFrame>
             <Typography variant="overline" component="h2" sx={{ px: 2, display: 'block' }}>
-                relationship audit
+                {`relationship audit · ${done} done`}
             </Typography>
             {matrix.rows.length === 0 || matrix.groups.length === 0 ? (
                 <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>

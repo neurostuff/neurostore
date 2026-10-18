@@ -212,13 +212,13 @@ function entries(): Entry[] {
         inspected('golden-ui-enter-integer', (stores) => {
             act(() => stores.view.getState().focusSlot(slotKey('an_1', 'groups[#0].n')));
             press('Enter', {}, document.body);
-            fireEvent.change(screen.getByRole('spinbutton', { name: 'groups[#0].n' }), { target: { value: '21' } });
+            fireEvent.change(screen.getByRole('spinbutton', { name: /: n$/ }), { target: { value: '21' } });
             press('Enter');
         }),
         inspected('golden-ui-n-outside-text', (stores) => {
             act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'age_mean')));
             press('n', {}, document.body);
-            fireEvent.change(screen.getByRole('combobox', { name: 'unreported reason' }), {
+            fireEvent.change(screen.getByRole('combobox', { name: 'Why not' }), {
                 target: { value: 'outside_text' },
             });
             press('Enter');
@@ -226,16 +226,16 @@ function entries(): Entry[] {
         inspected('golden-ui-open-enum', (stores) => {
             act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'species')));
             press('Enter', {}, document.body);
-            fireEvent.change(screen.getByRole('combobox', { name: 'extraction status' }), {
+            fireEvent.change(screen.getByRole('combobox', { name: 'In the paper?' }), {
                 target: { value: 'extracted' },
             });
-            fireEvent.change(screen.getByRole('combobox', { name: 'species' }), { target: { value: 'macaque' } });
+            fireEvent.change(screen.getByRole('combobox', { name: 'Species' }), { target: { value: 'macaque' } });
             press('Enter');
         }),
         inspected('golden-ui-list-add', (stores) => {
             act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'inclusion_criteria')));
             press('Enter', {}, document.body);
-            const add = screen.getByRole('textbox', { name: 'add to inclusion_criteria' });
+            const add = screen.getByRole('textbox', { name: 'add to Inclusion criteria' });
             fireEvent.change(add, { target: { value: 'adults only' } });
             press('Enter', {}, add);
             press('Enter', {}, add);
@@ -247,7 +247,7 @@ function entries(): Entry[] {
         inspected('golden-ui-semicolon-slot', (stores) => {
             act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'name')));
             press(';', {}, document.body);
-            fireEvent.change(screen.getByRole('textbox', { name: 'note on name' }), {
+            fireEvent.change(screen.getByRole('textbox', { name: 'note on Name' }), {
                 target: { value: 'the label is the paper’s' },
             });
             press('Enter');
@@ -255,7 +255,7 @@ function entries(): Entry[] {
         inspected('golden-ui-reject-other-note', (stores) => {
             act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'name')));
             press('r', {}, document.body);
-            const panel = screen.getByRole('group', { name: 'reject name' });
+            const panel = screen.getByRole('group', { name: 'reject Name' });
             press('5', {}, within(panel).getByRole('radio', { name: '1 wrong value' }));
             fireEvent.change(within(panel).getByRole('textbox', { name: 'note' }), {
                 target: { value: 'the paper calls them patients' },

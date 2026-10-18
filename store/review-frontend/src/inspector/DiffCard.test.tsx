@@ -31,7 +31,8 @@ function setup() {
     return view;
 }
 
-const diffRow = (path: string) => screen.getByRole('row', { name: new RegExp(`^${path.replace('.', '\\.')}\\b`) });
+/** The diff row of the slot at `path`, which its field cell gives in a tooltip. */
+const diffRow = (path: string) => screen.getAllByRole('row').find((row) => row.querySelector(`td[title="${path}"]`))!;
 
 describe('the inspector while the diff is shown', () => {
     it('shows the entity’s card until the diff is on', () => {
@@ -48,7 +49,7 @@ describe('the inspector while the diff is shown', () => {
             within(table)
                 .getAllByRole('columnheader')
                 .map((h) => h.textContent)
-        ).toEqual(['slot', 'original', 'review', 'diff']);
+        ).toEqual(['field', 'original', 'review', 'diff']);
         const n = diffRow('n');
         expect(
             within(n)
@@ -109,7 +110,7 @@ describe('the diff card’s rows for links, slots only the original has, and slo
         return view;
     }
 
-    const listRow = (path: string) => screen.getByRole('row', { name: (name) => name.startsWith(path) });
+    const listRow = diffRow;
 
     it('marks a link slot changed when its link moved, with the names in its columns', () => {
         show((record) => {

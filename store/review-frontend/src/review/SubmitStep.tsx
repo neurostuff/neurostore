@@ -1,5 +1,21 @@
-import { Alert, Box, Button, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
-import { useMemo, useState, type ReactNode } from 'react';
+import {
+    Alert,
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Link,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemText,
+    Typography,
+} from '@mui/material';
+import { useId, useMemo, useState, type ReactNode } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import { STEPS } from '../model/steps';
 import type { ReviewLifecycle } from '../api/reviewApi';
 import { useShallow } from 'zustand/react/shallow';
 import { currentAnalyses, parseOf } from '../model/coordinates';
@@ -107,6 +123,66 @@ function SubmitSummary({ changes, notes, unreviewed }: ReturnType<typeof useSumm
 const unreviewedText = (left: number) =>
     left === 1 ? '1 item is still unreviewed.' : `${left} items are still unreviewed.`;
 
+/** Asks before a review is submitted with items left; reviewing them is the default. */
+function ConfirmSubmit({
+    unreviewed,
+    onSubmit,
+    onClose,
+}: {
+    unreviewed: SummaryGroup[];
+    onSubmit(): void;
+    onClose(): void;
+}) {
+    const titleId = useId();
+    const setStep = useView((s) => s.setStep);
+    const focusTarget = useView((s) => s.focusTarget);
+    const left = count(unreviewed);
+    const reviewThem = () => {
+        onClose();
+        const [first] = unreviewed;
+        const step = STEPS.find((s) => s.label === first?.label);
+        if (step) setStep(step.id);
+        const target = first?.items[0]?.target;
+        if (target) focusTarget(target);
+    };
+    return (
+        <Dialog open onClose={onClose} aria-labelledby={titleId}>
+            <DialogTitle id={titleId}>{`Submit with ${left} ${left === 1 ? 'item' : 'items'} unreviewed?`}</DialogTitle>
+            <DialogContent>
+                <List dense aria-label="still unreviewed">
+                    {unreviewed.map((group) => (
+                        <ListItem key={group.label} disableGutters>
+                            {`${group.label}: ${group.items.length}`}
+                        </ListItem>
+                    ))}
+                </List>
+                <Typography variant="body2" color="text.secondary">
+                    Unreviewed items are sent as the model read them.
+                </Typography>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onSubmit}>Submit anyway</Button>
+                <Button variant="contained" autoFocus onClick={reviewThem}>
+                    Review them
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+/** What a submitted review is, and where to go next. */
+function Submitted() {
+    return (
+        <Alert role="status" aria-label="review submitted" severity="success" sx={{ mb: 1.5 }}>
+            <strong>Review submitted.</strong> It is kept as you left it; a lead can mark it the reference. Reopen it to
+            change anything.{' '}
+            <Link component={RouterLink} to="/">
+                Back to the papers
+            </Link>
+        </Alert>
+    );
+}
+
 export function SubmitStep() {
     const client = useOpClient();
     const state = useSession((s) => s.bundle.review?.state);
@@ -115,6 +191,7 @@ export function SubmitStep() {
     const [error, setError] = useState<string | null>(null);
     const summary = useSummary();
     const left = count(summary.unreviewed);
+    const [confirming, setConfirming] = useState(false);
 
     const change = (next: ReviewLifecycle) => {
         setBusy(true);
@@ -127,6 +204,7 @@ export function SubmitStep() {
 
     return (
         <Box sx={{ px: 3, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+            {state === 'submitted' && <Submitted />}
             <SubmitSummary {...summary} />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pt: 1.5 }}>
                 {state === 'submitted' ? (
@@ -137,7 +215,7 @@ export function SubmitStep() {
                     <Button
                         variant="contained"
                         disabled={busy || !saved || state !== 'in_progress'}
-                        onClick={() => change('submitted')}
+                        onClick={() => (left > 0 ? setConfirming(true) : change('submitted'))}
                     >
                         Submit review
                     </Button>
@@ -153,6 +231,16 @@ export function SubmitStep() {
                     </Alert>
                 )}
             </Box>
+            {confirming && (
+                <ConfirmSubmit
+                    unreviewed={summary.unreviewed}
+                    onClose={() => setConfirming(false)}
+                    onSubmit={() => {
+                        setConfirming(false);
+                        change('submitted');
+                    }}
+                />
+            )}
         </Box>
     );
 }

@@ -9,17 +9,17 @@ import { StepCards } from './StepCards';
 
 export function AnalysesStep() {
     const cards = useShown((index) => guidedCards(index).analyses);
-    return <StepCards label="analyses" cards={cards} />;
+    return <StepCards step="analyses" label="analyses" cards={cards} />;
 }
 
 export function EntitiesStep() {
     const cards = useShown((index) => guidedCards(index).entities);
-    return <StepCards label="entities" cards={cards} detail={LinkedFrom} />;
+    return <StepCards step="entities" label="entities" cards={cards} detail={LinkedFrom} />;
 }
 
 export function LeftoversStep() {
     const cards = useShown((index) => guidedCards(index).leftovers);
-    return <StepCards label="leftovers" cards={cards} detail={LeftoverActions} />;
+    return <StepCards step="leftovers" label="leftovers" cards={cards} detail={LeftoverActions} />;
 }
 
 /** The inspector pane of the step the review is on. */

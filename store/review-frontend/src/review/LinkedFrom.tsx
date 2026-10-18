@@ -8,6 +8,7 @@ import { relationshipKey, relationshipTarget } from '../model/targetKey';
 import { useIsEditable, useReviewStores, useSession, useShown } from '../store/context';
 import { useEditorName } from './editor';
 import { guidedCards, type Link } from '../model/guided';
+import { labelOf } from '../model/labels';
 
 const listStyles = (theme: Theme) => ({ px: 2, ...statusColors(theme.palette) });
 
@@ -18,10 +19,11 @@ function LinkRow({ link, target }: { link: Link; target: string }) {
     const key = relationshipKey(entity.id, slot.path, target);
     const state = useSession((s) => s.provenance[key]?.state);
     const editor = useEditorName(key);
+    const label = useSession((s) => labelOf(s.index, slot));
     const unlinking = useSession((s) => pendingStructure(s).linksBySlot.get(slot.key)?.get(target) === 'unlink');
     return (
         <ListItem disableGutters sx={{ display: 'block' }}>
-            <Typography variant="body2">{`${entity.name} · ${slot.path}`}</Typography>
+            <Typography variant="body2">{`${entity.name} · ${label}`}</Typography>
             <Stack direction="row" spacing={1} alignItems="center">
                 <StatusLabel id={reviewStatus(state)} by={editor} />
                 {unlinking ? (

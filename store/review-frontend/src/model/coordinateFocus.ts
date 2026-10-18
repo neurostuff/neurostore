@@ -10,7 +10,7 @@ import {
     type CoordinateAnalysis,
     type CoordinatePoint,
 } from './coordinates';
-import type { RecordIndex, SpanPair } from './record';
+import type { EntityNode, RecordIndex, SpanPair } from './record';
 import { layoutText, type Block, type ParsedPaperLayout, type TableBlock } from './layout';
 
 /** The focused coordinate analysis, by its key in the revision, its focused point and the points selected in it. */
@@ -115,6 +115,19 @@ export function placeReveal(bundle: ReviewBundle, key: string): SpanPair {
     const table = blocks.find((b) => b.kind === 'table' && b.tableId === analysis?.table_id);
     if (table) return [table.start, Math.min(table.start + 1, table.end)];
     return [Math.max(bundle.text.length - 1, 0), bundle.text.length];
+}
+
+/** The record slot naming the paper's table a record Table describes, by its label (`Table 1`). */
+const TABLE_LABEL_SLOT = 'table_number';
+
+/** Where the text shows the table the record entity `entity` describes; undefined for an entity that is no table. */
+export function tableReveal(bundle: ReviewBundle, entity: EntityNode | undefined): SpanPair | undefined {
+    const label = entity?.slots.find((slot) => slot.path === TABLE_LABEL_SLOT)?.value?.value;
+    if (typeof label !== 'string') return undefined;
+    const parsed = bundle.parsed_paper as ParsedPaperLayout;
+    const tableId = parsed.tables?.find((table) => table.label === label)?.table_id;
+    const table = layoutText(bundle.text, parsed).find((b) => b.kind === 'table' && b.tableId === tableId);
+    return table && [table.start, Math.min(table.start + 1, table.end)];
 }
 
 /** The focus on the first analysis in guided order, or none when there are no analyses. */

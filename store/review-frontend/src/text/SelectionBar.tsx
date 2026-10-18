@@ -10,6 +10,8 @@ import { addSelection } from './addSelection';
 import { snapToWords } from './snap';
 import { useSelectionOffsets } from './useSelectionOffsets';
 import { TextIndexContext } from './useTextIndex';
+import { slotLabel } from '../model/labels';
+import { Hint } from '../review/Hint';
 
 interface Anchor {
     top: number;
@@ -63,6 +65,12 @@ export function SelectionBar({ scrollerRef }: { scrollerRef: RefObject<HTMLEleme
     const canAdd = useSession((s) => canAddEvidence(s.index.slot(focused))) && editable;
     const needsValue = useSession((s) => s.index.slot(focused)?.value?.extraction_status === 'not_reported');
     const onAnalysis = useView((s) => s.coordinates !== null);
+    const target = useSession((s) => {
+        const slot = s.index.slot(focused);
+        return slot
+            ? `${s.index.entity(slot.entity)?.name ?? slot.entity} · ${slotLabel(s.index, slot)}`
+            : 'the focused field';
+    });
     const { offsets, rect } = useSelectionOffsets(useContext(TextIndexContext));
     const snapped = useMemo(() => offsets && snapToWords(text, offsets[0], offsets[1]), [text, offsets]);
     const [anchor, setAnchor] = useState<Anchor | null>(null);
@@ -84,11 +92,15 @@ export function SelectionBar({ scrollerRef }: { scrollerRef: RefObject<HTMLEleme
             sx={{ position: 'absolute', zIndex: 1, display: 'flex', alignItems: 'center', gap: 0.5, p: 0.5 }}
         >
             <Button size="small" disabled={!canAdd} onClick={() => addSelection(stores, 'first')}>
-                Add to evidence (E)
+                {`Add as evidence for ${target} (E)`}
             </Button>
-            <Button size="small" disabled={!canAdd} onClick={() => addSelection(stores, 'new')}>
-                New evidence set (Shift+E)
-            </Button>
+            <Hint title="A separate passage that supports the value on its own, apart from the evidence it has">
+                <span>
+                    <Button size="small" disabled={!canAdd} onClick={() => addSelection(stores, 'new')}>
+                        {`New evidence set for ${target} (Shift+E)`}
+                    </Button>
+                </span>
+            </Hint>
             {needsValue && (
                 <Typography variant="caption" sx={{ px: 1 }}>
                     set a value first

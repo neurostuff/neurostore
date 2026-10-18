@@ -1,5 +1,7 @@
 import { buildRecordIndex, withHidden } from './record';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
+import { createReviewStores } from '../store/reviewStores';
+import { hasFixture, loadFixture } from '../test/bundles';
 import { auditMatrix, guidedCards } from './guided';
 
 const record = {
@@ -130,4 +132,23 @@ describe('the guided cards of several records', () => {
         );
         expect(ids(guidedCards(buildRecordIndex(named)).entities)).toEqual(['grp_a', 'grp_b']);
     });
+});
+
+describe('the audit matrix of a record read against its schema', () => {
+    const ids = ['22fv2dADxHqR', '24syuoHkxfeu', '2KTUQPrgtEke'];
+    const bundles = [bundle, ...ids.filter(hasFixture).map(loadFixture)];
+
+    it.each(bundles.map((b, i) => [i === 0 ? 'the test record' : ids[i - 1], b] as const))(
+        'gives every analysis a slot to link each column through, in %s',
+        (_, b) => {
+            const { index } = createReviewStores(b).session.getState();
+            const matrix = auditMatrix(index);
+            const cells = matrix.rows.flatMap((analysis) =>
+                matrix.groups.flatMap((group) =>
+                    group.columns.map((entity) => matrix.cell(analysis, group.className, entity))
+                )
+            );
+            expect(cells.filter((cell) => cell.slot === undefined)).toEqual([]);
+        }
+    );
 });

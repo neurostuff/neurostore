@@ -14,6 +14,7 @@ import { useId, useState } from 'react';
 import type { SetAside } from '../api/reviewApi';
 import { useOpClient, useSession } from '../store/context';
 import { SET_ASIDE_REASONS } from './asideReasons';
+import { Hint } from './Hint';
 
 const REASONS = Object.entries(SET_ASIDE_REASONS) as [SetAside['reason'], string][];
 
@@ -91,9 +92,11 @@ export function SetAsideButton() {
     if (!open) return null;
     return (
         <>
-            <Button size="small" onClick={() => setAsking(true)} sx={{ mr: 2, flexShrink: 0 }}>
-                Set aside
-            </Button>
+            <Hint title="Set this paper aside, with a reason, without finishing it">
+                <Button size="small" onClick={() => setAsking(true)} sx={{ mr: 2, flexShrink: 0 }}>
+                    Set aside
+                </Button>
+            </Hint>
             {asking && <SetAsideDialog onClose={() => setAsking(false)} />}
         </>
     );

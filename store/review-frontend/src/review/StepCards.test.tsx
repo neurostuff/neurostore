@@ -20,7 +20,7 @@ describe('a card’s provenance badge', () => {
                 annotations: {},
             } as unknown as ReviewBundle['review'],
         });
-        renderWithStores(<StepCards label="Study" cards={[study]} />, bundle);
+        renderWithStores(<StepCards step="leftovers" label="Study" cards={[study]} />, bundle);
         const head = document.querySelector('[data-card="study"]') as HTMLElement;
         expect(within(head).getByText('verified by Ana')).toBeInTheDocument();
     });

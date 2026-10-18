@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
-import { ApiError } from '../src/api/reviewApi';
+import { ApiError, type ReviewLifecycle, type SetAside } from '../src/api/reviewApi';
 import type { ReviewBundle } from '../src/contract/generated/review-bundle';
 import type { Op } from '../src/contract/generated/review-ops';
 import { memoryBackend, type OpBatch } from '../src/test/memoryBackend';
@@ -36,6 +36,14 @@ export async function serve(page: Page) {
         if (method === 'POST' && (m = path.match(/^\/review\/reviews\/([^/]+)\/ops$/))) {
             batches.push((body as OpBatch).ops);
             return { status: 200, body: backend.postOps(decodeURIComponent(m[1]), body as OpBatch) };
+        }
+        if (method === 'PATCH' && (m = path.match(/^\/review\/reviews\/([^/]+)$/))) {
+            const { state, reason, note } = body as {
+                state: ReviewLifecycle;
+                reason?: SetAside['reason'];
+                note?: string;
+            };
+            return { status: 200, body: backend.setState(decodeURIComponent(m[1]), state, reason, note) };
         }
         return { status: 404, body: { status: 404, detail: `no route for ${method} ${path}` } };
     }

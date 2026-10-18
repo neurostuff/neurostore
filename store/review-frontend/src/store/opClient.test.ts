@@ -454,7 +454,7 @@ describe('a 409', () => {
         expect(sentIds(server)[1]).toEqual([kept.client_op_id]);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().notices).toEqual([
-            { kind: 'conflict', slot: 'study description', message: expect.stringContaining('set a value first') },
+            { kind: 'conflict', slot: 'study description', message: expect.stringContaining('set a value first'), op: expect.anything() },
         ]);
         expect(store.session.getState().record).toMatchObject({ description: { extraction_status: 'not_reported' } });
     });
@@ -520,7 +520,7 @@ describe('a 422', () => {
         expect(sentIds(server)).toEqual([[kept.client_op_id, refused.client_op_id], [kept.client_op_id]]);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().notices).toEqual([
-            { kind: 'refused', slot: 'study design.description', message: 'extraction-record /design: too long' },
+            { kind: 'refused', slot: 'study design.description', message: 'extraction-record /design: too long', op: expect.anything() },
         ]);
         expect(evidenceAt(store, 'design')).toEqual({ status: 'not_found' });
         expect(evidenceAt(store, 'description')).toMatchObject({ status: 'present' });
@@ -551,7 +551,7 @@ describe('a 422', () => {
         expect(sentIds(server)).toEqual([[kept.client_op_id, refused.client_op_id], [kept.client_op_id]]);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().notices).toEqual([
-            { kind: 'refused', slot: 'study design.description', message: expect.any(String) },
+            { kind: 'refused', slot: 'study design.description', message: expect.any(String), op: expect.anything() },
         ]);
     });
 
@@ -645,7 +645,7 @@ describe('a 422', () => {
         ]);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().notices).toEqual([
-            { kind: 'refused', slot: 'study design.description', message: 'extraction-record /design: too long' },
+            { kind: 'refused', slot: 'study design.description', message: 'extraction-record /design: too long', op: expect.anything() },
         ]);
     });
 

@@ -8,6 +8,7 @@ import type { EntityNode, RecordIndex, SlotNode } from './record';
 import { analysisTarget, relationshipTarget, targetKey } from './targetKey';
 import type { ProvenanceMap } from './applyOp';
 import type { StepId } from './steps';
+import { labelOf } from './labels';
 
 /** The class of the record entities that report a coordinate analysis: the one declaring its link slot. */
 const analysisClass = fromSchema('extraction-record', (schema) => {
@@ -123,8 +124,8 @@ export interface AuditGroup {
 export interface AuditCell {
     /** The analysis's reference slot that links the entity, if one does. */
     holding?: SlotNode;
-    /** The slot a click links or unlinks through; none when the analysis has no slot for the class. */
-    slot?: SlotNode;
+    /** The slot a click links or unlinks through: the one holding the link, else the analysis's first for the class. */
+    slot: SlotNode;
 }
 
 export interface AuditMatrix {
@@ -136,16 +137,41 @@ export interface AuditMatrix {
 const ofClass = (entity: EntityNode, className: string) =>
     entity.entityClass === className || entity.schemaClass === className;
 
-/** The analyses' reference slots by the class they link to. */
+/**
+ * The class an analysis's reference slot links to, where the audit shows it: a slot of the analysis itself, linking
+ * to another class than its own. Two kinds of pair are left out as meaningless in a matrix of analyses against what
+ * they use:
+ * - list-item links (`groups[#].group`, `effect.cells[#].term`): the link belongs to an item with slots of its own
+ *   (`n`, `direction`), and a cell can set a slot but cannot add or remove an item;
+ * - analysis-to-analysis links (`mirror_of`): they relate analyses to each other, not to something one uses, and
+ *   the matrix would pair each analysis with itself.
+ */
+function auditTarget(analysis: EntityNode, slot: SlotNode): string | undefined {
+    if (slot.kind !== 'reference' || /[.[]/.test(slot.path)) return undefined;
+    const target = referenceTarget(
+        { entity_class: analysis.entityClass, schema_class: analysis.schemaClass },
+        slot.path
+    );
+    return target === analysisClass() ? undefined : target;
+}
+
+/** The analyses' reference slots the audit shows, by the class they link to. */
 function slotsByClass(analysis: EntityNode) {
-    const row = { entity_class: analysis.entityClass, schema_class: analysis.schemaClass };
     const byClass = new Map<string, SlotNode[]>();
     for (const slot of analysis.slots) {
-        const target = slot.kind === 'reference' ? referenceTarget(row, slot.path) : undefined;
+        const target = auditTarget(analysis, slot);
         if (target) pushTo(byClass, target, slot);
     }
     return byClass;
 }
+
+/** The links of `analysis` the audit shows, which its step counts. */
+export const auditLinks = (analysis: EntityNode): AnyTarget[] =>
+    analysis.slots.flatMap((slot) =>
+        auditTarget(analysis, slot)
+            ? slot.references.map((target) => relationshipTarget(analysis.id, slot.path, target))
+            : []
+    );
 
 function buildMatrix(index: RecordIndex, analyses: EntityNode[]): AuditMatrix {
     const slots = new Map(analyses.map((a) => [a.id, slotsByClass(a)]));
@@ -159,8 +185,7 @@ function buildMatrix(index: RecordIndex, analyses: EntityNode[]): AuditMatrix {
         cell: (analysis, className, entity) => {
             const candidates = slots.get(analysis.id)?.get(className) ?? [];
             const holding = candidates.find((slot) => slot.references.includes(entity.id));
-            const slot = holding ?? (entity.id === analysis.id ? undefined : candidates[0]);
-            return { holding, slot };
+            return { holding, slot: holding ?? candidates[0] };
         },
     };
 }
@@ -181,7 +206,7 @@ export function analysisSlotsFor(index: RecordIndex, entity: EntityNode) {
     return matrix.rows.flatMap((analysis) =>
         classes.flatMap((className) => {
             const { holding, slot } = matrix.cell(analysis, className, entity);
-            return slot && !holding ? [{ id: slot.key, name: `${analysis.name} · ${slot.path}`, slot }] : [];
+            return !holding ? [{ id: slot.key, name: `${analysis.name} · ${labelOf(index, slot)}`, slot }] : [];
         })
     );
 }
@@ -191,31 +216,28 @@ export interface Progress {
     total: number;
 }
 
-export type StepState = { index: RecordIndex; bundle: ReviewBundle; showNonCoordinate: boolean };
+export type StepState = { index: RecordIndex; bundle: ReviewBundle };
 
-/** What a step has the reviewer judge: coordinate analyses, entity cards or links; null for submit. */
+/**
+ * What a step has the reviewer judge: coordinate analyses with points, entity cards or links, none of them hidden;
+ * null for submit. The view may show the hidden ones too, but the step does not ask for them.
+ */
 export function stepTargets(s: StepState, step: StepId): AnyTarget[] | null {
     switch (step) {
         case 'coordinates':
-            return guidedOrder(currentAnalyses(s.bundle), s.showNonCoordinate).map((a) => analysisTarget(a.key));
+            return guidedOrder(currentAnalyses(s.bundle), false).map((a) => analysisTarget(a.key));
         case 'analyses':
         case 'entities':
         case 'leftovers':
             return guidedCards(s.index)[step].map((e): AnyTarget => ({ kind: 'entity', entity: e.id }));
         case 'relationships':
-            return auditMatrix(s.index).rows.flatMap((analysis) =>
-                analysis.slots.flatMap((slot) =>
-                    slot.kind === 'reference'
-                        ? slot.references.map((target) => relationshipTarget(analysis.id, slot.path, target))
-                        : []
-                )
-            );
+            return auditMatrix(s.index).rows.flatMap(auditLinks);
         case 'submit':
             return null;
     }
 }
 
-/** How many of a step's items are judged; null for submit. */
+/** How many of a step's items are judged, the one count every view of the step shows; null for submit. */
 export function stepProgress(s: StepState & { provenance: ProvenanceMap }, step: StepId): Progress | null {
     const targets = stepTargets(s, step);
     if (!targets) return null;

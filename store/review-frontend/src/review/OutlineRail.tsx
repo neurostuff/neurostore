@@ -9,7 +9,6 @@ import {
     Paper,
     ToggleButton,
     ToggleButtonGroup,
-    Tooltip,
 } from '@mui/material';
 import { useMemo } from 'react';
 import { reviewStatus } from '../inspector/status';
@@ -19,7 +18,8 @@ import { entityKey } from '../model/targetKey';
 import { useSession, useShown, useView } from '../store/context';
 import { selectDiff } from '../store/diffSelectors';
 import { editorName } from './editor';
-import { notedKeys, outlineMatches } from './outline';
+import { Hint } from './Hint';
+import { notedEntities, outlineMatches } from './outline';
 import type { OutlineFilter } from '../store/viewStore';
 
 const RAIL_WIDTH = 48;
@@ -66,7 +66,7 @@ function Outline() {
     const focused = useView((s) => s.focus.entity);
     const focusEntity = useView((s) => s.focusEntity);
     const toggleOutline = useView((s) => s.toggleOutline);
-    const noted = useMemo(() => notedKeys([...ops.map((s) => s.op), ...pending]), [ops, pending]);
+    const noted = useMemo(() => notedEntities([...ops.map((s) => s.op), ...pending]), [ops, pending]);
     const statuses = useMemo(
         () => new Map(entities.map((entity) => [entity.id, reviewStatus(provenance[entityKey(entity.id)]?.state)])),
         [entities, provenance]
@@ -83,7 +83,7 @@ function Outline() {
                         filter,
                         entity,
                         statuses.get(entity.id)!,
-                        noted.has(entityKey(entity.id)),
+                        noted.has(entity.id),
                         diff.byKey.get(entityKey(entity.id))?.status ?? 'same'
                     )
                 )
@@ -115,7 +115,9 @@ function Outline() {
                                 >
                                     <ListItemText
                                         primary={entity.name}
-                                        secondary={<StatusLabel id={statuses.get(entity.id)!} by={editors.get(entity.id)} />}
+                                        secondary={
+                                            <StatusLabel id={statuses.get(entity.id)!} by={editors.get(entity.id)} />
+                                        }
                                         secondaryTypographyProps={{ component: 'div' }}
                                     />
                                 </ListItemButton>
@@ -143,11 +145,11 @@ export function OutlineRail() {
                     textAlign: 'center',
                 }}
             >
-                <Tooltip title="Outline (O)" placement="right">
+                <Hint title="Outline: every entity, by class, with filters (O)" placement="right">
                     <IconButton aria-label="toggle outline" aria-pressed={open} onClick={() => toggleOutline()}>
                         <FormatListBulletedIcon />
                     </IconButton>
-                </Tooltip>
+                </Hint>
             </Box>
             {open && <Outline />}
         </>

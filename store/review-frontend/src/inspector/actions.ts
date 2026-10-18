@@ -44,7 +44,7 @@ function linkAt(index: RecordIndex, entity: string, key: string) {
 }
 
 /** The op target of a focus key on the entity `focused`. */
-function targetOf(index: RecordIndex, focused: string, key: string): AnyTarget | undefined {
+export function targetOf(index: RecordIndex, focused: string, key: string): AnyTarget | undefined {
     const slot = index.slot(key);
     if (slot) return slotTarget(slot.entity, slot.path);
     if (key === entityKey(focused)) return { kind: 'entity', entity: focused };
@@ -81,12 +81,15 @@ export function accept(stores: ReviewStores, key?: string) {
     return target ? acceptTarget(stores, target) : false;
 }
 
+/** The value slots of `entity` that have evidence and no decision yet. */
+export const untouchedWithEvidence = (s: Pick<SessionState, 'index' | 'provenance'>, entity: string) =>
+    (s.index.entity(entity)?.slots ?? []).filter(
+        (slot) => slot.kind === 'value' && slot.value?.evidence?.status === 'present' && !s.provenance[slot.key]
+    );
+
 /** Accepts every slot on the focused card that has evidence and no decision yet; the count accepted. */
 export function acceptCard(stores: ReviewStores) {
-    const { index, provenance } = stores.session.getState();
-    const untouched = (index.entity(stores.view.getState().focus.entity)?.slots ?? []).filter(
-        (slot) => slot.kind === 'value' && slot.value?.evidence?.status === 'present' && !provenance[slot.key]
-    );
+    const untouched = untouchedWithEvidence(stores.session.getState(), stores.view.getState().focus.entity);
     return untouched.filter((slot) => accept(stores, slot.key)).length;
 }
 
@@ -126,8 +129,33 @@ export function linkCandidates(s: Pick<Documents, 'bundle' | 'index'>, slot: Slo
         .map((e) => ({ id: e.local_id, name: s.index.entity(e.local_id)?.name ?? e.local_id }));
 }
 
-/** The classes a new entity in the list holding `entity` can take. */
+type SiblingClasses = { name: string; title: string }[];
+
+const siblingsOf = new WeakMap<Schema, WeakMap<object, WeakMap<object, Map<string, SiblingClasses>>>>();
+
+function siblingsCache({ bundle, record }: Pick<Documents, 'bundle' | 'record'>) {
+    const schema = extractionSchema();
+    let byBundle = siblingsOf.get(schema);
+    if (!byBundle) siblingsOf.set(schema, (byBundle = new WeakMap()));
+    let byRecord = byBundle.get(bundle);
+    if (!byRecord) byBundle.set(bundle, (byRecord = new WeakMap()));
+    let byEntity = byRecord.get(record);
+    if (!byEntity) byRecord.set(record, (byEntity = new Map()));
+    return byEntity;
+}
+
+/** The classes a new entity in the list holding `entity` can take, worked out once for each schema, bundle and record. */
 export function siblingClasses(
+    s: Pick<Documents, 'bundle' | 'record'>,
+    entity: string
+): { name: string; title: string }[] {
+    const byEntity = siblingsCache(s);
+    let classes = byEntity.get(entity);
+    if (!classes) byEntity.set(entity, (classes = listSiblingClasses(s, entity)));
+    return classes;
+}
+
+function listSiblingClasses(
     s: Pick<Documents, 'bundle' | 'record'>,
     entity: string
 ): { name: string; title: string }[] {

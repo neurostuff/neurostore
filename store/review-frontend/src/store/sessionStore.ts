@@ -55,6 +55,8 @@ export interface Notice {
     kind: 'conflict' | 'refused' | 'dangling' | 'split' | 'undo' | 'redo';
     slot: string;
     message: string;
+    /** The op dropped, for naming what it was in the reviewer's terms. */
+    op?: Op;
 }
 
 /** An edit of one slot's evidence, made again on top of the record a rebase brings; a null `span` removes `from`. */
@@ -114,6 +116,8 @@ export interface SessionState {
     moveEvidence(slot: string, from: SpanPair, to: SpanPair): boolean;
     /** Removes the span `span` from the slot `slot`'s evidence; false when it has no such span. */
     removeEvidence(slot: string, span: SpanPair): boolean;
+    /** Moves the span `span` of the slot `from`'s evidence to the first set of the slot `to`, as one intent. */
+    transferEvidence(from: string, span: SpanPair, to: string): boolean;
     /** Resolves once the local_id of a pending create_entity op is minted. */
     minted(clientOpId: string): Promise<void>;
     setSave(save: SaveStatus, message?: string): void;
@@ -197,6 +201,7 @@ const EDITS = [
     'addEvidence',
     'moveEvidence',
     'removeEvidence',
+    'transferEvidence',
     'discardPending',
     'undoBlocked',
     'setLifecycle',
@@ -343,20 +348,28 @@ export function createSessionStore(
             if (!pushBatch(ops, from, { ...moved, waitingTo: null })) set({ waitingTo: null });
         };
 
-        /** Sends the evidence `intent` makes of `slot`'s as one set_evidence op, kept with the intent a rebase makes again. */
-        const pushIntent = (slot: SlotNode, intent: EvidenceIntent): boolean => {
+        /** The set_evidence op giving `slot` the evidence `intent` makes of its own; null when the intent is refused. */
+        const intentOp = (slot: SlotNode, intent: EvidenceIntent): SetEvidenceOp | null => {
             const intended = evidenceFor(slot.value?.evidence, intent);
-            if ('refused' in intended) return false;
-            const op: SetEvidenceOp = {
+            if ('refused' in intended) return null;
+            return {
                 client_op_id: randomUUID(),
                 type: 'set_evidence',
                 target: slotTarget(slot.entity, slot.path),
                 evidence: intended.evidence,
             };
-            if (!pushEdit([op])) return false;
-            set((s) => ({ intents: { ...s.intents, [op.client_op_id]: intent } }));
+        };
+
+        /** Sends the set_evidence ops of the evidence intents as one undo step, each kept with the intent a rebase makes again. */
+        const pushIntents = (edits: [SlotNode, EvidenceIntent][]): boolean => {
+            const ops = edits.map(([slot, intent]) => intentOp(slot, intent));
+            if (ops.some((op) => op === null) || !pushEdit(ops as SetEvidenceOp[])) return false;
+            const kept = Object.fromEntries(ops.map((op, i) => [op!.client_op_id, edits[i][1]]));
+            set((s) => ({ intents: { ...s.intents, ...kept } }));
             return true;
         };
+
+        const pushIntent = (slot: SlotNode, intent: EvidenceIntent) => pushIntents([[slot, intent]]);
 
         /** Sends the slot's evidence with the span `from` replaced by `to`, or left out when `to` is null. */
         const replaceSpan = (key: string, from: SpanPair, to: SpanPair | null): boolean => {
@@ -415,6 +428,16 @@ export function createSessionStore(
             },
             moveEvidence: (key, from, to) => replaceSpan(key, from, to),
             removeEvidence: (key, span) => replaceSpan(key, span, null),
+            transferEvidence: (fromKey, span, toKey) => {
+                const { index } = get();
+                const from = index.slot(fromKey);
+                const to = index.slot(toKey);
+                if (fromKey === toKey || from?.kind !== 'value' || !canAddEvidence(to)) return false;
+                return pushIntents([
+                    [from, { kind: 'replace_span', slot: fromKey, from: toSpan(span), span: null }],
+                    [to, { kind: 'add_span', slot: toKey, set_index: 0, span: toSpan(span) }],
+                ]);
+            },
             minted: (clientOpId) => mints.get(clientOpId) ?? Promise.resolve(),
             setSave: (save, message = '') => set({ save, saveMessage: message }),
             setDevice: (device, notice) => {
@@ -531,6 +554,7 @@ export function createSessionStore(
                         kind: kinds[op.client_op_id] ?? 'refused',
                         slot: slotLabel(op),
                         message,
+                        op,
                     }))
                 );
             },

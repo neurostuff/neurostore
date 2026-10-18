@@ -85,10 +85,21 @@ describe('adding evidence from a text selection', () => {
         });
     });
 
+    it('names the field the selection will be added to', () => {
+        const { select } = setup();
+        select(TEXT.indexOf('twenty'), TEXT.indexOf('twenty') + 6);
+        expect(screen.getByRole('button', { name: 'Add as evidence for Patients · Name (E)' })).toBeInTheDocument();
+        const set = screen.getByRole('button', { name: 'New evidence set for Patients · Name (Shift+E)' });
+        expect(set.closest('[title]')).toHaveAttribute(
+            'title',
+            'A separate passage that supports the value on its own, apart from the evidence it has'
+        );
+    });
+
     it('the bar’s buttons do what E and Shift+E do', () => {
         const { stores, select } = setup();
         select(TEXT.indexOf('twenty'), TEXT.indexOf('twenty') + 2);
-        fireEvent.click(screen.getByRole('button', { name: /add to evidence/i }));
+        fireEvent.click(screen.getByRole('button', { name: /add as evidence/i }));
         expect(stores.session.getState().pending).toHaveLength(1);
         select(TEXT.indexOf('3 T'), TEXT.indexOf('3 T') + 3);
         fireEvent.click(screen.getByRole('button', { name: /new evidence set/i }));
@@ -101,7 +112,7 @@ describe('adding evidence from a text selection', () => {
         const { stores, select } = setup();
         act(() => stores.view.getState().focusSlot('slot:grp_a:species'));
         select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
-        expect(screen.getByRole('button', { name: /add to evidence/i })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /add as evidence/i })).toBeDisabled();
         expect(screen.getByRole('button', { name: /new evidence set/i })).toBeDisabled();
         expect(bar()).toHaveTextContent('set a value first');
         press('e');
@@ -127,8 +138,8 @@ describe('the selection bar in a read-only tab', () => {
         const { stores, select } = setup();
         act(() => stores.session.getState().setDevice('readonly'));
         select(TEXT.indexOf('ontrol'), TEXT.indexOf('ontrol') + 3);
-        expect(screen.getByRole('button', { name: 'Add to evidence (E)' })).toBeDisabled();
-        expect(screen.getByRole('button', { name: 'New evidence set (Shift+E)' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Add as evidence for Patients · Name (E)' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'New evidence set for Patients · Name (Shift+E)' })).toBeDisabled();
         press('e');
         expect(stores.session.getState().pending).toEqual([]);
     });

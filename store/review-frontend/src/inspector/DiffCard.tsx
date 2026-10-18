@@ -9,10 +9,12 @@ import { CardHead } from './CardHead';
 import { formatValue } from './formatValue';
 import { statusColors, statusOf } from './status';
 import { StatusLabel } from './StatusLabel';
+import { slotLabel } from '../model/labels';
 
 interface DiffRow {
     key: string;
     path: string;
+    label: string;
     before?: SlotNode;
     after?: SlotNode;
     status: DiffStatus;
@@ -27,20 +29,32 @@ function slotStatus(diff: ReviewDiff, entity: string, slot: SlotNode): DiffStatu
 }
 
 /** The rows of the two columns: the review's slots in its order, then the ones only the original has. */
-function diffRows(entity: EntityNode, original: EntityNode | undefined, diff: ReviewDiff): DiffRow[] {
+function diffRows(
+    entity: EntityNode,
+    original: EntityNode | undefined,
+    diff: ReviewDiff,
+    indexes: { review: RecordIndex; original: RecordIndex }
+): DiffRow[] {
     const before = new Map((original?.slots ?? []).map((slot) => [slot.key, slot]));
     const keys = new Set(entity.slots.map((slot) => slot.key));
     return [
         ...entity.slots.map((after) => ({
             key: after.key,
             path: after.path,
+            label: slotLabel(indexes.review, after),
             before: before.get(after.key),
             after,
             status: slotStatus(diff, entity.id, after),
         })),
         ...(original?.slots ?? [])
             .filter((slot) => !keys.has(slot.key))
-            .map((slot) => ({ key: slot.key, path: slot.path, before: slot, status: 'removed' as const })),
+            .map((slot) => ({
+                key: slot.key,
+                path: slot.path,
+                label: slotLabel(indexes.original, slot),
+                before: slot,
+                status: 'removed' as const,
+            })),
     ];
 }
 
@@ -69,7 +83,7 @@ const tableStyles = (theme: Theme) => ({
         borderColor: 'divider',
     },
     '& th': { typography: 'caption', color: 'text.secondary' },
-    '& td.rv-diff-path': { fontFamily: 'monospace' },
+    '& td.rv-diff-path': { color: 'text.secondary' },
     '& tr[data-diff]': { cursor: 'pointer' },
     '& tr[aria-current="true"]': { bgcolor: 'action.selected' },
     '& tr:not([data-diff="same"]) td:first-of-type': { borderLeft: 3, borderLeftColor: 'primary.main' },
@@ -90,7 +104,9 @@ const DiffRowView = memo(function DiffRowView({
 }) {
     return (
         <tr data-diff={row.status} aria-current={focused ? 'true' : undefined} onClick={() => onFocus(row.key)}>
-            <td className="rv-diff-path">{row.path}</td>
+            <td className="rv-diff-path" title={row.path}>
+                {row.label}
+            </td>
             <SlotSide slot={row.before} names={names} />
             <SlotSide slot={row.after} names={names} />
             <td>{row.status !== 'same' && <span className="rv-diff">{row.status}</span>}</td>
@@ -108,7 +124,10 @@ export function DiffCard({ entity, focusedSlot }: { entity: EntityNode; focusedS
     const originalIndex = useSession(selectOriginalIndex);
     const focusSlot = useView((s) => s.focusSlot);
     const original = originalIndex.entity(entity.id);
-    const rows = useMemo(() => diffRows(entity, original, diff), [entity, original, diff]);
+    const rows = useMemo(
+        () => diffRows(entity, original, diff, { review: index, original: originalIndex }),
+        [entity, original, diff, index, originalIndex]
+    );
     const names = useMemo(() => nameIn(index, originalIndex), [index, originalIndex]);
     return (
         <Box component="section" aria-label={entity.name}>
@@ -116,7 +135,7 @@ export function DiffCard({ entity, focusedSlot }: { entity: EntityNode; focusedS
             <Box component="table" aria-label={`${entity.name}: original and review`} sx={tableStyles}>
                 <thead>
                     <tr>
-                        <th>slot</th>
+                        <th>field</th>
                         <th>original</th>
                         <th>review</th>
                         <th>diff</th>

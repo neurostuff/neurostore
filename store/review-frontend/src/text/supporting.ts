@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent, type MouseEvent } from 'react';
 import type { RecordIndex, SlotNode } from '../model/record';
+import { slotLabel } from '../model/labels';
 import { useReviewStores } from '../store/context';
 import { selectEvidenceCursor, selectFocusedSpans, selectShown } from '../store/viewSelectors';
 import type { HighlightLayer } from './highlights';
@@ -32,7 +33,7 @@ export function useSupportingFocus(index: TextIndex | null, layer: HighlightLaye
             const { index: records } = session.getState();
             const items = slots.map((slot) => ({
                 key: slot.key,
-                label: `${records.entity(slot.entity)?.name ?? slot.entity} · ${slot.path}`,
+                label: `${records.entity(slot.entity)?.name ?? slot.entity} · ${slotLabel(records, slot)}`,
             }));
             setChoice({ items, at });
         }

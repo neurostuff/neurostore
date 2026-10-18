@@ -12,17 +12,29 @@ import { SaveNotices } from './SaveNotices';
 const bundle = makeBundle({ description: ev('A study', [[0, 4]]) }, 'Text of the paper.');
 const op = { client_op_id: 'op-00000001' } as Op;
 
+const indicator = () => screen.getByRole('status', { name: /^save state/ });
+
 describe('the save indicator', () => {
-    it('says saved, N unsaved, saving or offline', () => {
+    it('says saved, N unsaved, saving or offline in its label and tooltip', () => {
         const { stores } = renderWithStores(<ReviewAppBar />, bundle);
-        const indicator = () => screen.getByLabelText(/^save state/);
-        expect(indicator()).toHaveTextContent('saved');
+        expect(indicator()).toHaveAccessibleName('save state: saved');
+        expect(indicator()).toHaveAttribute('title', 'saved');
         act(() => stores.session.setState({ pending: [op, op] }));
-        expect(indicator()).toHaveTextContent('2 unsaved');
+        expect(indicator()).toHaveAccessibleName('save state: 2 unsaved');
         act(() => stores.session.setState({ save: 'saving' }));
-        expect(indicator()).toHaveTextContent('saving');
+        expect(indicator()).toHaveAccessibleName('save state: saving');
         act(() => stores.session.setState({ save: 'offline' }));
-        expect(indicator()).toHaveTextContent('offline');
+        expect(indicator()).toHaveAccessibleName('save state: offline');
+    });
+
+    it('is an icon of one fixed width, with no text to push the header about', () => {
+        const { stores } = renderWithStores(<ReviewAppBar />, bundle);
+        expect(indicator()).toHaveTextContent('');
+        const width = getComputedStyle(indicator()).width;
+        expect(width).toBe('28px');
+        act(() => stores.session.setState({ save: 'offline' }));
+        expect(getComputedStyle(indicator()).width).toBe(width);
+        expect(indicator()).toHaveTextContent('');
     });
 });
 
@@ -35,9 +47,8 @@ describe('a refused save', () => {
                 saveMessage: 'the batch leaves an invalid document',
             })
         );
-        const indicator = screen.getByLabelText(/^save state/);
-        expect(indicator).toHaveTextContent('the batch leaves an invalid document');
-        expect(indicator).toHaveStyle({ color: theme.palette.error.main });
+        expect(indicator()).toHaveAccessibleName('save state: the batch leaves an invalid document');
+        expect(indicator()).toHaveStyle({ color: theme.palette.error.main });
     });
 });
 
@@ -55,12 +66,36 @@ describe('a save that needs a sign-in', () => {
         const client = createOpClient(stores.session, api);
         act(() => stores.session.setState({ pending: [op] }));
         await act(() => client.flush());
-        expect(screen.getByLabelText(/^save state/)).toHaveTextContent('sign in to save');
+        expect(indicator()).toHaveAccessibleName('save state: sign in to save');
         client.stop();
     });
 });
 
 describe('save notices', () => {
+    it('name a refused link by its ends in the reviewer’s terms, not its key (G3)', () => {
+        const linked = makeBundle(
+            {
+                analyses: [{ local_id: 'a_1', name: ev('Patients > Controls'), acquisitions: [] }],
+                acquisitions: [{ local_id: 'acq_1', name: ev('fMRI') }],
+            },
+            'Text of the paper.',
+            { entities: entityRows(row('a_1', 'Analysis', 'analyses'), row('acq_1', 'Acquisition', 'acquisitions')) }
+        );
+        const { stores } = renderWithStores(<SaveNotices />, linked);
+        const op: Op = {
+            client_op_id: 'op-link',
+            type: 'link',
+            target: { kind: 'relationship', entity: 'a_1', path: 'acquisitions', target_entity: 'acq_1' },
+        };
+        act(() => stores.session.getState().emit(op));
+        act(() => stores.session.getState().refuse([{ op, message: 'structural edits need the server' }]));
+        const banner = screen.getByRole('status');
+        expect(banner).toHaveTextContent(
+            'Couldn’t link Patients > Controls · Acquisitions → fMRI: the server refused this edit (structural edits need the server)'
+        );
+        expect(banner).not.toHaveTextContent('relationship:');
+    });
+
     it('name each dropped op’s slot without blocking, until dismissed', () => {
         const { stores } = renderWithStores(<SaveNotices />, bundle);
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -101,7 +136,7 @@ describe('the save state while offline', () => {
             stores.session.getState().setDevice('kept');
             stores.session.getState().setSave('offline');
         });
-        expect(screen.getByLabelText(/^save state/)).toHaveTextContent('offline; saved on this device');
+        expect(indicator()).toHaveAccessibleName('save state: offline; saved on this device');
     });
 });
 
@@ -124,7 +159,7 @@ describe('non-coordinate analyses', () => {
         expect(screen.getByRole('button', { name: 'non-coordinate analyses' })).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('says what the toggle and the counter mean, and shows the toggle filled while on', () => {
+    it('says what the toggle means, and shows the toggle filled while on', () => {
         const { stores } = renderWithStores(<ReviewAppBar />, withAnalysis);
         const toggle = screen.getByRole('button', { name: 'non-coordinate analyses' });
         expect(toggle.parentElement).toHaveAttribute(
@@ -134,10 +169,6 @@ describe('non-coordinate analyses', () => {
         expect(toggle).toHaveClass('MuiButton-outlined');
         act(() => stores.view.getState().toggleNonCoordinate());
         expect(screen.getByRole('button', { name: 'non-coordinate analyses' })).toHaveClass('MuiButton-contained');
-        expect(screen.getByText(/reviewed, plus/)).toHaveAttribute(
-            'title',
-            'Slots of the record you have accepted, rejected or edited; analyses with no coordinates are counted apart'
-        );
     });
 
     it('is greyed out, still saying what it does, when the paper has none', () => {
@@ -150,24 +181,14 @@ describe('non-coordinate analyses', () => {
         );
     });
 
-    it('counts reviewed coordinate items apart from the non-coordinate analyses, whether or not they are shown', () => {
-        const { stores } = renderWithStores(<ReviewAppBar />, withAnalysis);
-        const progress = () => screen.getByText(/reviewed, plus/);
-        const coordinateSlots = stores.session.getState().index.visible.flatMap((e) => e.slots);
-        const total = coordinateSlots.length;
-        expect(progress()).toHaveTextContent(`0 of ${total} reviewed, plus 1 non-coordinate analysis`);
-        act(() => stores.view.getState().toggleNonCoordinate());
-        expect(progress()).toHaveTextContent(`0 of ${total} reviewed, plus 1 non-coordinate analysis`);
-        const reviewed = coordinateSlots[0].key;
-        act(() =>
-            stores.session.setState({ provenance: { [reviewed]: { state: 'verified', user_id: 'u1', at: '' } } })
-        );
-        expect(progress()).toHaveTextContent(`1 of ${total} reviewed, plus 1 non-coordinate analysis`);
+    it('counts no slots of the record: the step bar counts what each step asks', () => {
+        renderWithStores(<ReviewAppBar />, withAnalysis);
+        expect(screen.getByRole('banner')).not.toHaveTextContent(/reviewed/);
     });
 });
 
 describe('the reviewers who have edited the paper', () => {
-    it('lists each reviewer with ops, their op count and last edit, and the exact time on hover', () => {
+    it('lists each reviewer with ops, their op count, last edit and its exact time, on the review state’s hover', () => {
         const lastEdit = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
         const edited = makeBundle({ description: ev('A study', [[0, 4]]) }, 'Text of the paper.', {
             reviewers: [
@@ -176,9 +197,12 @@ describe('the reviewers who have edited the paper', () => {
             ],
         });
         renderWithStores(<ReviewAppBar />, edited);
-        const line = screen.getByText('Ana: last edit 2 h ago, 3 ops');
-        expect(line).toHaveAttribute('title', new Date(lastEdit).toLocaleString());
-        expect(screen.queryByText(/^Ben:/)).not.toBeInTheDocument();
+        const state = screen.getByLabelText(/^review state/);
+        expect(state.closest('[title]')).toHaveAttribute(
+            'title',
+            `new review. Ana: last edit 2 h ago, 3 ops (${new Date(lastEdit).toLocaleString()})`
+        );
+        expect(state.closest('[title]')?.getAttribute('title')).not.toMatch(/Ben/);
     });
 });
 
@@ -215,7 +239,10 @@ describe('the copy the text was read from', () => {
     });
 
     it('has no hover text when the licence is not stated as anything', () => {
-        renderWithStores(<ReviewAppBar />, withCopy({ version: 'vor', license: { license_id: 'cc-by', stated_as: null } }));
+        renderWithStores(
+            <ReviewAppBar />,
+            withCopy({ version: 'vor', license: { license_id: 'cc-by', stated_as: null } })
+        );
         expect(screen.getByLabelText(/^text copy/)).not.toHaveAttribute('title');
     });
 

@@ -13,6 +13,7 @@ import { TextBody, type Aside } from './TextBody';
 import { useSupportingFocus } from './supporting';
 import { useHighlights } from './useHighlights';
 import { TextIndexContext, useTextIndex } from './useTextIndex';
+import { Hint } from '../review/Hint';
 
 const PULSE_MS = 600;
 
@@ -42,9 +43,11 @@ function ShowAllToggle() {
     const showAll = useView((s) => s.showAllEvidence);
     const toggleAllEvidence = useView((s) => s.toggleAllEvidence);
     return (
-        <Button size="small" aria-pressed={showAll} onClick={() => toggleAllEvidence()}>
-            show all evidence
-        </Button>
+        <Hint title="Fill every evidence span in the paper, not only the focused item's (Shift+V)">
+            <Button size="small" aria-pressed={showAll} onClick={() => toggleAllEvidence()}>
+                show all evidence
+            </Button>
+        </Hint>
     );
 }
 
@@ -98,7 +101,8 @@ const textStyles = {
     '& .rv-text': { maxWidth: '75ch', mx: 'auto', py: 2, lineHeight: 1.6 },
     '& .rv-paragraph': { whiteSpace: 'pre-wrap', my: 1.5 },
     '& .rv-heading': { mt: 3, mb: 1 },
-    '& .rv-marker': { color: 'text.disabled', fontSize: '0.6em' },
+    '& .rv-marker': { display: 'none' },
+    '& .rv-lost': { color: 'text.disabled', fontSize: '0.75em', verticalAlign: 'super', cursor: 'help' },
     '& .rv-trail': { whiteSpace: 'normal' },
     '& .rv-table': { borderCollapse: 'collapse', fontSize: '0.875rem', my: 2 },
     '& .rv-table td': { border: 1, borderColor: 'divider', px: 1, py: 0.5, verticalAlign: 'top' },
@@ -157,7 +161,18 @@ export function TextPane({ highlights = REVIEW_HIGHLIGHTS, aside }: { highlights
                         tabIndex={0}
                         onClick={onClick}
                         onKeyDown={onKeyDown}
-                        sx={{ flex: 1, overflow: 'auto', position: 'relative', px: 3 }}
+                        sx={(theme) => ({
+                            flex: 1,
+                            overflow: 'auto',
+                            position: 'relative',
+                            px: 3,
+                            '&:focus-visible': {
+                                outline: '1px solid',
+                                outlineColor: alpha(theme.palette.primary.main, 0.4),
+                                outlineOffset: '-1px',
+                            },
+                            '&:focus:not(:focus-visible)': { outline: 'none' },
+                        })}
                     >
                         <Box ref={rootRef} data-text-root sx={textStyles}>
                             <TextBody text={text} blocks={blocks} aside={aside} />

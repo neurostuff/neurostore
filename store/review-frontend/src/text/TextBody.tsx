@@ -10,6 +10,28 @@ interface TextBodyProps {
     aside?: Aside;
 }
 
+/** Three or more question marks in a row: the source's stand-in for a character its conversion lost. */
+const LOST = /(\?{3,})/;
+const LOST_MEANS = 'A character the paper’s conversion lost (shown as ??? in the source)';
+
+/** `text`, each run of lost characters marked; the characters stay, so every offset is where it was. */
+function Plain({ text }: { text: string }) {
+    if (!text.includes('???')) return <>{text}</>;
+    return (
+        <>
+            {text.split(LOST).map((part, i) =>
+                i % 2 === 1 ? (
+                    <span key={i} className="rv-lost" title={LOST_MEANS}>
+                        {part}
+                    </span>
+                ) : (
+                    part
+                )
+            )}
+        </>
+    );
+}
+
 function Trail({ text }: { text: string }) {
     return text ? <span className="rv-trail">{text}</span> : null;
 }
@@ -22,7 +44,7 @@ function Table({ text, block }: { text: string; block: TableBlock }) {
                     <tr key={row.start}>
                         {row.cells.map((cell) => (
                             <td key={cell.start}>
-                                {text.slice(cell.start, cell.contentEnd)}
+                                <Plain text={text.slice(cell.start, cell.contentEnd)} />
                                 <Trail text={text.slice(cell.contentEnd, cell.end)} />
                             </td>
                         ))}
@@ -43,7 +65,7 @@ function renderBlock(text: string, block: Block): ReactNode {
                     {block.markerEnd > block.start && (
                         <span className="rv-marker">{text.slice(block.start, block.markerEnd)}</span>
                     )}
-                    {text.slice(block.markerEnd, block.contentEnd)}
+                    <Plain text={text.slice(block.markerEnd, block.contentEnd)} />
                     {trail}
                 </Heading>
             );
@@ -53,7 +75,7 @@ function renderBlock(text: string, block: Block): ReactNode {
         case 'paragraph':
             return (
                 <p key={block.start} className="rv-paragraph" data-start={block.start}>
-                    {text.slice(block.start, block.contentEnd)}
+                    <Plain text={text.slice(block.start, block.contentEnd)} />
                     {trail}
                 </p>
             );

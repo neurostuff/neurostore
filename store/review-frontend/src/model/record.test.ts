@@ -1,7 +1,10 @@
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
 import type { Json } from './paths';
 import { declaredOf } from '../store/declared';
-import { buildRecordIndex, withHidden, withSlotFrom, withSlotOrder } from './record';
+import { setSchemas } from '../contract/schemas';
+import { GOLDEN_SCHEMAS } from '../test/goldenSchemas';
+import { withPropertyOrder } from '../test/schemaOrder';
+import { buildRecordIndex, withHidden, withSlotFrom } from './record';
 
 const TEXT = 'x'.repeat(200);
 
@@ -158,23 +161,19 @@ describe('buildRecordIndex', () => {
         expect(index.slot('slot:a_1:groups[#0].n')?.entity).toBe('a_1');
     });
 
-    it('puts doubtful slots first: evidence not found, then generated, then ambiguous, then the rest', () => {
+    it('lists an Analysis’s slots in the order its class declares them, list items in their list’s place', () => {
         expect(index.entity('a_1')?.slots.map((s) => s.path)).toEqual([
-            'outcome',
-            'definition',
-            'prespecification',
-            'name',
-            'spatial_scope',
-            'measure',
             'acquisitions',
+            'definition',
+            'effect.cells[#0].level',
+            'effect.cells[#0].term',
             'groups[#0].group',
             'groups[#0].n',
-            'effect.cells[#0].term',
-            'effect.cells[#0].level',
-        ]);
-        expect(index.entity('grp_a')?.slots.map((s) => [s.path, s.doubt])).toEqual([
-            ['species', 'not_found'],
-            ['name', 'other'],
+            'measure',
+            'name',
+            'outcome',
+            'prespecification',
+            'spatial_scope',
         ]);
     });
 
@@ -213,6 +212,159 @@ describe('buildRecordIndex', () => {
     });
 });
 
+describe('slot order (D96)', () => {
+    const LINKML_GROUP = [
+        'stable_id',
+        'local_id',
+        'name',
+        'description',
+        'species',
+        'approached_count',
+        'acquired_count',
+        'excluded_count',
+        'inclusion_criteria',
+        'age_mean',
+        'age_standard_deviation',
+        'age_minimum',
+        'age_unit',
+    ];
+    const group = {
+        local_id: 'grp_a',
+        age_standard_deviation: ev(9.1, [[30, 33]]),
+        acquired_count: ev(251, [[10, 13]]),
+        name: ev('Patients', [[50, 58]]),
+        age_mean: ev(30.2, [], 'generated'),
+        species: ev('human', [], 'generated'),
+    };
+
+    it('lists a class’s slots in the order the schema declares them, never by doubt or by the record’s order', () => {
+        setSchemas(withPropertyOrder(GOLDEN_SCHEMAS, 'Group', LINKML_GROUP));
+        const index = buildRecordIndex(
+            makeBundle({ groups: [group] }, TEXT, { entities: entityRows(row('grp_a', 'Group', 'groups')) }),
+            declaredOf
+        );
+        const paths = index.entity('grp_a')!.slots.map((s) => s.path);
+        expect(paths.slice(0, 10)).toEqual([
+            'name',
+            'description',
+            'species',
+            'approached_count',
+            'acquired_count',
+            'excluded_count',
+            'inclusion_criteria',
+            'age_mean',
+            'age_standard_deviation',
+            'age_minimum',
+        ]);
+    });
+});
+
+describe('slot order of nested list items (D96)', () => {
+    const analysis = {
+        local_id: 'a_1',
+        effect: {
+            cells: [
+                { direction: ev('positive'), label: ev('HC') },
+                { direction: ev('negative'), label: ev('SAD') },
+            ],
+        },
+    };
+    const cellPaths = () => {
+        const index = buildRecordIndex(
+            makeBundle({ analyses: [analysis] }, TEXT, { entities: entityRows(row('a_1', 'Analysis', 'analyses')) }),
+            declaredOf
+        );
+        return index
+            .entity('a_1')!
+            .slots.map((s) => s.path)
+            .filter((path) => path.startsWith('effect.cells'));
+    };
+
+    it('lists each item’s slots in the order the item class declares them, item after item', () => {
+        setSchemas(withPropertyOrder(GOLDEN_SCHEMAS, 'Cell', ['label', 'direction']));
+        expect(cellPaths()).toEqual([
+            'effect.cells[#0].label',
+            'effect.cells[#0].direction',
+            'effect.cells[#1].label',
+            'effect.cells[#1].direction',
+        ]);
+    });
+
+    it('follows the schema when it declares them the other way', () => {
+        setSchemas(withPropertyOrder(GOLDEN_SCHEMAS, 'Cell', ['direction', 'label']));
+        expect(cellPaths().slice(0, 2)).toEqual(['effect.cells[#0].direction', 'effect.cells[#0].label']);
+    });
+});
+
+describe('entity names', () => {
+    const named = {
+        devices: [
+            { local_id: 'dev_jena', manufacturer: ev('Siemens'), model: ev('TrioTim') },
+            { local_id: 'dev_a', manufacturer: ev('Philips') },
+            { local_id: 'dev_b', manufacturer: ev('Philips') },
+        ],
+        acquisitions: [{ local_id: 'acq_1', acquisition_type: 'MRI', modality: ev('sMRI'), device: 'dev_jena' }],
+        groups: [{ local_id: 'grp_a', name: ev('Patients') }],
+    };
+    const rows = entityRows(
+        row('dev_jena', 'Device', 'devices'),
+        row('dev_a', 'Device', 'devices'),
+        row('dev_b', 'Device', 'devices'),
+        row('acq_1', 'Acquisition', 'acquisitions', { schema_class: 'MRI' }),
+        row('grp_a', 'Group', 'groups')
+    );
+    const index = buildRecordIndex(makeBundle(named, TEXT, { entities: rows }));
+    const nameOf = (id: string) => index.entity(id)?.name;
+
+    it('names an entity with no name of its own by its first short values, not by its local id', () => {
+        expect(nameOf('dev_jena')).toBe('Siemens, TrioTim');
+        expect(nameOf('grp_a')).toBe('Patients');
+    });
+
+    it('adds the entity it refers to where it has fewer than two values', () => {
+        expect(nameOf('acq_1')).toBe('sMRI · Siemens, TrioTim');
+    });
+
+    it('names an entity by the first of its name, label, caption and source label slots that holds a text', () => {
+        const labelled = buildRecordIndex(
+            makeBundle(
+                {
+                    measures: [
+                        { local_id: 'm_1', source_label: ev('BOLD'), caption: ev('A caption'), label: ev('A label') },
+                        { local_id: 'm_2', source_label: ev('CBF'), caption: ev('Perfusion') },
+                        { local_id: 'm_3', source_label: ev('ASL'), name: ev(''), label: ev(7) },
+                        { local_id: 'm_4', name: ev('Named'), label: ev('Ignored') },
+                    ],
+                },
+                TEXT,
+                {
+                    entities: entityRows(...['m_1', 'm_2', 'm_3', 'm_4'].map((id) => row(id, 'Measure', 'measures'))),
+                }
+            )
+        );
+        expect(['m_1', 'm_2', 'm_3', 'm_4'].map((id) => labelled.entity(id)?.name)).toEqual([
+            'A label',
+            'Perfusion',
+            'ASL',
+            'Named',
+        ]);
+    });
+
+    it('tells apart entities of a class that would share a name by their local ids', () => {
+        expect(nameOf('dev_a')).toBe('Philips (dev_a)');
+        expect(nameOf('dev_b')).toBe('Philips (dev_b)');
+    });
+
+    it('names an entity again when an edit changes the value its name comes from', () => {
+        const edited = structuredClone(named);
+        edited.devices[1].manufacturer = ev('GE');
+        const after = withSlotFrom(index, { local_id: 'P1', ...edited }, 'slot:dev_a:manufacturer');
+        expect(after.entity('dev_a')?.name).toBe('GE');
+        expect(after.entity('dev_b')?.name).toBe('Philips');
+        expect(after.entity('grp_a')).toBe(index.entity('grp_a'));
+    });
+});
+
 describe('hidden entities in the view', () => {
     const bundle = makeBundle(record, TEXT, { entities, hidden: { analyses: ['a_hidden'], entities: ['grp_b'] } });
 
@@ -232,38 +384,17 @@ describe('the index after an edit', () => {
     const edited = structuredClone(record) as Json;
     (edited.groups as Json[])[0].species = ev('human', [[40, 45]]);
 
-    it('sorts an edited slot back among the slots of its doubt in record order', () => {
+    it('keeps an edited slot where its class declares it, whatever its doubt now', () => {
+        expect(index.entity('grp_a')?.slots.map((s) => [s.path, s.doubt])).toEqual([
+            ['name', 'other'],
+            ['species', 'not_found'],
+        ]);
         const after = withSlotFrom(index, edited, 'slot:grp_a:species');
         expect(after.entity('grp_a')?.slots.map((s) => [s.path, s.doubt])).toEqual([
             ['name', 'other'],
             ['species', 'other'],
         ]);
         expect(after.allSpans).toContainEqual([40, 45]);
-    });
-});
-
-describe('a slot order kept for one entity', () => {
-    const index = buildRecordIndex(
-        makeBundle(record, TEXT, { entities, hidden: { analyses: ['a_hidden'], entities: [] } })
-    );
-
-    it('lists the entity’s slots in the order given, the others after them, its spans as they were', () => {
-        const kept = withSlotOrder(index, 'a_1', ['slot:a_1:name', 'slot:a_1:measure']);
-        expect(
-            kept
-                .entity('a_1')
-                ?.slots.slice(0, 3)
-                .map((s) => s.path)
-        ).toEqual(['name', 'measure', 'outcome']);
-        expect(kept.visible.find((e) => e.id === 'a_1')?.slots[0].path).toBe('name');
-        expect(kept.entity('grp_a')).toBe(index.entity('grp_a'));
-        expect(kept.allSpans).toBe(index.allSpans);
-    });
-
-    it('is the index itself when the order is the one it has', () => {
-        const order = index.entity('a_1')!.slots.map((s) => s.key);
-        expect(withSlotOrder(index, 'a_1', order)).toBe(index);
-        expect(withSlotOrder(index, 'nobody', order)).toBe(index);
     });
 });
 

@@ -70,3 +70,23 @@ describe('TextBody', () => {
         expect(root.querySelector('h1')).toHaveTextContent(/^Differential neural correlates/);
     });
 });
+
+describe('characters the conversion lost (I2)', () => {
+    const LOST = 'Table 1. \nComorbidity???\tn\nGermany (???, ???)\t3\nA note??? here.';
+
+    it('marks each run of question marks the source left for a lost character, keeping the text whole', () => {
+        const { root } = renderBody(LOST, PAPER);
+        expect(root.textContent).toBe(LOST);
+        const marks = [...root.querySelectorAll('.rv-lost')];
+        expect(marks.map((mark) => mark.textContent)).toEqual(['???', '???', '???', '???']);
+        expect(marks[0]).toHaveAttribute(
+            'title',
+            'A character the paper’s conversion lost (shown as ??? in the source)'
+        );
+    });
+
+    it('leaves a single question mark alone', () => {
+        const { root } = renderBody('Why? Because.', PAPER);
+        expect(root.querySelector('.rv-lost')).toBeNull();
+    });
+});

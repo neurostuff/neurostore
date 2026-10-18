@@ -1,6 +1,7 @@
 import { entityPath, type Json, type Step } from '../model/paths';
 import type { EntityNode, RecordIndex } from '../model/record';
 import { slotKey } from '../model/targetKey';
+import { slotLabel } from '../model/labels';
 
 export interface Explained {
     message: string;
@@ -37,7 +38,11 @@ export function explain(problem: string, index: RecordIndex, record: Json): Expl
     for (let n = names.length; n > 0; n--) {
         const slot = index.slot(slotKey(entity.id, names.slice(0, n).join('.')));
         if (slot)
-            return { message, label: `${entity.name} · ${slot.path}`, focus: { entity: entity.id, slot: slot.key } };
+            return {
+                message,
+                label: `${entity.name} · ${slotLabel(index, slot)}`,
+                focus: { entity: entity.id, slot: slot.key },
+            };
     }
     return { message, label: entity.name, focus: { entity: entity.id } };
 }

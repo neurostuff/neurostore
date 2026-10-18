@@ -212,22 +212,65 @@ function renderPapers(api: Partial<ReviewApi>) {
     );
 }
 
+/** The background the rules that apply to `element` while it is hovered end up giving it. */
+const hoverBackground = (element: Element) =>
+    [...document.styleSheets]
+        .flatMap((sheet) => [...sheet.cssRules])
+        .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule && rule.selectorText.includes(':hover'))
+        .filter((rule) => element.matches(rule.selectorText.replaceAll(':hover', '')))
+        .flatMap((rule) => [...rule.cssText.matchAll(/background-color: ([^;]+);/g)].map((match) => match[1]))
+        .at(-1);
+
 describe('assignments in the paper list', () => {
-    it('shows who a paper is assigned to, and assigns it to the caller with “Assign me”', async () => {
+    it('shows who a paper is assigned to, and assigns it to the caller with “Add to my list”', async () => {
         const assign = vi.fn(async () => {});
         renderPapers({ listPapers: async () => [assigned([{ user_id: 'ben', name: 'Ben' }])], assign });
         const row = await screen.findByRole('link', { name: /Sixth paper/ });
         expect(within(row).getByText('Assigned to Ben')).toBeInTheDocument();
-        await userEvent.click(screen.getByRole('button', { name: 'Assign me' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Add to my list' }));
         expect(assign).toHaveBeenCalledWith('B-P6', 'ana');
     });
 
     it('releases the caller’s own assignment with “Release”', async () => {
         const release = vi.fn(async () => {});
         renderPapers({ listPapers: async () => [assigned([{ user_id: 'ana', name: 'Ana' }])], release });
-        expect(await screen.findByRole('button', { name: 'Assign me' })).toBeDisabled();
+        expect(await screen.findByRole('button', { name: 'Add to my list' })).toBeDisabled();
         await userEvent.click(screen.getByRole('button', { name: 'Release' }));
         expect(release).toHaveBeenCalledWith('B-P6', 'ana');
+    });
+
+    it('labels the lead’s picker “Reviewer assigned”, with “e.g. Sam” until someone is picked', async () => {
+        renderPapers({ listPapers: async () => [assigned([])], getMe: async () => ({ ...me, lead: true }) });
+        const picker = await screen.findByRole('combobox', { name: 'Reviewer assigned to Sixth paper' });
+        const field = picker.closest('.MuiFormControl-root') as HTMLElement;
+        expect(field.querySelector('label')).toHaveTextContent('Reviewer assigned');
+        expect(picker).toHaveTextContent('e.g. Sam');
+    });
+
+    it('keeps a row’s assignment controls inside the row, under its highlight', async () => {
+        renderPapers({ listPapers: async () => [assigned([])], getMe: async () => ({ ...me, lead: true }) });
+        const title = await screen.findByRole('link', { name: /Sixth paper/ });
+        const row = title.closest('li')!;
+        const highlighted = title.closest('.rv-paper-row')!;
+        expect(row).toContainElement(highlighted as HTMLElement);
+        expect(highlighted).toContainElement(screen.getByRole('button', { name: 'Add to my list' }));
+        expect(highlighted).toContainElement(
+            screen.getByRole('combobox', { name: 'Reviewer assigned to Sixth paper' })
+        );
+    });
+
+    it('draws the hover highlight on the row, not on the link inside it', async () => {
+        renderPapers({ listPapers: async () => [assigned([])], getMe: async () => ({ ...me, lead: true }) });
+        const link = await screen.findByRole('link', { name: /Sixth paper/ });
+        const row = link.closest('.rv-paper-row')!;
+        expect(hoverBackground(row)).toBe(theme.palette.action.hover);
+        expect(hoverBackground(link)).toBe('transparent');
+    });
+
+    it('shows the title as a link', async () => {
+        renderPapers({ listPapers: async () => [assigned([])] });
+        const title = within(await screen.findByRole('link', { name: /Sixth paper/ })).getByText('Sixth paper');
+        expect(title).toHaveStyle({ color: theme.palette.primary.main });
     });
 
     it('says a paper with no assignee is unassigned', async () => {
@@ -239,7 +282,7 @@ describe('assignments in the paper list', () => {
     it('gives a reviewer no picker of other reviewers', async () => {
         renderPapers({ listPapers: async () => [assigned([])] });
         await screen.findByRole('link', { name: /Sixth paper/ });
-        expect(screen.queryByRole('combobox', { name: 'Assign Sixth paper to' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('combobox', { name: 'Reviewer assigned to Sixth paper' })).not.toBeInTheDocument();
     });
 
     it('lets a lead reviewer assign a paper to any admin-reviewer through the picker, and release anyone', async () => {
@@ -252,7 +295,7 @@ describe('assignments in the paper list', () => {
             release,
         });
         await screen.findByRole('link', { name: /Sixth paper/ });
-        await userEvent.click(screen.getByRole('combobox', { name: 'Assign Sixth paper to' }));
+        await userEvent.click(screen.getByRole('combobox', { name: 'Reviewer assigned to Sixth paper' }));
         await userEvent.click(await screen.findByRole('option', { name: 'Ben' }));
         expect(assign).toHaveBeenCalledWith('B-P6', 'ben');
         await userEvent.click(screen.getByRole('button', { name: 'Release Ben' }));
@@ -265,7 +308,7 @@ describe('assignments in the paper list', () => {
             getMe: async () => ({ ...me, lead: true }),
         });
         await screen.findByRole('link', { name: /^P6/ });
-        expect(screen.getByRole('combobox', { name: 'Assign P6 to' })).toBeInTheDocument();
+        expect(screen.getByRole('combobox', { name: 'Reviewer assigned to P6' })).toBeInTheDocument();
     });
 
     it('filters the list to the papers assigned to the caller with “Assigned to me”', async () => {
@@ -277,7 +320,7 @@ describe('assignments in the paper list', () => {
         expect(screen.getByRole('button', { name: 'Assigned to me' })).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('still offers “Assign me” and “Release” when the reviewer directory fails to load', async () => {
+    it('still offers “Add to my list” and “Release” when the reviewer directory fails to load', async () => {
         const assign = vi.fn(async () => {});
         renderPapers({
             listPapers: async () => [assigned([])],
@@ -287,7 +330,7 @@ describe('assignments in the paper list', () => {
             assign,
         });
         await screen.findByRole('link', { name: /Sixth paper/ });
-        await userEvent.click(await screen.findByRole('button', { name: 'Assign me' }));
+        await userEvent.click(await screen.findByRole('button', { name: 'Add to my list' }));
         expect(assign).toHaveBeenCalledWith('B-P6', 'ana');
     });
 

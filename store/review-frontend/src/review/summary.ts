@@ -2,7 +2,8 @@ import type { AnyTarget, Op } from '../contract/generated/review-ops';
 import type { CoordinateAnalysis } from '../model/coordinates';
 import { diffTarget, isChange, type DiffItem } from '../model/diff';
 import type { RecordIndex } from '../model/record';
-import { targetKey } from '../model/targetKey';
+import { slotKey, targetKey } from '../model/targetKey';
+import { slotLabel } from '../model/labels';
 import type { ProvenanceMap } from '../model/applyOp';
 import { stepTargets, type StepState } from '../model/guided';
 import { STEPS } from '../model/steps';
@@ -26,15 +27,17 @@ export interface SummaryNote extends SummaryItem {
 /** Names targets by the review's entities, else the original's, and coordinate analyses by name. */
 export function targetLabeller(review: RecordIndex, original: RecordIndex, analyses: CoordinateAnalysis[]) {
     const entity = (id: string) => review.entity(id)?.name ?? original.entity(id)?.name ?? id;
+    const slot = (target: { entity: string; path: string }) =>
+        slotLabel(review.slot(slotKey(target.entity, target.path)) ? review : original, target);
     const named = new Map(analyses.map((a) => [a.key, a.name]));
     return (target: AnyTarget): string => {
         switch (target.kind) {
             case 'entity':
                 return entity(target.entity);
             case 'slot':
-                return `${entity(target.entity)} · ${target.path}`;
+                return `${entity(target.entity)} · ${slot(target)}`;
             case 'relationship':
-                return `${entity(target.entity)} · ${target.path} → ${entity(target.target_entity)}`;
+                return `${entity(target.entity)} · ${slot(target)} → ${entity(target.target_entity)}`;
             case 'coordinate_analysis':
                 return named.get(target.analysis_key) ?? target.analysis_key;
             case 'paper':

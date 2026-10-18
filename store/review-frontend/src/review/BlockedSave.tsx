@@ -4,11 +4,12 @@ import type { RecordIndex } from '../model/record';
 import { useOpClient, useReviewStores, useSession } from '../store/context';
 import type { Blocked } from '../store/sessionStore';
 import { explain } from './explainProblem';
+import { slotLabel } from '../model/labels';
 
 function opLabel(op: Op, index: RecordIndex): string {
     if (!('target' in op) || !('entity' in op.target)) return op.type;
     const name = index.entity(op.target.entity)?.name ?? op.target.entity;
-    return 'path' in op.target ? `${op.type}: ${name} · ${op.target.path}` : `${op.type}: ${name}`;
+    return 'path' in op.target ? `${op.type}: ${name} · ${slotLabel(index, op.target)}` : `${op.type}: ${name}`;
 }
 
 function download(ops: Op[]) {

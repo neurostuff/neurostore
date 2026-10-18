@@ -1,8 +1,9 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Evidence } from '../contract/generated/review-ops';
 import { referenceSlotsOf } from '../contract/references';
-import { fromSchema } from '../contract/schemas';
+import { fromSchema, schemaOf } from '../contract/schemas';
 import { entityPath, getIn, isObject, parsePath, ROOT_ENTITY, type Json } from './paths';
+import { compareRanks, slotRank } from './schema';
 import { slotKey } from './targetKey';
 
 export type SpanPair = [number, number];
@@ -25,7 +26,7 @@ export interface SlotNode {
     references: string[];
     spans: SpanPair[];
     doubt: Doubt;
-    /** Where the slot comes among its entity's slots in the record, the declared ones it leaves out last. */
+    /** Where the slot comes among its entity's slots, in the order its class declares them. */
     position: number;
 }
 
@@ -61,8 +62,16 @@ const classSlots = fromSchema(
     (schema) => new Set(referenceSlotsOf(schema).map((r) => `${r.class}.${r.slot}`))
 );
 const slotNames = fromSchema('extraction-record', (schema) => new Set(referenceSlotsOf(schema).map((r) => r.slot)));
-const DOUBT_RANK: Record<Doubt, number> = { not_found: 0, generated: 1, ambiguous: 2, other: 3 };
-const NAME_SLOTS = ['name', 'label', 'caption', 'source_label'];
+export const NAME_SLOTS = ['name', 'label', 'caption', 'source_label'];
+
+/** The first name slot that `get` reads a non-empty text from. */
+export const nameIn = (get: (slot: string) => unknown): string | undefined => {
+    for (const slot of NAME_SLOTS) {
+        const value = get(slot);
+        if (typeof value === 'string' && value) return value;
+    }
+    return undefined;
+};
 const SKIPPED = new Set(['local_id', 'extraction_metadata']);
 
 export const isExtractedValue = (value: unknown): value is ExtractedValue =>
@@ -92,15 +101,61 @@ export function doubtOf(value: ExtractedValue | undefined): Doubt {
 export const isDoubtful = (slot: SlotNode): slot is SlotNode & { doubt: Exclude<Doubt, 'other'> } =>
     slot.doubt !== 'other';
 
-function displayName(item: Json, fallback: string): string {
-    for (const slot of NAME_SLOTS) {
-        const value = item[slot];
-        if (isExtractedValue(value) && typeof value.value === 'string' && value.value) return value.value;
-    }
-    return fallback;
+type Named = Pick<EntityNode, 'id' | 'localId' | 'entityClass' | 'slots'>;
+
+const SHORT_VALUE = 40;
+const isTopLevel = (slot: SlotNode) => !/[.[]/.test(slot.path);
+
+/** The entity's name as the record gives it: its first name slot that holds one. */
+function ownName(entity: Named): string | undefined {
+    if (entity.id === ROOT_ENTITY) return 'Study';
+    return nameIn((name) => entity.slots.find((slot) => slot.path === name)?.value?.value);
 }
 
-const nameFallback = (id: string, fallbackName: string) => (id === ROOT_ENTITY ? 'Study' : fallbackName);
+/** The entity's first two short text values, in slot order. */
+const shortValues = (entity: Named) =>
+    entity.slots
+        .flatMap((slot) => {
+            const value = slot.kind === 'value' && isTopLevel(slot) ? slot.value?.value : undefined;
+            return typeof value === 'string' && value && value.length <= SHORT_VALUE ? [value] : [];
+        })
+        .slice(0, 2);
+
+/**
+ * Each entity's name: its own, else its first short values with, where it has fewer than two, the entity its first
+ * reference names; one a class would share is told apart by its local id.
+ */
+function namesOf(entities: Named[]): Map<string, string> {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    const names = new Map<string, string>();
+    const derived: Named[] = [];
+    for (const entity of entities) {
+        const own = ownName(entity);
+        if (own) names.set(entity.id, own);
+        else derived.push(entity);
+    }
+    const valuesName = (entity: Named) => shortValues(entity).join(', ');
+    const made = derived.map((entity) => {
+        const values = shortValues(entity);
+        const parts = values.length ? [values.join(', ')] : [];
+        if (values.length < 2) {
+            const reference = entity.slots.find((s) => s.kind === 'reference' && isTopLevel(s) && s.references.length);
+            const target = reference && byId.get(reference.references[0]);
+            const targetName = target && (names.get(target.id) ?? valuesName(target));
+            if (targetName) parts.push(targetName);
+        }
+        return { entity, name: parts.join(' · ') || entity.localId };
+    });
+    const sharedKey = ({ entity, name }: (typeof made)[number]) => `${entity.entityClass}\u0000${name}`;
+    const count = new Map<string, number>();
+    for (const one of made) count.set(sharedKey(one), (count.get(sharedKey(one)) ?? 0) + 1);
+    for (const one of made) {
+        const { entity, name } = one;
+        const shared = name !== entity.localId && count.get(sharedKey(one))! > 1;
+        names.set(entity.id, shared ? `${name} (${entity.localId})` : name);
+    }
+    return names;
+}
 
 function referencesIn(value: unknown): string[] | null {
     if (typeof value === 'string') return [value];
@@ -198,9 +253,16 @@ function absentSlots(row: EntityRow, present: SlotNode[], declared: Declared): S
     });
 }
 
-/** The slots, given in record order, sorted by doubt, the most doubtful first. */
-const byDoubt = (slots: SlotNode[]) => [...slots].sort((a, b) => DOUBT_RANK[a.doubt] - DOUBT_RANK[b.doubt]);
-const inRecordOrder = (slots: SlotNode[]) => [...slots].sort((a, b) => a.position - b.position);
+/** The slots of the item `item` of `row`, in the order the extraction schema declares them, each given its position. */
+function inSchemaOrder(row: EntityRow, item: Json, slots: SlotNode[]): SlotNode[] {
+    const root = schemaOf('extraction-record');
+    const ranked = slots.map((slot) => ({
+        slot,
+        rank: slotRank(root, row.schema_class, slot.path, item),
+    }));
+    ranked.sort((a, b) => compareRanks(a.rank, b.rank) || a.slot.position - b.slot.position);
+    return ranked.map(({ slot }, position) => (slot.position === position ? slot : { ...slot, position }));
+}
 const spansOf = (slots: SlotNode[]) => sortSpans(slots.flatMap((s) => s.spans));
 
 function indexOf(entities: EntityNode[], listHidden = false): RecordIndex {
@@ -236,7 +298,7 @@ export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () =
         const item = items.get(row.local_id);
         if (!item) return [];
         const present = slotsOf(row, item);
-        const slots = byDoubt([...present, ...absentSlots(row, present, declared)]);
+        const slots = inSchemaOrder(row, item, [...present, ...absentSlots(row, present, declared)]);
         const localId = typeof item.local_id === 'string' ? item.local_id : row.local_id;
         return [
             {
@@ -245,18 +307,23 @@ export function buildRecordIndex(bundle: ReviewBundle, declared: Declared = () =
                 entityClass: row.entity_class,
                 schemaClass: row.schema_class,
                 parent: row.parent,
-                name: displayName(item, nameFallback(row.local_id, localId)),
+                name: '',
                 hidden: hidden.has(row.local_id),
                 slots,
                 spans: spansOf(slots),
             },
         ];
     });
+    const names = namesOf(found);
     const classOrder = [...new Set(found.map((e) => e.entityClass))];
-    return indexOf(classOrder.flatMap((c) => found.filter((e) => e.entityClass === c)));
+    return indexOf(
+        classOrder.flatMap((c) =>
+            found.filter((e) => e.entityClass === c).map((e) => ({ ...e, name: names.get(e.id)! }))
+        )
+    );
 }
 
-/** The session's index with the slot `key` read again from `record`, its entity's slots sorted again. */
+/** The session's index with the slot `key` read again from `record`, in its place among its entity's slots. */
 export function withSlotFrom(index: RecordIndex, record: Json, key: string): RecordIndex {
     const slot = index.slot(key);
     const entity = slot && index.entity(slot.entity);
@@ -269,27 +336,9 @@ export function withSlotFrom(index: RecordIndex, record: Json, key: string): Rec
         references: slot.references,
         position: slot.position,
     });
-    const slots = byDoubt(inRecordOrder(entity.slots.map((s) => (s.key === key ? next : s))));
-    const name = displayName(getIn(record, at) as Json, nameFallback(entity.id, entity.localId));
-    const edited = { ...entity, name, slots, spans: spansOf(slots) };
-    return indexOf(index.entities.map((e) => (e.id === entity.id ? edited : e)));
-}
-
-/** The index with the slots of `id` in the order of `keys`, any others after them; the index itself when that is their order. */
-export function withSlotOrder(index: RecordIndex, id: string, keys: string[]): RecordIndex {
-    const entity = index.entity(id);
-    if (!entity) return index;
-    const rank = new Map(keys.map((key, i) => [key, i]));
-    const at = (slot: SlotNode) => rank.get(slot.key) ?? keys.length;
-    const slots = [...entity.slots].sort((a, b) => at(a) - at(b));
-    if (slots.every((s, i) => s === entity.slots[i])) return index;
-    const ordered = { ...entity, slots };
-    const swap = (nodes: EntityNode[]) => nodes.map((e) => (e === entity ? ordered : e));
-    return {
-        ...index,
-        entities: swap(index.entities),
-        unhidden: swap(index.unhidden),
-        visible: swap(index.visible),
-        entity: (other) => (other === id ? ordered : index.entity(other)),
-    };
+    const slots = entity.slots.map((s) => (s.key === key ? next : s));
+    const edited = { ...entity, slots, spans: spansOf(slots) };
+    const entities = index.entities.map((e) => (e.id === entity.id ? edited : e));
+    const names = namesOf(entities);
+    return indexOf(entities.map((e) => (names.get(e.id) === e.name ? e : { ...e, name: names.get(e.id)! })));
 }

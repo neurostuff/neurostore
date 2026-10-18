@@ -23,8 +23,8 @@ import {
     movingPoints,
     NAME_SLOT,
     namingSlot,
-    type Session,
-    type View,
+    type CoordinateSession,
+    type CoordinateView,
 } from './availability';
 
 type NewOp = Omit<CoordinateOp, 'client_op_id' | 'type'>;
@@ -35,7 +35,7 @@ const send = ({ session }: ReviewStores, op: NewOp) => session.getState().emitBa
 /** Emits the ops `build` makes from the focused analysis, as one batch; false when there is none or a coordinate op is pending. */
 function act(
     stores: ReviewStores,
-    build: (analysis: CoordinateAnalysis, session: Session, view: View) => NewOp[] | undefined
+    build: (analysis: CoordinateAnalysis, session: CoordinateSession, view: CoordinateView) => NewOp[] | undefined
 ) {
     const session = stores.session.getState();
     const view = stores.view.getState();
@@ -248,7 +248,7 @@ export function mergeAnalyses(stores: ReviewStores) {
 }
 
 /** What a merge would remove from the record, as a preview: the other analyses' entities and the links into them. */
-export function mergePreview(session: Pick<SessionState, 'bundle' | 'index'>, view: View) {
+export function mergePreview(session: Pick<SessionState, 'bundle' | 'index'>, view: CoordinateView) {
     const [, ...others] = mergeSet(session, view);
     const removed = others.flatMap((analysis) => entitiesNaming(session.index, analysis.key));
     const gone = new Set(removed.map((entity) => entity.id));
@@ -311,7 +311,11 @@ export const addAnalysisPanel = (table: string): Panel => ({ kind: 'add_analysis
 export const textAnalysisPanel = (span: SpanPair): Panel => ({ kind: 'add_analysis', target: { kind: 'paper' }, span });
 
 /** The panel `kind` opens on the focused coordinate analysis; undefined where it does not apply. */
-export function coordinatePanelFor(session: Session, view: View, kind: PanelKind): Panel | undefined {
+export function coordinatePanelFor(
+    session: CoordinateSession,
+    view: CoordinateView,
+    kind: PanelKind
+): Panel | undefined {
     const action = PANEL_ACTIONS[kind];
     const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates });
     if (!action || !analysis || COORDINATE_UNAVAILABLE[action](session, view)) return undefined;

@@ -3,6 +3,7 @@ import { scalarOf, textOf, type Scalar } from '../inspector/schema';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { wrapperSpec } from '../inspector/schema';
 import { asSchema, branchesOf, extractionSchema, listClassesAt, wrapperSchemaAt, type Schema } from '../model/schema';
+import { inWords } from '../model/labels';
 import { ANALYSES, ANALYSIS_EDITS, POINTS, READ_FROM, RECORD_ANALYSES } from '../model/coordinates';
 
 export const coordinateSchema = () => schemaOf('coordinate-parse');
@@ -27,7 +28,6 @@ const AXES = ['x', 'y', 'z'];
 
 const propertiesOf = (schema: Schema | undefined) => Object.entries(asSchema(schema?.properties) ?? {});
 const requiredOf = (schema: Schema | undefined) => (Array.isArray(schema?.required) ? schema.required : []);
-const labelOf = (name: string) => name.replace(/_/g, ' ');
 
 /** The class of the items of the list `property` on `node`. */
 function itemClass(root: Schema, node: Schema | undefined, property: string): Schema | undefined {
@@ -45,7 +45,7 @@ const pointClass = (root: Schema) => itemClass(root, analysisClass(root), POINTS
 const axesOf = (length: number) => (length === AXES.length ? AXES : Array.from({ length }, (_, i) => String(i + 1)));
 
 function fieldOf(root: Schema, name: string, property: Schema, required: boolean): PointField | undefined {
-    const label = labelOf(name);
+    const label = inWords(name);
     for (const branch of branchesOf(root, property)) {
         const items = asSchema(branch.items);
         if (!items) continue;
@@ -57,7 +57,7 @@ function fieldOf(root: Schema, name: string, property: Schema, required: boolean
         if (!record) return undefined;
         const fields = propertiesOf(record).flatMap(([field, schema]): RecordField[] => {
             const spec = requiredOf(record).includes(field) ? scalarOf(root, asSchema(schema) ?? {}) : undefined;
-            return spec ? [{ name: field, label: labelOf(field), spec }] : [];
+            return spec ? [{ name: field, label: inWords(field), spec }] : [];
         });
         return { name, label, kind: 'records', fields, required };
     }

@@ -7,6 +7,7 @@ import type { CoordinateAnalysis } from '../model/coordinates';
 import { renderWithStores } from '../test/render';
 import type { OpClient } from '../store/opClient';
 import { OpClientProvider } from '../store/context';
+import { ReviewScreen } from './ReviewScreen';
 import { SubmitStep } from './SubmitStep';
 
 const review = { id: 'r1', user_id: 'me', state: 'in_progress' as const, last_seq: 0, provenance: {}, annotations: {} };
@@ -34,6 +35,50 @@ describe('the submit step', () => {
         expect(submit).toBeEnabled();
         fireEvent.click(submit);
         expect(client.changeState).toHaveBeenCalledWith('submitted');
+    });
+});
+
+describe('submitting', () => {
+    const TEXT = 'x'.repeat(100);
+    const clientStub = () => ({ changeState: vi.fn(async () => {}) }) as unknown as OpClient;
+
+    function screenOn(bundle: ReviewBundle, client: OpClient) {
+        const view = renderWithStores(
+            <OpClientProvider client={client}>
+                <ReviewScreen />
+            </OpClientProvider>,
+            bundle
+        );
+        act(() => view.stores.view.getState().setStep('submit'));
+        return view;
+    }
+
+    it('skips the confirmation when nothing is left unreviewed', () => {
+        const client = clientStub();
+        screenOn(makeBundle({}, TEXT, { review }), client);
+        expect(screen.queryByText(/still unreviewed/)).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(client.changeState).toHaveBeenCalledWith('submitted');
+    });
+
+    it('leaves the Enter key to the confirmation: it neither runs the shortcut Enter has nor submits', () => {
+        const client = clientStub();
+        const { stores } = screenOn(
+            makeBundle({ groups: [{ local_id: 'grp_a', name: ev('Patients') }] }, TEXT, {
+                review,
+                entities: entityRows(row('grp_a', 'Group', 'groups')),
+            }),
+            client
+        );
+        act(() => stores.view.getState().focusSlot('slot:grp_a:name'));
+        fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+        const dialog = screen.getByRole('dialog', { name: /unreviewed\?$/ });
+        fireEvent.keyDown(within(dialog).getByRole('heading'), { key: 'Enter' });
+        fireEvent.keyDown(dialog, { key: 'Enter' });
+        expect(stores.view.getState().panel).toBeNull();
+        expect(client.changeState).not.toHaveBeenCalled();
+        expect(screen.getByRole('dialog', { name: /unreviewed\?$/ })).toBeInTheDocument();
     });
 });
 
@@ -117,7 +162,7 @@ describe('the submit summary', () => {
         expect(within(changes).getByText('Siblings')).toBeInTheDocument();
         expect(within(changes).queryByRole('button', { name: 'Siblings' })).not.toBeInTheDocument();
         expect(within(changes).queryByRole('heading', { name: /links added/ })).not.toBeInTheDocument();
-        fireEvent.click(within(changes).getByRole('button', { name: 'Healthy controls · name' }));
+        fireEvent.click(within(changes).getByRole('button', { name: 'Healthy controls · Name' }));
         expect(stores.view.getState().focus.key).toBe('slot:grp_b:name');
     });
 
@@ -128,25 +173,47 @@ describe('the submit summary', () => {
         fireEvent.click(within(notes).getByRole('button', { name: /Patients.*check the ages/ }));
         expect(stores.view.getState().focus.key).toBe('entity:grp_a');
         expect(
-            within(notes).getByRole('button', { name: /Healthy controls · name.*renamed as in table 1/ })
+            within(notes).getByRole('button', { name: /Healthy controls · Name.*renamed as in table 1/ })
         ).toBeInTheDocument();
     });
 
-    it('lists the unreviewed items by step, says how many, and still lets the review be submitted', () => {
+    it('lists the unreviewed items by step, says how many, and still lets the review be submitted, after confirming', () => {
         const { stores, client } = setup();
         const unreviewed = section('unreviewed');
-        expect(within(unreviewed).getByRole('heading', { name: 'unreviewed (3)' })).toBeInTheDocument();
+        expect(within(unreviewed).getByRole('heading', { name: 'unreviewed (2)' })).toBeInTheDocument();
         expect(within(unreviewed).getByRole('heading', { name: 'Entities (1)' })).toBeInTheDocument();
         expect(within(unreviewed).getByRole('heading', { name: 'Leftovers (1)' })).toBeInTheDocument();
-        expect(within(unreviewed).getByRole('heading', { name: 'Relationships (1)' })).toBeInTheDocument();
-        expect(within(unreviewed).queryByRole('heading', { name: /Analyses/ })).not.toBeInTheDocument();
-        fireEvent.click(
-            within(unreviewed).getByRole('button', { name: 'Patients > Controls · groups[#0].group → Patients' })
-        );
-        expect(stores.view.getState().focus.key).toBe('relationship:a_1:groups[#0].group:grp_a');
-        expect(screen.getByText('3 items are still unreviewed.')).toBeInTheDocument();
+        expect(within(unreviewed).queryByRole('heading', { name: /Analyses|Relationships/ })).not.toBeInTheDocument();
+        fireEvent.click(within(unreviewed).getByRole('button', { name: 'Patients' }));
+        expect(stores.view.getState().focus.key).toBe('entity:grp_a');
+        expect(screen.getByText('2 items are still unreviewed.')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+        expect(client.changeState).not.toHaveBeenCalled();
+        const dialog = screen.getByRole('dialog', { name: 'Submit with 2 items unreviewed?' });
+        expect(within(dialog).getByRole('list', { name: 'still unreviewed' })).toHaveTextContent('Entities: 1');
+        expect(within(dialog).getByRole('list', { name: 'still unreviewed' })).toHaveTextContent('Leftovers: 1');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Submit anyway' }));
         expect(client.changeState).toHaveBeenCalledWith('submitted');
+    });
+
+    it('goes to the first item left to review from the confirmation, its default, submitting nothing (H1)', () => {
+        const { stores, client } = setup();
+        fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+        const dialog = screen.getByRole('dialog', { name: 'Submit with 2 items unreviewed?' });
+        const reviewThem = within(dialog).getByRole('button', { name: 'Review them' });
+        expect(reviewThem).toHaveFocus();
+        fireEvent.click(reviewThem);
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(stores.view.getState().step).toBe('entities');
+        expect(client.changeState).not.toHaveBeenCalled();
+    });
+
+    it('says the review is done once submitted, and what is next (H2)', () => {
+        const { stores } = setup();
+        act(() => stores.session.getState().setLifecycle('submitted'));
+        const done = screen.getByRole('status', { name: 'review submitted' });
+        expect(done).toHaveTextContent('Review submitted');
+        expect(within(done).getByRole('link', { name: 'Back to the papers' })).toHaveAttribute('href', '/');
     });
 });
 
@@ -262,8 +329,8 @@ describe('the submit summary by kind', () => {
             ['slots edited (2)', ['Patients · n', 'Controls · n']],
             ['entities added (1)', ['Relatives']],
             ['entities removed (1)', ['Siblings']],
-            ['links added (1)', ['Patients > Controls · groups[#0].group → Controls']],
-            ['links removed (1)', ['Patients > Controls · groups[#0].group → Patients']],
+            ['links added (1)', ['Patients > Controls · Group 1: group → Controls']],
+            ['links removed (1)', ['Patients > Controls · Group 1: group → Patients']],
             ['coordinate analyses split (1)', ['Contrast 1']],
             ['coordinate analyses merged (2)', ['Contrast 2', 'Contrast 3']],
             ['coordinate analyses edited (2)', ['Contrast 4', 'Contrast 5']],
@@ -285,7 +352,7 @@ describe('the submit summary by kind', () => {
         const groups = groupsOf('what changed');
         expect(groups).toContainEqual([
             'rejected (3)',
-            ['Patients · name', 'Controls', 'Patients > Controls · groups[#0].group → Controls'],
+            ['Patients · Name', 'Controls', 'Patients > Controls · Group 1: group → Controls'],
         ]);
         expect(groups).toContainEqual(['slots edited (2)', ['Patients · n', 'Controls · n']]);
         expect(groups.map(([heading]) => heading)).not.toContain('links added (1)');
@@ -297,7 +364,7 @@ describe('the submit summary by kind', () => {
         fireEvent.click(within(changes).getByRole('button', { name: 'Controls · n' }));
         expect(stores.view.getState().focus.key).toBe('entity:grp_b');
         fireEvent.click(
-            within(changes).getByRole('button', { name: 'Patients > Controls · groups[#0].group → Patients' })
+            within(changes).getByRole('button', { name: 'Patients > Controls · Group 1: group → Patients' })
         );
         expect(stores.view.getState().focus.key).toBe('slot:a_1:groups[#0].group');
         expect(within(changes).queryByRole('button', { name: 'Siblings' })).not.toBeInTheDocument();

@@ -417,7 +417,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
         const dialog = screen.getByRole('dialog', { name: `Merge 2 analyses into ${FACES.name}?` });
         expect(within(dialog).getByRole('list', { name: 'cards removed' })).toHaveTextContent('Houses > Faces');
         expect(within(dialog).getByRole('list', { name: 'dangling links' })).toHaveTextContent(
-            'Faces > Houses · mirror_of → Houses > Faces'
+            'Faces > Houses · Mirror of → Houses > Faces'
         );
         expect(pending()).toEqual([]);
         fireEvent.click(within(dialog).getByRole('button', { name: 'Merge' }));

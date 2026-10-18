@@ -43,6 +43,13 @@ describe('coordinate actions that do not apply to the focus', () => {
         ]);
     });
 
+    it('name their key for assistive technology, enabled or not', () => {
+        setup();
+        expect(button('Accept')).toHaveAttribute('aria-keyshortcuts', 'a');
+        expect(button('Note')).toHaveAttribute('aria-keyshortcuts', ';');
+        expect(button('Split')).toHaveAttribute('aria-keyshortcuts', 's');
+    });
+
     it('say why in a tooltip', async () => {
         setup();
         expect(await reasonOf('Split')).toBe('Select the points to split off with Space first');

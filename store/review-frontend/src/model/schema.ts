@@ -125,6 +125,43 @@ function nodeAt(root: Schema, className: string, path: string, item: unknown): S
     return concrete(root, node, value);
 }
 
+const propertyRanks = new WeakMap<Schema, Map<string, number>>();
+
+/** Where `name` comes among the properties `def` declares; after them all when it declares no such property. */
+function rankIn(def: Schema, name: string): number {
+    let ranks = propertyRanks.get(def);
+    if (!ranks)
+        propertyRanks.set(def, (ranks = new Map(Object.keys(asSchema(def.properties) ?? {}).map((k, i) => [k, i]))));
+    return ranks.get(name) ?? ranks.size;
+}
+
+/**
+ * Where the slot at `path` comes among the slots of an item of `className`: at each step, the place of its property
+ * in the class declaring it, or its index in the list; compared step by step.
+ */
+export function slotRank(root: Schema, className: string, path: string, item: unknown): number[] {
+    let node = defOf(root, className);
+    let value = item;
+    return parsePath(path).map((step) => {
+        if (!node) return Number.MAX_SAFE_INTEGER;
+        const def = concrete(root, node, value);
+        if (typeof step === 'number') {
+            node = asSchema(def.items);
+            value = Array.isArray(value) ? value[step] : undefined;
+            return step;
+        }
+        node = propertyOf(def, step);
+        value = isObject(value) ? value[step] : undefined;
+        return rankIn(def, step);
+    });
+}
+
+/** Orders two slot ranks step by step, a rank before the longer ones it begins. */
+export function compareRanks(a: number[], b: number[]): number {
+    for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return a[i] - b[i];
+    return a.length - b.length;
+}
+
 /** The ExtractedValue schema of the slot at `path` on an item of `className`. */
 export function wrapperSchemaAt(root: Schema, className: string, path: string, item?: unknown): Schema | undefined {
     const node = nodeAt(root, className, path, item);

@@ -49,6 +49,27 @@ function setup(value: Schema, current: ExtractedValue | undefined, props: Partia
 }
 
 describe('SlotEditor', () => {
+    it('names the status, its reason and the value’s source in plain words, sending the schema’s values', () => {
+        setup({ type: ['string', 'null'] }, extracted('Patients'));
+        const status = screen.getByRole('combobox', { name: 'In the paper?' });
+        expect([...status.querySelectorAll('option')].map((o) => [o.value, o.textContent])).toEqual([
+            ['extracted', 'reported'],
+            ['not_reported', 'not reported'],
+        ]);
+        const source = screen.getByRole('combobox', { name: 'The value is' });
+        expect([...source.querySelectorAll('option')].map((o) => [o.value, o.textContent])).toEqual([
+            ['reported', 'as the paper states it'],
+            ['generated', 'worked out from the paper'],
+        ]);
+        fireEvent.change(status, { target: { value: 'not_reported' } });
+        const reason = screen.getByRole('combobox', { name: 'Why not' });
+        expect([...reason.querySelectorAll('option')].map((o) => o.textContent)).toEqual([
+            'no reason given',
+            'ambiguous',
+            'outside text',
+        ]);
+    });
+
     it('edits a string in a text field and saves it on Enter', () => {
         const { onSave, press } = setup({ type: ['string', 'null'] }, extracted('Patients'));
         const field = screen.getByRole('textbox', { name: 'slot' });
@@ -157,7 +178,7 @@ describe('SlotEditor', () => {
             { enum: ['MRI', 'EEG'] },
             { extraction_status: 'not_reported', evidence: { status: 'not_applicable' } }
         );
-        fireEvent.change(screen.getByRole('combobox', { name: 'extraction status' }), {
+        fireEvent.change(screen.getByRole('combobox', { name: 'In the paper?' }), {
             target: { value: 'extracted' },
         });
         const select = screen.getByRole('combobox', { name: 'slot' });
@@ -200,11 +221,11 @@ describe('SlotEditor', () => {
 
     it('sets the value source from the schema’s values', () => {
         const { onSave, press } = setup({ type: 'string' }, extracted('a'));
-        const source = screen.getByRole('combobox', { name: 'value source' });
+        const source = screen.getByRole('combobox', { name: 'The value is' });
         expect(
             within(source)
-                .getAllByRole('option')
-                .map((o) => o.textContent)
+                .getAllByRole<HTMLOptionElement>('option')
+                .map((o) => o.value)
         ).toEqual(['reported', 'generated']);
         fireEvent.change(source, { target: { value: 'generated' } });
         press('Enter', screen.getByRole('textbox', { name: 'slot' }));
@@ -213,15 +234,15 @@ describe('SlotEditor', () => {
 
     it('marks the slot not reported with a reason from the schema, focusing the reason', () => {
         const { onSave, press } = setup({ type: 'string' }, extracted('a'), { mode: 'not_reported' });
-        expect(screen.getByRole('combobox', { name: 'extraction status' })).toHaveValue('not_reported');
+        expect(screen.getByRole('combobox', { name: 'In the paper?' })).toHaveValue('not_reported');
         expect(screen.queryByRole('textbox', { name: 'slot' })).not.toBeInTheDocument();
-        const reason = screen.getByRole('combobox', { name: 'unreported reason' });
+        const reason = screen.getByRole('combobox', { name: 'Why not' });
         expect(reason).toHaveFocus();
         expect(
             within(reason)
-                .getAllByRole('option')
-                .map((o) => o.textContent)
-        ).toEqual(['none', 'ambiguous', 'outside_text']);
+                .getAllByRole<HTMLOptionElement>('option')
+                .map((o) => o.value)
+        ).toEqual(['', 'ambiguous', 'outside_text']);
         fireEvent.change(reason, { target: { value: 'outside_text' } });
         press('Enter');
         expect(onSave).toHaveBeenCalledWith({ extraction_status: 'not_reported', unreported_reason: 'outside_text' });
@@ -232,7 +253,7 @@ describe('SlotEditor', () => {
             { type: 'string' },
             { extraction_status: 'not_reported', evidence: { status: 'not_applicable' } }
         );
-        fireEvent.change(screen.getByRole('combobox', { name: 'extraction status' }), {
+        fireEvent.change(screen.getByRole('combobox', { name: 'In the paper?' }), {
             target: { value: 'extracted' },
         });
         const field = screen.getByRole('textbox', { name: 'slot' });

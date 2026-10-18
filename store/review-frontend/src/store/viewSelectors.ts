@@ -1,22 +1,12 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { clamp, coordinateSpans, type CoordinateFocus } from '../model/coordinateFocus';
-import { withHidden, withSlotOrder, type RecordIndex, type SpanPair } from '../model/record';
+import { withHidden, type RecordIndex, type SpanPair } from '../model/record';
 import type { SessionState } from './sessionStore';
 import type { ViewState } from './viewStore';
 
-type Shown = Pick<ViewState, 'focus' | 'slotOrder' | 'showNonCoordinate'>;
-
-const shownFor = new WeakMap<string[], { index: RecordIndex; listHidden: boolean; shown: RecordIndex }>();
-
-/** The index as the view lists it: the hidden entities while it shows them, the focused entity's slots in the order they had when the focus landed. */
-export function selectShown({ index }: Pick<SessionState, 'index'>, view: Shown): RecordIndex {
-    const { focus, slotOrder, showNonCoordinate: listHidden } = view;
-    const last = shownFor.get(slotOrder);
-    if (last?.index === index && last.listHidden === listHidden) return last.shown;
-    const shown = withSlotOrder(withHidden(index, listHidden), focus.entity, slotOrder);
-    shownFor.set(slotOrder, { index, listHidden, shown });
-    return shown;
-}
+/** The index as the view lists it: the hidden entities too while it shows them. */
+export const selectShown = ({ index }: Pick<SessionState, 'index'>, view: Pick<ViewState, 'showNonCoordinate'>) =>
+    withHidden(index, view.showNonCoordinate);
 
 export const NO_SPANS: SpanPair[] = [];
 

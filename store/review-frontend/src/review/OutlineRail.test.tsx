@@ -207,6 +207,22 @@ describe('the outline rail’s filters', () => {
         expect(names()[0]).toMatch(/^Others/);
     });
 
+    it('counts an entity noted when a note is on one of its slots or links (E1)', () => {
+        const { stores } = setup();
+        const note = (client_op_id: string, target: unknown) =>
+            ({ client_op_id, type: 'note', target, note: 'check' }) as unknown as Op;
+        act(() =>
+            stores.session.setState({
+                pending: [
+                    note('note-0001', { kind: 'slot', entity: 'grp_c', path: 'name' }),
+                    note('note-0002', { kind: 'relationship', entity: 'grp_d', path: 'arm', target_entity: 'x' }),
+                ],
+            })
+        );
+        filter('noted');
+        expect(names().map((name) => name.split('unchecked')[0])).toEqual(['Mixed', 'Ages']);
+    });
+
     it('shows only the entities with a doubtful slot: no evidence found, generated or ambiguous', () => {
         setup();
         filter('doubtful');

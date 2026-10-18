@@ -1,5 +1,5 @@
 import EditNoteIcon from '@mui/icons-material/EditNote';
-import { Box, Button, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Chip, IconButton, Stack, Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { memo } from 'react';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
@@ -23,6 +23,7 @@ import { AuthorshipChip } from './AuthorshipChip';
 import { PointGrid } from './PointGrid';
 import { analysisSummary } from './summary';
 import { NamedBy } from './RecordLinks';
+import { Hint } from '../review/Hint';
 
 const asideStyles = (theme: Theme) => ({
     my: 1.5,
@@ -101,7 +102,7 @@ function EditAnalysisButton({ analysis }: { analysis: CoordinateAnalysis }) {
     const editable = useIsEditable();
     const pending = useSession(coordinatePending);
     return (
-        <Tooltip title="Edit analysis: its name, coordinate space and role (n)">
+        <Hint title="Edit analysis: its name, coordinate space and role (n)">
             <span>
                 <IconButton
                     size="small"
@@ -116,7 +117,7 @@ function EditAnalysisButton({ analysis }: { analysis: CoordinateAnalysis }) {
                     <EditNoteIcon fontSize="small" />
                 </IconButton>
             </span>
-        </Tooltip>
+        </Hint>
     );
 }
 
@@ -180,9 +181,17 @@ export function CoordinateAside({ block }: { block: Block | null }) {
                 <AnalysisCard key={analysis.key} analysis={analysis} />
             ))}
             {table && (
-                <Button size="small" disabled={!editable} onClick={() => openPanel(addAnalysisPanel(table.tableId))}>
-                    {`Add an analysis to ${label}`}
-                </Button>
+                <Hint title={`Add an analysis of the coordinates in ${label} (c on an analysis of it)`}>
+                    <span>
+                        <Button
+                            size="small"
+                            disabled={!editable}
+                            onClick={() => openPanel(addAnalysisPanel(table.tableId))}
+                        >
+                            {`Add an analysis to ${label}`}
+                        </Button>
+                    </span>
+                </Hint>
             )}
         </Box>
     );

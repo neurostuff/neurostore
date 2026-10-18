@@ -2,6 +2,7 @@ import { Button, Typography } from '@mui/material';
 import { analysisNamedBy, currentAnalyses, entitiesNaming, type CoordinateAnalysis } from '../model/coordinates';
 import type { EntityNode } from '../model/record';
 import { useSession, useView } from '../store/context';
+import { Hint } from '../review/Hint';
 
 const pointCount = (n: number) => `${n} ${n === 1 ? 'point' : 'points'}`;
 
@@ -20,18 +21,19 @@ function LinkRow({ heading, links }: { heading: string; links: Link[] }) {
         <Typography variant="caption" color="text.secondary" component="div">
             {`${heading}: `}
             {links.map((link) => (
-                <Button
-                    key={link.key}
-                    size="small"
-                    aria-label={link.label}
-                    sx={{ py: 0, minWidth: 0, textTransform: 'none' }}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        link.open();
-                    }}
-                >
-                    {`${link.text} →`}
-                </Button>
+                <Hint key={link.key} title={link.label}>
+                    <Button
+                        size="small"
+                        aria-label={link.label}
+                        sx={{ py: 0, minWidth: 0, textTransform: 'none' }}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            link.open();
+                        }}
+                    >
+                        {`${link.text} →`}
+                    </Button>
+                </Hint>
             ))}
         </Typography>
     );

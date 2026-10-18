@@ -7,6 +7,7 @@ import { useIsEditable, useReviewStores, useShown, useView } from '../store/cont
 import type { PanelKind } from '../store/viewStore';
 import { analysisSlotsFor } from '../model/guided';
 import { openPanelOn } from '../inspector/openPanel';
+import { slotLabel } from '../model/labels';
 
 function LinkToAnalysis({ entity }: { entity: EntityNode }) {
     const stores = useReviewStores();
@@ -48,6 +49,7 @@ function useMergeChoice(entity: EntityNode) {
 }
 
 function MergeDialog({ entity }: { entity: EntityNode }) {
+    const index = useShown((shown) => shown);
     const { candidates, copies, into, copy, pick, toggle, merge } = useMergeChoice(entity);
     return (
         <ConfirmDialog title={`Merge ${entity.name} into…`} confirmLabel="Merge" onConfirm={merge}>
@@ -71,7 +73,7 @@ function MergeDialog({ entity }: { entity: EntityNode }) {
                     {copies.map((slot) => (
                         <FormControlLabel
                             key={slot.key}
-                            label={slot.path}
+                            label={slotLabel(index, slot)}
                             control={
                                 <Checkbox
                                     size="small"

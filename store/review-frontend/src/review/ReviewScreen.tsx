@@ -14,6 +14,7 @@ import { ShortcutHelp } from './ShortcutHelp';
 import { SHORTCUTS, useShortcuts } from './shortcuts';
 import { SetAsideBanner, SetAsideButton } from './SetAside';
 import { StepBar } from './StepBar';
+import { StepGuide } from './StepGuide';
 import { SubmitStep } from './SubmitStep';
 
 const noDialogOpen = (s: ViewState) => !s.helpOpen && !s.panel && !s.paletteOpen;
@@ -32,6 +33,7 @@ export function ReviewScreen() {
                 </Box>
                 <SetAsideButton />
             </Box>
+            <StepGuide />
             <SetAsideBanner />
             {submitting && <SubmitStep />}
             <BlockedSave />

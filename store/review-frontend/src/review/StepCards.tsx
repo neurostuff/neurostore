@@ -10,6 +10,9 @@ import { entityKey } from '../model/targetKey';
 import { useSession, useShown, useView } from '../store/context';
 import type { SessionState } from '../store/sessionStore';
 import { useEditorName } from './editor';
+import { Hint } from './Hint';
+import { selectStepProgress } from './stepCount';
+import type { CardStep } from '../model/guided';
 
 /** What a step adds below its focused card. */
 export type CardDetail = ComponentType<{ entity: EntityNode }>;
@@ -25,25 +28,27 @@ const CardHead = memo(function CardHead({ entity, focused }: { entity: EntityNod
     const state = useSession((s) => judged(s, entity.id));
     const editor = useEditorName(entityKey(entity.id));
     return (
-        <ListItemButton
-            data-card={entity.id}
-            selected={focused}
-            aria-current={focused ? 'true' : undefined}
-            onClick={() => focusEntity(entity.id)}
-            sx={headStyles}
-        >
-            <ListItemText
-                primary={entity.name}
-                secondary={
-                    <>
-                        {`${entity.entityClass} · ${spanCount(entity.spans.length)} · `}
-                        <StatusLabel id={reviewStatus(state)} by={editor} />
-                        {state && ' · done'}
-                    </>
-                }
-                secondaryTypographyProps={{ component: 'div' }}
-            />
-        </ListItemButton>
+        <Hint title={`Open ${entity.name} (Shift+J and Shift+K move between cards)`}>
+            <ListItemButton
+                data-card={entity.id}
+                selected={focused}
+                aria-current={focused ? 'true' : undefined}
+                onClick={() => focusEntity(entity.id)}
+                sx={headStyles}
+            >
+                <ListItemText
+                    primary={entity.name}
+                    secondary={
+                        <>
+                            {`${entity.entityClass} · ${spanCount(entity.spans.length)} · `}
+                            <StatusLabel id={reviewStatus(state)} by={editor} />
+                            {state && ' · done'}
+                        </>
+                    }
+                    secondaryTypographyProps={{ component: 'div' }}
+                />
+            </ListItemButton>
+        </Hint>
     );
 });
 
@@ -65,21 +70,23 @@ function Outside({ cards }: { cards: EntityNode[] }) {
 
 /** One card per entity of a guided step: its head, and the inspector's card for the focused one, then `detail`. */
 export function StepCards({
+    step,
     label,
     cards,
     detail: Detail,
 }: {
+    step: CardStep;
     label: string;
     cards: EntityNode[];
     detail?: CardDetail;
 }) {
     const focused = useView((s) => s.focus.entity);
     const focusedSlot = useView((s) => s.focus.slot);
-    const done = useSession((s) => cards.filter((e) => judged(s, e.id)).length);
+    const done = useSession((s) => selectStepProgress(s, step).text);
     return (
         <InspectorFrame>
             <Typography variant="overline" component="h2" sx={{ px: 2, display: 'block' }}>
-                {`${label} · ${done} of ${cards.length} done`}
+                {`${label} · ${done} done`}
             </Typography>
             <Outside cards={cards} />
             {cards.length === 0 ? (

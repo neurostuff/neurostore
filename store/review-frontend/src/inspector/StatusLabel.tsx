@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { memo, type ReactElement } from 'react';
 import { STATUSES, type Shape, type StatusId } from './status';
 
 const SHAPES: Record<Shape, ReactElement> = {
@@ -19,10 +19,10 @@ const SHAPES: Record<Shape, ReactElement> = {
 };
 
 export function StatusLabel({ id, by }: { id: StatusId; by?: string }) {
-    const { label, shape } = STATUSES[id];
+    const { label, shape, means } = STATUSES[id];
     const text = by ? `${label} by ${by}` : label;
     return (
-        <span className="rv-status" data-status={id} data-status-shape={shape} title={by ? text : undefined}>
+        <span className="rv-status" data-status={id} data-status-shape={shape} title={by ? text : `${label}: ${means}`}>
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                 {SHAPES[shape]}
             </svg>
@@ -30,3 +30,27 @@ export function StatusLabel({ id, by }: { id: StatusId; by?: string }) {
         </span>
     );
 }
+
+/** The statuses a slot shows, as the legend lists them. */
+const SLOT_STATUSES: StatusId[] = [
+    'present',
+    'not_found',
+    'generated',
+    'ambiguous',
+    'not_reported',
+    'absent',
+    'reference',
+];
+
+/** One line naming each slot status by its mark, each explained on hover. */
+export const StatusLegend = memo(function StatusLegend() {
+    return (
+        <ul className="rv-legend" aria-label="what the marks mean">
+            {SLOT_STATUSES.map((id) => (
+                <li key={id}>
+                    <StatusLabel id={id} />
+                </li>
+            ))}
+        </ul>
+    );
+});

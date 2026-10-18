@@ -17,11 +17,11 @@ describe('navigating the view', () => {
             .getState()
             .index.entity('grp_a')!
             .slots.map((s) => s.key);
-        expect(keys.slice(0, 4)).toEqual([
-            'slot:grp_a:sex',
-            'slot:grp_a:species',
-            'slot:grp_a:name',
+        expect(keys.filter((key) => /:(sex|species|name|description)$/.test(key))).toEqual([
             'slot:grp_a:description',
+            'slot:grp_a:name',
+            'slot:grp_a:species',
+            'slot:grp_a:sex',
         ]);
         const seen = keys.map(() => {
             store.view.getState().moveSlot(1);

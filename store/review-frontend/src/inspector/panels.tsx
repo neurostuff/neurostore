@@ -17,7 +17,9 @@ import {
 } from '@mui/material';
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { AnyTarget } from '../contract/generated/review-ops';
-import type { SlotNode } from '../model/record';
+import { slotLabel } from '../model/labels';
+import { canAddEvidence } from '../store/sessionStore';
+import type { RecordIndex, SlotNode, SpanPair } from '../model/record';
 import { isTextField } from '../review/shortcuts';
 import { useReviewStores, useSession, useView } from '../store/context';
 import {
@@ -148,11 +150,19 @@ export function NotePanel({ target, label }: { target: AnyTarget; label: string 
                     setError('');
                 }}
             />
+            <Stack direction="row" spacing={1}>
+                <Button size="small" variant="contained" onClick={submit}>
+                    Save note
+                </Button>
+                <Button size="small" onClick={closePanel}>
+                    Cancel
+                </Button>
+            </Stack>
         </Stack>
     );
 }
 
-export function LinkPanel({ slot }: { slot: SlotNode }) {
+export function LinkPanel({ slot, label }: { slot: SlotNode; label: string }) {
     const stores = useReviewStores();
     const bundle = useSession((s) => s.bundle);
     const index = useSession((s) => s.index);
@@ -160,10 +170,36 @@ export function LinkPanel({ slot }: { slot: SlotNode }) {
     return (
         <PickPanel
             options={options}
-            label={`link ${slot.path} to`}
+            label={`link ${label} to`}
             noOptionsText="no entity of this class to link"
             optionKey={(option) => option.id}
             onPick={(option) => link(stores, slot, option.id)}
+        />
+    );
+}
+
+/** The slots `span` of `slot` can move to: the others that take evidence, the slot's own entity's first. */
+function evidenceTargets(index: RecordIndex, slot: SlotNode) {
+    const own = index.visible.filter((e) => e.id === slot.entity);
+    return [...own, ...index.visible.filter((e) => e.id !== slot.entity)].flatMap((entity) =>
+        entity.slots
+            .filter((other) => other.key !== slot.key && canAddEvidence(other))
+            .map((other) => ({ key: other.key, name: `${entity.name} · ${slotLabel(index, other)}` }))
+    );
+}
+
+/** Picks the slot to move the evidence span `span` of `slot` to, and moves it there in one intent. */
+export function MoveEvidencePanel({ slot, span }: { slot: SlotNode; span: SpanPair }) {
+    const stores = useReviewStores();
+    const index = useSession((s) => s.index);
+    const options = useMemo(() => evidenceTargets(index, slot), [index, slot]);
+    return (
+        <PickPanel
+            options={options}
+            label="move this evidence to"
+            noOptionsText="no other field takes evidence"
+            optionKey={(option) => option.key}
+            onPick={(option) => stores.session.getState().transferEvidence(slot.key, span, option.key)}
         />
     );
 }
@@ -247,13 +283,14 @@ export function CreateDialog() {
 export type Dangling = ReturnType<typeof danglingLinks>[number];
 
 export function DanglingList({ links }: { links: Dangling[] }) {
+    const index = useSession((s) => s.index);
     return (
         <>
             <Typography variant="body2">These links would be left dangling:</Typography>
             <List dense aria-label="dangling links">
                 {links.map(({ entity: from, slot, target }) => (
                     <ListItem key={`${slot.key}:${target}`} disableGutters>
-                        {`${from.name} · ${slot.path} → ${target}`}
+                        {`${from.name} · ${slotLabel(index, slot)} → ${target}`}
                     </ListItem>
                 ))}
             </List>

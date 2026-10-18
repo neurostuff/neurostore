@@ -33,11 +33,15 @@ describe('review shortcuts', () => {
         const { stores } = setup();
         press('J', { shiftKey: true });
         expect(stores.view.getState().focus).toEqual({ entity: 'grp_a', key: 'entity:grp_a' });
+        const [first, second] = stores.session
+            .getState()
+            .index.entity('grp_a')!
+            .slots.map((s) => s.key);
         press('j');
         press('j');
-        expect(stores.view.getState().focus.key).toBe('slot:grp_a:n');
+        expect(stores.view.getState().focus.key).toBe(second);
         press('k');
-        expect(stores.view.getState().focus.key).toBe('slot:grp_a:name');
+        expect(stores.view.getState().focus.key).toBe(first);
         press('J', { shiftKey: true });
         expect(stores.view.getState().focus.entity).toBe('grp_b');
         press('K', { shiftKey: true });
@@ -85,7 +89,7 @@ describe('review shortcuts', () => {
         press('Escape');
         expect(stores.view.getState().diffOn).toBe(false);
         press('j');
-        expect(stores.view.getState().focus.key).toBe('slot:grp_b:name');
+        expect(stores.view.getState().focus.key).toBe(stores.session.getState().index.entity('grp_b')!.slots[0].key);
         press('D');
         expect(stores.view.getState().diffOn).toBe(true);
         press('d');
@@ -232,7 +236,7 @@ describe('review shortcuts', () => {
         const { stores } = setup();
         act(() => stores.view.getState().focusSlot('slot:grp_a:name'));
         press('r');
-        press('a', {}, screen.getByRole('group', { name: 'reject name' }));
+        press('a', {}, screen.getByRole('group', { name: 'reject Name' }));
         press('J', { shiftKey: true }, document.body);
         expect(stores.session.getState().pending).toEqual([]);
         expect(stores.view.getState().focus.key).toBe('slot:grp_a:name');
@@ -320,7 +324,7 @@ describe('undo and redo keys', () => {
         const [undo] = stores.session.getState().pending;
         act(() => stores.session.getState().refuse([{ op: undo, message: 'the name has changed since' }]));
         expect(screen.getByText(/could not be undone/)).toHaveTextContent(
-            'grp_a name: could not be undone (the name has changed since)'
+            'Cases · Name: could not be undone (the name has changed since)'
         );
     });
 
@@ -369,7 +373,7 @@ describe('undo and redo keys', () => {
         const [redo] = stores.session.getState().pending;
         act(() => stores.session.getState().refuse([{ op: redo, message: 'the name has changed since' }]));
         expect(screen.getByText(/could not be redone/)).toHaveTextContent(
-            'grp_a name: could not be redone (the name has changed since)'
+            'Patients · Name: could not be redone (the name has changed since)'
         );
     });
 

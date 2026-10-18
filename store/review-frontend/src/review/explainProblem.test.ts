@@ -21,7 +21,7 @@ describe('explain', () => {
     it('names the card and slot a refusal is about, and drops the schema path', () => {
         expect(explainOn('extraction-record /groups/0/acquired_count: too high')).toEqual({
             message: 'too high',
-            label: 'Patients · acquired_count',
+            label: 'Patients · Acquired count',
             focus: { entity: 'grp_a', slot: slotKey('grp_a', 'acquired_count') },
         });
     });
@@ -37,7 +37,7 @@ describe('explain', () => {
     it('focuses the slot a value refusal from the backend names, dropping the wrapper steps', () => {
         expect(explainOn("extraction-record /groups/0/age_mean/value: 'old' is not of type 'number', 'null'")).toEqual({
             message: "'old' is not of type 'number', 'null'",
-            label: 'Patients · age_mean',
+            label: 'Patients · Age mean',
             focus: { entity: 'grp_a', slot: slotKey('grp_a', 'age_mean') },
         });
     });
@@ -45,7 +45,7 @@ describe('explain', () => {
     it('focuses the slot an evidence refusal names, dropping the evidence steps', () => {
         expect(explainOn('extraction-record /groups/0/age_mean/evidence/0/sets/0/spans/0: outside the paper')).toEqual({
             message: 'outside the paper',
-            label: 'Patients · age_mean',
+            label: 'Patients · Age mean',
             focus: { entity: 'grp_a', slot: slotKey('grp_a', 'age_mean') },
         });
     });

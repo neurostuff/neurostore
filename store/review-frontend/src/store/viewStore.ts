@@ -7,6 +7,7 @@ import {
     focusedAnalysis,
     placeReveal,
     nextFocus,
+    tableReveal,
     type CoordinateFocus,
 } from '../model/coordinateFocus';
 import {
@@ -54,7 +55,8 @@ export type PanelKind =
     | 'merge'
     | 'add_analysis'
     | 'link_analysis'
-    | 'merge_entity';
+    | 'merge_entity'
+    | 'move_evidence';
 
 /**
  * An inspector panel: what it acts on, the slot row it sits in when it is on a slot or link, and the table, or the
@@ -72,8 +74,6 @@ export type OutlineFilter = 'all' | 'unreviewed' | 'changed' | 'noted' | 'doubtf
 
 export interface ViewState {
     focus: Focus;
-    /** The focused entity's slots as they were ordered when the focus landed, kept until it moves. */
-    slotOrder: string[];
     /** The focused span, as stepped to; read through `selectEvidenceCursor`, which keeps it within the spans. */
     evidenceCursor: number;
     reveal: Reveal | null;
@@ -147,8 +147,6 @@ export type ViewStore = ReturnType<typeof createViewStore>;
 const stepIn = (length: number, at: number, delta: number, start = 0) =>
     at === -1 ? start : clamp(at + delta, length - 1);
 
-const slotKeysOf = (index: RecordIndex, entity: string) => index.entity(entity)?.slots.map((s) => s.key) ?? [];
-
 const createdBy = (sent: Op[]) =>
     sent.flatMap((op) =>
         op.type === 'create_entity' && typeof (op.entity as Json).local_id === 'string'
@@ -186,15 +184,16 @@ export function createViewStore(session: SessionStore) {
         const shown = () => selectShown(documents(), get());
         const spans = () => selectFocusedSpans(documents(), get());
 
-        const landed = (focus: Focus) => ({ focus, slotOrder: slotKeysOf(documents().index, focus.entity) });
-
         const focusOn = (focus: Focus) => {
             const { reveal } = get();
             const focused = selectFocusedSpans(documents(), { focus, coordinates: null });
+            const table = focus.slot
+                ? undefined
+                : tableReveal(documents().bundle, documents().index.entity(focus.entity));
             set({
-                ...landed(focus),
+                focus,
                 evidenceCursor: 0,
-                reveal: revealed(focused[0], reveal),
+                reveal: revealed(focused[0] ?? table, reveal),
                 panel: null,
                 coordinates: null,
                 offer: null,
@@ -273,7 +272,7 @@ export function createViewStore(session: SessionStore) {
             const next = made ?? nearest(listed, rows, focus.entity) ?? listed.visible[0] ?? listed.entities[0];
             if (!next) return;
             const target = { entity: next.id, key: entityKey(next.id) };
-            if (coordinates && !made) set(landed(target));
+            if (coordinates && !made) set({ focus: target });
             else focusOn(target);
         };
 
@@ -289,7 +288,7 @@ export function createViewStore(session: SessionStore) {
         });
 
         return {
-            ...landed(initial),
+            focus: initial,
             evidenceCursor: 0,
             reveal: revealed(shownAt(initialCoordinates), null),
             selection: null,

@@ -170,8 +170,8 @@ describe('TextPane clicks and Enter on highlights', () => {
         const { stores, textRoot, container } = setup();
         clickAt(scrollerOf(container), textRoot(), at('Controls')[0] + 1);
         const items = screen.getAllByRole('menuitem');
-        expect(items.map((item) => item.textContent)).toEqual(['Controls · name', 'Controls · age']);
-        fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · age' }));
+        expect(items.map((item) => item.textContent)).toEqual(['Controls · Name', 'Controls · Age']);
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · Age' }));
         expect(stores.view.getState().focus.key).toBe('slot:grp_b:age');
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
@@ -187,7 +187,7 @@ describe('TextPane clicks and Enter on highlights', () => {
         const { stores, container } = setup();
         act(() => stores.view.getState().focusSlot('slot:grp_b:age'));
         fireEvent.keyDown(scrollerOf(container), { key: 'Enter' });
-        fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · name' }));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · Name' }));
         expect(stores.view.getState().focus.key).toBe('slot:grp_b:name');
     });
 });
@@ -318,5 +318,27 @@ describe('TextPane jump pulse', () => {
         act(() => stores.view.getState().focusSlot('slot:grp_a:n'));
         expect(registeredSpans('rv-pulse', textRoot())).toEqual([]);
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('A paper'), at('twenty')]);
+    });
+});
+
+describe('TextPane polish (I2, I3)', () => {
+    const headed = 'A paper\n## Methods\nWe scanned.';
+
+    it('names a heading without its markdown marker, which it hides', () => {
+        renderWithStores(
+            <TextPane />,
+            makeBundle({}, headed, { parsed_paper: { bibliography: { title: 'A paper' } } })
+        );
+        expect(screen.getByRole('heading', { name: 'Methods' })).toBeInTheDocument();
+    });
+
+    it('draws a thin ring on the text pane only when it has keyboard focus', () => {
+        const { container } = renderWithStores(<TextPane />, makeBundle({}, headed));
+        const scroller = container.querySelector('[data-text-scroller]')!;
+        const rules = [...document.querySelectorAll('style')].map((style) => style.textContent).join('\n');
+        const own = [...scroller.classList].find((name) => rules.includes(`.${name}:focus-visible`));
+        expect(own).toBeDefined();
+        expect(rules).toMatch(new RegExp(`\\.${own}:focus-visible\\{[^}]*outline:1px solid`));
+        expect(rules).toMatch(new RegExp(`\\.${own}:focus:not\\(:focus-visible\\)\\{[^}]*outline:none`));
     });
 });

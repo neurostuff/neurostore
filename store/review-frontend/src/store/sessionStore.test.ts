@@ -40,7 +40,7 @@ const spansOf = (record: unknown, slot: string) =>
 describe('the session store saving through its op client, with no view', () => {
     it('holds the documents and the save, and no focus, step or panel', async () => {
         const { session } = await open(await started());
-        const viewKeys = ['focus', 'slotOrder', 'step', 'panel', 'coordinates'];
+        const viewKeys = ['focus', 'step', 'panel', 'coordinates'];
         expect(Object.keys(session.getState()).filter((key) => viewKeys.includes(key))).toEqual([]);
     });
 

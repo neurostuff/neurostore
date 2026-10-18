@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { createReviewStores } from '../store/reviewStores';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
-import { createSibling, danglingLinks, linkCandidates } from './actions';
+import { createSibling, danglingLinks, linkCandidates, siblingClasses } from './actions';
 
 const record = {
     analyses: [
@@ -100,5 +100,16 @@ describe('dangling links', () => {
             ['t_2', 'interaction_with'],
             ['t_3', 'interaction_with'],
         ]);
+    });
+});
+
+describe('the classes a sibling can take', () => {
+    it('are worked out again for another bundle holding the same record', () => {
+        const s = state();
+        expect(siblingClasses(s, 'a_2').map((c) => c.name)).toEqual(['Analysis']);
+        const orphaned = makeBundle(record, 'x'.repeat(10), {
+            entities: entityRows({ ...row('a_2', 'Analysis', 'analyses'), parent: null }),
+        });
+        expect(siblingClasses({ bundle: orphaned, record: s.record }, 'a_2')).toEqual([]);
     });
 });

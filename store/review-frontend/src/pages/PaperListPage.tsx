@@ -22,6 +22,7 @@ import { Brand } from '../Brand';
 import { LastEdit } from '../format/LastEdit';
 import { displayName } from '../format/people';
 import { SET_ASIDE_REASONS } from '../review/asideReasons';
+import { Hint } from '../review/Hint';
 import { WhenLoaded } from './WhenLoaded';
 
 const reviewedShare = (reviewed: number, total: number) =>
@@ -42,9 +43,7 @@ function progressOf(paper: PaperSummary, now: Date) {
             <Box component="span" sx={{ display: 'block' }}>
                 {reviewerLine(review, paper.total)}
             </Box>
-            {review.last_edit_at && (
-                <LastEdit opCount={review.op_count} lastEditAt={review.last_edit_at} now={now} />
-            )}
+            {review.last_edit_at && <LastEdit opCount={review.op_count} lastEditAt={review.last_edit_at} now={now} />}
         </Fragment>
     ));
 }
@@ -71,9 +70,13 @@ function Assignment({
     const releaseFrom = (userId: string) => release.mutate({ baseStudyId: paper.base_study_id, userId });
     return (
         <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <Button size="small" disabled={isMine} onClick={() => assignTo(me.user_id)}>
-                Assign me
-            </Button>
+            <Hint title={isMine ? 'This paper is on your list' : 'Assign this paper to yourself'}>
+                <span>
+                    <Button size="small" disabled={isMine} onClick={() => assignTo(me.user_id)}>
+                        Add to my list
+                    </Button>
+                </span>
+            </Hint>
             {isMine && (
                 <Button size="small" onClick={() => releaseFrom(me.user_id)}>
                     Release
@@ -96,9 +99,22 @@ function Assignment({
                     <TextField
                         select
                         size="small"
-                        label={`Assign ${paper.label ?? paper.id} to`}
+                        label="Reviewer assigned"
                         value=""
-                        sx={{ minWidth: 200 }}
+                        InputLabelProps={{ shrink: true }}
+                        SelectProps={{
+                            displayEmpty: true,
+                            SelectDisplayProps: {
+                                'aria-label': `Reviewer assigned to ${paper.label ?? paper.id}`,
+                                'aria-labelledby': undefined,
+                            } as object,
+                            renderValue: () => (
+                                <Box component="span" sx={{ color: 'text.disabled' }}>
+                                    e.g. Sam
+                                </Box>
+                            ),
+                        }}
+                        sx={{ minWidth: 180 }}
                         onChange={(event) => event.target.value && assignTo(event.target.value)}
                     >
                         {(reviewers ?? []).map((reviewer) => (
@@ -149,19 +165,32 @@ export function PaperListPage() {
                                 <ListItem
                                     key={paper.id}
                                     disableGutters
-                                    secondaryAction={
-                                        <Assignment
-                                            paper={paper}
-                                            me={me.data}
-                                            reviewers={reviewers.data}
-                                            assign={assign}
-                                            release={release}
-                                        />
-                                    }
+                                    disablePadding
+                                    className="rv-paper-row"
+                                    sx={{
+                                        alignItems: 'flex-start',
+                                        gap: 1,
+                                        borderRadius: 1,
+                                        '&:hover': { bgcolor: 'action.hover' },
+                                    }}
                                 >
-                                    <ListItemButton component={RouterLink} to={`/papers/${paper.id}`}>
+                                    <ListItemButton
+                                        component={RouterLink}
+                                        to={`/papers/${paper.id}`}
+                                        sx={{
+                                            flex: 1,
+                                            minWidth: 0,
+                                            '&:hover': { bgcolor: 'transparent' },
+                                            '&:hover .rv-paper-title': { textDecoration: 'underline' },
+                                        }}
+                                    >
                                         <ListItemText
                                             primary={paper.label ?? paper.id}
+                                            primaryTypographyProps={{
+                                                className: 'rv-paper-title',
+                                                color: 'primary',
+                                                fontWeight: 500,
+                                            }}
                                             secondary={
                                                 <>
                                                     <Box component="span" sx={{ display: 'block' }}>
@@ -175,6 +204,15 @@ export function PaperListPage() {
                                             }
                                         />
                                     </ListItemButton>
+                                    <Box sx={{ py: 1, pr: 1, flexShrink: 0, maxWidth: '45%' }}>
+                                        <Assignment
+                                            paper={paper}
+                                            me={me.data}
+                                            reviewers={reviewers.data}
+                                            assign={assign}
+                                            release={release}
+                                        />
+                                    </Box>
                                 </ListItem>
                             ))}
                         </List>

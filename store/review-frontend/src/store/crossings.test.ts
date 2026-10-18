@@ -170,16 +170,17 @@ describe('what the view derives from the session’s documents', () => {
         expect(shownIndex(store).entity('grp_b')?.hidden).toBe(true);
     });
 
-    it('keeps the focused entity’s slot order through a rebuilt index, and sorts it once the focus moves', () => {
+    it('keeps the entity’s slots in their declared order through an edit, a rebuilt index and a focus move', () => {
         const store = open();
+        const declared = slotOrder(store);
         store.view.getState().focusSlot('slot:grp_a:sex');
         store.session.getState().emit(evidenceOn('sex', [[30, 35]]));
-        expect(slotOrder(store)).toEqual(['sex', 'species', 'name', 'description']);
+        expect(slotOrder(store)).toEqual(declared);
         const sent = store.session.getState().pending;
         store.session.getState().confirm(answer(store, sent, { hidden: { analyses: [], entities: ['grp_b'] } }), sent);
-        expect(slotOrder(store)).toEqual(['sex', 'species', 'name', 'description']);
+        expect(slotOrder(store)).toEqual(declared);
         store.view.getState().focusEntity('study');
-        expect(slotOrder(store)).toEqual(['species', 'name', 'description', 'sex']);
+        expect(slotOrder(store)).toEqual(declared);
     });
 });
 

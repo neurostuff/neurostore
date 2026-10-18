@@ -18,7 +18,6 @@ import { PointsView } from './PointsView';
 import { analysisSummary } from './summary';
 import { AddAnalysisPanel, EditAnalysisPanel, MergeDialog, MovePanel, RelabelPanel } from './panels';
 
-
 function Offer() {
     const offer = useView((s) => s.offer);
     const name = useSession((s) => (offer ? (s.index.entity(offer.entity)?.name ?? offer.entity) : ''));

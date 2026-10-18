@@ -79,20 +79,20 @@ describe('a save the server refuses without naming an op', () => {
         act(() => store.session.getState().addEvidence(store.view.getState().focus.key, at('Stroop'), 'new'));
 
         const alert = await screen.findByRole('alert', {}, SLOW);
-        expect(screen.getByLabelText(/^save state/)).toHaveTextContent('op 1 leaves an invalid document');
+        expect(screen.getByLabelText(/^save state/)).toHaveAccessibleName(/op 1 leaves an invalid document/);
         expect(alert).toHaveTextContent("'old' is not of type 'number', 'null'");
         expect(alert).toHaveTextContent('Pending edits (1)');
-        expect(alert).toHaveTextContent('set_evidence: Patients · age_mean');
+        expect(alert).toHaveTextContent('set_evidence: Patients · Age mean');
 
         act(() => store.view.getState().focusEntity('grp_a'));
-        fireEvent.click(within(alert).getByRole('button', { name: 'Patients · age_mean' }));
+        fireEvent.click(within(alert).getByRole('button', { name: 'Patients · Age mean' }));
         expect(store.view.getState().focus.key).toBe(slotKey('grp_a', 'age_mean'));
 
         fireEvent.click(within(alert).getByRole('button', { name: 'Undo the edits that caused it' }));
         await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument(), SLOW);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().index.slot(slotKey('grp_a', 'age_mean'))?.spans).toEqual([]);
-        expect(screen.getByLabelText(/^save state/).textContent).toBe('saved');
+        expect(screen.getByLabelText(/^save state/)).toHaveAccessibleName('save state: saved');
 
         act(() => store.view.getState().focusSlot(slotKey('grp_a', 'age_mean')));
         let added = false;
@@ -100,7 +100,10 @@ describe('a save the server refuses without naming an op', () => {
             added = store.session.getState().addEvidence(store.view.getState().focus.key, at('fMRI'), 'new');
         });
         expect(added).toBe(true);
-        await waitFor(() => expect(screen.getByLabelText(/^save state/).textContent).toBe('saved'), SLOW);
+        await waitFor(
+            () => expect(screen.getByLabelText(/^save state/)).toHaveAccessibleName('save state: saved'),
+            SLOW
+        );
         expect(server.requests.filter((r) => r.method === 'POST')).toHaveLength(2);
         expect(store.session.getState().index.slot(slotKey('grp_a', 'age_mean'))?.spans).toEqual([
             [at('fMRI')[0], at('fMRI')[1]],
@@ -114,7 +117,7 @@ describe('a tab another one holds the review in', () => {
         act(() => store.session.getState().setDevice('readonly', OTHER_TAB));
         act(() => store.view.getState().focusSlot(slotKey('grp_a', 'age_mean')));
         act(() => openPanelOn(store, 'edit'));
-        expect(screen.getByRole('note')).toHaveTextContent(OTHER_TAB);
+        expect(screen.getByText(OTHER_TAB).closest('[role="note"]')).not.toBeNull();
         const actions = within(screen.getByRole('toolbar', { name: 'review actions' })).getAllByRole('button');
         expect(actions.length).toBeGreaterThan(0);
         actions.forEach((button) => expect(button).toBeDisabled());

@@ -4,13 +4,7 @@ import type { ProvenanceMap } from './applyOp';
 import type { AnalysisDiff } from './coordinateDiff';
 import { currentAnalyses } from './coordinates';
 import { isObject, type Json } from './paths';
-import {
-    type EntityNode,
-    type ExtractedValue,
-    type RecordIndex,
-    type SlotNode,
-    type SpanPair,
-} from './record';
+import { type EntityNode, type ExtractedValue, type RecordIndex, type SlotNode, type SpanPair } from './record';
 import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget, targetKey } from './targetKey';
 
 export type DiffStatus = 'same' | 'changed' | 'added' | 'removed' | 'rejected';

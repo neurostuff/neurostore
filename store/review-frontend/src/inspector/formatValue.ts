@@ -8,5 +8,6 @@ export function formatValue(slot: SlotNode): string {
         return value.unreported_reason ? `not reported (${value.unreported_reason})` : 'not reported';
     }
     if (value.value === null || value.value === undefined) return '—';
+    if (Array.isArray(value.value)) return value.value.map(String).join('; ');
     return typeof value.value === 'object' ? JSON.stringify(value.value) : String(value.value);
 }

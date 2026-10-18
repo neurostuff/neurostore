@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { acceptAnalysis, addSelectionToAnalysis, editPoint, removePoint, splitAnalysis } from '../coordinates/actions';
-import { COORDINATE_UNAVAILABLE as NOT } from '../coordinates/availability';
+import { COORDINATE_UNAVAILABLE as NOT, type CoordinateSession } from '../coordinates/availability';
+import { RECORD_UNAVAILABLE as RECORD, type RecordSession } from '../inspector/availability';
 import { accept, acceptCard, createOn } from '../inspector/actions';
+import type { Reason } from './reason';
 import type { ReviewStores } from '../store/reviewStores';
-import type { SessionState } from '../store/sessionStore';
 import type { ViewState } from '../store/viewStore';
 import { addSelection } from '../text/addSelection';
-import { removeCursorSpan, stepCursorSpan } from '../text/spanEdits';
+import { openMoveEvidence, removeCursorSpan, stepCursorSpan } from '../text/spanEdits';
 import { openPanelOn } from '../inspector/openPanel';
 
 /** Where a shortcut acts: on a record item, on a coordinate analysis, or (unscoped) anywhere. */
@@ -18,8 +19,12 @@ export interface Shortcut {
     scope?: Scope;
     /** The toolbar button that runs the shortcut, if it has one. */
     button?: { label: string; color?: 'error' };
+    /** Whether its button is also beside the focused field, where it applies (D97). */
+    field?: boolean;
+    /** Whether its button sits on the focused card's head instead of the toolbar. */
+    card?: boolean;
     /** Why the shortcut does not apply to the focus now; undefined when it does. */
-    unavailable?(session: Pick<SessionState, 'bundle' | 'pending'>, view: ViewState): string | undefined;
+    unavailable?: Reason<RecordSession & CoordinateSession, ViewState>;
     run(stores: ReviewStores): void;
 }
 
@@ -82,45 +87,78 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['a'],
         label: 'accept the focused slot, entity or link',
         button: { label: 'Accept' },
+        field: true,
+        unavailable: RECORD.judge,
         run: (s) => void accept(s),
     }),
     record({
         keys: ['Shift+A'],
         label: 'accept every untouched slot on the card that has evidence',
+        button: { label: 'Accept all with evidence' },
+        card: true,
+        unavailable: RECORD.acceptCard,
         run: (s) => void acceptCard(s),
     }),
     record({
         keys: ['r'],
         label: 'reject, with a reason (1–5) and an optional note',
         button: { label: 'Reject', color: 'error' },
+        field: true,
+        unavailable: RECORD.judge,
         run: (s) => openPanelOn(s, 'reject'),
     }),
     record({
         keys: ['Enter'],
         label: 'edit the focused value; Enter saves, Esc cancels',
+        button: { label: 'Edit' },
+        field: true,
+        unavailable: RECORD.edit,
         run: (s) => openPanelOn(s, 'edit'),
     }),
     record({
         keys: ['n'],
         label: 'mark the focused slot not reported, with its reason',
+        button: { label: 'Not reported' },
+        unavailable: RECORD.notReported,
         run: (s) => openPanelOn(s, 'not_reported'),
     }),
-    record({ keys: ['l'], label: 'link the focused reference slot to an entity', run: (s) => openPanelOn(s, 'link') }),
+    record({
+        keys: ['l'],
+        label: 'link the focused reference slot to an entity',
+        button: { label: 'Link' },
+        field: true,
+        unavailable: RECORD.link,
+        run: (s) => openPanelOn(s, 'link'),
+    }),
     record({
         keys: ['c'],
         label: 'create an entity in the focused entity’s list; asks which class where the list has several',
+        button: { label: 'New entity' },
+        unavailable: RECORD.create,
         run: (s) => createOn(s),
     }),
     record({
         keys: ['Shift+Backspace'],
         label: 'delete the focused entity, after confirming',
+        button: { label: 'Delete', color: 'error' },
+        unavailable: RECORD.delete,
         run: (s) => openPanelOn(s, 'delete'),
     }),
     record({
         keys: [';'],
         label: 'add a note to the focused item',
         button: { label: 'Note' },
+        field: true,
+        unavailable: RECORD.judge,
         run: (s) => openPanelOn(s, 'note'),
+    }),
+    record({
+        keys: ['m'],
+        label: 'move the focused evidence span to another field',
+        button: { label: 'Move to…' },
+        field: true,
+        unavailable: RECORD.moveEvidence,
+        run: openMoveEvidence,
     }),
     coordinates({
         keys: ['j'],
@@ -246,6 +284,7 @@ export const SHORTCUTS: Shortcut[] = [
 
 const TEXT_FIELD =
     'input:not([type="radio"]):not([type="checkbox"]), textarea, select, [contenteditable]:not([contenteditable="false"])';
+const DIALOG = '[role="dialog"]';
 const CONTROL = 'button, a[href], [role="button"], [role="option"], [role="radio"], [role="menuitem"]';
 
 const within = (target: EventTarget | null, selector: string) =>
@@ -287,7 +326,7 @@ export function useShortcuts(stores: ReviewStores, table: Shortcut[], enabled: (
             for (const key of shortcut.keys) byKey.set(key, [...(byKey.get(key) ?? []), shortcut]);
         }
         const onKeyDown = (event: KeyboardEvent) => {
-            if (isTextField(event.target)) return;
+            if (isTextField(event.target) || within(event.target, DIALOG)) return;
             if (within(event.target, GRID) && !THROUGH_GRID.has(keyName(event))) return;
             if ((event.key === 'Enter' || event.key === ' ') && isControl(event.target)) return;
             const scope: Scope = view(stores).coordinates ? 'coordinates' : 'record';

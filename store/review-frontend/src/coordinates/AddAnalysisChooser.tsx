@@ -3,6 +3,7 @@ import type { ParsedPaperLayout } from '../model/layout';
 import { useIsEditable, useSession, useView } from '../store/context';
 import { addAnalysisPanel, textAnalysisPanel } from './actions';
 import { coordinatePending } from './availability';
+import { Hint } from '../review/Hint';
 
 const NO_TABLES: NonNullable<ParsedPaperLayout['tables']> = [];
 
@@ -28,28 +29,38 @@ export function AddAnalysisChooser() {
             <Typography variant="overline" component="h3">
                 Add an analysis
             </Typography>
-            <Button
-                size="small"
-                variant="outlined"
-                disabled={!editable || pending || !selection}
-                onClick={() => selection && openPanel(textAnalysisPanel(selection))}
-            >
-                From the selected text
-            </Button>
+            <Hint title="A new analysis from the sentence selected in the paper, with the x, y and z printed there; or a null result with no points">
+                <span>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        disabled={!editable || pending || !selection}
+                        onClick={() => selection && openPanel(textAnalysisPanel(selection))}
+                    >
+                        From the selected text
+                    </Button>
+                </span>
+            </Hint>
             {!selection && (
                 <Typography variant="caption" color="text.secondary">
                     select its sentence in the paper first
                 </Typography>
             )}
             {tables.map((table) => (
-                <Button
+                <Hint
                     key={table.table_id}
-                    size="small"
-                    disabled={!editable || pending}
-                    onClick={() => openPanel(addAnalysisPanel(table.table_id))}
+                    title={`A new analysis of the coordinates in ${table.label ?? table.table_id}`}
                 >
-                    {`To ${table.label ?? table.table_id}`}
-                </Button>
+                    <span>
+                        <Button
+                            size="small"
+                            disabled={!editable || pending}
+                            onClick={() => openPanel(addAnalysisPanel(table.table_id))}
+                        >
+                            {`To ${table.label ?? table.table_id}`}
+                        </Button>
+                    </span>
+                </Hint>
             ))}
         </Stack>
     );

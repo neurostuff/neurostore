@@ -75,7 +75,7 @@ describe('editing a slot', () => {
         const { pending, last, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:acquired_count'));
         press('Enter', {}, document.body);
-        const field = screen.getByRole('spinbutton', { name: 'acquired_count' });
+        const field = screen.getByRole('spinbutton', { name: 'Acquired count' });
         expect(field).toHaveFocus();
         expect(field).toHaveAttribute('step', '1');
         fireEvent.change(field, { target: { value: '2.5' } });
@@ -91,7 +91,7 @@ describe('editing a slot', () => {
             value: { extraction_status: 'extracted', value: 18, value_source: 'reported' },
         });
         expectValid(last());
-        expect(screen.queryByRole('group', { name: 'edit acquired_count' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'edit Acquired count' })).not.toBeInTheDocument();
         expect(rowOf('slot:grp_a:acquired_count')).toHaveTextContent('18');
         expect(reviewIn('slot:grp_a:acquired_count', 'edited')).toHaveTextContent('edited');
     });
@@ -100,9 +100,9 @@ describe('editing a slot', () => {
         const { pending, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:name'));
         press('Enter', {}, document.body);
-        fireEvent.change(screen.getByRole('textbox', { name: 'name' }), { target: { value: 'Cases' } });
+        fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), { target: { value: 'Cases' } });
         press('Escape');
-        expect(screen.queryByRole('group', { name: 'edit name' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'edit Name' })).not.toBeInTheDocument();
         expect(pending()).toEqual([]);
         expect(viewState().panel).toBeNull();
     });
@@ -111,18 +111,18 @@ describe('editing a slot', () => {
         const { viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:is_healthy'));
         press('Enter', {}, document.body);
-        expect(screen.getByRole('switch', { name: 'is_healthy' })).not.toBeChecked();
+        expect(screen.getByRole('switch', { name: 'Is healthy' })).not.toBeChecked();
         press('Escape');
         act(() => viewState().focusSlot('slot:grp_a:species'));
         press('Enter', {}, document.body);
-        expect(screen.getByRole('combobox', { name: 'species' })).toHaveValue('human');
+        expect(screen.getByRole('combobox', { name: 'Species' })).toHaveValue('human');
     });
 
     it('N marks the slot not reported with a reason from the schema, as one set_value', () => {
         const { last, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:name'));
         press('n', {}, document.body);
-        const reason = screen.getByRole('combobox', { name: 'unreported reason' });
+        const reason = screen.getByRole('combobox', { name: 'Why not' });
         expect(reason).toHaveFocus();
         fireEvent.change(reason, { target: { value: 'cited_elsewhere' } });
         press('Enter');
@@ -199,7 +199,7 @@ describe('verdicts and notes', () => {
         const { last, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:species'));
         press('r', {}, document.body);
-        const panel = screen.getByRole('group', { name: 'reject species' });
+        const panel = screen.getByRole('group', { name: 'reject Species' });
         expect(
             within(panel)
                 .getAllByRole('radio')
@@ -226,7 +226,7 @@ describe('verdicts and notes', () => {
         const { viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:species'));
         press('r', {}, document.body);
-        const panel = screen.getByRole('group', { name: 'reject species' });
+        const panel = screen.getByRole('group', { name: 'reject Species' });
         press('2', {}, within(panel).getByRole('radio', { name: '1 wrong value' }));
         expect(within(panel).getByRole('radio', { name: '2 not in text' })).toBeChecked();
         const note = within(panel).getByRole('textbox', { name: 'note' });
@@ -246,7 +246,7 @@ describe('verdicts and notes', () => {
         expect(pending()).toEqual([]);
         expect(note).toHaveAccessibleDescription('a note is required with “other”');
         press('Escape');
-        expect(screen.queryByRole('group', { name: 'reject species' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'reject Species' })).not.toBeInTheDocument();
     });
 
     it('a reject without a picked reason asks for one', () => {
@@ -298,7 +298,7 @@ describe('verdicts and notes', () => {
         const { last, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:name'));
         press(';', {}, document.body);
-        fireEvent.change(screen.getByRole('textbox', { name: 'note on name' }), {
+        fireEvent.change(screen.getByRole('textbox', { name: 'note on Name' }), {
             target: { value: 'check the label' },
         });
         press('Enter');
@@ -342,7 +342,7 @@ describe('links and entities', () => {
         const { last, viewState } = setup();
         act(() => viewState().focusSlot('slot:a_1:acquisitions'));
         press('l', {}, document.body);
-        const input = screen.getByRole('combobox', { name: 'link acquisitions to' });
+        const input = screen.getByRole('combobox', { name: 'link Acquisitions to' });
         expect(input).toHaveFocus();
         fireEvent.change(input, { target: { value: 'Scan' } });
         expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Scan B']);
@@ -368,7 +368,7 @@ describe('links and entities', () => {
         );
         act(() => viewState().focusSlot('slot:a_1:acquisitions'));
         press('l', {}, document.body);
-        fireEvent.change(screen.getByRole('combobox', { name: 'link acquisitions to' }), {
+        fireEvent.change(screen.getByRole('combobox', { name: 'link Acquisitions to' }), {
             target: { value: 'Scan' },
         });
         expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Scan Z']);
@@ -432,7 +432,7 @@ describe('links and entities', () => {
         press('Backspace', { shiftKey: true }, document.body);
         const dialog = screen.getByRole('dialog', { name: 'Delete Patients?' });
         expect(within(dialog).getByRole('list', { name: 'dangling links' })).toHaveTextContent(
-            'Patients > Controls · groups[#0].group → Patients'
+            'Patients > Controls · Group 1: group → Patients'
         );
         fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
         expect(pending()).toEqual([]);
@@ -488,7 +488,7 @@ describe('links and entities', () => {
             )
         );
         expect(within(screen.getByRole('dialog')).getByRole('list', { name: 'dangling links' })).toHaveTextContent(
-            'Patients > Controls · acquisitions → Scan B'
+            'Patients > Controls · Acquisitions → Scan B'
         );
     });
 
@@ -514,8 +514,8 @@ describe('keyboard paths', () => {
         const { pending, viewState } = setup();
         act(() => viewState().focusSlot('slot:a_1:acquisitions'));
         press('l', {}, document.body);
-        press('Escape', {}, screen.getByRole('combobox', { name: 'link acquisitions to' }));
-        expect(screen.queryByRole('combobox', { name: 'link acquisitions to' })).not.toBeInTheDocument();
+        press('Escape', {}, screen.getByRole('combobox', { name: 'link Acquisitions to' }));
+        expect(screen.queryByRole('combobox', { name: 'link Acquisitions to' })).not.toBeInTheDocument();
         expect(pending()).toEqual([]);
     });
 
@@ -582,13 +582,14 @@ describe('creating, and the actions for a pointer', () => {
     it('the toolbar accepts the focused item, and opens reject on it', () => {
         const { last, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:species'));
-        fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+        const toolbar = screen.getByRole('toolbar', { name: 'review actions' });
+        fireEvent.click(within(toolbar).getByRole('button', { name: 'Accept' }));
         expect(last()).toMatchObject({
             type: 'verdict',
             verdict: 'accept',
             target: { kind: 'slot', entity: 'grp_a', path: 'species' },
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
-        expect(screen.getByRole('group', { name: 'reject species' })).toBeInTheDocument();
+        fireEvent.click(within(toolbar).getByRole('button', { name: 'Reject' }));
+        expect(screen.getByRole('group', { name: 'reject Species' })).toBeInTheDocument();
     });
 });

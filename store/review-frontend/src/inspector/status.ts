@@ -18,23 +18,75 @@ export type Shape =
 
 export interface SlotStatus {
     label: string;
+    /** What the status tells the reviewer, and what to do about it. */
+    means: string;
     shape: Shape;
     color: (palette: Palette) => string;
 }
 
 export const STATUSES = {
-    absent: { label: 'not in the record', shape: 'dashed', color: (p) => darken(p.muted.main, 0.4) },
-    not_found: { label: 'evidence not found', shape: 'ring', color: (p) => darken(p.error.main, 0.3) },
-    generated: { label: 'value generated', shape: 'triangle', color: (p) => darken(p.warning.main, 0.3) },
-    ambiguous: { label: 'not reported (ambiguous)', shape: 'diamond', color: (p) => darken(p.warning.main, 0.3) },
-    not_reported: { label: 'not reported', shape: 'bar', color: (p) => darken(p.muted.main, 0.4) },
-    present: { label: 'evidence present', shape: 'circle', color: (p) => darken(p.success.main, 0.3) },
-    reference: { label: 'reference', shape: 'square', color: (p) => p.primary.main },
-    verified: { label: 'verified', shape: 'check', color: (p) => darken(p.success.main, 0.3) },
-    edited: { label: 'edited', shape: 'pencil', color: (p) => p.primary.main },
-    rejected: { label: 'rejected', shape: 'cross', color: (p) => darken(p.error.main, 0.3) },
-    added: { label: 'added', shape: 'plus', color: (p) => p.primary.main },
-    unchecked: { label: 'unchecked', shape: 'dot', color: (p) => darken(p.muted.main, 0.4) },
+    absent: {
+        label: 'not in the record',
+        means: 'the record has no value here; set one if the paper reports it',
+        shape: 'dashed',
+        color: (p) => darken(p.muted.main, 0.4),
+    },
+    not_found: {
+        label: 'evidence not found',
+        means: 'the model gave a value but found no text for it; add the evidence, or check the value',
+        shape: 'ring',
+        color: (p) => darken(p.error.main, 0.3),
+    },
+    generated: {
+        label: 'value generated',
+        means: 'the model worked the value out; check it against the text',
+        shape: 'triangle',
+        color: (p) => darken(p.warning.main, 0.3),
+    },
+    ambiguous: {
+        label: 'not reported (ambiguous)',
+        means: 'the model found the paper unclear on this',
+        shape: 'diamond',
+        color: (p) => darken(p.warning.main, 0.3),
+    },
+    not_reported: {
+        label: 'not reported',
+        means: 'the paper does not report this',
+        shape: 'bar',
+        color: (p) => darken(p.muted.main, 0.4),
+    },
+    present: {
+        label: 'evidence present',
+        means: 'the value has supporting text, highlighted in the paper',
+        shape: 'circle',
+        color: (p) => darken(p.success.main, 0.3),
+    },
+    reference: {
+        label: 'reference',
+        means: 'a link to other entities of the record',
+        shape: 'square',
+        color: (p) => p.primary.main,
+    },
+    verified: {
+        label: 'verified',
+        means: 'a reviewer accepted it',
+        shape: 'check',
+        color: (p) => darken(p.success.main, 0.3),
+    },
+    edited: { label: 'edited', means: 'a reviewer changed it', shape: 'pencil', color: (p) => p.primary.main },
+    rejected: {
+        label: 'rejected',
+        means: 'a reviewer rejected it',
+        shape: 'cross',
+        color: (p) => darken(p.error.main, 0.3),
+    },
+    added: { label: 'added', means: 'a reviewer added it', shape: 'plus', color: (p) => p.primary.main },
+    unchecked: {
+        label: 'unchecked',
+        means: 'no reviewer has judged it yet',
+        shape: 'dot',
+        color: (p) => darken(p.muted.main, 0.4),
+    },
 } satisfies Record<string, SlotStatus>;
 
 export type StatusId = keyof typeof STATUSES;

@@ -83,19 +83,19 @@ describe('adding evidence', () => {
         expect((record.groups as { sex: unknown }[])[0].sex).toMatchObject({ evidence: { status: 'present' } });
     });
 
-    it('keeps an edited slot in its place while it is focused and sorts it once focus moves on', () => {
+    it('keeps an edited slot in its declared place, while it is focused and once focus moves on', () => {
         const store = setup();
         const order = () =>
             shownIndex(store)
                 .entity('grp_a')!
                 .slots.filter((s) => s.value !== undefined)
                 .map((s) => s.path);
-        expect(order()).toEqual(['sex', 'species', 'name', 'description']);
+        expect(order()).toEqual(['description', 'name', 'species', 'sex']);
         store.view.getState().focusSlot('slot:grp_a:sex');
         store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 'first');
-        expect(order()).toEqual(['sex', 'species', 'name', 'description']);
+        expect(order()).toEqual(['description', 'name', 'species', 'sex']);
         store.view.getState().focusSlot('slot:grp_a:name');
-        expect(order()).toEqual(['species', 'name', 'description', 'sex']);
+        expect(order()).toEqual(['description', 'name', 'species', 'sex']);
     });
 
     it('refuses a pending op by its client_op_id, whichever copy of it the refusal carries', () => {
@@ -214,7 +214,7 @@ describe('emitting ops', () => {
         expect(await store.session.getState().emit(setName('grp_x', 'Nobody'))).toBe(false);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().notices).toEqual([
-            { kind: 'refused', slot: 'grp_x name', message: "no entity has local_id 'grp_x'" },
+            { kind: 'refused', slot: 'grp_x name', message: "no entity has local_id 'grp_x'", op: expect.anything() },
         ]);
     });
 
@@ -513,7 +513,7 @@ describe('moving and removing evidence', () => {
             const { pending, undoStack, notices } = store.session.getState();
             expect(pending).toEqual([]);
             expect(undoStack).toEqual([]);
-            expect(notices).toEqual([{ kind: 'conflict', slot: 'grp_a description', message: expect.any(String) }]);
+            expect(notices).toEqual([{ kind: 'conflict', slot: 'grp_a description', message: expect.any(String), op: expect.anything() }]);
             expect(spansOf(store, DESCRIPTION)).toEqual(c.shown);
         });
 
@@ -576,5 +576,33 @@ describe('declared slots', () => {
             .index.entity('grp_a')!
             .slots.map((s) => s.key);
         expect(slots).toContain('slot:grp_a:probe');
+    });
+});
+
+describe('moving evidence to another slot', () => {
+    const spansOf = (store: ReturnType<typeof setup>, key: string) => store.session.getState().index.slot(key)?.spans;
+
+    it('takes the span off one slot and adds it to another, as one intent and one undo step', () => {
+        const store = setup();
+        expect(store.session.getState().transferEvidence('slot:grp_a:name', [50, 58], 'slot:grp_b:name')).toBe(true);
+        expect(spansOf(store, 'slot:grp_a:name')).toEqual([]);
+        expect(spansOf(store, 'slot:grp_b:name')).toEqual([
+            [50, 58],
+            [60, 68],
+        ]);
+        const { pending, groupOf, undoStack } = store.session.getState();
+        expect(pending.map((op) => op.type)).toEqual(['set_evidence', 'set_evidence']);
+        expect(new Set(pending.map((op) => groupOf[op.client_op_id])).size).toBe(1);
+        expect(undoStack).toHaveLength(1);
+        expect(validateOpBatch({ ops: pending })).toBe(true);
+    });
+
+    it('refuses a move to a slot that takes no evidence, or to the slot itself, sending nothing', () => {
+        const store = setup();
+        expect(store.session.getState().transferEvidence('slot:grp_a:name', [50, 58], 'slot:grp_a:species')).toBe(
+            false
+        );
+        expect(store.session.getState().transferEvidence('slot:grp_a:name', [50, 58], 'slot:grp_a:name')).toBe(false);
+        expect(store.session.getState().pending).toEqual([]);
     });
 });

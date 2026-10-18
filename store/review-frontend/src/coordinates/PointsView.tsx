@@ -5,6 +5,7 @@ import type { CoordinateAnalysis } from '../model/coordinates';
 import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
 import { coordinatePending } from './availability';
 import { pointColumns, toRows } from './pointRows';
+import { Hint } from '../review/Hint';
 
 // The grid and Handsontable are a chunk of their own, fetched as soon as the review loads, since Coordinates is its first step.
 const pointsTable = import('./PointsTable');
@@ -72,9 +73,11 @@ export function PointsView({ analysis }: { analysis: CoordinateAnalysis }) {
                 </Box>
             )}
             {!engaged && table}
-            <Button size="small" aria-pressed={allColumns} onClick={() => setAllColumns((shown) => !shown)}>
-                More columns
-            </Button>
+            <Hint title="Show or hide the grid's other point columns">
+                <Button size="small" aria-pressed={allColumns} onClick={() => setAllColumns((shown) => !shown)}>
+                    More columns
+                </Button>
+            </Hint>
         </>
     );
 }

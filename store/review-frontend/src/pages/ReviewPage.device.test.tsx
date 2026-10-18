@@ -98,7 +98,7 @@ describe('a review opened with edits kept on this device', () => {
 
         const second = openPaper();
         const tab = within(second.container);
-        expect(await tab.findByRole('note', {}, SLOW)).toHaveTextContent(OTHER_TAB);
+        expect((await tab.findByText(OTHER_TAB, {}, SLOW)).closest('[role="note"]')).not.toBeNull();
         const accept = within(tab.getByRole('toolbar', { name: 'review actions' })).getByRole('button', {
             name: 'Accept',
         });

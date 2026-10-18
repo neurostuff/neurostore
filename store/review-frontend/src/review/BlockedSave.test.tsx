@@ -68,7 +68,7 @@ describe('a refused save that names no op', () => {
         expect(alert).toHaveTextContent('Saving has stopped: the server refused an edit and did not say which one');
         expect(alert).toHaveTextContent('too long');
         expect(alert).not.toHaveTextContent('/description');
-        act(() => fireEvent.click(within(alert).getByRole('button', { name: /description/ })));
+        act(() => fireEvent.click(within(alert).getByRole('button', { name: /Description/i })));
         expect(store.view.getState().focus.key).toBe(slotKey('study', 'description'));
     });
 
@@ -76,8 +76,8 @@ describe('a refused save that names no op', () => {
         const { pending } = setup();
         const alert = screen.getByRole('alert');
         expect(alert).toHaveTextContent(`Pending edits (${pending.length})`);
-        expect(alert).toHaveTextContent('set_evidence: Study · description');
-        expect(alert).toHaveTextContent('set_evidence: Study · design.description');
+        expect(alert).toHaveTextContent('set_evidence: Study · Description');
+        expect(alert).toHaveTextContent('set_evidence: Study · Design: description');
     });
 
     it('discards every pending edit and resumes saving', () => {

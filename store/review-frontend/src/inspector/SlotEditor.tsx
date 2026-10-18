@@ -1,6 +1,7 @@
 import { Box, Button, Chip, FormControlLabel, Stack, Switch, TextField } from '@mui/material';
 import { useId, useMemo, useState, type KeyboardEvent } from 'react';
 import type { SetValueOp } from '../contract/generated/review-ops';
+import { inWords } from '../model/labels';
 import type { ExtractedValue } from '../model/record';
 import { panelKeys } from './panelKeys';
 import { RemoveIcon } from './RemoveIcon';
@@ -8,6 +9,17 @@ import { inferredEditor, parseScalar, wrapperSpec, type EditorSpec, type Parsed,
 import type { Schema } from '../model/schema';
 
 type SetValue = SetValueOp['value'];
+
+const STATUS_WORDS: Record<string, string> = { extracted: 'reported', not_reported: 'not reported' };
+const SOURCE_WORDS: Record<string, string> = {
+    reported: 'as the paper states it',
+    generated: 'worked out from the paper',
+};
+/** The schema's reasons in words, with the empty choice named. */
+const reasonWords = (reasons: string[]) => ({
+    '': 'no reason given',
+    ...Object.fromEntries(reasons.map((reason) => [reason, inWords(reason)])),
+});
 
 export interface SlotEditorProps {
     label: string;
@@ -284,18 +296,19 @@ export function SlotEditor({ label, schema, root = schema, value, mode, onSave, 
             <Stack direction="row" spacing={1}>
                 <NativeSelect
                     id={`${id}-status`}
-                    label="extraction status"
+                    label="In the paper?"
                     value={status}
                     options={spec.statuses}
+                    labels={STATUS_WORDS}
                     onChange={clearError(setStatus)}
                 />
                 {status === 'not_reported' ? (
                     <NativeSelect
                         id={`${id}-reason`}
-                        label="unreported reason"
+                        label="Why not"
                         value={reason}
                         options={['', ...spec.reasons]}
-                        labels={{ '': 'none' }}
+                        labels={reasonWords(spec.reasons)}
                         autoFocus={mode === 'not_reported'}
                         onChange={setReason}
                     />
@@ -303,9 +316,10 @@ export function SlotEditor({ label, schema, root = schema, value, mode, onSave, 
                     spec.sources.length > 0 && (
                         <NativeSelect
                             id={`${id}-source`}
-                            label="value source"
+                            label="The value is"
                             value={source}
                             options={spec.sources}
+                            labels={SOURCE_WORDS}
                             onChange={setSource}
                         />
                     )

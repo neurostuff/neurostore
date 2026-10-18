@@ -130,7 +130,7 @@ export function replay(
             pending.push(sent);
         } catch (error) {
             const { message } = error as Error;
-            notices.push({ kind, slot: slotLabel(op), message });
+            notices.push({ kind, slot: slotLabel(op), message, op });
             refused.push({ op, message });
         }
     }

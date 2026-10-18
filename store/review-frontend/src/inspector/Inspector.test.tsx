@@ -70,11 +70,106 @@ describe('Inspector', () => {
         expect(screen.getByText('verified by Ana')).toBeInTheDocument();
     });
 
-    it('shows the focused entity’s class, name and local id', () => {
+    it('shows the focused entity’s class and name, with its local id in a tooltip', () => {
         setup();
         const card = screen.getByRole('region', { name: 'Patients > Controls' });
         expect(within(card).getByText('Analysis')).toBeInTheDocument();
-        expect(within(card).getByText('a_1')).toBeInTheDocument();
+        expect(within(card).getByRole('heading', { name: 'Patients > Controls' })).toHaveAttribute('title', 'a_1');
+    });
+
+    it('labels each slot by its name and a list item by the entity it refers to, the path only in a tooltip', () => {
+        setup();
+        const label = (key: string) => rowOf(key).querySelector('.rv-slot-label')!;
+        expect(label('slot:a_1:groups[#0].n')).toHaveTextContent('Patients: n');
+        expect(label('slot:a_1:groups[#0].n')).toHaveAttribute('title', 'groups[#0].n');
+        expect(label('slot:a_1:spatial_scope')).toHaveTextContent('Spatial scope');
+        expect(screen.queryByText(/\[#\d+\]/)).not.toBeInTheDocument();
+    });
+
+    it('shows the entity’s local id in a tooltip on its name, not as text', () => {
+        setup();
+        const card = screen.getByRole('region', { name: 'Patients > Controls' });
+        expect(within(card).queryByText('a_1')).not.toBeInTheDocument();
+        expect(within(card).getByRole('heading', { name: 'Patients > Controls' })).toHaveAttribute('title', 'a_1');
+    });
+
+    it('names a reference chip’s entity by its name, with its local id in a tooltip', () => {
+        setup();
+        expect(within(rowOf('slot:a_1:measure')).getByRole('button', { name: 'BOLD' })).toHaveAttribute(
+            'title',
+            'mea_1'
+        );
+    });
+
+    it('explains each status in a tooltip, and in a legend on the card', () => {
+        setup();
+        expect(shapeIn(rowOf('slot:a_1:definition'))).toHaveAttribute(
+            'title',
+            'value generated: the model worked the value out; check it against the text'
+        );
+        const legend = screen.getByRole('list', { name: 'what the marks mean' });
+        expect(
+            within(legend)
+                .getAllByRole('listitem')
+                .map((li) => li.textContent)
+        ).toEqual([
+            'evidence present',
+            'evidence not found',
+            'value generated',
+            'not reported (ambiguous)',
+            'not reported',
+            'not in the record',
+            'reference',
+        ]);
+    });
+
+    it('renders a list value as a list of its values, not as JSON', () => {
+        const view = renderWithStores(
+            <Inspector />,
+            makeBundle(
+                {
+                    groups: [
+                        { local_id: 'grp_a', name: ev('Patients'), inclusion_criteria: ev(['18 or older', 'SAD']) },
+                    ],
+                },
+                TEXT,
+                {
+                    entities: entityRows(row('grp_a', 'Group', 'groups')),
+                }
+            )
+        );
+        act(() => view.stores.view.getState().focusEntity('grp_a'));
+        const value = within(rowOf('slot:grp_a:inclusion_criteria')).getByRole('list');
+        expect(
+            within(value)
+                .getAllByRole('listitem')
+                .map((li) => li.textContent)
+        ).toEqual(['18 or older', 'SAD']);
+        expect(rowOf('slot:grp_a:inclusion_criteria')).not.toHaveTextContent('[');
+    });
+
+    it('accepts every untouched slot with evidence from the card’s own button, as Shift+A does', () => {
+        const { stores } = setup();
+        const card = screen.getByRole('region', { name: 'Patients > Controls' });
+        fireEvent.click(within(card).getByRole('button', { name: 'Accept all with evidence' }));
+        const accepted = stores.session
+            .getState()
+            .pending.map((op) => (op.type === 'verdict' && op.target.kind === 'slot' ? op.target.path : ''));
+        expect(accepted.sort()).toEqual(['definition', 'groups[#0].n', 'name']);
+    });
+
+    it('shows a group the n each analysis using it analysed, read-only, with a link to the analysis (C2)', () => {
+        const { stores } = setup('grp_a');
+        const analysed = screen.getByRole('list', { name: 'analysed n' });
+        expect(analysed).toHaveTextContent('n analysed: 20, in Patients > Controls');
+        expect(within(analysed).queryByRole('textbox')).not.toBeInTheDocument();
+        fireEvent.click(within(analysed).getByRole('button', { name: 'open Patients > Controls' }));
+        expect(stores.view.getState().focus.key).toBe('slot:a_1:groups[#0].n');
+    });
+
+    it('shows no analysed n on an entity no analysis counts', () => {
+        setup('mea_1');
+        expect(screen.queryByRole('list', { name: 'analysed n' })).not.toBeInTheDocument();
     });
 
     it('names the schema class beside the entity class where they differ', () => {
@@ -85,33 +180,34 @@ describe('Inspector', () => {
     it('shows the record’s local id where it differs from the entity id', () => {
         setup('study');
         const card = screen.getByRole('region', { name: 'Study' });
-        expect(within(card).getByText('study-1')).toBeInTheDocument();
-        expect(within(card).queryByText('study')).not.toBeInTheDocument();
+        expect(within(card).getByRole('heading', { name: 'Study' })).toHaveAttribute('title', 'study-1');
     });
 
-    it('lists the slots doubtful first, each with a status shape, a visible status label and its value', () => {
+    it('lists the slots in the order the schema declares them, each with a status shape, a visible status label and its value', () => {
         setup();
-        expect(
-            rows()
-                .slice(0, 9)
-                .map((row) => row.getAttribute('data-slot-key'))
-        ).toEqual([
-            'slot:a_1:outcome',
-            'slot:a_1:definition',
-            'slot:a_1:prespecification',
-            'slot:a_1:name',
-            'slot:a_1:spatial_scope',
-            'slot:a_1:measure',
+        const inRecord = [
             'slot:a_1:acquisitions',
+            'slot:a_1:definition',
             'slot:a_1:groups[#0].group',
             'slot:a_1:groups[#0].n',
-        ]);
-        const statuses = rows().map((row) => [
-            row.getAttribute('data-slot-key'),
-            shapeIn(row)?.textContent,
-            shapeIn(row)?.getAttribute('data-status-shape'),
-        ]);
-        expect(statuses.slice(0, 6)).toEqual([
+            'slot:a_1:measure',
+            'slot:a_1:name',
+            'slot:a_1:outcome',
+            'slot:a_1:prespecification',
+            'slot:a_1:spatial_scope',
+        ];
+        expect(
+            rows()
+                .map((row) => row.getAttribute('data-slot-key')!)
+                .filter((key) => inRecord.includes(key))
+        ).toEqual(inRecord);
+        const statusOf = (key: string) => [
+            key,
+            shapeIn(rowOf(key))?.textContent,
+            shapeIn(rowOf(key))?.getAttribute('data-status-shape'),
+        ];
+        const doubtful = ['outcome', 'definition', 'prespecification', 'name', 'spatial_scope', 'measure'];
+        expect(doubtful.map((path) => statusOf(`slot:a_1:${path}`))).toEqual([
             ['slot:a_1:outcome', 'evidence not found', 'ring'],
             ['slot:a_1:definition', 'value generated', 'triangle'],
             ['slot:a_1:prespecification', 'not reported (ambiguous)', 'diamond'],
@@ -135,7 +231,7 @@ describe('Inspector', () => {
             openPanelOn(view.stores, 'edit');
         });
         expect(screen.getByText('no schema for this slot')).toBeInTheDocument();
-        expect(screen.queryByRole('group', { name: 'edit mystery' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'edit Mystery' })).not.toBeInTheDocument();
     });
 
     it('lists the slots the class declares that the record leaves out, after the record’s', () => {
@@ -183,18 +279,19 @@ describe('Inspector', () => {
 
     it('focuses a slot when it is clicked', () => {
         const { stores } = setup();
-        fireEvent.click(within(rows()[3]).getByText('name'));
+        fireEvent.click(within(rowOf('slot:a_1:name')).getByText('Name'));
         expect(stores.view.getState().focus).toEqual({ entity: 'a_1', key: 'slot:a_1:name', slot: 'slot:a_1:name' });
-        expect(rows()[3]).toHaveAttribute('aria-current', 'true');
+        expect(rowOf('slot:a_1:name')).toHaveAttribute('aria-current', 'true');
     });
 
-    it('updates a slot’s status when evidence is added, and keeps the row in place while it is focused', () => {
+    it('updates a slot’s status when evidence is added, and keeps the row in its place', () => {
         const { stores } = setup();
         act(() => stores.view.getState().focusSlot('slot:a_1:outcome'));
+        const at = rows().indexOf(rowOf('slot:a_1:outcome'));
         act(() => void stores.session.getState().addEvidence(stores.view.getState().focus.key, [10, 20], 'first'));
-        expect(rows()[0]).toHaveAttribute('data-slot-key', 'slot:a_1:outcome');
-        expect(shapeIn(rows()[0])).toHaveTextContent('evidence present');
+        expect(rows()[at]).toHaveAttribute('data-slot-key', 'slot:a_1:outcome');
+        expect(shapeIn(rows()[at])).toHaveTextContent('evidence present');
         act(() => stores.view.getState().focusSlot('slot:a_1:definition'));
-        expect(rows()[0]).toHaveAttribute('data-slot-key', 'slot:a_1:definition');
+        expect(rows()[at]).toHaveAttribute('data-slot-key', 'slot:a_1:outcome');
     });
 });

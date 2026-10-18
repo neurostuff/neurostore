@@ -6,6 +6,7 @@ import { renderWithStores } from '../test/render';
 import { ReviewScreen } from './ReviewScreen';
 import type { ReviewStores } from '../store/reviewStores';
 import { focusedSpans } from '../test/stores';
+import { acceptTarget } from '../inspector/actions';
 
 const TEXT = 'Twenty patients and twenty controls performed a Stroop task during a 3 T fMRI scan.';
 const at = (word: string): [number, number] => [TEXT.indexOf(word), TEXT.indexOf(word) + word.length];
@@ -70,8 +71,8 @@ describe('step 2, analyses', () => {
         const { stores } = setup('analyses');
         expect(stores.view.getState().focus.entity).toBe('a_1');
         const card = screen.getByRole('region', { name: 'Patients > Controls' });
-        expect(within(card).getByText('statistic')).toBeInTheDocument();
-        expect(within(card).getByText('groups[#0].n')).toBeInTheDocument();
+        expect(within(card).getByText('Statistic')).toBeInTheDocument();
+        expect(within(card).getByText('Patients: n')).toBeInTheDocument();
         expect(within(cardList('analyses')).getByRole('button', { name: /Patients > Controls/ })).toHaveTextContent(
             '3 evidence spans'
         );
@@ -121,7 +122,10 @@ describe('step 3, entities outward from the analyses', () => {
         const { stores } = setup('entities');
         act(() =>
             stores.session.setState({
-                bundle: { ...stores.session.getState().bundle, reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }] },
+                bundle: {
+                    ...stores.session.getState().bundle,
+                    reviewers: [{ user_id: 'u1', name: 'Ana', state: 'in_progress', op_count: 0, last_edit_at: null }],
+                },
                 provenance: { 'relationship:a_1:acquisitions:acq_1': { state: 'verified', user_id: 'u1', at: 'then' } },
             })
         );
@@ -136,7 +140,7 @@ describe('step 3, entities outward from the analyses', () => {
             within(links)
                 .getAllByRole('listitem')
                 .map((li) => li.firstChild?.textContent)
-        ).toEqual(['Patients > Controls · acquisitions', 'Controls > Patients · acquisitions']);
+        ).toEqual(['Patients > Controls · Acquisitions', 'Controls > Patients · Acquisitions']);
         fireEvent.click(within(links).getAllByRole('button', { name: 'Accept link' })[0]);
         expect(stores.session.getState().provenance['relationship:a_1:acquisitions:acq_1']?.state).toBe('verified');
         expect(within(links).getAllByRole('listitem')[0]).toHaveTextContent('verified');
@@ -177,14 +181,42 @@ describe('step 5, the relationship audit', () => {
         const headers = within(matrix())
             .getAllByRole('columnheader')
             .map((h) => h.textContent);
-        expect(headers).toEqual(expect.arrayContaining(['Acquisition', 'Group', 'fMRI', 'Patients', 'Controls']));
+        expect(headers).toEqual(expect.arrayContaining(['Acquisition', 'fMRI']));
         const rows = within(matrix())
             .getAllByRole('rowheader')
-            .map((h) => h.textContent);
+            .map((h) => h.querySelector('.rv-row-name')?.textContent);
         expect(rows).toEqual(['Patients > Controls', 'Controls > Patients']);
         expect(cell('Patients > Controls → fMRI')).toHaveAttribute('aria-pressed', 'true');
-        expect(cell('Patients > Controls → Patients')).toHaveAttribute('aria-pressed', 'true');
-        expect(cell('Patients > Controls → Controls')).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('leaves out the pairs that mean nothing: a list item’s links, and analyses against analyses', () => {
+        setup('relationships');
+        const headers = within(matrix())
+            .getAllByRole('columnheader')
+            .map((h) => h.textContent);
+        expect(headers).not.toContain('Group');
+        expect(headers).not.toContain('Analysis');
+        expect(within(matrix()).queryByRole('button', { name: 'Patients > Controls → Patients' })).toBeNull();
+    });
+
+    it('keeps the row and column labels in view, each name whole on hover', () => {
+        setup('relationships');
+        const [first] = within(matrix()).getAllByRole('rowheader');
+        expect(getComputedStyle(first).position).toBe('sticky');
+        expect(first.querySelector('.rv-row-name')).toHaveAttribute('title', 'Patients > Controls');
+        const names = within(matrix()).getAllByRole('columnheader');
+        expect(names.find((h) => h.textContent === 'fMRI')).toHaveAttribute('title', 'fMRI');
+    });
+
+    it('completes its progress there: a row’s accept judges each link it holds', () => {
+        const { stores } = setup('relationships');
+        const step = () => screen.getByRole('button', { name: /^Relationships/ });
+        expect(step()).toHaveTextContent('0 of 2');
+        fireEvent.click(within(matrix()).getByRole('button', { name: 'accept the links of Patients > Controls' }));
+        fireEvent.click(within(matrix()).getByRole('button', { name: 'accept the links of Controls > Patients' }));
+        expect(step()).toHaveTextContent('2 of 2');
+        expect(stores.session.getState().provenance['relationship:a_1:acquisitions:acq_1']?.state).toBe('verified');
+        expect(screen.getByRole('heading', { name: /relationship audit/ })).toHaveTextContent('2 of 2 done');
     });
 
     it('toggles a link with a click: unlink where it is set, link where it is not', () => {
@@ -194,16 +226,24 @@ describe('step 5, the relationship audit', () => {
             type: 'unlink',
             target: { entity: 'a_2', path: 'acquisitions', target_entity: 'acq_1' },
         });
-        fireEvent.click(cell('Patients > Controls → Controls'));
-        expect(stores.session.getState().pending.at(-1)).toMatchObject({
-            type: 'link',
-            target: { entity: 'a_1', path: 'groups[#0].group', target_entity: 'grp_b' },
-        });
     });
 
-    it('cannot link where the analysis has no slot for it', () => {
-        setup('relationships');
-        expect(cell('Controls > Patients → Patients')).toBeDisabled();
+    it('links with a click where the analysis has no link yet', () => {
+        const unlinked = makeBundle(
+            {
+                analyses: [{ local_id: 'a_1', name: ev('First') }],
+                acquisitions: [{ local_id: 'acq_1', name: ev('fMRI') }],
+            },
+            TEXT,
+            { entities: entityRows(row('a_1', 'Analysis', 'analyses'), row('acq_1', 'Acquisition', 'acquisitions')) }
+        );
+        const { stores } = renderWithStores(<ReviewScreen />, unlinked);
+        act(() => stores.view.getState().setStep('relationships'));
+        fireEvent.click(cell('First → fMRI'));
+        expect(stores.session.getState().pending.at(-1)).toMatchObject({
+            type: 'link',
+            target: { entity: 'a_1', path: 'acquisitions', target_entity: 'acq_1' },
+        });
     });
 });
 
@@ -222,14 +262,30 @@ describe('step 4, leftover entities', () => {
         expect(stores.session.getState().provenance['entity:grp_b']?.state).toBe('verified');
     });
 
-    it('links one to an analysis with the link action', async () => {
-        const { stores } = setup('leftovers');
+    it('links one to an analysis with the link action, through the analysis’s own slot for its class', async () => {
+        const spare = makeBundle(
+            {
+                analyses: [{ local_id: 'a_1', name: ev('First'), acquisitions: [] }],
+                acquisitions: [{ local_id: 'acq_x', name: ev('Spare scan') }],
+            },
+            TEXT,
+            { entities: entityRows(row('a_1', 'Analysis', 'analyses'), row('acq_x', 'Acquisition', 'acquisitions')) }
+        );
+        const { stores } = renderWithStores(<ReviewScreen />, spare);
+        act(() => stores.view.getState().setStep('leftovers'));
         fireEvent.click(within(actions()).getByRole('button', { name: 'Link to an analysis' }));
-        fireEvent.click(await screen.findByRole('option', { name: 'Patients > Controls · groups[#0].group' }));
+        fireEvent.click(await screen.findByRole('option', { name: 'First · Acquisitions' }));
         expect(stores.session.getState().pending.at(-1)).toMatchObject({
             type: 'link',
-            target: { entity: 'a_1', path: 'groups[#0].group', target_entity: 'grp_b' },
+            target: { entity: 'a_1', path: 'acquisitions', target_entity: 'acq_x' },
         });
+    });
+
+    it('offers no list item’s slot to link a group through, which would retarget the item', async () => {
+        setup('leftovers');
+        fireEvent.click(within(actions()).getByRole('button', { name: 'Link to an analysis' }));
+        fireEvent.focus(screen.getByRole('combobox', { name: /^link .* from$/ }));
+        expect(await screen.findByText('no analysis can link it')).toBeInTheDocument();
     });
 
     it('merges one into another of its class, copying the slots chosen, as one batch', () => {
@@ -303,7 +359,7 @@ describe('moving between steps', () => {
         expect(stepButton(/^Analyses/)).toHaveTextContent('0 of 2');
         expect(stepButton(/^Entities/)).toHaveTextContent('0 of 2');
         expect(stepButton(/^Leftovers/)).toHaveTextContent('0 of 2');
-        expect(stepButton(/^Relationships/)).toHaveTextContent('0 of 3');
+        expect(stepButton(/^Relationships/)).toHaveTextContent('0 of 2');
         press('a');
         expect(stepButton(/^Analyses/)).toHaveTextContent('1 of 2');
         expect(stores.view.getState().step).toBe('analyses');
@@ -416,7 +472,7 @@ describe('done means judged, accepted or rejected', () => {
     it('counts a rejected link in the relationships step', () => {
         const { stores } = setup('analyses');
         reject(stores, { kind: 'relationship', entity: 'a_1', path: 'acquisitions', target_entity: 'acq_1' });
-        expect(stepButton(/^Relationships/)).toHaveTextContent('1 of 3');
+        expect(stepButton(/^Relationships/)).toHaveTextContent('1 of 2');
     });
 });
 
@@ -426,11 +482,11 @@ describe('the relationship audit with hidden analyses and self links', () => {
         act(() => stores.view.getState().toggleNonCoordinate());
         const rows = within(screen.getByRole('table', { name: 'relationship audit' }))
             .getAllByRole('rowheader')
-            .map((h) => h.textContent);
+            .map((h) => h.querySelector('.rv-row-name')?.textContent);
         expect(rows).toEqual(['Patients > Controls', 'Controls > Patients', 'No coordinates']);
     });
 
-    it('refuses an analysis linking to itself, and shows the mirror it names', () => {
+    it('leaves an analysis’s mirror out of the matrix, to its card', () => {
         const mirrored = makeBundle(
             {
                 analyses: [
@@ -443,9 +499,8 @@ describe('the relationship audit with hidden analyses and self links', () => {
         );
         const view = renderWithStores(<ReviewScreen />, mirrored);
         act(() => view.stores.view.getState().setStep('relationships'));
-        const audit = screen.getByRole('table', { name: 'relationship audit' });
-        expect(within(audit).getByRole('button', { name: 'First → First' })).toBeDisabled();
-        expect(within(audit).getByRole('button', { name: 'First → Second' })).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.queryByRole('table', { name: 'relationship audit' })).toBeNull();
+        expect(screen.getByText('No links to audit.')).toBeInTheDocument();
     });
 });
 
@@ -483,9 +538,9 @@ describe('step 4, a leftover that something links to', () => {
         const { stores } = open();
         expect(cardNames('leftovers')).toEqual(['acq_x', 'dev_x']);
         fireEvent.click(within(actions()).getByRole('button', { name: 'Delete' }));
-        const dialog = screen.getByRole('dialog', { name: 'Delete dev_x?' });
+        const dialog = screen.getByRole('dialog', { name: 'Delete Philips, Achieva?' });
         expect(within(dialog).getByRole('list', { name: 'dangling links' })).toHaveTextContent(
-            'Spare scan · device → dev_x'
+            'Spare scan · Device → Philips, Achieva'
         );
         fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
         expect(pending(stores)).toEqual([{ type: 'delete_entity', target: { kind: 'entity', entity: 'dev_x' } }]);
@@ -494,9 +549,9 @@ describe('step 4, a leftover that something links to', () => {
     it('merges into a linked entity: re-points the link, copies the one slot ticked, deletes it, as one batch', () => {
         const { stores } = open();
         fireEvent.click(within(actions()).getByRole('button', { name: 'Merge into…' }));
-        const dialog = screen.getByRole('dialog', { name: 'Merge dev_x into…' });
+        const dialog = screen.getByRole('dialog', { name: 'Merge Philips, Achieva into…' });
         fireEvent.click(within(dialog).getByRole('radio', { name: 'dev_a' }));
-        fireEvent.click(within(dialog).getByRole('checkbox', { name: 'model' }));
+        fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Model' }));
         fireEvent.click(within(dialog).getByRole('button', { name: 'Merge' }));
         const device = (type: 'unlink' | 'link', target_entity: string) => ({
             type,
@@ -528,7 +583,7 @@ describe('step 4, a leftover that something links to', () => {
     it('refreshes what the merge dialog offers when the record changes under it', () => {
         const { stores } = open();
         fireEvent.click(within(actions()).getByRole('button', { name: 'Merge into…' }));
-        const dialog = screen.getByRole('dialog', { name: 'Merge dev_x into…' });
+        const dialog = screen.getByRole('dialog', { name: 'Merge Philips, Achieva into…' });
         expect(within(dialog).getByRole('radio', { name: 'dev_a' })).toBeInTheDocument();
         const without = (id: string): typeof linkedBundle => ({
             ...linkedBundle,
@@ -567,7 +622,7 @@ describe('the steps in a read-only tab', () => {
 
     it('disables the audit’s link toggles', () => {
         readOnly('relationships');
-        expect(screen.getByRole('button', { name: 'Patients > Controls → Controls' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Patients > Controls → fMRI' })).toBeDisabled();
     });
 
     it('disables the leftover actions', () => {
@@ -582,5 +637,86 @@ describe('the steps in a read-only tab', () => {
         act(() => stores.view.getState().focusEntity('a_1'));
         expect(screen.getByRole('button', { name: 'fMRI' })).toBeInTheDocument();
         expect(screen.queryByLabelText('unlink fMRI')).not.toBeInTheDocument();
+    });
+});
+
+describe('one count per step (image-12)', () => {
+    const stepButton = (name: RegExp) => screen.getByRole('button', { name });
+    const heading = () => screen.getByRole('heading', { name: /^analyses · / });
+
+    it('counts what the step asks the reviewer to judge, the same in the step bar and the card list', () => {
+        const { stores } = setup('analyses');
+        expect(stepButton(/^Analyses/)).toHaveTextContent('0 of 2');
+        expect(heading()).toHaveTextContent('analyses · 0 of 2 done');
+        act(() => stores.view.getState().toggleNonCoordinate());
+        expect(cardNames('analyses')).toEqual(['a_1', 'a_2', 'a_h']);
+        expect(stepButton(/^Analyses/)).toHaveTextContent('0 of 2');
+        expect(heading()).toHaveTextContent('analyses · 0 of 2 done');
+    });
+});
+
+describe('moving on when a step is done (image-6)', () => {
+    const judgeAll = (stores: ReviewStores, ids: string[]) =>
+        ids.forEach((id) => act(() => void acceptTarget(stores, { kind: 'entity', entity: id })));
+
+    it('offers the next step once the step’s last item is judged, and goes there', () => {
+        const { stores } = setup('analyses');
+        expect(screen.queryByRole('button', { name: 'Next: Entities →' })).not.toBeInTheDocument();
+        judgeAll(stores, ['a_1']);
+        expect(screen.queryByRole('button', { name: 'Next: Entities →' })).not.toBeInTheDocument();
+        judgeAll(stores, ['a_2']);
+        fireEvent.click(screen.getByRole('button', { name: 'Next: Entities →' }));
+        expect(stores.view.getState().step).toBe('entities');
+    });
+
+    it('marks a done step with a check in the step bar', () => {
+        const { stores } = setup('analyses');
+        const analysesStep = () => screen.getByRole('button', { name: /^Analyses/ });
+        expect(analysesStep().querySelector('.Mui-completed')).toBeNull();
+        judgeAll(stores, ['a_1']);
+        expect(analysesStep()).toHaveTextContent('1 of 2');
+        expect(analysesStep().querySelector('.Mui-completed')).toBeNull();
+        judgeAll(stores, ['a_2']);
+        expect(analysesStep().querySelector('.Mui-completed')).not.toBeNull();
+    });
+});
+
+describe('a hint per step', () => {
+    beforeEach(() => localStorage.clear());
+    const hint = () => screen.queryByRole('note', { name: 'what this step is for' });
+
+    it('says in one line what the step is for', () => {
+        setup('leftovers');
+        expect(hint()).toHaveTextContent('Tables and entities no analysis uses: keep, link, merge or delete each.');
+    });
+
+    it('stays dismissed for that step, here and when the review is opened again', () => {
+        const { stores, unmount } = setup('analyses');
+        fireEvent.click(within(hint()!).getByRole('button', { name: 'dismiss' }));
+        expect(hint()).toBeNull();
+        act(() => stores.view.getState().setStep('entities'));
+        expect(hint()).not.toBeNull();
+        unmount();
+        setup('analyses');
+        expect(hint()).toBeNull();
+    });
+});
+
+describe('a leftover table card', () => {
+    const tableText = 'Intro.\n\nTable 1\nGroup\tn\nSAD\t174\n\nMore text.';
+    const tableBundle = makeBundle(
+        { tables: [{ local_id: 'tbl1', table_number: ev('Table 1'), caption: ev('Sample composition.') }] },
+        tableText,
+        {
+            entities: entityRows(row('tbl1', 'Table', 'tables')),
+            parsed_paper: { bibliography: { title: 'A paper' }, tables: [{ table_id: 't1', label: 'Table 1' }] },
+        }
+    );
+
+    it('scrolls the paper to its table, though the card has no evidence', () => {
+        const { stores } = renderWithStores(<ReviewScreen />, tableBundle);
+        act(() => stores.view.getState().setStep('leftovers'));
+        act(() => stores.view.getState().focusEntity('tbl1'));
+        expect(stores.view.getState().reveal?.span[0]).toBe(tableText.indexOf('Group\tn'));
     });
 });

@@ -1,12 +1,13 @@
 import type { RecordIndex, SlotNode } from '../model/record';
 import { currentAnalyses, entitiesNaming, guidedOrder, type CoordinateAnalysis } from '../model/coordinates';
 import { focusedAnalysis } from '../model/coordinateFocus';
+import type { Reason as ReasonOf } from '../review/reason';
 import { slotKey } from '../model/targetKey';
 import { canAddEvidence, type SessionState } from '../store/sessionStore';
 import type { ViewState } from '../store/viewStore';
 
-export type Session = Pick<SessionState, 'bundle' | 'pending'>;
-export type View = Pick<ViewState, 'coordinates' | 'merging'>;
+export type CoordinateSession = Pick<SessionState, 'bundle' | 'pending'>;
+export type CoordinateView = Pick<ViewState, 'coordinates' | 'merging'>;
 
 /** Whether a coordinate op waits for its result; until it lands no key the client holds can be trusted. */
 export const coordinatePending = (s: Pick<SessionState, 'pending'>) => s.pending.some((op) => op.type === 'coordinate');
@@ -38,13 +39,13 @@ export const moveTargets = (
 /** The analyses a merge joins: those selected and the focused one, in guided order; the first takes the others. */
 export function mergeSet(
     { bundle }: Pick<SessionState, 'bundle'>,
-    { coordinates, merging }: View
+    { coordinates, merging }: CoordinateView
 ): CoordinateAnalysis[] {
     const chosen = new Set([...merging, ...(coordinates ? [coordinates.analysis] : [])]);
     return guidedOrder(currentAnalyses(bundle), true).filter((analysis) => chosen.has(analysis.key));
 }
 
-/** The record slot holding an entity's name. */
+/** The record slot holding an entity's editable name: the one a rename sets, whatever other slots can name it. */
 export const NAME_SLOT = 'name';
 
 /** The name slot of the record entity naming `analysis` that takes evidence, if one does. */
@@ -54,12 +55,12 @@ export function namingSlot(index: RecordIndex, analysis: CoordinateAnalysis): Sl
         .find(canAddEvidence);
 }
 
-type Reason = (session: Session, view: View) => string | undefined;
+type Reason = ReasonOf<CoordinateSession, CoordinateView>;
 
 const PENDING = 'Wait for the coordinate change to save';
 const NO_ANALYSIS = 'Focus an analysis first';
 
-const pointCount = (session: Session, view: View) =>
+const pointCount = (session: CoordinateSession, view: CoordinateView) =>
     focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates })?.points?.length ?? 0;
 
 /** Why an action cannot act on the focused analysis now, after `more` says what else it needs; undefined when it can. */
