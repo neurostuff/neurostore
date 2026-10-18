@@ -179,7 +179,6 @@ def parsed_paper(pmid="12345678", corrections=None):
     unlicensed = {"license_id": "all-rights-reserved", "determination": "assumed"}
     document["text_copy"] = {
         "route": "pmc",
-        "version": "vor",
         "access": "public",
         "license": unlicensed,
     }
