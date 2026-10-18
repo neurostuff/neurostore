@@ -7,6 +7,7 @@ import { renderWithStores } from '../test/render';
 import { answerPending, withoutIds } from '../test/undoHelpers';
 import { ReviewScreen } from './ReviewScreen';
 import { focusedSpans } from '../test/stores';
+import { GROUP_REFERENCE, referencingBundle } from '../test/storeFixture';
 
 // Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
 vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
@@ -499,5 +500,44 @@ describe('evidence span keys', () => {
             .getAllByRole('row')
             .map((row) => row.firstElementChild?.textContent);
         expect(keys).toEqual(expect.arrayContaining(SPAN_KEYS.map(([key]) => key)));
+    });
+});
+
+describe('a focused reference field', () => {
+    const focusGroup = () => {
+        const view = renderWithStores(
+            <ReviewScreen />,
+            referencingBundle(record, TEXT, entities, { groups: [{ group: 'grp_a' }] })
+        );
+        act(() => view.stores.view.getState().focusSlot(GROUP_REFERENCE));
+        return view;
+    };
+
+    it('] and [ step through the referenced entity’s evidence', () => {
+        const { stores } = focusGroup();
+        expect(screen.getByText('evidence 1 of 3')).toBeInTheDocument();
+        press(']');
+        expect(stores.view.getState().reveal?.span).toEqual(at('patients'));
+        press(']');
+        expect(stores.view.getState().reveal?.span).toEqual(at('scanner'));
+        press('[');
+        expect(screen.getByText('evidence 2 of 3')).toBeInTheDocument();
+    });
+
+    it('Backspace and the span keys leave the referenced entity’s evidence alone', () => {
+        const { stores } = focusGroup();
+        const before = stores.session.getState().index.entity('grp_a')!.spans;
+        for (const key of [',', '.', 'Backspace']) press(key);
+        press('<', { shiftKey: true });
+        expect(stores.session.getState().pending).toEqual([]);
+        expect(stores.session.getState().index.entity('grp_a')!.spans).toEqual(before);
+    });
+
+    it('`e` adds nothing', () => {
+        const { stores } = focusGroup();
+        act(() => stores.view.getState().setSelection(at('controls')));
+        press('e');
+        expect(stores.session.getState().pending).toEqual([]);
+        expect(stores.session.getState().index.slot(GROUP_REFERENCE)?.spans).toEqual([]);
     });
 });

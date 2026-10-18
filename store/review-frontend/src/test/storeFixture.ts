@@ -1,4 +1,4 @@
-import type { StoredOp } from '../contract/generated/review-bundle';
+import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
 import { createReviewStores } from '../store/reviewStores';
 import { entityRows, ev, makeBundle, notReported, row } from './bundles';
 
@@ -58,3 +58,19 @@ export function setup() {
     });
     return createReviewStores(bundle);
 }
+
+/** The key of the group reference field of the analysis `referencingBundle` adds. */
+export const GROUP_REFERENCE = 'slot:a_1:groups[#0].group';
+
+/** A bundle of `base` and the entity rows `rows`, with the analysis a_1 added, holding the slots `analysis` gives. */
+export const referencingBundle = (
+    base: Record<string, unknown>,
+    text: string,
+    rows: ReviewBundle['entities'],
+    analysis: Record<string, unknown>,
+    overrides: Partial<ReviewBundle> = {}
+) =>
+    makeBundle({ ...base, analyses: [{ local_id: 'a_1', ...analysis }] }, text, {
+        ...overrides,
+        entities: [...rows, row('a_1', 'Analysis', 'analyses')],
+    });

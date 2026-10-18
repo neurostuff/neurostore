@@ -56,3 +56,13 @@ test('text selected inside a sentence several other fields use is added to the f
     ]);
     expect(await focusHighlight(page)).toEqual(['SAD-patients and', 'larger putamen volume']);
 });
+
+test('focusing a reference field highlights the evidence of the entity it references', async ({ page }) => {
+    await serve(page);
+    await page.goto('/review/e2e/index.html?paper=P3');
+    await page.getByRole('button', { name: 'Next: Analyses →' }).click({ timeout: 20_000 });
+    await page.locator('[data-slot-key="slot:ana_1:groups[#0].group"] .rv-slot-label').click();
+    await expect
+        .poll(() => focusHighlight(page))
+        .toEqual(['We scanned 251 SAD-patients and 213 HC-participants.', '31.2 years']);
+});

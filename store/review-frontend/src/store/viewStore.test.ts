@@ -1,8 +1,9 @@
-import { entityRows, makeBundle, row } from '../test/bundles';
+import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { createReviewStores } from './reviewStores';
 import { openPanelOn } from '../inspector/openPanel';
 import { evidenceCursor, focusedSpans, shownIndex } from '../test/stores';
-import { TEXT, record, setup } from '../test/storeFixture';
+import { GROUP_REFERENCE, TEXT, record, referencingBundle, setup } from '../test/storeFixture';
+import { selectFocusedSpans } from './viewSelectors';
 
 describe('navigating the view', () => {
     it('starts on the first entity, focused by its target key', () => {
@@ -121,11 +122,11 @@ describe('inspector panels and links', () => {
                 entities: entityRows(row('grp_a', 'Group', 'groups'), row('a_1', 'Analysis', 'analyses')),
             })
         );
-        store.view.getState().focusLink('slot:a_1:groups[#0].group', 'grp_a');
+        store.view.getState().focusLink(GROUP_REFERENCE, 'grp_a');
         expect(store.view.getState().focus).toEqual({
             entity: 'a_1',
             key: 'relationship:a_1:groups[#0].group:grp_a',
-            slot: 'slot:a_1:groups[#0].group',
+            slot: GROUP_REFERENCE,
         });
     });
 });
@@ -139,5 +140,103 @@ describe('non-coordinate analyses in the view', () => {
         expect(visible()).toContain('a_hidden');
         store.view.getState().toggleNonCoordinate();
         expect(visible()).not.toContain('a_hidden');
+    });
+});
+
+describe('focusing a reference field', () => {
+    const referencing = (analysis: Record<string, unknown>, hidden: string[] = []) =>
+        createReviewStores(
+            referencingBundle(
+                {
+                    ...record,
+                    acquisitions: [
+                        { local_id: 'acq_1', name: ev('Scan', [[100, 104]]) },
+                        { local_id: 'acq_2', name: ev('Rest', [[20, 24]]), description: ev('d', [[100, 104]]) },
+                    ],
+                },
+                TEXT,
+                entityRows(
+                    row('grp_a', 'Group', 'groups'),
+                    row('grp_b', 'Group', 'groups'),
+                    row('acq_1', 'Acquisition', 'acquisitions'),
+                    row('acq_2', 'Acquisition', 'acquisitions')
+                ),
+                analysis,
+                { hidden: { analyses: [], entities: hidden } }
+            )
+        );
+
+    it('highlights every span of the entity it references', () => {
+        const store = referencing({ groups: [{ group: 'grp_a' }] });
+        store.view.getState().focusSlot(GROUP_REFERENCE);
+        expect(focusedSpans(store)).toEqual([
+            [5, 9],
+            [50, 58],
+            [90, 95],
+        ]);
+    });
+
+    it('highlights the union of several references in reading order, each span once', () => {
+        const store = referencing({ acquisitions: ['acq_1', 'acq_2'] });
+        store.view.getState().focusSlot('slot:a_1:acquisitions');
+        expect(focusedSpans(store)).toEqual([
+            [20, 24],
+            [100, 104],
+        ]);
+    });
+
+    it('gives the same spans to two reads of the same index and focus', () => {
+        const store = referencing({ groups: [{ group: 'grp_a' }] });
+        store.view.getState().focusSlot(GROUP_REFERENCE);
+        const session = store.session.getState();
+        const view = store.view.getState();
+        expect(selectFocusedSpans(session, view)).toBe(selectFocusedSpans(session, { ...view }));
+    });
+
+    it('takes nothing from a hidden entity', () => {
+        const store = referencing({ acquisitions: ['acq_1', 'acq_2'] }, ['acq_2']);
+        store.view.getState().focusSlot('slot:a_1:acquisitions');
+        expect(focusedSpans(store)).toEqual([[100, 104]]);
+    });
+
+    it('takes nothing from a missing entity', () => {
+        const store = referencing({ acquisitions: ['acq_1', 'acq_gone'] });
+        store.view.getState().focusSlot('slot:a_1:acquisitions');
+        expect(focusedSpans(store)).toEqual([[100, 104]]);
+    });
+
+    it('gives each reference field its own spans in one index', () => {
+        const store = referencing({ groups: [{ group: 'grp_a' }], acquisitions: ['acq_1', 'acq_2'] });
+        store.view.getState().focusSlot(GROUP_REFERENCE);
+        expect(focusedSpans(store)).toEqual([
+            [5, 9],
+            [50, 58],
+            [90, 95],
+        ]);
+        store.view.getState().focusSlot('slot:a_1:acquisitions');
+        expect(focusedSpans(store)).toEqual([
+            [20, 24],
+            [100, 104],
+        ]);
+    });
+
+    it('includes evidence added to the referenced entity since the field was last focused', () => {
+        const store = referencing({ groups: [{ group: 'grp_a' }] });
+        store.view.getState().focusSlot(GROUP_REFERENCE);
+        store.view.getState().focusSlot('slot:grp_a:name');
+        store.session.getState().addEvidence('slot:grp_a:name', [120, 130], 0);
+        store.view.getState().focusSlot(GROUP_REFERENCE);
+        expect(focusedSpans(store)).toEqual([
+            [5, 9],
+            [50, 58],
+            [90, 95],
+            [120, 130],
+        ]);
+    });
+
+    it('asks the text to reveal the first referenced span on focus', () => {
+        const store = referencing({ groups: [{ group: 'grp_a' }] });
+        store.view.getState().focusSlot(GROUP_REFERENCE);
+        expect(store.view.getState().reveal?.span).toEqual([5, 9]);
     });
 });

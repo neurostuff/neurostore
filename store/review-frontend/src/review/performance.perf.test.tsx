@@ -1,10 +1,12 @@
 import { act, fireEvent } from '@testing-library/react';
 import { currentAnalyses } from '../model/coordinates';
+import type { SlotNode } from '../model/record';
 import { selectDiff } from '../store/diffSelectors';
 import { createReviewStores } from '../store/reviewStores';
 import { hasFixture, loadFixture } from '../test/bundles';
 import { registeredSpans } from '../test/highlights';
 import { renderWithStores } from '../test/render';
+import { focusedSpans } from '../test/stores';
 import { RelationshipAudit } from './RelationshipAudit';
 import { ReviewScreen } from './ReviewScreen';
 import { buildPaletteIndex, searchPalette } from './search';
@@ -68,6 +70,32 @@ describe.skipIf(!hasFixture(HEAVY))(`focus performance on ${HEAVY}’s heaviest 
                 return elapsed;
             });
             expect(median(timings)).toBeLessThan(BUDGET_MS);
+        },
+        RENDER_TIMEOUT_MS
+    );
+
+    it(
+        `focuses each of the 3 reference fields with the most referenced spans within ${BUDGET_MS} ms`,
+        () => {
+            const { stores, textRoot, index, slots } = open(HEAVY);
+            const referenced = (slot: SlotNode) =>
+                slot.references.reduce((n, id) => n + (index.entity(id)?.spans.length ?? 0), 0);
+            const heaviest = index.visible
+                .flatMap((e) => e.slots)
+                .filter((s) => s.kind === 'reference')
+                .sort((a, b) => referenced(b) - referenced(a))
+                .slice(0, 3);
+            expect(heaviest.length).toBeGreaterThan(0);
+            const elsewhere = slots[slots.length - 1];
+            for (const slot of heaviest) {
+                const timings = Array.from({ length: RUNS }, () => {
+                    act(() => stores.view.getState().focusSlot(elsewhere.key));
+                    return timed(() => stores.view.getState().focusSlot(slot.key));
+                });
+                expect(registeredSpans('rv-focus', textRoot())).toEqual(focusedSpans(stores));
+                expect(focusedSpans(stores).length).toBeGreaterThan(0);
+                expect(median(timings), `${slot.key}, ${focusedSpans(stores).length} spans`).toBeLessThan(BUDGET_MS);
+            }
         },
         RENDER_TIMEOUT_MS
     );

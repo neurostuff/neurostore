@@ -5,6 +5,7 @@ import { renderWithStores } from '../test/render';
 import { TextIndex } from './TextIndex';
 import { TextPane } from './TextPane';
 import { selectText } from '../test/selection';
+import { GROUP_REFERENCE, referencingBundle } from '../test/storeFixture';
 
 const TEXT = '# A paper\n\nWe scanned twenty patients on a 3 T scanner.\n\nControls were matched for age.\n';
 const at = (word: string): [number, number] => [TEXT.indexOf(word), TEXT.indexOf(word) + word.length];
@@ -72,6 +73,15 @@ describe('TextPane highlights', () => {
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('Controls'), at('age')]);
         act(() => stores.view.getState().focusEntity('grp_a'));
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('A paper'), at('twenty'), at('patients')]);
+    });
+
+    it('registers every span of the entity a focused reference field references as the focus highlight', () => {
+        const { stores, textRoot } = renderWithStores(
+            <TextPane />,
+            referencingBundle(record, TEXT, entities, { groups: [{ group: 'grp_b' }] })
+        );
+        act(() => stores.view.getState().focusSlot(GROUP_REFERENCE));
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('Controls'), at('age')]);
     });
 
     it('keeps the underlines right after evidence is added and focus moves on', () => {

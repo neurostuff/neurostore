@@ -8,6 +8,7 @@ import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
 import { registeredSpans } from '../test/highlights';
 import { renderThroughServer, renderWithStores } from '../test/render';
+import { GROUP_REFERENCE, referencingBundle } from '../test/storeFixture';
 import { TextIndex } from './TextIndex';
 import { TextPane } from './TextPane';
 
@@ -116,6 +117,28 @@ describe('span handles', () => {
         act(() => stores.view.getState().focusSlot('slot:grp_a:region'));
         expect(handle('start')).toBeNull();
         expect(handle('end')).toBeNull();
+    });
+
+    it('shows no handles nor remove control on the referenced entity’s spans while a reference field is focused', () => {
+        const view = renderWithStores(
+            <TextPane />,
+            referencingBundle(
+                record,
+                TEXT,
+                entities,
+                { groups: [{ group: 'grp_a' }] },
+                {
+                    parsed_paper: PAPER,
+                    review: { ...review },
+                }
+            )
+        );
+        placeRects(view.textRoot);
+        act(() => view.stores.view.getState().focusSlot(GROUP_REFERENCE));
+        expect(registeredSpans('rv-focus', view.textRoot())).not.toEqual([]);
+        expect(handle('start')).toBeNull();
+        expect(handle('end')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'remove this evidence span' })).toBeNull();
     });
 
     it('drags the end to the end of the word it is dropped in, previewing it, in one edit', () => {
