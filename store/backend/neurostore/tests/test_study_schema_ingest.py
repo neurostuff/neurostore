@@ -1358,6 +1358,119 @@ def test_parse_without_parsed_paper_leaves_retraction_unknown(session):
     assert BaseStudy.query.get(summary["base_study_id"]).is_retracted is None
 
 
+def test_the_parse_header_names_the_base_study_it_updates(session):
+    held = BaseStudy(name="Held", level="group", pmid="55555555")
+    db.session.add(held)
+    db.session.flush()
+    parse = fx.parse([LOSS], pmid="66666666", base_study_id=held.id)
+
+    summary = ingest_upload({"coordinate_parse": parse})
+
+    assert summary["base_study_id"] == held.id
+    assert not BaseStudy.query.filter_by(pmid="66666666").count()
+
+
+def test_a_base_study_id_among_the_identifiers_is_refused(session):
+    held = BaseStudy(name="Held", level="group", pmid="12345678")
+    db.session.add(held)
+    db.session.flush()
+    parse = fx.parse([LOSS])
+    parse["header"]["identifiers"]["neurostore_base_study_id"] = held.id
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": parse})
+    assert error.value.status_code == 422
+    assert [(e.code, e.field) for e in error.value.errors] == [
+        ("SCHEMA", "coordinate-parse/header/identifiers")
+    ]
+
+
+# A NeuroImage paper whose text was read from its bioRxiv preprint, as ingestion
+# writes it: the preprint's DOI beside the version of record's ids, the copy's
+# own licence, and the paper's licence in the bibliography.
+PREPRINT_DOI = {"doi": "10.1101/2021.03.04.433968", "server": "biorxiv"}
+PUBLISHED_WITH_PREPRINT = fx.identifiers(
+    "77777777", doi="10.1016/j.neuroimage.2022.119000", preprint_dois=[PREPRINT_DOI]
+)
+
+
+def _parsed_paper_of_preprint_copy(identifiers):
+    paper = fx.parsed_paper()
+    paper["header"]["identifiers"] = identifiers
+    paper["text_copy"] = {
+        "route": "preprint_server",
+        "version": "submitted",
+        "preprint_server": "biorxiv",
+        "access": "public",
+        "license": {
+            "license_id": "cc-by-nc-nd",
+            "determination": "stated",
+            "stated_by": "jats",
+            "stated_as": "http://creativecommons.org/licenses/by-nc-nd/4.0/",
+        },
+    }
+    paper["bibliography"] = {
+        "title": "A paper read from its preprint",
+        "abstract": "What the paper found.",
+        "abstract_provider": "europepmc",
+        "provider": "pubmed",
+        "license": {
+            "license_id": "other",
+            "determination": "stated",
+            "stated_by": "crossref",
+            "stated_as": "https://www.elsevier.com/tdm/userlicense/1.0/",
+        },
+        "oa_status": "green",
+    }
+    return paper
+
+
+def test_a_paper_read_from_its_preprint_is_stored_under_its_version_of_record(session):
+    parse = fx.parse([LOSS], pmid="77777777")
+    parse["header"]["identifiers"] = PUBLISHED_WITH_PREPRINT
+
+    summary = ingest_upload(
+        {
+            "coordinate_parse": parse,
+            "parsed_paper": _parsed_paper_of_preprint_copy(PUBLISHED_WITH_PREPRINT),
+        }
+    )
+
+    base = BaseStudy.query.get(summary["base_study_id"])
+    assert (base.doi, base.pmid, base.pmcid) == (
+        "10.1016/j.neuroimage.2022.119000",
+        "77777777",
+        None,
+    )
+    assert (base.name, base.description) == (
+        "A paper read from its preprint",
+        "What the paper found.",
+    )
+    stored = PipelineStudyResult.query.filter_by(base_study_id=base.id).one()
+    assert stored.result_data["header"]["identifiers"]["preprint_dois"] == [PREPRINT_DOI]
+
+
+def test_a_paper_known_only_by_its_preprint_is_refused_a_base_study(session):
+    preprint_only = {
+        "preprint_dois": [PREPRINT_DOI],
+        "preprint_pmid": "33758917",
+        "publication_status": "preprint",
+    }
+    parse = fx.parse([LOSS])
+    parse["header"]["identifiers"] = preprint_only
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(
+            {
+                "coordinate_parse": parse,
+                "parsed_paper": _parsed_paper_of_preprint_copy(preprint_only),
+            }
+        )
+    assert error.value.status_code == 400
+    assert [e.field for e in error.value.errors] == ["coordinate_parse/header/identifiers"]
+    assert not BaseStudy.query.filter_by(pmid="33758917").count()
+
+
 def test_inverse_half_takes_the_original_halfs_outcome(session):
     revision, original, inverse, merged = _revision()
     ingest_upload({"coordinate_parse": ORIGINAL})

@@ -396,10 +396,9 @@ def _check_verdicts(revision, revised):
 
 
 def _resolve_base_study(body, parse, parsed_paper, create):
-    identifiers = {}
-    if parse is not None:
-        identifiers = parse["header"]["identifiers"] or {}
-    base_study_id = body.get("base_study_id") or identifiers.get("neurostore_base_study_id")
+    header = {} if parse is None else parse["header"]
+    identifiers = header.get("identifiers") or {}
+    base_study_id = body.get("base_study_id") or header.get("neurostore_base_study_id")
     if base_study_id:
         base_study = db.session.get(BaseStudy, base_study_id)
         if base_study is None:
@@ -467,10 +466,10 @@ def _bibliography(parsed_paper):
     authors = [a.get("name") if isinstance(a, dict) else a for a in bib.get("authors") or []]
     # NOTE (licensing, 2026-10-16): the abstract is stored and shown whatever its
     # licence. Open question: should an abstract whose licence does not permit
-    # redistribution be hidden? study_schema will carry the paper's licence and a
-    # redistribution rule (study_schema.licensing.permits_redistribution); decide
-    # here once it does. Tracked in the pipeline work plan; do not open an issue
-    # for this.
+    # redistribution be hidden? study_schema now carries the paper's licence
+    # (bibliography.license) and the rule
+    # (study_schema.licensing.abstract_may_be_redistributed); decide here. Tracked in
+    # the pipeline work plan; do not open an issue for this.
     fields = {
         "name": bib.get("title"),
         "description": bib.get("abstract"),

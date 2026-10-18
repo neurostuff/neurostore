@@ -65,14 +65,27 @@ def text_analysis(spans, name, points=(), role="result", space="MNI"):
     })
 
 
-def parse(analyses, pmid="12345678", revision_of=None, verdicts=None, producer="ingestion"):
+def identifiers(pmid="12345678", **fields):
+    """A published paper's header identifiers; ``fields`` adds or overrides one."""
+    return {"pmid": pmid, "publication_status": "published", **fields}
+
+
+def parse(
+    analyses,
+    pmid="12345678",
+    revision_of=None,
+    verdicts=None,
+    producer="ingestion",
+    base_study_id=None,
+):
     document = {
         "header": {
             "artifact_kind": "coordinate_parse",
             "schema_version": SCHEMA_VERSION,
             "article_id": f"art-{pmid}",
-            "identifiers": {"pmid": pmid},
+            "identifiers": identifiers(pmid),
             "producer": {"name": producer, "version": "1.0.0", "stage": "analyses"},
+            "neurostore_base_study_id": base_study_id,
         },
         "parse_id": hashlib.sha256(
             json.dumps(analyses, sort_keys=True).encode("utf-8")
@@ -162,8 +175,15 @@ def parsed_paper(pmid="12345678", corrections=None):
     """A minimal parsed paper; ``corrections`` are its bibliography's notices."""
     schema = load("parsed-paper")
     document = _minimal(schema, schema["$defs"])
-    document["header"]["identifiers"] = {"pmid": pmid}
-    document["bibliography"] = {"title": "A paper"}
+    document["header"]["identifiers"] = identifiers(pmid)
+    unlicensed = {"license_id": "all-rights-reserved", "determination": "assumed"}
+    document["text_copy"] = {
+        "route": "pmc",
+        "version": "vor",
+        "access": "public",
+        "license": unlicensed,
+    }
+    document["bibliography"] = {"title": "A paper", "license": unlicensed}
     if corrections is not None:
         document["bibliography"]["corrections"] = corrections
     return document
