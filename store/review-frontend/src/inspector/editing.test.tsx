@@ -1,6 +1,9 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import type { Op } from '../contract/generated/review-ops';
+import { setSchemas } from '../contract/schemas';
+import type { Schema } from '../model/schema';
 import { ReviewScreen } from '../review/ReviewScreen';
+import { GOLDEN_SCHEMAS } from '../test/goldenSchemas';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { renderWithStores } from '../test/render';
 import { validateOpBatch } from '../test/schemas';
@@ -576,6 +579,91 @@ describe('creating, and the actions for a pointer', () => {
             parent: 'study',
             list: 'acquisitions',
             entity: { acquisition_type: 'EEG' },
+        });
+    });
+
+    it('does not offer a new analysis where there is no measure for it, saying why', async () => {
+        const { pending, viewState } = setup();
+        act(() => viewState().focusEntity('a_1'));
+        const toolbar = screen.getByRole('toolbar', { name: 'review actions' });
+        const button = within(toolbar).getByRole('button', { name: 'New entity' });
+        expect(button).toBeDisabled();
+        fireEvent.mouseOver(button.parentElement!);
+        expect((await screen.findByRole('tooltip')).textContent).toBe('Add a measure first: an analysis needs one');
+        press('c', {}, document.body);
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(pending()).toEqual([]);
+    });
+
+    it('C asks which measure a new analysis takes when its sibling has none and there are several', () => {
+        const withMeasures = {
+            ...record,
+            measures: [
+                { local_id: 'mea_1', name: ev('BOLD') },
+                { local_id: 'mea_2', name: ev('CBF') },
+            ],
+            model_estimations: [{ local_id: 'me_1', name: ev('GLM') }],
+        };
+        const view = renderWithStores(
+            <ReviewScreen />,
+            makeBundle(withMeasures, TEXT, {
+                entities: [
+                    ...entities,
+                    row('mea_1', 'Measure', 'measures'),
+                    row('mea_2', 'Measure', 'measures'),
+                    row('me_1', 'ModelEstimation', 'model_estimations'),
+                ],
+                review: { ...review },
+            })
+        );
+        act(() => view.stores.view.getState().focusEntity('a_1'));
+        press('c', {}, document.body);
+        const input = within(screen.getByRole('dialog')).getByRole('combobox', { name: 'measure of the new analysis' });
+        fireEvent.change(input, { target: { value: 'C' } });
+        fireEvent.click(screen.getByRole('option', { name: 'CBF' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(view.stores.session.getState().pending.at(-1)).toMatchObject({
+            type: 'create_entity',
+            list: 'analyses',
+            entity: { measure: 'mea_2', model_estimation: 'me_1' },
+        });
+    });
+
+    it('the kinds dialog disables a kind it cannot make, saying why, and asks for a reference after a kind is chosen', () => {
+        const golden = GOLDEN_SCHEMAS['extraction-record'];
+        const defs = golden.$defs as Record<string, Schema>;
+        const needing = (name: string, property: string, schema: Schema) => ({
+            ...defs[name],
+            properties: { ...(defs[name].properties as Schema), [property]: schema },
+            required: [...(defs[name].required as string[]), property],
+        });
+        setSchemas({
+            ...GOLDEN_SCHEMAS,
+            'extraction-record': {
+                ...golden,
+                $defs: {
+                    ...defs,
+                    EEG: needing('EEG', 'device', { type: 'string', 'x-reference': 'Device' }),
+                    PET: needing('PET', 'cohort', { type: 'string', 'x-reference': 'Group' }),
+                },
+            },
+        });
+        const { last, viewState } = setup();
+        act(() => viewState().focusEntity('acq_1'));
+        press('c', {}, document.body);
+        const kinds = within(screen.getByRole('dialog')).getByRole('list', { name: 'kinds' });
+        const eeg = within(kinds).getByRole('button', { name: 'EEG' });
+        expect(eeg).toBeDisabled();
+        expect(eeg).toHaveAttribute('title', 'Add a device first: an EEG needs one');
+        fireEvent.click(within(kinds).getByRole('button', { name: 'PET' }));
+        const input = within(screen.getByRole('dialog')).getByRole('combobox', { name: 'cohort of the new PET' });
+        fireEvent.change(input, { target: { value: 'Con' } });
+        fireEvent.click(screen.getByRole('option', { name: 'Controls' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(last()).toMatchObject({
+            type: 'create_entity',
+            list: 'acquisitions',
+            entity: { acquisition_type: 'PET', cohort: 'grp_b' },
         });
     });
 

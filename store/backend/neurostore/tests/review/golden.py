@@ -24,6 +24,8 @@ BUNDLE = ROOT / "review-frontend/src/test/golden/bundle.json"
 OPS = BUNDLE.with_name("ops.json")
 DIFF_BUNDLE = BUNDLE.with_name("diff-bundle.json")
 DIFF_VERDICTS = BUNDLE.with_name("diff-verdicts.json")
+#: The create_entity the front end's New entity sends beside the golden analysis; the front end writes it.
+CREATE_ANALYSIS = BUNDLE.with_name("create-analysis.json")
 REGENERATE = (
     "regenerate it: cd store && docker compose run -e APP_ENV=docker_test -e UPDATE_GOLDEN=1 "
     '--rm neurostore bash -c "python -m pytest neurostore/tests/review"'

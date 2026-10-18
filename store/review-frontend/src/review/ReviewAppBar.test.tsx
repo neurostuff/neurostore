@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import type { ReviewApi } from '../api/reviewApi';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
@@ -94,6 +94,79 @@ describe('save notices', () => {
             'Couldn’t link Patients > Controls · Acquisitions → fMRI: the server refused this edit (structural edits need the server)'
         );
         expect(banner).not.toHaveTextContent('relationship:');
+    });
+
+    const listedBundle = () =>
+        makeBundle({ analyses: [{ local_id: 'a_1', name: ev('Patients > Controls') }] }, 'Text of the paper.', {
+            entities: entityRows(row('a_1', 'Analysis', 'analyses')),
+        });
+    const creating = (client_op_id: string): Op => ({
+        client_op_id,
+        type: 'create_entity',
+        parent: 'study',
+        list: 'analyses',
+        entity: {},
+    });
+    const required = (name: string) => `extraction-record /analyses/1: '${name}' is a required property`;
+    const linesOf = () => within(screen.getByRole('status')).getAllByRole('listitem');
+
+    it('group the problems of one refused op into one line, the raw problems behind details', () => {
+        const { stores } = renderWithStores(<SaveNotices />, listedBundle());
+        const op = creating('op-create');
+        const raw = ['measure', 'groups', 'effect', 'details', 'model_estimation'].map(required);
+        act(() => stores.session.getState().refuse(raw.map((message) => ({ op, message }))));
+        const lines = linesOf();
+        expect(lines).toHaveLength(1);
+        expect(lines[0]).toHaveTextContent(
+            /^Couldn’t add the analysis: the server needs measure, groups, effect, details and model estimation\./
+        );
+        const details = within(lines[0]).getByText('details').closest('details')!;
+        expect(details).not.toHaveAttribute('open');
+        expect(details).toHaveTextContent(raw.join(''));
+    });
+
+    it('say what the server needs, then its other problems, on one op’s line', () => {
+        const { stores } = renderWithStores(<SaveNotices />, listedBundle());
+        const op = creating('op-create');
+        const raw = [required('measure'), 'extraction-record /analyses/1/name: must be object'];
+        act(() => stores.session.getState().refuse(raw.map((message) => ({ op, message }))));
+        expect(linesOf()[0]).toHaveTextContent(
+            /^Couldn’t add the analysis: the server needs measure\. the server refused this edit \(extraction-record \/analyses\/1\/name: must be object\)details/
+        );
+    });
+
+    it('group the problems of a refused edit that creates nothing, by its target', () => {
+        const { stores } = renderWithStores(<SaveNotices />, listedBundle());
+        const op: Op = {
+            client_op_id: 'op-name',
+            type: 'set_value',
+            target: { kind: 'slot', entity: 'a_1', path: 'name' },
+            value: { extraction_status: 'extracted', value: 'x', value_source: 'reported' },
+        };
+        const raw = ['first problem', 'second problem'];
+        act(() => stores.session.getState().refuse(raw.map((message) => ({ op, message }))));
+        const lines = linesOf();
+        expect(lines).toHaveLength(1);
+        expect(lines[0]).toHaveTextContent(
+            /^Couldn’t set Patients > Controls · Name: the server refused this edit \(first problem; second problem\)/
+        );
+        expect(within(lines[0]).getByText('details')).toBeInTheDocument();
+    });
+
+    it('put two refused ops on two lines', () => {
+        const { stores } = renderWithStores(<SaveNotices />, listedBundle());
+        const [one, two] = [creating('op-one'), creating('op-two')];
+        act(() =>
+            stores.session.getState().refuse([
+                { op: one, message: required('measure') },
+                { op: two, message: required('groups') },
+                { op: one, message: required('effect') },
+            ])
+        );
+        const lines = linesOf();
+        expect(lines).toHaveLength(2);
+        expect(lines[0]).toHaveTextContent(/the server needs measure and effect\./);
+        expect(lines[1]).toHaveTextContent(/the server needs groups\./);
     });
 
     it('name each dropped op’s slot without blocking, until dismissed', () => {

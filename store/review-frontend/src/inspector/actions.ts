@@ -1,5 +1,6 @@
 import type { AnyTarget, Op, SetEvidenceOp, SetValueOp, VerdictOp } from '../contract/generated/review-ops';
-import { entityPath, getIn, ROOT_ENTITY } from '../model/paths';
+import { classWords, withArticle } from '../model/labels';
+import { entityPath, getIn, ROOT_ENTITY, writePath, type Json } from '../model/paths';
 import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
 import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } from '../model/targetKey';
 import { randomUUID } from '../model/uuid';
@@ -10,8 +11,9 @@ import {
     extractionSchema,
     type Schema,
     listClassesAt,
+    type OpenReference,
     referenceTarget,
-    requiredDefaults,
+    skeletonOf,
     titleOf,
     wrapperSchemaAt,
 } from '../model/schema';
@@ -117,26 +119,30 @@ function linkClass(s: Pick<Documents, 'bundle'>, slot: SlotNode) {
     return row && referenceTarget(row, slot.path);
 }
 
+/** The entities of class `target`, by id and name. */
+const entitiesOf = (s: Pick<Documents, 'bundle' | 'index'>, target: string) =>
+    s.bundle.entities
+        .filter((e) => e.entity_class === target || e.schema_class === target)
+        .map((e) => ({ id: e.local_id, name: s.index.entity(e.local_id)?.name ?? e.local_id }));
+
 /** The entities a reference slot can link to: of its target class, not linked already. */
 export function linkCandidates(s: Pick<Documents, 'bundle' | 'index'>, slot: SlotNode) {
     const target = linkClass(s, slot);
     if (!target) return [];
-    return s.bundle.entities
-        .filter(
-            (e) => (e.entity_class === target || e.schema_class === target) && !slot.references.includes(e.local_id)
-        )
-        .filter((e) => e.local_id !== slot.entity)
-        .map((e) => ({ id: e.local_id, name: s.index.entity(e.local_id)?.name ?? e.local_id }));
+    return entitiesOf(s, target).filter((e) => e.id !== slot.entity && !slot.references.includes(e.id));
 }
 
 type SiblingClasses = { name: string; title: string }[];
 
-const siblingsOf = new WeakMap<Schema, WeakMap<object, WeakMap<object, Map<string, SiblingClasses>>>>();
+type ByDocuments<T> = WeakMap<Schema, WeakMap<object, WeakMap<object, Map<string, T>>>>;
 
-function siblingsCache({ bundle, record }: Pick<Documents, 'bundle' | 'record'>) {
+const siblingsOf: ByDocuments<SiblingClasses> = new WeakMap();
+
+/** The values `caches` holds by entity for the schema, bundle and record now. */
+function documentsCache<T>(caches: ByDocuments<T>, { bundle, record }: Pick<Documents, 'bundle' | 'record'>) {
     const schema = extractionSchema();
-    let byBundle = siblingsOf.get(schema);
-    if (!byBundle) siblingsOf.set(schema, (byBundle = new WeakMap()));
+    let byBundle = caches.get(schema);
+    if (!byBundle) caches.set(schema, (byBundle = new WeakMap()));
     let byRecord = byBundle.get(bundle);
     if (!byRecord) byBundle.set(bundle, (byRecord = new WeakMap()));
     let byEntity = byRecord.get(record);
@@ -149,7 +155,7 @@ export function siblingClasses(
     s: Pick<Documents, 'bundle' | 'record'>,
     entity: string
 ): { name: string; title: string }[] {
-    const byEntity = siblingsCache(s);
+    const byEntity = documentsCache(siblingsOf, s);
     let classes = byEntity.get(entity);
     if (!classes) byEntity.set(entity, (classes = listSiblingClasses(s, entity)));
     return classes;
@@ -168,21 +174,51 @@ function listSiblingClasses(
     }));
 }
 
-/** Creates an entity of `className`, or of the list's only class, beside the focused entity. */
+export type NewEntity =
+    | { entity: Json }
+    | { pick: OpenReference & { candidates: { id: string; name: string }[] } }
+    | { unavailable: string };
+
+/**
+ * The entity of `className` to create beside `entity`: its skeleton, each required reference the sibling does not
+ * fill set to the one in `picked`, else to the only entity of its class; the reference to pick first where there
+ * are several, or why it cannot be made where there are none.
+ */
+export function newEntity(
+    s: Documents,
+    entity: string,
+    className: string,
+    picked: Record<string, string> = {}
+): NewEntity {
+    const skeleton = skeletonOf(extractionSchema(), className, itemOf(s, entity));
+    let made = skeleton.entity;
+    for (const open of skeleton.open) {
+        const candidates = entitiesOf(s, open.target);
+        const chosen = picked[open.path] ?? (candidates.length === 1 ? candidates[0].id : undefined);
+        if (chosen !== undefined) made = writePath(made, open.path, chosen);
+        else if (candidates.length === 0)
+            return {
+                unavailable: `Add ${withArticle(classWords(open.target))} first: ${withArticle(classWords(className))} needs one`,
+            };
+        else return { pick: { ...open, candidates } };
+    }
+    return { entity: made };
+}
+
+/** Sends `made`'s entity as a create_entity beside the focused entity; false where it is not whole or the focus is in no list. */
+export function createNew(stores: ReviewStores, made: NewEntity) {
+    const row = entityRow(stores.session.getState(), stores.view.getState().focus.entity);
+    if (!row?.parent || !row.list_path || !('entity' in made)) return false;
+    return send(stores, { type: 'create_entity', parent: row.parent, list: row.list_path, entity: made.entity });
+}
+
+/** Creates an entity of `className`, or of the list's only class, beside the focused entity, once it can be made whole. */
 export function createSibling(stores: ReviewStores, className?: string) {
     const documents = stores.session.getState();
     const { entity } = stores.view.getState().focus;
-    const row = entityRow(documents, entity);
-    if (!row?.parent || !row.list_path) return false;
     const classes = siblingClasses(documents, entity);
     const chosen = className ?? (classes.length === 1 ? classes[0].name : undefined);
-    if (chosen === undefined) return false;
-    return send(stores, {
-        type: 'create_entity',
-        parent: row.parent,
-        list: row.list_path,
-        entity: requiredDefaults(extractionSchema(), chosen),
-    });
+    return chosen !== undefined && createNew(stores, newEntity(documents, entity, chosen));
 }
 
 export const deleteEntity = (stores: ReviewStores, entity: string) =>
@@ -241,11 +277,57 @@ export function panelFor(s: Documents, focus: Focus, kind: PanelKind): Panel | u
         case 'merge_entity':
             return canDelete(focus) ? { kind, target: entity } : undefined;
         case 'create':
-            return siblingClasses(s, focus.entity).length > 1 ? { kind, target: entity } : undefined;
+            return siblingClasses(s, focus.entity).length > 1 || creatable(s, focus.entity).asks
+                ? { kind, target: entity }
+                : undefined;
     }
 }
 
-/** C: creates an entity in the focused list, or asks which class first when the list holds several. */
+/**
+ * Why an entity of `className` cannot be made beside `entity`, when it cannot. A fast path: a class whose skeleton
+ * leaves no reference open is always made, so the sibling is not read for it.
+ */
+export function cannotMake(s: Documents, entity: string, className: string): string | undefined {
+    if (skeletonOf(extractionSchema(), className).open.length === 0) return undefined;
+    const made = newEntity(s, entity, className);
+    return 'unavailable' in made ? made.unavailable : undefined;
+}
+
+interface Creatable {
+    /** Why no class the list holds can be made, when none can. */
+    reason?: string;
+    /** Whether the list's only class asks which entity a reference takes first. */
+    asks: boolean;
+}
+
+const creatableBeside: ByDocuments<Creatable> = new WeakMap();
+
+/** Whether and how an entity can be created beside `entity`, worked out once for each schema, bundle and record. */
+function creatable(s: Documents, entity: string): Creatable {
+    const byEntity = documentsCache(creatableBeside, s);
+    if (!byEntity.has(entity)) byEntity.set(entity, creatableFrom(s, entity));
+    return byEntity.get(entity)!;
+}
+
+function creatableFrom(s: Documents, entity: string): Creatable {
+    const classes = siblingClasses(s, entity);
+    if (classes.length === 0)
+        return { reason: 'Focus an entity in a list first, to add another beside it', asks: false };
+    const reasons = classes.map(({ name }) => cannotMake(s, entity, name));
+    const only = classes.length === 1 && reasons[0] === undefined ? classes[0].name : undefined;
+    return {
+        reason: reasons.every((reason) => reason !== undefined) ? reasons[0] : undefined,
+        asks:
+            only !== undefined &&
+            skeletonOf(extractionSchema(), only).open.length > 0 &&
+            'pick' in newEntity(s, entity, only),
+    };
+}
+
+/** Why no entity can be created beside `entity`: why the first class the list holds cannot be made, when none can. */
+export const cannotCreate = (s: Documents, entity: string) => creatable(s, entity).reason;
+
+/** C: creates an entity in the focused list, or asks which class, or which entity a reference takes, first. */
 export function createOn(stores: ReviewStores) {
     const view = stores.view.getState();
     const panel = panelFor(stores.session.getState(), view.focus, 'create');

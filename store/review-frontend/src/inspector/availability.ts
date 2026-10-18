@@ -2,7 +2,7 @@ import type { Reason as ReasonOf } from '../review/reason';
 import type { SessionState } from '../store/sessionStore';
 import { selectCursorSpan } from '../store/viewSelectors';
 import type { ViewState } from '../store/viewStore';
-import { panelFor, siblingClasses, targetOf, untouchedWithEvidence } from './actions';
+import { cannotCreate, panelFor, targetOf, untouchedWithEvidence } from './actions';
 
 export type RecordSession = Pick<SessionState, 'bundle' | 'record' | 'index' | 'provenance'>;
 export type RecordView = Pick<ViewState, 'focus' | 'coordinates' | 'evidenceCursor'>;
@@ -27,10 +27,7 @@ export const RECORD_UNAVAILABLE = {
         panelFor(session, view.focus, 'link')
             ? undefined
             : 'Focus a reference field first: one that names other entities',
-    create: (session, view) =>
-        siblingClasses(session, view.focus.entity).length
-            ? undefined
-            : 'Focus an entity in a list first, to add another beside it',
+    create: (session, view) => cannotCreate(session, view.focus.entity),
     moveEvidence: (session, view) =>
         selectCursorSpan(session, view)
             ? undefined

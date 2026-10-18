@@ -85,6 +85,17 @@ describe('creating with no parent', () => {
     });
 });
 
+describe('creating what the schema would refuse', () => {
+    it('sends nothing for an analysis when the record holds no measure for it', () => {
+        const store = createReviewStores(makeBundle(record, 'x'.repeat(10), { entities }));
+        store.view.getState().focusEntity('a_2');
+        const emit = vi.fn(() => true);
+        store.session.setState({ emit });
+        expect(createSibling(store, 'Analysis')).toBe(false);
+        expect(emit).not.toHaveBeenCalled();
+    });
+});
+
 describe('dangling links', () => {
     it('lists the links from elsewhere to the deleted entity and what is nested in it, not those among them', () => {
         const s = state();

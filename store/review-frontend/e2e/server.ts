@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { ApiError, type ReviewLifecycle, type SetAside } from '../src/api/reviewApi';
 import type { ReviewBundle } from '../src/contract/generated/review-bundle';
 import type { Op } from '../src/contract/generated/review-ops';
-import { memoryBackend, type OpBatch } from '../src/test/memoryBackend';
+import { memoryBackend, type MemoryOptions, type OpBatch } from '../src/test/memoryBackend';
 import { E2E_API } from './api';
 
 const file = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
@@ -14,10 +14,10 @@ type Answer = { status: number; body: unknown };
 
 /**
  * Answers the app's API requests from a memory backend over the fixture bundles, as the test server does in the
- * unit tests, and keeps the op batches it is sent.
+ * unit tests, and keeps the op batches it is sent; `createdProblems` as memoryBackend takes it.
  */
-export async function serve(page: Page) {
-    const backend = memoryBackend(async (id) => bundleOf(id));
+export async function serve(page: Page, { createdProblems }: Pick<MemoryOptions, 'createdProblems'> = {}) {
+    const backend = memoryBackend(async (id) => bundleOf(id), { createdProblems });
     const batches: Op[][] = [];
 
     async function answer(method: string, path: string, body: unknown): Promise<Answer> {

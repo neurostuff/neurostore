@@ -17,18 +17,20 @@ import {
 } from '@mui/material';
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { AnyTarget } from '../contract/generated/review-ops';
-import { slotLabel } from '../model/labels';
+import { classWords, inWords, slotLabel } from '../model/labels';
 import { canAddEvidence } from '../store/sessionStore';
 import type { RecordIndex, SlotNode, SpanPair } from '../model/record';
 import { isTextField } from '../review/shortcuts';
 import { useReviewStores, useSession, useView } from '../store/context';
 import {
     addNote,
-    createSibling,
+    cannotMake,
+    createNew,
     danglingLinks,
     deleteEntity,
     link,
     linkCandidates,
+    newEntity,
     reject,
     REJECT_REASONS,
     type RejectReason,
@@ -252,26 +254,52 @@ export function CreateDialog() {
     const closePanel = useView((s) => s.closePanel);
     const bundle = useSession((s) => s.bundle);
     const record = useSession((s) => s.record);
+    const index = useSession((s) => s.index);
     const focused = useView((s) => s.focus.entity);
     const classes = useMemo(() => siblingClasses({ bundle, record }, focused), [bundle, record, focused]);
+    const [chosen, setChosen] = useState(classes.length === 1 ? classes[0].name : undefined);
+    const [picked, setPicked] = useState<Record<string, string>>({});
+    const documents = { bundle, record, index };
+    const made = chosen === undefined ? undefined : newEntity(documents, focused, chosen, picked);
     const titleId = useId();
+    const asking = made && 'pick' in made ? made.pick : undefined;
+    const choose = (name: string) => {
+        const next = newEntity(documents, focused, name);
+        if ('pick' in next) setChosen(name);
+        else if (createNew(stores, next)) closePanel();
+    };
+    const pick = (name: string, path: string, id: string) => {
+        const next = { ...picked, [path]: id };
+        const resolved = newEntity(documents, focused, name, next);
+        if ('pick' in resolved) setPicked(next);
+        return createNew(stores, resolved);
+    };
     return (
         <Dialog open onClose={closePanel} aria-labelledby={titleId}>
-            <DialogTitle id={titleId}>Create which kind?</DialogTitle>
+            <DialogTitle id={titleId}>{asking ? `Which ${inWords(asking.path)}?` : 'Create which kind?'}</DialogTitle>
             <DialogContent>
-                <List dense aria-label="kinds">
-                    {classes.map(({ name, title }) => (
-                        <ListItem key={name} disableGutters>
-                            <Button
-                                onClick={() => {
-                                    if (createSibling(stores, name)) closePanel();
-                                }}
-                            >
-                                {title}
-                            </Button>
-                        </ListItem>
-                    ))}
-                </List>
+                {asking && chosen ? (
+                    <PickPanel
+                        options={asking.candidates}
+                        label={`${inWords(asking.path)} of the new ${classWords(chosen)}`}
+                        noOptionsText={`no ${inWords(asking.path)} to pick`}
+                        optionKey={(option) => option.id}
+                        onPick={(option) => pick(chosen, asking.path, option.id)}
+                    />
+                ) : (
+                    <List dense aria-label="kinds">
+                        {classes.map(({ name, title }) => {
+                            const reason = cannotMake(documents, focused, name);
+                            return (
+                                <ListItem key={name} disableGutters>
+                                    <Button disabled={reason !== undefined} title={reason} onClick={() => choose(name)}>
+                                        {title}
+                                    </Button>
+                                </ListItem>
+                            );
+                        })}
+                    </List>
+                )}
             </DialogContent>
             <DialogActions>
                 <Button onClick={closePanel}>Cancel</Button>

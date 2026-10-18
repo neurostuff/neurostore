@@ -11,8 +11,23 @@ export const humanize = (name: string) => {
     return words.length > 1 ? words[0].toUpperCase() + words.slice(1) : words;
 };
 
+/** A class name in words, split before each capital that follows a lower-case letter; all-capital words kept, the rest lower-case. */
+export const classWords = (name: string) =>
+    name
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .split(' ')
+        .map((word) => (/^[A-Z]+$/.test(word) ? word : word.toLowerCase()))
+        .join(' ');
+
+/** Words with `a` or `an` before them, by their first letter. */
+export const withArticle = (words: string) => `${/^[aeiou]/i.test(words) ? 'an' : 'a'} ${words}`;
+
+/** Words listed in a sentence: `a, b and c`. */
+export const listed = (words: string[]) =>
+    words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : (words[0] ?? '');
+
 /** A list's name for one of its items: `cells` → `cell`, `analyses` → `analysis`, `studies` → `study`. */
-const singular = (name: string) =>
+export const singular = (name: string) =>
     name.endsWith('ies')
         ? `${name.slice(0, -3)}y`
         : name.endsWith('yses')

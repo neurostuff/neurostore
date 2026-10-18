@@ -178,20 +178,75 @@ export const titleOf = (root: Schema, name: string) => (defOf(root, name)?.title
 
 const NOT_REPORTED = { extraction_status: 'not_reported', evidence: { status: 'not_applicable' } };
 
-/** The values a new entity of a class needs: each required wrapper not reported, each required single-value attribute its value. */
-export function requiredDefaults(root: Schema, className: string): Record<string, unknown> {
-    const def = defOf(root, className);
-    const props = asSchema(def?.properties) ?? {};
-    const required = Array.isArray(def?.required) ? (def?.required as string[]) : [];
+/** A required reference a skeleton could not fill: its path on the new entity and the class it links to. */
+export interface OpenReference {
+    path: string;
+    target: string;
+}
+
+export interface Skeleton {
+    entity: Record<string, unknown>;
+    open: OpenReference[];
+}
+
+const hasType = (schema: Schema, type: string) =>
+    schema.type === type || (Array.isArray(schema.type) && schema.type.includes(type));
+
+/** The class definition a property stands for, its anyOf or oneOf branch the one `sibling` is an instance of, else the first. */
+function branchFor(root: Schema, property: Schema, sibling: unknown): Schema {
+    const options = Array.isArray(property.oneOf) ? { anyOf: property.oneOf } : property;
+    return concrete(root, options, sibling);
+}
+
+/**
+ * A value of `property` the schema takes, with what `sibling` holds at the same place to copy references and
+ * branches from; undefined where it can make none, a reference it cannot fill added to `open`.
+ */
+function skeletonAt(root: Schema, property: Schema, sibling: unknown, path: string, open: OpenReference[]): unknown {
+    const target = property['x-reference'];
+    if (typeof target === 'string') {
+        if (hasType(property, 'array')) return [];
+        if (typeof sibling === 'string') return sibling;
+        open.push({ path, target });
+        return undefined;
+    }
+    const fixed = singleValue(property);
+    if (fixed !== undefined) return fixed;
+    const def = branchFor(root, property, sibling);
+    if (isWrapper(def)) return { ...NOT_REPORTED };
+    if (hasType(def, 'array')) {
+        const items = asSchema(def.items);
+        if (!items || typeof def.minItems !== 'number') return [];
+        return Array.from({ length: def.minItems }, (_, i) =>
+            skeletonAt(root, items, Array.isArray(sibling) ? sibling[i] : undefined, `${path}[#${i}]`, open)
+        );
+    }
+    return hasType(def, 'object') ? objectSkeleton(root, def, sibling, path, open) : undefined;
+}
+
+function objectSkeleton(root: Schema, def: Schema, sibling: unknown, prefix: string, open: OpenReference[]) {
+    const props = asSchema(def.properties) ?? {};
+    const required = Array.isArray(def.required) ? (def.required as string[]) : [];
     return Object.fromEntries(
         required.flatMap((name): [string, unknown][] => {
-            const branch = asSchema(props[name]);
-            if (!branch || name === 'local_id') return [];
-            if (isWrapper(concrete(root, branch, undefined))) return [[name, { ...NOT_REPORTED }]];
-            const fixed = singleValue(branch);
-            return fixed === undefined ? [] : [[name, fixed]];
+            const property = asSchema(props[name]);
+            if (!property || name === 'local_id') return [];
+            const path = prefix ? `${prefix}.${name}` : name;
+            const value = skeletonAt(root, property, isObject(sibling) ? sibling[name] : undefined, path, open);
+            return value === undefined ? [] : [[name, value]];
         })
     );
+}
+
+/**
+ * A new entity of a class, as the schema takes it: each required wrapper not reported, list empty (or its least
+ * size of skeleton items), object its own skeleton, single-value attribute its value, union the branch `sibling`
+ * takes (else the first), and reference what `sibling` holds there; the required references it could not fill open.
+ */
+export function skeletonOf(root: Schema, className: string, sibling?: unknown): Skeleton {
+    const open: OpenReference[] = [];
+    const def = defOf(root, className);
+    return { entity: def ? objectSkeleton(root, def, sibling, '', open) : {}, open };
 }
 
 export interface DeclaredAttribute {

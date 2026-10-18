@@ -1,6 +1,6 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { httpApi } from '../api/httpApi';
-import { judgeableKeys, memoryBackend, type OpBatch } from './memoryBackend';
+import { judgeableKeys, memoryBackend, type MemoryOptions, type OpBatch } from './memoryBackend';
 import { ApiError, type ReviewLifecycle, type SetAside } from '../api/reviewApi';
 import { fakeFetch, json, type SentRequest } from './fakeFetch';
 import { schemaByName } from './goldenSchemas';
@@ -13,7 +13,10 @@ const route = (request: SentRequest, pattern: RegExp, method: string) =>
     request.method === method ? request.path.slice(new URL(API_BASE).pathname.length).match(pattern) : null;
 
 /** The /review API over a memory backend, with the real one's last_seq, replay and 409 semantics. */
-export function fakeServer(bundles: ReviewBundle[], { userId = 'me' }: { userId?: string } = {}) {
+export function fakeServer(
+    bundles: ReviewBundle[],
+    { userId = 'me', createdProblems }: Pick<MemoryOptions, 'userId' | 'createdProblems'> = {}
+) {
     const byId = new Map(bundles.map((b) => [b.source.id, b]));
     const backend = memoryBackend(
         async (id) => {
@@ -22,7 +25,7 @@ export function fakeServer(bundles: ReviewBundle[], { userId = 'me' }: { userId?
                 throw new ApiError(404, { title: 'Not Found', detail: `Record ${id} not found in review source` });
             return bundle;
         },
-        { userId }
+        { userId, createdProblems }
     );
     const interceptors: Interceptor[] = [];
 

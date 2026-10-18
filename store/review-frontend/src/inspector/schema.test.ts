@@ -1,5 +1,5 @@
 import extractionSchema from '../test/golden/schemas/extraction-record.schema.json';
-import { classOf, pick, referenceTarget, requiredDefaults, wrapperSchemaAt, type Schema } from '../model/schema';
+import { classOf, pick, referenceTarget, skeletonOf, wrapperSchemaAt, type Schema } from '../model/schema';
 import { editorFor, parseScalar, wrapperSpec } from './schema';
 
 const root = extractionSchema as Schema;
@@ -223,9 +223,76 @@ describe('picking a class from its value, on schema fragments', () => {
                 },
             },
         };
-        expect(requiredDefaults(withNeeds, 'Needy')).toEqual({
+        expect(skeletonOf(withNeeds, 'Needy').entity).toEqual({
             whole: { extraction_status: 'not_reported', evidence: { status: 'not_applicable' } },
             kind: 'Needy',
+        });
+    });
+});
+
+const NOT_REPORTED = { extraction_status: 'not_reported', evidence: { status: 'not_applicable' } };
+
+describe('the skeleton of a new entity', () => {
+    it('fills an analysis’s required lists, objects and union, its references and branch taken from a sibling', () => {
+        const sibling = {
+            measure: 'm_1',
+            model_estimation: 'me_1',
+            details: { details_type: 'DecodingDetails', decoded_variable: NOT_REPORTED, performance_metrics: [] },
+        };
+        expect(skeletonOf(root, 'Analysis', sibling)).toEqual({
+            entity: {
+                name: NOT_REPORTED,
+                definition: NOT_REPORTED,
+                prespecification: NOT_REPORTED,
+                spatial_scope: NOT_REPORTED,
+                measure: 'm_1',
+                groups: [],
+                effect: { cells: [], statistic: { family: NOT_REPORTED } },
+                details: { decoded_variable: NOT_REPORTED, performance_metrics: [], details_type: 'DecodingDetails' },
+                model_estimation: 'me_1',
+            },
+            open: [],
+        });
+    });
+
+    it('leaves the required references open with no sibling to take them from, and takes the first branch', () => {
+        const { entity, open } = skeletonOf(root, 'Analysis');
+        expect(open).toEqual([
+            { path: 'measure', target: 'Measure' },
+            { path: 'model_estimation', target: 'ModelEstimation' },
+        ]);
+        expect(entity).not.toHaveProperty('measure');
+        expect(entity.details).toEqual({ details_type: 'MassUnivariateDetails' });
+    });
+
+    it('gives a required list with a least size that many skeleton items, and takes a oneOf like an anyOf', () => {
+        const listed = {
+            $defs: {
+                ExtractedWhole: {
+                    type: 'object',
+                    properties: { extraction_status: {}, value: {}, evidence: {} },
+                    required: ['extraction_status', 'evidence'],
+                },
+                Item: {
+                    type: 'object',
+                    properties: { whole: { $ref: '#/$defs/ExtractedWhole' } },
+                    required: ['whole'],
+                },
+                Other: { type: 'object', properties: { kind: { const: 'Other' } }, required: ['kind'] },
+                Listed: {
+                    type: 'object',
+                    properties: {
+                        local_id: {},
+                        items: { type: 'array', minItems: 2, items: { $ref: '#/$defs/Item' } },
+                        either: { oneOf: [{ $ref: '#/$defs/Other' }, { $ref: '#/$defs/Item' }] },
+                    },
+                    required: ['local_id', 'items', 'either'],
+                },
+            },
+        };
+        expect(skeletonOf(listed, 'Listed').entity).toEqual({
+            items: [{ whole: NOT_REPORTED }, { whole: NOT_REPORTED }],
+            either: { kind: 'Other' },
         });
     });
 });

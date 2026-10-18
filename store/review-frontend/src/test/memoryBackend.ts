@@ -1,9 +1,10 @@
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
-import type { Evidence, Op } from '../contract/generated/review-ops';
+import type { CreateEntityOp, Evidence, Op } from '../contract/generated/review-ops';
 import { applyBatch, OpRefused, type ApplyContext, type Documents } from '../model/applyOp';
 import type { CoordinateParse } from '../model/coordinates';
 import { codePointPaper } from '../model/offsets';
 import { entityPath, getIn, readPath, type Json } from '../model/paths';
+import { listClassesAt, pick, type Schema } from '../model/schema';
 import { targetKey } from '../model/targetKey';
 import type { InverseOp } from '../store/undoSteps';
 import {
@@ -18,6 +19,7 @@ import {
 import { SET_ASIDE_REASONS } from '../review/asideReasons';
 import { walkClasses } from './golden/schemaWalk';
 import { applyCoordinate } from './memoryCoordinates';
+import { CREATED_ID, EXTRACTION_SCHEMA, withCreated } from './recordProblems';
 
 interface Review extends ReviewSummary {
     created_at: string;
@@ -147,10 +149,47 @@ const notFound = (what: string) =>
 const conflict = (detail: string, extra: { last_seq?: number } = {}) =>
     new ApiError(409, { title: 'Conflict', detail, ...extra });
 
-interface MemoryOptions {
+export interface MemoryOptions {
     userId?: string;
     now?: () => string;
     userName?: (userId: string) => string;
+    /**
+     * The problems a create_entity op brings into the record, as the server words them. With it, create_entity ops,
+     * otherwise the server's alone (ADR 0002), are applied here: one with problems is refused with them, the rest
+     * placed at the end of their list.
+     */
+    createdProblems?: (record: Json, op: CreateEntityOp) => string[];
+}
+
+const refusedWith = (index: number, clientOpId: string, problems: string[]) =>
+    new ApiError(422, {
+        title: 'Unprocessable Entity',
+        detail: `op ${index} leaves an invalid document`,
+        errors: problems.map((message) => ({
+            field: `ops/${index}`,
+            code: 'REJECTED',
+            message,
+            context: { op_index: index, client_op_id: clientOpId },
+        })),
+    });
+
+type EntityRow = ReviewBundle['entities'][number];
+
+/** The entity row of `op`'s new entity: its class picked from those its list holds, named as a sibling's is. */
+function createdRow(record: Json, entities: EntityRow[], op: CreateEntityOp): EntityRow {
+    const root = EXTRACTION_SCHEMA as Schema;
+    const parent = entities.find((e) => e.local_id === op.parent);
+    const parentItem = getIn(record, entityPath(record, op.parent) ?? []);
+    const names = listClassesAt(root, parent?.schema_class ?? 'Study', op.list, parentItem);
+    const schemaClass = pick(root, names, op.entity) ?? names[0];
+    const sibling = entities.find((e) => e.parent === op.parent && e.list_path === op.list);
+    return {
+        local_id: ((op.entity as Json).local_id as string | undefined) ?? CREATED_ID,
+        entity_class: sibling?.entity_class ?? schemaClass,
+        schema_class: schemaClass,
+        parent: op.parent,
+        list_path: op.list,
+    };
 }
 
 /** One reviewer's reviews kept in memory, answering as the /review API does. */
@@ -160,6 +199,7 @@ export function memoryBackend(
         userId = 'me',
         now = () => new Date().toISOString(),
         userName = (id: string) => `name of ${id}`,
+        createdProblems,
     }: MemoryOptions = {}
 ) {
     const sources = new Map<string, ReviewBundle>();
@@ -318,7 +358,16 @@ export function memoryBackend(
             let documents = before;
             let revision = r.revision;
             const steps: ReturnType<typeof stepsOf> = [];
+            const created: EntityRow[] = [];
             for (const [index, op] of batch.ops.entries()) {
+                if (op.type === 'create_entity' && createdProblems) {
+                    const problems = createdProblems(documents.record, op);
+                    if (problems.length) throw refusedWith(index, op.client_op_id, problems);
+                    created.push(createdRow(documents.record, [...entities, ...created], op));
+                    documents = { ...documents, record: withCreated(documents.record, op) };
+                    steps.push({ undo: undefined, before: {}, after: {} });
+                    continue;
+                }
                 try {
                     if (op.type === 'coordinate') {
                         const step = applyCoordinate(revision ?? parse, documents.record, op);
@@ -347,6 +396,8 @@ export function memoryBackend(
                 const undo = steps[index].undo;
                 if (undo) r.inverses[op.client_op_id] = undo;
             });
+            if (created.length)
+                sources.set(r.source_id, { ...sources.get(r.source_id)!, entities: [...entities, ...created] });
             Object.assign(r, {
                 ...documents,
                 revision,

@@ -31,5 +31,5 @@ The golden files under `src/test/golden` (and `src/contract/references.fixture.j
 1. The backend's goldens: the store test command from AGENTS.md, with `UPDATE_GOLDEN=1`:
    `cd store && docker compose run -e "APP_ENV=docker_test" -e "UPDATE_GOLDEN=1" --rm neurostore bash -c "python -m pytest neurostore/tests/review"`
    The container writes the files as root; `chown` them back to yourself afterwards.
-2. `ops.json`, which the front end writes from `bundle.json`: `cd store/review-frontend && UPDATE_GOLDEN=1 npm run test`
-3. Run step 1 again without `UPDATE_GOLDEN`, so the backend replays the new `ops.json`.
+2. `ops.json` and `create-analysis.json`, which the front end writes from `bundle.json`: `cd store/review-frontend && UPDATE_GOLDEN=1 npm run test`
+3. Run step 1 again without `UPDATE_GOLDEN`, so the backend replays the new `ops.json` and applies `create-analysis.json`.
