@@ -162,18 +162,19 @@ describe('buildRecordIndex', () => {
     });
 
     it('lists an Analysis’s slots in the order its class declares them, list items in their list’s place', () => {
+        // The LinkML's order for Analysis; a Cell's term comes before its level.
         expect(index.entity('a_1')?.slots.map((s) => s.path)).toEqual([
-            'acquisitions',
+            'name',
             'definition',
-            'effect.cells[#0].level',
-            'effect.cells[#0].term',
+            'prespecification',
+            'outcome',
+            'spatial_scope',
+            'measure',
             'groups[#0].group',
             'groups[#0].n',
-            'measure',
-            'name',
-            'outcome',
-            'prespecification',
-            'spatial_scope',
+            'effect.cells[#0].term',
+            'effect.cells[#0].level',
+            'acquisitions',
         ]);
     });
 

@@ -185,16 +185,17 @@ describe('Inspector', () => {
 
     it('lists the slots in the order the schema declares them, each with a status shape, a visible status label and its value', () => {
         setup();
+        // The LinkML's order for Analysis: name, definition, prespecification, outcome, spatial_scope, measure, groups, acquisitions.
         const inRecord = [
-            'slot:a_1:acquisitions',
+            'slot:a_1:name',
             'slot:a_1:definition',
+            'slot:a_1:prespecification',
+            'slot:a_1:outcome',
+            'slot:a_1:spatial_scope',
+            'slot:a_1:measure',
             'slot:a_1:groups[#0].group',
             'slot:a_1:groups[#0].n',
-            'slot:a_1:measure',
-            'slot:a_1:name',
-            'slot:a_1:outcome',
-            'slot:a_1:prespecification',
-            'slot:a_1:spatial_scope',
+            'slot:a_1:acquisitions',
         ];
         expect(
             rows()

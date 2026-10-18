@@ -15,6 +15,7 @@ const POINT = {
 
 describe('the point grid’s columns', () => {
     it('are the schema’s point fields: x, y and z, the first value’s kind and value, then numbers, choices, text and switches', () => {
+        // Within a kind, the columns keep the order the LinkML declares the point's attributes in: space before cluster measure.
         expect(pointColumns().map((c) => [c.header, c.kind])).toEqual([
             ['x', 'number'],
             ['y', 'number'],
@@ -22,8 +23,8 @@ describe('the point grid’s columns', () => {
             ['statistic', 'dropdown'],
             ['value', 'number'],
             ['cluster size', 'number'],
-            ['cluster measure', 'dropdown'],
             ['space', 'dropdown'],
+            ['cluster measure', 'dropdown'],
             ['label', 'text'],
             ['is subpeak', 'checkbox'],
         ]);

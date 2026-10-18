@@ -17,9 +17,10 @@ describe('navigating the view', () => {
             .getState()
             .index.entity('grp_a')!
             .slots.map((s) => s.key);
+        // The LinkML's order for Group: name, description, species, then sex.
         expect(keys.filter((key) => /:(sex|species|name|description)$/.test(key))).toEqual([
-            'slot:grp_a:description',
             'slot:grp_a:name',
+            'slot:grp_a:description',
             'slot:grp_a:species',
             'slot:grp_a:sex',
         ]);

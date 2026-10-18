@@ -5,6 +5,7 @@ const STATISTICS = ['t', 'z', 'f', 'chi_square', 'd', 'g', 'r', 'beta', 'p', 'ot
 
 describe('point fields from the coordinate-parse schema', () => {
     it('edits a point’s coordinates as three numbers, its values by kind and value, and its other attributes', () => {
+        // Lists first, then each kind in the order the LinkML declares the point's attributes: space before cluster measure.
         expect(pointFields(coordinateSchema())).toEqual([
             {
                 name: 'coordinates',
@@ -32,17 +33,17 @@ describe('point fields from the coordinate-parse schema', () => {
                 required: false,
             },
             {
-                name: 'cluster_measure',
-                label: 'cluster measure',
-                kind: 'scalar',
-                spec: { kind: 'enum', options: ['voxels', 'mm3', 'cm3', 'other'], open: false },
-                required: false,
-            },
-            {
                 name: 'space',
                 label: 'space',
                 kind: 'scalar',
                 spec: { kind: 'enum', options: ['MNI', 'TAL', 'OTHER'], open: false },
+                required: false,
+            },
+            {
+                name: 'cluster_measure',
+                label: 'cluster measure',
+                kind: 'scalar',
+                spec: { kind: 'enum', options: ['voxels', 'mm3', 'cm3', 'other'], open: false },
                 required: false,
             },
             { name: 'label', label: 'label', kind: 'scalar', spec: { kind: 'text' }, required: false },

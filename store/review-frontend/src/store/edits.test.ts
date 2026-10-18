@@ -90,12 +90,14 @@ describe('adding evidence', () => {
                 .entity('grp_a')!
                 .slots.filter((s) => s.value !== undefined)
                 .map((s) => s.path);
-        expect(order()).toEqual(['description', 'name', 'species', 'sex']);
+        // The LinkML's order for Group: name, description, species, then sex.
+        const declared = ['name', 'description', 'species', 'sex'];
+        expect(order()).toEqual(declared);
         store.view.getState().focusSlot('slot:grp_a:sex');
         store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 'first');
-        expect(order()).toEqual(['description', 'name', 'species', 'sex']);
+        expect(order()).toEqual(declared);
         store.view.getState().focusSlot('slot:grp_a:name');
-        expect(order()).toEqual(['description', 'name', 'species', 'sex']);
+        expect(order()).toEqual(declared);
     });
 
     it('refuses a pending op by its client_op_id, whichever copy of it the refusal carries', () => {
@@ -513,7 +515,9 @@ describe('moving and removing evidence', () => {
             const { pending, undoStack, notices } = store.session.getState();
             expect(pending).toEqual([]);
             expect(undoStack).toEqual([]);
-            expect(notices).toEqual([{ kind: 'conflict', slot: 'grp_a description', message: expect.any(String), op: expect.anything() }]);
+            expect(notices).toEqual([
+                { kind: 'conflict', slot: 'grp_a description', message: expect.any(String), op: expect.anything() },
+            ]);
             expect(spansOf(store, DESCRIPTION)).toEqual(c.shown);
         });
 

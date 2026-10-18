@@ -24,20 +24,11 @@
     "AnalysisVerdict": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/TextSpan"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
         "key": {
           "type": "string"
         },
-        "reason": {
-          "type": "string"
+        "verdict": {
+          "$ref": "#/$defs/AuditVerdict"
         },
         "replaced_by": {
           "items": {
@@ -61,8 +52,17 @@
             }
           ]
         },
-        "verdict": {
-          "$ref": "#/$defs/AuditVerdict"
+        "reason": {
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/TextSpan"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -86,7 +86,7 @@
     "ArticleIdentifiers": {
       "additionalProperties": false,
       "properties": {
-        "doi": {
+        "pmid": {
           "type": [
             "string",
             "null"
@@ -98,7 +98,7 @@
             "null"
           ]
         },
-        "pmid": {
+        "doi": {
           "type": [
             "string",
             "null"
@@ -113,13 +113,13 @@
             "null"
           ]
         },
-        "preprint_pmcid": {
+        "preprint_pmid": {
           "type": [
             "string",
             "null"
           ]
         },
-        "preprint_pmid": {
+        "preprint_pmcid": {
           "type": [
             "string",
             "null"
@@ -138,21 +138,20 @@
     "ArtifactHeader": {
       "additionalProperties": false,
       "properties": {
-        "article_id": {
-          "type": "string"
-        },
         "artifact_kind": {
           "$ref": "#/$defs/ArtifactKind"
         },
-        "created_at": {
-          "format": "date-time",
-          "type": [
-            "string",
-            "null"
-          ]
+        "schema_version": {
+          "type": "string"
+        },
+        "article_id": {
+          "type": "string"
         },
         "identifiers": {
           "$ref": "#/$defs/ArticleIdentifiers"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
         },
         "inputs": {
           "items": {
@@ -163,17 +162,18 @@
             "null"
           ]
         },
-        "neurostore_base_study_id": {
+        "created_at": {
+          "format": "date-time",
           "type": [
             "string",
             "null"
           ]
         },
-        "producer": {
-          "$ref": "#/$defs/Producer"
-        },
-        "schema_version": {
-          "type": "string"
+        "neurostore_base_study_id": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -237,6 +237,49 @@
         ]
       },
       "properties": {
+        "title": {
+          "type": "string"
+        },
+        "authors": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "journal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "publication_year": {
+          "minimum": 1600,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "volume": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "issue": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pages": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "abstract": {
           "pattern": "\\S",
           "type": [
@@ -254,7 +297,7 @@
             }
           ]
         },
-        "authors": {
+        "language": {
           "items": {
             "type": "string"
           },
@@ -263,37 +306,23 @@
             "null"
           ]
         },
-        "corrections": {
+        "publication_types": {
           "items": {
-            "$ref": "#/$defs/Correction"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StudyType"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
           "type": [
             "array",
-            "null"
-          ]
-        },
-        "issue": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "journal": {
-          "type": [
-            "string",
             "null"
           ]
         },
         "keywords": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "language": {
           "items": {
             "type": "string"
           },
@@ -315,9 +344,12 @@
             }
           ]
         },
-        "pages": {
+        "corrections": {
+          "items": {
+            "$ref": "#/$defs/Correction"
+          },
           "type": [
-            "string",
+            "array",
             "null"
           ]
         },
@@ -329,38 +361,6 @@
             {
               "type": "null"
             }
-          ]
-        },
-        "publication_types": {
-          "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/StudyType"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "publication_year": {
-          "minimum": 1600,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "title": {
-          "type": "string"
-        },
-        "volume": {
-          "type": [
-            "string",
-            "null"
           ]
         }
       },
@@ -388,11 +388,11 @@
     "CellRef": {
       "additionalProperties": false,
       "properties": {
-        "column_group": {
+        "row": {
           "minimum": 0,
           "type": "integer"
         },
-        "row": {
+        "column_group": {
           "minimum": 0,
           "type": "integer"
         }
@@ -407,16 +407,8 @@
     "Citation": {
       "additionalProperties": false,
       "properties": {
-        "confidence": {
-          "maximum": 1,
-          "minimum": 0,
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "method": {
-          "$ref": "#/$defs/CitationAlignment"
+        "text_span": {
+          "$ref": "#/$defs/TextSpan"
         },
         "references": {
           "items": {
@@ -428,8 +420,16 @@
           ],
           "x-reference": "Reference"
         },
-        "text_span": {
-          "$ref": "#/$defs/TextSpan"
+        "method": {
+          "$ref": "#/$defs/CitationAlignment"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
         }
       },
       "required": [
@@ -494,25 +494,13 @@
     "CoordinateParse": {
       "additionalProperties": false,
       "properties": {
-        "analyses": {
-          "items": {
-            "$ref": "#/$defs/ParsedAnalysis"
-          },
-          "type": "array"
-        },
         "header": {
           "$ref": "#/$defs/ArtifactHeader"
         },
-        "omitted_analyses": {
-          "items": {
-            "$ref": "#/$defs/OmittedAnalysis"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
         "parse_id": {
+          "type": "string"
+        },
+        "text_sha256": {
           "type": "string"
         },
         "revision_of": {
@@ -520,6 +508,12 @@
             "string",
             "null"
           ]
+        },
+        "analyses": {
+          "items": {
+            "$ref": "#/$defs/ParsedAnalysis"
+          },
+          "type": "array"
         },
         "tables": {
           "items": {
@@ -530,8 +524,14 @@
             "null"
           ]
         },
-        "text_sha256": {
-          "type": "string"
+        "omitted_analyses": {
+          "items": {
+            "$ref": "#/$defs/OmittedAnalysis"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         },
         "text_sweep": {
           "anyOf": [
@@ -599,21 +599,21 @@
         ]
       },
       "properties": {
-        "license": {
-          "$ref": "#/$defs/License"
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
         },
-        "preprint_server": {
+        "version": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PreprintServer"
+              "$ref": "#/$defs/CopyVersion"
             },
             {
               "type": "null"
             }
           ]
         },
-        "route": {
-          "$ref": "#/$defs/CopyRoute"
+        "license": {
+          "$ref": "#/$defs/License"
         },
         "url": {
           "type": [
@@ -621,10 +621,10 @@
             "null"
           ]
         },
-        "version": {
+        "preprint_server": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CopyVersion"
+              "$ref": "#/$defs/PreprintServer"
             },
             {
               "type": "null"
@@ -685,12 +685,6 @@
     "Correction": {
       "additionalProperties": false,
       "properties": {
-        "doi": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "kind": {
           "anyOf": [
             {
@@ -702,6 +696,12 @@
           ]
         },
         "pmid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doi": {
           "type": [
             "string",
             "null"
@@ -847,21 +847,21 @@
         "access": {
           "$ref": "#/$defs/CopyAccess"
         },
-        "license": {
-          "$ref": "#/$defs/License"
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
         },
-        "preprint_server": {
+        "version": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PreprintServer"
+              "$ref": "#/$defs/CopyVersion"
             },
             {
               "type": "null"
             }
           ]
         },
-        "route": {
-          "$ref": "#/$defs/CopyRoute"
+        "license": {
+          "$ref": "#/$defs/License"
         },
         "url": {
           "type": [
@@ -869,10 +869,10 @@
             "null"
           ]
         },
-        "version": {
+        "preprint_server": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CopyVersion"
+              "$ref": "#/$defs/PreprintServer"
             },
             {
               "type": "null"
@@ -941,20 +941,20 @@
           "license_id": {
             "const": "all-rights-reserved"
           },
-          "stated_as": {
-            "not": {
-              "anyOf": [
-                {
-                  "type": "string"
-                }
-              ]
-            }
-          },
           "stated_by": {
             "not": {
               "anyOf": [
                 {
                   "$ref": "#/$defs/MetadataSource"
+                }
+              ]
+            }
+          },
+          "stated_as": {
+            "not": {
+              "anyOf": [
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -972,18 +972,11 @@
         ]
       },
       "properties": {
-        "determination": {
-          "$ref": "#/$defs/LicenseDetermination"
-        },
         "license_id": {
           "$ref": "#/$defs/LicenseId"
         },
-        "stated_as": {
-          "pattern": "\\S",
-          "type": [
-            "string",
-            "null"
-          ]
+        "determination": {
+          "$ref": "#/$defs/LicenseDetermination"
         },
         "stated_by": {
           "anyOf": [
@@ -994,6 +987,13 @@
               "type": "null"
             }
           ]
+        },
+        "stated_as": {
+          "pattern": "\\S",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1002,17 +1002,17 @@
       ],
       "then": {
         "properties": {
-          "stated_as": {
-            "anyOf": [
-              {
-                "type": "string"
-              }
-            ]
-          },
           "stated_by": {
             "anyOf": [
               {
                 "$ref": "#/$defs/MetadataSource"
+              }
+            ]
+          },
+          "stated_as": {
+            "anyOf": [
+              {
+                "type": "string"
               }
             ]
           }
@@ -1167,9 +1167,6 @@
         "name": {
           "type": "string"
         },
-        "reason": {
-          "type": "string"
-        },
         "text_spans": {
           "items": {
             "$ref": "#/$defs/TextSpan"
@@ -1178,6 +1175,9 @@
             "array",
             "null"
           ]
+        },
+        "reason": {
+          "type": "string"
         }
       },
       "required": [
@@ -1190,18 +1190,8 @@
     "ParsedAnalysis": {
       "additionalProperties": false,
       "properties": {
-        "anchor_kind": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AnchorKind"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "key": {
+          "type": "string"
         },
         "cells": {
           "items": {
@@ -1209,6 +1199,39 @@
           },
           "type": [
             "array",
+            "null"
+          ]
+        },
+        "text_spans": {
+          "items": {
+            "$ref": "#/$defs/TextSpan"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "origin": {
+          "$ref": "#/$defs/CoordinateOrigin"
+        },
+        "table_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "name_is_printed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
             "null"
           ]
         },
@@ -1220,84 +1243,6 @@
             {
               "type": "null"
             }
-          ]
-        },
-        "derived_from": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "description": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "from_prior_study": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "key": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "name_is_printed": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "origin": {
-          "$ref": "#/$defs/CoordinateOrigin"
-        },
-        "points": {
-          "items": {
-            "$ref": "#/$defs/ParsedPoint"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "prior_study_evidence": {
-          "items": {
-            "$ref": "#/$defs/TextSpan"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "role": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/CoordinateRole"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "role_confidence": {
-          "maximum": 1,
-          "minimum": 0,
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "role_source": {
-          "type": [
-            "string",
-            "null"
           ]
         },
         "space_as_printed": {
@@ -1316,6 +1261,58 @@
             }
           ]
         },
+        "role": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoordinateRole"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "anchor_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnchorKind"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "from_prior_study": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "prior_study_evidence": {
+          "items": {
+            "$ref": "#/$defs/TextSpan"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "role_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "role_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "split": {
           "anyOf": [
             {
@@ -1324,6 +1321,15 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "derived_from": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
           ]
         },
         "statistic": {
@@ -1345,24 +1351,18 @@
             "null"
           ]
         },
-        "table_id": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "text_spans": {
+        "thresholds": {
           "items": {
-            "$ref": "#/$defs/TextSpan"
+            "$ref": "#/$defs/Threshold"
           },
           "type": [
             "array",
             "null"
           ]
         },
-        "thresholds": {
+        "points": {
           "items": {
-            "$ref": "#/$defs/Threshold"
+            "$ref": "#/$defs/ParsedPoint"
           },
           "type": [
             "array",
@@ -1382,60 +1382,8 @@
     "ParsedPaper": {
       "additionalProperties": false,
       "properties": {
-        "bibliography": {
-          "$ref": "#/$defs/Bibliography"
-        },
-        "citations": {
-          "items": {
-            "$ref": "#/$defs/Citation"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
         "header": {
           "$ref": "#/$defs/ArtifactHeader"
-        },
-        "is_meta_analysis": {
-          "type": "boolean"
-        },
-        "is_meta_analysis_basis": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/MetaAnalysisBasis"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "references": {
-          "items": {
-            "$ref": "#/$defs/Reference"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "reported_copies": {
-          "items": {
-            "$ref": "#/$defs/ReportedCopy"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "sections": {
-          "items": {
-            "$ref": "#/$defs/Section"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
         },
         "source": {
           "anyOf": [
@@ -1453,9 +1401,77 @@
             "null"
           ]
         },
+        "text_copy": {
+          "$ref": "#/$defs/HeldCopy"
+        },
+        "reported_copies": {
+          "items": {
+            "$ref": "#/$defs/ReportedCopy"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "text_path": {
+          "type": "string"
+        },
+        "text_sha256": {
+          "type": "string"
+        },
+        "text_length": {
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "bibliography": {
+          "$ref": "#/$defs/Bibliography"
+        },
+        "is_meta_analysis": {
+          "type": "boolean"
+        },
+        "is_meta_analysis_basis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetaAnalysisBasis"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/Section"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "supplements": {
           "items": {
             "$ref": "#/$defs/Supplement"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/Reference"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "citations": {
+          "items": {
+            "$ref": "#/$defs/Citation"
           },
           "type": [
             "array",
@@ -1470,22 +1486,6 @@
             "array",
             "null"
           ]
-        },
-        "text_copy": {
-          "$ref": "#/$defs/HeldCopy"
-        },
-        "text_length": {
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "text_path": {
-          "type": "string"
-        },
-        "text_sha256": {
-          "type": "string"
         }
       },
       "required": [
@@ -1503,30 +1503,6 @@
     "ParsedPoint": {
       "additionalProperties": false,
       "properties": {
-        "cluster_measure": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ClusterMeasure"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "cluster_size": {
-          "minimum": 0,
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "column_group": {
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
         "coordinates": {
           "items": {
             "type": "number"
@@ -1534,25 +1510,6 @@
           "maxItems": 3,
           "minItems": 3,
           "type": "array"
-        },
-        "is_subpeak": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "label": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "row": {
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
         },
         "space": {
           "anyOf": [
@@ -1562,6 +1519,20 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "row": {
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "column_group": {
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
           ]
         },
         "text_span": {
@@ -1582,6 +1553,35 @@
             "array",
             "null"
           ]
+        },
+        "cluster_size": {
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cluster_measure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ClusterMeasure"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "is_subpeak": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1593,7 +1593,34 @@
     "ParsedTable": {
       "additionalProperties": false,
       "properties": {
+        "table_id": {
+          "type": "string"
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "number": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "caption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "footer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "raw_path": {
           "type": [
             "string",
             "null"
@@ -1608,40 +1635,6 @@
             "null"
           ]
         },
-        "coordinate_space_hint": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ReportedSpace"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "footer": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "label": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "number": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "raw_path": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "rows": {
           "items": {
             "$ref": "#/$defs/TableRow"
@@ -1651,13 +1644,20 @@
             "null"
           ]
         },
-        "table_id": {
-          "type": "string"
-        },
         "text_span": {
           "anyOf": [
             {
               "$ref": "#/$defs/TextSpan"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coordinate_space_hint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedSpace"
             },
             {
               "type": "null"
@@ -1693,19 +1693,6 @@
     "PointValue": {
       "additionalProperties": false,
       "properties": {
-        "correction": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/CorrectionMethod"
-            },
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "kind": {
           "anyOf": [
             {
@@ -1722,6 +1709,9 @@
             "null"
           ]
         },
+        "value": {
+          "type": "number"
+        },
         "level": {
           "anyOf": [
             {
@@ -1732,8 +1722,18 @@
             }
           ]
         },
-        "value": {
-          "type": "number"
+        "correction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CorrectionMethod"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1818,20 +1818,11 @@
     "Producer": {
       "additionalProperties": false,
       "properties": {
-        "model": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "name": {
           "type": "string"
         },
-        "prompt_version": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "version": {
+          "type": "string"
         },
         "stage": {
           "type": [
@@ -1839,8 +1830,17 @@
             "null"
           ]
         },
-        "version": {
-          "type": "string"
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prompt_version": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1861,26 +1861,8 @@
     "Reference": {
       "additionalProperties": false,
       "properties": {
-        "doi": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "id": {
           "type": "string"
-        },
-        "label": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "pmid": {
-          "type": [
-            "string",
-            "null"
-          ]
         },
         "position": {
           "minimum": 1,
@@ -1902,8 +1884,26 @@
             }
           ]
         },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "text": {
           "type": "string"
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pmid": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "title": {
           "type": [
@@ -1963,24 +1963,24 @@
         ]
       },
       "properties": {
-        "license": {
-          "$ref": "#/$defs/License"
+        "reported_by": {
+          "$ref": "#/$defs/MetadataSource"
         },
-        "preprint_server": {
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
+        },
+        "version": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PreprintServer"
+              "$ref": "#/$defs/CopyVersion"
             },
             {
               "type": "null"
             }
           ]
         },
-        "reported_by": {
-          "$ref": "#/$defs/MetadataSource"
-        },
-        "route": {
-          "$ref": "#/$defs/CopyRoute"
+        "license": {
+          "$ref": "#/$defs/License"
         },
         "url": {
           "type": [
@@ -1988,10 +1988,10 @@
             "null"
           ]
         },
-        "version": {
+        "preprint_server": {
           "anyOf": [
             {
-              "$ref": "#/$defs/CopyVersion"
+              "$ref": "#/$defs/PreprintServer"
             },
             {
               "type": "null"
@@ -2057,16 +2057,6 @@
     "Section": {
       "additionalProperties": false,
       "properties": {
-        "end_char": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "heading": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "kind": {
           "anyOf": [
             {
@@ -2077,7 +2067,17 @@
             }
           ]
         },
+        "heading": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "start_char": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "end_char": {
           "minimum": 0,
           "type": "integer"
         }
@@ -2231,22 +2231,22 @@
     "Supplement": {
       "additionalProperties": false,
       "properties": {
-        "fetched": {
-          "type": "boolean"
-        },
         "label": {
           "type": [
             "string",
             "null"
           ]
         },
-        "path": {
+        "url": {
           "type": [
             "string",
             "null"
           ]
         },
-        "url": {
+        "fetched": {
+          "type": "boolean"
+        },
+        "path": {
           "type": [
             "string",
             "null"
@@ -2277,6 +2277,9 @@
     "TableReading": {
       "additionalProperties": false,
       "properties": {
+        "table_id": {
+          "type": "string"
+        },
         "reading": {
           "$ref": "#/$defs/TableReadingKind"
         },
@@ -2285,9 +2288,6 @@
             "string",
             "null"
           ]
-        },
-        "table_id": {
-          "type": "string"
         }
       },
       "required": [
@@ -2311,6 +2311,10 @@
     "TableRow": {
       "additionalProperties": false,
       "properties": {
+        "row": {
+          "minimum": 0,
+          "type": "integer"
+        },
         "cells": {
           "items": {
             "type": "string"
@@ -2319,10 +2323,6 @@
             "array",
             "null"
           ]
-        },
-        "row": {
-          "minimum": 0,
-          "type": "integer"
         },
         "text_span": {
           "anyOf": [
@@ -2344,13 +2344,16 @@
     "TableTriage": {
       "additionalProperties": false,
       "properties": {
-        "excluded_by_hand": {
+        "passes": {
+          "type": "boolean"
+        },
+        "score": {
           "type": [
-            "boolean",
+            "number",
             "null"
           ]
         },
-        "exclusion_reason": {
+        "route": {
           "type": [
             "string",
             "null"
@@ -2362,18 +2365,15 @@
             "null"
           ]
         },
-        "passes": {
-          "type": "boolean"
-        },
-        "route": {
+        "excluded_by_hand": {
           "type": [
-            "string",
+            "boolean",
             "null"
           ]
         },
-        "score": {
+        "exclusion_reason": {
           "type": [
-            "number",
+            "string",
             "null"
           ]
         }
@@ -2395,11 +2395,11 @@
     "TextSpan": {
       "additionalProperties": false,
       "properties": {
-        "end_char": {
+        "start_char": {
           "minimum": 0,
           "type": "integer"
         },
-        "start_char": {
+        "end_char": {
           "minimum": 0,
           "type": "integer"
         },
@@ -2434,15 +2434,15 @@
             "null"
           ]
         },
+        "truncated": {
+          "type": "boolean"
+        },
         "points_dropped_as_table_restatements": {
           "minimum": 0,
           "type": [
             "integer",
             "null"
           ]
-        },
-        "truncated": {
-          "type": "boolean"
         }
       },
       "required": [
@@ -2454,6 +2454,18 @@
     "Threshold": {
       "additionalProperties": false,
       "properties": {
+        "level": {
+          "$ref": "#/$defs/ThresholdLevel"
+        },
+        "quantity": {
+          "$ref": "#/$defs/ThresholdQuantity"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
         "correction": {
           "anyOf": [
             {
@@ -2466,12 +2478,6 @@
               "type": "null"
             }
           ]
-        },
-        "level": {
-          "$ref": "#/$defs/ThresholdLevel"
-        },
-        "quantity": {
-          "$ref": "#/$defs/ThresholdQuantity"
         },
         "scope_as_printed": {
           "type": [
@@ -2487,12 +2493,6 @@
             {
               "type": "null"
             }
-          ]
-        },
-        "value": {
-          "type": [
-            "number",
-            "null"
           ]
         }
       },
@@ -2549,25 +2549,13 @@
   "additionalProperties": false,
   "metamodel_version": "1.12.0",
   "properties": {
-    "analyses": {
-      "items": {
-        "$ref": "#/$defs/ParsedAnalysis"
-      },
-      "type": "array"
-    },
     "header": {
       "$ref": "#/$defs/ArtifactHeader"
     },
-    "omitted_analyses": {
-      "items": {
-        "$ref": "#/$defs/OmittedAnalysis"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
     "parse_id": {
+      "type": "string"
+    },
+    "text_sha256": {
       "type": "string"
     },
     "revision_of": {
@@ -2575,6 +2563,12 @@
         "string",
         "null"
       ]
+    },
+    "analyses": {
+      "items": {
+        "$ref": "#/$defs/ParsedAnalysis"
+      },
+      "type": "array"
     },
     "tables": {
       "items": {
@@ -2585,8 +2579,14 @@
         "null"
       ]
     },
-    "text_sha256": {
-      "type": "string"
+    "omitted_analyses": {
+      "items": {
+        "$ref": "#/$defs/OmittedAnalysis"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
     },
     "text_sweep": {
       "anyOf": [

@@ -3,15 +3,15 @@
     "Acquisition": {
       "additionalProperties": false,
       "properties": {
-        "acquisition_duration_seconds": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
+        },
+        "local_id": {
+          "type": "string"
         },
         "acquisition_type": {
           "enum": [
@@ -19,10 +19,13 @@
           ],
           "type": "string"
         },
-        "brain_coverage": {
+        "modality": {
+          "$ref": "#/$defs/ExtractedModality"
+        },
+        "acquisition_duration_seconds": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedBrainCoverage"
+              "$ref": "#/$defs/ExtractedNumber"
             },
             {
               "type": "null"
@@ -36,17 +39,14 @@
           ],
           "x-reference": "Device"
         },
-        "local_id": {
-          "type": "string"
-        },
-        "modality": {
-          "$ref": "#/$defs/ExtractedModality"
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
+        "brain_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedBrainCoverage"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -71,35 +71,57 @@
     "Analysis": {
       "additionalProperties": false,
       "properties": {
-        "acquisitions": {
-          "items": {
-            "type": "string"
-          },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
           "type": [
-            "array",
+            "string",
             "null"
-          ],
-          "x-reference": "Acquisition"
+          ]
         },
-        "assessments": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ],
-          "x-reference": "Assessment"
+        "local_id": {
+          "type": "string"
         },
-        "coordinate_space": {
+        "name": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "definition": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "prespecification": {
+          "$ref": "#/$defs/ExtractedPrespecification"
+        },
+        "interpretations": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedString"
+              "$ref": "#/$defs/ExtractedStringList"
             },
             {
               "type": "null"
             }
           ]
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedAnalysisOutcome"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "spatial_scope": {
+          "$ref": "#/$defs/ExtractedSpatialScope"
+        },
+        "regions": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Region"
         },
         "defines_regions": {
           "items": {
@@ -111,8 +133,18 @@
           ],
           "x-reference": "Region"
         },
-        "definition": {
-          "$ref": "#/$defs/ExtractedString"
+        "measure": {
+          "type": "string",
+          "x-reference": "Measure"
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/AnalysisGroup"
+          },
+          "type": "array"
+        },
+        "effect": {
+          "$ref": "#/$defs/Effect"
         },
         "details": {
           "anyOf": [
@@ -142,77 +174,7 @@
             }
           ]
         },
-        "effect": {
-          "$ref": "#/$defs/Effect"
-        },
-        "groups": {
-          "items": {
-            "$ref": "#/$defs/AnalysisGroup"
-          },
-          "type": "array"
-        },
-        "inference_settings": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "InferenceSettings"
-        },
-        "interpretations": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedStringList"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "measure": {
-          "type": "string",
-          "x-reference": "Measure"
-        },
-        "mirror_of": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "Analysis"
-        },
-        "model_estimation": {
-          "type": "string",
-          "x-reference": "ModelEstimation"
-        },
-        "model_representation_notes": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "name": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "outcome": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedAnalysisOutcome"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "prespecification": {
-          "$ref": "#/$defs/ExtractedPrespecification"
-        },
-        "regions": {
+        "acquisitions": {
           "items": {
             "type": "string"
           },
@@ -220,27 +182,28 @@
             "array",
             "null"
           ],
-          "x-reference": "Region"
+          "x-reference": "Acquisition"
         },
-        "source_table_analysis": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "tasks": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Task"
         },
-        "spatial_scope": {
-          "$ref": "#/$defs/ExtractedSpatialScope"
+        "model_estimation": {
+          "type": "string",
+          "x-reference": "ModelEstimation"
         },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "inference_settings": {
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "x-reference": "InferenceSettings"
         },
         "tables": {
           "items": {
@@ -252,7 +215,27 @@
           ],
           "x-reference": "Table"
         },
-        "tasks": {
+        "source_table_analysis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coordinate_space": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assessments": {
           "items": {
             "type": "string"
           },
@@ -260,7 +243,24 @@
             "array",
             "null"
           ],
-          "x-reference": "Task"
+          "x-reference": "Assessment"
+        },
+        "model_representation_notes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mirror_of": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-reference": "Analysis"
         }
       },
       "required": [
@@ -352,7 +352,20 @@
     "Arm": {
       "additionalProperties": false,
       "properties": {
-        "agent": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "description": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -365,7 +378,7 @@
         "arm_kind": {
           "$ref": "#/$defs/ExtractedArmKind"
         },
-        "description": {
+        "agent": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -373,19 +386,6 @@
             {
               "type": "null"
             }
-          ]
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "name": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
           ]
         }
       },
@@ -414,15 +414,18 @@
     "Assessment": {
       "additionalProperties": false,
       "properties": {
-        "assessment_type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/ExtractedString"
         },
         "description": {
           "anyOf": [
@@ -434,17 +437,14 @@
             }
           ]
         },
-        "local_id": {
-          "type": "string"
-        },
-        "name": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
+        "assessment_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -491,27 +491,7 @@
         "category": {
           "$ref": "#/$defs/ExtractedString"
         },
-        "category_normalized": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "count": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "denominator": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedInteger"
@@ -531,7 +511,27 @@
             }
           ]
         },
+        "denominator": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedInteger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "reporting_framework": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category_normalized": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -551,6 +551,20 @@
     "Cell": {
       "additionalProperties": false,
       "properties": {
+        "term": {
+          "type": "string",
+          "x-reference": "ModelTerm"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "direction": {
           "$ref": "#/$defs/ExtractedDirection"
         },
@@ -563,20 +577,6 @@
               "type": "null"
             }
           ]
-        },
-        "level": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "term": {
-          "type": "string",
-          "x-reference": "ModelTerm"
         }
       },
       "required": [
@@ -589,6 +589,29 @@
     "Condition": {
       "additionalProperties": false,
       "properties": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "stimulus_content": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "condition_kind": {
           "anyOf": [
             {
@@ -603,29 +626,6 @@
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "name": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "stimulus_content": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedStringList"
             },
             {
               "type": "null"
@@ -695,11 +695,15 @@
             "null"
           ]
         },
-        "details_type": {
-          "enum": [
-            "ConjunctionDetails"
-          ],
-          "type": "string"
+        "null_hypothesis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNullHypothesis"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "implementation": {
           "anyOf": [
@@ -711,15 +715,11 @@
             }
           ]
         },
-        "null_hypothesis": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNullHypothesis"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "details_type": {
+          "enum": [
+            "ConjunctionDetails"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -743,41 +743,6 @@
         "connectivity_method": {
           "$ref": "#/$defs/ExtractedConnectivityMethod"
         },
-        "details_type": {
-          "enum": [
-            "ConnectivityDetails"
-          ],
-          "type": "string"
-        },
-        "edges": {
-          "items": {
-            "$ref": "#/$defs/ConnectivityEdge"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "inference_target": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInferenceTarget"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "modulatory_input": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "seed_regions": {
           "items": {
             "type": "string"
@@ -797,6 +762,41 @@
             "null"
           ],
           "x-reference": "Region"
+        },
+        "edges": {
+          "items": {
+            "$ref": "#/$defs/ConnectivityEdge"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "modulatory_input": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inference_target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedInferenceTarget"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "details_type": {
+          "enum": [
+            "ConnectivityDetails"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -855,55 +855,15 @@
     "CoordinateSet": {
       "additionalProperties": false,
       "properties": {
-        "analysis": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
           "type": [
             "string",
             "null"
-          ],
-          "x-reference": "Analysis"
-        },
-        "anchor_kind": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedAnchorKind"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "description": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
           ]
         },
         "local_id": {
           "type": "string"
-        },
-        "regions": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ],
-          "x-reference": "Region"
-        },
-        "result_kind": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedResultKind"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "role": {
           "anyOf": [
@@ -915,11 +875,51 @@
             }
           ]
         },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "result_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedResultKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "anchor_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedAnchorKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "analysis": {
           "type": [
             "string",
             "null"
+          ],
+          "x-reference": "Analysis"
+        },
+        "regions": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Region"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -932,15 +932,15 @@
     "DecodingClass": {
       "additionalProperties": false,
       "properties": {
+        "label": {
+          "$ref": "#/$defs/ExtractedString"
+        },
         "condition": {
           "type": [
             "string",
             "null"
           ],
           "x-reference": "Condition"
-        },
-        "label": {
-          "$ref": "#/$defs/ExtractedString"
         }
       },
       "required": [
@@ -952,6 +952,9 @@
     "DecodingDetails": {
       "additionalProperties": false,
       "properties": {
+        "decoded_variable": {
+          "$ref": "#/$defs/ExtractedString"
+        },
         "classes": {
           "items": {
             "$ref": "#/$defs/DecodingClass"
@@ -959,25 +962,6 @@
           "type": [
             "array",
             "null"
-          ]
-        },
-        "decoded_variable": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "details_type": {
-          "enum": [
-            "DecodingDetails"
-          ],
-          "type": "string"
-        },
-        "generalization": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
           ]
         },
         "performance_metrics": {
@@ -995,6 +979,22 @@
               "type": "null"
             }
           ]
+        },
+        "generalization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "details_type": {
+          "enum": [
+            "DecodingDetails"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -1036,6 +1036,13 @@
     "Device": {
       "additionalProperties": false,
       "properties": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "local_id": {
           "type": "string"
         },
@@ -1058,13 +1065,6 @@
               "type": "null"
             }
           ]
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
-          ]
         }
       },
       "required": [
@@ -1086,53 +1086,10 @@
     "EEG": {
       "additionalProperties": false,
       "properties": {
-        "acquisition_duration_seconds": {
+        "sampling_frequency_hz": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "acquisition_type": {
-          "enum": [
-            "EEG"
-          ],
-          "type": "string"
-        },
-        "brain_coverage": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedBrainCoverage"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "device": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "Device"
-        },
-        "eeg_channel_count": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "eeg_placement_scheme": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
@@ -1149,11 +1106,15 @@
             }
           ]
         },
-        "local_id": {
-          "type": "string"
-        },
-        "modality": {
-          "$ref": "#/$defs/ExtractedModality"
+        "eeg_placement_scheme": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "recording_type": {
           "anyOf": [
@@ -1165,10 +1126,10 @@
             }
           ]
         },
-        "sampling_frequency_hz": {
+        "eeg_channel_count": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedNumber"
+              "$ref": "#/$defs/ExtractedInteger"
             },
             {
               "type": "null"
@@ -1180,6 +1141,45 @@
           "type": [
             "string",
             "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "acquisition_type": {
+          "enum": [
+            "EEG"
+          ],
+          "type": "string"
+        },
+        "modality": {
+          "$ref": "#/$defs/ExtractedModality"
+        },
+        "acquisition_duration_seconds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-reference": "Device"
+        },
+        "brain_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedBrainCoverage"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -1255,6 +1255,9 @@
     "Evidence": {
       "additionalProperties": false,
       "properties": {
+        "status": {
+          "$ref": "#/$defs/EvidenceStatus"
+        },
         "sets": {
           "items": {
             "$ref": "#/$defs/EvidenceSet"
@@ -1263,9 +1266,6 @@
             "array",
             "null"
           ]
-        },
-        "status": {
-          "$ref": "#/$defs/EvidenceStatus"
         },
         "unlocated_quotes": {
           "minimum": 1,
@@ -1321,16 +1321,16 @@
     "EvidenceSpan": {
       "additionalProperties": false,
       "properties": {
-        "end_char": {
-          "minimum": 0,
-          "type": "integer"
+        "text": {
+          "type": "string"
         },
         "start_char": {
           "minimum": 0,
           "type": "integer"
         },
-        "text": {
-          "type": "string"
+        "end_char": {
+          "minimum": 0,
+          "type": "integer"
         }
       },
       "required": [
@@ -1380,21 +1380,8 @@
     "ExtractedAllocation": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1418,6 +1405,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1430,21 +1430,8 @@
     "ExtractedAnalysisOutcome": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1465,6 +1452,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1477,21 +1477,8 @@
     "ExtractedAnalysisType": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1515,6 +1502,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1527,21 +1527,8 @@
     "ExtractedAnchorKind": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1565,6 +1552,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1577,21 +1577,8 @@
     "ExtractedArmKind": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1615,6 +1602,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1627,21 +1627,8 @@
     "ExtractedAssignmentStructure": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1665,6 +1652,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1677,21 +1677,8 @@
     "ExtractedBlinding": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1715,6 +1702,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1727,21 +1727,8 @@
     "ExtractedBoolean": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "type": [
@@ -1758,6 +1745,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1770,21 +1770,8 @@
     "ExtractedBooleanList": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "items": {
@@ -1804,6 +1791,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1816,21 +1816,8 @@
     "ExtractedBrainCoverage": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1851,6 +1838,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1863,21 +1863,8 @@
     "ExtractedConditionKind": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1901,6 +1888,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1913,21 +1913,8 @@
     "ExtractedConjunctionImplementation": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -1951,6 +1938,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -1963,21 +1963,8 @@
     "ExtractedConnectivityMethod": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2001,6 +1988,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2013,21 +2013,8 @@
     "ExtractedCoordinateRole": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2051,6 +2038,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2063,21 +2063,8 @@
     "ExtractedDecompositionMethod": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2101,6 +2088,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2113,21 +2113,8 @@
     "ExtractedDesignType": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2151,6 +2138,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2163,21 +2163,8 @@
     "ExtractedDirection": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2198,6 +2185,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2210,21 +2210,8 @@
     "ExtractedEffectKind": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2245,6 +2232,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2257,21 +2257,8 @@
     "ExtractedEffectPath": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2292,6 +2279,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2304,21 +2304,8 @@
     "ExtractedFunctionalForm": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2342,6 +2329,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2354,21 +2354,8 @@
     "ExtractedInferenceTarget": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2392,6 +2379,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2404,21 +2404,8 @@
     "ExtractedInteger": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "type": [
@@ -2435,6 +2422,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2447,21 +2447,8 @@
     "ExtractedIntegerList": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "items": {
@@ -2481,6 +2468,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2493,21 +2493,8 @@
     "ExtractedMapQuantity": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2531,6 +2518,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2543,21 +2543,8 @@
     "ExtractedMeasureFamily": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2581,6 +2568,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2593,21 +2593,8 @@
     "ExtractedMeasureType": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2631,6 +2618,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2643,21 +2643,8 @@
     "ExtractedModality": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2681,6 +2668,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2693,21 +2693,8 @@
     "ExtractedModelFamily": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2731,6 +2718,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2743,21 +2743,8 @@
     "ExtractedNotStructurableReason": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2781,6 +2768,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2793,21 +2793,8 @@
     "ExtractedNullHypothesis": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2828,6 +2815,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2840,21 +2840,8 @@
     "ExtractedNumber": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "type": [
@@ -2871,6 +2858,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2883,21 +2883,8 @@
     "ExtractedNumberList": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "items": {
@@ -2917,6 +2904,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2929,21 +2929,8 @@
     "ExtractedPerformanceRelation": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -2964,6 +2951,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -2976,21 +2976,8 @@
     "ExtractedPolaritySemantics": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3011,6 +2998,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3023,21 +3023,8 @@
     "ExtractedPrespecification": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3061,6 +3048,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3073,21 +3073,8 @@
     "ExtractedRegionDefinition": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3111,6 +3098,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3123,21 +3123,8 @@
     "ExtractedRegionType": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3161,6 +3148,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3173,21 +3173,8 @@
     "ExtractedResponseModalityList": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "items": {
@@ -3214,6 +3201,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3226,21 +3226,8 @@
     "ExtractedResultKind": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3264,6 +3251,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3276,21 +3276,8 @@
     "ExtractedResultReporting": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3311,6 +3298,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3323,21 +3323,8 @@
     "ExtractedSampleSource": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3358,6 +3345,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3370,21 +3370,8 @@
     "ExtractedSecondBlockList": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "items": {
@@ -3411,6 +3398,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3423,21 +3423,8 @@
     "ExtractedSpatialScope": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3461,6 +3448,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3473,21 +3473,8 @@
     "ExtractedSpatialUnit": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3511,6 +3498,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3523,21 +3523,8 @@
     "ExtractedSpecies": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3561,6 +3548,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3573,21 +3573,8 @@
     "ExtractedStatisticFamily": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3611,6 +3598,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3623,21 +3623,8 @@
     "ExtractedStimulusModalityList": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "items": {
@@ -3664,6 +3651,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3676,21 +3676,8 @@
     "ExtractedString": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "type": [
@@ -3707,6 +3694,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3719,21 +3719,8 @@
     "ExtractedStringList": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "items": {
@@ -3753,6 +3740,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3765,21 +3765,8 @@
     "ExtractedTablePurpose": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3803,6 +3790,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3815,21 +3815,8 @@
     "ExtractedTaskVariantAxis": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3853,6 +3840,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3865,21 +3865,8 @@
     "ExtractedTermType": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3900,6 +3887,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3912,21 +3912,8 @@
     "ExtractedTimepointRelation": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -3950,6 +3937,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -3962,21 +3962,8 @@
     "ExtractedValue": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {},
         "value_source": {
@@ -3988,6 +3975,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -4000,21 +4000,8 @@
     "ExtractedVariationLevel": {
       "additionalProperties": false,
       "properties": {
-        "evidence": {
-          "$ref": "#/$defs/Evidence"
-        },
         "extraction_status": {
           "$ref": "#/$defs/ExtractionStatus"
-        },
-        "unreported_reason": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/UnreportedReason"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "value": {
           "anyOf": [
@@ -4038,6 +4025,19 @@
               "type": "null"
             }
           ]
+        },
+        "unreported_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnreportedReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
         }
       },
       "required": [
@@ -4050,25 +4050,22 @@
     "ExtractionMetadata": {
       "additionalProperties": false,
       "properties": {
-        "extraction_date": {
-          "format": "date",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "extractor_model": {
           "type": "string"
         },
         "extractor_version": {
           "type": "string"
         },
-        "paper_sections": {
-          "items": {
-            "$ref": "#/$defs/PaperSection"
-          },
+        "source_text_hash": {
           "type": [
-            "array",
+            "string",
+            "null"
+          ]
+        },
+        "extraction_date": {
+          "format": "date",
+          "type": [
+            "string",
             "null"
           ]
         },
@@ -4078,9 +4075,12 @@
             "null"
           ]
         },
-        "source_text_hash": {
+        "paper_sections": {
+          "items": {
+            "$ref": "#/$defs/PaperSection"
+          },
           "type": [
-            "string",
+            "array",
             "null"
           ]
         }
@@ -4103,59 +4103,10 @@
     "FNIRS": {
       "additionalProperties": false,
       "properties": {
-        "acquisition_duration_seconds": {
+        "sampling_frequency_hz": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "acquisition_type": {
-          "enum": [
-            "FNIRS"
-          ],
-          "type": "string"
-        },
-        "brain_coverage": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedBrainCoverage"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "device": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "Device"
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "modality": {
-          "$ref": "#/$defs/ExtractedModality"
-        },
-        "nirs_channel_count": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "nirs_placement_scheme": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedStringList"
             },
             {
               "type": "null"
@@ -4172,20 +4123,20 @@
             }
           ]
         },
-        "recorded_signal_types": {
+        "nirs_channel_count": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedStringList"
+              "$ref": "#/$defs/ExtractedInteger"
             },
             {
               "type": "null"
             }
           ]
         },
-        "sampling_frequency_hz": {
+        "wavelengths_nm": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedNumber"
+              "$ref": "#/$defs/ExtractedNumberList"
             },
             {
               "type": "null"
@@ -4212,6 +4163,26 @@
             }
           ]
         },
+        "nirs_placement_scheme": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recorded_signal_types": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "stable_id": {
           "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
           "type": [
@@ -4219,10 +4190,39 @@
             "null"
           ]
         },
-        "wavelengths_nm": {
+        "local_id": {
+          "type": "string"
+        },
+        "acquisition_type": {
+          "enum": [
+            "FNIRS"
+          ],
+          "type": "string"
+        },
+        "modality": {
+          "$ref": "#/$defs/ExtractedModality"
+        },
+        "acquisition_duration_seconds": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedNumberList"
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-reference": "Device"
+        },
+        "brain_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedBrainCoverage"
             },
             {
               "type": "null"
@@ -4241,15 +4241,18 @@
     "FactorLevel": {
       "additionalProperties": false,
       "properties": {
-        "arms": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ],
-          "x-reference": "Arm"
+        "level": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "order": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedInteger"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "conditions": {
           "items": {
@@ -4271,18 +4274,25 @@
           ],
           "x-reference": "Group"
         },
-        "level": {
-          "$ref": "#/$defs/ExtractedString"
+        "timepoints": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Timepoint"
         },
-        "order": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "arms": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Arm"
         },
         "regions": {
           "items": {
@@ -4293,16 +4303,6 @@
             "null"
           ],
           "x-reference": "Region"
-        },
-        "timepoints": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ],
-          "x-reference": "Timepoint"
         }
       },
       "required": [
@@ -4324,6 +4324,69 @@
     "Group": {
       "additionalProperties": false,
       "properties": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "species": {
+          "$ref": "#/$defs/ExtractedSpecies"
+        },
+        "arm": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-reference": "Arm"
+        },
+        "approached_count": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedInteger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "consented_count": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedInteger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "enrolled_count": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedInteger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "acquired_count": {
           "anyOf": [
             {
@@ -4334,10 +4397,50 @@
             }
           ]
         },
-        "age_maximum": {
+        "excluded_count": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedNumber"
+              "$ref": "#/$defs/ExtractedInteger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inclusion_criteria": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exclusion_criteria": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recruitment_method": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recruitment_dates": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
@@ -4345,26 +4448,6 @@
           ]
         },
         "age_mean": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "age_median": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "age_minimum": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedNumber"
@@ -4384,6 +4467,36 @@
             }
           ]
         },
+        "age_minimum": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "age_maximum": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "age_median": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "age_unit": {
           "anyOf": [
             {
@@ -4394,130 +4507,13 @@
             }
           ]
         },
-        "age_unit_normalized": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "approached_count": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "arm": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "Arm"
-        },
-        "clinical_characteristics": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "consented_count": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "description": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "diagnostic_instrument": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ],
-          "x-reference": "Assessment"
-        },
-        "diagnostic_system": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "education_summary": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "enrolled_count": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "ethnicity_distribution": {
+        "sex_distribution": {
           "items": {
             "$ref": "#/$defs/CategoryDistribution"
           },
           "type": [
             "array",
             "null"
-          ]
-        },
-        "excluded_count": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "exclusion_criteria": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedStringList"
-            },
-            {
-              "type": "null"
-            }
           ]
         },
         "gender_distribution": {
@@ -4538,7 +4534,25 @@
             "null"
           ]
         },
-        "inclusion_criteria": {
+        "race_distribution": {
+          "items": {
+            "$ref": "#/$defs/CategoryDistribution"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "ethnicity_distribution": {
+          "items": {
+            "$ref": "#/$defs/CategoryDistribution"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "population_characteristics": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedStringList"
@@ -4547,19 +4561,6 @@
               "type": "null"
             }
           ]
-        },
-        "is_healthy": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedBoolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "local_id": {
-          "type": "string"
         },
         "medical_condition": {
           "anyOf": [
@@ -4571,7 +4572,27 @@
             }
           ]
         },
-        "medication_status": {
+        "diagnostic_system": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "diagnostic_instrument": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Assessment"
+        },
+        "clinical_characteristics": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -4591,39 +4612,7 @@
             }
           ]
         },
-        "name": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "other_characteristics": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedStringList"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "population_characteristics": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedStringList"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "race_distribution": {
-          "items": {
-            "$ref": "#/$defs/CategoryDistribution"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "recruitment_dates": {
+        "medication_status": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -4633,7 +4622,7 @@
             }
           ]
         },
-        "recruitment_method": {
+        "education_summary": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -4643,10 +4632,10 @@
             }
           ]
         },
-        "sample_overlap_count": {
+        "socioeconomic_status_summary": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedInteger"
+              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
@@ -4673,16 +4662,27 @@
             }
           ]
         },
-        "sex_distribution": {
-          "items": {
-            "$ref": "#/$defs/CategoryDistribution"
-          },
-          "type": [
-            "array",
-            "null"
+        "sample_overlap_count": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedInteger"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
-        "socioeconomic_status_summary": {
+        "is_healthy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedBoolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "age_unit_normalized": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -4692,14 +4692,14 @@
             }
           ]
         },
-        "species": {
-          "$ref": "#/$defs/ExtractedSpecies"
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
+        "other_characteristics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -4714,10 +4714,40 @@
     "InferenceSettings": {
       "additionalProperties": false,
       "properties": {
-        "alpha_level": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "inference_level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "height_threshold_value": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "height_threshold_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
@@ -4744,15 +4774,15 @@
             }
           ]
         },
-        "correction_regions": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ],
-          "x-reference": "Region"
+        "multiple_comparison_method": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "correction_scope": {
           "anyOf": [
@@ -4764,40 +4794,17 @@
             }
           ]
         },
-        "height_threshold_type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "correction_regions": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Region"
         },
-        "height_threshold_value": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "inference_level": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "multiple_comparison_method": {
+        "search_volume": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -4817,10 +4824,20 @@
             }
           ]
         },
-        "number_of_tests": {
+        "tfce_used": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedInteger"
+              "$ref": "#/$defs/ExtractedBoolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tfce_parameters": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
@@ -4837,37 +4854,20 @@
             }
           ]
         },
-        "search_volume": {
+        "alpha_level": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedString"
+              "$ref": "#/$defs/ExtractedNumber"
             },
             {
               "type": "null"
             }
           ]
         },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "tfce_parameters": {
+        "number_of_tests": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "tfce_used": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedBoolean"
+              "$ref": "#/$defs/ExtractedInteger"
             },
             {
               "type": "null"
@@ -4893,77 +4893,8 @@
     "LatentDecompositionDetails": {
       "additionalProperties": false,
       "properties": {
-        "component_id": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "component_label": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "crossblock_covariance_percent": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "details_type": {
-          "enum": [
-            "LatentDecompositionDetails"
-          ],
-          "type": "string"
-        },
-        "dimensionality_selection_method": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "map_quantity": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedMapQuantity"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "method": {
           "$ref": "#/$defs/ExtractedDecompositionMethod"
-        },
-        "polarity_semantics": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedPolaritySemantics"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "salience_threshold": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "second_block": {
           "$ref": "#/$defs/ExtractedSecondBlockList"
@@ -4988,7 +4919,10 @@
             }
           ]
         },
-        "selection_criterion": {
+        "component_id": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "component_label": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -5008,6 +4942,26 @@
             }
           ]
         },
+        "dimensionality_selection_method": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selection_criterion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "variance_explained_percent": {
           "anyOf": [
             {
@@ -5017,6 +4971,52 @@
               "type": "null"
             }
           ]
+        },
+        "crossblock_covariance_percent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "map_quantity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedMapQuantity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "salience_threshold": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "polarity_semantics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedPolaritySemantics"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "details_type": {
+          "enum": [
+            "LatentDecompositionDetails"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -5031,62 +5031,6 @@
     "MRI": {
       "additionalProperties": false,
       "properties": {
-        "acquisition_duration_seconds": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "acquisition_type": {
-          "enum": [
-            "MRI"
-          ],
-          "type": "string"
-        },
-        "acquisition_voxel_size_mm": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumberList"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "brain_coverage": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedBrainCoverage"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "device": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "Device"
-        },
-        "echo_time_seconds": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumberList"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "local_id": {
-          "type": "string"
-        },
         "magnetic_field_strength_tesla": {
           "anyOf": [
             {
@@ -5097,10 +5041,7 @@
             }
           ]
         },
-        "modality": {
-          "$ref": "#/$defs/ExtractedModality"
-        },
-        "mr_acquisition_type": {
+        "pulse_sequence_type": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -5110,17 +5051,7 @@
             }
           ]
         },
-        "number_of_volumes": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedInteger"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "pulse_sequence_type": {
+        "mr_acquisition_type": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -5140,11 +5071,80 @@
             }
           ]
         },
+        "echo_time_seconds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumberList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "acquisition_voxel_size_mm": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumberList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "number_of_volumes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedInteger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "stable_id": {
           "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
           "type": [
             "string",
             "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "acquisition_type": {
+          "enum": [
+            "MRI"
+          ],
+          "type": "string"
+        },
+        "modality": {
+          "$ref": "#/$defs/ExtractedModality"
+        },
+        "acquisition_duration_seconds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-reference": "Device"
+        },
+        "brain_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedBrainCoverage"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -5186,11 +5186,21 @@
     "Measure": {
       "additionalProperties": false,
       "properties": {
-        "family": {
-          "$ref": "#/$defs/ExtractedMeasureFamily"
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "local_id": {
           "type": "string"
+        },
+        "family": {
+          "$ref": "#/$defs/ExtractedMeasureFamily"
+        },
+        "type": {
+          "$ref": "#/$defs/ExtractedMeasureType"
         },
         "source_label": {
           "anyOf": [
@@ -5211,16 +5221,6 @@
               "type": "null"
             }
           ]
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "$ref": "#/$defs/ExtractedMeasureType"
         },
         "unit": {
           "anyOf": [
@@ -5282,12 +5282,12 @@
     "Mediation": {
       "additionalProperties": false,
       "properties": {
+        "path": {
+          "$ref": "#/$defs/ExtractedEffectPath"
+        },
         "mediator": {
           "type": "string",
           "x-reference": "ModelTerm"
-        },
-        "path": {
-          "$ref": "#/$defs/ExtractedEffectPath"
         }
       },
       "required": [
@@ -5316,15 +5316,21 @@
     "ModelEstimation": {
       "additionalProperties": false,
       "properties": {
-        "estimator": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "model_family": {
+          "$ref": "#/$defs/ExtractedModelFamily"
+        },
+        "model_type": {
+          "$ref": "#/$defs/ExtractedString"
         },
         "hrf_model": {
           "anyOf": [
@@ -5336,22 +5342,6 @@
             }
           ]
         },
-        "inputs_from": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ],
-          "x-reference": "ModelEstimation"
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "model_family": {
-          "$ref": "#/$defs/ExtractedModelFamily"
-        },
         "model_settings": {
           "anyOf": [
             {
@@ -5362,18 +5352,18 @@
             }
           ]
         },
-        "model_type": {
+        "stage": {
           "$ref": "#/$defs/ExtractedString"
         },
-        "preprocessing": {
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ],
-          "x-reference": "Preprocessing"
+        "estimator": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "software": {
           "anyOf": [
@@ -5395,15 +5385,25 @@
             }
           ]
         },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "preprocessing": {
+          "items": {
+            "type": "string"
+          },
           "type": [
-            "string",
+            "array",
             "null"
-          ]
+          ],
+          "x-reference": "Preprocessing"
         },
-        "stage": {
-          "$ref": "#/$defs/ExtractedString"
+        "inputs_from": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "ModelEstimation"
         },
         "terms": {
           "items": {
@@ -5438,12 +5438,54 @@
     "ModelTerm": {
       "additionalProperties": false,
       "properties": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "type": {
+          "$ref": "#/$defs/ExtractedTermType"
+        },
+        "levels": {
+          "items": {
+            "$ref": "#/$defs/FactorLevel"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "assessment": {
           "type": [
             "string",
             "null"
           ],
           "x-reference": "Assessment"
+        },
+        "region": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-reference": "Region"
+        },
+        "variation_level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedVariationLevel"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "functional_form": {
           "anyOf": [
@@ -5465,48 +5507,6 @@
           ],
           "x-reference": "ModelTerm"
         },
-        "levels": {
-          "items": {
-            "$ref": "#/$defs/FactorLevel"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "name": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "region": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "Region"
-        },
-        "source_definition": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "$ref": "#/$defs/ExtractedTermType"
-        },
         "unit": {
           "anyOf": [
             {
@@ -5517,10 +5517,10 @@
             }
           ]
         },
-        "variation_level": {
+        "source_definition": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedVariationLevel"
+              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
@@ -5539,17 +5539,17 @@
     "NotStructurableDetails": {
       "additionalProperties": false,
       "properties": {
+        "reason": {
+          "$ref": "#/$defs/ExtractedNotStructurableReason"
+        },
+        "explanation": {
+          "$ref": "#/$defs/ExtractedString"
+        },
         "details_type": {
           "enum": [
             "NotStructurableDetails"
           ],
           "type": "string"
-        },
-        "explanation": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "reason": {
-          "$ref": "#/$defs/ExtractedNotStructurableReason"
         }
       },
       "required": [
@@ -5580,16 +5580,7 @@
     "OtherAnalysisDetails": {
       "additionalProperties": false,
       "properties": {
-        "details_type": {
-          "enum": [
-            "OtherAnalysisDetails"
-          ],
-          "type": "string"
-        },
         "method_label": {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        "reason_first_class_type_not_used": {
           "$ref": "#/$defs/ExtractedString"
         },
         "structured_details": {
@@ -5601,6 +5592,15 @@
               "type": "null"
             }
           ]
+        },
+        "reason_first_class_type_not_used": {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        "details_type": {
+          "enum": [
+            "OtherAnalysisDetails"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -5614,45 +5614,6 @@
     "OtherModality": {
       "additionalProperties": false,
       "properties": {
-        "acquisition_duration_seconds": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "acquisition_type": {
-          "enum": [
-            "OtherModality"
-          ],
-          "type": "string"
-        },
-        "brain_coverage": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedBrainCoverage"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "device": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "Device"
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "modality": {
-          "$ref": "#/$defs/ExtractedModality"
-        },
         "modality_label": {
           "$ref": "#/$defs/ExtractedString"
         },
@@ -5672,6 +5633,45 @@
             "string",
             "null"
           ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "acquisition_type": {
+          "enum": [
+            "OtherModality"
+          ],
+          "type": "string"
+        },
+        "modality": {
+          "$ref": "#/$defs/ExtractedModality"
+        },
+        "acquisition_duration_seconds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-reference": "Device"
+        },
+        "brain_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedBrainCoverage"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -5686,39 +5686,6 @@
     "PET": {
       "additionalProperties": false,
       "properties": {
-        "acquisition_duration_seconds": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "acquisition_type": {
-          "enum": [
-            "PET"
-          ],
-          "type": "string"
-        },
-        "brain_coverage": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedBrainCoverage"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "device": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "x-reference": "Device"
-        },
         "image_units": {
           "anyOf": [
             {
@@ -5729,11 +5696,25 @@
             }
           ]
         },
-        "local_id": {
-          "type": "string"
+        "tracer_name": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
-        "modality": {
-          "$ref": "#/$defs/ExtractedModality"
+        "tracer_radionuclide": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "mode_of_administration": {
           "anyOf": [
@@ -5745,20 +5726,30 @@
             }
           ]
         },
-        "reconstructed_voxel_size_mm": {
+        "scan_type": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedNumberList"
+              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
             }
           ]
         },
-        "scan_type": {
+        "uptake_time_seconds": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedString"
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reconstructed_voxel_size_mm": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumberList"
             },
             {
               "type": "null"
@@ -5782,30 +5773,39 @@
             "null"
           ]
         },
-        "tracer_name": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "local_id": {
+          "type": "string"
         },
-        "tracer_radionuclide": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "acquisition_type": {
+          "enum": [
+            "PET"
+          ],
+          "type": "string"
         },
-        "uptake_time_seconds": {
+        "modality": {
+          "$ref": "#/$defs/ExtractedModality"
+        },
+        "acquisition_duration_seconds": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-reference": "Device"
+        },
+        "brain_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedBrainCoverage"
             },
             {
               "type": "null"
@@ -5824,15 +5824,14 @@
     "PaperSection": {
       "additionalProperties": false,
       "properties": {
-        "end_char": {
+        "ordinal": {
           "minimum": 0,
           "type": "integer"
+        },
+        "title": {
+          "type": "string"
         },
         "level": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "ordinal": {
           "minimum": 0,
           "type": "integer"
         },
@@ -5846,8 +5845,9 @@
           "minimum": 0,
           "type": "integer"
         },
-        "title": {
-          "type": "string"
+        "end_char": {
+          "minimum": 0,
+          "type": "integer"
         }
       },
       "required": [
@@ -5866,6 +5866,16 @@
         "name": {
           "$ref": "#/$defs/ExtractedString"
         },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "reference_value": {
           "anyOf": [
             {
@@ -5880,16 +5890,6 @@
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedPerformanceRelation"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "value": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
             },
             {
               "type": "null"
@@ -5924,23 +5924,20 @@
     "Preprocessing": {
       "additionalProperties": false,
       "properties": {
-        "description": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         },
         "local_id": {
           "type": "string"
         },
-        "smoothing_fwhm_mm": {
+        "description": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedNumberList"
+              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
@@ -5957,17 +5954,20 @@
             }
           ]
         },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "steps": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "smoothing_fwhm_mm": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumberList"
             },
             {
               "type": "null"
@@ -5993,27 +5993,11 @@
     "Region": {
       "additionalProperties": false,
       "properties": {
-        "atlas": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "definition_method": {
-          "$ref": "#/$defs/ExtractedRegionDefinition"
-        },
-        "description": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
           ]
         },
         "local_id": {
@@ -6021,6 +6005,9 @@
         },
         "name": {
           "$ref": "#/$defs/ExtractedString"
+        },
+        "definition_method": {
+          "$ref": "#/$defs/ExtractedRegionDefinition"
         },
         "region_type": {
           "anyOf": [
@@ -6032,11 +6019,24 @@
             }
           ]
         },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
+        "atlas": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -6129,22 +6129,6 @@
     "SimilarityDetails": {
       "additionalProperties": false,
       "properties": {
-        "competing_models": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedStringList"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "details_type": {
-          "enum": [
-            "SimilarityDetails"
-          ],
-          "type": "string"
-        },
         "model": {
           "anyOf": [
             {
@@ -6174,6 +6158,22 @@
               "type": "null"
             }
           ]
+        },
+        "competing_models": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "details_type": {
+          "enum": [
+            "SimilarityDetails"
+          ],
+          "type": "string"
         }
       },
       "required": [
@@ -6216,15 +6216,8 @@
     "Statistic": {
       "additionalProperties": false,
       "properties": {
-        "degrees_of_freedom_denominator": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedNumber"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "family": {
+          "$ref": "#/$defs/ExtractedStatisticFamily"
         },
         "degrees_of_freedom_numerator": {
           "anyOf": [
@@ -6236,8 +6229,15 @@
             }
           ]
         },
-        "family": {
-          "$ref": "#/$defs/ExtractedStatisticFamily"
+        "degrees_of_freedom_denominator": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -6275,6 +6275,94 @@
     "Study": {
       "additionalProperties": false,
       "properties": {
+        "extraction_metadata": {
+          "$ref": "#/$defs/ExtractionMetadata"
+        },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hypothesis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "design": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StudyDesign"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/Group"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "tasks": {
+          "items": {
+            "$ref": "#/$defs/Task"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "assessments": {
+          "items": {
+            "$ref": "#/$defs/Assessment"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "regions": {
+          "items": {
+            "$ref": "#/$defs/Region"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "devices": {
+          "items": {
+            "$ref": "#/$defs/Device"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "acquisitions": {
           "items": {
             "anyOf": [
@@ -6300,108 +6388,9 @@
             "null"
           ]
         },
-        "analyses": {
+        "preprocessings": {
           "items": {
-            "$ref": "#/$defs/Analysis"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "assessments": {
-          "items": {
-            "$ref": "#/$defs/Assessment"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "coordinate_sets": {
-          "items": {
-            "$ref": "#/$defs/CoordinateSet"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "description": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "design": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/StudyDesign"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "devices": {
-          "items": {
-            "$ref": "#/$defs/Device"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "external_datasets": {
-          "items": {
-            "$ref": "#/$defs/ExternalDataset"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "extraction_metadata": {
-          "$ref": "#/$defs/ExtractionMetadata"
-        },
-        "groups": {
-          "items": {
-            "$ref": "#/$defs/Group"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "hypothesis": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedStringList"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "inference_settings": {
-          "items": {
-            "$ref": "#/$defs/InferenceSettings"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "local_id": {
-          "type": "string"
-        },
-        "measures": {
-          "items": {
-            "$ref": "#/$defs/Measure"
+            "$ref": "#/$defs/Preprocessing"
           },
           "type": [
             "array",
@@ -6417,18 +6406,27 @@
             "null"
           ]
         },
-        "preprocessings": {
+        "inference_settings": {
           "items": {
-            "$ref": "#/$defs/Preprocessing"
+            "$ref": "#/$defs/InferenceSettings"
           },
           "type": [
             "array",
             "null"
           ]
         },
-        "regions": {
+        "measures": {
           "items": {
-            "$ref": "#/$defs/Region"
+            "$ref": "#/$defs/Measure"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "analyses": {
+          "items": {
+            "$ref": "#/$defs/Analysis"
           },
           "type": [
             "array",
@@ -6445,13 +6443,6 @@
             }
           ]
         },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "tables": {
           "items": {
             "$ref": "#/$defs/Table"
@@ -6461,9 +6452,18 @@
             "null"
           ]
         },
-        "tasks": {
+        "coordinate_sets": {
           "items": {
-            "$ref": "#/$defs/Task"
+            "$ref": "#/$defs/CoordinateSet"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "external_datasets": {
+          "items": {
+            "$ref": "#/$defs/ExternalDataset"
           },
           "type": [
             "array",
@@ -6481,6 +6481,16 @@
     "StudyDesign": {
       "additionalProperties": false,
       "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "allocation": {
           "anyOf": [
             {
@@ -6489,15 +6499,6 @@
             {
               "type": "null"
             }
-          ]
-        },
-        "arms": {
-          "items": {
-            "$ref": "#/$defs/Arm"
-          },
-          "type": [
-            "array",
-            "null"
           ]
         },
         "assignment_structure": {
@@ -6520,14 +6521,13 @@
             }
           ]
         },
-        "description": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
+        "arms": {
+          "items": {
+            "$ref": "#/$defs/Arm"
+          },
+          "type": [
+            "array",
+            "null"
           ]
         },
         "timepoints": {
@@ -6546,7 +6546,47 @@
     "Table": {
       "additionalProperties": false,
       "properties": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "local_id": {
+          "type": "string"
+        },
+        "table_number": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "caption": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "footer": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -6576,50 +6616,10 @@
             }
           ]
         },
-        "footer": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "local_id": {
-          "type": "string"
-        },
         "purpose": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedTablePurpose"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "table_number": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "title": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
@@ -6651,53 +6651,11 @@
     "Task": {
       "additionalProperties": false,
       "properties": {
-        "acquisitions": {
-          "items": {
-            "type": "string"
-          },
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
           "type": [
-            "array",
+            "string",
             "null"
-          ],
-          "x-reference": "Acquisition"
-        },
-        "conditions": {
-          "items": {
-            "$ref": "#/$defs/Condition"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "description": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "design_type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedDesignType"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "instructions": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
           ]
         },
         "local_id": {
@@ -6723,17 +6681,65 @@
             }
           ]
         },
-        "performance_measures": {
+        "variant_qualifiers": {
+          "items": {
+            "$ref": "#/$defs/TaskQualifier"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "description": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ExtractedStringList"
+              "$ref": "#/$defs/ExtractedString"
             },
             {
               "type": "null"
             }
           ]
         },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "design_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedDesignType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "acquisitions": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Acquisition"
+        },
         "presentation_software": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "instructions": {
           "anyOf": [
             {
               "$ref": "#/$defs/ExtractedString"
@@ -6751,23 +6757,6 @@
             {
               "type": "null"
             }
-          ]
-        },
-        "response_modality": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedResponseModalityList"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
           ]
         },
         "stimuli": {
@@ -6800,13 +6789,24 @@
             }
           ]
         },
-        "variant_qualifiers": {
-          "items": {
-            "$ref": "#/$defs/TaskQualifier"
-          },
-          "type": [
-            "array",
-            "null"
+        "response_modality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedResponseModalityList"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "performance_measures": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtractedStringList"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -6819,11 +6819,11 @@
     "TaskQualifier": {
       "additionalProperties": false,
       "properties": {
-        "axis": {
-          "$ref": "#/$defs/ExtractedTaskVariantAxis"
-        },
         "qualifier": {
           "$ref": "#/$defs/ExtractedString"
+        },
+        "axis": {
+          "$ref": "#/$defs/ExtractedTaskVariantAxis"
         }
       },
       "required": [
@@ -6855,11 +6855,21 @@
     "Timepoint": {
       "additionalProperties": false,
       "properties": {
+        "stable_id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "local_id": {
           "type": "string"
         },
         "name": {
           "$ref": "#/$defs/ExtractedString"
+        },
+        "relation_to_intervention": {
+          "$ref": "#/$defs/ExtractedTimepointRelation"
         },
         "order": {
           "anyOf": [
@@ -6869,16 +6879,6 @@
             {
               "type": "null"
             }
-          ]
-        },
-        "relation_to_intervention": {
-          "$ref": "#/$defs/ExtractedTimepointRelation"
-        },
-        "stable_id": {
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-          "type": [
-            "string",
-            "null"
           ]
         },
         "time_from_intervention": {
@@ -6944,6 +6944,94 @@
   "additionalProperties": false,
   "metamodel_version": "1.12.0",
   "properties": {
+    "extraction_metadata": {
+      "$ref": "#/$defs/ExtractionMetadata"
+    },
+    "stable_id": {
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "local_id": {
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExtractedString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "hypothesis": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExtractedStringList"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "design": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StudyDesign"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "groups": {
+      "items": {
+        "$ref": "#/$defs/Group"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/Task"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "assessments": {
+      "items": {
+        "$ref": "#/$defs/Assessment"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "regions": {
+      "items": {
+        "$ref": "#/$defs/Region"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "devices": {
+      "items": {
+        "$ref": "#/$defs/Device"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
     "acquisitions": {
       "items": {
         "anyOf": [
@@ -6969,108 +7057,9 @@
         "null"
       ]
     },
-    "analyses": {
+    "preprocessings": {
       "items": {
-        "$ref": "#/$defs/Analysis"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
-    "assessments": {
-      "items": {
-        "$ref": "#/$defs/Assessment"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
-    "coordinate_sets": {
-      "items": {
-        "$ref": "#/$defs/CoordinateSet"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
-    "description": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/ExtractedString"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "design": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/StudyDesign"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "devices": {
-      "items": {
-        "$ref": "#/$defs/Device"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
-    "external_datasets": {
-      "items": {
-        "$ref": "#/$defs/ExternalDataset"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
-    "extraction_metadata": {
-      "$ref": "#/$defs/ExtractionMetadata"
-    },
-    "groups": {
-      "items": {
-        "$ref": "#/$defs/Group"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
-    "hypothesis": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/ExtractedStringList"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "inference_settings": {
-      "items": {
-        "$ref": "#/$defs/InferenceSettings"
-      },
-      "type": [
-        "array",
-        "null"
-      ]
-    },
-    "local_id": {
-      "type": "string"
-    },
-    "measures": {
-      "items": {
-        "$ref": "#/$defs/Measure"
+        "$ref": "#/$defs/Preprocessing"
       },
       "type": [
         "array",
@@ -7086,18 +7075,27 @@
         "null"
       ]
     },
-    "preprocessings": {
+    "inference_settings": {
       "items": {
-        "$ref": "#/$defs/Preprocessing"
+        "$ref": "#/$defs/InferenceSettings"
       },
       "type": [
         "array",
         "null"
       ]
     },
-    "regions": {
+    "measures": {
       "items": {
-        "$ref": "#/$defs/Region"
+        "$ref": "#/$defs/Measure"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "analyses": {
+      "items": {
+        "$ref": "#/$defs/Analysis"
       },
       "type": [
         "array",
@@ -7114,13 +7112,6 @@
         }
       ]
     },
-    "stable_id": {
-      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
     "tables": {
       "items": {
         "$ref": "#/$defs/Table"
@@ -7130,9 +7121,18 @@
         "null"
       ]
     },
-    "tasks": {
+    "coordinate_sets": {
       "items": {
-        "$ref": "#/$defs/Task"
+        "$ref": "#/$defs/CoordinateSet"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "external_datasets": {
+      "items": {
+        "$ref": "#/$defs/ExternalDataset"
       },
       "type": [
         "array",
