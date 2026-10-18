@@ -6,6 +6,8 @@ import { coordinateBundle, CUNEUS, FACES, HOUSES, key, LOCALIZER, revision, SCRA
 import { renderWithStores } from '../test/render';
 import { answerPending, withoutIds } from '../test/undoHelpers';
 import { ReviewScreen } from './ReviewScreen';
+import { useShortcuts, type Shortcut } from './shortcuts';
+import { useReviewStores } from '../store/context';
 import { focusedSpans } from '../test/stores';
 import { GROUP_REFERENCE, referencingBundle } from '../test/storeFixture';
 
@@ -539,5 +541,30 @@ describe('a focused reference field', () => {
         press('e');
         expect(stores.session.getState().pending).toEqual([]);
         expect(stores.session.getState().index.slot(GROUP_REFERENCE)?.spans).toEqual([]);
+    });
+});
+
+describe('keys on a separator', () => {
+    it('are the separator’s own: its arrows, Home and End run no shortcut, and other keys still do', () => {
+        const run = vi.fn();
+        const table: Shortcut[] = [
+            { keys: ['ArrowLeft', 'Shift+ArrowRight', 'Home', 'End', 'j'], label: 'stand-in', run },
+        ];
+        function WithShortcuts() {
+            useShortcuts(useReviewStores(), table, () => true);
+            return <div role="separator" aria-orientation="vertical" aria-valuenow={50} tabIndex={0} />;
+        }
+        renderWithStores(<WithShortcuts />, makeBundle({}, 'A paper.'));
+        const separator = screen.getByRole('separator');
+        for (const init of [
+            { key: 'ArrowLeft' },
+            { key: 'ArrowRight', shiftKey: true },
+            { key: 'Home' },
+            { key: 'End' },
+        ])
+            press(init.key, init, separator);
+        expect(run).not.toHaveBeenCalled();
+        press('j', {}, separator);
+        expect(run).toHaveBeenCalledTimes(1);
     });
 });

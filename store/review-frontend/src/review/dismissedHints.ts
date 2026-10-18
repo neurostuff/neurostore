@@ -1,21 +1,12 @@
 import { STEPS, type StepId } from '../model/steps';
+import { readKept, writeKept } from './kept';
 
 const KEY = 'neurostore-review:dismissed-step-hints:v1';
 
 /** The steps whose hint the reviewer dismissed, on this device; none where the browser keeps nothing. */
-export function readDismissed(): StepId[] {
-    try {
-        const kept: unknown = JSON.parse(localStorage.getItem(KEY) ?? '[]');
-        return Array.isArray(kept) ? STEPS.map((step) => step.id).filter((id) => kept.includes(id)) : [];
-    } catch {
-        return [];
-    }
-}
+export const readDismissed = (): StepId[] =>
+    readKept(KEY, (kept) =>
+        Array.isArray(kept) ? STEPS.map((step) => step.id).filter((id) => kept.includes(id)) : undefined
+    ) ?? [];
 
-export function writeDismissed(steps: StepId[]) {
-    try {
-        localStorage.setItem(KEY, JSON.stringify(steps));
-    } catch {
-        // A browser that keeps nothing shows the hint again next time.
-    }
-}
+export const writeDismissed = (steps: StepId[]) => writeKept(KEY, steps);

@@ -35,6 +35,15 @@ describe('help you can find', () => {
         expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeInTheDocument();
     });
 
+    it('lists the keys of the divider between the text and the inspector in the shortcut sheet', () => {
+        setup();
+        fireEvent.click(screen.getByRole('button', { name: 'Help' }));
+        const rows = within(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).getAllByRole('row');
+        const divider = rows.filter((row) => row.lastElementChild?.textContent === 'the pane divider');
+        expect(divider.map((row) => row.firstElementChild?.textContent)).toEqual(['← →', 'Shift+← →', 'Home End']);
+        expect(screen.getByRole('dialog')).toHaveTextContent('double-click it to go back to 60/40');
+    });
+
     it('gives every control on the coordinates step a tooltip', () => {
         setup();
         expect(unhinted()).toEqual([]);

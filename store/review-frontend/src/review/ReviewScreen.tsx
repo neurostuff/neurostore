@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import { CoordinateAside } from '../coordinates/CoordinateAside';
 import { CoordinatesInspector } from '../coordinates/CoordinatesInspector';
-import { useReviewStores, useView } from '../store/context';
+import { useReviewStores, useSession, useView } from '../store/context';
 import type { ViewState } from '../store/viewStore';
 import { TextPane } from '../text/TextPane';
 import { CommandPalette } from './CommandPalette';
@@ -13,6 +13,7 @@ import { SaveNotices } from './SaveNotices';
 import { ShortcutHelp } from './ShortcutHelp';
 import { SHORTCUTS, useShortcuts } from './shortcuts';
 import { SetAsideBanner, SetAsideButton } from './SetAside';
+import { SplitPanes } from './SplitPanes';
 import { StepBar } from './StepBar';
 import { StepGuide } from './StepGuide';
 import { SubmitStep } from './SubmitStep';
@@ -24,6 +25,7 @@ export function ReviewScreen() {
     useShortcuts(useReviewStores(), SHORTCUTS, noDialogOpen);
     const submitting = useView((s) => s.step === 'submit');
     const coordinates = useView(onCoordinates);
+    const viewer = useSession((s) => s.bundle.review?.user_id);
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
             <ReviewAppBar />
@@ -40,15 +42,11 @@ export function ReviewScreen() {
             <SaveNotices />
             <Box sx={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
                 <OutlineRail />
-                <Box component="main" sx={{ flex: '3 1 0', minWidth: 0 }}>
-                    <TextPane aside={CoordinateAside} />
-                </Box>
-                <Box
-                    component="aside"
-                    sx={{ flex: '2 1 0', minWidth: 0, overflow: 'auto', borderLeft: 1, borderColor: 'divider' }}
-                >
-                    {coordinates ? <CoordinatesInspector /> : <StepInspector />}
-                </Box>
+                <SplitPanes
+                    viewer={viewer}
+                    text={<TextPane aside={CoordinateAside} />}
+                    inspector={coordinates ? <CoordinatesInspector /> : <StepInspector />}
+                />
             </Box>
             <ShortcutHelp />
             <CommandPalette />

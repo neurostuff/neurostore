@@ -292,6 +292,9 @@ const within = (target: EventTarget | null, selector: string) =>
 /** A spreadsheet, whose keys are its own but undo and redo. */
 const GRID = '[data-coordinate-table]';
 const THROUGH_GRID = new Set(['Ctrl+Z', 'Ctrl+Shift+Z', 'Ctrl+Y']);
+/** A divider between panes, which moves on its arrows, Home and End. */
+const SEPARATOR = '[role="separator"]';
+const SEPARATOR_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'Home', 'End']);
 
 export const isTextField = (target: EventTarget | null) => within(target, TEXT_FIELD);
 export const isControl = (target: EventTarget | null) => within(target, CONTROL);
@@ -328,6 +331,7 @@ export function useShortcuts(stores: ReviewStores, table: Shortcut[], enabled: (
         const onKeyDown = (event: KeyboardEvent) => {
             if (isTextField(event.target) || within(event.target, DIALOG)) return;
             if (isInGrid(event.target) && !THROUGH_GRID.has(keyName(event))) return;
+            if (within(event.target, SEPARATOR) && SEPARATOR_KEYS.has(event.key)) return;
             if ((event.key === 'Enter' || event.key === ' ') && isControl(event.target)) return;
             const scope: Scope = view(stores).coordinates ? 'coordinates' : 'record';
             const inScope = (key: string) => byKey.get(key)?.find((s) => (s.scope ?? scope) === scope);

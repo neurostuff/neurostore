@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@mui/material';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
@@ -13,6 +13,7 @@ import { OTHER_TAB } from '../store/reviewSession';
 import { selectCanUndo } from '../store/sessionStore';
 import { theme } from '../theme';
 import { ReviewScreen } from './ReviewScreen';
+import { writeShare } from './paneShare';
 import { newSet } from '../test/stores';
 
 const TEXT = 'Twenty patients performed a Stroop task during fMRI scanning.';
@@ -142,5 +143,22 @@ describe('a tab another one holds the review in', () => {
         expect(selectCanUndo(store.session.getState())).toBe(false);
         fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
         expect(store.session.getState().pending).toEqual([]);
+    });
+});
+
+describe('the divider between the text and the inspector', () => {
+    beforeEach(() => localStorage.clear());
+
+    it('sits between them, with the share the reviewer left it at', async () => {
+        const store = await renderScreen();
+        const viewer = store.session.getState().bundle.review!.user_id;
+        client?.stop();
+        cleanup();
+        writeShare(viewer, 45);
+        await renderScreen();
+        const divider = screen.getByRole('separator', { name: 'Resize the text and the review panes' });
+        expect(divider.previousElementSibling).toBe(screen.getByRole('main'));
+        expect(divider.nextElementSibling).toBe(screen.getByRole('complementary', { name: 'review' }));
+        expect(divider).toHaveAttribute('aria-valuenow', '45');
     });
 });
