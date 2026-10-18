@@ -87,6 +87,10 @@ export const stringToNumber = (s: string): { value: number; isValid: boolean } =
     };
 };
 
+export const notUndefinedOrNull = <T,>(value: T): value is NonNullable<T> => {
+    return value !== undefined && value !== null;
+};
+
 export const getAuthorsShortName = (authors: string) => {
     let shortName = authors;
     const authorsList = (authors || '').split(',');

@@ -6,6 +6,17 @@ import useSubmitMetaAnalysisJob from '../hooks/useSubmitMetaAnalysisJob';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { getMetaAnalysisAnnotationId, getMetaAnalysisSpecificationId } from 'helpers/MetaAnalysis.helpers';
+import useGetMetaAnalysisById from 'hooks/metaAnalyses/useGetMetaAnalysisById';
+import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
+import useGetSnapshotAnnotationById from 'hooks/annotations/useGetSnapshotAnnotationById';
+import { AnnotationReturn } from 'neurosynth-compose-typescript-sdk';
+import LargeAleSubtractionReferenceWarning from 'pages/MetaAnalysis/components/LargeAleSubtractionReferenceWarning';
+import {
+    getSpecificationReferenceDataset,
+    isLargeAleSubtractionReference,
+} from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
+import useInclusionColumnOptions from 'pages/MetaAnalysis/hooks/useInclusionColumnOptions';
 
 const MetaAnalysisInstructions = ({
     metaAnalysisId,
@@ -17,6 +28,27 @@ const MetaAnalysisInstructions = ({
     const { mutate: submitMetaAnalysisJob, isPending: submitMetaAnalysisJobIsLoading } = useSubmitMetaAnalysisJob();
     const { enqueueSnackbar } = useSnackbar();
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+    const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
+    const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
+    const { data: specification } = useGetSpecificationById(specificationId);
+    const annotationId = getMetaAnalysisAnnotationId(metaAnalysis);
+    const { data: annotationSnapshot } = useGetSnapshotAnnotationById(annotationId);
+    const neurostoreAnnotationId = (annotationSnapshot as AnnotationReturn | null | undefined)?.neurostore_id;
+    const referenceDataset = getSpecificationReferenceDataset(
+        specification?.database_studyset,
+        specification?.conditions
+    );
+    const studyCountByAnnotationValue = useInclusionColumnOptions(
+        neurostoreAnnotationId,
+        specification?.filter || undefined
+    );
+    // if reference dataset is "neurostore", "neuroquery", or "neurosynth", i.e. not a custom key, then it default to 0 here.
+    const referenceStudyCount = referenceDataset ? (studyCountByAnnotationValue[referenceDataset] ?? 0) : 0;
+    const cloudRunDisabled = isLargeAleSubtractionReference({
+        estimatorLabel: specification?.estimator?.type,
+        referenceDataset,
+        referenceStudyCount,
+    });
     const handleCloseConfirmationDialog = (confirm: boolean | undefined) => {
         if (confirm) {
             submitMetaAnalysisJob(
@@ -62,6 +94,9 @@ const MetaAnalysisInstructions = ({
                         dialogMessage="Note: once you run and produce a result, you will not be able to delete this meta-analysis."
                         onCloseDialog={handleCloseConfirmationDialog}
                     />
+                    {cloudRunDisabled && (
+                        <LargeAleSubtractionReferenceWarning sx={{ marginTop: 0, marginBottom: '0.5rem' }} />
+                    )}
                     <CardHeader
                         title="1. Online via Amazon Web Services"
                         titleTypographyProps={{
@@ -79,7 +114,12 @@ const MetaAnalysisInstructions = ({
                         </Typography>
                     </CardContent>
                     <CardActions sx={{ padding: '0 1rem 1rem 1rem' }}>
-                        <Button variant="contained" fullWidth onClick={() => setShowConfirmationDialog(true)}>
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            disabled={cloudRunDisabled}
+                            onClick={() => setShowConfirmationDialog(true)}
+                        >
                             run meta-analysis
                         </Button>
                     </CardActions>

@@ -1,6 +1,8 @@
 import {
     filterStudyAnalysesTable,
+    getSpecificationReferenceDataset,
     IStudyAnalysesTableFormat,
+    isLargeAleSubtractionReference,
     isMultiGroupAlgorithm,
     selectedReferenceDatasetIsDefaultDataset,
 } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
@@ -93,6 +95,60 @@ describe('SelectAnalysesComponentHelpers', () => {
             const result = filterStudyAnalysesTable(studies, 'alpha', 'MOTOR');
             expect(result).toHaveLength(1);
             expect(result[0].analyses).toEqual([{ analysisId: 'a1', analysisName: 'Motor', isSelected: true }]);
+        });
+    });
+
+    describe('isLargeAleSubtractionReference', () => {
+        it('should read a custom reference from the second condition when no database studyset is set', () => {
+            expect(getSpecificationReferenceDataset(undefined, ['included', 'reference-group'])).toBe(
+                'reference-group'
+            );
+            expect(getSpecificationReferenceDataset('neurostore', ['included'])).toBe('neurostore');
+            expect(getSpecificationReferenceDataset(undefined, ['included'])).toBeUndefined();
+        });
+
+        it('should warn for ALE subtraction against the neurostore reference dataset', () => {
+            expect(
+                isLargeAleSubtractionReference({
+                    estimatorLabel: 'ALESubtraction',
+                    referenceDataset: 'neurostore',
+                    referenceStudyCount: 0,
+                })
+            ).toBe(true);
+        });
+
+        it('should warn for ALE subtraction against a custom reference of 1000 or more studies', () => {
+            expect(
+                isLargeAleSubtractionReference({
+                    estimatorLabel: 'ALESubtraction',
+                    referenceDataset: 'reference-group',
+                    referenceStudyCount: 1000,
+                })
+            ).toBe(true);
+        });
+
+        it('should not warn for a smaller custom reference or a different algorithm or default dataset', () => {
+            expect(
+                isLargeAleSubtractionReference({
+                    estimatorLabel: 'ALESubtraction',
+                    referenceDataset: 'reference-group',
+                    referenceStudyCount: 999,
+                })
+            ).toBe(false);
+            expect(
+                isLargeAleSubtractionReference({
+                    estimatorLabel: 'MKDAChi2',
+                    referenceDataset: 'neurostore',
+                    referenceStudyCount: 5000,
+                })
+            ).toBe(false);
+            expect(
+                isLargeAleSubtractionReference({
+                    estimatorLabel: 'ALESubtraction',
+                    referenceDataset: 'neuroquery',
+                    referenceStudyCount: 5000,
+                })
+            ).toBe(false);
         });
     });
 });
