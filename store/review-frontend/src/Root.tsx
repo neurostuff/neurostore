@@ -27,9 +27,32 @@ function SignIn({ onSignIn }: { onSignIn: () => void }) {
     );
 }
 
+/** Auth0's answers that mean the session is over (an expired or revoked refresh token), so the
+ * reviewer has to sign in again rather than retry. */
+const SESSION_ENDED = new Set(['invalid_grant', 'missing_refresh_token', 'login_required', 'consent_required']);
+
+const sessionEnded = (error: unknown) =>
+    typeof error === 'object' && error !== null && SESSION_ENDED.has(String((error as { error?: unknown }).error));
+
 function SignedInApp({ apiBase }: { apiBase: string }) {
     const { isLoading, isAuthenticated, loginWithRedirect, getAccessTokenSilently } = useAuth0();
-    const api = useMemo(() => httpApi(apiBase, () => getAccessTokenSilently()), [apiBase, getAccessTokenSilently]);
+    const api = useMemo(() => {
+        const signIn = () => loginWithRedirect({ appState: { returnTo: window.location.pathname } });
+        let redirecting = false;
+        return httpApi(apiBase, async () => {
+            try {
+                return await getAccessTokenSilently();
+            } catch (error) {
+                if (!sessionEnded(error)) throw error;
+                if (!redirecting) {
+                    redirecting = true;
+                    void signIn();
+                }
+                // The page is leaving for the sign-in screen; never settle, so no error flashes.
+                return new Promise<string>(() => {});
+            }
+        });
+    }, [apiBase, getAccessTokenSilently, loginWithRedirect]);
     if (isLoading) return <Loading />;
     if (!isAuthenticated)
         return <SignIn onSignIn={() => loginWithRedirect({ appState: { returnTo: window.location.pathname } })} />;

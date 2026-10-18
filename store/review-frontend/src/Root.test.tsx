@@ -61,6 +61,39 @@ describe('Root', () => {
         expect(server.requests[0]).toMatchObject({ path: '/api/review/sources/', problems: [] });
     });
 
+    it.each([
+        ['invalid_grant', 'Unknown or invalid refresh token.'],
+        ['missing_refresh_token', 'Missing Refresh Token'],
+        ['login_required', 'Login required'],
+    ])(
+        'sends the user back to sign in when Auth0 refuses the session (%s), then returns to this page',
+        async (error, description) => {
+            const server = fakeServer([bundle]);
+            vi.stubGlobal('fetch', server.fetch);
+            const auth = signedIn(true);
+            auth.getAccessTokenSilently.mockRejectedValue(
+                Object.assign(new Error(description), { error, error_description: description })
+            );
+            window.history.replaceState(null, '', '/review/papers/S1');
+            render(<Root env={ENV} />);
+            await vi.waitFor(() => expect(auth.loginWithRedirect).toHaveBeenCalledTimes(1));
+            expect(auth.loginWithRedirect).toHaveBeenCalledWith({ appState: { returnTo: '/review/papers/S1' } });
+            expect(screen.queryByText(description)).not.toBeInTheDocument();
+            expect(server.requests).toHaveLength(0);
+        }
+    );
+
+    it('shows any other token failure as an error, without signing the user out', async () => {
+        const server = fakeServer([bundle]);
+        vi.stubGlobal('fetch', server.fetch);
+        const auth = signedIn(true);
+        auth.getAccessTokenSilently.mockRejectedValue(new Error('Failed to fetch'));
+        window.history.replaceState(null, '', '/review');
+        render(<Root env={ENV} />);
+        expect(await screen.findByText(/Failed to fetch/)).toBeInTheDocument();
+        expect(auth.loginWithRedirect).not.toHaveBeenCalled();
+    });
+
     it('sends the token Auth0 gives as the bearer token', async () => {
         const server = fakeServer([bundle]);
         const fetch = vi.fn(server.fetch);
