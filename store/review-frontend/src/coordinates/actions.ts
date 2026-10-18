@@ -268,14 +268,14 @@ interface NewAnalysis {
 export type AnalysisSource = { table: string } | { span: SpanPair };
 
 /**
- * Adds an analysis read from `source`, with its first point or none; the server computes its key. `record` gives
+ * Adds an analysis read from `source`, with `points`; the server computes its key. `record` gives
  * values for the record entity the add makes, set once the server has made it.
  */
 export function addAnalysis(
     stores: ReviewStores,
     source: AnalysisSource,
     fields: NewAnalysis,
-    point: CoordinatePoint | null,
+    points: CoordinatePoint[],
     record: Record<string, string> = {}
 ) {
     if (coordinatePending(stores.session.getState())) return false;
@@ -286,7 +286,7 @@ export function addAnalysis(
     const op = coordinateOp({
         target: { kind: 'coordinate_parse' },
         action: 'add',
-        payload: { analysis: { ...read, ...fields, points: point ? [point] : [] } },
+        payload: { analysis: { ...read, ...fields, points } },
     });
     if (!stores.session.getState().emitBatch([op])) return false;
     if (Object.keys(record).length) stores.view.getState().setOnMade(op.client_op_id, record);

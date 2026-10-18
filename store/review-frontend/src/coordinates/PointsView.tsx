@@ -73,11 +73,18 @@ export function PointsView({ analysis }: { analysis: CoordinateAnalysis }) {
                 </Box>
             )}
             {!engaged && table}
-            <Hint title="Show or hide the grid's other point columns">
-                <Button size="small" aria-pressed={allColumns} onClick={() => setAllColumns((shown) => !shown)}>
-                    More columns
-                </Button>
-            </Hint>
+            <MoreColumns shown={allColumns} onToggle={() => setAllColumns((shown) => !shown)} />
         </>
+    );
+}
+
+/** The button that shows or hides the point columns the grid leaves out at first. */
+export function MoreColumns({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
+    return (
+        <Hint title="Show or hide the grid's other point columns">
+            <Button size="small" aria-pressed={shown} onClick={onToggle}>
+                More columns
+            </Button>
+        </Hint>
     );
 }

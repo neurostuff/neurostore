@@ -10,6 +10,7 @@ import {
     LOCALIZER,
     SCRAMBLED,
 } from '../test/coordinates';
+import { newPointsGrid } from '../test/grid';
 import { renderWithStores } from '../test/render';
 import { coordinateOpErrors } from '../test/schemas';
 import { TextIndex } from '../text/TextIndex';
@@ -37,7 +38,7 @@ function setup() {
 const SENTENCE = 'The precuneus peaked at x = 4, y = -60, z = 40 in the localizer.';
 
 describe('a new coordinate analysis from a selection', () => {
-    it('is offered by the selection bar in the coordinates step, with the selection’s x, y and z as its first point', () => {
+    it('is offered by the selection bar in the coordinates step, with the selection’s x, y and z as its first point', async () => {
         const { select } = setup();
         select(SENTENCE);
         fireEvent.click(
@@ -45,13 +46,9 @@ describe('a new coordinate analysis from a selection', () => {
                 name: 'New coordinate analysis from selection',
             })
         );
-        const form = screen.getByRole('group', {
-            name: 'edit the first point of a new analysis from the selected text',
-        });
+        const form = screen.getByRole('group', { name: 'new analysis from the selected text' });
         expect(within(form).getByRole('textbox', { name: 'name' })).toHaveFocus();
-        expect(within(form).getByRole('spinbutton', { name: 'x' })).toHaveValue(4);
-        expect(within(form).getByRole('spinbutton', { name: 'y' })).toHaveValue(-60);
-        expect(within(form).getByRole('spinbutton', { name: 'z' })).toHaveValue(40);
+        expect((await newPointsGrid(form)).data).toEqual([expect.objectContaining({ x: 4, y: -60, z: 40 })]);
         expect(within(form).getByRole('combobox', { name: 'coordinate space' })).toHaveValue('MNI');
     });
 
@@ -59,9 +56,7 @@ describe('a new coordinate analysis from a selection', () => {
         const { select, pending } = setup();
         select(SENTENCE);
         fireEvent.click(screen.getByRole('button', { name: 'New coordinate analysis from selection' }));
-        const form = screen.getByRole('group', {
-            name: 'edit the first point of a new analysis from the selected text',
-        });
+        const form = screen.getByRole('group', { name: 'new analysis from the selected text' });
         fireEvent.change(within(form).getByRole('textbox', { name: 'name' }), { target: { value: 'Localizer peak' } });
         fireEvent.click(within(form).getByRole('button', { name: 'Add analysis' }));
         const start = COORD_TEXT.indexOf(SENTENCE);
@@ -89,9 +84,7 @@ describe('a new coordinate analysis from a selection', () => {
         const { select, pending, session, stores } = setup();
         select(SENTENCE);
         fireEvent.click(screen.getByRole('button', { name: 'New coordinate analysis from selection' }));
-        const form = screen.getByRole('group', {
-            name: 'edit the first point of a new analysis from the selected text',
-        });
+        const form = screen.getByRole('group', { name: 'new analysis from the selected text' });
         fireEvent.change(within(form).getByRole('textbox', { name: 'name' }), { target: { value: 'Localizer peak' } });
         fireEvent.click(within(form).getByRole('button', { name: 'Add analysis' }));
         const start = COORD_TEXT.indexOf(SENTENCE);

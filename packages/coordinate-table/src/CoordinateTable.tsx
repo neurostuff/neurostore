@@ -43,6 +43,8 @@ export interface CoordinateTableHandle {
   engage(engagement: GridEngagement): void;
   /** Commits the cell edit still open, if one is. */
   finish(): void;
+  /** Commits the cell edit still open, then gives the rows that are not blank, or null after marking their invalid cells. */
+  filledRows(): Row[] | null;
 }
 
 export interface CoordinateTableProps {
@@ -237,6 +239,17 @@ export function CoordinateTable({
     const editor = hot.current?.hotInstance?.getActiveEditor();
     if (editor?.isOpened()) editor.finishEditing();
   };
+  const filledRows = () => {
+    finish();
+    const at = rows.flatMap((row, i) => (isBlankRow(row, columns) ? [] : [i]));
+    const filled = at.map((i) => rows[i]);
+    const problems = invalidCells(filled, columns);
+    if (problems.length === 0) return copyRows(filled);
+    setInvalid(problems.length);
+    hot.current?.hotInstance?.validateRows(at);
+    return null;
+  };
+
   const latestFinish = useRef(finish);
   useLayoutEffect(() => {
     latestFinish.current = finish;
@@ -245,6 +258,7 @@ export function CoordinateTable({
 
   useImperativeHandle(ref, () => ({
     finish,
+    filledRows,
     engage: (engagement) => {
       switch (engagement.kind) {
         case "select":

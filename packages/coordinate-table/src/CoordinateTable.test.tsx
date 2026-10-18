@@ -334,5 +334,33 @@ describe("the coordinate table", () => {
         { ...POINTS[1], z: "9" },
       ]);
     });
+
+    it("filledRows commits the edit still open and gives the rows not blank", () => {
+      const { ref, hot } = engaged();
+      act(() => ref.current!.engage({ kind: "addRow" }));
+      act(() =>
+        ref.current!.engage({ kind: "type", row: 1, column: 2, text: "9" }),
+      );
+      let rows: unknown;
+      act(() => void (rows = ref.current!.filledRows()));
+      expect(rows).toEqual([POINTS[0], { ...POINTS[1], z: "9" }]);
+      expect(hot().getSourceData()).toHaveLength(3);
+    });
+
+    it("filledRows marks the invalid cells of the rows not blank, and gives null", () => {
+      const { ref, hot } = engaged();
+      act(() => hot().edit(0, "x", "left"));
+      act(() => ref.current!.engage({ kind: "addRow" }));
+      let rows: unknown;
+      act(() => void (rows = ref.current!.filledRows()));
+      expect(rows).toBeNull();
+      const invalid = screen
+        .getByRole("group", { name: "points" })
+        .querySelectorAll("td.htInvalid");
+      expect([...invalid].map((cell) => cell.textContent)).toEqual(["left"]);
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "1 cell is not valid",
+      );
+    });
   });
 });

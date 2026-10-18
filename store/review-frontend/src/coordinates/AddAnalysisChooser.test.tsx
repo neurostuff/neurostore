@@ -13,6 +13,7 @@ import {
     RECORD,
     SCRAMBLED,
 } from '../test/coordinates';
+import { newPointsGrid } from '../test/grid';
 import { renderWithStores } from '../test/render';
 import { coordinateOpErrors } from '../test/schemas';
 import { TextIndex } from '../text/TextIndex';
@@ -39,8 +40,7 @@ function setup() {
 
 const chooser = () => screen.getByRole('group', { name: 'add an analysis' });
 const SENTENCE = 'The precuneus peaked at x = 4, y = -60, z = 40 in the localizer.';
-const textForm = () =>
-    screen.getByRole('group', { name: 'edit the first point of a new analysis from the selected text' });
+const textForm = () => screen.getByRole('group', { name: 'new analysis from the selected text' });
 
 describe('adding an analysis, from the coordinates step itself', () => {
     it('offers the selected text or any table, saying to select the sentence first', () => {
@@ -48,27 +48,26 @@ describe('adding an analysis, from the coordinates step itself', () => {
         expect(within(chooser()).getByRole('button', { name: 'From the selected text' })).toBeDisabled();
         expect(within(chooser()).getByText('select its sentence in the paper first')).toBeInTheDocument();
         fireEvent.click(within(chooser()).getByRole('button', { name: 'To Table 2' }));
-        expect(
-            screen.getByRole('group', { name: 'edit the first point of a new analysis in Table 2' })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('group', { name: 'new analysis in Table 2' })).toBeInTheDocument();
     });
 
-    it('takes the selection when there is one', () => {
+    it('takes the selection when there is one', async () => {
         const { select } = setup();
         select(SENTENCE);
         fireEvent.click(within(chooser()).getByRole('button', { name: 'From the selected text' }));
-        expect(within(textForm()).getByRole('spinbutton', { name: 'x' })).toHaveValue(4);
+        expect((await newPointsGrid(textForm())).data).toEqual([expect.objectContaining({ x: 4, y: -60, z: 40 })]);
     });
 
-    it('adds a null result with no points, whole-brain, its record Analysis given the outcome and scope once made', () => {
+    it('adds a null result with no points, whole-brain, its record Analysis given the outcome and scope once made', async () => {
         const { select, pending, session } = setup();
         select(SENTENCE);
         fireEvent.click(within(chooser()).getByRole('button', { name: 'From the selected text' }));
         fireEvent.change(within(textForm()).getByRole('textbox', { name: 'name' }), {
             target: { value: 'Whole brain' },
         });
+        await newPointsGrid(textForm());
         fireEvent.click(within(textForm()).getByRole('switch', { name: 'no significant result: no points' }));
-        expect(within(textForm()).queryByRole('spinbutton', { name: 'x' })).not.toBeInTheDocument();
+        expect(within(textForm()).queryByRole('group', { name: 'points of the new analysis' })).not.toBeInTheDocument();
         fireEvent.change(within(textForm()).getByRole('combobox', { name: 'spatial scope' }), {
             target: { value: 'whole_brain' },
         });

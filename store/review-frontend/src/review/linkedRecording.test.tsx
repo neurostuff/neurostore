@@ -5,6 +5,7 @@ import type { Op } from '../contract/generated/review-ops';
 import { currentAnalyses, type CoordinateAnalysis } from '../model/coordinates';
 import { createOpClient, type OpClient } from '../store/opClient';
 import { fakeFetch, json } from '../test/fakeFetch';
+import { newPointsGrid } from '../test/grid';
 import { linkedBundle, RECORDED } from '../test/linked';
 import { renderWithStores } from '../test/render';
 import { coordinateOpErrors } from '../test/schemas';
@@ -128,11 +129,15 @@ describe('the recorded linked-analyses bundle, driven through the screen', () =>
         const before = new Set(currentAnalyses(stores.session.getState().bundle).map((a) => a.key));
         fireEvent.click(card(FIRST));
         press('c');
-        const form = screen.getByRole('group', { name: 'edit the first point of a new analysis in t1' });
-        const [x, y, z] = added.analysis.points[0].coordinates;
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'x' }), { target: { value: String(x) } });
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'y' }), { target: { value: String(y) } });
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'z' }), { target: { value: String(z) } });
+        const form = screen.getByRole('group', { name: 'new analysis in t1' });
+        const hot = await newPointsGrid(form);
+        act(() =>
+            hot.paste(
+                0,
+                0,
+                added.analysis.points.map((point) => point.coordinates.map(String))
+            )
+        );
         fireEvent.change(within(form).getByRole('textbox', { name: 'name' }), {
             target: { value: added.analysis.name },
         });

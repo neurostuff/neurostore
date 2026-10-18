@@ -159,6 +159,11 @@ export class FakeHot {
       for (const prop of this.props_) this.markValidated(row, prop);
     this.redraw();
   };
+  validateRows = (rows: number[]) => {
+    for (const at of rows)
+      for (const prop of this.props_) this.markValidated(this.data[at], prop);
+    this.redraw();
+  };
   private newRows(count: number) {
     return Array.from({ length: count }, () => this.props.dataSchema?.() ?? {});
   }

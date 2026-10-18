@@ -296,6 +296,7 @@ const THROUGH_GRID = new Set(['Ctrl+Z', 'Ctrl+Shift+Z', 'Ctrl+Y']);
 
 export const isTextField = (target: EventTarget | null) => within(target, TEXT_FIELD);
 export const isControl = (target: EventTarget | null) => within(target, CONTROL);
+export const isInGrid = (target: EventTarget | null) => within(target, GRID);
 
 /** The key as the table names it: a letter or named key pressed with Shift is `Shift+` and its name. */
 const plainKeyName = (event: KeyboardEvent) =>
@@ -327,7 +328,7 @@ export function useShortcuts(stores: ReviewStores, table: Shortcut[], enabled: (
         }
         const onKeyDown = (event: KeyboardEvent) => {
             if (isTextField(event.target) || within(event.target, DIALOG)) return;
-            if (within(event.target, GRID) && !THROUGH_GRID.has(keyName(event))) return;
+            if (isInGrid(event.target) && !THROUGH_GRID.has(keyName(event))) return;
             if ((event.key === 'Enter' || event.key === ' ') && isControl(event.target)) return;
             const scope: Scope = view(stores).coordinates ? 'coordinates' : 'record';
             const inScope = (key: string) => byKey.get(key)?.find((s) => (s.scope ?? scope) === scope);

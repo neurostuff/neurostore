@@ -1,5 +1,5 @@
-import { List, ListItem, Stack, Typography } from '@mui/material';
-import { useId, useMemo, useState } from 'react';
+import { Box, Button, List, ListItem, Stack, Typography } from '@mui/material';
+import { lazy, Suspense, useId, useMemo, useRef, useState } from 'react';
 import type { CoordinateOp } from '../contract/generated/review-ops';
 import { ConfirmDialog, DanglingList, PickPanel } from '../inspector/panels';
 import { panelKeys } from '../inspector/panelKeys';
@@ -11,8 +11,8 @@ import {
     RECORD_OUTCOME,
     RECORD_SCOPE,
     type CoordinateAnalysis,
-    type CoordinatePoint,
 } from '../model/coordinates';
+import { isInGrid } from '../review/shortcuts';
 import { useReviewStores, useSession, useView } from '../store/context';
 import type { ParsedPaperLayout } from '../model/layout';
 import {
@@ -26,7 +26,8 @@ import {
     relabelAnalysis,
 } from './actions';
 import { mergeSet, moveTargets, movingPoints } from './availability';
-import { PointEditor } from './PointEditor';
+import type { NewPointsHandle } from './NewPointsTable';
+import { MoreColumns } from './PointsView';
 import { analysisEditors, recordAnalysisChoices } from './schema';
 
 type Role = NonNullable<CoordinateOp['role']>;
@@ -194,6 +195,8 @@ function startingSpace(analyses: CoordinateAnalysis[], source: AnalysisSource) {
 
 const NULL_SWITCH = { kind: 'boolean' } as const;
 
+const NewPointsTable = lazy(() => import('./NewPointsTable'));
+
 export function AddAnalysisPanel({ source }: { source: AnalysisSource }) {
     const stores = useReviewStores();
     const closePanel = useView((s) => s.closePanel);
@@ -203,11 +206,13 @@ export function AddAnalysisPanel({ source }: { source: AnalysisSource }) {
             ? `in ${(s.bundle.parsed_paper as ParsedPaperLayout).tables?.find((t) => t.table_id === source.table)?.label ?? source.table}`
             : 'from the selected text'
     );
-    const [point] = useState(() => {
+    const [first] = useState(() => {
         if ('table' in source) return null;
         const coordinates = printedCoordinates(stores.session.getState().bundle.text.slice(...source.span));
         return coordinates ? { coordinates } : null;
     });
+    const points = useRef<NewPointsHandle>(null);
+    const [allColumns, setAllColumns] = useState(false);
     const id = useId();
     const [name, setName] = useState('');
     const [nameError, setNameError] = useState('');
@@ -218,21 +223,21 @@ export function AddAnalysisPanel({ source }: { source: AnalysisSource }) {
     const scopes = useSession((s) =>
         recordAnalysisChoices({ entities: s.bundle.entities, record: s.record }, RECORD_SCOPE)
     );
-    const save = (next: CoordinatePoint | null) => {
-        if (!name.trim()) return setNameError('required');
+    const save = () => {
+        if (!name.trim()) setNameError('required');
+        const next = isNull ? [] : (points.current?.points() ?? null);
+        if (!name.trim() || !next) return;
         const fields = { name: name.trim(), role, ...(space ? { coordinate_space: space } : {}) };
         const record = { ...(isNull && { [RECORD_OUTCOME]: NULL_OUTCOME }), ...(scope && { [RECORD_SCOPE]: scope }) };
-        if (addAnalysis(stores, source, fields, isNull ? null : next, record)) closePanel();
+        if (addAnalysis(stores, source, fields, next, record)) closePanel();
     };
     return (
-        <PointEditor
-            label={`the first point of a new analysis ${label}`}
-            point={point}
-            saveLabel="Add analysis"
-            autoFocus={false}
-            onSave={(next) => save(next as CoordinatePoint | null)}
-            onCancel={closePanel}
-            withoutPoint={isNull}
+        <Stack
+            role="group"
+            aria-label={`new analysis ${label}`}
+            spacing={1.5}
+            sx={{ py: 1 }}
+            onKeyDown={panelKeys(save, closePanel, (event) => isInGrid(event.target))}
         >
             {editors.name && (
                 <ScalarField
@@ -292,6 +297,20 @@ export function AddAnalysisPanel({ source }: { source: AnalysisSource }) {
                 autoFocus={false}
                 onChange={(next) => setNull(next === 'true')}
             />
-        </PointEditor>
+            <Box sx={isNull ? { display: 'none' } : undefined}>
+                <Suspense fallback={null}>
+                    <NewPointsTable ref={points} first={first} space={space} allColumns={allColumns} />
+                </Suspense>
+                <MoreColumns shown={allColumns} onToggle={() => setAllColumns((shown) => !shown)} />
+            </Box>
+            <Stack direction="row" spacing={1}>
+                <Button size="small" variant="contained" onClick={save}>
+                    Add analysis
+                </Button>
+                <Button size="small" onClick={closePanel}>
+                    Cancel
+                </Button>
+            </Stack>
+        </Stack>
     );
 }

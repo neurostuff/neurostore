@@ -20,6 +20,7 @@ import {
     SCRAMBLED,
 } from '../test/coordinates';
 import { registeredSpans } from '../test/highlights';
+import { newPointsGrid } from '../test/grid';
 import { renderWithStores } from '../test/render';
 import { coordinateOpErrors } from '../test/schemas';
 
@@ -439,13 +440,12 @@ describe('coordinate actions, each emitted as the server applies it', () => {
         ]);
     });
 
-    it('C adds an analysis to the focused analysis’s table, with a name, role and first point', () => {
+    it('C adds an analysis to the focused analysis’s table, with a name, role and first point', async () => {
         const { pending } = setup();
         press('c');
-        const form = screen.getByRole('group', { name: 'edit the first point of a new analysis in Table 1' });
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'x' }), { target: { value: '8' } });
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'y' }), { target: { value: '9' } });
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'z' }), { target: { value: '10' } });
+        const form = screen.getByRole('group', { name: 'new analysis in Table 1' });
+        const hot = await newPointsGrid(form);
+        act(() => hot.paste(0, 0, [['8', '9', '10']]));
         press('Enter');
         expect(within(form).getByRole('textbox', { name: 'name' })).toHaveAccessibleDescription('required');
         expect(pending()).toEqual([]);
@@ -475,13 +475,13 @@ describe('coordinate actions, each emitted as the server applies it', () => {
         expectValid(pending());
     });
 
-    it('adds an analysis to a table the parse found none in, from the table’s own button', () => {
+    it('adds an analysis to a table the parse found none in, from the table’s own button', async () => {
         const { pending } = setup();
         fireEvent.click(screen.getByRole('button', { name: 'Add an analysis to Table 2' }));
-        const form = screen.getByRole('group', { name: 'edit the first point of a new analysis in Table 2' });
+        const form = screen.getByRole('group', { name: 'new analysis in Table 2' });
         fireEvent.change(within(form).getByRole('textbox', { name: 'name' }), { target: { value: 'Scrambled' } });
-        for (const axis of ['x', 'y', 'z'])
-            fireEvent.change(within(form).getByRole('spinbutton', { name: axis }), { target: { value: '0' } });
+        const hot = await newPointsGrid(form);
+        act(() => hot.paste(0, 0, [['0', '0', '0']]));
         fireEvent.click(within(form).getByRole('button', { name: 'Add analysis' }));
         expect(pending()).toEqual([
             expect.objectContaining({
@@ -553,13 +553,13 @@ describe('after a coordinate result', () => {
         expect(viewState().coordinates).toEqual({ analysis: first.key, point: 0, selected: [] });
     });
 
-    it('takes the record and entity index from the result, and offers the card an added analysis made', () => {
+    it('takes the record and entity index from the result, and offers the card an added analysis made', async () => {
         const { pending, session, viewState } = setup();
         press('c');
-        const form = screen.getByRole('group', { name: 'edit the first point of a new analysis in Table 1' });
+        const form = screen.getByRole('group', { name: 'new analysis in Table 1' });
         fireEvent.change(within(form).getByRole('textbox', { name: 'name' }), { target: { value: 'Faces > Objects' } });
-        for (const axis of ['x', 'y', 'z'])
-            fireEvent.change(within(form).getByRole('spinbutton', { name: axis }), { target: { value: '1' } });
+        const hot = await newPointsGrid(form);
+        act(() => hot.paste(0, 0, [['1', '1', '1']]));
         press('Enter');
         const sent = pending();
         const added = {
@@ -678,14 +678,13 @@ describe('while a coordinate op is pending', () => {
         expect(pending()).toEqual([accept]);
     });
 
-    it('an analysis the form adds is not sent', () => {
+    it('an analysis the form adds is not sent', async () => {
         const { pending, session } = setup();
         press('c');
-        const form = screen.getByRole('group', { name: 'edit the first point of a new analysis in Table 1' });
+        const form = screen.getByRole('group', { name: 'new analysis in Table 1' });
         act(() => void session().emitBatch([accept]));
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'x' }), { target: { value: '8' } });
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'y' }), { target: { value: '9' } });
-        fireEvent.change(within(form).getByRole('spinbutton', { name: 'z' }), { target: { value: '10' } });
+        const hot = await newPointsGrid(form);
+        act(() => hot.paste(0, 0, [['8', '9', '10']]));
         fireEvent.change(within(form).getByRole('textbox', { name: 'name' }), { target: { value: 'Faces > Objects' } });
         press('Enter');
         expect(pending()).toEqual([accept]);

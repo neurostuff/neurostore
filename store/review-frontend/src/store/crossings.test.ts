@@ -228,7 +228,9 @@ describe('the one crossing back: the view follows what a confirm or rebase repla
         const store = createReviewStores(coordinateBundle(), { now: () => 'now' });
         store.view.getState().toggleMerge(HOUSES.key);
         expect(
-            addAnalysis(store, { table: 't1' }, { name: 'Faces > Objects', role: 'result' }, { coordinates: [1, 1, 1] })
+            addAnalysis(store, { table: 't1' }, { name: 'Faces > Objects', role: 'result' }, [
+                { coordinates: [1, 1, 1] },
+            ])
         ).toBe(true);
         const sent = store.session.getState().pending;
         const added = {

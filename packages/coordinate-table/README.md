@@ -16,6 +16,9 @@ are marked, and a status line says how many there are.
 read-only table of the grid's widths and row heights, and hands `onEngage` whatever begins an edit there; the
 grid's `ref` carries it on with `engage`, so an app can mount the grid only when a reviewer starts to edit.
 
+`ref.filledRows()` is for a form that saves the rows itself: it commits the cell edit still open and gives the
+rows that are not blank, or marks their invalid cells and gives null.
+
 ## Compose's points table on the package
 
 Compose's `EditStudyAnalysisCBMAPointsHotTable` keeps points in its store through per-row hooks:
