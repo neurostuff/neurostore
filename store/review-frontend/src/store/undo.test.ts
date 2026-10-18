@@ -8,6 +8,7 @@ import { createOpClient, type OpClient } from './opClient';
 import { createReviewStores, type ReviewStores } from './reviewStores';
 import { selectCanRedo, selectCanUndo } from './sessionStore';
 import type { InverseOp } from './undoSteps';
+import { newSet } from '../test/stores';
 
 const TEXT = 'Twenty patients performed a Stroop task during fMRI scanning.';
 const record = {
@@ -442,7 +443,13 @@ describe('undo and redo through the test server', () => {
     it('undoes and redoes an evidence edit', async () => {
         const store = await start();
         store.view.getState().focusSlot(slotKey('study', 'description'));
-        store.session.getState().addEvidence(store.view.getState().focus.key, [0, 15], 'new');
+        store.session
+            .getState()
+            .addEvidence(
+                store.view.getState().focus.key,
+                [0, 15],
+                newSet(store.session.getState(), store.view.getState().focus.key)
+            );
         await saved();
         const added = description(store).evidence;
         store.session.getState().undo();
@@ -472,7 +479,7 @@ describe('undo and redo through the test server', () => {
         const before = offsets();
         const utf16 = (word: string) => [wide.indexOf(word), wide.indexOf(word) + word.length] as [number, number];
         store.view.getState().focusSlot(slotKey('study', 'description'));
-        store.session.getState().addEvidence(store.view.getState().focus.key, utf16('patients'), 'first');
+        store.session.getState().addEvidence(store.view.getState().focus.key, utf16('patients'), 0);
         await saved();
         const added = offsets();
         expect(added).not.toEqual(before);

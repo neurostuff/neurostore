@@ -11,7 +11,7 @@ import type { Json } from '../../model/paths';
 import { slotKey } from '../../model/targetKey';
 import { ReviewScreen } from '../../review/ReviewScreen';
 import { createReviewStores, type ReviewStores } from '../../store/reviewStores';
-import type { EvidenceMode } from '../../store/sessionStore';
+import { newSet } from '../stores';
 import { renderWithStores } from '../render';
 import { validateOpBatch } from '../schemas';
 
@@ -108,18 +108,22 @@ const verdict = (target: object, verdict: 'accept' | 'reject', reason?: string) 
 const note = (target: object, text: string) => ({ type: 'note', target, note: text });
 const reported = (value: unknown) => ({ extraction_status: 'extracted', value, value_source: 'reported' });
 
-const addTo = (entity: string, path: string, words: string, mode: EvidenceMode) => (stores: ReviewStores) => {
-    stores.view.getState().focusSlot(slotKey(entity, path));
-    expect(stores.session.getState().addEvidence(stores.view.getState().focus.key, at(words), mode)).toBe(true);
-};
+const addTo =
+    (entity: string, path: string, words: string, asNewSet = false) =>
+    (stores: ReviewStores) => {
+        const key = slotKey(entity, path);
+        stores.view.getState().focusSlot(key);
+        const setIndex = asNewSet ? newSet(stores.session.getState(), key) : 0;
+        expect(stores.session.getState().addEvidence(key, at(words), setIndex)).toBe(true);
+    };
 
 function entries(): Entry[] {
     return [
-        emitted('golden-positional-nested-slot', addTo('an_1', 'groups[#0].n', 'Twenty patients', 'first')),
-        emitted('golden-dotted-slot', addTo('study', 'design.description', 'during fMRI', 'first')),
-        emitted('golden-study-slot', addTo('study', 'description', 'performed a Stroop task', 'first')),
-        emitted('golden-e-keeps-model-quote', addTo('grp_a', 'age_mean', 'on average', 'first')),
-        emitted('golden-shift-e-new-set', addTo('grp_a', 'age_mean', '34.2 years', 'new')),
+        emitted('golden-positional-nested-slot', addTo('an_1', 'groups[#0].n', 'Twenty patients')),
+        emitted('golden-dotted-slot', addTo('study', 'design.description', 'during fMRI')),
+        emitted('golden-study-slot', addTo('study', 'description', 'performed a Stroop task')),
+        emitted('golden-e-keeps-model-quote', addTo('grp_a', 'age_mean', 'on average')),
+        emitted('golden-shift-e-new-set', addTo('grp_a', 'age_mean', '34.2 years', true)),
         refused(
             'golden-not-reported-refused',
             'set a value first',
@@ -323,7 +327,7 @@ describe('the golden op file the backend replays', () => {
         const stores = createReviewStores(bundle);
         stores.view.getState().focusSlot(slotKey('grp_b', 'age_mean'));
         expect(
-            stores.session.getState().addEvidence(stores.view.getState().focus.key, at('eighteen controls'), 'first')
+            stores.session.getState().addEvidence(stores.view.getState().focus.key, at('eighteen controls'), 0)
         ).toBe(false);
         expect(stores.session.getState().pending).toEqual([]);
     });

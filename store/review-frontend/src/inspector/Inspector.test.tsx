@@ -289,7 +289,7 @@ describe('Inspector', () => {
         const { stores } = setup();
         act(() => stores.view.getState().focusSlot('slot:a_1:outcome'));
         const at = rows().indexOf(rowOf('slot:a_1:outcome'));
-        act(() => void stores.session.getState().addEvidence(stores.view.getState().focus.key, [10, 20], 'first'));
+        act(() => void stores.session.getState().addEvidence(stores.view.getState().focus.key, [10, 20], 0));
         expect(rows()[at]).toHaveAttribute('data-slot-key', 'slot:a_1:outcome');
         expect(shapeIn(rows()[at])).toHaveTextContent('evidence present');
         act(() => stores.view.getState().focusSlot('slot:a_1:definition'));

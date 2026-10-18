@@ -3,7 +3,7 @@ import { ReviewScreen } from '../review/ReviewScreen';
 import { PROSE, PROSE_SENTENCE, PROSE_TEXT, proseBundle } from '../test/coordinates';
 import { registeredSpans } from '../test/highlights';
 import { renderWithStores } from '../test/render';
-import { TextIndex } from '../text/TextIndex';
+import { selectText } from '../test/selection';
 
 // Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
 vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
@@ -41,12 +41,7 @@ describe('a text analysis with no spans of its own', () => {
     it('E adds the selected sentence to the evidence of the record Analysis naming it, which then finds it', () => {
         const view = setup(proseBundle({ sets: false, nameSpans: false, coordinates: [1, 2, 3] }));
         const [start, end] = PROSE_SENTENCE;
-        act(() => {
-            const selection = window.getSelection()!;
-            selection.removeAllRanges();
-            selection.addRange(TextIndex.build(view.textRoot()).toRange(start, end));
-            document.dispatchEvent(new Event('selectionchange'));
-        });
+        selectText(view.textRoot(), [start, end]);
         act(() => void fireEvent.keyDown(document.body, { key: 'e' }));
         expect(view.session().pending).toEqual([
             expect.objectContaining({

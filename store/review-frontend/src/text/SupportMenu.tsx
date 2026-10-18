@@ -1,7 +1,14 @@
-import { Menu, MenuItem } from '@mui/material';
+import { ListSubheader, Menu, MenuItem } from '@mui/material';
+
+/** The slots of one entity a span supports: `entity` is its id, `name` its name; each item's `label` names it with its entity. */
+export interface SupportGroup {
+    entity: string;
+    name: string;
+    items: { key: string; field: string; label: string }[];
+}
 
 export interface SupportChoice {
-    items: { key: string; label: string }[];
+    groups: SupportGroup[];
     at: { top: number; left: number };
 }
 
@@ -20,13 +27,19 @@ export function SupportMenu({
             onClose={onClose}
             anchorReference="anchorPosition"
             anchorPosition={choice?.at}
-            aria-label="items this evidence supports"
+            MenuListProps={{ 'aria-label': 'items this evidence supports', dense: true }}
+            slotProps={{ paper: { sx: { maxHeight: '40vh' } } }}
         >
-            {choice?.items.map((item) => (
-                <MenuItem key={item.key} onClick={() => onChoose(item.key)}>
-                    {item.label}
-                </MenuItem>
-            ))}
+            {choice?.groups.flatMap(({ entity, name, items }) => [
+                <ListSubheader key={entity} sx={{ lineHeight: 2.5 }}>
+                    {name}
+                </ListSubheader>,
+                ...items.map((item) => (
+                    <MenuItem key={item.key} aria-label={item.label} onClick={() => onChoose(item.key)}>
+                        {item.field}
+                    </MenuItem>
+                )),
+            ])}
         </Menu>
     );
 }

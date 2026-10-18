@@ -13,6 +13,7 @@ import { OTHER_TAB } from '../store/reviewSession';
 import { selectCanUndo } from '../store/sessionStore';
 import { theme } from '../theme';
 import { ReviewScreen } from './ReviewScreen';
+import { newSet } from '../test/stores';
 
 const TEXT = 'Twenty patients performed a Stroop task during fMRI scanning.';
 const at = (words: string): [number, number] => [TEXT.indexOf(words), TEXT.indexOf(words) + words.length];
@@ -76,7 +77,15 @@ describe('a save the server refuses without naming an op', () => {
         );
         const store = await renderScreen();
         act(() => store.view.getState().focusSlot(slotKey('grp_a', 'age_mean')));
-        act(() => store.session.getState().addEvidence(store.view.getState().focus.key, at('Stroop'), 'new'));
+        act(() =>
+            store.session
+                .getState()
+                .addEvidence(
+                    store.view.getState().focus.key,
+                    at('Stroop'),
+                    newSet(store.session.getState(), store.view.getState().focus.key)
+                )
+        );
 
         const alert = await screen.findByRole('alert', {}, SLOW);
         expect(screen.getByLabelText(/^save state/)).toHaveAccessibleName(/op 1 leaves an invalid document/);
@@ -97,7 +106,13 @@ describe('a save the server refuses without naming an op', () => {
         act(() => store.view.getState().focusSlot(slotKey('grp_a', 'age_mean')));
         let added = false;
         act(() => {
-            added = store.session.getState().addEvidence(store.view.getState().focus.key, at('fMRI'), 'new');
+            added = store.session
+                .getState()
+                .addEvidence(
+                    store.view.getState().focus.key,
+                    at('fMRI'),
+                    newSet(store.session.getState(), store.view.getState().focus.key)
+                );
         });
         expect(added).toBe(true);
         await waitFor(

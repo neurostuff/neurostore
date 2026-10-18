@@ -329,5 +329,5 @@ export function addSelectionToAnalysis(stores: ReviewStores) {
     const session = stores.session.getState();
     const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: stores.view.getState().coordinates });
     const slot = analysis && namingSlot(session.index, analysis);
-    return slot ? addSelectionTo(stores, slot.key, 'first') : false;
+    return slot ? addSelectionTo(stores, slot.key) : false;
 }

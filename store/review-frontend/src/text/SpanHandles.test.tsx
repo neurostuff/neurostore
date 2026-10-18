@@ -1,17 +1,13 @@
-import { ThemeProvider } from '@mui/material';
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { act, fireEvent, screen } from '@testing-library/react';
 import type { Op, SetEvidenceOp } from '../contract/generated/review-ops';
 import { slotKey } from '../model/targetKey';
 import { ReviewScreen } from '../review/ReviewScreen';
-import { OpClientProvider, ReviewStoresProvider } from '../store/context';
-import { createOpClient, type OpClient } from '../store/opClient';
-import { createReviewStores } from '../store/reviewStores';
+import type { OpClient } from '../store/opClient';
+import type { ReviewStores } from '../store/reviewStores';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
 import { registeredSpans } from '../test/highlights';
-import { renderWithStores } from '../test/render';
-import { theme } from '../theme';
+import { renderThroughServer, renderWithStores } from '../test/render';
 import { TextIndex } from './TextIndex';
 import { TextPane } from './TextPane';
 
@@ -233,25 +229,12 @@ describe('span edits through the server', () => {
                 source: { ...makeBundle({}, '').source, id: 'S1', label: 'A paper' },
             }),
         ]);
-        await server.backend.startReview('S1');
-        const stores = createReviewStores(await server.backend.getBundle('S1'));
-        client = createOpClient(stores.session, server.api());
-        client.start();
-        const view = render(
-            <ThemeProvider theme={theme}>
-                <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                    <ReviewStoresProvider stores={stores}>
-                        <OpClientProvider client={client}>
-                            <ReviewScreen />
-                        </OpClientProvider>
-                    </ReviewStoresProvider>
-                </MemoryRouter>
-            </ThemeProvider>
-        );
-        const textRoot = () => view.container.querySelector<HTMLElement>('[data-text-root]');
-        placeRects(textRoot);
+        const view = await renderThroughServer(<ReviewScreen />, server, 'S1');
+        client = view.client;
+        const { stores } = view;
+        placeRects(view.textRoot);
         act(() => stores.view.getState().focusSlot(DESCRIPTION));
-        return { stores, textRoot: () => textRoot()! };
+        return { stores, textRoot: view.textRoot };
     }
 
     const saved = async () => {
@@ -260,7 +243,7 @@ describe('span edits through the server', () => {
     };
     const posts = () => server.requests.filter((r) => r.method === 'POST');
     const sentEvidence = (i: number) => (posts()[i].body as { ops: Op[] }).ops[0] as SetEvidenceOp;
-    const recordSpans = (stores: ReturnType<typeof createReviewStores>) =>
+    const recordSpans = (stores: ReviewStores) =>
         (
             stores.session.getState().record as { description: { evidence?: SetEvidenceOp['evidence'] } }
         ).description.evidence?.sets?.flatMap((set) => set.spans.map((span) => [span.start_char, span.end_char]));

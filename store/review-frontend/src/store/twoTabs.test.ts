@@ -4,6 +4,7 @@ import { ev, makeBundle } from '../test/bundles';
 import { fakeServer } from '../test/fakeServer';
 import { createOpClient } from './opClient';
 import { createReviewStores, type ReviewStores } from './reviewStores';
+import { newSet } from '../test/stores';
 
 const TEXT = 'Twenty patients and eighteen controls performed a Stroop task during fMRI scanning at 3 T.';
 const at = (words: string): [number, number] => [TEXT.indexOf(words), TEXT.indexOf(words) + words.length];
@@ -15,7 +16,15 @@ const source = makeBundle(
 
 function edit(store: ReviewStores, path: string, words: string) {
     store.view.getState().focusSlot(slotKey('study', path));
-    expect(store.session.getState().addEvidence(store.view.getState().focus.key, at(words), 'new')).toBe(true);
+    expect(
+        store.session
+            .getState()
+            .addEvidence(
+                store.view.getState().focus.key,
+                at(words),
+                newSet(store.session.getState(), store.view.getState().focus.key)
+            )
+    ).toBe(true);
     return store.session.getState().pending.at(-1)!;
 }
 
@@ -77,9 +86,9 @@ describe('two tabs saving to one review', () => {
             [b, 'eighteen controls'],
         ] as const) {
             tab.store.view.getState().focusSlot(slotKey('study', 'description'));
-            expect(
-                tab.store.session.getState().addEvidence(tab.store.view.getState().focus.key, at(words), 'first')
-            ).toBe(true);
+            expect(tab.store.session.getState().addEvidence(tab.store.view.getState().focus.key, at(words), 0)).toBe(
+                true
+            );
         }
         await a.client.flush();
         await b.client.flush();

@@ -11,7 +11,7 @@ import { theme } from '../theme';
 import { BlockedSave } from './BlockedSave';
 import type { SpanPair } from '../model/record';
 import { KEPT_REFUSED } from '../store/keptOps';
-import type { EvidenceMode } from '../store/sessionStore';
+import { newSet } from '../test/stores';
 
 const TEXT = 'Twenty patients performed a Stroop task during fMRI scanning.';
 const bundle = makeBundle({ description: ev('A study'), design: { description: ev('fMRI') } }, TEXT);
@@ -21,12 +21,14 @@ function setup() {
     const api = { postOps: () => new Promise<never>(() => {}) } as unknown as ReviewApi;
     const client = createOpClient(store.session, api);
     const { focusSlot } = store.view.getState();
-    const addEvidence = (span: SpanPair, mode: EvidenceMode) =>
-        store.session.getState().addEvidence(store.view.getState().focus.key, span, mode);
+    const addEvidence = (span: SpanPair) => {
+        const key = store.view.getState().focus.key;
+        return store.session.getState().addEvidence(key, span, newSet(store.session.getState(), key));
+    };
     focusSlot(slotKey('study', 'description'));
-    addEvidence([TEXT.indexOf('Twenty'), TEXT.indexOf('Twenty') + 'Twenty'.length], 'new');
+    addEvidence([TEXT.indexOf('Twenty'), TEXT.indexOf('Twenty') + 'Twenty'.length]);
     focusSlot(slotKey('study', 'design.description'));
-    addEvidence([TEXT.indexOf('fMRI'), TEXT.indexOf('fMRI') + 'fMRI'.length], 'new');
+    addEvidence([TEXT.indexOf('fMRI'), TEXT.indexOf('fMRI') + 'fMRI'.length]);
     const pending = store.session.getState().pending;
     store.session
         .getState()
@@ -110,10 +112,12 @@ describe('a refused save that names no op', () => {
     it('keeps an edit made after the refusal when it undoes the refused ones', () => {
         const { store } = setup();
         const { focusSlot } = store.view.getState();
-        const addEvidence = (span: SpanPair, mode: EvidenceMode) =>
-            store.session.getState().addEvidence(store.view.getState().focus.key, span, mode);
+        const addEvidence = (span: SpanPair) => {
+            const key = store.view.getState().focus.key;
+            return store.session.getState().addEvidence(key, span, newSet(store.session.getState(), key));
+        };
         focusSlot(slotKey('study', 'description'));
-        addEvidence([TEXT.indexOf('Stroop'), TEXT.indexOf('Stroop') + 'Stroop'.length], 'new');
+        addEvidence([TEXT.indexOf('Stroop'), TEXT.indexOf('Stroop') + 'Stroop'.length]);
         const [later] = store.session.getState().pending.slice(-1);
         fireEvent.click(screen.getByRole('button', { name: 'Undo the edits that caused it' }));
         expect(store.session.getState().pending).toEqual([later]);

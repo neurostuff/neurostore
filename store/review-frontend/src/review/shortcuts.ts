@@ -60,8 +60,7 @@ export const SHORTCUTS: Shortcut[] = [
     record({ keys: ['Shift+K'], label: 'previous entity', run: (s) => view(s).moveEntity(-1) }),
     { keys: [']'], label: 'next evidence span', run: (s) => view(s).stepEvidence(1) },
     { keys: ['['], label: 'previous evidence span', run: (s) => view(s).stepEvidence(-1) },
-    record({ keys: ['e'], label: 'add the selection to the slot’s evidence', run: (s) => addSelection(s, 'first') }),
-    record({ keys: ['Shift+E'], label: 'add the selection as a new evidence set', run: (s) => addSelection(s, 'new') }),
+    record({ keys: ['e'], label: 'add the selection to the slot’s evidence', run: addSelection }),
     record({
         keys: [','],
         label: 'move the focused evidence span’s end a word back',

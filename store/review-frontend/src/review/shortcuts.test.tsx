@@ -171,8 +171,16 @@ describe('review shortcuts', () => {
         const keys = within(screen.getByRole('dialog', { name: 'Keyboard shortcuts' }))
             .getAllByRole('row')
             .map((row) => row.firstElementChild?.textContent);
-        expect(keys).toEqual(expect.arrayContaining(['j', 'k', 'e', 'Shift+J', 'Shift+K', 'Shift+E']));
+        expect(keys).toEqual(expect.arrayContaining(['j', 'k', 'e', 'Shift+J', 'Shift+K']));
         expect(keys).not.toContain('J');
+    });
+
+    it('offers one way to add evidence in the help, and never speaks of evidence sets', () => {
+        setup();
+        press('?', { shiftKey: true });
+        const help = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+        expect(help).not.toHaveTextContent(/evidence set/i);
+        expect(within(help).queryByText('Shift+E')).not.toBeInTheDocument();
     });
 
     it('lists the editing keys in the help', () => {

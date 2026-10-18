@@ -4,6 +4,7 @@ import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
 import { renderWithStores } from '../test/render';
 import { TextIndex } from './TextIndex';
 import { TextPane } from './TextPane';
+import { selectText } from '../test/selection';
 
 const TEXT = '# A paper\n\nWe scanned twenty patients on a 3 T scanner.\n\nControls were matched for age.\n';
 const at = (word: string): [number, number] => [TEXT.indexOf(word), TEXT.indexOf(word) + word.length];
@@ -25,6 +26,15 @@ const record = {
 const entities = entityRows(row('grp_a', 'Group', 'groups'), row('grp_b', 'Group', 'groups'));
 const setup = () => renderWithStores(<TextPane />, makeBundle(record, TEXT, { entities }));
 const styleText = () => [...document.querySelectorAll('style')].map((style) => style.textContent).join('');
+
+const scrollerOf = (container: HTMLElement) => container.querySelector<HTMLElement>('[data-text-scroller]')!;
+
+/** Clicks the scroller at the character `offset` of the text under `root`, with no drag. */
+const clickAt = (scroller: HTMLElement, root: HTMLElement, offset: number) => {
+    const range = TextIndex.build(root).toRange(offset, offset);
+    document.caretRangeFromPoint = () => range;
+    fireEvent.click(scroller, { clientX: 10, clientY: 10 });
+};
 
 describe('TextPane highlights', () => {
     it('registers the focused item’s spans as the focus highlight and all other evidence as underlines', () => {
@@ -67,7 +77,7 @@ describe('TextPane highlights', () => {
     it('keeps the underlines right after evidence is added and focus moves on', () => {
         const { stores, textRoot } = setup();
         act(() => stores.view.getState().focusSlot('slot:grp_a:name'));
-        act(() => void stores.session.getState().addEvidence(stores.view.getState().focus.key, at('matched'), 'first'));
+        act(() => void stores.session.getState().addEvidence(stores.view.getState().focus.key, at('matched'), 0));
         expect(registeredSpans('rv-focus', textRoot())).toEqual([at('patients'), at('matched')]);
         expect(registeredSpans('rv-evidence', textRoot())).not.toContainEqual(at('matched'));
         act(() => stores.view.getState().focusSlot('slot:grp_b:name'));
@@ -140,13 +150,6 @@ describe('TextPane evidence navigation', () => {
 });
 
 describe('TextPane clicks and Enter on highlights', () => {
-    const clickAt = (scroller: HTMLElement, root: HTMLElement, offset: number) => {
-        const range = TextIndex.build(root).toRange(offset, offset);
-        document.caretRangeFromPoint = () => range;
-        fireEvent.click(scroller, { clientX: 10, clientY: 10 });
-    };
-    const scrollerOf = (container: HTMLElement) => container.querySelector<HTMLElement>('[data-text-scroller]')!;
-
     afterEach(() => {
         delete (document as { caretRangeFromPoint?: unknown }).caretRangeFromPoint;
     });
@@ -170,7 +173,7 @@ describe('TextPane clicks and Enter on highlights', () => {
         const { stores, textRoot, container } = setup();
         clickAt(scrollerOf(container), textRoot(), at('Controls')[0] + 1);
         const items = screen.getAllByRole('menuitem');
-        expect(items.map((item) => item.textContent)).toEqual(['Controls · Name', 'Controls · Age']);
+        expect(items.map((item) => item.getAttribute('aria-label'))).toEqual(['Controls · Name', 'Controls · Age']);
         fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · Age' }));
         expect(stores.view.getState().focus.key).toBe('slot:grp_b:age');
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
@@ -189,6 +192,61 @@ describe('TextPane clicks and Enter on highlights', () => {
         fireEvent.keyDown(scrollerOf(container), { key: 'Enter' });
         fireEvent.click(screen.getByRole('menuitem', { name: 'Controls · Name' }));
         expect(stores.view.getState().focus.key).toBe('slot:grp_b:name');
+    });
+});
+
+describe('TextPane on a sentence that supports many fields', () => {
+    const SENTENCE = 'SAD-patients had larger GM volume in the right putamen.';
+    const MANY = `# Results\n\n${SENTENCE}\n\nNothing else.\n`;
+    const whole: [number, number] = [MANY.indexOf(SENTENCE), MANY.indexOf(SENTENCE) + SENTENCE.length];
+    const ids = Array.from({ length: 10 }, (_, i) => `grp_${i + 1}`);
+    const manyRecord = {
+        groups: ids.map((local_id, i) => ({ local_id, name: ev(`Group ${i + 1}`, [whole]), n: ev(i, [whole]) })),
+    };
+    const manySetup = () =>
+        renderWithStores(
+            <TextPane />,
+            makeBundle(manyRecord, MANY, { entities: entityRows(...ids.map((id) => row(id, 'Group', 'groups'))) })
+        );
+
+    afterEach(() => {
+        delete (document as { caretRangeFromPoint?: unknown }).caretRangeFromPoint;
+    });
+
+    it.each([
+        ['two words', 'larger GM'],
+        ['one character', 'l'],
+    ])('shows the selection bar and no menu on a selection of %s inside the span', (_, words) => {
+        const { stores, textRoot, container } = manySetup();
+        act(() => stores.view.getState().focusSlot('slot:grp_3:n'));
+        const start = MANY.indexOf('larger');
+        selectText(textRoot(), [start, start + words.length]);
+        clickAt(scrollerOf(container), textRoot(), start + words.length);
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        expect(screen.getByRole('toolbar', { name: 'selection' })).toBeInTheDocument();
+    });
+
+    it('closes the menu once a selection begins, so the selection bar is never under it', () => {
+        const { textRoot, container } = manySetup();
+        clickAt(scrollerOf(container), textRoot(), MANY.indexOf('putamen'));
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+        const start = MANY.indexOf('right');
+        selectText(textRoot(), [start, start + 'right'.length]);
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        expect(screen.getByRole('toolbar', { name: 'selection' })).toBeInTheDocument();
+    });
+
+    it('lists, on a plain click, the fields by entity, the focused one first, in a menu of capped height', () => {
+        const { stores, textRoot, container } = manySetup();
+        act(() => stores.view.getState().focusSlot('slot:grp_3:n'));
+        clickAt(scrollerOf(container), textRoot(), MANY.indexOf('putamen'));
+        const menu = screen.getByRole('menu');
+        const rows = [...menu.children].map((child) => child.textContent);
+        expect(rows.slice(0, 6)).toEqual(['Group 3', 'n', 'Name', 'Group 1', 'Name', 'n']);
+        expect(rows.filter((text) => text?.startsWith('Group'))).toHaveLength(10);
+        expect(screen.getAllByRole('menuitem')).toHaveLength(20);
+        expect(screen.getAllByRole('menuitem')[0]).toHaveAccessibleName('Group 3 · n');
+        expect(menu.closest('.MuiPaper-root')).toHaveStyle({ maxHeight: '40vh' });
     });
 });
 

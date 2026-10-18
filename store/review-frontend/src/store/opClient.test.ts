@@ -17,6 +17,7 @@ import { selectSaveLabel } from './sessionStore';
 import { mintLocalId } from '../model/mint';
 import { slotKey } from '../model/targetKey';
 import { CUNEUS, FACES, HOUSES, INSULA, PRECUNEUS, coordinateBundle } from '../test/coordinates';
+import { newSet } from '../test/stores';
 
 interface RecordedStep {
     request: { method: string; path: string; body: unknown };
@@ -44,9 +45,11 @@ const evidenceAt = (store: ReviewStores, field: 'description' | 'design') => {
     return field === 'design' ? record.design.description?.evidence : record.description.evidence;
 };
 
-function edit(store: ReviewStores, path: string, words: string, mode: 'first' | 'new' = 'new') {
-    store.view.getState().focusSlot(slotKey('study', path));
-    expect(store.session.getState().addEvidence(store.view.getState().focus.key, at(words), mode)).toBe(true);
+function edit(store: ReviewStores, path: string, words: string, setIndex?: number) {
+    const key = slotKey('study', path);
+    store.view.getState().focusSlot(key);
+    const set = setIndex ?? newSet(store.session.getState(), key);
+    expect(store.session.getState().addEvidence(key, at(words), set)).toBe(true);
 }
 
 const evidenceOp = (id: string, path: string, words: string): SetEvidenceOp => ({
@@ -454,7 +457,12 @@ describe('a 409', () => {
         expect(sentIds(server)[1]).toEqual([kept.client_op_id]);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().notices).toEqual([
-            { kind: 'conflict', slot: 'study description', message: expect.stringContaining('set a value first'), op: expect.anything() },
+            {
+                kind: 'conflict',
+                slot: 'study description',
+                message: expect.stringContaining('set a value first'),
+                op: expect.anything(),
+            },
         ]);
         expect(store.session.getState().record).toMatchObject({ description: { extraction_status: 'not_reported' } });
     });
@@ -520,7 +528,12 @@ describe('a 422', () => {
         expect(sentIds(server)).toEqual([[kept.client_op_id, refused.client_op_id], [kept.client_op_id]]);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().notices).toEqual([
-            { kind: 'refused', slot: 'study design.description', message: 'extraction-record /design: too long', op: expect.anything() },
+            {
+                kind: 'refused',
+                slot: 'study design.description',
+                message: 'extraction-record /design: too long',
+                op: expect.anything(),
+            },
         ]);
         expect(evidenceAt(store, 'design')).toEqual({ status: 'not_found' });
         expect(evidenceAt(store, 'description')).toMatchObject({ status: 'present' });
@@ -645,7 +658,12 @@ describe('a 422', () => {
         ]);
         expect(store.session.getState().pending).toEqual([]);
         expect(store.session.getState().notices).toEqual([
-            { kind: 'refused', slot: 'study design.description', message: 'extraction-record /design: too long', op: expect.anything() },
+            {
+                kind: 'refused',
+                slot: 'study design.description',
+                message: 'extraction-record /design: too long',
+                op: expect.anything(),
+            },
         ]);
     });
 
@@ -708,7 +726,9 @@ describe('a 422', () => {
 
     it('forgets the group of ops once they are saved', async () => {
         const { store, client } = await open();
-        store.session.getState().emitBatch([
+        store.session
+            .getState()
+            .emitBatch([
                 evidenceOp('group-a-op', 'description', 'Twenty'),
                 evidenceOp('group-b-op', 'description', 'Stroop'),
             ]);
@@ -719,7 +739,9 @@ describe('a 422', () => {
 
     it('forgets the group of ops once they are discarded', async () => {
         const { store, client } = await open();
-        store.session.getState().emitBatch([
+        store.session
+            .getState()
+            .emitBatch([
                 evidenceOp('group-a-op', 'description', 'Twenty'),
                 evidenceOp('group-b-op', 'description', 'Stroop'),
             ]);
@@ -1009,7 +1031,10 @@ describe('a refetch and a 400', () => {
     it('falls back to the detail of a 400 that carries no errors', async () => {
         const { store, client } = await open();
         server.intercept(() =>
-            json({ type: 'about:blank', title: 'Bad Request', detail: 'Request body must not be empty', status: 400 }, 400)
+            json(
+                { type: 'about:blank', title: 'Bad Request', detail: 'Request body must not be empty', status: 400 },
+                400
+            )
         );
         edit(store, 'description', 'Twenty patients');
         await client.flush();
@@ -1099,7 +1124,15 @@ describe('a browser outside a secure context, with getRandomValues only', () => 
         server = fakeServer([groups]);
         const { store, client } = await open();
         store.view.getState().focusSlot(slotKey('grp_a', 'name'));
-        expect(store.session.getState().addEvidence(store.view.getState().focus.key, at('Twenty'), 'new')).toBe(true);
+        expect(
+            store.session
+                .getState()
+                .addEvidence(
+                    store.view.getState().focus.key,
+                    at('Twenty'),
+                    newSet(store.session.getState(), store.view.getState().focus.key)
+                )
+        ).toBe(true);
         store.view.getState().focusEntity('grp_a');
         expect(createSibling(store, 'Group')).toBe(true);
         const created = store.session.getState().pending.find((op) => op.type === 'create_entity')!;
@@ -1189,7 +1222,13 @@ describe('offsets outside the Basic Multilingual Plane', () => {
         const start = WIDE.indexOf('twenty');
         store.view.getState().focusSlot(slotKey('study', 'description'));
         expect(
-            store.session.getState().addEvidence(store.view.getState().focus.key, [start, start + 6], 'new')
+            store.session
+                .getState()
+                .addEvidence(
+                    store.view.getState().focus.key,
+                    [start, start + 6],
+                    newSet(store.session.getState(), store.view.getState().focus.key)
+                )
         ).toBe(true);
         await vi.advanceTimersByTimeAsync(1000);
         await client.settled();
@@ -1232,7 +1271,9 @@ describe('a batch of coordinate ops', () => {
                 payload: { points },
             }) as Op;
         expect(
-            store.session.getState().emitBatch([edit('move-0001', FACES.key, [CUNEUS]), edit('move-0002', HOUSES.key, [INSULA, PRECUNEUS])])
+            store.session
+                .getState()
+                .emitBatch([edit('move-0001', FACES.key, [CUNEUS]), edit('move-0002', HOUSES.key, [INSULA, PRECUNEUS])])
         ).toBe(true);
         await client.flush();
         expect(sentIds(server)[0]).toEqual(['move-0001', 'move-0002']);

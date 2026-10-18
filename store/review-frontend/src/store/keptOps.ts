@@ -37,11 +37,15 @@ function withSpan(evidence: Evidence | undefined, span: Span, setIndex: number |
     };
 }
 
+/** The index of the set of `evidence` holding `span`; -1 when none does. */
+export const setHolding = (evidence: Evidence | undefined, span: Span): number =>
+    (evidence?.sets ?? []).findIndex((set) => set.spans.some((s) => spanKey(s) === spanKey(span)));
+
 /** The evidence with the span `from` replaced by `to`, or left out when `to` is null; null when it has no span `from`. */
 function replacingSpan(evidence: Evidence | undefined, from: Span, to: Span | null): Evidence | null {
     const { sets: given = [], ...rest } = evidence ?? { status: 'not_found' };
     const sets = given.map(withoutText);
-    const at = sets.findIndex((set) => set.spans.some((s) => spanKey(s) === spanKey(from)));
+    const at = setHolding(evidence, from);
     if (at === -1) return null;
     const kept = sets[at].spans.filter((s) => spanKey(s) !== spanKey(from));
     const spans = to ? [...kept, to] : kept;

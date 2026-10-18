@@ -18,6 +18,7 @@ import {
 import { KEPT_REFUSED } from './keptOps';
 import { selectCanRedo, selectCanUndo, selectSaveLabel } from './sessionStore';
 import type { ReviewStores } from './reviewStores';
+import { newSet } from '../test/stores';
 
 const TEXT = 'Twenty patients performed a Stroop task during fMRI scanning.';
 const at = (words: string): [number, number] => [TEXT.indexOf(words), TEXT.indexOf(words) + words.length];
@@ -63,7 +64,15 @@ async function openTab(device: Partial<Device> = {}) {
 
 function edit(stores: ReviewStores, path: string, words: string) {
     stores.view.getState().focusSlot(slotKey('study', path));
-    expect(stores.session.getState().addEvidence(stores.view.getState().focus.key, at(words), 'new')).toBe(true);
+    expect(
+        stores.session
+            .getState()
+            .addEvidence(
+                stores.view.getState().focus.key,
+                at(words),
+                newSet(stores.session.getState(), stores.view.getState().focus.key)
+            )
+    ).toBe(true);
     return stores.session.getState().pending.at(-1)!.client_op_id;
 }
 
@@ -216,8 +225,12 @@ describe('the offline queue', () => {
         expect((record as { description: { evidence: unknown } }).description.evidence).toEqual({
             status: 'present',
             sets: [
-                { spans: [{ ...spanOf('during fMRI'), text: 'during fMRI' }] },
-                { spans: [{ ...spanOf('Twenty patients'), text: 'Twenty patients' }] },
+                {
+                    spans: [
+                        { ...spanOf('Twenty patients'), text: 'Twenty patients' },
+                        { ...spanOf('during fMRI'), text: 'during fMRI' },
+                    ],
+                },
             ],
         });
     });
@@ -409,7 +422,13 @@ describe('the offline queue', () => {
         expect(state().device).toBe('readonly');
         expect(state().deviceNotice).toBe(OTHER_TAB);
         second.stores.view.getState().focusSlot(slotKey('study', 'design.description'));
-        expect(state().addEvidence(second.stores.view.getState().focus.key, at('during fMRI'), 'new')).toBe(false);
+        expect(
+            state().addEvidence(
+                second.stores.view.getState().focus.key,
+                at('during fMRI'),
+                newSet(state(), second.stores.view.getState().focus.key)
+            )
+        ).toBe(false);
         expect(state().emit(setDescription('second-1', 'two'))).toBe(false);
         expect(state().emitBatch([setDescription('second-2', 'two')])).toBe(false);
         expect(state().pending).toEqual([]);
@@ -481,7 +500,7 @@ describe('the offline queue', () => {
                 [a]: {
                     kind: 'add_span',
                     slot: slotKey('study', 'description'),
-                    set_index: 'new',
+                    set_index: 0,
                     span: spanOf('Twenty patients'),
                 },
             },
@@ -557,8 +576,12 @@ describe('the offline queue', () => {
         expect((record as { design: { description: { evidence: unknown } } }).design.description.evidence).toEqual({
             status: 'present',
             sets: [
-                { spans: [{ ...spanOf('Stroop task'), text: 'Stroop task' }] },
-                { spans: [{ ...spanOf('during fMRI'), text: 'during fMRI' }] },
+                {
+                    spans: [
+                        { ...spanOf('Stroop task'), text: 'Stroop task' },
+                        { ...spanOf('during fMRI'), text: 'during fMRI' },
+                    ],
+                },
             ],
         });
     });
@@ -712,6 +735,36 @@ describe('the offline queue', () => {
         expect(session.getState()).toBe(blocked);
         await vi.advanceTimersByTimeAsync(5000);
         expect(posts()).toEqual([]);
+    });
+
+    it('replays a kept intent an earlier version saved with a new set, as a set of its own', async () => {
+        server.backend.postOps(reviewId, {
+            expected_last_seq: 0,
+            ops: [evidence('elsewhere', 'description', 'Stroop task')],
+        });
+        const queue = await openDeviceQueue(indexedDB, () => {});
+        await queue.write({
+            ...(await keptEntry()),
+            intents: {
+                'kept-0001': {
+                    kind: 'add_span',
+                    slot: slotKey('study', 'description'),
+                    set_index: 'new',
+                    span: spanOf('Twenty patients'),
+                },
+            },
+        });
+
+        const tab = await openTab();
+        await tab.client.settled();
+        const { record } = await server.backend.getBundle('S1');
+        expect((record as { description: { evidence: unknown } }).description.evidence).toEqual({
+            status: 'present',
+            sets: [
+                { spans: [{ ...spanOf('Stroop task'), text: 'Stroop task' }] },
+                { spans: [{ ...spanOf('Twenty patients'), text: 'Twenty patients' }] },
+            ],
+        });
     });
 
     it('keeps only the kept ops’ groups and intents once restoring drops the stored ones and blocks', async () => {

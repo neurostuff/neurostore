@@ -4,6 +4,7 @@ import { ev, makeBundle } from '../test/bundles';
 import { fakeServer, type FakeServer } from '../test/fakeServer';
 import { createOpClient } from './opClient';
 import { createSessionStore } from './sessionStore';
+import { newSet } from '../test/stores';
 
 const TEXT = 'Twenty patients and eighteen controls performed a Stroop task during fMRI scanning at 3 T.';
 const at = (words: string): [number, number] => [TEXT.indexOf(words), TEXT.indexOf(words) + words.length];
@@ -61,7 +62,15 @@ describe('the session store saving through its op client, with no view', () => {
     it('adds evidence to a slot named by its key', async () => {
         const server = await started();
         const { session, client } = await open(server);
-        expect(session.getState().addEvidence(slotKey('study', 'task'), at('Stroop task'), 'new')).toBe(true);
+        expect(
+            session
+                .getState()
+                .addEvidence(
+                    slotKey('study', 'task'),
+                    at('Stroop task'),
+                    newSet(session.getState(), slotKey('study', 'task'))
+                )
+        ).toBe(true);
         await client.flush();
         expect(session.getState().index.slot(slotKey('study', 'task'))?.spans).toEqual([at('Stroop task')]);
         expect(session.getState().record).toEqual((await server.backend.getBundle('S1')).record);
@@ -71,7 +80,13 @@ describe('the session store saving through its op client, with no view', () => {
         const server = await started();
         const a = await open(server);
         const b = await open(server);
-        a.session.getState().addEvidence(slotKey('study', 'description'), at('Twenty patients'), 'new');
+        a.session
+            .getState()
+            .addEvidence(
+                slotKey('study', 'description'),
+                at('Twenty patients'),
+                newSet(a.session.getState(), slotKey('study', 'description'))
+            );
         await a.client.flush();
         b.session.getState().emit(setTask('t-1', 'n-back'));
         await b.client.flush();
@@ -89,9 +104,9 @@ describe('the session store saving through its op client, with no view', () => {
         const server = await started();
         const a = await open(server);
         const b = await open(server);
-        a.session.getState().addEvidence(slotKey('study', 'description'), at('Twenty patients'), 'first');
+        a.session.getState().addEvidence(slotKey('study', 'description'), at('Twenty patients'), 0);
         await a.client.flush();
-        b.session.getState().addEvidence(slotKey('study', 'description'), at('Stroop task'), 'first');
+        b.session.getState().addEvidence(slotKey('study', 'description'), at('Stroop task'), 0);
         await b.client.flush();
         const saved = await server.backend.getBundle('S1');
         expect(server.requests.filter((r) => r.status === 409)).toHaveLength(1);

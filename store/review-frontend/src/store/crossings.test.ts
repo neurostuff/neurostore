@@ -125,7 +125,7 @@ describe('an edit that also moves the view: adding the selection to the evidence
         const store = open();
         store.view.getState().focusSlot('slot:grp_a:description');
         store.view.getState().setSelection([20, 25]);
-        addSelection(store, 'first');
+        addSelection(store);
         expect(focusedSpans(store)).toEqual([
             [5, 9],
             [20, 25],

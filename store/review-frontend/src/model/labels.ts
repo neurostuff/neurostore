@@ -114,3 +114,7 @@ export function slotLabel(index: RecordIndex, slot: { entity: string; path: stri
     const leaf = names.at(-1) ?? slot.path;
     return names.length > 1 ? `${humanize(names.at(-2)!)}: ${inWords(leaf)}` : humanize(leaf);
 }
+
+/** The slot as the reviewer reads it beside other entities' slots: its entity's name, then its own label. */
+export const fieldLabel = (index: RecordIndex, slot: { entity: string; path: string }): string =>
+    `${index.entity(slot.entity)?.name ?? slot.entity} · ${slotLabel(index, slot)}`;

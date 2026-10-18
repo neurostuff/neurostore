@@ -10,7 +10,7 @@ import { ev, makeBundle, row } from '../test/bundles';
 import type { Json } from '../model/paths';
 import { KEPT_REFUSED } from './keptOps';
 import { createReviewStores } from './reviewStores';
-import { focusedSpans, shownIndex } from '../test/stores';
+import { focusedSpans, newSet, shownIndex } from '../test/stores';
 import { TEXT, record, entities, storedOp, setup } from '../test/storeFixture';
 
 describe('adding evidence', () => {
@@ -18,7 +18,7 @@ describe('adding evidence', () => {
         const store = setup();
         expect(store.session.getState().ops).toEqual([storedOp]);
         store.view.getState().focusSlot('slot:grp_a:name');
-        store.session.getState().addEvidence(store.view.getState().focus.key, [120, 130], 'first');
+        store.session.getState().addEvidence(store.view.getState().focus.key, [120, 130], 0);
         expect(store.session.getState().ops).toEqual([storedOp]);
         expect(store.session.getState().pending).toHaveLength(1);
     });
@@ -26,7 +26,7 @@ describe('adding evidence', () => {
     it('adds a span to the focused slot’s first set, keeping each set’s source and the unlocated quotes', () => {
         const store = setup();
         store.view.getState().focusSlot('slot:grp_a:description');
-        expect(store.session.getState().addEvidence(store.view.getState().focus.key, [120, 130], 'first')).toBe(true);
+        expect(store.session.getState().addEvidence(store.view.getState().focus.key, [120, 130], 0)).toBe(true);
         const { pending } = store.session.getState();
         expect(validateOpBatch({ ops: pending })).toBe(true);
         expect(pending).toEqual([
@@ -56,8 +56,14 @@ describe('adding evidence', () => {
     it('adds a span as a new set with no source, and to a slot that had no evidence', () => {
         const store = setup();
         store.view.getState().focusSlot('slot:grp_a:sex');
-        store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 'first');
-        store.session.getState().addEvidence(store.view.getState().focus.key, [30, 35], 'new');
+        store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 0);
+        store.session
+            .getState()
+            .addEvidence(
+                store.view.getState().focus.key,
+                [30, 35],
+                newSet(store.session.getState(), store.view.getState().focus.key)
+            );
         const [first, second] = store.session.getState().pending;
         expect(validateOpBatch({ ops: [first, second] })).toBe(true);
         expect(first).toMatchObject({
@@ -75,7 +81,7 @@ describe('adding evidence', () => {
     it('updates the slot from the edited record: its spans, its doubt and every span in the text', () => {
         const store = setup();
         store.view.getState().focusSlot('slot:grp_a:sex');
-        store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 'first');
+        store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 0);
         const { index, record } = store.session.getState();
         expect(index.slot('slot:grp_a:sex')).toMatchObject({ spans: [[20, 25]], doubt: 'other' });
         expect(index.entity('grp_a')?.spans).toContainEqual([20, 25]);
@@ -94,7 +100,7 @@ describe('adding evidence', () => {
         const declared = ['name', 'description', 'species', 'sex'];
         expect(order()).toEqual(declared);
         store.view.getState().focusSlot('slot:grp_a:sex');
-        store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 'first');
+        store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 0);
         expect(order()).toEqual(declared);
         store.view.getState().focusSlot('slot:grp_a:name');
         expect(order()).toEqual(declared);
@@ -103,7 +109,7 @@ describe('adding evidence', () => {
     it('refuses a pending op by its client_op_id, whichever copy of it the refusal carries', () => {
         const store = setup();
         store.view.getState().focusSlot('slot:grp_a:name');
-        store.session.getState().addEvidence(store.view.getState().focus.key, [120, 130], 'first');
+        store.session.getState().addEvidence(store.view.getState().focus.key, [120, 130], 0);
         const [op] = store.session.getState().pending;
         store.session.getState().refuse([{ op: { ...op }, message: 'too long' }]);
         expect(store.session.getState().pending).toEqual([]);
@@ -115,15 +121,15 @@ describe('adding evidence', () => {
     it('refuses evidence on a slot that is not extracted', () => {
         const store = setup();
         store.view.getState().focusSlot('slot:grp_a:species');
-        expect(store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 'first')).toBe(false);
+        expect(store.session.getState().addEvidence(store.view.getState().focus.key, [20, 25], 0)).toBe(false);
         expect(store.session.getState().pending).toEqual([]);
     });
 
     it('targets the root study by "study" and does nothing without a focused slot', () => {
         const store = setup();
-        expect(store.session.getState().addEvidence(store.view.getState().focus.key, [1, 2], 'first')).toBe(false);
+        expect(store.session.getState().addEvidence(store.view.getState().focus.key, [1, 2], 0)).toBe(false);
         store.view.getState().focusSlot('slot:study:description');
-        store.session.getState().addEvidence(store.view.getState().focus.key, [1, 2], 'first');
+        store.session.getState().addEvidence(store.view.getState().focus.key, [1, 2], 0);
         expect(store.session.getState().pending[0]).toMatchObject({
             target: { kind: 'slot', entity: 'study', path: 'description' },
         });
@@ -552,9 +558,15 @@ describe('offsets outside the Basic Multilingual Plane', () => {
     it('keeps an added span at the characters the reviewer picked', () => {
         const store = createReviewStores(makeBundle({ description: ev('A study') }, WIDE));
         store.view.getState().focusSlot('slot:study:description');
-        expect(store.session.getState().addEvidence(store.view.getState().focus.key, utf16('twenty'), 'new')).toBe(
-            true
-        );
+        expect(
+            store.session
+                .getState()
+                .addEvidence(
+                    store.view.getState().focus.key,
+                    utf16('twenty'),
+                    newSet(store.session.getState(), store.view.getState().focus.key)
+                )
+        ).toBe(true);
         expect(store.session.getState().index.slot('slot:study:description')?.spans).toEqual([utf16('twenty')]);
     });
 });

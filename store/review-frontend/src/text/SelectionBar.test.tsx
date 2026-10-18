@@ -1,31 +1,46 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { registeredSpans } from '../test/highlights';
 import { entityRows, ev, makeBundle, notReported, row } from '../test/bundles';
 import { renderWithStores } from '../test/render';
 import { validateOpBatch } from '../test/schemas';
-import { TextIndex } from './TextIndex';
+import type { SetEvidenceOp } from '../contract/generated/review-ops';
+import { addSelectionTo } from './addSelection';
+import { selectText, clearSelection } from '../test/selection';
 
 const TEXT = 'We scanned twenty patients and twenty controls on a 3 T scanner.';
 const at = (word: string): [number, number] => [TEXT.indexOf(word), TEXT.indexOf(word) + word.length];
 
+const spansOf = (...words: string[]) => words.map((word) => ({ start_char: at(word)[0], end_char: at(word)[1] }));
+
 const record = {
-    groups: [{ local_id: 'grp_a', name: ev('Patients', [at('patients')]), species: notReported('outside_text') }],
+    groups: [
+        {
+            local_id: 'grp_a',
+            name: ev('Patients', [at('patients')]),
+            species: notReported('outside_text'),
+            sex: { extraction_status: 'extracted', value: 'mixed', value_source: 'reported' },
+            age_mean: ev(30),
+        },
+    ],
 };
 
-function setup() {
+const inTwoSets = (value: unknown) => ({
+    ...ev(value),
+    evidence: { status: 'present', sets: [{ spans: spansOf('patients') }, { spans: spansOf('controls') }] },
+});
+
+const twoSets = {
+    groups: [{ local_id: 'grp_a', name: inTwoSets('Patients'), age_mean: inTwoSets(30) }],
+};
+
+function setup(given: typeof record | typeof twoSets = record) {
     const view = renderWithStores(
         <ReviewScreen />,
-        makeBundle(record, TEXT, { entities: entityRows(row('grp_a', 'Group', 'groups')) })
+        makeBundle(given, TEXT, { entities: entityRows(row('grp_a', 'Group', 'groups')) })
     );
     act(() => view.stores.view.getState().focusSlot('slot:grp_a:name'));
-    const select = (start: number, end: number) =>
-        act(() => {
-            const selection = window.getSelection()!;
-            selection.removeAllRanges();
-            selection.addRange(TextIndex.build(view.textRoot()).toRange(start, end));
-            document.dispatchEvent(new Event('selectionchange'));
-        });
+    const select = (start: number, end: number) => selectText(view.textRoot(), [start, end]);
     return { ...view, select };
 }
 
@@ -38,8 +53,7 @@ describe('adding evidence from a text selection', () => {
         expect(bar()).not.toBeInTheDocument();
         select(TEXT.indexOf('ontrol'), TEXT.indexOf('ontrol') + 3);
         expect(bar()).toBeInTheDocument();
-        act(() => window.getSelection()!.removeAllRanges());
-        act(() => void document.dispatchEvent(new Event('selectionchange')));
+        clearSelection();
         expect(bar()).not.toBeInTheDocument();
     });
 
@@ -71,52 +85,131 @@ describe('adding evidence from a text selection', () => {
         expect(bar()).not.toBeInTheDocument();
     });
 
-    it('Shift+E adds the selection as a new evidence set', () => {
+    it('Shift+E does nothing', () => {
         const { stores, select } = setup();
         select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
         press('E', true);
+        expect(stores.session.getState().pending).toEqual([]);
+        expect(bar()).toBeInTheDocument();
+    });
+
+    it('E adds to the set holding the span the evidence cursor is on', () => {
+        const { stores, select } = setup(twoSets);
+        act(() => stores.view.getState().stepEvidence(1));
+        select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
+        press('e');
         expect(stores.session.getState().pending[0]).toMatchObject({
             evidence: {
                 sets: [
                     { spans: [{ start_char: at('patients')[0] }] },
-                    { spans: [{ start_char: at('scanner')[0], end_char: at('scanner')[1] }] },
+                    {
+                        spans: [
+                            { start_char: at('controls')[0], end_char: at('controls')[1] },
+                            { start_char: at('scanner')[0], end_char: at('scanner')[1] },
+                        ],
+                    },
                 ],
             },
         });
     });
 
-    it('names the field the selection will be added to', () => {
-        const { select } = setup();
-        select(TEXT.indexOf('twenty'), TEXT.indexOf('twenty') + 6);
-        expect(screen.getByRole('button', { name: 'Add as evidence for Patients · Name (E)' })).toBeInTheDocument();
-        const set = screen.getByRole('button', { name: 'New evidence set for Patients · Name (Shift+E)' });
-        expect(set.closest('[title]')).toHaveAttribute(
-            'title',
-            'A separate passage that supports the value on its own, apart from the evidence it has'
-        );
-    });
-
-    it('the bar’s buttons do what E and Shift+E do', () => {
+    it('E on a field with no evidence makes its one set of the selection', () => {
         const { stores, select } = setup();
-        select(TEXT.indexOf('twenty'), TEXT.indexOf('twenty') + 2);
-        fireEvent.click(screen.getByRole('button', { name: /add as evidence/i }));
-        expect(stores.session.getState().pending).toHaveLength(1);
-        select(TEXT.indexOf('3 T'), TEXT.indexOf('3 T') + 3);
-        fireEvent.click(screen.getByRole('button', { name: /new evidence set/i }));
-        expect(stores.session.getState().pending[1]).toMatchObject({
-            evidence: { sets: [{}, { spans: [{ start_char: at('3 T')[0] }] }] },
+        act(() => stores.view.getState().focusSlot('slot:grp_a:sex'));
+        select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
+        press('e');
+        expect(stores.session.getState().pending[0]).toMatchObject({
+            evidence: {
+                status: 'present',
+                sets: [{ spans: [{ start_char: at('scanner')[0], end_char: at('scanner')[1] }] }],
+            },
         });
     });
 
-    it('on a slot that is not extracted, disables both actions and says to set a value first', () => {
+    it.each([
+        ['evidence not found', 'slot:grp_a:age_mean'],
+        ['no evidence', 'slot:grp_a:sex'],
+    ])('labels a field with %s as evidence present once a selection is added to it', (_, key) => {
+        const { stores, select } = setup();
+        act(() => stores.view.getState().focusSlot(key));
+        const status = () => document.querySelector(`[data-slot-key="${key}"] [data-status]`);
+        expect(status()).toHaveAttribute('data-status', 'not_found');
+        select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
+        press('e');
+        expect(status()).toHaveAttribute('data-status', 'present');
+        expect(status()).toHaveTextContent('evidence present');
+    });
+
+    it('adds to the first set of a field the evidence cursor is not on, though another field’s cursor span is in its second', () => {
+        const { stores, select } = setup(twoSets);
+        act(() => stores.view.getState().stepEvidence(1));
+        select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
+        act(() => void addSelectionTo(stores, 'slot:grp_a:age_mean'));
+        expect(stores.session.getState().pending[0]).toMatchObject({
+            target: { path: 'age_mean' },
+            evidence: {
+                sets: [{ spans: spansOf('patients', 'scanner') }, { spans: spansOf('controls') }],
+            },
+        });
+    });
+
+    it('adds to the first of several sets while the cursor is on it, making no new set', () => {
+        const { stores, select } = setup(twoSets);
+        select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
+        press('e');
+        expect(stores.session.getState().pending[0]).toMatchObject({
+            evidence: { sets: [{ spans: spansOf('patients', 'scanner') }, { spans: spansOf('controls') }] },
+        });
+        expect((stores.session.getState().pending[0] as SetEvidenceOp).evidence.sets).toHaveLength(2);
+    });
+
+    it('highlights every span of a field with two sets, and ] and [ step through them', () => {
+        const { textRoot } = setup(twoSets);
+        expect(registeredSpans('rv-focus', textRoot())).toEqual([at('patients'), at('controls')]);
+        expect(screen.getByText('evidence 1 of 2')).toBeInTheDocument();
+        press(']');
+        expect(screen.getByText('evidence 2 of 2')).toBeInTheDocument();
+        press('[');
+        expect(screen.getByText('evidence 1 of 2')).toBeInTheDocument();
+    });
+
+    it('names no evidence set in the help or the field’s actions', () => {
+        setup(twoSets);
+        const field = screen.getByRole('toolbar', { name: /^actions on / });
+        press('?', true);
+        const help = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+        const texts = [...help.querySelectorAll('td'), ...field.querySelectorAll('button')].map((e) => e.textContent!);
+        expect(texts.length).toBeGreaterThan(10);
+        for (const text of texts) expect(text.replace(/set aside|set a value/gi, '')).not.toMatch(/\bsets?\b/i);
+    });
+
+    it('offers one action, adding to the field it names', () => {
+        const { select } = setup();
+        select(TEXT.indexOf('twenty'), TEXT.indexOf('twenty') + 6);
+        expect(
+            within(bar()!)
+                .getAllByRole('button')
+                .map((button) => button.textContent)
+        ).toEqual(['Add as evidence for Patients · Name (E)']);
+        expect(bar()).not.toHaveTextContent(/\bset\b/i);
+    });
+
+    it('the bar’s button does what E does', () => {
+        const { stores, select } = setup();
+        select(TEXT.indexOf('twenty'), TEXT.indexOf('twenty') + 2);
+        fireEvent.click(screen.getByRole('button', { name: /add as evidence/i }));
+        expect(stores.session.getState().pending[0]).toMatchObject({
+            evidence: { sets: [{ spans: [{ start_char: at('twenty')[0] }, { start_char: at('patients')[0] }] }] },
+        });
+    });
+
+    it('on a slot that is not extracted, disables the action and says to set a value first', () => {
         const { stores, select } = setup();
         act(() => stores.view.getState().focusSlot('slot:grp_a:species'));
         select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
         expect(screen.getByRole('button', { name: /add as evidence/i })).toBeDisabled();
-        expect(screen.getByRole('button', { name: /new evidence set/i })).toBeDisabled();
         expect(bar()).toHaveTextContent('set a value first');
         press('e');
-        press('E', true);
         expect(stores.session.getState().pending).toEqual([]);
         act(() => stores.view.getState().focusSlot('slot:grp_a:name'));
         expect(bar()).not.toHaveTextContent('set a value first');
@@ -139,7 +232,6 @@ describe('the selection bar in a read-only tab', () => {
         act(() => stores.session.getState().setDevice('readonly'));
         select(TEXT.indexOf('ontrol'), TEXT.indexOf('ontrol') + 3);
         expect(screen.getByRole('button', { name: 'Add as evidence for Patients · Name (E)' })).toBeDisabled();
-        expect(screen.getByRole('button', { name: 'New evidence set for Patients · Name (Shift+E)' })).toBeDisabled();
         press('e');
         expect(stores.session.getState().pending).toEqual([]);
     });

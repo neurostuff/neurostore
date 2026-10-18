@@ -34,8 +34,6 @@ import {
     type UndoStep,
 } from './undoSteps';
 
-export type EvidenceMode = 'first' | 'new';
-
 /** How this tab keeps its pending ops: in memory only, loading them, on the device, or not at all (read-only). */
 export type DeviceStatus = 'memory' | 'loading' | 'kept' | 'readonly';
 
@@ -59,7 +57,10 @@ export interface Notice {
     op?: Op;
 }
 
-/** An edit of one slot's evidence, made again on top of the record a rebase brings; a null `span` removes `from`. */
+/**
+ * An edit of one slot's evidence, made again on top of the record a rebase brings; a null `span` removes `from`.
+ * A `set_index` of 'new' comes only from intents an earlier version kept on this device.
+ */
 export type EvidenceIntent =
     | { kind: 'add_span'; slot: string; set_index: number | 'new'; span: Span }
     | { kind: 'replace_span'; slot: string; from: Span; span: Span | null };
@@ -110,8 +111,8 @@ export interface SessionState {
     emit(op: Op): boolean;
     /** Puts the ops of one intent in pending as one batch, sent in one request whatever the save timing. */
     emitBatch(ops: Op[]): boolean;
-    /** Adds `span` to the evidence of the slot `slot`; false when the slot takes no evidence. */
-    addEvidence(slot: string, span: SpanPair, mode: EvidenceMode): boolean;
+    /** Adds `span` to the set `setIndex` of the slot `slot`'s evidence, past its last set a new one; false when the slot takes no evidence. */
+    addEvidence(slot: string, span: SpanPair, setIndex: number): boolean;
     /** Moves the span `from` of the slot `slot`'s evidence to `to`, in the set it is in; false when it has no such span. */
     moveEvidence(slot: string, from: SpanPair, to: SpanPair): boolean;
     /** Removes the span `span` from the slot `slot`'s evidence; false when it has no such span. */
@@ -420,11 +421,10 @@ export function createSessionStore(
             waitingTo: null,
             replaced: null,
 
-            addEvidence: (key, span, mode) => {
+            addEvidence: (key, span, setIndex) => {
                 const slot = get().index.slot(key);
                 if (!canAddEvidence(slot)) return false;
-                const set_index = mode === 'new' ? 'new' : 0;
-                return pushIntent(slot, { kind: 'add_span', slot: slot.key, set_index, span: toSpan(span) });
+                return pushIntent(slot, { kind: 'add_span', slot: slot.key, set_index: setIndex, span: toSpan(span) });
             },
             moveEvidence: (key, from, to) => replaceSpan(key, from, to),
             removeEvidence: (key, span) => replaceSpan(key, span, null),
