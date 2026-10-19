@@ -5,7 +5,12 @@ import json
 
 import pytest
 
-from neurostore.review.core.ops import ReviewState, apply_batch, full_problems, incremental_problems
+from neurostore.review.core.ops import (
+    ReviewState,
+    apply_batch,
+    full_problems,
+    incremental_problems,
+)
 from neurostore.tests.review import golden, records
 
 
