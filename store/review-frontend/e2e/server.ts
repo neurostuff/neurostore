@@ -24,6 +24,13 @@ export async function serve(page: Page, { createdProblems }: Pick<MemoryOptions,
     });
     const backend = memoryBackend(async (id) => bundleOf(id), { createdProblems });
     const batches: Op[][] = [];
+    let held: Promise<void> | null = null;
+    /** Holds back the answer to the next op batch, which still counts as sent, until the returned function is called. */
+    const holdNext = () => {
+        let release = () => {};
+        held = new Promise<void>((resolve) => (release = resolve));
+        return release;
+    };
 
     async function answer(method: string, path: string, body: unknown): Promise<Answer> {
         let m;
@@ -40,6 +47,9 @@ export async function serve(page: Page, { createdProblems }: Pick<MemoryOptions,
         }
         if (method === 'POST' && (m = path.match(/^\/review\/reviews\/([^/]+)\/ops$/))) {
             batches.push((body as OpBatch).ops);
+            const holding = held;
+            held = null;
+            if (holding) await holding;
             return { status: 200, body: backend.postOps(decodeURIComponent(m[1]), body as OpBatch) };
         }
         if (method === 'PATCH' && (m = path.match(/^\/review\/reviews\/([^/]+)$/))) {
@@ -66,5 +76,5 @@ export async function serve(page: Page, { createdProblems }: Pick<MemoryOptions,
         await route.fulfill({ status: answered.status, json: answered.body });
     });
 
-    return { backend, batches };
+    return { backend, batches, holdNext };
 }

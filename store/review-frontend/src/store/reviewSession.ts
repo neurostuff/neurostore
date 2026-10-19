@@ -1,6 +1,6 @@
 import type { ReviewApi } from '../api/reviewApi';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
-import { keepPending, openDeviceQueue, QUEUE_VERSION } from './deviceQueue';
+import { keepPending, openDeviceQueue, READ_VERSIONS } from './deviceQueue';
 import { createOpClient } from './opClient';
 import { createReviewStores } from './reviewStores';
 import type { DeviceStatus } from './sessionStore';
@@ -65,7 +65,7 @@ export function createReviewSession(bundle: ReviewBundle, api: ReviewApi, device
         const queue = await openDeviceQueue(factory, notKept);
         const entry = await queue.read(id);
         if (lost) return;
-        if (entry && entry.version !== QUEUE_VERSION) {
+        if (entry && !READ_VERSIONS.includes(entry.version)) {
             await queue.remove(id);
             if (lost) return;
             setDevice('kept', UNKNOWN_VERSION);
@@ -90,7 +90,8 @@ export function createReviewSession(bundle: ReviewBundle, api: ReviewApi, device
         phase = 'editable';
         if (teardown !== undefined) return;
         client.start();
-        if (session.getState().pending.length > 0) void client.flush();
+        const { pending, collected } = session.getState();
+        if (pending.length > 0 || collected.length > 0) void client.flush();
     }
 
     async function load() {

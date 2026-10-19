@@ -17,7 +17,8 @@ import { analysisPlace } from '../model/coordinateFocus';
 import type { RecordIndex } from '../model/record';
 import { selectSourceUnknown } from '../store/viewSelectors';
 import { addAnalysisPanel } from './actions';
-import { coordinatePending, namingSlot, pendingKeys } from './availability';
+import { pendingKeys, waitsOnKeys } from '../store/pointEdits';
+import { namingSlot } from './availability';
 import { AnalysisName } from './AnalysisName';
 import { AuthorshipChip } from './AuthorshipChip';
 import { PointGrid } from './PointGrid';
@@ -100,7 +101,7 @@ const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: Coordi
 function EditAnalysisButton({ analysis }: { analysis: CoordinateAnalysis }) {
     const stores = useReviewStores();
     const editable = useIsEditable();
-    const pending = useSession(coordinatePending);
+    const pending = useSession((s) => waitsOnKeys(s, [analysis.key]));
     return (
         <Hint title="Edit analysis: its name, coordinate space and role (n)">
             <span>

@@ -31,7 +31,11 @@ async function open({ engaged = true } = {}) {
     client.start();
     const grid = () => screen.getByRole('group', { name: `edit the points of ${FACES.name}` });
     if (engaged) await engageGrid(FACES.name);
-    const saved = () => waitFor(() => expect(view.stores.session.getState().pending).toEqual([]), SLOW);
+    const saved = () =>
+        waitFor(() => {
+            expect(view.stores.session.getState().collected).toEqual([]);
+            expect(view.stores.session.getState().pending).toEqual([]);
+        }, SLOW);
     const posted = () => server.requests.filter((r) => r.method === 'POST').map((r) => (r.body as { ops: Op[] }).ops);
     const points = () =>
         currentAnalyses(view.stores.session.getState().bundle).find((a) => a.name === FACES.name)?.points;
@@ -148,12 +152,12 @@ describe('a result that lands while the grid is hidden', () => {
         ['confirmed', () => undefined],
         ['refused', refuse],
     ])('leaves the focus on the analysis shown when it is %s', async (_, respond) => {
-        const { grid, saved, server, stores } = await open();
+        const { grid, server, stores } = await open();
         const release = holdBatch(server);
         act(() => fakeHotIn(grid()).edit(0, 'z', 42));
         act(() => stores.view.getState().focusAnalysis(HOUSES.key));
         release(respond);
-        await saved();
+        await waitFor(() => expect(stores.session.getState().pending).toEqual([]), SLOW);
         expect(stores.view.getState().coordinates).toEqual({ analysis: HOUSES.key, point: null, selected: [] });
         expect(screen.getByRole('group', { name: `${HOUSES.name}: card head` })).toBeInTheDocument();
     });

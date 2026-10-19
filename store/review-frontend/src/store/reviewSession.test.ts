@@ -492,7 +492,7 @@ describe('the offline queue', () => {
         expect(await queue.read(reviewId)).toBeUndefined();
         await vi.advanceTimersByTimeAsync(1);
         expect(await queue.read(reviewId)).toEqual({
-            version: 1,
+            version: QUEUE_VERSION,
             review_id: reviewId,
             ops: tab.stores.session.getState().pending,
             groupOf: { 'intent-1': 'intent-1', 'intent-2': 'intent-1' },
@@ -526,9 +526,11 @@ describe('the offline queue', () => {
         Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
         document.dispatchEvent(new Event('visibilitychange'));
         Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+        await null;
         expect((await queue.read(reviewId))?.ops.map((op) => op.client_op_id)).toEqual([a]);
         const b = edit(tab.stores, 'design.description', 'during fMRI');
         window.dispatchEvent(new Event('pagehide'));
+        await null;
         expect((await queue.read(reviewId))?.ops.map((op) => op.client_op_id)).toEqual([a, b]);
     });
 
@@ -795,8 +797,9 @@ describe('the offline queue', () => {
         const tab = await openTab();
         expect(tab.stores.session.getState().blocked?.clientOpIds).toEqual(['refused-01']);
         window.dispatchEvent(new Event('pagehide'));
+        await null;
         expect(await queue.read(reviewId)).toEqual({
-            version: 1,
+            version: QUEUE_VERSION,
             review_id: reviewId,
             ops: [refused],
             groupOf: {},

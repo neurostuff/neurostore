@@ -3,8 +3,7 @@ import { Typography } from '@mui/material';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CoordinateAnalysis } from '../model/coordinates';
 import { useIsEditable, useReviewStores, useSession } from '../store/context';
-import { savePoints } from './actions';
-import { coordinatePending, pendingKeys } from './availability';
+import { selectShownPoints } from '../store/sessionStore';
 import { pairProblems, pointColumns, toPoints, toRows } from './pointRows';
 
 type Row = Record<string, unknown>;
@@ -13,10 +12,10 @@ const rowsBetween = (first: number, last: number) =>
     Array.from({ length: Math.max(last - first + 1, 0) }, (_, i) => first + i);
 
 /**
- * The points of `analysis` in a spreadsheet; each committed change is one edit_points op. While it is unconfirmed
- * the grid shows what was sent and takes no edits; a refusal brings back the analysis's points. It carries on what
- * the reviewer began on the static table, and commits the edit still open once hidden. A selection over rows selects
- * those points, as Space does; hidden, a selection in it focuses and selects nothing.
+ * The points of `analysis` in a spreadsheet, as the reviewer last left them; each committed change is collected, and
+ * the grid takes edits while earlier ones save. A refusal brings back the analysis's points. It carries on what the
+ * reviewer began on the static table, and commits the edit still open once hidden, sending it at once. A selection
+ * over rows selects those points, as Space does; hidden, a selection in it focuses and selects nothing.
  */
 export default function PointsTable({
     analysis,
@@ -30,17 +29,14 @@ export default function PointsTable({
 }) {
     const stores = useReviewStores();
     const editable = useIsEditable();
-    const saving = useSession((s) => pendingKeys(s).has(analysis.key));
-    const pending = useSession(coordinatePending);
+    const points = useSession((s) => selectShownPoints(s, analysis.key));
     const grid = useRef<CoordinateTableHandle>(null);
-    const [sent, setSent] = useState<{ key: string; rows: Row[] } | null>(null);
     const [problems, setProblems] = useState<string[]>([]);
-    const rows = useMemo(() => toRows(analysis.points ?? []), [analysis.points]);
+    const rows = useMemo(() => toRows(points), [points]);
     const columns = useMemo(
         () => pointColumns(analysis.coordinate_space, allColumns),
         [analysis.coordinate_space, allColumns]
     );
-    const shown = saving && sent?.key === analysis.key ? sent.rows : rows;
 
     /** Whether the points selected came from a selection over rows here, which a selection of one row clears. */
     const spanned = useRef(false);
@@ -64,16 +60,18 @@ export default function PointsTable({
         };
     }, [engagement]);
     const active = engagement !== null;
+    const hidden = useRef(!active);
     useLayoutEffect(() => {
+        hidden.current = !active;
         if (!active) grid.current?.finish();
     }, [active]);
 
     const onChange = (next: Row[]) => {
         const found = pairProblems(next);
         setProblems(found);
-        if (found.length === 0 && savePoints(stores, analysis.key, toPoints(next))) {
-            setSent({ key: analysis.key, rows: next });
-        }
+        if (found.length > 0) return;
+        const { collect, askToSend } = stores.session.getState();
+        if (collect(analysis.key, toPoints(next)) && hidden.current) askToSend();
     };
 
     return (
@@ -81,9 +79,9 @@ export default function PointsTable({
             <CoordinateTable
                 ref={grid}
                 label={`edit the points of ${analysis.name}`}
-                points={shown}
+                points={rows}
                 columns={columns}
-                readOnly={!editable || pending}
+                readOnly={!editable}
                 onChange={onChange}
                 onSelectRow={({ row, first, last }) => {
                     if (!active) return;

@@ -1,7 +1,7 @@
 import { Button, Paper, Typography } from '@mui/material';
 import { useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react';
 import { addSelectionToAnalysis, textAnalysisPanel } from '../coordinates/actions';
-import { coordinatePending, namingSlot } from '../coordinates/availability';
+import { namingSlot } from '../coordinates/availability';
 import { focusedAnalysis } from '../model/coordinateFocus';
 import type { SpanPair } from '../model/record';
 import { useIsEditable, useReviewStores, useSession, useSessionView, useView } from '../store/context';
@@ -26,7 +26,6 @@ function anchorOf(scroller: HTMLElement, rect: DOMRect): Anchor {
 function AnalysisSelectionBar({ anchor, selection }: { anchor: Anchor; selection: SpanPair }) {
     const stores = useReviewStores();
     const editable = useIsEditable();
-    const pending = useSession(coordinatePending);
     const openPanel = useView((s) => s.openPanel);
     const canName = useSessionView((session, view) => {
         const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates });
@@ -44,11 +43,7 @@ function AnalysisSelectionBar({ anchor, selection }: { anchor: Anchor; selection
             <Button size="small" disabled={!editable || !canName} onClick={() => addSelectionToAnalysis(stores)}>
                 Add as the analysis’s sentence (E)
             </Button>
-            <Button
-                size="small"
-                disabled={!editable || pending}
-                onClick={() => openPanel(textAnalysisPanel(selection))}
-            >
+            <Button size="small" disabled={!editable} onClick={() => openPanel(textAnalysisPanel(selection))}>
                 New coordinate analysis from selection
             </Button>
         </Paper>

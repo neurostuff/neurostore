@@ -5,7 +5,11 @@ import { StrictMode } from 'react';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { COORD_TEXT, coordinateBundle, FACES, HOUSES, INSULA, LOCALIZER, PRECUNEUS } from '../test/coordinates';
 import { engageGrid, staticTable } from '../test/grid';
+import { heldClient } from '../test/heldClient';
 import { renderWithStores } from '../test/render';
+
+let client: ReturnType<typeof heldClient> | undefined;
+afterEach(() => client?.stop());
 import { coordinateOpErrors } from '../test/schemas';
 
 // Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
@@ -21,7 +25,12 @@ async function setup() {
     const hot = () => fakeHotIn(screen.getByRole('group', { name: `edit the points of ${FACES.name}` }));
     const cells = () =>
         [...grid.querySelectorAll('tbody tr')].map((r) => [...r.querySelectorAll('td')].map((c) => c.textContent));
-    return { ...view, session, pending: () => session().pending, hot, cells, grid };
+    /** The pending ops once the point edits collected are sent. */
+    const pending = () => {
+        act(() => void session().sendCollected());
+        return session().pending;
+    };
+    return { ...view, session, pending, hot, cells, grid };
 }
 
 const target = { kind: 'coordinate_analysis', analysis_key: FACES.key };
@@ -62,8 +71,9 @@ describe('the focused analysis’s points, read-only until the reviewer edits th
         await waitFor(() => expect(fakeHotIn(grid).editor).toEqual({ row: 0, prop: 'x', value: '-7.5' }));
     });
 
-    it('leaving the analysis brings back the table, the edit open committed first', async () => {
+    it('leaving the analysis brings back the table, the edit open committed first and sent', async () => {
         const { stores } = open();
+        client = heldClient(stores);
         act(() => void fireEvent.keyDown(staticTable(FACES.name), { key: '7' }));
         await screen.findByRole('group', { name: `edit the points of ${FACES.name}` });
         act(() => stores.view.getState().focusAnalysis(LOCALIZER.key));
@@ -104,6 +114,8 @@ describe('keys typed on the static table before the grid is mounted', () => {
         await waitFor(() => expect(fakeHotIn(grid).editor).toEqual({ row: 0, prop: 'x', value: '12' }));
         expect(stores.session.getState().pending).toEqual([]);
         act(() => fakeHotIn(grid).getActiveEditor()!.finishEditing());
+        expect(stores.session.getState().pending).toEqual([]);
+        act(() => void stores.session.getState().sendCollected());
         expect(stores.session.getState().pending).toEqual([editPoints(12)]);
     });
 
@@ -201,7 +213,9 @@ describe('the focused analysis’s points, in a spreadsheet', () => {
         expect(pending()).toEqual([
             expect.objectContaining({ payload: { points: [PRECUNEUS, { ...INSULA, coordinates: [-36, 20, 40] }] } }),
         ]);
-        act(() => session().refuse([{ op: pending()[0], message: 'no' }]));
+        const [filled] = pending();
+        act(() => session().refuse([{ op: filled, message: 'no' }]));
+        act(() => session().discardCollected(FACES.key));
         act(() => hot().selectRows(0, 0));
         fireEvent.click(screen.getByRole('button', { name: 'Delete row(s)' }));
         expect(pending()).toEqual([expect.objectContaining({ payload: { points: [INSULA] } })]);
@@ -223,12 +237,16 @@ describe('the focused analysis’s points, in a spreadsheet', () => {
         expect(screen.getByText('row 2: a value needs its statistic')).toBeInTheDocument();
     });
 
-    it('shows the sent points, read-only, until the server answers; a refusal brings back the analysis’s', async () => {
+    it('shows the sent points, still editable, until the server answers; after a refusal Discard brings back the analysis’s', async () => {
         const { hot, pending, session, cells } = await setup();
         act(() => hot().edit(0, 'z', 42));
         expect(cells()[0][2]).toBe('42');
-        expect(hot().props.columns?.[0].readOnly).toBe(true);
-        act(() => session().refuse([{ op: pending()[0], message: 'refused' }]));
+        const [sent] = pending();
+        expect(cells()[0][2]).toBe('42');
+        expect(hot().props.columns?.[0].readOnly).toBe(false);
+        act(() => session().refuse([{ op: sent, message: 'refused' }]));
+        expect(cells()[0][2]).toBe('42');
+        act(() => session().discardCollected(FACES.key));
         expect(cells()[0][2]).toBe('40');
         expect(hot().props.columns?.[0].readOnly).toBe(false);
     });

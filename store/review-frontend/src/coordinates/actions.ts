@@ -12,12 +12,11 @@ import { randomUUID } from '../model/uuid';
 import { focusedAnalysis } from '../model/coordinateFocus';
 import { analysisTarget, slotTarget, targetKey } from '../model/targetKey';
 import type { ReviewStores } from '../store/reviewStores';
-import type { SessionState } from '../store/sessionStore';
+import { selectShownPoints, type SessionState } from '../store/sessionStore';
 import { addSelectionTo } from '../text/addSelection';
 import type { Panel, PanelKind } from '../store/viewStore';
 import {
     COORDINATE_UNAVAILABLE,
-    coordinatePending,
     mergeSet,
     moveTargets,
     movingPoints,
@@ -26,23 +25,44 @@ import {
     type CoordinateSession,
     type CoordinateView,
 } from './availability';
+import { waitsOnKeys } from '../store/pointEdits';
 
 type NewOp = Omit<CoordinateOp, 'client_op_id' | 'type'>;
 
 const coordinateOp = (op: NewOp) => ({ client_op_id: randomUUID(), type: 'coordinate', ...op }) as Op;
 const send = ({ session }: ReviewStores, op: NewOp) => session.getState().emitBatch([coordinateOp(op)]);
 
-/** Emits the ops `build` makes from the focused analysis, as one batch; false when there is none or a coordinate op is pending. */
+/** The analysis `key` with the points the reviewer last left it with, collected or pending. */
+function shownAnalysis(session: CoordinateSession, key: string | undefined): CoordinateAnalysis | undefined {
+    const analysis = currentAnalyses(session.bundle).find((candidate) => candidate.key === key);
+    return analysis && { ...analysis, points: selectShownPoints(session, analysis.key) };
+}
+
+/**
+ * The analysis `key` as shown, once the point edits collected are sent so that what follows is sent after them;
+ * undefined, sending nothing, when there is no such analysis or a pending op may replace the key of one of `keys`.
+ */
+function sentFirst(stores: ReviewStores, key: string | undefined, keys: string[] = []) {
+    const session = stores.session.getState();
+    const analysis = shownAnalysis(session, key);
+    if (!analysis || waitsOnKeys(session, [analysis.key, ...keys])) return undefined;
+    session.askToSend();
+    return analysis;
+}
+
+/**
+ * Emits the ops `build` makes from the focused analysis as it is shown, as one batch after the point edits collected;
+ * false when there is none or a pending op may replace its key.
+ */
 function act(
     stores: ReviewStores,
     build: (analysis: CoordinateAnalysis, session: CoordinateSession, view: CoordinateView) => NewOp[] | undefined
 ) {
-    const session = stores.session.getState();
     const view = stores.view.getState();
-    const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates });
-    const ops = analysis && !coordinatePending(session) ? build(analysis, session, view) : undefined;
+    const analysis = sentFirst(stores, view.coordinates?.analysis);
+    const ops = analysis && build(analysis, stores.session.getState(), view);
     if (!ops?.length) return false;
-    return session.emitBatch(ops.map(coordinateOp));
+    return stores.session.getState().emitBatch(ops.map(coordinateOp));
 }
 
 const pointsOf = (analysis: CoordinateAnalysis): CoordinatePoint[] => analysis.points ?? [];
@@ -53,12 +73,10 @@ const editPoints = (analysis: CoordinateAnalysis, points: CoordinatePoint[]): Ne
     payload: { points },
 });
 
-/** Accepts the focused analysis with a verdict op, the one way to judge it; false when there is none or a coordinate op is pending. */
+/** Accepts the focused analysis with a verdict op, the one way to judge it; false when there is none or a pending op may replace its key. */
 export function acceptAnalysis(stores: ReviewStores) {
-    const session = stores.session.getState();
-    const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: stores.view.getState().coordinates });
-    if (!analysis || coordinatePending(session)) return false;
-    return acceptTarget(stores, analysisTarget(analysis.key));
+    const analysis = sentFirst(stores, stores.view.getState().coordinates?.analysis);
+    return analysis ? acceptTarget(stores, analysisTarget(analysis.key)) : false;
 }
 
 export const relabelAnalysis = (stores: ReviewStores, role: NonNullable<CoordinateOp['role']>) =>
@@ -137,9 +155,9 @@ function editOps(index: RecordIndex, analysis: CoordinateAnalysis, edit: Analysi
 
 /** Gives the analysis `key` the name, space and role of `edit` as one batch; true when nothing changes, false when it cannot be sent. */
 export function editAnalysis(stores: ReviewStores, key: string, edit: AnalysisEdit) {
+    const analysis = sentFirst(stores, key);
+    if (!analysis) return false;
     const session = stores.session.getState();
-    const analysis = currentAnalyses(session.bundle).find((candidate) => candidate.key === key);
-    if (!analysis || coordinatePending(session)) return false;
     const ops = editOps(session.index, analysis, edit);
     return ops.length === 0 || session.emitBatch(ops);
 }
@@ -152,12 +170,13 @@ export function saveSlotValue(stores: ReviewStores, slot: SlotNode, value: SetVa
             ? analysisNamedBy(session.index.entity(slot.entity), currentAnalyses(session.bundle))
             : undefined;
     if (!analysis || analysis.name === value.value) return setValue(stores, slot, value);
-    if (coordinatePending(session)) return false;
+    const shown = sentFirst(stores, analysis.key);
+    if (!shown) return false;
     const edited = slotTarget(slot.entity, slot.path);
-    const ops = renamePair(session.index, analysis, value.value as string).map((op) =>
+    const ops = renamePair(session.index, shown, value.value as string).map((op) =>
         op.type === 'set_value' && targetKey(op.target) === targetKey(edited) ? { ...op, value } : op
     );
-    return session.emitBatch(ops);
+    return stores.session.getState().emitBatch(ops);
 }
 
 /** Renames the analysis `key`, keeping its space and role. */
@@ -171,51 +190,43 @@ export function renameAnalysis(stores: ReviewStores, key: string, name: string) 
     });
 }
 
-/** Replaces the points of the analysis `key` with `points` as one edit_points op; false when nothing changes or it cannot be sent. */
-export function savePoints(stores: ReviewStores, key: string, points: CoordinatePoint[]) {
-    const session = stores.session.getState();
-    const analysis = currentAnalyses(session.bundle).find((candidate) => candidate.key === key);
-    if (!analysis || coordinatePending(session)) return false;
-    if (JSON.stringify(points) === JSON.stringify(pointsOf(analysis))) return false;
-    return send(stores, editPoints(analysis, points));
-}
-
 /** Puts the keyboard in the point grid on the focused point's row, or the first row when no point is focused. */
 export function editPoint(stores: ReviewStores) {
     const view = stores.view.getState();
-    const analysis = focusedAnalysis({ bundle: stores.session.getState().bundle, coordinates: view.coordinates });
-    if (!analysis || !pointsOf(analysis).length) return false;
+    const session = stores.session.getState();
+    const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates });
+    if (!analysis || !selectShownPoints(session, analysis.key).length) return false;
     view.focusAnalysis(analysis.key, view.coordinates?.point ?? 0);
     stores.view.getState().engageGrid();
     return true;
 }
 
-export const removePoint = (stores: ReviewStores) =>
-    act(stores, (analysis, _, view) => {
-        const at = view.coordinates?.point;
-        return at === null || at === undefined
-            ? undefined
-            : [
-                  editPoints(
-                      analysis,
-                      pointsOf(analysis).filter((_, i) => i !== at)
-                  ),
-              ];
-    });
+/** Removes the focused point, collected as an edit of the grid is. */
+export function removePoint(stores: ReviewStores) {
+    const session = stores.session.getState();
+    const { coordinates } = stores.view.getState();
+    const at = coordinates?.point;
+    if (at === null || at === undefined || !coordinates) return false;
+    const points = selectShownPoints(session, coordinates.analysis);
+    return session.collect(
+        coordinates.analysis,
+        points.filter((_, i) => i !== at)
+    );
+}
 
 /** Moves the moving points to the analysis `to`, as one batch of two edit_points. */
 export const movePoints = (stores: ReviewStores, to: string) =>
     act(stores, (analysis, session, view) => {
         const moving = movingPoints(view);
         const destination = moveTargets(session, view).find((candidate) => candidate.key === to);
-        if (!moving.length || !destination) return undefined;
+        if (!moving.length || !destination || waitsOnKeys(session, [to])) return undefined;
         const points = pointsOf(analysis);
         return [
             editPoints(
                 analysis,
                 points.filter((_, i) => !moving.includes(i))
             ),
-            editPoints(destination, [...pointsOf(destination), ...moving.map((i) => points[i])]),
+            editPoints(destination, [...selectShownPoints(session, to), ...moving.map((i) => points[i])]),
         ];
     });
 
@@ -237,9 +248,9 @@ export const splitAnalysis = (stores: ReviewStores) =>
     });
 
 export function mergeAnalyses(stores: ReviewStores) {
-    const session = stores.session.getState();
-    const [into, ...others] = mergeSet(session, stores.view.getState());
-    if (!into || !others.length || coordinatePending(session)) return false;
+    const [into, ...others] = mergeSet(stores.session.getState(), stores.view.getState());
+    const keys = others.map((analysis) => analysis.key);
+    if (!into || !others.length || !sentFirst(stores, into.key, keys)) return false;
     return send(stores, {
         target: analysisTarget(into.key),
         action: 'merge',
@@ -278,7 +289,7 @@ export function addAnalysis(
     points: CoordinatePoint[],
     record: Record<string, string> = {}
 ) {
-    if (coordinatePending(stores.session.getState())) return false;
+    stores.session.getState().askToSend();
     const read =
         'table' in source
             ? { origin: 'table', table_id: source.table, cells: [] }

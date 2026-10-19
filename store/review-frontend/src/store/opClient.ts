@@ -2,9 +2,12 @@ import { ApiError, ROLE_MESSAGE, type ReviewApi, type ReviewLifecycle, type SetA
 import { BATCH_MAX_OPS, type Op } from '../contract/generated/review-ops';
 import { isLocalOp } from '../model/applyOp';
 import { spansToCodePoints } from '../model/offsets';
+import { keysChanged, keysNamed } from '../model/analysisFollow';
+import type { PointEdit } from './pointEdits';
 import { selectIsBlocked, selectIsEditable, type Refusal, type SessionStore } from './sessionStore';
 
 export const DEBOUNCE_MS = 1000;
+export const COLLECT_PAUSE_MS = 1500;
 export const MAX_BACKOFF_MS = 30_000;
 /** Browsers refuse a keepalive body over 64 KiB; a hidden-page flush stays under this. */
 export const KEEPALIVE_LIMIT = 60 * 1024;
@@ -39,20 +42,36 @@ function measured(text: string, batch: Op[]): Batch {
     return { batch, sent, size: bytesOf(sent) };
 }
 
-/** The leading whole groups to send: at most BATCH_MAX_OPS ops, and when hidden under KEEPALIVE_LIMIT bytes. */
+/**
+ * The leading whole groups to send: at most BATCH_MAX_OPS ops, when hidden under KEEPALIVE_LIMIT bytes, and none
+ * naming an analysis key an earlier group may replace, whose new key only that group's result gives. Such a group
+ * is pending behind its key's op when an action follows the edits collected on its analysis, which are sent first,
+ * and when a device's kept ops are restored.
+ */
 function nextBatch(pending: Op[], groupOf: Record<string, string>, text: string, hidden: boolean): Batch {
     const next: Batch = { batch: [], sent: [], size: 0 };
+    const replaced = new Set<string>();
     for (const group of groupsOf(pending, groupOf)) {
         const converted = spansToCodePoints(text, group);
         const groupSize = bytesOf(converted);
         const overBatch = next.batch.length + group.length > BATCH_MAX_OPS;
         const overKeepalive = hidden && next.size + groupSize >= KEEPALIVE_LIMIT;
-        if (next.batch.length > 0 && (overBatch || overKeepalive)) break;
+        const waitsOnKey = group.some((op) => keysNamed(op).some((key) => replaced.has(key)));
+        if (next.batch.length > 0 && (overBatch || overKeepalive || waitsOnKey)) break;
+        for (const op of group) for (const key of keysChanged(op)) replaced.add(key);
         next.batch.push(...group);
         next.sent.push(...converted);
         next.size += groupSize;
     }
     return next;
+}
+
+/** Why the review cannot move on while point edits are kept unsent: how many, on which analysis. */
+export function unsavedEdits(collected: PointEdit[]): string {
+    const byName = new Map<string, number>();
+    for (const edit of collected) byName.set(edit.name, (byName.get(edit.name) ?? 0) + 1);
+    const each = [...byName].map(([name, count]) => `${count} point ${count === 1 ? 'edit' : 'edits'} on ${name}`);
+    return `${each.join('; ')} ${collected.length === 1 ? 'is' : 'are'} not saved: resolve them first`;
 }
 
 function refusals(error: ApiError, batch: Op[]): Refusal[] {
@@ -81,6 +100,8 @@ function needsSignIn(error: unknown): boolean {
 /** Saves the store's pending ops to its review, one batch at a time. */
 export function createOpClient(store: SessionStore, api: ReviewApi) {
     let debounce: ReturnType<typeof setTimeout> | undefined;
+    /** Runs out COLLECT_PAUSE_MS after the reviewer's last point edit, sending what is collected. */
+    let collecting: ReturnType<typeof setTimeout> | undefined;
     let backoff: ReturnType<typeof setTimeout> | undefined;
     /** The batch whose answer was lost, sent again unchanged so the server can replay it. */
     let unansweredBatch: Op[] | null = null;
@@ -182,6 +203,7 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
                 } catch (error) {
                     if (!(await recover(error, batch))) return;
                 }
+                if (collecting === undefined) state().sendCollected();
                 if (editedSinceSend()) return;
             }
         } finally {
@@ -189,16 +211,51 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
         }
     }
 
+    /** Whether a flush came while the save loop ran, which it may have ended before seeing. */
+    let again = false;
+    /** Whether the save loop runs; false in the same step it ends, so a flush after that starts it again. */
+    let draining = false;
+
+    /** Runs the save loop, and again while a flush came during the last run. */
+    async function drainWhileAsked() {
+        try {
+            do {
+                again = false;
+                await drain();
+            } while (again);
+        } finally {
+            draining = false;
+        }
+    }
+
     function flush(): Promise<void> {
         clearTimeout(debounce);
         debounce = undefined;
-        running ??= drain().finally(() => (running = null));
-        return running;
+        if (draining && running) {
+            again = true;
+            return running;
+        }
+        draining = true;
+        const run = drainWhileAsked();
+        running = run;
+        void run.finally(() => {
+            if (running === run) running = null;
+        });
+        return run;
+    }
+
+    /** Sends the point edits collected, then saves what is pending. */
+    function sendAll(): Promise<void> {
+        clearTimeout(collecting);
+        collecting = undefined;
+        state().sendCollected();
+        return flush();
     }
 
     const flushNow = () => void flush();
+    const sendAllNow = () => void sendAll();
     const onVisibility = () => {
-        if (document.visibilityState === 'hidden') flushNow();
+        if (document.visibilityState === 'hidden') sendAllNow();
     };
     const onOnline = () => {
         if (state().save !== 'offline') return;
@@ -209,7 +266,8 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
     };
     const onOffline = () => showNetwork(false);
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
-        if (state().pending.length === 0) return;
+        sendAllNow();
+        if (state().pending.length === 0 && state().collected.length === 0) return;
         event.preventDefault();
         event.returnValue = '';
     };
@@ -218,13 +276,21 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
         start() {
             stopped = false;
             unsubscribe = store.subscribe((next, previous) => {
+                if (next.sendAsked !== previous.sendAsked) sendAllNow();
+                if (next.collected.length && next.collected.at(-1)?.points !== previous.collected.at(-1)?.points) {
+                    clearTimeout(collecting);
+                    collecting = setTimeout(() => {
+                        collecting = undefined;
+                        state().sendCollected();
+                    }, COLLECT_PAUSE_MS);
+                }
                 const last = next.pending.at(-1);
                 if (!last || previous.pending.some((op) => op.client_op_id === last.client_op_id)) return;
                 clearTimeout(debounce);
                 if (isLocalOp(last)) debounce = setTimeout(flushNow, DEBOUNCE_MS);
                 else void state().minted(last.client_op_id).then(flushNow);
             });
-            window.addEventListener('blur', flushNow);
+            window.addEventListener('blur', sendAllNow);
             window.addEventListener('beforeunload', onBeforeUnload);
             window.addEventListener('online', onOnline);
             window.addEventListener('offline', onOffline);
@@ -238,19 +304,21 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
             clearTimeout(backoff);
             backoff = undefined;
             unsubscribe();
-            window.removeEventListener('blur', flushNow);
+            window.removeEventListener('blur', sendAllNow);
             window.removeEventListener('beforeunload', onBeforeUnload);
             window.removeEventListener('online', onOnline);
             window.removeEventListener('offline', onOffline);
             document.removeEventListener('visibilitychange', onVisibility);
-            flushNow();
+            sendAllNow();
         },
-        flush,
+        /** Sends the point edits collected and saves everything pending. */
+        flush: sendAll,
         /** Saves what is pending, then moves the review to `next`; nothing while the session takes no edits. */
         async changeState(next: ReviewLifecycle, setAside?: SetAside) {
             if (!selectIsEditable(state())) return;
-            await flush();
+            await sendAll();
             if (selectIsBlocked(state())) return;
+            if (next !== 'in_progress' && state().collected.length) throw new Error(unsavedEdits(state().collected));
             const { review } = state().bundle;
             if (!review) return;
             const summary = await api.setState(review.id, next, setAside);

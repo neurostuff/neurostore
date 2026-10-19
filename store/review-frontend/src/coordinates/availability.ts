@@ -3,26 +3,13 @@ import { currentAnalyses, entitiesNaming, guidedOrder, type CoordinateAnalysis }
 import { focusedAnalysis, guidedIndex } from '../model/coordinateFocus';
 import type { Reason as ReasonOf } from '../review/reason';
 import { slotKey } from '../model/targetKey';
-import { canAddEvidence, type SessionState } from '../store/sessionStore';
+import { waitsOnKeys } from '../store/pointEdits';
+import { canAddEvidence, selectShownPoints, type SessionState } from '../store/sessionStore';
 import type { ViewState } from '../store/viewStore';
 
-export type CoordinateSession = Pick<SessionState, 'bundle' | 'pending'>;
+export type CoordinateSession = Pick<SessionState, 'bundle' | 'pending' | 'collected'>;
 export type CoordinateView = Pick<ViewState, 'coordinates' | 'merging'>;
 type GuidedView = Pick<ViewState, 'coordinates' | 'showNonCoordinate'>;
-
-/** Whether a coordinate op waits for its result; until it lands no key the client holds can be trusted. */
-export const coordinatePending = (s: Pick<SessionState, 'pending'>) => s.pending.some((op) => op.type === 'coordinate');
-
-/** The keys the pending coordinate ops change. */
-export function pendingKeys(s: Pick<SessionState, 'pending'>): Set<string> {
-    return new Set(
-        s.pending.flatMap((op) => {
-            if (op.type !== 'coordinate') return [];
-            const merged = op.payload && 'with' in op.payload ? op.payload.with : [];
-            return op.target.kind === 'coordinate_analysis' ? [op.target.analysis_key, ...merged] : [];
-        })
-    );
-}
 
 /** The points a move takes: the selected ones, else the focused one. */
 export function movingPoints({ coordinates }: Pick<ViewState, 'coordinates'>): number[] {
@@ -78,15 +65,21 @@ type Reason = ReasonOf<CoordinateSession, CoordinateView>;
 const PENDING = 'Wait for the coordinate change to save';
 const NO_ANALYSIS = 'Focus an analysis first';
 
-const pointCount = (session: CoordinateSession, view: CoordinateView) =>
-    focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates })?.points?.length ?? 0;
+const pointCount = (session: CoordinateSession, view: CoordinateView) => {
+    const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates });
+    return analysis ? selectShownPoints(session, analysis.key).length : 0;
+};
 
-/** Why an action cannot act on the focused analysis now, after `more` says what else it needs; undefined when it can. */
+/**
+ * Why an action cannot act on the focused analysis now, after `more` says what else it needs; undefined when it can.
+ * One that `waits` does not act while a pending op may replace the analysis's key.
+ */
 const needs =
     (more: Reason = () => undefined, waits = true): Reason =>
     (session, view) => {
-        if (!focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates })) return NO_ANALYSIS;
-        if (waits && coordinatePending(session)) return PENDING;
+        const analysis = focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates });
+        if (!analysis) return NO_ANALYSIS;
+        if (waits && waitsOnKeys(session, [analysis.key])) return PENDING;
         return more(session, view);
     };
 
@@ -94,8 +87,10 @@ const needs =
 export const COORDINATE_UNAVAILABLE = {
     judge: needs(),
     note: needs(undefined, false),
-    editPoint: needs((session, view) =>
-        pointCount(session, view) ? undefined : 'This analysis has no points yet: add a row in its grid'
+    editPoint: needs(
+        (session, view) =>
+            pointCount(session, view) ? undefined : 'This analysis has no points yet: add a row in its grid',
+        false
     ),
     move: needs((session, view) => {
         if (!movingPoints(view).length) return 'Focus a point, or select points: drag over rows or press Space';
@@ -106,11 +101,17 @@ export const COORDINATE_UNAVAILABLE = {
         if (!selected.length) return 'Select the points to split off: drag over rows or press Space';
         return selected.length < pointCount(session, view) ? undefined : 'Leave at least one point unselected to split';
     }),
-    merge: needs((session, view) =>
-        mergeSet(session, view).length > 1
-            ? undefined
-            : 'Merge joins whole analyses: Shift-click another analysis’s card; to put these points in another analysis, use Move to…'
-    ),
+    merge: needs((session, view) => {
+        const joined = mergeSet(session, view);
+        if (joined.length < 2)
+            return 'Merge joins whole analyses: Shift-click another analysis’s card; to put these points in another analysis, use Move to…';
+        return waitsOnKeys(
+            session,
+            joined.map((analysis) => analysis.key)
+        )
+            ? PENDING
+            : undefined;
+    }),
     addAnalysis: needs((session, view) =>
         focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates })!.table_id
             ? undefined

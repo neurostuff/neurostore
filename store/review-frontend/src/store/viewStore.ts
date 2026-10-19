@@ -11,14 +11,7 @@ import {
     tableReveal,
     type CoordinateFocus,
 } from '../model/coordinateFocus';
-import {
-    currentAnalyses,
-    entitiesNaming,
-    guidedOrder,
-    hasPoints,
-    successor,
-    type CoordinateAnalysis,
-} from '../model/coordinates';
+import { currentAnalyses, entitiesNaming, guidedOrder, hasPoints, type CoordinateAnalysis } from '../model/coordinates';
 import { randomUUID } from '../model/uuid';
 import { analysisItemFor, diffTarget, nextChange, resolveTarget, visibleItems } from '../model/diff';
 import { auditRows, isLinkStep, stepCards, type AuditLink } from '../model/guided';
@@ -27,6 +20,7 @@ import type { RecordIndex, SpanPair } from '../model/record';
 import { STEPS, type StepId } from '../model/steps';
 import { analysisTarget, entityKey, relationshipKey, slotTarget, targetKey } from '../model/targetKey';
 import { isFocused, selectDiff } from './diffSelectors';
+import { followerOf, type Follower } from '../model/analysisFollow';
 import { selectIsEditable, type Replaced, type SessionStore } from './sessionStore';
 import { selectEvidenceCursor, selectFocusedSpans, selectShown } from './viewSelectors';
 
@@ -226,6 +220,7 @@ export function createViewStore(session: SessionStore) {
 
         const focusOn = (focus: Focus) => {
             const { reveal } = get();
+            if (get().coordinates) session.getState().askToSend();
             const focused = selectFocusedSpans(documents(), { focus, coordinates: null });
             const table = focus.slot
                 ? undefined
@@ -242,10 +237,14 @@ export function createViewStore(session: SessionStore) {
             });
         };
 
-        /** Focuses `coordinates`; the point grid stays engaged on the same analysis, or on the one `kept` replaced. */
+        /**
+         * Focuses `coordinates`; the point grid stays engaged on the same analysis, or on the one `kept` replaced.
+         * Leaving an analysis sends the point edits collected.
+         */
         const focusCoordinates = (coordinates: CoordinateFocus | null, kept = false) => {
             const { reveal, gridEngagement, judged } = get();
             const same = kept || coordinates?.analysis === get().coordinates?.analysis;
+            if (!same) session.getState().askToSend();
             set({
                 coordinates,
                 evidenceCursor: 0,
@@ -296,14 +295,20 @@ export function createViewStore(session: SessionStore) {
             return added;
         };
 
-        /** After the analyses change from `before`, focuses `added`, the one that replaced the focused one, or the one now in its place. */
-        const refocusCoordinates = (before: CoordinateAnalysis[], added: CoordinateAnalysis | undefined) => {
+        /** After the analyses change, focuses `added`, the one that replaced the focused one, or the one now in its place. */
+        const refocusCoordinates = (follower: Follower, added: CoordinateAnalysis | undefined) => {
             const { coordinates, showNonCoordinate } = get();
             if (!coordinates) return;
-            const after = currentAnalyses(documents().bundle);
-            const next = nextFocus(before, after, coordinates, showNonCoordinate, added);
+            const next = nextFocus(
+                follower.was,
+                follower.now,
+                coordinates,
+                showNonCoordinate,
+                added,
+                follower.successor
+            );
             if (next?.analysis === coordinates.analysis) return set({ coordinates: next });
-            focusCoordinates(next, !added && next?.analysis === successor(before, after, coordinates.analysis));
+            focusCoordinates(next, !added && next?.analysis === follower.successor(coordinates.analysis));
         };
 
         /** Focuses `created` once it is in the index, else the nearest ancestor of a focused entity that is gone. */
@@ -322,8 +327,9 @@ export function createViewStore(session: SessionStore) {
         const refocus = ({ before, sent }: Replaced) => {
             refocusEntity(before.entities, createdBy(sent).at(-1));
             pruneMerging();
-            const analyses = currentAnalyses(before);
-            if (get().coordinates) refocusCoordinates(analyses, offerAdded(analyses, sent));
+            if (!get().coordinates) return;
+            const follower = followerOf(before, documents().bundle);
+            refocusCoordinates(follower, offerAdded(follower.was, sent));
         };
 
         /** Step 5's link rows, and where the focus is among them: on a row, else before the focused card's first. */

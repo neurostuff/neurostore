@@ -12,7 +12,8 @@ import { focusedAnalysis } from '../model/coordinateFocus';
 import { analysisTarget } from '../model/targetKey';
 import type { CoordinateAnalysis } from '../model/coordinates';
 import { humanize } from '../model/labels';
-import { coordinatePending, guidedPosition } from './availability';
+import { PointEditsSaved, StrandedEdits } from './PointEditsStatus';
+import { guidedPosition } from './availability';
 import { AnalysisName } from './AnalysisName';
 import { AddAnalysisChooser } from './AddAnalysisChooser';
 import { AuthorshipChip } from './AuthorshipChip';
@@ -66,7 +67,6 @@ export function CoordinatesInspector() {
     const analysis = useSession((s) => focusedAnalysis({ bundle: s.bundle, coordinates }));
     const panel = useView((s) => s.panel);
     const merging = useView((s) => s.merging.length);
-    const saving = useSession(coordinatePending);
     const reviewed = useSession((s) =>
         analysis ? s.provenance[targetKey(analysisTarget(analysis.key))]?.state : undefined
     );
@@ -74,9 +74,6 @@ export function CoordinatesInspector() {
     const summary = useSession((s) => (analysis ? analysisSummary(s.bundle, s.index, analysis) : ''));
     return (
         <>
-            <Box role="status" aria-label="pending coordinate changes" sx={{ px: 2, typography: 'caption' }}>
-                {saving ? 'saving coordinate changes…' : ''}
-            </Box>
             <Offer />
             {analysis && coordinates && (
                 <Box component="section" aria-label={analysis.name}>
@@ -89,6 +86,7 @@ export function CoordinatesInspector() {
                             <Chip size="small" variant="outlined" label={analysis.role} />
                             <AuthorshipChip analysis={analysis} judged={reviewed !== undefined} />
                             <StatusLabel id={reviewStatus(reviewed)} by={editor} />
+                            <PointEditsSaved analysis={analysis} />
                         </Stack>
                         <Typography variant="caption" color="text.secondary" component="div">
                             {[
@@ -110,6 +108,7 @@ export function CoordinatesInspector() {
                             <Position />
                             <CoordinateHeadActions />
                         </Stack>
+                        <StrandedEdits />
                         <AnalysisReasons />
                         <JudgedStatus analysis={analysis} />
                         <NamedBy analysis={analysis} />

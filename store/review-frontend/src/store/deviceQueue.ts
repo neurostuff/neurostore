@@ -4,7 +4,9 @@
  */
 import type { KeptOps, SessionStore } from './sessionStore';
 
-export const QUEUE_VERSION = 1;
+export const QUEUE_VERSION = 2;
+/** The versions this one reads: 1 kept no collected point edits. */
+export const READ_VERSIONS = [1, QUEUE_VERSION];
 const WRITE_EVERY_MS = 250;
 
 const DATABASE = 'neurostore-review';
@@ -65,42 +67,48 @@ export async function openDeviceQueue(factory: IDBFactory, onFail: () => void): 
     };
 }
 
-/** Writes the store's pending ops to `queue` at most every WRITE_EVERY_MS, and at once when the page is hidden. */
+/**
+ * Writes the store's pending ops and collected point edits to `queue` at most every WRITE_EVERY_MS, and at once
+ * when the page is hidden.
+ */
 export function keepPending(store: SessionStore, queue: DeviceQueue, reviewId: string) {
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     function write(): Promise<void> {
         clearTimeout(timer);
         timer = undefined;
-        const { pending, groupOf, intents } = store.getState();
-        if (pending.length === 0) return queue.remove(reviewId);
+        const { pending, groupOf, intents, collected } = store.getState();
+        if (pending.length === 0 && collected.length === 0) return queue.remove(reviewId);
         return queue.write({
             version: QUEUE_VERSION,
             review_id: reviewId,
             ops: pending,
             groupOf,
             intents,
+            ...(collected.length > 0 && { collected }),
             saved_at: new Date().toISOString(),
         });
     }
 
     const writeNow = () => void write();
+    /** Writes once the event's other listeners have run, so the op client's send on hiding is what is written. */
+    const writeAfter = () => queueMicrotask(writeNow);
     const onVisibility = () => {
-        if (document.visibilityState === 'hidden') writeNow();
+        if (document.visibilityState === 'hidden') writeAfter();
     };
     const unsubscribe = store.subscribe((next, previous) => {
-        if (next.pending === previous.pending || timer !== undefined) return;
+        if ((next.pending === previous.pending && next.collected === previous.collected) || timer !== undefined) return;
         timer = setTimeout(writeNow, WRITE_EVERY_MS);
     });
     document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('pagehide', writeNow);
+    window.addEventListener('pagehide', writeAfter);
 
     function stop() {
         clearTimeout(timer);
         timer = undefined;
         unsubscribe();
         document.removeEventListener('visibilitychange', onVisibility);
-        window.removeEventListener('pagehide', writeNow);
+        window.removeEventListener('pagehide', writeAfter);
     }
 
     return { write, stop };

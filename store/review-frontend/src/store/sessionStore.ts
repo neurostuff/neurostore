@@ -3,7 +3,7 @@ import { withState, type OpResult, type ReviewLifecycle, type SetAside } from '.
 import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
 import type { CreateEntityOp, Op, SetEvidenceOp, Span } from '../contract/generated/review-ops';
 import { isLocalOp, type AnnotationMap, type ProvenanceMap } from '../model/applyOp';
-import { currentAnalyses, keepUnchanged, type CoordinateParse } from '../model/coordinates';
+import { currentAnalyses, keepUnchanged, type CoordinateParse, type CoordinatePoint } from '../model/coordinates';
 import { spansToUtf16 } from '../model/offsets';
 import { mintLocalId } from '../model/mint';
 import { randomUUID } from '../model/uuid';
@@ -11,6 +11,17 @@ import type { Json } from '../model/paths';
 import { buildRecordIndex, withSlotFrom, type RecordIndex, type SlotNode, type SpanPair } from '../model/record';
 import { slotTarget, targetKey } from '../model/targetKey';
 import { declaredOf } from './declared';
+import { followerOf, type Follower } from '../model/analysisFollow';
+import {
+    collectedByAnalysis,
+    followAnalyses,
+    keptThroughRefusal,
+    KEPT_EDITS,
+    pendingKeys,
+    pendingPoints,
+    samePoints,
+    type PointEdit,
+} from './pointEdits';
 import {
     blockedFrom,
     carrying,
@@ -50,7 +61,7 @@ export interface Blocked {
 const UNNAMED_REFUSAL = 'the server refused an edit and did not say which one';
 
 export interface Notice {
-    kind: 'conflict' | 'refused' | 'dangling' | 'split' | 'undo' | 'redo';
+    kind: 'conflict' | 'refused' | 'dangling' | 'split' | 'undo' | 'redo' | 'kept';
     slot: string;
     message: string;
     /** The op dropped, for naming what it was in the reviewer's terms. */
@@ -82,6 +93,8 @@ export interface KeptOps {
     /** The client_op_id opening the emitBatch group of each op that came in one. */
     groupOf: Record<string, string>;
     intents: Record<string, EvidenceIntent>;
+    /** The point edits collected and not yet sent; absent when there are none. */
+    collected?: PointEdit[];
 }
 
 export interface SessionState {
@@ -141,6 +154,26 @@ export interface SessionState {
     undo(): void;
     /** Sends the inverse of the last undo as one batch, and moves it back to the undo stack. */
     redo(): void;
+    /** The reviewer's point edits not yet sent, in the order made; shown at once, sent by `sendCollected`. */
+    collected: PointEdit[];
+    /** The collected edits undone before they were sent, the last undone last; a new edit clears them. */
+    uncollected: PointEdit[];
+    /** Collects an edit giving the analysis `key` the points `points`; false when it changes nothing. */
+    collect(key: string, points: CoordinatePoint[]): boolean;
+    /**
+     * Sends the collected edits as one batch and one undo step: an edit_points of each analysis's latest points. An
+     * analysis a pending op changes keeps its edits until that op's result names its key, and held edits stay;
+     * false when none is sent. Only the op client calls it.
+     */
+    sendCollected(): boolean;
+    /** Drops the collected edits of the analysis `key`, which then shows the points the server has. */
+    discardCollected(key: string): void;
+    /** Collects the latest edited points of the analysis `key`, held, as an edit of the analysis `to`. */
+    applyCollected(key: string, to: string): boolean;
+    /** How many times a view or an action asked for the collected edits to be sent now; the op client sends them. */
+    sendAsked: number;
+    /** Asks the op client to send the collected edits now. */
+    askToSend(): void;
 }
 
 export type SessionStore = ReturnType<typeof createSessionStore>;
@@ -158,11 +191,23 @@ export const selectIsEditable = (s: Pick<SessionState, 'device'>): boolean =>
 
 export const selectIsBlocked = (s: Pick<SessionState, 'blocked'>): boolean => s.blocked != null;
 
-export const selectCanUndo = (s: Pick<SessionState, 'blocked' | 'undoStack' | 'device'>): boolean =>
-    selectIsEditable(s) && !selectIsBlocked(s) && s.undoStack.length > 0;
+export const selectCanUndo = (s: Pick<SessionState, 'blocked' | 'undoStack' | 'device' | 'collected'>): boolean =>
+    selectIsEditable(s) && (s.collected.length > 0 || (!selectIsBlocked(s) && s.undoStack.length > 0));
 
-export const selectCanRedo = (s: Pick<SessionState, 'blocked' | 'redoStack' | 'device'>): boolean =>
-    selectIsEditable(s) && !selectIsBlocked(s) && s.redoStack.length > 0;
+export const selectCanRedo = (s: Pick<SessionState, 'blocked' | 'redoStack' | 'device' | 'uncollected'>): boolean =>
+    selectIsEditable(s) && (s.uncollected.length > 0 || (!selectIsBlocked(s) && s.redoStack.length > 0));
+
+const NO_POINTS: CoordinatePoint[] = [];
+
+/** The points of the analysis `key` as the server has them, or as its last pending edit_points gives them. */
+const sentPoints = ({ bundle, pending }: Pick<SessionState, 'bundle' | 'pending'>, key: string): CoordinatePoint[] =>
+    pendingPoints(pending, key) ??
+    currentAnalyses(bundle).find((analysis) => analysis.key === key)?.points ??
+    NO_POINTS;
+
+/** The points of the analysis `key` as the reviewer last left them: collected, pending, or as the server has them. */
+export const selectShownPoints = (s: Pick<SessionState, 'bundle' | 'pending' | 'collected'>, key: string) =>
+    s.collected.findLast((edit) => edit.key === key)?.points ?? sentPoints(s, key);
 
 export function selectSaveLabel({
     save,
@@ -170,12 +215,14 @@ export function selectSaveLabel({
     pending,
     blocked,
     device,
-}: Pick<SessionState, 'save' | 'saveMessage' | 'pending' | 'blocked' | 'device'>): string {
+    collected,
+}: Pick<SessionState, 'save' | 'saveMessage' | 'pending' | 'blocked' | 'device' | 'collected'>): string {
     if (save === 'failed' || blocked != null) return saveMessage;
     if (save === 'signin') return 'sign in to save';
     if (save === 'offline') return device === 'kept' ? 'offline; saved on this device' : save;
     if (save === 'saving') return save;
-    return pending.length ? `${pending.length} unsaved` : 'saved';
+    const unsaved = pending.length + collected.length;
+    return unsaved ? `${unsaved} unsaved` : 'saved';
 }
 
 /** The bundle with its span offsets in UTF-16 code units, as the DOM counts them. */
@@ -208,6 +255,11 @@ const EDITS = [
     'setLifecycle',
     'undo',
     'redo',
+    'collect',
+    'sendCollected',
+    'discardCollected',
+    'applyCollected',
+    'askToSend',
 ] as const satisfies (keyof SessionState)[];
 
 function whileEditable<K extends keyof SessionState>(
@@ -220,6 +272,28 @@ function whileEditable<K extends keyof SessionState>(
         return [name, (...args: unknown[]) => (editable() ? act(...args) : false)];
     });
     return Object.fromEntries(guarded) as Pick<SessionState, K>;
+}
+
+/** The notice that the edits collected on the analysis named `slot` are kept, not sent. */
+const keptNotice = (slot: string): Notice => ({ kind: 'kept', slot, message: KEPT_EDITS });
+
+/**
+ * The pending ops and collected edits re-aimed by `followAnalyses`, with a notice for each analysis whose edits
+ * could not follow it.
+ */
+function followed(follower: Follower, pending: Op[], collected: PointEdit[]) {
+    const { stranded, ...rest } = followAnalyses(follower, pending, collected);
+    return { ...rest, notices: stranded.map((edit) => keptNotice(edit.name)) };
+}
+
+/** What `withDocuments` replays besides the documents: by default nothing more, and the edits collected now. */
+interface Rebuild {
+    notices?: Notice[];
+    touched?: string[] | null;
+    carry?: (record: Json, op: Op) => Op;
+    answers?: Map<string, InverseOp[]>;
+    replaced?: Replaced;
+    collected?: PointEdit[];
 }
 
 export interface SessionStoreOptions {
@@ -237,14 +311,22 @@ export function createSessionStore(
 
         const withDocuments = (
             next: ReviewBundle,
-            pending: Op[],
-            notices: Notice[] = [],
-            touched: string[] | null = null,
-            carry?: (record: Json, op: Op) => Op,
-            answers = new Map<string, InverseOp[]>(),
-            replaced?: Replaced
+            given: Op[],
+            {
+                notices = [],
+                touched = null,
+                carry,
+                answers = new Map<string, InverseOp[]>(),
+                replaced,
+                collected = get().collected,
+            }: Rebuild = {}
         ) => {
             const state = get();
+            const unchanged = currentAnalyses(state.bundle) === currentAnalyses(next);
+            const aimed = unchanged
+                ? { pending: given, collected, notices: [] }
+                : followed(followerOf(state.bundle, next), given, collected);
+            const { pending } = aimed;
             const replayed = replay(next, documentsOf(next), pending, now(), 'conflict', carry);
             const { record } = replayed.documents;
             const intents = Object.fromEntries(
@@ -272,7 +354,9 @@ export function createSessionStore(
                 groupOf,
                 intents,
                 index,
-                notices: [...state.notices, ...notices, ...replayed.notices],
+                collected: aimed.collected,
+                uncollected: aimed.collected === state.collected ? state.uncollected : [],
+                notices: [...state.notices, ...notices, ...aimed.notices, ...replayed.notices],
                 ...settled(
                     answerSteps({ undoStack: state.undoStack, redoStack: state.redoStack }, answers),
                     new Set(replayed.pending.map((op) => op.client_op_id)),
@@ -325,6 +409,23 @@ export function createSessionStore(
                 redoStack: redoStack.length ? [] : redoStack,
                 waitingTo: null,
             });
+        };
+
+        /** The edit_points op giving the analysis `key` the points `points`. */
+        const editPointsOp = (key: string, points: CoordinatePoint[]): Op => ({
+            client_op_id: randomUUID(),
+            type: 'coordinate',
+            target: { kind: 'coordinate_analysis', analysis_key: key },
+            action: 'edit_points',
+            payload: { points },
+        });
+
+        /** Moves the last edit of `from` to the other of the collected and the uncollected edits. */
+        const stepCollected = (from: 'collected' | 'uncollected') => {
+            const state = get();
+            const to = from === 'collected' ? 'uncollected' : 'collected';
+            const last = state[from].at(-1);
+            if (last) set({ [from]: state[from].slice(0, -1), [to]: [...state[to], last] });
         };
 
         /** Sends the inverse of the top step of `from`, moving the step to the other stack once sent. */
@@ -420,6 +521,9 @@ export function createSessionStore(
             redoStack: [],
             waitingTo: null,
             replaced: null,
+            collected: [],
+            uncollected: [],
+            sendAsked: 0,
 
             addEvidence: (key, span, setIndex) => {
                 const slot = get().index.slot(key);
@@ -451,8 +555,8 @@ export function createSessionStore(
                     blocked: blockedFrom(batch, batch, get().groupOf, problems, UNNAMED_REFUSAL),
                 }),
             discardPending: () => {
-                withDocuments(get().bundle, []);
-                set({ save: 'idle', saveMessage: '', blocked: null });
+                withDocuments(get().bundle, [], { collected: [] });
+                set({ uncollected: [], save: 'idle', saveMessage: '', blocked: null });
             },
             undoBlocked: () => {
                 const { blocked, bundle: current, pending } = get();
@@ -514,11 +618,12 @@ export function createSessionStore(
                         ops: [...ops, ...result.ops.filter((s) => !seqs.has(s.seq)).map(logged)],
                     },
                     rest,
-                    dangling,
-                    sent.every(isLocalOp) ? touched : null,
-                    undefined,
-                    inverses,
-                    { before: current, sent }
+                    {
+                        notices: dangling,
+                        touched: sent.every(isLocalOp) ? touched : null,
+                        answers: inverses,
+                        replaced: { before: current, sent },
+                    }
                 );
                 const { waitingTo } = get();
                 if (waitingTo) sendInverse(waitingTo);
@@ -526,17 +631,24 @@ export function createSessionStore(
             rebase: (fresh) => {
                 const next = toDomBundle(fresh);
                 const { pending, intents, bundle: current } = get();
-                withDocuments(next, unstored(next, pending), [], null, carrying(intents), undefined, {
-                    before: current,
-                    sent: [],
+                withDocuments(next, unstored(next, pending), {
+                    carry: carrying(intents),
+                    replaced: { before: current, sent: [] },
                 });
             },
             restore: (entry) => {
                 const { bundle: current } = get();
-                const { documents, blocked, ...kept } = restored(current, entry, now());
+                const aimed = followed(
+                    followerOf(current, current, current.ops),
+                    unstored(current, entry.ops),
+                    entry.collected ?? []
+                );
+                const { documents, blocked, ...kept } = restored(current, { ...entry, ops: aimed.pending }, now());
                 set({
                     ...documents,
                     ...kept,
+                    collected: aimed.collected,
+                    notices: [...get().notices, ...aimed.notices],
                     index: rebuiltIndex(current, documents.record),
                     blocked,
                     ...(blocked && { save: 'failed', saveMessage: KEPT_REFUSED }),
@@ -544,19 +656,26 @@ export function createSessionStore(
                 });
             },
             refuse: (refusals) => {
-                const { undoStack, redoStack, bundle: current, pending } = get();
+                const { undoStack, redoStack, bundle: current, pending, collected } = get();
                 const refused = new Set(refusals.map((r) => r.op.client_op_id));
                 const { kinds, dropped } = revertedBy({ undoStack, redoStack }, refused);
-                withDocuments(
-                    current,
-                    pending.filter((op) => !dropped.has(op.client_op_id)),
-                    refusals.map(({ op, message }) => ({
+                const left = pending.filter((op) => !dropped.has(op.client_op_id));
+                const named = (key: string) =>
+                    currentAnalyses(current).find((analysis) => analysis.key === key)?.name ?? key;
+                withDocuments(current, left, {
+                    notices: refusals.map(({ op, message }) => ({
                         kind: kinds[op.client_op_id] ?? 'refused',
                         slot: slotLabel(op),
                         message,
                         op,
-                    }))
-                );
+                    })),
+                    collected: keptThroughRefusal(
+                        collected,
+                        refusals,
+                        (key) => sentPoints({ bundle: current, pending: left }, key),
+                        named
+                    ),
+                });
             },
             setLifecycle: (state, setAside) => {
                 const { bundle: current } = get();
@@ -569,8 +688,53 @@ export function createSessionStore(
                 return pushEdit([op]);
             },
             emitBatch: (ops) => ops.length > 0 && pushEdit(ops),
-            undo: () => sendInverse('undo'),
-            redo: () => sendInverse('redo'),
+            undo: () => (get().collected.length ? stepCollected('collected') : sendInverse('undo')),
+            redo: () => (get().uncollected.length ? stepCollected('uncollected') : sendInverse('redo')),
+            collect: (key, points) => {
+                const state = get();
+                const analysis = currentAnalyses(state.bundle).find((candidate) => candidate.key === key);
+                if (!analysis) return false;
+                const base = selectShownPoints(state, key);
+                if (samePoints(base, points)) return false;
+                const freed = state.collected.map((edit) =>
+                    edit.key === key && edit.held ? { ...edit, held: undefined } : edit
+                );
+                set({
+                    collected: [...freed, { key, name: analysis.name, base, points }],
+                    uncollected: [],
+                    redoStack: state.redoStack.length ? [] : state.redoStack,
+                });
+                return true;
+            },
+            sendCollected: () => {
+                const state = get();
+                const held = pendingKeys(state);
+                const known = new Set(currentAnalyses(state.bundle).map((analysis) => analysis.key));
+                const ready = collectedByAnalysis(state.collected).filter(
+                    (edit) => known.has(edit.key) && !held.has(edit.key) && !edit.held
+                );
+                if (!ready.length) return false;
+                const sending = new Set(ready.map((edit) => edit.key));
+                set({ collected: state.collected.filter((edit) => !sending.has(edit.key)), uncollected: [] });
+                const ops = ready
+                    .filter((edit) => !samePoints(edit.points, sentPoints(state, edit.key)))
+                    .map((edit) => editPointsOp(edit.key, edit.points));
+                return ops.length > 0 && pushEdit(ops);
+            },
+            discardCollected: (key) => {
+                const { collected, uncollected } = get();
+                set({
+                    collected: collected.filter((edit) => edit.key !== key),
+                    uncollected: uncollected.filter((edit) => edit.key !== key),
+                });
+            },
+            applyCollected: (key, to) => {
+                const edit = collectedByAnalysis(get().collected).find((candidate) => candidate.key === key);
+                if (!edit) return false;
+                get().discardCollected(key);
+                return get().collect(to, edit.points);
+            },
+            askToSend: () => set((s) => ({ sendAsked: s.sendAsked + 1 })),
         };
         return { ...initial, ...whileEditable(initial, EDITS, () => selectIsEditable(get())) };
     });

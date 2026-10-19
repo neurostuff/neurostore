@@ -1,6 +1,5 @@
 import { act, screen, within } from '@testing-library/react';
 import { ReviewScreen } from '../review/ReviewScreen';
-import { savePoints } from './actions';
 import { coordinateBundle, coordinateResult, CUNEUS, FACES, HOUSES, LOCALIZER, SCRAMBLED } from '../test/coordinates';
 import { renderWithStores } from '../test/render';
 
@@ -38,7 +37,10 @@ describe('what an analysis card shows first', () => {
     it('follows a result that changes an analysis where it stands', () => {
         const { stores } = setup();
         const points = [...FACES.points!, CUNEUS];
-        act(() => void savePoints(stores, FACES.key, points));
+        act(() => {
+            stores.session.getState().collect(FACES.key, points);
+            stores.session.getState().sendCollected();
+        });
         const sent = stores.session.getState().pending;
         act(() =>
             stores.session

@@ -83,7 +83,9 @@ describe('the way on from a judged analysis', () => {
         press('a');
         act(() => viewState().focusAnalysis(FACES.key));
         fireEvent.click(inHead(FACES.name, 'Accept'));
-        expect(within(head(FACES.name)).getByRole('status')).toHaveTextContent(`Accepted ${FACES.name}`);
+        expect(within(head(FACES.name)).getByRole('status', { name: 'last verdict' })).toHaveTextContent(
+            `Accepted ${FACES.name}`
+        );
         fireEvent.click(within(head(FACES.name)).getByRole('button', { name: 'Next analysis' }));
         expect(focused()).toBe(LOCALIZER.key);
     });
@@ -115,7 +117,9 @@ describe('the way on from a judged analysis', () => {
         fireEvent.click(inHead(FACES.name, 'Reject'));
         press('4');
         press('Enter');
-        expect(within(head(FACES.name)).getByRole('status')).toHaveTextContent(`Rejected ${FACES.name}`);
+        expect(within(head(FACES.name)).getByRole('status', { name: 'last verdict' })).toHaveTextContent(
+            `Rejected ${FACES.name}`
+        );
         fireEvent.click(within(head(FACES.name)).getByRole('button', { name: 'Next analysis' }));
         expect(focused()).toBe(HOUSES.key);
     });
@@ -125,7 +129,7 @@ describe('the way on from a judged analysis', () => {
         press('a');
         act(() => viewState().moveAnalysis(1));
         act(() => viewState().moveAnalysis(-1));
-        expect(within(head(FACES.name)).getByRole('status')).toHaveTextContent('');
+        expect(within(head(FACES.name)).getByRole('status', { name: 'last verdict' })).toHaveTextContent('');
         expect(screen.queryByRole('button', { name: 'Next analysis' })).not.toBeInTheDocument();
     });
 

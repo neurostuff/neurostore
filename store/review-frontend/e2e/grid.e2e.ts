@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import type { Op } from '../src/contract/generated/review-ops';
 import { serve } from './server';
 
@@ -23,7 +23,7 @@ async function holdGrid(page: Page) {
 
 /** The paper open on its first analysis, its points in the static table, and no grid mounted yet. */
 async function open(page: Page) {
-    const { batches } = await serve(page);
+    const { batches, holdNext } = await serve(page);
     await page.goto('/review/e2e/index.html');
     const table = page.getByRole('table', { name: `points of ${FACES}` });
     const grid = page.getByRole('group', { name: `edit the points of ${FACES}` });
@@ -49,7 +49,12 @@ async function open(page: Page) {
         await staticCell(row, column).click();
         await expect(cell(row, column)).toBeVisible();
     };
-    return { table, grid, staticCell, cell, engage, sent, noneSent };
+    /** The grid takes edits: no cell dimmed as read-only, and its Add row button enabled. */
+    const expectEditable = async () => {
+        await expect(grid.locator('td.htDimmed')).toHaveCount(0);
+        await expect(grid.getByRole('button', { name: 'Add row', exact: true })).toBeEnabled();
+    };
+    return { table, grid, staticCell, cell, engage, sent, noneSent, batches, holdNext, expectEditable };
 }
 
 const actions = (batch: Op[]) => batch.map((op) => [op.type, 'action' in op && op.action]);
@@ -230,4 +235,66 @@ test('dragging over rows in the grid selects those points, and Split splits them
     expect(batches[1]).toEqual([
         expect.objectContaining({ action: 'split', payload: { parts: [{ indices: [0, 1] }, { indices: [2] }] } }),
     ]);
+});
+
+/** Types `value` in the grid's cell at `row`, `column` and commits it with Enter. */
+async function typeIn(
+    page: Page,
+    cell: (row: number, column: number) => Locator,
+    row: number,
+    column: number,
+    value: string
+) {
+    await cell(row, column).click();
+    await page.keyboard.type(value);
+    await page.keyboard.press('Enter');
+}
+
+const FINAL = [
+    { ...PRECUNEUS, coordinates: [5, -60, 42] },
+    { ...INSULA, coordinates: [-36, 20, 7] },
+];
+
+test('three quick edits send nothing until a pause, then one batch of the final points; the grid never dims', async ({
+    page,
+}) => {
+    const { cell, engage, batches, sent, holdNext, expectEditable } = await open(page);
+    const release = holdNext();
+    await engage(0, Z);
+    await typeIn(page, cell, 0, Z, '42');
+    await expectEditable();
+    await typeIn(page, cell, 1, Z, '7');
+    await expectEditable();
+    await typeIn(page, cell, 0, X, '5');
+    await expectEditable();
+    await page.waitForTimeout(1000);
+    expect(batches).toEqual([]);
+    await expect.poll(() => batches.length).toBe(1);
+    await expectEditable();
+    release();
+    const [batch] = await sent(1);
+    expect(actions(batch)).toEqual([['coordinate', 'edit_points']]);
+    expect(pointsOf(batch)).toEqual(FINAL);
+    await expectEditable();
+});
+
+test('edits made while a batch waits for its answer stay editable and go out after it, in order', async ({ page }) => {
+    const { cell, engage, batches, sent, holdNext, expectEditable } = await open(page);
+    const release = holdNext();
+    await engage(0, Z);
+    await typeIn(page, cell, 0, Z, '42');
+    await expect.poll(() => batches.length).toBe(1);
+    await expectEditable();
+    await typeIn(page, cell, 1, Z, '7');
+    await expectEditable();
+    await typeIn(page, cell, 0, X, '5');
+    await expectEditable();
+    await expect(cell(0, X)).toHaveText('5');
+    await expect(cell(1, Z)).toHaveText('7');
+    release();
+    const [first, second] = await sent(2);
+    expect(pointsOf(first)).toEqual([{ ...PRECUNEUS, coordinates: [4, -60, 42] }, INSULA]);
+    expect(pointsOf(second)).toEqual(FINAL);
+    await expectEditable();
+    await expect(cell(0, X)).toHaveText('5');
 });

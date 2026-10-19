@@ -3,7 +3,7 @@ import { Box, Button, Typography } from '@mui/material';
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { CoordinateAnalysis } from '../model/coordinates';
 import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
-import { coordinatePending } from './availability';
+import { selectShownPoints } from '../store/sessionStore';
 import { pointColumns, toRows } from './pointRows';
 import { Hint } from '../review/Hint';
 
@@ -28,7 +28,7 @@ export function PointsView({ analysis, children }: { analysis: CoordinateAnalysi
     const engageGrid = useView((s) => s.engageGrid);
     const point = useView((s) => s.coordinates?.point ?? null);
     const editable = useIsEditable();
-    const pending = useSession(coordinatePending);
+    const points = useSession((s) => selectShownPoints(s, analysis.key));
     const [allColumns, setAllColumns] = useState(false);
     const [held, setHeld] = useState<CoordinateAnalysis | null>(null);
     const [begun, setBegun] = useState<{ engagement: GridEngagement; request: number } | null>(null);
@@ -53,7 +53,7 @@ export function PointsView({ analysis, children }: { analysis: CoordinateAnalysi
         [request, begun, stores]
     );
     const onEngage = (next: GridEngagement) => setBegun({ engagement: next, request: engageGrid() });
-    const rows = useMemo(() => toRows(analysis.points ?? []), [analysis.points]);
+    const rows = useMemo(() => toRows(points), [points]);
     const columns = useMemo(
         () => pointColumns(analysis.coordinate_space, allColumns),
         [analysis.coordinate_space, allColumns]
@@ -64,7 +64,7 @@ export function PointsView({ analysis, children }: { analysis: CoordinateAnalysi
             columns={columns}
             caption={`points of ${analysis.name}`}
             row={point}
-            readOnly={!editable || pending}
+            readOnly={!editable}
             onEngage={onEngage}
         />
     );

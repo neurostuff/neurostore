@@ -195,15 +195,46 @@ export function printedCoordinates(text: string): [number, number, number] | und
 export const originsOf = (analysis: CoordinateAnalysis) =>
     analysis.derived_from?.length ? analysis.derived_from : [analysis.key];
 
-/** The key of the analysis in `after` that takes the place of `key` in `before`: itself, else the first new analysis sharing its originals. */
-export function successor(before: CoordinateAnalysis[], after: CoordinateAnalysis[], key: string): string | undefined {
-    if (after.some((analysis) => analysis.key === key)) return key;
-    const replaced = before.find((analysis) => analysis.key === key);
-    if (!replaced) return undefined;
-    const origins = new Set(originsOf(replaced));
+/** No op's word on which analyses replaced which. */
+const NO_REPLACEMENTS: ReadonlyMap<string, string[]> = new Map();
+
+/**
+ * The analyses of `after` that took the place of `key` in `before`, the one to follow first: itself, else those the
+ * ops' `replaced` (each key an op took away, to the keys it put in its place) lead to, else the new analyses sharing
+ * its originals; none when nothing did.
+ */
+export function inPlaceOf(
+    before: CoordinateAnalysis[],
+    after: CoordinateAnalysis[],
+    key: string,
+    replaced: ReadonlyMap<string, string[]> = NO_REPLACEMENTS
+): CoordinateAnalysis[] {
+    const present = new Map(after.map((analysis) => [analysis.key, analysis]));
+    const found = new Set<CoordinateAnalysis>();
+    const seen = new Set<string>();
+    const follow = (at: string) => {
+        const analysis = present.get(at);
+        if (analysis) return void found.add(analysis);
+        if (seen.has(at)) return;
+        seen.add(at);
+        for (const next of replaced.get(at) ?? []) follow(next);
+    };
+    follow(key);
+    if (found.size) return [...found];
+    const gone = before.find((analysis) => analysis.key === key);
+    if (!gone) return [];
+    const origins = new Set(originsOf(gone));
     const known = new Set(before.map((analysis) => analysis.key));
-    return after.find((analysis) => !known.has(analysis.key) && originsOf(analysis).some((k) => origins.has(k)))?.key;
+    return after.filter((analysis) => !known.has(analysis.key) && originsOf(analysis).some((k) => origins.has(k)));
 }
+
+/** The key of the analysis in `after` that takes the place of `key` in `before`: the first `inPlaceOf` gives. */
+export const successor = (
+    before: CoordinateAnalysis[],
+    after: CoordinateAnalysis[],
+    key: string,
+    replaced?: ReadonlyMap<string, string[]>
+): string | undefined => inPlaceOf(before, after, key, replaced)[0]?.key;
 
 const NONE: EntityNode[] = [];
 /**

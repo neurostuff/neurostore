@@ -26,6 +26,7 @@ const REASONS: Record<Notice['kind'], string> = {
     split: 'kept on the first part of a split',
     undo: 'could not be undone',
     redo: 'could not be redone',
+    kept: 'point edits kept, not sent',
 };
 
 const REQUIRED = /'([^']+)' is a required property$/;

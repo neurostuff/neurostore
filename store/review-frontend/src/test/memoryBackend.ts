@@ -19,7 +19,7 @@ import {
 } from '../api/reviewApi';
 import { SET_ASIDE_REASONS } from '../review/asideReasons';
 import { walkClasses } from './golden/schemaWalk';
-import { applyCoordinate } from './memoryCoordinates';
+import { applyCoordinate, indexedAnalyses } from './memoryCoordinates';
 import { CREATED_ID, EXTRACTION_SCHEMA, withCreated } from './recordProblems';
 
 interface Review extends ReviewSummary {
@@ -448,10 +448,15 @@ export function memoryBackend(
                         documents = done.documents;
                         steps.push(done.step as (typeof steps)[number]);
                     } else if (op.type === 'coordinate') {
-                        const step = applyCoordinate(revision ?? parse, documents.record, op);
+                        const was = (revision ?? parse).analyses ?? [];
+                        const step = applyCoordinate(revision ?? parse, documents.record, op, parse);
                         revision = { ...(revision ?? parse), analyses: step.analyses };
                         documents = { ...documents, record: step.record };
-                        steps.push({ undo: step.undo, before: {}, after: {} });
+                        steps.push({
+                            undo: step.undo,
+                            before: { analyses: indexedAnalyses(was, step.analyses) },
+                            after: { analyses: indexedAnalyses(step.analyses, was) },
+                        });
                     } else {
                         const at = { ...paper, coordinateRevision: revision };
                         steps.push(...stepsOf(documents, [op], at));

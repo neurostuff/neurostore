@@ -36,7 +36,11 @@ function setup(bundle = coordinateBundle()) {
     const view = renderWithStores(<ReviewScreen />, bundle, { now: () => 'now' });
     const session = () => view.stores.session.getState();
     const viewState = () => view.stores.view.getState();
-    const pending = () => session().pending;
+    /** The pending ops once the point edits collected are sent. */
+    const pending = () => {
+        act(() => void session().sendCollected());
+        return session().pending;
+    };
     return { ...view, session, viewState, pending };
 }
 
@@ -355,7 +359,9 @@ describe('coordinate actions, each emitted as the server applies it', () => {
                 payload: { points: [PRECUNEUS, INSULA, { coordinates: [1, 2, 3] }] },
             }),
         ]);
-        act(() => session().refuse([{ op: pending()[0], message: 'no' }]));
+        const [pasted] = pending();
+        act(() => session().refuse([{ op: pasted, message: 'no' }]));
+        act(() => session().discardCollected(FACES.key));
         press('j');
         press('Backspace');
         expect(pending()).toEqual([
@@ -687,7 +693,7 @@ describe('while a coordinate op is pending', () => {
         expect(pending()).toEqual([accept]);
     });
 
-    it('an analysis the form adds is not sent', async () => {
+    it('an analysis the form adds is sent behind it, since its key is the server’s to give', async () => {
         const { pending, session } = setup();
         press('c');
         const form = screen.getByRole('group', { name: 'new analysis in Table 1' });
@@ -696,7 +702,10 @@ describe('while a coordinate op is pending', () => {
         act(() => hot.paste(0, 0, [['8', '9', '10']]));
         fireEvent.change(within(form).getByRole('textbox', { name: 'name' }), { target: { value: 'Faces > Objects' } });
         press('Enter');
-        expect(pending()).toEqual([accept]);
+        expect(pending()).toEqual([
+            accept,
+            expect.objectContaining({ action: 'add', target: { kind: 'coordinate_parse' } }),
+        ]);
     });
 
     it('the analyses a pending merge takes show as saving, with the one it joins into', () => {

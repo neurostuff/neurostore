@@ -123,7 +123,7 @@ describe('coordinate actions that do not apply to the focus', () => {
         expect(reasonOf('Edit point')).toBe('This analysis has no points yet: add a row in its grid');
     });
 
-    it('wait while a coordinate change saves', () => {
+    it('wait while a change to the analysis saves, but for editing its points', () => {
         const { stores } = setup();
         const relabel: Op = {
             client_op_id: 'c-pending',
@@ -133,7 +133,7 @@ describe('coordinate actions that do not apply to the focus', () => {
             role: 'anchor',
         };
         act(() => void stores.session.getState().emitBatch([relabel]));
-        expect(enabled()).toEqual(['Next', 'Note']);
+        expect(enabled()).toEqual(['Next', 'Note', 'Edit point']);
         expect(reasonOf('Accept')).toBe('Wait for the coordinate change to save');
     });
 

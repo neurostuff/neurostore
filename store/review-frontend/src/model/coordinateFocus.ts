@@ -146,19 +146,21 @@ export function firstAnalysis(analyses: CoordinateAnalysis[], shown: boolean): C
 }
 
 /**
- * The focus once the analyses change from `before` to `after`: on `added`, else on the analysis that replaced
- * the focused one, else on the one now in its place. The focused analysis kept keeps its point, within its count.
+ * The focus once the analyses change from `before` to `after`: on `added`, else on the analysis `follow` says took
+ * the focused one's place (by default `successor`), else on the one now in its place. The focused analysis kept keeps
+ * its point, within its count.
  */
 export function nextFocus(
     before: CoordinateAnalysis[],
     after: CoordinateAnalysis[],
     focus: CoordinateFocus,
     shown: boolean,
-    added?: CoordinateAnalysis
+    added?: CoordinateAnalysis,
+    follow: (key: string) => string | undefined = (key) => successor(before, after, key)
 ): CoordinateFocus | null {
     const placed = guidedOrder(before, shown).findIndex((a) => a.key === focus.analysis);
     const order = guidedOrder(after, shown);
-    const key = added?.key ?? successor(before, after, focus.analysis) ?? order[clamp(placed, order.length - 1)]?.key;
+    const key = added?.key ?? follow(focus.analysis) ?? order[clamp(placed, order.length - 1)]?.key;
     const analysis = after.find((a) => a.key === key);
     if (!analysis) return null;
     const count = analysis.points?.length ?? 0;

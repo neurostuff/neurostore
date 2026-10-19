@@ -2,7 +2,6 @@ import { Button, Stack, Typography } from '@mui/material';
 import type { ParsedPaperLayout } from '../model/layout';
 import { useIsEditable, useSession, useView } from '../store/context';
 import { addAnalysisPanel, textAnalysisPanel } from './actions';
-import { coordinatePending } from './availability';
 import { Hint } from '../review/Hint';
 
 const NO_TABLES: NonNullable<ParsedPaperLayout['tables']> = [];
@@ -10,7 +9,6 @@ const NO_TABLES: NonNullable<ParsedPaperLayout['tables']> = [];
 /** Where a new analysis can come from: the selected text, or any table of the paper. */
 export function AddAnalysisChooser() {
     const editable = useIsEditable();
-    const pending = useSession(coordinatePending);
     const selection = useView((s) => s.selection);
     const openPanel = useView((s) => s.openPanel);
     const tables = useSession((s) => (s.bundle.parsed_paper as ParsedPaperLayout).tables ?? NO_TABLES);
@@ -34,7 +32,7 @@ export function AddAnalysisChooser() {
                     <Button
                         size="small"
                         variant="outlined"
-                        disabled={!editable || pending || !selection}
+                        disabled={!editable || !selection}
                         onClick={() => selection && openPanel(textAnalysisPanel(selection))}
                     >
                         From the selected text
@@ -54,7 +52,7 @@ export function AddAnalysisChooser() {
                     <span>
                         <Button
                             size="small"
-                            disabled={!editable || pending}
+                            disabled={!editable}
                             onClick={() => openPanel(addAnalysisPanel(table.table_id))}
                         >
                             {`To ${table.label ?? table.table_id}`}
