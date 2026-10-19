@@ -48,7 +48,7 @@ const axialStepByKey: Record<string, [number, number, number]> = {
 };
 
 const INTERACTIVE_TARGET_SELECTOR =
-    'input, textarea, select, [contenteditable="true"], [role="slider"], [role="listbox"], [role="menu"], [role="combobox"], [role="dialog"]';
+    'input, textarea, select, [contenteditable="true"], [role="slider"], [role="listbox"], [role="menu"], [role="combobox"], [role="dialog"], [role="tab"], [role="tablist"], .handsontable, .ht-root-wrapper';
 
 const NiiVueVisualizer = ({
     file,

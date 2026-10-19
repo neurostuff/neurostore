@@ -187,6 +187,30 @@ describe('NiiVueVisualizer', () => {
         expect(niivueInstances[0].moveCrosshairInVox).not.toHaveBeenCalled();
     });
 
+    it('does not move the crosshair while a tab or Handsontable cell is focused', async () => {
+        const user = userEvent.setup();
+        renderVisualizer('map-a.nii.gz');
+        await finishLoad(UNDERLAY_URL);
+
+        const tab = document.createElement('button');
+        tab.setAttribute('role', 'tab');
+        const handsontableRoot = document.createElement('div');
+        handsontableRoot.className = 'ht-wrapper handsontable';
+        const handsontableCell = document.createElement('td');
+        handsontableCell.tabIndex = -1;
+        handsontableRoot.appendChild(handsontableCell);
+        document.body.append(tab, handsontableRoot);
+
+        tab.focus();
+        await user.keyboard('{ArrowRight}{ArrowLeft}');
+        handsontableCell.focus();
+        await user.keyboard('{ArrowDown}{Shift>}{ArrowUp}{/Shift}');
+
+        expect(niivueInstances[0].moveCrosshairInVox).not.toHaveBeenCalled();
+        tab.remove();
+        handsontableRoot.remove();
+    });
+
     it('stops plane keys before Niivue handles them', async () => {
         const user = userEvent.setup();
         renderVisualizer('map-a.nii.gz');
