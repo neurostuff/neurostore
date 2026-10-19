@@ -22,7 +22,7 @@ export const STEPS = [
     {
         id: 'relationships',
         label: 'Relationships',
-        hint: 'Which entities each analysis uses: a click links or unlinks, and Accept confirms a row’s links.',
+        hint: 'Which entities each analysis uses: accept or reject each link (j and k move between them), remove one, or link another.',
     },
     { id: 'submit', label: 'Submit', hint: 'See what changed and what is left, then submit the review.' },
 ] as const;

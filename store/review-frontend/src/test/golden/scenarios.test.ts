@@ -8,7 +8,7 @@ import { validateBundle } from '../schemas';
 import { json, fakeFetch } from '../fakeFetch';
 import { API_BASE, responseProblems } from '../spec';
 import { fakeServer } from '../fakeServer';
-import { LINKED_SCENARIO, linkedBundle } from '../linked';
+import { LINKED_SCENARIO, linkedBundle, recordedBundle, SOURCE_SCENARIO } from '../linked';
 
 interface Step {
     request: { method: string; path: string; body: unknown };
@@ -113,27 +113,19 @@ describe('the client against the recorded requests', () => {
 
 /** Scenarios the test server does not reproduce yet, and why; each stays a todo until it does. */
 const GAPS: Record<string, string> = {
-    'bundle without a review, then with one': 'the recorded source hides an_2, which bundle.json does not',
-    'fresh batch':
-        'verdict, link and coordinate ops are not applied by the test server, nor its before, after or provenance',
-    'full replay':
-        'verdict, link and coordinate ops are not applied by the test server, nor its before, after or provenance',
-    'partial replay': 'verdict ops are not applied by the test server, nor its before and after',
-    'stale expected_last_seq behind': 'verdict ops are not applied by the test server',
-    'link reaches a hidden entity': 'link ops and the hidden set are not modelled by the test server',
-    'verdict accept of a coordinate analysis': 'verdict ops are not applied by the test server',
+    'link reaches a hidden entity': 'the server unhides an entity a link reaches; the test server keeps the hidden set',
+    'verdict accept of a coordinate analysis':
+        'the test server logs the verdict’s before with the analysis’s reasons, which the recorded one leaves out',
     'create an entity with a client local id, then set a value on it':
         'structural ops are applied by the server only (ADR 0002), not by the test server',
     'create an entity the server mints an id for':
         'structural ops are applied by the server only (ADR 0002), not by the test server',
     'create a term under a model estimation with a client local id':
         'structural ops are applied by the server only (ADR 0002), not by the test server',
-    'link an analysis to an assessment of the record':
-        'structural ops are applied by the server only (ADR 0002), not by the test server',
     'delete a group that an analysis still references':
         'structural ops are applied by the server only (ADR 0002), not by the test server',
     'merge an assessment into another, then undo the merge':
-        'link, unlink and structural ops are applied by the server only (ADR 0002), not by the test server',
+        'it deletes and recreates an entity, which only the server applies (ADR 0002), on a source with asm_2 that neither bundle.json nor the recorded source holds',
     'refused batch with two failing ops': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 fails after op 0 would apply': 'the 422 messages are the backend’s, not the test server’s',
     'refused batch, op 1 leaves an invalid document': 'the 422 message is the backend’s, not the test server’s',
@@ -145,9 +137,24 @@ const GAPS: Record<string, string> = {
     'batch by a non-owner': 'the test server has no owner check',
 };
 
+/** Scenarios recorded on the golden source as the backend holds it, which hides an_2 and reg_1 where bundle.json does not. */
+const ON_RECORDED_SOURCE = new Set([
+    SOURCE_SCENARIO,
+    'fresh batch',
+    'full replay',
+    'partial replay',
+    'stale expected_last_seq behind',
+    'link an analysis to an assessment of the record',
+]);
+
 /** Replays a scenario's requests against a fresh test server, keeping each answer. */
 async function answersOf(scenario: Scenario) {
-    const seeded = scenario.name === LINKED_SCENARIO ? linkedBundle() : GOLDEN;
+    const seeded =
+        scenario.name === LINKED_SCENARIO
+            ? linkedBundle()
+            : ON_RECORDED_SOURCE.has(scenario.name)
+              ? recordedBundle(SOURCE_SCENARIO)
+              : GOLDEN;
     const server = fakeServer([OTHER, seeded], { userId: 'user1-id' });
     const answers: { url: string; method: string; status: number; body: unknown }[] = [];
     for (const step of scenario.steps) {

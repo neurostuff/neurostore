@@ -1,11 +1,12 @@
-import type { ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
+import type { Provenance, ReviewBundle, StoredOp } from '../contract/generated/review-bundle';
 import type { CreateEntityOp, Evidence, Op } from '../contract/generated/review-ops';
 import { applyBatch, OpRefused, type ApplyContext, type Documents } from '../model/applyOp';
 import type { CoordinateParse } from '../model/coordinates';
 import { codePointPaper } from '../model/offsets';
-import { entityPath, getIn, readPath, type Json } from '../model/paths';
+import { entityPath, getIn, readPath, setIn, writePath, type Json } from '../model/paths';
 import { listClassesAt, pick, type Schema } from '../model/schema';
-import { targetKey } from '../model/targetKey';
+import { referenceSlotOf } from '../model/schema';
+import { slotKey, targetKey } from '../model/targetKey';
 import type { InverseOp } from '../store/undoSteps';
 import {
     ApiError,
@@ -106,6 +107,79 @@ export function inverseOf(op: Op, before: Documents, after: Documents): InverseO
         ];
     }
     return undefined;
+}
+
+type LinkOp = Extract<Op, { type: 'link' | 'unlink' }>;
+
+const mark = (
+    provenance: Documents['provenance'],
+    key: string,
+    state: Provenance['state'],
+    by: { userId: string; at: string }
+): Documents['provenance'] => ({
+    ...provenance,
+    [key]: { state, user_id: by.userId, at: by.at },
+});
+
+/**
+ * The documents after the link or unlink `op`, its logged before and after and its inverse, as the review core's
+ * apply_link and apply_unlink give them: a link of the slot's class it does not hold yet, set on a single slot (the
+ * replaced link marked removed) or added to a list; an unlink dropping the slot once it holds none. The link is
+ * marked added or removed and its slot edited.
+ */
+function linked(documents: Documents, op: LinkOp, rows: EntityRow[], by: { userId: string; at: string }) {
+    const { entity, path, target_entity: id } = op.target;
+    const rowOf = (local: string) => rows.find((r) => r.local_id === local);
+    const row = rowOf(entity);
+    const slot = row && referenceSlotOf(row, path);
+    if (!slot) throw new Error(`${JSON.stringify(path)} on ${JSON.stringify(entity)} is not a reference slot`);
+    const target = rowOf(id);
+    if (!target) throw new Error(`no entity ${JSON.stringify(id)}`);
+    const at = entityPath(documents.record, entity)!;
+    const item = getIn(documents.record, at) as Json;
+    const held = readPath(item, path);
+    const ids = (slot.multivalued ? ((held as string[] | undefined) ?? []) : held == null ? [] : [held]) as string[];
+    const key = (to: string) => targetKey({ ...op.target, target_entity: to });
+    let provenance = documents.provenance;
+    let next: unknown;
+    if (op.type === 'link') {
+        if (![target.entity_class, target.schema_class].includes(slot.target))
+            throw new Error(
+                `${JSON.stringify(id)} is a ${target.schema_class}; ${slot.slot} on ${slot.class} references ${slot.target}`
+            );
+        if (ids.includes(id))
+            throw new Error(`${JSON.stringify(entity)} ${path} already references ${JSON.stringify(id)}`);
+        const index = (op as { index?: number }).index ?? ids.length;
+        next = slot.multivalued ? [...ids.slice(0, index), id, ...ids.slice(index)] : id;
+        if (!slot.multivalued && held != null) provenance = mark(provenance, key(held as string), 'removed', by);
+    } else {
+        if (!ids.includes(id))
+            throw new Error(`${JSON.stringify(entity)} ${path} does not reference ${JSON.stringify(id)}`);
+        const remaining = ids.filter((other) => other !== id);
+        next = remaining.length ? remaining : undefined;
+    }
+    provenance = mark(provenance, slotKey(entity, path), 'edited', by);
+    provenance = mark(provenance, key(id), op.type === 'link' ? 'added' : 'removed', by);
+    const written = next === undefined ? withoutPath(item, path) : writePath(item, path, next);
+    const before = held ?? null;
+    const undo: InverseOp =
+        op.type === 'unlink'
+            ? { type: 'link', target: op.target, ...(Array.isArray(held) && { index: held.indexOf(id) }) }
+            : Array.isArray(held) || held == null
+              ? { type: 'unlink', target: op.target }
+              : { type: 'link', target: { ...op.target, target_entity: held as string } };
+    return {
+        documents: { ...documents, record: setIn(documents.record, at, written), provenance },
+        step: { undo: [undo], before: structuredClone(before), after: structuredClone(next ?? null) },
+    };
+}
+
+/** `item` without the attribute at the top-level or nested field `path`. */
+function withoutPath(item: Json, path: string): Json {
+    const dot = path.lastIndexOf('.');
+    const owner = (dot === -1 ? item : readPath(item, path.slice(0, dot))) as Json;
+    const rest = Object.fromEntries(Object.entries(owner).filter(([name]) => name !== path.slice(dot + 1)));
+    return dot === -1 ? rest : writePath(item, path.slice(0, dot), rest);
 }
 
 /** What `op` replaces or writes in `documents`, as the backend logs it; null where nothing is there. */
@@ -369,7 +443,11 @@ export function memoryBackend(
                     continue;
                 }
                 try {
-                    if (op.type === 'coordinate') {
+                    if (op.type === 'link' || op.type === 'unlink') {
+                        const done = linked(documents, op, [...entities, ...created], { userId, at });
+                        documents = done.documents;
+                        steps.push(done.step as (typeof steps)[number]);
+                    } else if (op.type === 'coordinate') {
                         const step = applyCoordinate(revision ?? parse, documents.record, op);
                         revision = { ...(revision ?? parse), analyses: step.analyses };
                         documents = { ...documents, record: step.record };

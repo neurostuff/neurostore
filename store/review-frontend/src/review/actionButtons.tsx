@@ -1,5 +1,5 @@
 import { Button, Stack } from '@mui/material';
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { entityKey } from '../model/targetKey';
 import { useIsEditable, useReviewStores, useSessionView } from '../store/context';
 import { Hint } from './Hint';
@@ -102,8 +102,8 @@ export function ActionToolbar({ scope, label }: { scope: Scope; label: string })
     );
 }
 
-/** The actions on the focused field that apply to it, beside it (D97); a click on one stays with the field. */
-export function FieldActions({ label }: { label: string }) {
+/** The actions on the focused field that apply to it, beside it (D97), then `children`; a click on one stays with the field. */
+export function FieldActions({ label, children }: { label: string; children?: ReactNode }) {
     const reasons = useReasons(RECORD_FIELD);
     return (
         <Stack
@@ -120,6 +120,7 @@ export function FieldActions({ label }: { label: string }) {
             {RECORD_FIELD.map((action, i) =>
                 reasons[i] === '' ? <QuickButton key={action.button.label} action={action} reason="" /> : null
             )}
+            {children}
         </Stack>
     );
 }

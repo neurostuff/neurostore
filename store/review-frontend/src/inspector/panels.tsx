@@ -20,6 +20,7 @@ import type { AnyTarget } from '../contract/generated/review-ops';
 import { classWords, inWords, labelOf, slotLabel } from '../model/labels';
 import { canAddEvidence } from '../store/sessionStore';
 import type { RecordIndex, SlotNode, SpanPair } from '../model/record';
+import type { LinkSlot } from '../model/links';
 import { isTextField } from '../review/shortcuts';
 import { useReviewStores, useSession, useView } from '../store/context';
 import {
@@ -29,8 +30,10 @@ import {
     createNew,
     danglingLinks,
     deleteEntity,
+    changeLink,
     link,
     linkCandidates,
+    pendingLinks,
     newEntity,
     reject,
     REJECT_REASONS,
@@ -167,18 +170,42 @@ export function NotePanel({ target, label }: { target: AnyTarget; label: string 
     );
 }
 
-export function LinkPanel({ slot, label }: { slot: SlotNode; label: string }) {
+/**
+ * Picks an entity for the reference slot `slot` to link to, of its class, not linked yet nor being linked; picking
+ * one links it, or, with `replacing`, changes the slot's link from that entity to it.
+ */
+export function LinkPanel({
+    slot,
+    label,
+    autoFocus,
+    disabled,
+    replacing,
+}: {
+    slot: LinkSlot & { key: string };
+    label: string;
+    autoFocus?: boolean;
+    disabled?: boolean;
+    replacing?: string;
+}) {
     const stores = useReviewStores();
     const bundle = useSession((s) => s.bundle);
     const index = useSession((s) => s.index);
-    const options = useMemo(() => linkCandidates({ bundle, index }, slot), [bundle, index, slot]);
+    const pending = useSession((s) => s.pending);
+    const options = useMemo(() => {
+        const { linking } = pendingLinks({ pending }, slot.key);
+        return linkCandidates({ bundle, index }, slot).filter((option) => !linking.includes(option.id));
+    }, [bundle, index, pending, slot]);
     return (
         <PickPanel
             options={options}
-            label={`link ${label} to`}
+            label={label}
             noOptionsText="no entity of this class to link"
             optionKey={(option) => option.id}
-            onPick={(option) => link(stores, slot, option.id)}
+            onPick={(option) =>
+                replacing === undefined ? link(stores, slot, option.id) : changeLink(stores, slot, replacing, option.id)
+            }
+            autoFocus={autoFocus}
+            disabled={disabled}
         />
     );
 }
@@ -216,12 +243,16 @@ export function PickPanel<T extends { name: string }>({
     noOptionsText,
     optionKey,
     onPick,
+    autoFocus = true,
+    disabled,
 }: {
     options: T[];
     label: string;
     noOptionsText: string;
     optionKey(option: T): string;
     onPick(option: T): boolean;
+    autoFocus?: boolean;
+    disabled?: boolean;
 }) {
     const closePanel = useView((s) => s.closePanel);
     return (
@@ -235,6 +266,7 @@ export function PickPanel<T extends { name: string }>({
                 size="small"
                 openOnFocus
                 autoHighlight
+                disabled={disabled}
                 options={options}
                 getOptionLabel={(option) => option.name}
                 getOptionKey={optionKey}
@@ -246,7 +278,7 @@ export function PickPanel<T extends { name: string }>({
                 onChange={(_, option) => {
                     if (option && onPick(option)) closePanel();
                 }}
-                renderInput={(params) => <TextField {...params} autoFocus label={label} />}
+                renderInput={(params) => <TextField {...params} autoFocus={autoFocus} label={label} />}
             />
         </Stack>
     );

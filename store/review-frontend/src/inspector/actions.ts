@@ -4,6 +4,8 @@ import { entityPath, getIn, ROOT_ENTITY, writePath, type Json } from '../model/p
 import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
 import { statusOf } from './status';
 import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } from '../model/targetKey';
+import { auditCards, cardLinks, isLinkStep, linkTarget, type AuditCard } from '../model/guided';
+import { selectShown } from '../store/viewSelectors';
 import { randomUUID } from '../model/uuid';
 import type { ReviewStores } from '../store/reviewStores';
 import type { SessionState } from '../store/sessionStore';
@@ -13,7 +15,6 @@ import {
     type Schema,
     listClassesAt,
     type OpenReference,
-    referenceTarget,
     skeletonOf,
     titleOf,
     wrapperSchemaAt,
@@ -98,6 +99,10 @@ export function unjudgedFields(s: Pick<SessionState, 'index' | 'provenance'>, en
 /** Which unjudged fields a card accept takes: those with evidence, or all of them. */
 export type CardFields = 'evidence' | 'all';
 
+/** An accept of each target, as the ops of one batch. */
+const acceptOps = (targets: AnyTarget[]) =>
+    targets.map((target): Op => ({ client_op_id: randomUUID(), type: 'verdict', target, verdict: 'accept' }));
+
 /**
  * Accepts the unjudged fields of `entity` with evidence, or all of them, and the entity while it is unchecked, as
  * one batch; what it accepted, or undefined where there was nothing to send.
@@ -109,17 +114,12 @@ export function acceptCard(stores: ReviewStores, entity: string, fields: CardFie
     const unchecked = !session.provenance[entityKey(entity)];
     const targets: AnyTarget[] = slots.map((slot) => slotTarget(slot.entity, slot.path));
     if (unchecked) targets.push({ kind: 'entity', entity });
-    const ops = targets.map((target): Op => ({
-        client_op_id: randomUUID(),
-        type: 'verdict',
-        target,
-        verdict: 'accept',
-    }));
-    if (!session.emitBatch(ops)) return undefined;
+    if (!session.emitBatch(acceptOps(targets))) return undefined;
     const accepted = {
         card: entity,
         entity: unchecked,
         fields: slots.length,
+        links: 0,
         withoutEvidenceLeft: fields === 'all' ? 0 : withoutEvidence.length,
     };
     stores.view.getState().showAccepted(accepted);
@@ -127,8 +127,12 @@ export function acceptCard(stores: ReviewStores, entity: string, fields: CardFie
 }
 
 /** What a card accept says it did: `Accepted the analysis and 6 fields · 2 fields without evidence still unchecked`. */
-export function acceptedText({ entity, fields, withoutEvidenceLeft: left }: AcceptedCard, kind: string) {
-    const taken = [...(entity ? [`the ${kind}`] : []), ...(fields > 0 ? [counted(fields, 'field')] : [])];
+export function acceptedText({ entity, fields, links, withoutEvidenceLeft: left }: AcceptedCard, kind: string) {
+    const taken = [
+        ...(entity ? [`the ${kind}`] : []),
+        ...(fields > 0 ? [counted(fields, 'field')] : []),
+        ...(links > 0 ? [counted(links, 'link')] : []),
+    ];
     const done = `Accepted ${listed(taken)}`;
     return left > 0 ? `${done} · ${counted(left, 'field')} without evidence still unchecked` : done;
 }
@@ -144,6 +148,47 @@ export function acceptOrAsk(stores: ReviewStores) {
     else acceptCard(stores, entity, 'evidence');
 }
 
+/** The links of a step 5 card no one has judged yet. */
+export const unjudgedLinks = (s: Pick<SessionState, 'provenance'>, card: AuditCard) =>
+    cardLinks(card).filter((link) => !s.provenance[link.key]);
+
+/** How many of a step 5 card's links are judged, of how many: the count the step's own adds up. */
+export function linkProgress(s: Pick<SessionState, 'provenance'>, card: AuditCard) {
+    const total = cardLinks(card).length;
+    return { done: total - unjudgedLinks(s, card).length, total };
+}
+
+/** Accepts a step 5 card's unjudged links as one batch; how many, or undefined where there were none. */
+export function acceptLinks(stores: ReviewStores, card: AuditCard): AcceptedCard | undefined {
+    const session = stores.session.getState();
+    const targets = unjudgedLinks(session, card).map(linkTarget);
+    if (targets.length === 0 || !session.emitBatch(acceptOps(targets))) return undefined;
+    const accepted = {
+        card: card.analysis.id,
+        entity: false,
+        fields: 0,
+        links: targets.length,
+        withoutEvidenceLeft: 0,
+    };
+    stores.view.getState().showAccepted(accepted);
+    return accepted;
+}
+
+/** The step 5 card of the analysis `analysis`, as the view lists the cards. */
+export function cardOf(stores: ReviewStores, analysis: string) {
+    const session = stores.session.getState();
+    const index = selectShown(session, stores.view.getState());
+    return auditCards({ index, bundle: session.bundle }).find((card) => card.analysis.id === analysis);
+}
+
+/** Shift+A: on step 5 the focused card's unjudged links, elsewhere the focused card as acceptOrAsk takes it. */
+export function acceptFocusedCard(stores: ReviewStores) {
+    const { step, focus } = stores.view.getState();
+    if (!isLinkStep(step)) return acceptOrAsk(stores);
+    const card = cardOf(stores, focus.entity);
+    if (card) acceptLinks(stores, card);
+}
+
 export function reject(stores: ReviewStores, target: AnyTarget, reason: RejectReason, note: string) {
     return send(stores, { type: 'verdict', target, verdict: 'reject', reason, ...(note ? { note } : {}) });
 }
@@ -156,30 +201,31 @@ export function setValue(stores: ReviewStores, slot: SlotNode, value: SetValueOp
     return send(stores, { type: 'set_value', target: slotTarget(slot.entity, slot.path), value });
 }
 
-export const link = (stores: ReviewStores, slot: SlotNode, target: string) =>
+/** A reference slot as a link or unlink names it, held in the record or not. */
+type LinkingSlot = Pick<SlotNode, 'entity' | 'path'>;
+
+export const link = (stores: ReviewStores, slot: LinkingSlot, target: string) =>
     send(stores, { type: 'link', target: relationshipTarget(slot.entity, slot.path, target) });
 
-export const unlink = (stores: ReviewStores, slot: SlotNode, target: string) =>
+export const unlink = (stores: ReviewStores, slot: LinkingSlot, target: string) =>
     send(stores, { type: 'unlink', target: relationshipTarget(slot.entity, slot.path, target) });
 
-/** The class a reference slot links to. */
-function linkClass(s: Pick<Documents, 'bundle'>, slot: SlotNode) {
-    const row = entityRow(s, slot.entity);
-    return row && referenceTarget(row, slot.path);
+/** Changes the single link of `slot` from `from` to `to`, as one batch: an unlink, then a link. */
+export function changeLink(stores: ReviewStores, slot: LinkingSlot, from: string, to: string) {
+    const ops: Op[] = [
+        { client_op_id: randomUUID(), type: 'unlink', target: relationshipTarget(slot.entity, slot.path, from) },
+        { client_op_id: randomUUID(), type: 'link', target: relationshipTarget(slot.entity, slot.path, to) },
+    ];
+    return stores.session.getState().emitBatch(ops);
 }
+
+export { linkCandidates } from '../model/links';
 
 /** The entities of class `target`, by id and name. */
 const entitiesOf = (s: Pick<Documents, 'bundle' | 'index'>, target: string) =>
     s.bundle.entities
         .filter((e) => e.entity_class === target || e.schema_class === target)
         .map((e) => ({ id: e.local_id, name: s.index.entity(e.local_id)?.name ?? e.local_id }));
-
-/** The entities a reference slot can link to: of its target class, not linked already. */
-export function linkCandidates(s: Pick<Documents, 'bundle' | 'index'>, slot: SlotNode) {
-    const target = linkClass(s, slot);
-    if (!target) return [];
-    return entitiesOf(s, target).filter((e) => e.id !== slot.entity && !slot.references.includes(e.id));
-}
 
 type SiblingClasses = { name: string; title: string }[];
 
@@ -399,6 +445,13 @@ export function pendingStructure(s: Pick<SessionState, 'pending'>) {
         else if (op.type === 'create_entity') creating.push({ parent: op.parent, list: op.list });
     }
     return { linksBySlot, deleting, creating };
+}
+
+/** The links to and from the reference slot `slot` waiting for the server: the ids being linked, and being unlinked. */
+export function pendingLinks(s: Pick<SessionState, 'pending'>, slot: string) {
+    const ops = pendingStructure(s).linksBySlot.get(slot);
+    const of = (type: 'link' | 'unlink') => [...(ops ?? [])].flatMap(([id, t]) => (t === type ? [id] : []));
+    return { linking: of('link'), unlinking: new Set(of('unlink')) };
 }
 
 /** The entities `from` can be merged into: the others of its class `index` lists. */

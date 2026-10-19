@@ -7,7 +7,8 @@ import { hasFixture, loadFixture } from '../test/bundles';
 import { registeredSpans } from '../test/highlights';
 import { renderWithStores } from '../test/render';
 import { focusedSpans } from '../test/stores';
-import { RelationshipAudit } from './RelationshipAudit';
+import { auditCards } from '../model/guided';
+import { SHORTCUTS } from './shortcuts';
 import { ReviewScreen } from './ReviewScreen';
 import { buildPaletteIndex, searchPalette } from './search';
 
@@ -231,19 +232,30 @@ describe.skipIf(!hasFixture(HEAVY))(`the diff against the original on ${HEAVY}`,
     );
 });
 
-describe('relationship audit performance', () => {
+describe('relationships step performance', () => {
     it.skipIf(!hasFixture(HEAVY))(
-        `renders the largest paper and redraws after a click within ${CLICK_BUDGET_MS} ms`,
+        `opens the step on the largest paper as fast as the analyses step, then a card on a click and each link on j within ${BUDGET_MS} ms`,
         () => {
-            const view = renderWithStores(<RelationshipAudit />, loadFixture(HEAVY));
-            const analyses = view.stores.session.getState().index.visible.filter((e) => e.entityClass === 'Analysis');
-            const table = view.container.querySelector('table[aria-label="relationship audit"]')!;
-            expect(table.querySelectorAll('tbody th')).toHaveLength(analyses.length);
-            const [first, second] = table.querySelectorAll<HTMLButtonElement>('tbody button:not([disabled])');
-            act(() => void fireEvent.click(first));
-            const started = performance.now();
+            const { stores, textRoot } = open(HEAVY);
+            const view = () => stores.view.getState();
+            const cards = auditCards(stores.session.getState());
+            act(() => view().setStep('relationships'));
+            const analyses = timed(() => view().setStep('analyses'));
+            const opened = timed(() => view().setStep('relationships'));
+            const heads = document.querySelectorAll('[aria-label="relationships"] > li');
+            expect(heads).toHaveLength(cards.length);
+            expect(document.querySelectorAll('[role="region"][aria-label^="Links of "]')).toHaveLength(1);
+            const [, second, third] = [...heads].map((head) => head.querySelector<HTMLElement>('[data-card]')!);
             act(() => void fireEvent.click(second));
-            expect(performance.now() - started).toBeLessThan(CLICK_BUDGET_MS);
+            const clicked = timed(() => void fireEvent.click(third));
+            expect(view().focus.entity).toBe(cards[2].analysis.id);
+            const next = SHORTCUTS.find((s) => s.keys[0] === 'j' && s.scope === 'record')!;
+            const timings = Array.from({ length: RUNS * 2 }, () => timed(() => next.run(stores)));
+            expect(view().focus.key).toMatch(/^relationship:/);
+            expect(registeredSpans('rv-focus', textRoot())).toEqual(focusedSpans(stores));
+            expect(opened).toBeLessThan(analyses * 1.5);
+            expect(clicked).toBeLessThan(CLICK_BUDGET_MS);
+            expect(median(timings)).toBeLessThan(BUDGET_MS);
         },
         RENDER_TIMEOUT_MS
     );

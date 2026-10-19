@@ -87,6 +87,10 @@ export function useSessionView<T>(selector: (session: SessionState, view: ViewSt
 export const useShown = <T>(selector: (index: RecordIndex) => T): T =>
     useSessionView((session, view) => selector(selectShown(session, view)));
 
+/** What `selector` reads from the index as the view lists it and the bundle it is built from. */
+export const useShownDocuments = <T>(selector: (documents: { index: RecordIndex; bundle: ReviewBundle }) => T): T =>
+    useSessionView((session, view) => selector({ index: selectShown(session, view), bundle: session.bundle }));
+
 const OpClientContext = createContext<OpClient | null>(null);
 
 export function OpClientProvider({ client, children }: { client: OpClient; children: ReactNode }) {

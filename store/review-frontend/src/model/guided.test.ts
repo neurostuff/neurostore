@@ -2,7 +2,8 @@ import { buildRecordIndex, withHidden } from './record';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { createReviewStores } from '../store/reviewStores';
 import { hasFixture, loadFixture } from '../test/bundles';
-import { auditMatrix, guidedCards } from './guided';
+import { auditCards, guidedCards, stepTargets } from './guided';
+import { targetKey } from './targetKey';
 
 const record = {
     analyses: [
@@ -100,8 +101,8 @@ describe('the guided cards of several records', () => {
         expect(ids(guidedCards(second).entities)).toEqual(['grp_q']);
         expect(guidedCards(first)).toBe(cardsOfFirst);
         expect(ids(guidedCards(first).analyses)).toEqual(['a_2', 'a_1']);
-        expect(ids(auditMatrix(second).rows)).toEqual(['b_1']);
-        expect(ids(auditMatrix(first).rows)).toEqual(['a_2', 'a_1']);
+        expect(auditCards({ index: second, bundle: other })).toEqual([]);
+        expect(ids(auditCards({ index: first, bundle }).map((card) => card.analysis))).toEqual(['a_2', 'a_1']);
     });
 
     it('orders entities reached once each by name, not in the order they were reached', () => {
@@ -134,21 +135,49 @@ describe('the guided cards of several records', () => {
     });
 });
 
-describe('the audit matrix of a record read against its schema', () => {
-    const ids = ['22fv2dADxHqR', '24syuoHkxfeu', '2KTUQPrgtEke'];
-    const bundles = [bundle, ...ids.filter(hasFixture).map(loadFixture)];
+describe('the audit cards of a record read against its schema', () => {
+    const papers = ['22fv2dADxHqR', '24syuoHkxfeu', '2KTUQPrgtEke'];
+    const bundles = [bundle, ...papers.filter(hasFixture).map(loadFixture)];
 
-    it.each(bundles.map((b, i) => [i === 0 ? 'the test record' : ids[i - 1], b] as const))(
-        'gives every analysis a slot to link each column through, in %s',
+    it.each(bundles.map((b, i) => [i === 0 ? 'the test record' : papers[i - 1], b] as const))(
+        'shows each link the step counts in one row, and gives each group a slot to link through, in %s',
         (_, b) => {
-            const { index } = createReviewStores(b).session.getState();
-            const matrix = auditMatrix(index);
-            const cells = matrix.rows.flatMap((analysis) =>
-                matrix.groups.flatMap((group) =>
-                    group.columns.map((entity) => matrix.cell(analysis, group.className, entity))
-                )
-            );
-            expect(cells.filter((cell) => cell.slot === undefined)).toEqual([]);
+            const { session } = createReviewStores(b);
+            const { index } = session.getState();
+            const cards = auditCards({ index, bundle: b });
+            const rows = cards.flatMap((card) => card.groups.flatMap((group) => group.links.map((link) => link.key)));
+            const counted = stepTargets(session.getState(), 'relationships')!.map(targetKey);
+            expect(rows.toSorted()).toEqual(counted.toSorted());
+            expect(cards.flatMap((card) => card.groups).filter((group) => group.slots.length === 0)).toEqual([]);
         }
     );
+
+    it('groups every link kind the analysis’s class declares, held or not, offering the entities it does not link', () => {
+        const [second, first] = auditCards(createReviewStores(bundle).session.getState());
+        const unlinked = (card: typeof first) =>
+            card.groups.map((group) => [group.className, group.unlinked.map((e) => e.id)]);
+        expect(unlinked(second)).toEqual([
+            ['Acquisition', []],
+            ['Measure', ['mea_1']],
+            ['Region', ['reg_h']],
+            ['Task', []],
+        ]);
+        expect(unlinked(first)).toEqual([
+            ['Acquisition', []],
+            ['Measure', []],
+            ['Region', ['reg_h']],
+            ['Task', ['task_1']],
+        ]);
+        expect(first.groups.find((group) => group.className === 'Task')?.slots).toMatchObject([
+            { key: 'slot:a_1:tasks', references: [] },
+        ]);
+    });
+
+    it('links a region through its own slot first, before defines_regions', () => {
+        const [, first] = auditCards(createReviewStores(bundle).session.getState());
+        expect(first.groups.find((group) => group.className === 'Region')?.slots.map((slot) => slot.path)).toEqual([
+            'regions',
+            'defines_regions',
+        ]);
+    });
 });

@@ -41,6 +41,10 @@ export const singular = (name: string) =>
               ? name.slice(0, -1)
               : name;
 
+/** Words for several of what `words` name: `acquisition` → `acquisitions`, `inference settings` as written. */
+export const plural = (words: string) =>
+    words.endsWith('s') ? words : /[^aeiou]y$/.test(words) ? `${words.slice(0, -1)}ies` : `${words}s`;
+
 /** The path of the steps, as record paths write them. */
 const pathOf = (steps: Step[]) =>
     steps.reduce<string>(

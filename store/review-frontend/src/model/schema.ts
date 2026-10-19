@@ -1,4 +1,4 @@
-import { referenceSlots } from '../contract/references';
+import { referenceSlots, type Reference } from '../contract/references';
 import { schemaOf } from '../contract/schemas';
 import { isObject, parsePath } from './paths';
 import { isReferenceSlot } from './record';
@@ -272,13 +272,20 @@ export function declaredAttributes(root: Schema, className: string): DeclaredAtt
     return start ? visit(start, '', [className]) : [];
 }
 
-/** The class a reference slot links to, from referenceSlots() (the x-reference annotations), by the rule record.ts gives the slot. */
-export function referenceTarget(row: { entity_class: string; schema_class: string }, path: string): string | undefined {
+/** The reference slot at `path` of an entity of `row`'s classes, from referenceSlots(), by the rule record.ts gives the slot. */
+export function referenceSlotOf(
+    row: { entity_class: string; schema_class: string },
+    path: string
+): Reference | undefined {
     const steps = parsePath(path);
     const attribute = steps.filter((step): step is string => typeof step === 'string').at(-1);
     if (attribute === undefined) return undefined;
     const nested = steps.length > 1;
     if (!isReferenceSlot(row, nested, attribute)) return undefined;
     const owners = [row.schema_class, row.entity_class];
-    return referenceSlots().find((r) => r.slot === attribute && (nested || owners.includes(r.class)))?.target;
+    return referenceSlots().find((r) => r.slot === attribute && (nested || owners.includes(r.class)));
 }
+
+/** The class a reference slot links to. */
+export const referenceTarget = (row: { entity_class: string; schema_class: string }, path: string) =>
+    referenceSlotOf(row, path)?.target;

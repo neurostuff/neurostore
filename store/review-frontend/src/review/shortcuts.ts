@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { acceptAnalysis, addSelectionToAnalysis, editPoint, removePoint, splitAnalysis } from '../coordinates/actions';
 import { COORDINATE_UNAVAILABLE as NOT, type CoordinateSession } from '../coordinates/availability';
 import { RECORD_UNAVAILABLE as RECORD, type RecordSession } from '../inspector/availability';
-import { accept, acceptOrAsk, createOn } from '../inspector/actions';
+import { accept, acceptFocusedCard, createOn } from '../inspector/actions';
 import type { Reason } from './reason';
 import type { ReviewStores } from '../store/reviewStores';
 import type { ViewState } from '../store/viewStore';
@@ -51,12 +51,12 @@ const diffAware = (normal: (s: ReviewStores) => void, delta: 1 | -1) => (s: Revi
 export const SHORTCUTS: Shortcut[] = [
     record({
         keys: ['j'],
-        label: 'next slot; next change while the diff is shown',
+        label: 'next slot, or next link on the relationships step; next change while the diff is shown',
         run: diffAware((s) => view(s).moveSlot(1), 1),
     }),
     record({
         keys: ['k'],
-        label: 'previous slot; previous change while the diff is shown',
+        label: 'previous slot, or previous link on the relationships step; previous change while the diff is shown',
         run: diffAware((s) => view(s).moveSlot(-1), -1),
     }),
     record({ keys: ['Shift+J'], label: 'next entity', run: (s) => view(s).moveEntity(1) }),
@@ -95,15 +95,15 @@ export const SHORTCUTS: Shortcut[] = [
     }),
     record({
         keys: ['Shift+A'],
-        label: 'accept the card: its entity and its unjudged fields with evidence; asks first where some fields have none, offering to accept them too',
+        label: 'accept the card: its entity and its unjudged fields with evidence; asks first where some fields have none, offering to accept them too. On the relationships step, its unjudged links',
         button: { label: 'Accept card' },
         card: { label: (kind) => `Accept ${kind}` },
         unavailable: RECORD.acceptCard,
-        run: acceptOrAsk,
+        run: acceptFocusedCard,
     }),
     record({
         keys: ['r'],
-        label: 'reject, with a reason (1–5) and an optional note',
+        label: 'reject the focused slot, entity or link, with a reason (1–5) and an optional note',
         button: { label: 'Reject', color: 'error' },
         field: true,
         card: { label: (kind) => `Reject ${kind}`, focusesEntity: true },
@@ -152,7 +152,7 @@ export const SHORTCUTS: Shortcut[] = [
     }),
     record({
         keys: [';'],
-        label: 'add a note to the focused item',
+        label: 'add a note to the focused slot, entity or link',
         button: { label: 'Note' },
         field: true,
         card: { label: () => 'Note', focusesEntity: true },

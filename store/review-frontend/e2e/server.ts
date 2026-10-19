@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import { ApiError, type ReviewLifecycle, type SetAside } from '../src/api/reviewApi';
 import type { ReviewBundle } from '../src/contract/generated/review-bundle';
 import type { Op } from '../src/contract/generated/review-ops';
+import { setSchemas } from '../src/contract/schemas';
 import { memoryBackend, type MemoryOptions, type OpBatch } from '../src/test/memoryBackend';
 import { E2E_API } from './api';
 
@@ -17,6 +18,10 @@ type Answer = { status: number; body: unknown };
  * unit tests, and keeps the op batches it is sent; `createdProblems` as memoryBackend takes it.
  */
 export async function serve(page: Page, { createdProblems }: Pick<MemoryOptions, 'createdProblems'> = {}) {
+    setSchemas({
+        'extraction-record': schemaOf('extraction-record'),
+        'coordinate-parse': schemaOf('coordinate-parse'),
+    });
     const backend = memoryBackend(async (id) => bundleOf(id), { createdProblems });
     const batches: Op[][] = [];
 

@@ -173,65 +173,79 @@ describe('step 3, entities outward from the analyses', () => {
 });
 
 describe('step 5, the relationship audit', () => {
-    const matrix = () => screen.getByRole('table', { name: 'relationship audit' });
-    const cell = (name: string) => within(matrix()).getByRole('button', { name });
+    const cards = () => [
+        ...screen.getByRole('list', { name: 'relationships' }).querySelectorAll<HTMLElement>(':scope > li'),
+    ];
+    const card = (name: string) => cards().find((c) => c.querySelector('[data-card]')?.textContent?.startsWith(name))!;
+    const links = (name: string) => screen.getByRole('region', { name: `Links of ${name}` });
+    const rowNames = (name: string) => [...links(name).querySelectorAll('.rv-link-name')].map((n) => n.textContent);
 
-    it('has a row per analysis and a column group per class the analyses link to, marking each link', () => {
+    it('has a card per analysis and in it a group per class the analysis links to, a row per link', () => {
         setup('relationships');
-        const headers = within(matrix())
-            .getAllByRole('columnheader')
-            .map((h) => h.textContent);
-        expect(headers).toEqual(expect.arrayContaining(['Acquisition', 'fMRI']));
-        const rows = within(matrix())
-            .getAllByRole('rowheader')
-            .map((h) => h.querySelector('.rv-row-name')?.textContent);
-        expect(rows).toEqual(['Patients > Controls', 'Controls > Patients']);
-        expect(cell('Patients > Controls → fMRI')).toHaveAttribute('aria-pressed', 'true');
+        expect(cards().map((c) => c.querySelector('[data-card]')?.getAttribute('data-card'))).toEqual(['a_1', 'a_2']);
+        expect(within(links('Patients > Controls')).getByRole('group', { name: 'Acquisitions (1 linked)' }));
+        expect(rowNames('Patients > Controls')).toEqual(['fMRI']);
     });
 
     it('leaves out the pairs that mean nothing: a list item’s links, and analyses against analyses', () => {
         setup('relationships');
-        const headers = within(matrix())
-            .getAllByRole('columnheader')
-            .map((h) => h.textContent);
-        expect(headers).not.toContain('Group');
-        expect(headers).not.toContain('Analysis');
-        expect(within(matrix()).queryByRole('button', { name: 'Patients > Controls → Patients' })).toBeNull();
+        const groups = within(links('Patients > Controls'))
+            .getAllByRole('group')
+            .map((g) => g.getAttribute('aria-label'));
+        expect(groups).toEqual(['Acquisitions (1 linked)']);
+        expect(rowNames('Patients > Controls')).not.toContain('Patients');
     });
 
-    it('keeps the row and column labels in view, each name whole on hover', () => {
-        setup('relationships');
-        const [first] = within(matrix()).getAllByRole('rowheader');
-        expect(getComputedStyle(first).position).toBe('sticky');
-        expect(first.querySelector('.rv-row-name')).toHaveAttribute('title', 'Patients > Controls');
-        const names = within(matrix()).getAllByRole('columnheader');
-        expect(names.find((h) => h.textContent === 'fMRI')).toHaveAttribute('title', 'fMRI');
+    it('shows each name whole, wrapping, with no table to scroll sideways', () => {
+        const long =
+            'Patients with social anxiety disorder > healthy controls, whole-brain voxel-based morphometry, FWE-corrected';
+        const scan =
+            '3 T Siemens Trio fMRI with a 32-channel head coil and multiband echo-planar imaging of the whole brain';
+        const named = makeBundle(
+            {
+                analyses: [{ local_id: 'a_1', name: ev(long), acquisitions: ['acq_1'] }],
+                acquisitions: [{ local_id: 'acq_1', name: ev(scan) }],
+            },
+            TEXT,
+            { entities: entityRows(row('a_1', 'Analysis', 'analyses'), row('acq_1', 'Acquisition', 'acquisitions')) }
+        );
+        const { stores } = renderWithStores(<ReviewScreen />, named);
+        act(() => stores.view.getState().setStep('relationships'));
+        expect(screen.queryByRole('table')).toBeNull();
+        expect(card(long).querySelector('[data-card]')).toHaveTextContent(long);
+        const name = links(long).querySelector('.rv-link-name')!;
+        expect(name).toHaveTextContent(new RegExp(`^${scan}$`));
+        expect(name).not.toHaveAttribute('title');
     });
 
-    it('completes its progress there: a row’s accept judges each link it holds', () => {
+    it('completes its progress there: a card’s Accept all links judges each link it holds', () => {
         const { stores } = setup('relationships');
         const step = () => screen.getByRole('button', { name: /^Relationships/ });
         expect(step()).toHaveTextContent('0 of 2');
-        fireEvent.click(within(matrix()).getByRole('button', { name: 'accept the links of Patients > Controls' }));
-        fireEvent.click(within(matrix()).getByRole('button', { name: 'accept the links of Controls > Patients' }));
+        fireEvent.click(within(card('Patients > Controls')).getByRole('button', { name: 'Accept all links' }));
+        fireEvent.click(within(card('Controls > Patients')).getByRole('button', { name: 'Accept all links' }));
         expect(step()).toHaveTextContent('2 of 2');
         expect(stores.session.getState().provenance['relationship:a_1:acquisitions:acq_1']?.state).toBe('verified');
         expect(screen.getByRole('heading', { name: /relationship audit/ })).toHaveTextContent('2 of 2 done');
     });
 
-    it('toggles a link with a click: unlink where it is set, link where it is not', () => {
+    it('unlinks with the focused row’s Remove link', () => {
         const { stores } = setup('relationships');
-        fireEvent.click(cell('Controls > Patients → fMRI'));
+        act(() => stores.view.getState().focusLink('slot:a_2:acquisitions', 'acq_1'));
+        fireEvent.click(within(links('Controls > Patients')).getByRole('button', { name: 'Remove link' }));
         expect(stores.session.getState().pending.at(-1)).toMatchObject({
             type: 'unlink',
             target: { entity: 'a_2', path: 'acquisitions', target_entity: 'acq_1' },
         });
     });
 
-    it('links with a click where the analysis has no link yet', () => {
+    it.each([
+        ['an empty list', { acquisitions: [] }],
+        ['no such slot in the record', {}],
+    ])('links through the picker where the analysis has no link yet: %s', (_, slot) => {
         const unlinked = makeBundle(
             {
-                analyses: [{ local_id: 'a_1', name: ev('First') }],
+                analyses: [{ local_id: 'a_1', name: ev('First'), ...slot }],
                 acquisitions: [{ local_id: 'acq_1', name: ev('fMRI') }],
             },
             TEXT,
@@ -239,7 +253,10 @@ describe('step 5, the relationship audit', () => {
         );
         const { stores } = renderWithStores(<ReviewScreen />, unlinked);
         act(() => stores.view.getState().setStep('relationships'));
-        fireEvent.click(cell('First → fMRI'));
+        expect(links('First')).toHaveTextContent('No acquisition linked');
+        const picker = screen.getByRole('combobox', { name: 'link an acquisition to First' });
+        fireEvent.keyDown(picker, { key: 'ArrowDown' });
+        fireEvent.click(screen.getByRole('option', { name: 'fMRI' }));
         expect(stores.session.getState().pending.at(-1)).toMatchObject({
             type: 'link',
             target: { entity: 'a_1', path: 'acquisitions', target_entity: 'acq_1' },
@@ -477,16 +494,16 @@ describe('done means judged, accepted or rejected', () => {
 });
 
 describe('the relationship audit with hidden analyses and self links', () => {
-    it('has a row for each hidden analysis once they are shown', () => {
+    it('has a card for each hidden analysis once they are shown', () => {
         const { stores } = setup('relationships');
         act(() => stores.view.getState().toggleNonCoordinate());
-        const rows = within(screen.getByRole('table', { name: 'relationship audit' }))
-            .getAllByRole('rowheader')
-            .map((h) => h.querySelector('.rv-row-name')?.textContent);
-        expect(rows).toEqual(['Patients > Controls', 'Controls > Patients', 'No coordinates']);
+        const names = [
+            ...screen.getByRole('list', { name: 'relationships' }).querySelectorAll(':scope > li [data-card]'),
+        ].map((head) => head.querySelector('.MuiListItemText-primary')?.textContent);
+        expect(names).toEqual(['Patients > Controls', 'Controls > Patients', 'No coordinates']);
     });
 
-    it('leaves an analysis’s mirror out of the matrix, to its card', () => {
+    it('leaves an analysis’s mirror out of the audit, to its card', () => {
         const mirrored = makeBundle(
             {
                 analyses: [
@@ -499,7 +516,7 @@ describe('the relationship audit with hidden analyses and self links', () => {
         );
         const view = renderWithStores(<ReviewScreen />, mirrored);
         act(() => view.stores.view.getState().setStep('relationships'));
-        expect(screen.queryByRole('table', { name: 'relationship audit' })).toBeNull();
+        expect(screen.queryByRole('list', { name: 'relationships' })).toBeNull();
         expect(screen.getByText('No links to audit.')).toBeInTheDocument();
     });
 });
@@ -620,9 +637,12 @@ describe('the steps in a read-only tab', () => {
         ].forEach((button) => expect(button).toBeDisabled());
     });
 
-    it('disables the audit’s link toggles', () => {
-        readOnly('relationships');
-        expect(screen.getByRole('button', { name: 'Patients > Controls → fMRI' })).toBeDisabled();
+    it('disables the audit’s accept, reject and remove controls', () => {
+        const { stores } = readOnly('relationships');
+        act(() => stores.view.getState().focusLink('slot:a_1:acquisitions', 'acq_1'));
+        screen.getAllByRole('button', { name: 'Accept all links' }).forEach((button) => expect(button).toBeDisabled());
+        const row = within(screen.getByRole('toolbar', { name: 'actions on Patients > Controls → fMRI' }));
+        ['Accept', 'Reject', 'Remove link'].forEach((name) => expect(row.getByRole('button', { name })).toBeDisabled());
     });
 
     it('disables the leftover actions', () => {

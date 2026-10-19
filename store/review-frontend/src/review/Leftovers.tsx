@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { acceptTarget, link, mergeCandidates, mergeCopies, mergeInto } from '../inspector/actions';
 import { ConfirmDialog, PickPanel } from '../inspector/panels';
 import type { EntityNode } from '../model/record';
-import { useIsEditable, useReviewStores, useShown, useView } from '../store/context';
+import { useIsEditable, useReviewStores, useShown, useShownDocuments, useView } from '../store/context';
 import type { PanelKind } from '../store/viewStore';
 import { analysisSlotsFor } from '../model/guided';
 import { openPanelOn } from '../inspector/openPanel';
@@ -11,8 +11,7 @@ import { slotLabel } from '../model/labels';
 
 function LinkToAnalysis({ entity }: { entity: EntityNode }) {
     const stores = useReviewStores();
-    const index = useShown((shown) => shown);
-    const options = useMemo(() => analysisSlotsFor(index, entity), [index, entity]);
+    const options = useShownDocuments((documents) => analysisSlotsFor(documents, entity));
     return (
         <PickPanel
             options={options}

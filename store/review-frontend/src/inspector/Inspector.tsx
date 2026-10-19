@@ -1,6 +1,6 @@
 import { Box, Chip, List, Stack, Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import { memo, type ReactNode, useEffect, useMemo, useRef } from 'react';
+import { memo, type ReactNode, useMemo } from 'react';
 import type { EntityNode, SlotNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
 import { CardActions, FieldActions } from '../review/actionButtons';
@@ -10,7 +10,7 @@ import { useIsEditable, useReviewStores, useSession, useView } from '../store/co
 import type { Panel } from '../store/viewStore';
 import { saveSlotValue } from '../coordinates/actions';
 import { CoordinatesOf } from '../coordinates/RecordLinks';
-import { acceptedText, pendingStructure, slotSchema, unlink } from './actions';
+import { acceptedText, pendingLinks, pendingStructure, slotSchema, unlink } from './actions';
 import {
     AcceptCardDialog,
     CreateDialog,
@@ -31,7 +31,10 @@ import { NoteMark } from './NoteMark';
 import { reviewStatus, statusColors, statusOf } from './status';
 import { classWords, labelOf } from '../model/labels';
 import { selectStepProgress } from '../review/stepCount';
+import { isLinkStep } from '../model/guided';
 import { StatusLabel, StatusLegend } from './StatusLabel';
+import { slotStyles } from './slotStyles';
+import { useScrollIntoViewWhen } from './useScrollIntoViewWhen';
 
 function ReferenceChips({ slot }: { slot: SlotNode }) {
     const stores = useReviewStores();
@@ -40,16 +43,14 @@ function ReferenceChips({ slot }: { slot: SlotNode }) {
     const pending = useSession((s) => s.pending);
     const focusEntity = useView((s) => s.focusEntity);
     const focusLink = useView((s) => s.focusLink);
-    const { linksBySlot } = useMemo(() => pendingStructure({ pending }), [pending]);
-    const pendingLinks = linksBySlot.get(slot.key);
-    const linking = [...(pendingLinks ?? [])].flatMap(([id, type]) => (type === 'link' ? [id] : []));
+    const { linking, unlinking } = useMemo(() => pendingLinks({ pending }, slot.key), [pending, slot.key]);
     const nameOf = (id: string) => index.entity(id)?.name ?? id;
     if (slot.references.length === 0 && linking.length === 0) return <Typography variant="body2">—</Typography>;
     return (
         <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
             {slot.references.map((id) => {
-                const unlinking = pendingLinks?.get(id) === 'unlink';
-                const label = unlinking ? `${nameOf(id)} · unlinking` : nameOf(id);
+                const going = unlinking.has(id);
+                const label = going ? `${nameOf(id)} · unlinking` : nameOf(id);
                 return (
                     <Chip
                         key={id}
@@ -58,13 +59,13 @@ function ReferenceChips({ slot }: { slot: SlotNode }) {
                         label={label}
                         aria-label={label}
                         title={id}
-                        aria-busy={unlinking || undefined}
+                        aria-busy={going || undefined}
                         onFocus={() => focusLink(slot.key, id)}
                         onClick={(event) => {
                             event.stopPropagation();
                             focusEntity(id);
                         }}
-                        onDelete={unlinking || !editable ? undefined : () => void unlink(stores, slot, id)}
+                        onDelete={going || !editable ? undefined : () => void unlink(stores, slot, id)}
                         deleteIcon={<RemoveIcon label={`unlink ${nameOf(id)}`} />}
                     />
                 );
@@ -121,7 +122,7 @@ function SlotPanel({
         case 'note':
             return <NotePanel target={panel.target} label={panelLabel} />;
         case 'link':
-            return <LinkPanel slot={slot} label={label} />;
+            return <LinkPanel slot={slot} label={`link ${label} to`} />;
         case 'move_evidence':
             return panel.span ? <MoveEvidencePanel slot={slot} span={panel.span} /> : null;
         default:
@@ -149,12 +150,8 @@ const SlotRow = memo(function SlotRow({
         return `${label} → ${s.index.entity(target.target_entity)?.name ?? target.target_entity}`;
     });
     const notes = useSession((s) => selectNotes(s).get(slot.key)?.join('\n'));
-    const ref = useRef<HTMLLIElement>(null);
+    const ref = useScrollIntoViewWhen<HTMLLIElement>(focused);
     const editing = panel?.kind === 'edit' || panel?.kind === 'not_reported';
-
-    useEffect(() => {
-        if (focused) ref.current?.scrollIntoView?.({ block: 'nearest' });
-    }, [focused]);
 
     return (
         <li
@@ -207,23 +204,6 @@ const legendStyles = (theme: Theme) => ({
     ...statusColors(theme.palette),
 });
 
-const slotStyles = (theme: Theme) => ({
-    '& .rv-slot': {
-        px: 2,
-        py: 0.75,
-        cursor: 'pointer',
-        borderLeft: 3,
-        borderColor: 'transparent',
-        '&:hover': { bgcolor: 'action.hover' },
-    },
-    '& .rv-slot[aria-current="true"]': { borderColor: 'primary.main', bgcolor: 'action.selected' },
-    '& .rv-slot-head': { typography: 'caption', display: 'flex', gap: 1.5 },
-    '& .rv-slot-label': { color: 'text.secondary', fontWeight: 500 },
-    '& .rv-slot-value': { typography: 'body2', overflowWrap: 'anywhere' },
-    '& .rv-values': { m: 0, pl: 2.5 },
-    ...statusColors(theme.palette),
-});
-
 /** The way on from an accepted card while its step is not done: the step's next card no one has judged. */
 function NextCard() {
     const step = useView((s) => s.step);
@@ -237,13 +217,13 @@ function NextCard() {
             title="Open the step’s next card no one has judged (Shift+J and Shift+K move between cards)"
             onClick={focusNextUnjudged}
         >
-            {step === 'analyses' ? 'Next analysis' : 'Next card'}
+            {step === 'analyses' || isLinkStep(step) ? 'Next analysis' : 'Next card'}
         </button>
     );
 }
 
 /** What the last accept of the card took, announced as it changes, and the way on. */
-function AcceptedStatus({ entity, kind }: { entity: string; kind: string }) {
+export function AcceptedStatus({ entity, kind }: { entity: string; kind: string }) {
     const accepted = useView((s) => (s.accepted?.card === entity ? s.accepted : null));
     return (
         <Stack direction="row" spacing={1} alignItems="center">

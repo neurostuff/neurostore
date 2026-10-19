@@ -92,6 +92,109 @@ describe('the memory backend', () => {
     });
 });
 
+describe('the memory backend’s links, as the review core applies them', () => {
+    const record = {
+        analyses: [{ local_id: 'a_1', name: ev('First'), measure: 'mea_1', acquisitions: ['acq_1'] }],
+        acquisitions: [
+            { local_id: 'acq_1', name: ev('Scan A') },
+            { local_id: 'acq_2', name: ev('Scan B') },
+        ],
+        measures: [
+            { local_id: 'mea_1', name: ev('BOLD') },
+            { local_id: 'mea_2', name: ev('CBF') },
+        ],
+        tasks: [{ local_id: 'task_1', name: ev('Stroop') }],
+        model_estimations: [{ local_id: 'mdl_1', name: ev('GLM') }],
+    };
+    const entities = entityRows(
+        row('a_1', 'Analysis', 'analyses'),
+        row('acq_1', 'Acquisition', 'acquisitions'),
+        row('acq_2', 'Acquisition', 'acquisitions'),
+        row('mea_1', 'Measure', 'measures'),
+        row('mea_2', 'Measure', 'measures'),
+        row('task_1', 'Task', 'tasks'),
+        row('mdl_1', 'ModelEstimation', 'model_estimations')
+    );
+    const rel = (path: string, target_entity: string) =>
+        ({ kind: 'relationship', entity: 'a_1', path, target_entity }) as const;
+    let n = 0;
+    const op = (type: 'link' | 'unlink', path: string, target: string, extra: object = {}): Op =>
+        ({ client_op_id: `link-op-${++n}`, type, target: rel(path, target), ...extra }) as Op;
+
+    async function open() {
+        const server = fakeServer([makeBundle(record, 'Some text.', { entities })]);
+        const { summary } = await server.backend.startReview('P1');
+        let seq = 0;
+        const post = (...ops: Op[]) => {
+            const result = server.backend.postOps(summary.id, { expected_last_seq: seq, ops });
+            seq = result.last_seq;
+            return result;
+        };
+        const analysis = () => (result: { record: unknown }) =>
+            (result.record as { analyses: Record<string, unknown>[] }).analyses[0];
+        return { post, analysis: analysis() };
+    }
+    const entry = (state: string) => ({ state, user_id: 'me', at: expect.any(String) });
+
+    it('adds a link to a list: the link added, the slot edited, its before and after the lists, an unlink its inverse', async () => {
+        const { post, analysis } = await open();
+        const result = post(op('link', 'acquisitions', 'acq_2'));
+        expect(analysis(result).acquisitions).toEqual(['acq_1', 'acq_2']);
+        expect(result.provenance).toEqual({
+            'slot:a_1:acquisitions': entry('edited'),
+            'relationship:a_1:acquisitions:acq_2': entry('added'),
+        });
+        expect(result.ops[0]).toMatchObject({
+            before: ['acq_1'],
+            after: ['acq_1', 'acq_2'],
+            inverse: [{ type: 'unlink', target: rel('acquisitions', 'acq_2') }],
+        });
+    });
+
+    it('links through an absent slot as the shape the schema gives it: a string for a single one, a list for a list', async () => {
+        const { post, analysis } = await open();
+        const single = post(op('link', 'model_estimation', 'mdl_1'));
+        expect(analysis(single).model_estimation).toBe('mdl_1');
+        expect(single.ops[0]).toMatchObject({ before: null, after: 'mdl_1' });
+        const listed = post(op('link', 'tasks', 'task_1'));
+        expect(analysis(listed).tasks).toEqual(['task_1']);
+    });
+
+    it('replaces a single link, marking the old one removed; its inverse links the old one back', async () => {
+        const { post, analysis } = await open();
+        const result = post(op('link', 'measure', 'mea_2'));
+        expect(analysis(result).measure).toBe('mea_2');
+        expect(result.provenance).toMatchObject({
+            'relationship:a_1:measure:mea_1': entry('removed'),
+            'relationship:a_1:measure:mea_2': entry('added'),
+        });
+        expect(result.ops[0].inverse).toEqual([{ type: 'link', target: rel('measure', 'mea_1') }]);
+    });
+
+    it.each([
+        ['a link it holds already', 'acquisitions', 'acq_1'],
+        ['an entity of another class', 'acquisitions', 'task_1'],
+    ])('refuses %s', async (_, path, target) => {
+        const { post } = await open();
+        expect(() => post(op('link', path, target))).toThrow(expect.objectContaining({ status: 422 }));
+    });
+
+    it('unlinks the last reference by removing the key, its inverse relinking it at its place', async () => {
+        const { post, analysis } = await open();
+        const result = post(op('unlink', 'acquisitions', 'acq_1'));
+        expect(analysis(result)).not.toHaveProperty('acquisitions');
+        expect(result.provenance).toMatchObject({ 'relationship:a_1:acquisitions:acq_1': entry('removed') });
+        expect(result.ops[0]).toMatchObject({
+            before: ['acq_1'],
+            after: null,
+            inverse: [{ type: 'link', target: rel('acquisitions', 'acq_1'), index: 0 }],
+        });
+        const back = post(op('link', 'acquisitions', 'acq_1', { index: 0 }));
+        expect(analysis(back).acquisitions).toEqual(['acq_1']);
+        expect(back.provenance).toMatchObject({ 'relationship:a_1:acquisitions:acq_1': entry('added') });
+    });
+});
+
 describe('the memory backend’s coordinate ops', () => {
     const edit = (key: string, points: unknown[], id = 'c-1') => ({
         client_op_id: id,

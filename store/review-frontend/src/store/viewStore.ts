@@ -20,7 +20,7 @@ import {
 } from '../model/coordinates';
 import { randomUUID } from '../model/uuid';
 import { analysisItemFor, diffTarget, nextChange, resolveTarget, visibleItems } from '../model/diff';
-import { stepCards } from '../model/guided';
+import { auditRows, isLinkStep, stepCards, type AuditLink } from '../model/guided';
 import type { Json } from '../model/paths';
 import type { RecordIndex, SpanPair } from '../model/record';
 import { STEPS, type StepId } from '../model/steps';
@@ -71,12 +71,16 @@ export interface Panel {
     span?: SpanPair;
 }
 
-/** What one accept of the card `card` took: its entity or not, how many fields, and the unjudged ones without evidence left. */
+/**
+ * What one accept of the card `card` took: its entity or not, how many fields, and the unjudged ones without evidence
+ * left; on step 5, how many links.
+ */
 export interface AcceptedCard {
     card: string;
     entity: boolean;
     fields: number;
     withoutEvidenceLeft: number;
+    links: number;
 }
 
 export type OutlineFilter = 'all' | 'unreviewed' | 'changed' | 'noted' | 'doubtful';
@@ -196,6 +200,7 @@ export function createViewStore(session: SessionStore) {
                   placeReveal(documents().bundle, coordinates.analysis))
                 : undefined;
         const shown = () => selectShown(documents(), get());
+        const shownDocuments = () => ({ index: shown(), bundle: documents().bundle });
         const spans = () => selectFocusedSpans(documents(), get());
 
         const focusOn = (focus: Focus) => {
@@ -298,6 +303,42 @@ export function createViewStore(session: SessionStore) {
             if (get().coordinates) refocusCoordinates(analyses, offerAdded(analyses, sent));
         };
 
+        /** Step 5's link rows, and where the focus is among them: on a row, else before the focused card's first. */
+        const linkRows = () => {
+            const rows = auditRows(shownDocuments());
+            const { focus } = get();
+            const on = rows.findIndex((row) => row.key === focus.key);
+            if (on !== -1) return { rows, on, before: on };
+            const cards = stepCards({ ...shownDocuments(), step: 'relationships' }) ?? [];
+            const card = cards.findIndex((e) => e.id === focus.entity);
+            const later = new Set(cards.slice(Math.max(card, 0)).map((e) => e.id));
+            const before = rows.findIndex((row) => later.has(row.slot.entity));
+            return { rows, on, before: before === -1 ? rows.length : before };
+        };
+
+        const focusRow = (row: AuditLink | undefined) => {
+            if (row) get().focusLink(row.slot.key, row.target);
+        };
+
+        /** j and k on step 5: the next or previous link row, across cards. */
+        const moveLink = (delta: 1 | -1) => {
+            const { rows, on, before } = linkRows();
+            const next = on !== -1 ? clamp(on + delta, rows.length - 1) : delta > 0 ? before : before - 1;
+            if (next !== on) focusRow(rows[next]);
+        };
+
+        /** The way on from an accepted card on step 5: the next link row, round to the start, no one has judged. */
+        const focusNextUnjudgedLink = () => {
+            const { rows, on, before } = linkRows();
+            const { provenance } = documents();
+            const start = on !== -1 ? on + 1 : before;
+            focusRow(
+                rows
+                    .map((_, i) => rows[(start + i) % rows.length])
+                    .find((row) => row.key !== get().focus.key && !provenance[row.key])
+            );
+        };
+
         session.subscribe((state, previous) => {
             if (state.replaced && state.replaced !== previous.replaced) refocus(state.replaced);
         });
@@ -390,6 +431,7 @@ export function createViewStore(session: SessionStore) {
                 focusOn({ entity: node.entity, key, slot: node.key });
             },
             moveSlot: (delta) => {
+                if (isLinkStep(get().step)) return moveLink(delta);
                 const { focus } = get();
                 const slots = shown().entity(focus.entity)?.slots ?? [];
                 const at = slots.findIndex((s) => s.key === focus.key);
@@ -399,13 +441,14 @@ export function createViewStore(session: SessionStore) {
             },
             moveEntity: (delta) => {
                 const listed = shown();
-                const cards = stepCards({ index: listed, step: get().step }) ?? listed.visible;
+                const cards = stepCards({ ...shownDocuments(), step: get().step }) ?? listed.visible;
                 const at = cards.findIndex((e) => e.id === get().focus.entity);
                 const next = stepIn(cards.length, at, delta);
                 if (cards[next] && next !== at) focusOn({ entity: cards[next].id, key: entityKey(cards[next].id) });
             },
             focusNextUnjudged: () => {
-                const cards = stepCards({ index: shown(), step: get().step }) ?? [];
+                if (isLinkStep(get().step)) return focusNextUnjudgedLink();
+                const cards = stepCards({ ...shownDocuments(), step: get().step }) ?? [];
                 const at = cards.findIndex((e) => e.id === get().focus.entity);
                 const { provenance } = documents();
                 const next = cards
@@ -440,7 +483,7 @@ export function createViewStore(session: SessionStore) {
                     const first = kept ?? firstAnalysis(currentAnalyses(documents().bundle), showNonCoordinate);
                     if (first) focusCoordinates(first);
                 }
-                const cards = stepCards({ index: shown(), step });
+                const cards = stepCards({ ...shownDocuments(), step });
                 if (cards?.length && !cards.some((e) => e.id === get().focus.entity)) {
                     focusOn({ entity: cards[0].id, key: entityKey(cards[0].id) });
                 }
