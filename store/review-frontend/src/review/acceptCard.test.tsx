@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { StrictMode, type ReactElement } from 'react';
 import type { Op } from '../contract/generated/review-ops';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { renderThroughServer, renderWithStores } from '../test/render';
@@ -37,8 +38,11 @@ const bundleOf = (analyses: object[]) =>
         review: { ...review },
     });
 
-function setup(analyses: object[] = [mixed, plain], focus = 'a_1') {
-    const view = renderWithStores(<ReviewScreen />, bundleOf(analyses));
+/** `ui`, under StrictMode when `strict`. */
+const strictly = (ui: ReactElement, strict: boolean) => (strict ? <StrictMode>{ui}</StrictMode> : ui);
+
+function setup(analyses: object[] = [mixed, plain], focus = 'a_1', strict = false) {
+    const view = renderWithStores(strictly(<ReviewScreen />, strict), bundleOf(analyses));
     act(() => view.stores.view.getState().setStep('analyses'));
     act(() => view.stores.view.getState().focusEntity(focus));
     const session = () => view.stores.session.getState();
@@ -152,6 +156,13 @@ describe('accepting a card', () => {
             ]);
         });
 
+        it('starts on Accept fields with evidence under StrictMode too', () => {
+            setup([mixed, plain], 'a_1', true);
+            act(() => screen.getAllByRole('button')[0].focus());
+            press('A', { shiftKey: true });
+            expect(within(dialog()).getByRole('button', { name: 'Accept fields with evidence' })).toHaveFocus();
+        });
+
         it('starts on Accept fields with evidence; Escape cancels', () => {
             const { session } = setup();
             press('A', { shiftKey: true });
@@ -176,9 +187,9 @@ describe('accepting a card', () => {
     describe('the card’s Accept button', () => {
         const card = (name: string) => screen.getByRole('region', { name });
         const acceptButton = (name: string) => within(card(name)).getByRole('button', { name: 'Accept analysis' });
-        function setupJudged(provenance: Record<string, Judged>, analyses: object[] = [plain]) {
+        function setupJudged(provenance: Record<string, Judged>, analyses: object[] = [plain], strict = false) {
             const bundle = bundleOf(analyses);
-            const view = renderWithStores(<ReviewScreen />, {
+            const view = renderWithStores(strictly(<ReviewScreen />, strict), {
                 ...bundle,
                 review: { ...review, provenance: judged(provenance) },
             });
@@ -215,6 +226,27 @@ describe('accepting a card', () => {
             expect(accepted(stores.session.getState().pending)).toEqual(['name']);
             expect(statusIn('Controls > Patients')).toHaveTextContent(/^Accepted 1 field$/);
         });
+
+        it.each([false, true])(
+            'starts on Accept all fields while Accept fields with evidence is unavailable (StrictMode: %s)',
+            (strict) => {
+                setupJudged(
+                    {
+                        'entity:a_1': 'verified',
+                        'slot:a_1:name': 'verified',
+                        'slot:a_1:statistic': 'verified',
+                        'slot:a_1:groups[#0].n': 'verified',
+                    },
+                    [mixed],
+                    strict
+                );
+                const button = acceptButton('Patients > Controls');
+                act(() => button.focus());
+                fireEvent.click(button);
+                const dialog = screen.getByRole('dialog', { name: 'These fields don’t have evidence' });
+                expect(within(dialog).getByRole('button', { name: 'Accept all fields' })).toHaveFocus();
+            }
+        );
 
         it('stays available on an accepted card while fields without evidence are unjudged, asking first', () => {
             const { stores } = setupJudged(

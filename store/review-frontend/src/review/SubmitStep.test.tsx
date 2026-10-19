@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { StrictMode } from 'react';
 import type { Op } from '../contract/generated/review-ops';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
@@ -123,7 +124,7 @@ describe('the submit summary', () => {
         }),
     ];
 
-    function setup() {
+    function setup(strict = false) {
         const record = {
             groups: [
                 { local_id: 'grp_a', name: ev('Patients') },
@@ -133,10 +134,13 @@ describe('the submit summary', () => {
         };
         const verified = { state: 'verified' as const, user_id: 'me', at: 'then' };
         const client = { changeState: vi.fn(async () => {}) } as unknown as OpClient;
-        const view = renderWithStores(
+        const step = (
             <OpClientProvider client={client}>
                 <SubmitStep />
-            </OpClientProvider>,
+            </OpClientProvider>
+        );
+        const view = renderWithStores(
+            strict ? <StrictMode>{step}</StrictMode> : step,
             makeBundle(record, TEXT, {
                 entities: rows,
                 ops,
@@ -194,6 +198,15 @@ describe('the submit summary', () => {
         expect(within(dialog).getByRole('list', { name: 'still unreviewed' })).toHaveTextContent('Leftovers: 1');
         fireEvent.click(within(dialog).getByRole('button', { name: 'Submit anyway' }));
         expect(client.changeState).toHaveBeenCalledWith('submitted');
+    });
+
+    it('starts the confirmation on Review them under StrictMode too', () => {
+        setup(true);
+        const submit = screen.getByRole('button', { name: 'Submit review' });
+        act(() => submit.focus());
+        fireEvent.click(submit);
+        const dialog = screen.getByRole('dialog', { name: 'Submit with 2 items unreviewed?' });
+        expect(within(dialog).getByRole('button', { name: 'Review them' })).toHaveFocus();
     });
 
     it('goes to the first item left to review from the confirmation, its default, submitting nothing (H1)', () => {

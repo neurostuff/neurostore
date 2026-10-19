@@ -23,6 +23,7 @@ import { visibleItems } from '../model/diff';
 import { useOpClient, useSession, useView } from '../store/context';
 import { selectDiff, selectOriginalIndex } from '../store/diffSelectors';
 import { selectSaveLabel } from '../store/sessionStore';
+import { useStartFocus } from './startFocus';
 import {
     changeGroups,
     openNotes,
@@ -137,6 +138,7 @@ function ConfirmSubmit({
     const setStep = useView((s) => s.setStep);
     const focusTarget = useView((s) => s.focusTarget);
     const left = count(unreviewed);
+    const reviewFirst = useStartFocus<HTMLButtonElement>();
     const reviewThem = () => {
         onClose();
         const [first] = unreviewed;
@@ -162,7 +164,7 @@ function ConfirmSubmit({
             </DialogContent>
             <DialogActions>
                 <Button onClick={onSubmit}>Submit anyway</Button>
-                <Button variant="contained" autoFocus onClick={reviewThem}>
+                <Button ref={reviewFirst} variant="contained" onClick={reviewThem}>
                     Review them
                 </Button>
             </DialogActions>

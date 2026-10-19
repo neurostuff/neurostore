@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
 import { renderWithStores } from '../test/render';
 import { ReviewScreen } from './ReviewScreen';
@@ -18,8 +19,15 @@ const record = {
 };
 const entities = entityRows(row('grp_a', 'Group', 'groups'), row('grp_b', 'Group', 'groups'));
 
-function setup() {
-    const view = renderWithStores(<ReviewScreen />, makeBundle(record, TEXT, { entities }));
+function setup(strict = false) {
+    const ui = strict ? (
+        <StrictMode>
+            <ReviewScreen />
+        </StrictMode>
+    ) : (
+        <ReviewScreen />
+    );
+    const view = renderWithStores(ui, makeBundle(record, TEXT, { entities }));
     return {
         ...view,
         press: (key: string, init: KeyboardEventInit = {}) => fireEvent.keyDown(document.body, { key, ...init }),
@@ -39,6 +47,13 @@ describe('the command palette', () => {
         const { press } = setup();
         const dialog = openPalette(press);
         expect(dialog).toBeInTheDocument();
+        expect(screen.getByRole('textbox', { name: 'search' })).toHaveFocus();
+    });
+
+    it('focuses the search field under StrictMode too', () => {
+        const { press } = setup(true);
+        act(() => screen.getAllByRole('button')[0].focus());
+        openPalette(press);
         expect(screen.getByRole('textbox', { name: 'search' })).toHaveFocus();
     });
 

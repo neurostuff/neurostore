@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
+import { StrictMode, type ReactElement } from 'react';
 import type { Op } from '../contract/generated/review-ops';
 import { setSchemas } from '../contract/schemas';
 import type { Schema } from '../model/schema';
@@ -53,8 +54,42 @@ const review = {
     annotations: {},
 } as const;
 
-function setup() {
-    const view = renderWithStores(<ReviewScreen />, makeBundle(record, TEXT, { entities, review: { ...review } }));
+/** The review of a record with two measures and a model estimation, but no analysis taking a measure. */
+function renderWithMeasures(ui: ReactElement) {
+    const withMeasures = {
+        ...record,
+        measures: [
+            { local_id: 'mea_1', name: ev('BOLD') },
+            { local_id: 'mea_2', name: ev('CBF') },
+        ],
+        model_estimations: [{ local_id: 'me_1', name: ev('GLM') }],
+    };
+    return renderWithStores(
+        ui,
+        makeBundle(withMeasures, TEXT, {
+            entities: [
+                ...entities,
+                row('mea_1', 'Measure', 'measures'),
+                row('mea_2', 'Measure', 'measures'),
+                row('me_1', 'ModelEstimation', 'model_estimations'),
+            ],
+            review: { ...review },
+        })
+    );
+}
+
+/** The review screen, under StrictMode when `strict`. */
+const screenOf = (strict: boolean) =>
+    strict ? (
+        <StrictMode>
+            <ReviewScreen />
+        </StrictMode>
+    ) : (
+        <ReviewScreen />
+    );
+
+function setup(strict = false) {
+    const view = renderWithStores(screenOf(strict), makeBundle(record, TEXT, { entities, review: { ...review } }));
     const session = () => view.stores.session.getState();
     const viewState = () => view.stores.view.getState();
     const pending = () => session().pending;
@@ -525,6 +560,15 @@ describe('keyboard paths', () => {
         expect(pending()).toEqual([]);
     });
 
+    it('the delete dialog focuses Delete under StrictMode too', () => {
+        const { viewState } = setup(true);
+        act(() => viewState().focusEntity('grp_b'));
+        act(() => screen.getAllByRole('button')[0].focus());
+        press('Backspace', { shiftKey: true }, document.body);
+        const dialog = screen.getByRole('dialog', { name: 'Delete Controls?' });
+        expect(within(dialog).getByRole('button', { name: 'Delete' })).toHaveFocus();
+    });
+
     it('the delete dialog focuses Delete, so Enter confirms, and Esc cancels', () => {
         const { pending, viewState } = setup();
         act(() => viewState().focusEntity('grp_b'));
@@ -597,27 +641,18 @@ describe('creating, and the actions for a pointer', () => {
         expect(pending()).toEqual([]);
     });
 
+    it.each([false, true])('C asks which measure in a dialog that starts on its field (StrictMode: %s)', (strict) => {
+        const { stores } = renderWithMeasures(screenOf(strict));
+        act(() => stores.view.getState().focusEntity('a_1'));
+        act(() => screen.getAllByRole('button')[0].focus());
+        press('c', {}, document.body);
+        expect(
+            within(screen.getByRole('dialog')).getByRole('combobox', { name: 'measure of the new analysis' })
+        ).toHaveFocus();
+    });
+
     it('C asks which measure a new analysis takes when its sibling has none and there are several', () => {
-        const withMeasures = {
-            ...record,
-            measures: [
-                { local_id: 'mea_1', name: ev('BOLD') },
-                { local_id: 'mea_2', name: ev('CBF') },
-            ],
-            model_estimations: [{ local_id: 'me_1', name: ev('GLM') }],
-        };
-        const view = renderWithStores(
-            <ReviewScreen />,
-            makeBundle(withMeasures, TEXT, {
-                entities: [
-                    ...entities,
-                    row('mea_1', 'Measure', 'measures'),
-                    row('mea_2', 'Measure', 'measures'),
-                    row('me_1', 'ModelEstimation', 'model_estimations'),
-                ],
-                review: { ...review },
-            })
-        );
+        const view = renderWithMeasures(<ReviewScreen />);
         act(() => view.stores.view.getState().focusEntity('a_1'));
         press('c', {}, document.body);
         const input = within(screen.getByRole('dialog')).getByRole('combobox', { name: 'measure of the new analysis' });

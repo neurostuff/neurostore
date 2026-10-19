@@ -11,9 +11,11 @@ import {
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { useReviewStores, useSession, useShown, useView } from '../store/context';
 import { buildPaletteIndex, PALETTE_KINDS, searchPalette, type PaletteEntry } from './search';
+import { useStartFocus } from './startFocus';
 
 function PaletteBody() {
     const stores = useReviewStores();
+    const search = useStartFocus<HTMLInputElement>();
     const index = useShown((shown) => shown);
     const text = useSession((s) => s.bundle.text);
     const palette = useMemo(() => buildPaletteIndex(index, text), [index, text]);
@@ -50,7 +52,7 @@ function PaletteBody() {
     return (
         <DialogContent>
             <TextField
-                autoFocus
+                inputRef={search}
                 fullWidth
                 size="small"
                 placeholder="entities, slots, values and paper text"

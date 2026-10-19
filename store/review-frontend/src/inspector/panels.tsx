@@ -22,6 +22,7 @@ import { canAddEvidence } from '../store/sessionStore';
 import type { RecordIndex, SlotNode, SpanPair } from '../model/record';
 import type { LinkSlot } from '../model/links';
 import { isTextField } from '../review/shortcuts';
+import { useStartFocus } from '../review/startFocus';
 import { useReviewStores, useSession, useView } from '../store/context';
 import {
     acceptCard,
@@ -255,6 +256,7 @@ export function PickPanel<T extends { name: string }>({
     disabled?: boolean;
 }) {
     const closePanel = useView((s) => s.closePanel);
+    const input = useStartFocus<HTMLInputElement>(autoFocus);
     return (
         <Stack
             sx={{ py: 1 }}
@@ -278,7 +280,7 @@ export function PickPanel<T extends { name: string }>({
                 onChange={(_, option) => {
                     if (option && onPick(option)) closePanel();
                 }}
-                renderInput={(params) => <TextField {...params} autoFocus={autoFocus} label={label} />}
+                renderInput={(params) => <TextField {...params} inputRef={input} label={label} />}
             />
         </Stack>
     );
@@ -394,6 +396,8 @@ export function ConfirmDialog({
     const confirmed = (confirm: () => boolean) => () => {
         if (confirm()) closePanel();
     };
+    const main = useStartFocus<HTMLButtonElement>(!unavailable);
+    const fallback = useStartFocus<HTMLButtonElement>(!!unavailable);
     return (
         <Dialog open onClose={closePanel} aria-labelledby={titleId}>
             <DialogTitle id={titleId}>{title}</DialogTitle>
@@ -410,7 +414,7 @@ export function ConfirmDialog({
                 <Button
                     color={color}
                     variant="contained"
-                    autoFocus={!unavailable}
+                    ref={main}
                     disabled={!!unavailable}
                     aria-describedby={unavailable ? reasonId : undefined}
                     onClick={confirmed(onConfirm)}
@@ -418,7 +422,7 @@ export function ConfirmDialog({
                     {confirmLabel}
                 </Button>
                 {other && (
-                    <Button autoFocus={!!unavailable} onClick={confirmed(other.onConfirm)}>
+                    <Button ref={fallback} onClick={confirmed(other.onConfirm)}>
                         {other.label}
                     </Button>
                 )}
