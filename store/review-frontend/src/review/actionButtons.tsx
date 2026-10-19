@@ -1,5 +1,6 @@
 import { Button, Stack } from '@mui/material';
 import { memo } from 'react';
+import { entityKey } from '../model/targetKey';
 import { useIsEditable, useReviewStores, useSessionView } from '../store/context';
 import { Hint } from './Hint';
 import { quickButtons } from './quickButtons';
@@ -11,11 +12,12 @@ const SEPARATOR = '\u0000';
 
 const hasButton = (s: Shortcut): s is Labelled => s.button !== undefined;
 
-/** Why each action does not apply to the focus now, in order; '' for one that does. */
-function useReasons(actions: Labelled[]): string[] {
-    return useSessionView((session, view) =>
-        actions.map((action) => action.unavailable?.(session, view) ?? '').join(SEPARATOR)
-    ).split(SEPARATOR);
+/** Why each action does not apply now, in order, to the focus or to the entity `entity` as if focused; '' for one that does. */
+function useReasons(actions: Labelled[], entity?: string): string[] {
+    return useSessionView((session, view) => {
+        const on = entity === undefined ? view : { ...view, focus: { entity, key: entityKey(entity) } };
+        return actions.map((action) => action.unavailable?.(session, on) ?? '').join(SEPARATOR);
+    }).split(SEPARATOR);
 }
 
 /** What a shortcut's button says on hover: why it does not apply, or what it does and its key. */
@@ -81,7 +83,7 @@ const RECORD_FIELD = SHORTCUTS.filter((s): s is Labelled => s.scope === 'record'
  * shortcut does not apply to the focus is disabled, its tooltip saying why; otherwise the tooltip names its key.
  */
 export function ActionToolbar({ scope, label }: { scope: Scope; label: string }) {
-    const actions = SHORTCUTS.filter((s): s is Labelled => s.scope === scope && hasButton(s) && !s.card);
+    const actions = SHORTCUTS.filter((s): s is Labelled => s.scope === scope && hasButton(s));
     const reasons = useReasons(actions);
     return (
         <Stack
@@ -122,11 +124,25 @@ export function FieldActions({ label }: { label: string }) {
     );
 }
 
-/** The button of the record shortcut `shortcut` that sits on the focused card's head. */
-export const CardAction = memo(function CardAction({ shortcut }: { shortcut: string }) {
-    const action = SHORTCUTS.find(
-        (s): s is Labelled => s.scope === 'record' && s.card === true && hasButton(s) && s.keys.includes(shortcut)
-    )!;
-    const [reason] = useReasons([action]);
-    return <QuickButton action={action} reason={reason} />;
+type OnCard = Labelled & { card: NonNullable<Shortcut['card']> };
+
+const RECORD_CARD = SHORTCUTS.filter((s): s is OnCard => s.scope === 'record' && s.card !== undefined && hasButton(s));
+
+/** A card action as its button runs it: on the entity, focusing it first where the shortcut asks to. */
+const onEntity = (action: OnCard, entity: string, kind: string): Labelled => ({
+    ...action,
+    button: { ...action.button, label: action.card.label(kind) },
+    run: (stores) => {
+        const view = stores.view.getState();
+        if (action.card.focusesEntity && view.focus.key !== entityKey(entity)) view.focusEntity(entity);
+        action.run(stores);
+    },
+});
+
+/** The actions on the focused card's entity, on its head, each named for the entity's kind. */
+export const CardActions = memo(function CardActions({ entity, kind }: { entity: string; kind: string }) {
+    const reasons = useReasons(RECORD_CARD, entity);
+    return RECORD_CARD.map((action, i) => (
+        <QuickButton key={action.button.label} action={onEntity(action, entity, kind)} reason={reasons[i]} />
+    ));
 });

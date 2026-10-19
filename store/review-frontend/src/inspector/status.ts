@@ -1,4 +1,4 @@
-import { darken, type Palette } from '@mui/material/styles';
+import { darken, lighten, type Palette } from '@mui/material/styles';
 import type { Provenance } from '../contract/generated/review-bundle';
 import { isDoubtful, type SlotNode } from '../model/record';
 
@@ -24,42 +24,46 @@ export interface SlotStatus {
     color: (palette: Palette) => string;
 }
 
+/** `colour` moved `amount` away from the background: darker in light mode, lighter in dark. */
+const deepened = (p: Palette, colour: string, amount: number) =>
+    p.mode === 'dark' ? lighten(colour, amount) : darken(colour, amount);
+
 export const STATUSES = {
     absent: {
         label: 'not in the record',
         means: 'the record has no value here; set one if the paper reports it',
         shape: 'dashed',
-        color: (p) => darken(p.muted.main, 0.4),
+        color: (p) => deepened(p, p.muted.main, 0.4),
     },
     not_found: {
         label: 'evidence not found',
         means: 'the model gave a value but found no text for it; add the evidence, or check the value',
         shape: 'ring',
-        color: (p) => darken(p.error.main, 0.3),
+        color: (p) => deepened(p, p.error.main, 0.3),
     },
     generated: {
         label: 'value generated',
         means: 'the model worked the value out; check it against the text',
         shape: 'triangle',
-        color: (p) => darken(p.warning.main, 0.3),
+        color: (p) => deepened(p, p.warning.main, 0.3),
     },
     ambiguous: {
         label: 'not reported (ambiguous)',
         means: 'the model found the paper unclear on this',
         shape: 'diamond',
-        color: (p) => darken(p.warning.main, 0.3),
+        color: (p) => deepened(p, p.warning.main, 0.3),
     },
     not_reported: {
         label: 'not reported',
         means: 'the paper does not report this',
         shape: 'bar',
-        color: (p) => darken(p.muted.main, 0.4),
+        color: (p) => deepened(p, p.muted.main, 0.4),
     },
     present: {
         label: 'evidence present',
         means: 'the value has supporting text, highlighted in the paper',
         shape: 'circle',
-        color: (p) => darken(p.success.main, 0.3),
+        color: (p) => deepened(p, p.success.main, 0.3),
     },
     reference: {
         label: 'reference',
@@ -71,21 +75,21 @@ export const STATUSES = {
         label: 'verified',
         means: 'a reviewer accepted it',
         shape: 'check',
-        color: (p) => darken(p.success.main, 0.3),
+        color: (p) => deepened(p, p.success.main, 0.3),
     },
     edited: { label: 'edited', means: 'a reviewer changed it', shape: 'pencil', color: (p) => p.primary.main },
     rejected: {
         label: 'rejected',
         means: 'a reviewer rejected it',
         shape: 'cross',
-        color: (p) => darken(p.error.main, 0.3),
+        color: (p) => deepened(p, p.error.main, 0.3),
     },
     added: { label: 'added', means: 'a reviewer added it', shape: 'plus', color: (p) => p.primary.main },
     unchecked: {
         label: 'unchecked',
         means: 'no reviewer has judged it yet',
         shape: 'dot',
-        color: (p) => darken(p.muted.main, 0.4),
+        color: (p) => deepened(p, p.muted.main, 0.4),
     },
 } satisfies Record<string, SlotStatus>;
 

@@ -56,6 +56,7 @@ export type PanelKind =
     | 'add_analysis'
     | 'link_analysis'
     | 'merge_entity'
+    | 'accept_card'
     | 'move_evidence';
 
 /**
@@ -68,6 +69,14 @@ export interface Panel {
     slot?: string;
     table?: string;
     span?: SpanPair;
+}
+
+/** What one accept of the card `card` took: its entity or not, how many fields, and the unjudged ones without evidence left. */
+export interface AcceptedCard {
+    card: string;
+    entity: boolean;
+    fields: number;
+    withoutEvidenceLeft: number;
 }
 
 export type OutlineFilter = 'all' | 'unreviewed' | 'changed' | 'noted' | 'doubtful';
@@ -96,6 +105,9 @@ export interface ViewState {
     diffOn: boolean;
     /** The record entity an added analysis made, offered for focus. */
     offer: { entity: string } | null;
+    /** The last card accept on the focused card, until the focus moves. */
+    accepted: AcceptedCard | null;
+    showAccepted(accepted: AcceptedCard): void;
     /** Gives the record entity the add `clientOpId` makes the slot values `values`, once the server has made it. */
     setOnMade(clientOpId: string, values: Record<string, string>): void;
     /**
@@ -123,6 +135,8 @@ export interface ViewState {
     focusLink(slot: string, target: string): void;
     moveSlot(delta: 1 | -1): void;
     moveEntity(delta: 1 | -1): void;
+    /** Focuses the step's next card after the focused one, round to its start, that is not hidden and no one has judged. */
+    focusNextUnjudged(): void;
     stepEvidence(delta: 1 | -1): void;
     /** Puts the evidence cursor on `span`, once it is among the focused spans. */
     showSpan(span: SpanPair): void;
@@ -197,6 +211,7 @@ export function createViewStore(session: SessionStore) {
                 panel: null,
                 coordinates: null,
                 offer: null,
+                accepted: null,
             });
         };
 
@@ -304,10 +319,12 @@ export function createViewStore(session: SessionStore) {
             showNonCoordinate: false,
             diffOn: false,
             offer: null,
+            accepted: null,
             gridEngagement: null,
 
             engageGrid: () => set((s) => ({ gridEngagement: (s.gridEngagement ?? 0) + 1 })),
             setOnMade: (clientOpId, values) => void onMade.set(clientOpId, values),
+            showAccepted: (accepted) => set({ accepted }),
             focusAnalysis: (key, point = null) => {
                 const { coordinates } = get();
                 const analysis = currentAnalyses(documents().bundle).find((a) => a.key === key);
@@ -386,6 +403,15 @@ export function createViewStore(session: SessionStore) {
                 const at = cards.findIndex((e) => e.id === get().focus.entity);
                 const next = stepIn(cards.length, at, delta);
                 if (cards[next] && next !== at) focusOn({ entity: cards[next].id, key: entityKey(cards[next].id) });
+            },
+            focusNextUnjudged: () => {
+                const cards = stepCards({ index: shown(), step: get().step }) ?? [];
+                const at = cards.findIndex((e) => e.id === get().focus.entity);
+                const { provenance } = documents();
+                const next = cards
+                    .map((_, i) => cards[(at + 1 + i) % cards.length])
+                    .find((e) => !e.hidden && e.id !== get().focus.entity && !provenance[entityKey(e.id)]);
+                if (next) focusOn({ entity: next.id, key: entityKey(next.id) });
             },
             stepEvidence: (delta) => {
                 const focused = spans();

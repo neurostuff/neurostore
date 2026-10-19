@@ -17,12 +17,13 @@ import {
 } from '@mui/material';
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { AnyTarget } from '../contract/generated/review-ops';
-import { classWords, inWords, slotLabel } from '../model/labels';
+import { classWords, inWords, labelOf, slotLabel } from '../model/labels';
 import { canAddEvidence } from '../store/sessionStore';
 import type { RecordIndex, SlotNode, SpanPair } from '../model/record';
 import { isTextField } from '../review/shortcuts';
 import { useReviewStores, useSession, useView } from '../store/context';
 import {
+    acceptCard,
     addNote,
     cannotMake,
     createNew,
@@ -33,8 +34,10 @@ import {
     newEntity,
     reject,
     REJECT_REASONS,
+    type CardFields,
     type RejectReason,
     siblingClasses,
+    unjudgedFields,
 } from './actions';
 import { panelKeys } from './panelKeys';
 
@@ -326,38 +329,67 @@ export function DanglingList({ links }: { links: Dangling[] }) {
     );
 }
 
-/** A dialog that runs `onConfirm` on its button and closes when it returns true. */
+/** A second way to confirm, beside the main one. */
+interface OtherConfirm {
+    label: string;
+    onConfirm(): boolean;
+}
+
+/**
+ * A dialog that runs `onConfirm` on its button, or `other`'s on the other button, and closes when it returns true;
+ * while `unavailable` says why, the main button is disabled and the focus starts on the other.
+ */
 export function ConfirmDialog({
     title,
     confirmLabel,
     color,
     onConfirm,
+    unavailable,
+    other,
     children,
 }: {
     title: string;
     confirmLabel: string;
     color?: 'error';
     onConfirm(): boolean;
+    unavailable?: string;
+    other?: OtherConfirm;
     children: ReactNode;
 }) {
     const closePanel = useView((s) => s.closePanel);
     const titleId = useId();
+    const reasonId = useId();
+    const confirmed = (confirm: () => boolean) => () => {
+        if (confirm()) closePanel();
+    };
     return (
         <Dialog open onClose={closePanel} aria-labelledby={titleId}>
             <DialogTitle id={titleId}>{title}</DialogTitle>
-            <DialogContent>{children}</DialogContent>
+            <DialogContent>
+                {children}
+                {unavailable && (
+                    <Typography id={reasonId} variant="caption" color="text.secondary">
+                        {unavailable}
+                    </Typography>
+                )}
+            </DialogContent>
             <DialogActions>
                 <Button onClick={closePanel}>Cancel</Button>
                 <Button
                     color={color}
                     variant="contained"
-                    autoFocus
-                    onClick={() => {
-                        if (onConfirm()) closePanel();
-                    }}
+                    autoFocus={!unavailable}
+                    disabled={!!unavailable}
+                    aria-describedby={unavailable ? reasonId : undefined}
+                    onClick={confirmed(onConfirm)}
                 >
                     {confirmLabel}
                 </Button>
+                {other && (
+                    <Button autoFocus={!!unavailable} onClick={confirmed(other.onConfirm)}>
+                        {other.label}
+                    </Button>
+                )}
             </DialogActions>
         </Dialog>
     );
@@ -384,6 +416,32 @@ export function DeleteDialog({ entity }: { entity: string }) {
             <Typography variant="caption" color="text.secondary">
                 The server applies the delete and reports every link it leaves.
             </Typography>
+        </ConfirmDialog>
+    );
+}
+
+/** Asks which of the card's unjudged fields to accept with it, where some have no evidence. */
+export function AcceptCardDialog({ entity }: { entity: string }) {
+    const stores = useReviewStores();
+    const index = useSession((s) => s.index);
+    const provenance = useSession((s) => s.provenance);
+    const { withEvidence, withoutEvidence } = unjudgedFields({ index, provenance }, entity);
+    const accept = (fields: CardFields) => () => acceptCard(stores, entity, fields) !== undefined;
+    return (
+        <ConfirmDialog
+            title="These fields don’t have evidence"
+            confirmLabel="Accept fields with evidence"
+            onConfirm={accept('evidence')}
+            unavailable={withEvidence.length === 0 ? 'No unjudged field on this card has evidence' : undefined}
+            other={{ label: 'Accept all fields', onConfirm: accept('all') }}
+        >
+            <List dense disablePadding>
+                {withoutEvidence.map((slot) => (
+                    <ListItem key={slot.key} disableGutters>
+                        {labelOf(index, slot)}
+                    </ListItem>
+                ))}
+            </List>
         </ConfirmDialog>
     );
 }

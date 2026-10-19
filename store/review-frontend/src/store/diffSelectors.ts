@@ -1,13 +1,7 @@
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { parseOf } from '../model/coordinates';
 import { diffCoordinates } from '../model/coordinateDiff';
-import {
-    analysisItemFor,
-    diffRecords,
-    reviewDiff,
-    type FocusIntent,
-    type ReviewDiff,
-} from '../model/diff';
+import { analysisItemFor, diffRecords, reviewDiff, type FocusIntent, type ReviewDiff } from '../model/diff';
 import { buildRecordIndex, type RecordIndex, type SpanPair } from '../model/record';
 import { declaredOf } from './declared';
 import type { SessionState } from './sessionStore';

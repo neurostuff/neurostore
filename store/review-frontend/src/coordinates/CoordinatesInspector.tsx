@@ -4,7 +4,7 @@ import { NotePanel, RejectPanel } from '../inspector/panels';
 import { reviewStatus } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import { targetKey } from '../model/targetKey';
-import { ActionToolbar } from '../review/ActionToolbar';
+import { ActionToolbar } from '../review/actionButtons';
 import { useEditorName } from '../review/editor';
 import { useSession, useView } from '../store/context';
 import { focusedAnalysis } from '../model/coordinateFocus';

@@ -12,7 +12,10 @@ const headStyles = (theme: Theme) => ({
     borderColor: 'divider',
     ...statusColors(theme.palette),
     ...quickButtons(theme),
+    '& .rv-status, & .rv-quick': { whiteSpace: 'nowrap' },
 });
+
+const stickyStyles = { position: 'sticky', top: 0, zIndex: 1, bgcolor: 'fieldSurface' } as const;
 
 /** The head of a card: its overline and title, then whatever else the head holds. */
 export function CardHead({
@@ -20,6 +23,7 @@ export function CardHead({
     title,
     titleTooltip,
     heading,
+    sticky = false,
     children,
 }: {
     overline: string;
@@ -28,10 +32,12 @@ export function CardHead({
     titleTooltip?: string;
     /** Rendered in place of the title's heading. */
     heading?: ReactNode;
+    /** Whether it stays at the top of the scrolling pane, on the field surface, while the card scrolls. */
+    sticky?: boolean;
     children?: ReactNode;
 }) {
     return (
-        <Box sx={headStyles}>
+        <Box role="group" aria-label={`${title}: card head`} sx={[headStyles, sticky && stickyStyles]}>
             <Typography variant="overline" color="primary" component="div">
                 {overline}
             </Typography>

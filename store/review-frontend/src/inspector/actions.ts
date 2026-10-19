@@ -1,12 +1,13 @@
 import type { AnyTarget, Op, SetEvidenceOp, SetValueOp, VerdictOp } from '../contract/generated/review-ops';
-import { classWords, withArticle } from '../model/labels';
+import { classWords, counted, listed, withArticle } from '../model/labels';
 import { entityPath, getIn, ROOT_ENTITY, writePath, type Json } from '../model/paths';
 import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
+import { statusOf } from './status';
 import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } from '../model/targetKey';
 import { randomUUID } from '../model/uuid';
 import type { ReviewStores } from '../store/reviewStores';
 import type { SessionState } from '../store/sessionStore';
-import type { Focus, Panel, PanelKind } from '../store/viewStore';
+import type { AcceptedCard, Focus, Panel, PanelKind } from '../store/viewStore';
 import {
     extractionSchema,
     type Schema,
@@ -83,16 +84,64 @@ export function accept(stores: ReviewStores, key?: string) {
     return target ? acceptTarget(stores, target) : false;
 }
 
-/** The value slots of `entity` that have evidence and no decision yet. */
-export const untouchedWithEvidence = (s: Pick<SessionState, 'index' | 'provenance'>, entity: string) =>
-    (s.index.entity(entity)?.slots ?? []).filter(
-        (slot) => slot.kind === 'value' && slot.value?.evidence?.status === 'present' && !s.provenance[slot.key]
-    );
+/** The value fields of `entity` with a value and no decision yet: those whose evidence is present, and the rest. */
+export function unjudgedFields(s: Pick<SessionState, 'index' | 'provenance'>, entity: string) {
+    const withEvidence: SlotNode[] = [];
+    const withoutEvidence: SlotNode[] = [];
+    for (const slot of s.index.entity(entity)?.slots ?? []) {
+        if (slot.kind !== 'value' || !slot.value || s.provenance[slot.key]) continue;
+        (statusOf(slot) === 'present' ? withEvidence : withoutEvidence).push(slot);
+    }
+    return { withEvidence, withoutEvidence };
+}
 
-/** Accepts every slot on the focused card that has evidence and no decision yet; the count accepted. */
-export function acceptCard(stores: ReviewStores) {
-    const untouched = untouchedWithEvidence(stores.session.getState(), stores.view.getState().focus.entity);
-    return untouched.filter((slot) => accept(stores, slot.key)).length;
+/** Which unjudged fields a card accept takes: those with evidence, or all of them. */
+export type CardFields = 'evidence' | 'all';
+
+/**
+ * Accepts the unjudged fields of `entity` with evidence, or all of them, and the entity while it is unchecked, as
+ * one batch; what it accepted, or undefined where there was nothing to send.
+ */
+export function acceptCard(stores: ReviewStores, entity: string, fields: CardFields): AcceptedCard | undefined {
+    const session = stores.session.getState();
+    const { withEvidence, withoutEvidence } = unjudgedFields(session, entity);
+    const slots = fields === 'all' ? [...withEvidence, ...withoutEvidence] : withEvidence;
+    const unchecked = !session.provenance[entityKey(entity)];
+    const targets: AnyTarget[] = slots.map((slot) => slotTarget(slot.entity, slot.path));
+    if (unchecked) targets.push({ kind: 'entity', entity });
+    const ops = targets.map((target): Op => ({
+        client_op_id: randomUUID(),
+        type: 'verdict',
+        target,
+        verdict: 'accept',
+    }));
+    if (!session.emitBatch(ops)) return undefined;
+    const accepted = {
+        card: entity,
+        entity: unchecked,
+        fields: slots.length,
+        withoutEvidenceLeft: fields === 'all' ? 0 : withoutEvidence.length,
+    };
+    stores.view.getState().showAccepted(accepted);
+    return accepted;
+}
+
+/** What a card accept says it did: `Accepted the analysis and 6 fields · 2 fields without evidence still unchecked`. */
+export function acceptedText({ entity, fields, withoutEvidenceLeft: left }: AcceptedCard, kind: string) {
+    const taken = [...(entity ? [`the ${kind}`] : []), ...(fields > 0 ? [counted(fields, 'field')] : [])];
+    const done = `Accepted ${listed(taken)}`;
+    return left > 0 ? `${done} · ${counted(left, 'field')} without evidence still unchecked` : done;
+}
+
+/** Accepts the focused card at once, or first asks which fields to take where some unjudged ones have no evidence. */
+export function acceptOrAsk(stores: ReviewStores) {
+    const session = stores.session.getState();
+    const view = stores.view.getState();
+    const { entity } = view.focus;
+    if (!session.index.entity(entity)) return;
+    if (unjudgedFields(session, entity).withoutEvidence.length > 0)
+        view.openPanel({ kind: 'accept_card', target: { kind: 'entity', entity } });
+    else acceptCard(stores, entity, 'evidence');
 }
 
 export function reject(stores: ReviewStores, target: AnyTarget, reason: RejectReason, note: string) {

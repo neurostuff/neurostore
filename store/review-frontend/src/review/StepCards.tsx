@@ -7,6 +7,7 @@ import { reviewStatus, statusColors } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import type { EntityNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
+import { counted } from '../model/labels';
 import { useSession, useShown, useView } from '../store/context';
 import type { SessionState } from '../store/sessionStore';
 import { useEditorName } from './editor';
@@ -19,9 +20,26 @@ export type CardDetail = ComponentType<{ entity: EntityNode }>;
 
 const judged = (s: Pick<SessionState, 'provenance'>, id: string) => s.provenance[entityKey(id)]?.state;
 
-const spanCount = (n: number) => `${n} evidence ${n === 1 ? 'span' : 'spans'}`;
-
 const headStyles = (theme: Theme) => statusColors(theme.palette);
+
+const cardStyles = {
+    display: 'block',
+    mx: 1.5,
+    mb: 1,
+    width: 'auto',
+    border: 1,
+    borderColor: 'divider',
+    borderRadius: 1,
+    '&:has([aria-current="true"])': { borderColor: 'primary.main' },
+} as const;
+
+const fieldPanelStyles = {
+    ml: 1.5,
+    mb: 1,
+    borderLeft: 3,
+    borderColor: 'primary.main',
+    bgcolor: 'fieldSurface',
+} as const;
 
 const CardHead = memo(function CardHead({ entity, focused }: { entity: EntityNode; focused: boolean }) {
     const focusEntity = useView((s) => s.focusEntity);
@@ -38,9 +56,10 @@ const CardHead = memo(function CardHead({ entity, focused }: { entity: EntityNod
             >
                 <ListItemText
                     primary={entity.name}
+                    primaryTypographyProps={{ variant: 'subtitle1', component: 'div', fontWeight: 600 }}
                     secondary={
                         <>
-                            {`${entity.entityClass} · ${spanCount(entity.spans.length)} · `}
+                            {`${entity.entityClass} · ${counted(entity.spans.length, 'evidence span')} · `}
                             <StatusLabel id={reviewStatus(state)} by={editor} />
                             {state && ' · done'}
                         </>
@@ -96,11 +115,11 @@ export function StepCards({
             ) : (
                 <List dense disablePadding aria-label={label}>
                     {cards.map((entity) => (
-                        <ListItem key={entity.id} disablePadding sx={{ display: 'block' }}>
+                        <ListItem key={entity.id} disablePadding sx={cardStyles}>
                             <CardHead entity={entity} focused={entity.id === focused} />
                             {entity.id === focused && (
-                                <Box sx={{ borderLeft: 3, borderColor: 'primary.main' }}>
-                                    <FocusedCard entity={entity} focusedSlot={focusedSlot} />
+                                <Box role="region" aria-label={`Fields of ${entity.name}`} sx={fieldPanelStyles}>
+                                    <FocusedCard entity={entity} focusedSlot={focusedSlot} stickyHead />
                                     {Detail && <Detail entity={entity} />}
                                 </Box>
                             )}

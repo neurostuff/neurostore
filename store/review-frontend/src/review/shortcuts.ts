@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { acceptAnalysis, addSelectionToAnalysis, editPoint, removePoint, splitAnalysis } from '../coordinates/actions';
 import { COORDINATE_UNAVAILABLE as NOT, type CoordinateSession } from '../coordinates/availability';
 import { RECORD_UNAVAILABLE as RECORD, type RecordSession } from '../inspector/availability';
-import { accept, acceptCard, createOn } from '../inspector/actions';
+import { accept, acceptOrAsk, createOn } from '../inspector/actions';
 import type { Reason } from './reason';
 import type { ReviewStores } from '../store/reviewStores';
 import type { ViewState } from '../store/viewStore';
@@ -17,12 +17,15 @@ export interface Shortcut {
     keys: string[];
     label: string;
     scope?: Scope;
-    /** The toolbar button that runs the shortcut, if it has one. */
+    /** The button that runs the shortcut, if it has one. */
     button?: { label: string; color?: 'error' };
     /** Whether its button is also beside the focused field, where it applies (D97). */
     field?: boolean;
-    /** Whether its button sits on the focused card's head instead of the toolbar. */
-    card?: boolean;
+    /**
+     * Its button on the focused card's head, acting on the card's entity: the label, given the entity's kind, and
+     * whether the button focuses the entity first, for a shortcut that acts on the focused item.
+     */
+    card?: { label: (kind: string) => string; focusesEntity?: boolean };
     /** Why the shortcut does not apply to the focus now; undefined when it does. */
     unavailable?: Reason<RecordSession & CoordinateSession, ViewState>;
     run(stores: ReviewStores): void;
@@ -92,17 +95,18 @@ export const SHORTCUTS: Shortcut[] = [
     }),
     record({
         keys: ['Shift+A'],
-        label: 'accept every untouched slot on the card that has evidence',
-        button: { label: 'Accept all with evidence' },
-        card: true,
+        label: 'accept the card: its entity and its unjudged fields with evidence; asks first where some fields have none, offering to accept them too',
+        button: { label: 'Accept card' },
+        card: { label: (kind) => `Accept ${kind}` },
         unavailable: RECORD.acceptCard,
-        run: (s) => void acceptCard(s),
+        run: acceptOrAsk,
     }),
     record({
         keys: ['r'],
         label: 'reject, with a reason (1–5) and an optional note',
         button: { label: 'Reject', color: 'error' },
         field: true,
+        card: { label: (kind) => `Reject ${kind}`, focusesEntity: true },
         unavailable: RECORD.judge,
         run: (s) => openPanelOn(s, 'reject'),
     }),
@@ -118,6 +122,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['n'],
         label: 'mark the focused slot not reported, with its reason',
         button: { label: 'Not reported' },
+        field: true,
         unavailable: RECORD.notReported,
         run: (s) => openPanelOn(s, 'not_reported'),
     }),
@@ -133,6 +138,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['c'],
         label: 'create an entity in the focused entity’s list; asks which class where the list has several',
         button: { label: 'New entity' },
+        card: { label: (kind) => `New ${kind}` },
         unavailable: RECORD.create,
         run: (s) => createOn(s),
     }),
@@ -140,6 +146,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['Shift+Backspace'],
         label: 'delete the focused entity, after confirming',
         button: { label: 'Delete', color: 'error' },
+        card: { label: (kind) => `Delete ${kind}` },
         unavailable: RECORD.delete,
         run: (s) => openPanelOn(s, 'delete'),
     }),
@@ -148,6 +155,7 @@ export const SHORTCUTS: Shortcut[] = [
         label: 'add a note to the focused item',
         button: { label: 'Note' },
         field: true,
+        card: { label: () => 'Note', focusesEntity: true },
         unavailable: RECORD.judge,
         run: (s) => openPanelOn(s, 'note'),
     }),

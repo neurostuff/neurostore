@@ -24,11 +24,10 @@ async function open() {
 }
 
 describe('creating an entity through a server that validates it', () => {
-    it('adds the new analysis New entity makes, with no banner', async () => {
+    it('adds the new analysis New analysis makes, with no banner', async () => {
         const { stores, saved, analyses, client } = await open();
         act(() => stores.view.getState().focusEntity('an_1'));
-        const toolbar = screen.getByRole('toolbar', { name: 'review actions' });
-        fireEvent.click(within(toolbar).getByRole('button', { name: 'New entity' }));
+        fireEvent.click(screen.getByRole('button', { name: 'New analysis' }));
         await saved();
         expect(analyses()).toHaveLength(2);
         expect(screen.queryByText(/Couldn’t/)).not.toBeInTheDocument();
@@ -67,9 +66,7 @@ describe('creating an entity through a server that validates it', () => {
         expect(measureVerdict).toMatchObject({ state: 'verified' });
         const before = selectStepProgress(session(), 'relationships');
         act(() => stores.view.getState().focusEntity('an_1'));
-        fireEvent.click(
-            within(screen.getByRole('toolbar', { name: 'review actions' })).getByRole('button', { name: 'New entity' })
-        );
+        fireEvent.click(screen.getByRole('button', { name: 'New analysis' }));
         await saved();
         const created = analyses().find((e) => e.local_id !== 'an_1')!.local_id;
         expect(session().provenance[relationshipKey(created, 'measure', 'msr_1')]).toBeUndefined();

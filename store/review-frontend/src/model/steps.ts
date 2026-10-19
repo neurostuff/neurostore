@@ -7,12 +7,12 @@ export const STEPS = [
     {
         id: 'analyses',
         label: 'Analyses',
-        hint: 'Check each analysis the record reports: its name, contrast, groups and statistics.',
+        hint: 'Check each analysis the record reports, then accept it from its head (Shift+A), with its fields that have evidence.',
     },
     {
         id: 'entities',
         label: 'Entities',
-        hint: 'Check the groups, tasks, scans and other entities the analyses use.',
+        hint: 'Check the groups, tasks, scans and other entities the analyses use; Shift+A accepts a card.',
     },
     {
         id: 'leftovers',

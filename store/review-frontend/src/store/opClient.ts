@@ -68,7 +68,7 @@ export function isRetryable(error: unknown): boolean {
 }
 
 function saveMessage(error: unknown): string {
-    const [first] = error instanceof ApiError ? error.body.errors ?? [] : [];
+    const [first] = error instanceof ApiError ? (error.body.errors ?? []) : [];
     if (first) return first.field ? `${first.field}: ${first.message}` : first.message;
     return error instanceof Error ? error.message : 'the save failed';
 }

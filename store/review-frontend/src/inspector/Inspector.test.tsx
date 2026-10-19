@@ -148,14 +148,17 @@ describe('Inspector', () => {
         expect(rowOf('slot:grp_a:inclusion_criteria')).not.toHaveTextContent('[');
     });
 
-    it('accepts every untouched slot with evidence from the card’s own button, as Shift+A does', () => {
+    it('accepts the card from its own button, as Shift+A does: the entity and its unjudged fields with evidence', () => {
         const { stores } = setup();
         const card = screen.getByRole('region', { name: 'Patients > Controls' });
-        fireEvent.click(within(card).getByRole('button', { name: 'Accept all with evidence' }));
+        fireEvent.click(within(card).getByRole('button', { name: 'Accept analysis' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Accept fields with evidence' }));
         const accepted = stores.session
             .getState()
-            .pending.map((op) => (op.type === 'verdict' && op.target.kind === 'slot' ? op.target.path : ''));
-        expect(accepted.sort()).toEqual(['definition', 'groups[#0].n', 'name']);
+            .pending.map((op) =>
+                op.type === 'verdict' ? (op.target.kind === 'slot' ? op.target.path : op.target.kind) : ''
+            );
+        expect(accepted.sort()).toEqual(['entity', 'groups[#0].n', 'name']);
     });
 
     it('shows a group the n each analysis using it analysed, read-only, with a link to the analysis (C2)', () => {

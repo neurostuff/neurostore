@@ -184,15 +184,18 @@ describe('verdicts and notes', () => {
         expectValid(last());
     });
 
-    it('Shift+A accepts every untouched slot on the card that has evidence, in one batch', () => {
+    it('Shift+A accepts the card, its untouched slots with evidence and the entity, in one batch', () => {
         const { pending, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:name'));
         press('a', {}, document.body);
         press('A', { shiftKey: true }, document.body);
+        fireEvent.click(screen.getByRole('button', { name: 'Accept fields with evidence' }));
         const accepted = pending().slice(1);
         expect(
-            accepted.map((op) => op.type === 'verdict' && op.target.kind === 'slot' && op.target.path).sort()
-        ).toEqual(['acquired_count', 'species']);
+            accepted
+                .map((op) => op.type === 'verdict' && (op.target.kind === 'slot' ? op.target.path : op.target.kind))
+                .sort()
+        ).toEqual(['acquired_count', 'entity', 'species']);
         expect(accepted.every((op) => op.type === 'verdict' && op.verdict === 'accept')).toBe(true);
         expectValid(...accepted);
         expect(statusIn('slot:grp_a:is_healthy')).toHaveTextContent('evidence not found');
@@ -582,14 +585,13 @@ describe('creating, and the actions for a pointer', () => {
         });
     });
 
-    it('does not offer a new analysis where there is no measure for it, saying why', async () => {
+    it('does not offer a new analysis where there is no measure for it, saying why', () => {
         const { pending, viewState } = setup();
         act(() => viewState().focusEntity('a_1'));
-        const toolbar = screen.getByRole('toolbar', { name: 'review actions' });
-        const button = within(toolbar).getByRole('button', { name: 'New entity' });
+        const card = screen.getByRole('region', { name: 'Patients > Controls' });
+        const button = within(card).getByRole('button', { name: 'New analysis' });
         expect(button).toBeDisabled();
-        fireEvent.mouseOver(button.parentElement!);
-        expect((await screen.findByRole('tooltip')).textContent).toBe('Add a measure first: an analysis needs one');
+        expect(button).toHaveAttribute('title', 'Add a measure first: an analysis needs one');
         press('c', {}, document.body);
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         expect(pending()).toEqual([]);
@@ -667,10 +669,10 @@ describe('creating, and the actions for a pointer', () => {
         });
     });
 
-    it('the toolbar accepts the focused item, and opens reject on it', () => {
+    it('the focused field’s actions accept it, and open reject on it', () => {
         const { last, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:species'));
-        const toolbar = screen.getByRole('toolbar', { name: 'review actions' });
+        const toolbar = screen.getByRole('toolbar', { name: 'actions on Species' });
         fireEvent.click(within(toolbar).getByRole('button', { name: 'Accept' }));
         expect(last()).toMatchObject({
             type: 'verdict',

@@ -15,6 +15,7 @@ import {
 import { isInGrid } from '../review/shortcuts';
 import { useReviewStores, useSession, useView } from '../store/context';
 import type { ParsedPaperLayout } from '../model/layout';
+import { counted } from '../model/labels';
 import {
     addAnalysis,
     editAnalysis,
@@ -179,7 +180,7 @@ export function MovePanel() {
     return (
         <PickPanel
             options={options}
-            label={`move ${count} point${count === 1 ? '' : 's'} to`}
+            label={`move ${counted(count, 'point')} to`}
             noOptionsText="no other analysis"
             optionKey={(option) => option.key}
             onPick={(option) => movePoints(stores, option.key)}

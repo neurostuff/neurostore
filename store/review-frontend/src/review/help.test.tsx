@@ -66,14 +66,11 @@ describe('help you can find', () => {
     describe('the action controls', () => {
         const buttonShortcuts = SHORTCUTS.filter((shortcut) => shortcut.button);
         const actionControls = () =>
-            screen
-                .getAllByRole('toolbar')
-                .flatMap((toolbar) => within(toolbar).queryAllByRole('button'))
-                .filter((control) => control.hasAttribute('aria-keyshortcuts'));
+            screen.getAllByRole('button').filter((control) => control.hasAttribute('aria-keyshortcuts'));
 
         const namesItsKey = (control: Element, scope: Scope) => {
-            const label = control.textContent;
-            const shortcut = buttonShortcuts.find((s) => s.scope === scope && s.button!.label === label)!;
+            const key = control.getAttribute('aria-keyshortcuts');
+            const shortcut = buttonShortcuts.find((s) => s.scope === scope && keyLabel(s.keys[0]) === key)!;
             if (!control.matches(':disabled')) return hintOf(control).endsWith(`(${keyLabel(shortcut.keys[0])})`);
             return hintOf(control) !== '' && !hintOf(control).endsWith(')');
         };
@@ -87,14 +84,27 @@ describe('help you can find', () => {
             ).toEqual([]);
         });
 
-        it('each name their key in their hint, beside the field and in the toolbar, on a record step', () => {
+        it('each name their key in their hint, beside the field and on the card head, on a record step', () => {
             const { stores } = setup();
             act(() => stores.view.getState().setStep('analyses'));
             const [first] = stores.session.getState().index.visible.filter((e) => e.entityClass === 'Analysis');
             act(() => stores.view.getState().focusSlot(first.slots[0].key));
             const controls = actionControls();
-            expect(screen.getAllByRole('toolbar', { name: /^actions on / })).toHaveLength(1);
-            expect(controls.length).toBeGreaterThan(10);
+            const [field] = screen.getAllByRole('toolbar', { name: /^actions on / });
+            const head = screen.getByRole('group', { name: `${first.name}: card head` });
+            const keyed = (holder: HTMLElement) =>
+                within(holder)
+                    .getAllByRole('button')
+                    .filter((control) => control.hasAttribute('aria-keyshortcuts'));
+            expect(keyed(head)).toHaveLength(5);
+            expect(keyed(field).map((c) => c.textContent)).toEqual([
+                'Accept',
+                'Reject',
+                'Edit',
+                'Not reported',
+                'Note',
+            ]);
+            expect(controls).toHaveLength(10);
             expect(controls.filter((control) => !namesItsKey(control, 'record')).map((c) => c.textContent)).toEqual([]);
         });
     });

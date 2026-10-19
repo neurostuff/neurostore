@@ -2,7 +2,8 @@ import type { Reason as ReasonOf } from '../review/reason';
 import type { SessionState } from '../store/sessionStore';
 import { selectCursorSpan } from '../store/viewSelectors';
 import type { ViewState } from '../store/viewStore';
-import { cannotCreate, panelFor, targetOf, untouchedWithEvidence } from './actions';
+import { entityKey } from '../model/targetKey';
+import { cannotCreate, panelFor, targetOf, unjudgedFields } from './actions';
 
 export type RecordSession = Pick<SessionState, 'bundle' | 'record' | 'index' | 'provenance'>;
 export type RecordView = Pick<ViewState, 'focus' | 'coordinates' | 'evidenceCursor'>;
@@ -18,7 +19,7 @@ const onValue: Reason = (session, view) => {
         : 'Focus a field first';
 };
 
-/** Why each record action does not apply to the focus, by action; the toolbar and the field's actions read it. */
+/** Why each record action does not apply to the focus, by action; the card head and the field's actions read it. */
 export const RECORD_UNAVAILABLE = {
     judge: (session, view) => (targetOf(session.index, view.focus.entity, view.focus.key) ? undefined : NOTHING),
     edit: onValue,
@@ -32,10 +33,14 @@ export const RECORD_UNAVAILABLE = {
         selectCursorSpan(session, view)
             ? undefined
             : 'Focus a field with evidence first; ] and [ step through its spans',
-    acceptCard: (session, view) =>
-        untouchedWithEvidence(session, view.focus.entity).length
-            ? undefined
-            : 'Nothing on this card is unjudged and has evidence',
+    acceptCard: (session, view) => {
+        const { entity } = view.focus;
+        if (!session.index.entity(entity)) return 'Focus an entity first';
+        const { withEvidence, withoutEvidence } = unjudgedFields(session, entity);
+        if (!session.provenance[entityKey(entity)] || withEvidence.length + withoutEvidence.length > 0)
+            return undefined;
+        return 'This card and all its fields are judged';
+    },
     delete: (session, view) =>
         panelFor(session, view.focus, 'delete') ? undefined : 'The study itself cannot be deleted',
 } satisfies Record<string, Reason>;

@@ -4,12 +4,21 @@ import { DiffCard } from './DiffCard';
 import { EntityCard, InspectorFrame } from './Inspector';
 
 /** The focused entity's card; in two columns, original and review, while the diff is shown. */
-export function FocusedCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
+export function FocusedCard({
+    entity,
+    focusedSlot,
+    stickyHead,
+}: {
+    entity: EntityNode;
+    focusedSlot?: string;
+    /** Whether the card's head stays at the top of the scrolling pane while its fields scroll. */
+    stickyHead?: boolean;
+}) {
     const diffOn = useView((s) => s.diffOn);
     return diffOn ? (
         <DiffCard entity={entity} focusedSlot={focusedSlot} />
     ) : (
-        <EntityCard entity={entity} focusedSlot={focusedSlot} />
+        <EntityCard entity={entity} focusedSlot={focusedSlot} stickyHead={stickyHead} />
     );
 }
 

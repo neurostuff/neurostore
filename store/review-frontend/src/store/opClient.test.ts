@@ -138,11 +138,15 @@ describe('the save loop', () => {
         );
         server = fakeServer([card]);
         const { store, client } = await open();
-        expect(acceptCard(store)).toBe(2);
+        expect(acceptCard(store, 'study', 'evidence')).toMatchObject({
+            entity: true,
+            fields: 2,
+            withoutEvidenceLeft: 0,
+        });
         await vi.advanceTimersByTimeAsync(1000);
         await client.settled();
         expect(sentIds(server)).toHaveLength(1);
-        expect(sentIds(server)[0]).toHaveLength(2);
+        expect(sentIds(server)[0]).toHaveLength(3);
     });
 
     it('sends at most the contract’s maximum of ops a batch', async () => {

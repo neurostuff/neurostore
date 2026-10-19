@@ -134,7 +134,9 @@ describe('a tab another one holds the review in', () => {
         act(() => store.view.getState().focusSlot(slotKey('grp_a', 'age_mean')));
         act(() => openPanelOn(store, 'edit'));
         expect(screen.getByText(OTHER_TAB).closest('[role="note"]')).not.toBeNull();
-        const actions = within(screen.getByRole('toolbar', { name: 'review actions' })).getAllByRole('button');
+        const actions = within(screen.getByRole('complementary', { name: 'review' }))
+            .getAllByRole('button')
+            .filter((button) => button.hasAttribute('aria-keyshortcuts'));
         expect(actions.length).toBeGreaterThan(0);
         actions.forEach((button) => expect(button).toBeDisabled());
         expect(store.view.getState().panel).toBeNull();

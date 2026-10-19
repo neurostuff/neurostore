@@ -3,15 +3,23 @@ import type { Theme } from '@mui/material/styles';
 import { memo, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import type { EntityNode, SlotNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
-import { ActionToolbar, CardAction, FieldActions } from '../review/ActionToolbar';
+import { CardActions, FieldActions } from '../review/actionButtons';
 import { openPanelOn } from './openPanel';
 import { useEditorName } from '../review/editor';
 import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
 import type { Panel } from '../store/viewStore';
 import { saveSlotValue } from '../coordinates/actions';
 import { CoordinatesOf } from '../coordinates/RecordLinks';
-import { pendingStructure, slotSchema, unlink } from './actions';
-import { CreateDialog, DeleteDialog, LinkPanel, MoveEvidencePanel, NotePanel, RejectPanel } from './panels';
+import { acceptedText, pendingStructure, slotSchema, unlink } from './actions';
+import {
+    AcceptCardDialog,
+    CreateDialog,
+    DeleteDialog,
+    LinkPanel,
+    MoveEvidencePanel,
+    NotePanel,
+    RejectPanel,
+} from './panels';
 import { RemoveIcon } from './RemoveIcon';
 import { extractionSchema } from '../model/schema';
 import { SlotEditor } from './SlotEditor';
@@ -21,7 +29,8 @@ import { AnalysedN } from './AnalysedN';
 import { selectNotes } from '../review/outline';
 import { NoteMark } from './NoteMark';
 import { reviewStatus, statusColors, statusOf } from './status';
-import { labelOf } from '../model/labels';
+import { classWords, labelOf } from '../model/labels';
+import { selectStepProgress } from '../review/stepCount';
 import { StatusLabel, StatusLegend } from './StatusLabel';
 
 function ReferenceChips({ slot }: { slot: SlotNode }) {
@@ -215,7 +224,46 @@ const slotStyles = (theme: Theme) => ({
     ...statusColors(theme.palette),
 });
 
-export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focusedSlot?: string }) {
+/** The way on from an accepted card while its step is not done: the step's next card no one has judged. */
+function NextCard() {
+    const step = useView((s) => s.step);
+    const focusNextUnjudged = useView((s) => s.focusNextUnjudged);
+    const complete = useSession((s) => selectStepProgress(s, step).complete);
+    if (complete) return null;
+    return (
+        <button
+            type="button"
+            className="rv-quick"
+            title="Open the step’s next card no one has judged (Shift+J and Shift+K move between cards)"
+            onClick={focusNextUnjudged}
+        >
+            {step === 'analyses' ? 'Next analysis' : 'Next card'}
+        </button>
+    );
+}
+
+/** What the last accept of the card took, announced as it changes, and the way on. */
+function AcceptedStatus({ entity, kind }: { entity: string; kind: string }) {
+    const accepted = useView((s) => (s.accepted?.card === entity ? s.accepted : null));
+    return (
+        <Stack direction="row" spacing={1} alignItems="center">
+            <Typography role="status" variant="body2" color="text.secondary" component="div">
+                {accepted && acceptedText(accepted, kind)}
+            </Typography>
+            {accepted && <NextCard />}
+        </Stack>
+    );
+}
+
+export function EntityCard({
+    entity,
+    focusedSlot,
+    stickyHead,
+}: {
+    entity: EntityNode;
+    focusedSlot?: string;
+    stickyHead?: boolean;
+}) {
     const panel = useView((s) => s.panel);
     const reviewed = useSession((s) => s.provenance[entityKey(entity.id)]?.state);
     const entityEditor = useEditorName(entityKey(entity.id));
@@ -226,21 +274,23 @@ export function EntityCard({ entity, focusedSlot }: { entity: EntityNode; focuse
         entity.schemaClass === entity.entityClass
             ? entity.entityClass
             : `${entity.entityClass} · ${entity.schemaClass}`;
+    const kind = classWords(entity.entityClass);
     const entityPanel =
         panel && !panel.slot && panel.target.kind === 'entity' && panel.target.entity === entity.id ? panel : null;
     return (
         <Box component="section" aria-label={entity.name}>
-            <CardHead overline={classLabel} title={entity.name} titleTooltip={entity.localId}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                    {reviewed && <StatusLabel id={reviewStatus(reviewed)} by={entityEditor} />}
+            <CardHead overline={classLabel} title={entity.name} titleTooltip={entity.localId} sticky={stickyHead}>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
+                    <StatusLabel id={reviewStatus(reviewed)} by={entityEditor} />
                     {notes && <NoteMark notes={notes} />}
-                    <CardAction shortcut="Shift+A" />
+                    <CardActions entity={entity.id} kind={kind} />
                     {deleting && (
                         <Typography variant="caption" color="error">
                             deleting…
                         </Typography>
                     )}
                 </Stack>
+                <AcceptedStatus entity={entity.id} kind={kind} />
                 <AnalysedN entity={entity} />
                 <CoordinatesOf entity={entity} />
                 {entityPanel?.kind === 'reject' && <RejectPanel target={entityPanel.target} label={entity.name} />}
@@ -272,15 +322,17 @@ function PendingChanges() {
     );
 }
 
-/** The inspector's toolbar, pending changes and dialogs around `children`. */
+/** The inspector's legend, pending changes and dialogs around `children`. */
 export function InspectorFrame({ children }: { children?: ReactNode }) {
     const deleting = useView((s) =>
         s.panel?.kind === 'delete' && s.panel.target.kind === 'entity' ? s.panel.target.entity : null
     );
     const creating = useView((s) => s.panel?.kind === 'create');
+    const accepting = useView((s) =>
+        s.panel?.kind === 'accept_card' && s.panel.target.kind === 'entity' ? s.panel.target.entity : null
+    );
     return (
         <>
-            <ActionToolbar scope="record" label="review actions" />
             <Box sx={legendStyles}>
                 <StatusLegend />
             </Box>
@@ -288,6 +340,7 @@ export function InspectorFrame({ children }: { children?: ReactNode }) {
             {children}
             {deleting && <DeleteDialog entity={deleting} />}
             {creating && <CreateDialog />}
+            {accepting && <AcceptCardDialog entity={accepting} />}
         </>
     );
 }

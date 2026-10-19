@@ -247,6 +247,7 @@ function entries(): Entry[] {
         inspected('golden-ui-shift-a', (stores) => {
             act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'name')));
             press('A', { shiftKey: true }, document.body);
+            fireEvent.click(screen.getByRole('button', { name: 'Accept fields with evidence' }));
         }),
         inspected('golden-ui-semicolon-slot', (stores) => {
             act(() => stores.view.getState().focusSlot(slotKey('grp_a', 'name')));

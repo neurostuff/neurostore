@@ -4,7 +4,8 @@ import { serve } from './server';
 
 /**
  * A first-time reviewer, by mouse alone: opens the paper, finds help, edits a field from its Edit button, accepts
- * beside the field, finishes a step and follows "Next", and submits through the confirmation.
+ * beside the field, accepts the card from its head, finishes a step and follows "Next", and submits through the
+ * confirmation.
  */
 test('a reviewer new to the app reviews a paper by mouse, from help to submit', async ({ page }) => {
     const { batches } = await serve(page);
@@ -30,8 +31,7 @@ test('a reviewer new to the app reviews a paper by mouse, from help to submit', 
         .getByRole('button', { name: 'Accept' })
         .click();
 
-    await page.locator('[data-card="ana_1"]').click();
-    await page.getByRole('toolbar', { name: 'review actions' }).getByRole('button', { name: 'Accept' }).click();
+    await page.getByRole('button', { name: 'Accept analysis' }).click();
     const next = page.getByRole('button', { name: 'Next: Entities →' });
     await expect(next).toBeVisible();
     await expect(

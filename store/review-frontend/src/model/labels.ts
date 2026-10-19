@@ -19,6 +19,9 @@ export const classWords = (name: string) =>
         .map((word) => (/^[A-Z]+$/.test(word) ? word : word.toLowerCase()))
         .join(' ');
 
+/** `n` and the noun, plural unless `n` is 1: `1 field`, `3 fields`. */
+export const counted = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+
 /** Words with `a` or `an` before them, by their first letter. */
 export const withArticle = (words: string) => `${/^[aeiou]/i.test(words) ? 'an' : 'a'} ${words}`;
 

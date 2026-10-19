@@ -26,47 +26,33 @@ function setup(started = false) {
     return { ...view, viewState: () => view.stores.view.getState() };
 }
 
-const toolbar = () => screen.getByRole('toolbar', { name: 'review actions' });
-const toolbarButton = (name: string) => within(toolbar()).getByRole('button', { name });
 const rowOf = (key: string) => document.querySelector<HTMLElement>(`[data-slot-key="${key}"]`)!;
 const fieldActions = () => screen.queryAllByRole('toolbar', { name: /^actions on / });
 
-async function tooltipOf(element: HTMLElement) {
-    fireEvent.mouseOver(element);
-    return (await screen.findByRole('tooltip')).textContent;
-}
+describe('the record actions, with no toolbar', () => {
+    const head = (name: string) => screen.getByRole('group', { name: `${name}: card head` });
+    const labels = (holder: HTMLElement) =>
+        within(holder)
+            .getAllByRole('button')
+            .filter((b) => b.hasAttribute('aria-keyshortcuts'))
+            .map((b) => b.textContent);
 
-describe('the record toolbar', () => {
-    it('has a button for each action on the focused item, the hidden keys too', () => {
-        setup();
-        expect(
-            within(toolbar())
-                .getAllByRole('button')
-                .map((b) => b.textContent)
-        ).toEqual(['Accept', 'Reject', 'Edit', 'Not reported', 'Link', 'New entity', 'Delete', 'Note', 'Move to…']);
-    });
-
-    it('disables an action that does not apply to the focus, saying why', async () => {
+    it('keeps each action the toolbar had, beside the focused field or on the card head', () => {
         const { viewState } = setup();
-        act(() => viewState().focusSlot('slot:grp_a:name'));
-        expect(toolbarButton('Link')).toBeDisabled();
-        expect(await tooltipOf(toolbarButton('Link').parentElement!)).toBe(
-            'Focus a reference field first: one that names other entities'
-        );
+        expect(screen.queryByRole('toolbar', { name: 'review actions' })).not.toBeInTheDocument();
+        act(() => viewState().focusSlot('slot:grp_a:acquired_count'));
+        expect(labels(fieldActions()[0])).toEqual(['Accept', 'Reject', 'Edit', 'Not reported', 'Note', 'Move to…']);
+        expect(labels(head('Patients'))).toEqual(['Accept group', 'Reject group', 'New group', 'Delete group', 'Note']);
+        act(() => viewState().focusSlot('slot:a_1:measure'));
+        expect(labels(fieldActions()[0])).toEqual(['Accept', 'Reject', 'Link', 'Note']);
     });
 
-    it('says why the study itself cannot be deleted', async () => {
+    it('says why the study itself cannot be deleted, on its head', () => {
         const { viewState } = setup();
         act(() => viewState().focusEntity('study'));
-        expect(toolbarButton('Delete')).toBeDisabled();
-        expect(await tooltipOf(toolbarButton('Delete').parentElement!)).toBe('The study itself cannot be deleted');
-    });
-
-    it('opens the editor Enter opens from its Edit button', () => {
-        const { viewState } = setup();
-        act(() => viewState().focusSlot('slot:grp_a:acquired_count'));
-        fireEvent.click(toolbarButton('Edit'));
-        expect(screen.getByRole('group', { name: 'edit Acquired count' })).toBeInTheDocument();
+        const button = within(head('Study')).getByRole('button', { name: 'Delete study' });
+        expect(button).toBeDisabled();
+        expect(button).toHaveAttribute('title', 'The study itself cannot be deleted');
     });
 });
 
@@ -83,7 +69,7 @@ describe('actions beside the focused field (D97)', () => {
             within(actions)
                 .getAllByRole('button')
                 .map((b) => b.textContent)
-        ).toEqual(['Accept', 'Reject', 'Edit', 'Note', 'Move to…']);
+        ).toEqual(['Accept', 'Reject', 'Edit', 'Not reported', 'Note', 'Move to…']);
     });
 
     it('do not follow the pointer to another field', () => {
