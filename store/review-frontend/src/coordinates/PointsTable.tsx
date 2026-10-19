@@ -38,8 +38,24 @@ export default function PointsTable({
     );
     const shown = saving && sent?.key === analysis.key ? sent.rows : rows;
 
+    const settled = useRef(false);
     useEffect(() => {
-        if (engagement) grid.current?.engage(engagement);
+        queueMicrotask(() => (settled.current = true));
+        return () => {
+            settled.current = false;
+        };
+    }, []);
+    // The first engagement waits for the mount to settle, so that a grid mounted twice, as under StrictMode, is engaged once.
+    useEffect(() => {
+        if (!engagement) return;
+        if (settled.current) return void grid.current?.engage(engagement);
+        let dropped = false;
+        queueMicrotask(() => {
+            if (!dropped) grid.current?.engage(engagement);
+        });
+        return () => {
+            dropped = true;
+        };
     }, [engagement]);
     const active = engagement !== null;
     useLayoutEffect(() => {

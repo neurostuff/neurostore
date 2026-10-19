@@ -26,6 +26,12 @@ import {
   type CoordinateColumn,
 } from "./columns";
 import { CoordinateTableToolbar } from "./CoordinateTableToolbar";
+import {
+  NO_MODIFIERS,
+  takeHeldKeys,
+  typesCharacter,
+  type HeldKey,
+} from "./heldKeys";
 import type { GridEngagement } from "./StaticTable";
 import { InsertRowsDialog } from "./InsertRowsDialog";
 import { sanitizePaste } from "./paste";
@@ -72,6 +78,16 @@ export interface CoordinateTableProps {
 }
 
 const emptyRow = (): Row => ({});
+/** The rows and columns Enter, Tab and the arrows move the selection by; Shift turns Enter and Tab back. */
+const MOVES: Record<string, [number, number]> = {
+  Enter: [1, 0],
+  Tab: [0, 1],
+  ArrowDown: [1, 0],
+  ArrowUp: [-1, 0],
+  ArrowRight: [0, 1],
+  ArrowLeft: [0, -1],
+};
+const clamp = (value: number, max: number) => Math.max(0, Math.min(value, max));
 const copyRows = (rows: Row[]) => rows.map((row) => ({ ...row }));
 
 /**
@@ -235,9 +251,62 @@ export function CoordinateTable({
     return instance;
   };
 
-  const finish = () => {
+  /** Commits the edit open and moves the selection as `key` does. */
+  const move = (key: HeldKey) => {
+    const instance = hot.current?.hotInstance;
+    const [selected] = instance?.getSelected() ?? [];
+    if (!instance || !selected) return;
+    finish();
+    const back = key.shiftKey && (key.key === "Enter" || key.key === "Tab");
+    const [rows, cols] = MOVES[key.key].map((by) => (back ? -by : by));
+    instance.selectCell(
+      clamp(selected[0] + rows, instance.countRows() - 1),
+      clamp(selected[1] + cols, columns.length - 1),
+    );
+  };
+
+  /** Types `keys` at the selection, in order, as the grid takes them from the keyboard. */
+  const typeKeys = (keys: HeldKey[]) => {
+    for (const key of keys) {
+      const editor = hot.current?.hotInstance?.getActiveEditor();
+      const open = editor?.isOpened() ?? false;
+      if (typesCharacter(key)) {
+        if (readOnly || !editor) continue;
+        if (open) {
+          editor.setValue(`${editor.getValue()}${key.key}`);
+        } else {
+          editor.beginEditing(key.key);
+          editor.setValue(key.key);
+        }
+      } else if (key.key === "Backspace") {
+        if (open) editor!.setValue(String(editor!.getValue()).slice(0, -1));
+      } else if (key.key === "Escape") {
+        if (open) editor!.finishEditing(true);
+      } else if (key.key in MOVES) {
+        move(key);
+      }
+    }
+  };
+
+  /** The engagement whose held keys are still to be typed, once the grid's mount has settled. */
+  const unsettled = useRef<object | null>(null);
+  /** Selects the cell at `row`, `column`, types `typed`, then once the mount has settled the keys held for the grid. */
+  const carryOn = (row: number, column: number, typed: HeldKey[]) => {
+    selectCell(row, column);
+    typeKeys(typed);
+    const settling = {};
+    unsettled.current = settling;
+    queueMicrotask(() => {
+      if (unsettled.current !== settling) return;
+      unsettled.current = null;
+      typeKeys(takeHeldKeys());
+    });
+  };
+
+  /** Commits the edit open, or drops it when `drop`. */
+  const finish = (drop = false) => {
     const editor = hot.current?.hotInstance?.getActiveEditor();
-    if (editor?.isOpened()) editor.finishEditing();
+    if (editor?.isOpened()) editor.finishEditing(drop);
   };
   const filledRows = () => {
     finish();
@@ -254,25 +323,29 @@ export function CoordinateTable({
   useLayoutEffect(() => {
     latestFinish.current = finish;
   });
-  useLayoutEffect(() => () => latestFinish.current(), []);
+  // A grid unmounted before its mount settles, as StrictMode's remount does, drops the edit open.
+  useLayoutEffect(
+    () => () => {
+      const settling = unsettled.current !== null;
+      unsettled.current = null;
+      latestFinish.current(settling);
+    },
+    [],
+  );
 
   useImperativeHandle(ref, () => ({
-    finish,
+    finish: () => finish(),
     filledRows,
     engage: (engagement) => {
       switch (engagement.kind) {
         case "select":
-          selectCell(engagement.row, engagement.column);
+          carryOn(engagement.row, engagement.column, []);
           break;
-        case "type": {
-          const editor = selectCell(
-            engagement.row,
-            engagement.column,
-          )?.getActiveEditor();
-          editor?.beginEditing(engagement.text);
-          editor?.setValue(engagement.text);
+        case "type":
+          carryOn(engagement.row, engagement.column, [
+            { ...NO_MODIFIERS, key: engagement.text },
+          ]);
           break;
-        }
         case "paste":
           selectCell(engagement.row, engagement.column)
             ?.getPlugin("copyPaste")

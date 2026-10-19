@@ -7,6 +7,20 @@ const PRECUNEUS = { coordinates: [4, -60, 40], values: [{ kind: 't', value: 5.1 
 const INSULA = { coordinates: [-36, 20, 2], values: [{ kind: 't', value: 4.2 }], cluster_size: 12 };
 const [X, , Z] = [0, 1, 2];
 
+/**
+ * Holds back the grid's chunk until the returned function is called, so that keys typed on the static table come
+ * before the grid is mounted.
+ */
+async function holdGrid(page: Page) {
+    let release = () => {};
+    const released = new Promise<void>((resolve) => (release = resolve));
+    await page.route('**/src/coordinates/PointsTable.tsx*', async (route) => {
+        await released;
+        await route.continue();
+    });
+    return release;
+}
+
 /** The paper open on its first analysis, its points in the static table, and no grid mounted yet. */
 async function open(page: Page) {
     const { batches } = await serve(page);
@@ -58,6 +72,32 @@ test('typing on the static table keeps the first character, in the grid’s cell
     await page.keyboard.press('Enter');
     const [batch] = await sent(1);
     expect(pointsOf(batch)).toEqual([{ ...PRECUNEUS, coordinates: [-7, -60, 40] }, INSULA]);
+});
+
+test('typing -7.5 and Tab on the static table before the grid is in keeps every key, in order', async ({ page }) => {
+    const release = await holdGrid(page);
+    const { table, sent } = await open(page);
+    await table.focus();
+    await page.keyboard.type('-7.5');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.handsontable')).toHaveCount(0);
+    release();
+    await expect(page.locator('.handsontable').first()).toBeVisible();
+    const [batch] = await sent(1);
+    expect(pointsOf(batch)).toEqual([{ ...PRECUNEUS, coordinates: [-7.5, -60, 40] }, INSULA]);
+});
+
+test('typing a number that begins with a digit before the grid is in sends nothing until Enter', async ({ page }) => {
+    const release = await holdGrid(page);
+    const { table, sent, noneSent } = await open(page);
+    await table.focus();
+    await page.keyboard.type('12');
+    release();
+    await expect(page.locator('.handsontableInput')).toHaveValue('12');
+    await noneSent();
+    await page.keyboard.press('Enter');
+    const [batch] = await sent(1);
+    expect(pointsOf(batch)).toEqual([{ ...PRECUNEUS, coordinates: [12, -60, 40] }, INSULA]);
 });
 
 test('pasting three rows on the static table, past the last row, sends one edit_points', async ({ page }) => {

@@ -3,6 +3,7 @@ export {
   type CoordinateTableHandle,
   type CoordinateTableProps,
 } from "./CoordinateTable";
+export { dropHeldKeys, takeHeldKeys, type HeldKey } from "./heldKeys";
 export { CoordinateTableToolbar } from "./CoordinateTableToolbar";
 export { InsertRowsDialog } from "./InsertRowsDialog";
 export {

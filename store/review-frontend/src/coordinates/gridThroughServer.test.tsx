@@ -1,12 +1,12 @@
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { fakeHotIn } from '@neurosynth/coordinate-table/testing';
 import type { Op } from '../contract/generated/review-ops';
 import { currentAnalyses } from '../model/coordinates';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { createOpClient, type OpClient } from '../store/opClient';
-import { coordinateBundle, FACES, INSULA, PRECUNEUS } from '../test/coordinates';
+import { coordinateBundle, FACES, INSULA, LOCALIZER, PRECUNEUS } from '../test/coordinates';
 import { fakeServer } from '../test/fakeServer';
-import { engageGrid } from '../test/grid';
+import { engageGrid, staticTable } from '../test/grid';
 import { renderWithStores } from '../test/render';
 
 // Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
@@ -20,14 +20,14 @@ afterEach(() => client?.stop());
 
 const SLOW = { timeout: 10_000 };
 
-async function open() {
+async function open({ engaged = true } = {}) {
     const server = fakeServer([coordinateBundle({ review: null })]);
     await server.backend.startReview('P1');
     const view = renderWithStores(<ReviewScreen />, await server.backend.getBundle('P1'), { now: () => 'now' });
     client = createOpClient(view.stores.session, server.api());
     client.start();
     const grid = () => screen.getByRole('group', { name: `edit the points of ${FACES.name}` });
-    await engageGrid(FACES.name);
+    if (engaged) await engageGrid(FACES.name);
     const saved = () => waitFor(() => expect(view.stores.session.getState().pending).toEqual([]), SLOW);
     const posted = () => server.requests.filter((r) => r.method === 'POST').map((r) => (r.body as { ops: Op[] }).ops);
     const points = () =>
@@ -77,5 +77,28 @@ describe('the point grid through the test server', () => {
             screen.getByRole('group', { name: `edit the points of ${FACES.name}` }).querySelectorAll('tbody tr')
         ).toHaveLength(2);
         expect(server.invalid()).toEqual([]);
+    });
+
+    it('carries keys typed on the static table into its first grid only, never into a later Edit point', async () => {
+        const { saved, posted, stores } = await open({ engaged: false });
+        act(() => {
+            fireEvent.keyDown(staticTable(FACES.name), { key: '-' });
+            for (const key of ['7', 'Enter']) fireEvent.keyDown(document.body, { key });
+        });
+        await waitFor(() => expect(posted()).toHaveLength(1), SLOW);
+        await saved();
+        act(() => stores.view.getState().focusAnalysis(LOCALIZER.key));
+        fireEvent.click(
+            within(screen.getByRole('toolbar', { name: 'coordinate actions' })).getByRole('button', {
+                name: 'Edit point',
+            })
+        );
+        const grid = await screen.findByRole('group', { name: `edit the points of ${LOCALIZER.name}` });
+        await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+        expect(fakeHotIn(grid).editor).toBeNull();
+        expect(fakeHotIn(grid).selection).toEqual([0, 0, 0, 0]);
+        expect(posted().map(([op]) => (op as { payload: { points: unknown[] } }).payload.points)).toEqual([
+            [{ ...PRECUNEUS, coordinates: [-7, -60, 40] }, INSULA],
+        ]);
     });
 });

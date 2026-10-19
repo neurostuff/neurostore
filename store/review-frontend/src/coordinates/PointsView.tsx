@@ -1,6 +1,6 @@
-import { StaticTable, type GridEngagement } from '@neurosynth/coordinate-table/static';
-import { Box, Button } from '@mui/material';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { dropHeldKeys, StaticTable, type GridEngagement } from '@neurosynth/coordinate-table/static';
+import { Box, Button, Typography } from '@mui/material';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import type { CoordinateAnalysis } from '../model/coordinates';
 import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
 import { coordinatePending } from './availability';
@@ -8,7 +8,7 @@ import { pointColumns, toRows } from './pointRows';
 import { Hint } from '../review/Hint';
 
 // The grid and Handsontable are a chunk of their own, fetched as soon as the review loads, since Coordinates is its first step.
-const pointsTable = import('./PointsTable');
+const pointsTable = import('./PointsTable').catch(() => ({ default: GridUnavailable }));
 const LazyPointsTable = lazy(() => pointsTable);
 /**
  * The grid's component once its chunk is in, rendered as is: lazy() suspends on its first render even then, and a
@@ -33,6 +33,15 @@ export function PointsView({ analysis }: { analysis: CoordinateAnalysis }) {
     const [begun, setBegun] = useState<{ engagement: GridEngagement; request: number } | null>(null);
     const engaged = request !== null;
     if (engaged && held !== analysis) setHeld(analysis);
+    if (!engaged && begun) setBegun(null);
+    useEffect(
+        () =>
+            stores.view.subscribe((state, before) => {
+                if (state.gridEngagement === null && before.gridEngagement !== null) dropHeldKeys();
+            }),
+        [stores]
+    );
+    useEffect(() => () => dropHeldKeys(), []);
     const engagement = useMemo(
         () =>
             request === null
@@ -42,10 +51,7 @@ export function PointsView({ analysis }: { analysis: CoordinateAnalysis }) {
                   : { kind: 'select' as const, row: stores.view.getState().coordinates?.point ?? 0, column: 0 },
         [request, begun, stores]
     );
-    const onEngage = (next: GridEngagement) => {
-        setBegun({ engagement: next, request: (request ?? 0) + 1 });
-        engageGrid();
-    };
+    const onEngage = (next: GridEngagement) => setBegun({ engagement: next, request: engageGrid() });
     const rows = useMemo(() => toRows(analysis.points ?? []), [analysis.points]);
     const columns = useMemo(
         () => pointColumns(analysis.coordinate_space, allColumns),
@@ -75,6 +81,16 @@ export function PointsView({ analysis }: { analysis: CoordinateAnalysis }) {
             {!engaged && table}
             <MoreColumns shown={allColumns} onToggle={() => setAllColumns((shown) => !shown)} />
         </>
+    );
+}
+
+/** In place of the grid when its chunk did not load: says so, and lets go of the keys held for the grid. */
+function GridUnavailable() {
+    useEffect(() => dropHeldKeys(), []);
+    return (
+        <Typography role="alert" variant="caption" color="error">
+            The point grid did not load; reload the page to edit the points
+        </Typography>
     );
 }
 

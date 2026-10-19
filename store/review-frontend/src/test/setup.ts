@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { dropHeldKeys } from '@neurosynth/coordinate-table/static';
 import { setSchemas } from '../contract/schemas';
 import { GOLDEN_SCHEMAS } from './goldenSchemas';
 import { installHighlightAdapter } from './highlights';
@@ -19,4 +20,7 @@ beforeEach(() => {
     setSchemas(GOLDEN_SCHEMAS);
     if (isDom) installHighlightAdapter();
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+    vi.restoreAllMocks();
+    if (isDom) dropHeldKeys();
+});

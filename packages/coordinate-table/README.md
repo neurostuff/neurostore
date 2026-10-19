@@ -14,7 +14,13 @@ are marked, and a status line says how many there are.
 
 `StaticTable` (`@neurosynth/coordinate-table/static`, which loads no Handsontable) shows the same rows as a
 read-only table of the grid's widths and row heights, and hands `onEngage` whatever begins an edit there; the
-grid's `ref` carries it on with `engage`, so an app can mount the grid only when a reviewer starts to edit.
+grid's `ref` carries it on with `engage`, so an app can mount the grid only when a reviewer starts to edit. The keys
+pressed after a click, Enter or a character there, until the grid is mounted, are held from the rest of the page;
+`engage` takes them once the grid's mount settles and types them in order: characters and Backspace into the cell,
+Enter, Tab and the arrows committing and moving, Escape dropping the edit. One hold is kept at a time, and it is let
+go, its keys dropped, on a pointer down, a key elsewhere, the window losing the focus, the page being hidden,
+`dropHeldKeys()`, or after 3 s. An app calls `dropHeldKeys()` when it drops the engagement or will not mount the
+grid.
 
 `ref.filledRows()` is for a form that saves the rows itself: it commits the cell edit still open and gives the
 rows that are not blank, or marks their invalid cells and gives null.

@@ -2,6 +2,7 @@ import { Box } from "@mui/material";
 import type { ClipboardEvent, KeyboardEvent, MouseEvent } from "react";
 import type { CoordinateColumn } from "./columns";
 import { CoordinateTableToolbar } from "./CoordinateTableToolbar";
+import { holdKeys, typesCharacter } from "./heldKeys";
 
 /** What the reviewer began on the static table, for the grid to carry on once it is mounted. */
 export type GridEngagement =
@@ -84,13 +85,10 @@ const ALIGN = {
   dropdown: "htLeft",
 } as const;
 
-/** Whether `event` types a character into a cell, as a keypress on Handsontable's selection does. */
-const typesCharacter = (event: KeyboardEvent) =>
-  event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
-
 /**
  * The rows as a plain, read-only table laid out as the grid lays them out, with the grid's toolbar; whatever begins
  * an edit (a click, Enter, a character, a paste, a toolbar button) is handed to `onEngage` for the grid to carry on.
+ * The keys pressed after a click, Enter or a character are held for the grid, which takes them once it is mounted.
  */
 export function StaticTable({
   rows,
@@ -103,10 +101,15 @@ export function StaticTable({
   maxHeight = 500,
 }: StaticTableProps) {
   const at = Math.min(row ?? 0, Math.max(rows.length - 1, 0));
+  /** Hands the grid `engagement` begun on `element`, holding the keys pressed from now on for it unless read-only. */
+  const engageHolding = (element: Element, engagement: GridEngagement) => {
+    if (!readOnly) holdKeys(element);
+    onEngage(engagement);
+  };
   const onClick = (event: MouseEvent) => {
     const cell = (event.target as Element).closest("td[data-column]");
     if (!cell) return;
-    onEngage({
+    engageHolding(cell, {
       kind: "select",
       row: Number(cell.parentElement!.dataset.row),
       column: Number((cell as HTMLElement).dataset.column),
@@ -115,10 +118,19 @@ export function StaticTable({
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter" || event.key === "F2") {
       event.preventDefault();
-      onEngage({ kind: "select", row: at, column: 0 });
+      engageHolding(event.currentTarget, {
+        kind: "select",
+        row: at,
+        column: 0,
+      });
     } else if (typesCharacter(event) && !readOnly) {
       event.preventDefault();
-      onEngage({ kind: "type", row: at, column: 0, text: event.key });
+      engageHolding(event.currentTarget, {
+        kind: "type",
+        row: at,
+        column: 0,
+        text: event.key,
+      });
     }
   };
   const onPaste = (event: ClipboardEvent) => {

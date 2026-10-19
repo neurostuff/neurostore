@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { numberColumn } from "./columns";
+import { CBMA_COLUMNS, numberColumn } from "./columns";
 import { CoordinateTable, type CoordinateTableHandle } from "./CoordinateTable";
 import { createRef } from "react";
 import { fakeHotIn } from "./testing/fakeHotTable";
+import { StaticTable, type GridEngagement } from "./StaticTable";
 
 vi.mock("@handsontable/react-wrapper", () => import("./testing/fakeHotTable"));
 vi.mock("handsontable/registry", () => ({ registerAllModules: () => {} }));
@@ -263,7 +264,7 @@ describe("the coordinate table", () => {
     function engaged() {
       const ref = createRef<CoordinateTableHandle>();
       const onChange = vi.fn();
-      render(
+      const { unmount } = render(
         <CoordinateTable
           ref={ref}
           points={POINTS}
@@ -273,7 +274,7 @@ describe("the coordinate table", () => {
       );
       const hot = () =>
         fakeHotIn(screen.getByRole("group", { name: "points" }));
-      return { ref, onChange, hot };
+      return { ref, onChange, hot, unmount };
     }
 
     it("selects the cell the reviewer clicked", () => {
@@ -294,6 +295,99 @@ describe("the coordinate table", () => {
         { ...POINTS[0], x: "7" },
         POINTS[1],
       ]);
+    });
+
+    /** What the static table hands the grid for `first` typed on it and `rest` pressed after, before the grid engages. */
+    function typedOnStatic(first: string, ...rest: string[]) {
+      let engagement: GridEngagement | undefined;
+      const { unmount } = render(
+        <StaticTable
+          rows={POINTS}
+          columns={CBMA_COLUMNS}
+          caption="points of Faces"
+          onEngage={(next) => (engagement = next)}
+        />,
+      );
+      const table = screen.getByRole("table", { name: "points of Faces" });
+      if (first === "click")
+        fireEvent.click(within(table).getAllByRole("cell")[0]);
+      else fireEvent.keyDown(table, { key: first });
+      for (const key of rest) fireEvent.keyDown(document.body, { key });
+      unmount();
+      return engagement!;
+    }
+
+    it("types the keys pressed after the character on the static table once the grid is mounted, and a grid unmounted at once sends nothing", async () => {
+      const engagement = typedOnStatic("-", ..."7.5");
+      const first = engaged();
+      act(() => first.ref.current!.engage(engagement));
+      first.unmount();
+      expect(first.onChange).not.toHaveBeenCalled();
+      const { ref, hot } = engaged();
+      await act(async () => ref.current!.engage(engagement));
+      expect(hot().editor).toEqual({ row: 0, prop: "x", value: "-7.5" });
+    });
+
+    it("types a number begun with a digit", async () => {
+      const engagement = typedOnStatic("1", "2");
+      const { ref, hot } = engaged();
+      await act(async () => ref.current!.engage(engagement));
+      expect(hot().editor).toEqual({ row: 0, prop: "x", value: "12" });
+    });
+
+    it("takes Backspace as editing what was typed", async () => {
+      const engagement = typedOnStatic("-", "8", "Backspace", "7");
+      const { ref, hot } = engaged();
+      await act(async () => ref.current!.engage(engagement));
+      expect(hot().editor).toEqual({ row: 0, prop: "x", value: "-7" });
+    });
+
+    it("commits at Tab and moves right, and at Enter and moves down", async () => {
+      const tab = typedOnStatic("-", ..."7.5", "Tab");
+      const first = engaged();
+      await act(async () => first.ref.current!.engage(tab));
+      expect(first.onChange).toHaveBeenCalledWith([
+        { ...POINTS[0], x: "-7.5" },
+        POINTS[1],
+      ]);
+      expect(first.hot().editor).toBeNull();
+      expect(first.hot().selection).toEqual([0, 1, 0, 1]);
+      first.unmount();
+      const enter = typedOnStatic("1", "2", "Enter", "3");
+      const { ref, hot, onChange } = engaged();
+      await act(async () => ref.current!.engage(enter));
+      expect(onChange).toHaveBeenCalledWith([
+        { ...POINTS[0], x: "12" },
+        POINTS[1],
+      ]);
+      expect(hot().editor).toEqual({ row: 1, prop: "x", value: "3" });
+    });
+
+    it("commits what was typed at an arrow, and moves", async () => {
+      const engagement = typedOnStatic("-", "7", "ArrowDown");
+      const { ref, hot, onChange } = engaged();
+      await act(async () => ref.current!.engage(engagement));
+      expect(onChange).toHaveBeenCalledWith([
+        { ...POINTS[0], x: "-7" },
+        POINTS[1],
+      ]);
+      expect(hot().selection).toEqual([1, 0, 1, 0]);
+    });
+
+    it("drops what was typed at Escape, leaving the cell as it was", async () => {
+      const engagement = typedOnStatic("-", "7", "Escape");
+      const { ref, hot, onChange } = engaged();
+      await act(async () => ref.current!.engage(engagement));
+      expect(hot().editor).toBeNull();
+      expect(onChange).not.toHaveBeenCalled();
+      expect(hot().getSourceData()[0]).toEqual(POINTS[0]);
+    });
+
+    it("types the keys pressed after a click on the static table into the cell clicked", async () => {
+      const engagement = typedOnStatic("click", "5");
+      const { ref, hot } = engaged();
+      await act(async () => ref.current!.engage(engagement));
+      expect(hot().editor).toEqual({ row: 0, prop: "x", value: "5" });
     });
 
     it("pastes the text pasted on it at the cell", () => {

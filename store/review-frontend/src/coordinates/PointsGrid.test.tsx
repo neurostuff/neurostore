@@ -1,5 +1,7 @@
-import { act, fireEvent, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { takeHeldKeys } from '@neurosynth/coordinate-table/static';
 import { fakeHotIn } from '@neurosynth/coordinate-table/testing';
+import { StrictMode } from 'react';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { COORD_TEXT, coordinateBundle, FACES, INSULA, LOCALIZER, PRECUNEUS } from '../test/coordinates';
 import { engageGrid, staticTable } from '../test/grid';
@@ -50,6 +52,16 @@ describe('the focused analysis’s points, read-only until the reviewer edits th
         expect(fakeHotIn(grid).editor).toEqual({ row: 0, prop: 'x', value: '7' });
     });
 
+    it('keys typed faster than the grid mounts all go into the grid’s cell, in order', async () => {
+        open();
+        act(() => {
+            fireEvent.keyDown(staticTable(FACES.name), { key: '-' });
+            for (const key of '7.5') fireEvent.keyDown(document.body, { key });
+        });
+        const grid = await screen.findByRole('group', { name: `edit the points of ${FACES.name}` });
+        await waitFor(() => expect(fakeHotIn(grid).editor).toEqual({ row: 0, prop: 'x', value: '-7.5' }));
+    });
+
     it('leaving the analysis brings back the table, the edit open committed first', async () => {
         const { stores } = open();
         act(() => void fireEvent.keyDown(staticTable(FACES.name), { key: '7' }));
@@ -64,6 +76,70 @@ describe('the focused analysis’s points, read-only until the reviewer edits th
                 payload: { points: [{ ...PRECUNEUS, coordinates: [7, -60, 40] }, INSULA] },
             }),
         ]);
+    });
+});
+
+describe('keys typed on the static table before the grid is mounted', () => {
+    const open = (ui = <ReviewScreen />) => renderWithStores(ui, coordinateBundle(), { now: () => 'now' });
+    const gridOf = (name: string) => screen.findByRole('group', { name: `edit the points of ${name}` });
+    /** Types `first` on the analysis's static table and presses `rest` after it, in one tick, the focus gone to the page. */
+    const typeOnTable = (name: string, first: string, ...rest: string[]) => {
+        fireEvent.keyDown(staticTable(name), { key: first });
+        for (const key of rest) fireEvent.keyDown(document.body, { key });
+    };
+    const editPoints = (x: number) =>
+        expect.objectContaining({
+            action: 'edit_points',
+            payload: { points: [{ ...PRECUNEUS, coordinates: [x, -60, 40] }, INSULA] },
+        });
+
+    it('under StrictMode are sent only at Enter, once', async () => {
+        const { stores } = open(
+            <StrictMode>
+                <ReviewScreen />
+            </StrictMode>
+        );
+        act(() => typeOnTable(FACES.name, '1', '2'));
+        const grid = await gridOf(FACES.name);
+        await waitFor(() => expect(fakeHotIn(grid).editor).toEqual({ row: 0, prop: 'x', value: '12' }));
+        expect(stores.session.getState().pending).toEqual([]);
+        act(() => fakeHotIn(grid).getActiveEditor()!.finishEditing());
+        expect(stores.session.getState().pending).toEqual([editPoints(12)]);
+    });
+
+    it('never reach the review’s shortcuts', async () => {
+        const { stores } = open();
+        act(() => typeOnTable(FACES.name, '-', 'a', 'Backspace'));
+        const grid = await gridOf(FACES.name);
+        await waitFor(() => expect(fakeHotIn(grid).editor).toEqual({ row: 0, prop: 'x', value: '-' }));
+        expect(stores.session.getState().pending).toEqual([]);
+        expect(stores.view.getState().panel).toBeNull();
+    });
+
+    it('are dropped when the view unmounts, and the next key reaches the window', () => {
+        const { unmount } = open();
+        const reached = vi.fn();
+        window.addEventListener('keydown', reached);
+        onTestFinished(() => window.removeEventListener('keydown', reached));
+        act(() => {
+            typeOnTable(FACES.name, '-', '7');
+            unmount();
+        });
+        reached.mockClear();
+        fireEvent.keyDown(document.body, { key: 'j' });
+        expect(reached).toHaveBeenCalledTimes(1);
+        expect(takeHeldKeys()).toEqual([]);
+    });
+
+    it('are dropped when the focus moves to another analysis, and j moves at once', async () => {
+        const { stores } = open();
+        act(() => {
+            typeOnTable(FACES.name, '-', '7');
+            stores.view.getState().focusAnalysis(LOCALIZER.key);
+        });
+        expect(takeHeldKeys()).toEqual([]);
+        press('j');
+        expect(stores.view.getState().coordinates).toMatchObject({ analysis: LOCALIZER.key, point: 0 });
     });
 });
 

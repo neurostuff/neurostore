@@ -88,6 +88,7 @@ export class FakeHot {
     const prop = this.props_[column];
     return {
       isOpened: () => this.editor !== null,
+      getValue: () => this.editor?.value,
       beginEditing: (initial?: unknown) => {
         if (this.props.columns?.[column]?.readOnly) return;
         this.editor = { row, prop, value: initial ?? this.data[row]?.[prop] };
@@ -97,10 +98,11 @@ export class FakeHot {
         if (this.editor) this.editor.value = value;
         this.redraw();
       },
-      finishEditing: () => {
+      finishEditing: (restoreOriginalValue = false) => {
         const editor = this.editor;
         if (!editor) return;
         this.editor = null;
+        if (restoreOriginalValue) return this.redraw();
         this.setDataAtRowProp(editor.row, editor.prop, editor.value, "edit");
       },
     };

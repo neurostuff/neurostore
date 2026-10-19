@@ -115,11 +115,12 @@ export interface ViewState {
     /** Gives the record entity the add `clientOpId` makes the slot values `values`, once the server has made it. */
     setOnMade(clientOpId: string, values: Record<string, string>): void;
     /**
-     * How many times the reviewer has asked for the focused analysis's point grid, in place of its static table;
-     * null while the table is static. Focusing another analysis makes it static again.
+     * The id of the reviewer's last ask for the focused analysis's point grid, in place of its static table; null
+     * while the table is static. Focusing another analysis makes it static again. Ids never repeat in a review.
      */
     gridEngagement: number | null;
-    engageGrid(): void;
+    /** Asks for the point grid, and gives the ask's id. */
+    engageGrid(): number;
     toggleDiff(on?: boolean): void;
     /** Focuses the next or previous changed item of the diff. */
     moveChange(delta: 1 | -1): void;
@@ -190,6 +191,7 @@ export function createViewStore(session: SessionStore) {
 
     return createStore<ViewState>()((set, get) => {
         let seq = 0;
+        let engagements = 0;
         const revealed = (span: SpanPair | undefined, current: Reveal | null) =>
             span ? { span, seq: ++seq } : current;
         /** The coordinate focus the step had when the review last left it. */
@@ -363,7 +365,10 @@ export function createViewStore(session: SessionStore) {
             accepted: null,
             gridEngagement: null,
 
-            engageGrid: () => set((s) => ({ gridEngagement: (s.gridEngagement ?? 0) + 1 })),
+            engageGrid: () => {
+                set({ gridEngagement: ++engagements });
+                return engagements;
+            },
             setOnMade: (clientOpId, values) => void onMade.set(clientOpId, values),
             showAccepted: (accepted) => set({ accepted }),
             focusAnalysis: (key, point = null) => {
