@@ -9,7 +9,7 @@ import { selectShown } from '../store/viewSelectors';
 import { randomUUID } from '../model/uuid';
 import type { ReviewStores } from '../store/reviewStores';
 import type { SessionState } from '../store/sessionStore';
-import type { AcceptedCard, Focus, Panel, PanelKind } from '../store/viewStore';
+import type { AcceptedCard, Focus, JudgedAnalysis, Panel, PanelKind } from '../store/viewStore';
 import {
     extractionSchema,
     type Schema,
@@ -75,8 +75,19 @@ export function slotSchema(s: Pick<Documents, 'bundle' | 'record'>, slot: SlotNo
     );
 }
 
-export const acceptTarget = (stores: ReviewStores, target: AnyTarget) =>
-    send(stores, { type: 'verdict', target, verdict: 'accept' });
+/** Sends a verdict on `target`; one on a coordinate analysis is also shown as the analysis's last, with the way on. */
+function judge(
+    stores: ReviewStores,
+    target: AnyTarget,
+    verdict: Partial<Pick<VerdictOp, 'reason' | 'note'>> & Pick<JudgedAnalysis, 'verdict'>
+) {
+    if (!send(stores, { type: 'verdict', target, ...verdict })) return false;
+    if (target.kind === 'coordinate_analysis')
+        stores.view.getState().showJudged({ analysis: target.analysis_key, verdict: verdict.verdict });
+    return true;
+}
+
+export const acceptTarget = (stores: ReviewStores, target: AnyTarget) => judge(stores, target, { verdict: 'accept' });
 
 /** Accepts the slot, entity or link of the focus key `key` on the focused entity, the focused one by default. */
 export function accept(stores: ReviewStores, key?: string) {
@@ -190,7 +201,7 @@ export function acceptFocusedCard(stores: ReviewStores) {
 }
 
 export function reject(stores: ReviewStores, target: AnyTarget, reason: RejectReason, note: string) {
-    return send(stores, { type: 'verdict', target, verdict: 'reject', reason, ...(note ? { note } : {}) });
+    return judge(stores, target, { verdict: 'reject', reason, ...(note ? { note } : {}) });
 }
 
 export function addNote(stores: ReviewStores, target: AnyTarget, note: string) {

@@ -30,11 +30,10 @@ import { selectNotes } from '../review/outline';
 import { NoteMark } from './NoteMark';
 import { reviewStatus, statusColors, statusOf } from './status';
 import { classWords, labelOf } from '../model/labels';
-import { selectStepProgress } from '../review/stepCount';
-import { isLinkStep } from '../model/guided';
 import { StatusLabel, StatusLegend } from './StatusLabel';
 import { slotStyles } from './slotStyles';
 import { useScrollIntoViewWhen } from './useScrollIntoViewWhen';
+import { VerdictStatus } from './WayOn';
 
 function ReferenceChips({ slot }: { slot: SlotNode }) {
     const stores = useReviewStores();
@@ -204,35 +203,10 @@ const legendStyles = (theme: Theme) => ({
     ...statusColors(theme.palette),
 });
 
-/** The way on from an accepted card while its step is not done: the step's next card no one has judged. */
-function NextCard() {
-    const step = useView((s) => s.step);
-    const focusNextUnjudged = useView((s) => s.focusNextUnjudged);
-    const complete = useSession((s) => selectStepProgress(s, step).complete);
-    if (complete) return null;
-    return (
-        <button
-            type="button"
-            className="rv-quick"
-            title="Open the step’s next card no one has judged (Shift+J and Shift+K move between cards)"
-            onClick={focusNextUnjudged}
-        >
-            {step === 'analyses' || isLinkStep(step) ? 'Next analysis' : 'Next card'}
-        </button>
-    );
-}
-
-/** What the last accept of the card took, announced as it changes, and the way on. */
+/** What the last accept of the card took, and the way on. */
 export function AcceptedStatus({ entity, kind }: { entity: string; kind: string }) {
     const accepted = useView((s) => (s.accepted?.card === entity ? s.accepted : null));
-    return (
-        <Stack direction="row" spacing={1} alignItems="center">
-            <Typography role="status" variant="body2" color="text.secondary" component="div">
-                {accepted && acceptedText(accepted, kind)}
-            </Typography>
-            {accepted && <NextCard />}
-        </Stack>
-    );
+    return <VerdictStatus text={accepted ? acceptedText(accepted, kind) : ''} />;
 }
 
 export function EntityCard({

@@ -1,6 +1,6 @@
 import type { RecordIndex, SlotNode } from '../model/record';
 import { currentAnalyses, entitiesNaming, guidedOrder, type CoordinateAnalysis } from '../model/coordinates';
-import { focusedAnalysis } from '../model/coordinateFocus';
+import { focusedAnalysis, guidedIndex } from '../model/coordinateFocus';
 import type { Reason as ReasonOf } from '../review/reason';
 import { slotKey } from '../model/targetKey';
 import { canAddEvidence, type SessionState } from '../store/sessionStore';
@@ -8,6 +8,7 @@ import type { ViewState } from '../store/viewStore';
 
 export type CoordinateSession = Pick<SessionState, 'bundle' | 'pending'>;
 export type CoordinateView = Pick<ViewState, 'coordinates' | 'merging'>;
+type GuidedView = Pick<ViewState, 'coordinates' | 'showNonCoordinate'>;
 
 /** Whether a coordinate op waits for its result; until it lands no key the client holds can be trusted. */
 export const coordinatePending = (s: Pick<SessionState, 'pending'>) => s.pending.some((op) => op.type === 'coordinate');
@@ -45,6 +46,23 @@ export function mergeSet(
     return guidedOrder(currentAnalyses(bundle), true).filter((analysis) => chosen.has(analysis.key));
 }
 
+/** Where the focused analysis is in the order Shift+J and Shift+K walk: its place from 1, 0 when it is not in it, of how many. */
+export function guidedPosition(session: Pick<SessionState, 'bundle'>, view: GuidedView) {
+    const { order, at } = guidedIndex(session, view);
+    return { at: at + 1, of: order.length };
+}
+
+/** Why Shift+J (1) or Shift+K (-1) cannot move from the focused analysis: it is the last, or the first. */
+export const guidedEnd =
+    (delta: 1 | -1): ReasonOf<Pick<SessionState, 'bundle'>, GuidedView> =>
+    (session, view) => {
+        const { at, of } = guidedPosition(session, view);
+        if (at === 0) return undefined;
+        if (delta > 0 && at === of) return 'This is the last analysis';
+        if (delta < 0 && at === 1) return 'This is the first analysis';
+        return undefined;
+    };
+
 /** The record slot holding an entity's editable name: the one a rename sets, whatever other slots can name it. */
 export const NAME_SLOT = 'name';
 
@@ -80,16 +98,18 @@ export const COORDINATE_UNAVAILABLE = {
         pointCount(session, view) ? undefined : 'This analysis has no points yet: add a row in its grid'
     ),
     move: needs((session, view) => {
-        if (!movingPoints(view).length) return 'Focus a point, or select points with Space, first';
+        if (!movingPoints(view).length) return 'Focus a point, or select points: drag over rows or press Space';
         return moveTargets(session, view).length ? undefined : 'There is no other analysis to move points to';
     }),
     split: needs((session, view) => {
         const selected = view.coordinates?.selected ?? [];
-        if (!selected.length) return 'Select the points to split off with Space first';
+        if (!selected.length) return 'Select the points to split off: drag over rows or press Space';
         return selected.length < pointCount(session, view) ? undefined : 'Leave at least one point unselected to split';
     }),
     merge: needs((session, view) =>
-        mergeSet(session, view).length > 1 ? undefined : 'Shift-click another analysis to merge with this one'
+        mergeSet(session, view).length > 1
+            ? undefined
+            : 'Merge joins whole analyses: Shift-click another analysis’s card; to put these points in another analysis, use Move to…'
     ),
     addAnalysis: needs((session, view) =>
         focusedAnalysis({ bundle: session.bundle, coordinates: view.coordinates })!.table_id

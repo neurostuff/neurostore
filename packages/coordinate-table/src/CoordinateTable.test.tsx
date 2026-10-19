@@ -148,6 +148,23 @@ describe("the coordinate table", () => {
     expect(cells().map((row) => row[0])).toEqual(["4", "", "", "-36"]);
   });
 
+  it("gives the row a selection ends on and the first and last rows it spans, however it was dragged", () => {
+    const onSelectRow = vi.fn();
+    render(
+      <CoordinateTable
+        points={[...POINTS, { x: 1, y: 1, z: 1 }]}
+        onChange={() => {}}
+        onSelectRow={onSelectRow}
+        label="points"
+      />,
+    );
+    const hot = fakeHotIn(screen.getByRole("group", { name: "points" }));
+    act(() => hot.selectRows(2, 0));
+    expect(onSelectRow).toHaveBeenLastCalledWith({ row: 0, first: 0, last: 2 });
+    act(() => hot.selectCell(1, 0));
+    expect(onSelectRow).toHaveBeenLastCalledWith({ row: 1, first: 1, last: 1 });
+  });
+
   it("deletes the selected rows as one change", () => {
     const { hot, onChange } = setup([...POINTS, { x: 1, y: 1, z: 1 }]);
     act(() => hot().selectRows(0, 1));

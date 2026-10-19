@@ -182,3 +182,52 @@ test('the grid takes the static table’s place without moving it, and leaving t
     await expect(page.getByRole('table', { name: 'points of Houses > Faces' })).toBeVisible();
     await expect(grid).toBeHidden();
 });
+
+test('More columns on the next analysis leaves the focus there, though the grid it left stays mounted', async ({
+    page,
+}) => {
+    const { engage, noneSent } = await open(page);
+    await engage(1, X);
+    await page
+        .getByRole('group', { name: `${FACES}: card head` })
+        .getByRole('button', { name: 'Next' })
+        .click();
+    const houses = page.getByRole('article', { name: 'Houses > Faces' });
+    await expect(houses).toHaveAttribute('aria-current', 'true');
+    const headers = page.getByRole('table', { name: 'points of Houses > Faces' }).getByRole('columnheader');
+    const fewer = await headers.count();
+    await page.getByRole('button', { name: 'More columns' }).click();
+    await expect.poll(() => headers.count()).toBeGreaterThan(fewer);
+    await expect(houses).toHaveAttribute('aria-current', 'true');
+    await expect(page.getByRole('group', { name: 'Houses > Faces: card head' })).toBeVisible();
+    await noneSent();
+});
+
+test('dragging over rows in the grid selects those points, and Split splits them off', async ({ page }) => {
+    const { table, cell, sent } = await open(page);
+    await table.focus();
+    await table.evaluate((element) => {
+        const data = new DataTransfer();
+        data.setData('text/plain', '1\t2\t3\n4\t5\t6\n7\t8\t9');
+        element.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true }));
+    });
+    await sent(1);
+    await expect(cell(2, X)).toHaveText('7');
+    await cell(2, X).click();
+    const head = page.getByRole('group', { name: `${FACES}: card head` });
+    const split = head.getByRole('button', { name: 'Split' });
+    await expect(split).toBeDisabled();
+    await expect(head.getByRole('list', { name: 'why some actions do not apply' })).toContainText(
+        'Select the points to split off: drag over rows or press Space'
+    );
+    await cell(0, X).hover();
+    await page.mouse.down();
+    await cell(1, Z).hover();
+    await page.mouse.up();
+    await expect(split).toBeEnabled();
+    await split.click();
+    const batches = await sent(2);
+    expect(batches[1]).toEqual([
+        expect.objectContaining({ action: 'split', payload: { parts: [{ indices: [0, 1] }, { indices: [2] }] } }),
+    ]);
+});

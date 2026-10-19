@@ -4,7 +4,10 @@ import type { Op } from '../contract/generated/review-ops';
 import { currentAnalyses } from '../model/coordinates';
 import { ReviewScreen } from '../review/ReviewScreen';
 import { createOpClient, type OpClient } from '../store/opClient';
-import { coordinateBundle, FACES, INSULA, LOCALIZER, PRECUNEUS } from '../test/coordinates';
+import { coordinateBundle, FACES, HOUSES, INSULA, LOCALIZER, PRECUNEUS } from '../test/coordinates';
+import { json } from '../test/fakeFetch';
+import type { Interceptor } from '../test/fakeServer';
+import type { SentRequest } from '../test/fakeFetch';
 import { fakeServer } from '../test/fakeServer';
 import { engageGrid, staticTable } from '../test/grid';
 import { renderWithStores } from '../test/render';
@@ -89,7 +92,7 @@ describe('the point grid through the test server', () => {
         await saved();
         act(() => stores.view.getState().focusAnalysis(LOCALIZER.key));
         fireEvent.click(
-            within(screen.getByRole('toolbar', { name: 'coordinate actions' })).getByRole('button', {
+            within(screen.getByRole('group', { name: /^actions on (point \d+|the points) of / })).getByRole('button', {
                 name: 'Edit point',
             })
         );
@@ -100,5 +103,58 @@ describe('the point grid through the test server', () => {
         expect(posted().map(([op]) => (op as { payload: { points: unknown[] } }).payload.points)).toEqual([
             [{ ...PRECUNEUS, coordinates: [-7, -60, 40] }, INSULA],
         ]);
+    });
+});
+
+describe('a result that lands while the grid is hidden', () => {
+    type Respond = (request: SentRequest) => Response | undefined;
+
+    /** Holds back the next op batch until the returned function is called; `respond` answers it, else the server does. */
+    function holdBatch(server: { intercept(interceptor: Interceptor): void }) {
+        let release: (respond: Respond) => void = () => {};
+        const released = new Promise<Respond>((resolve) => (release = resolve));
+        const hold: Interceptor = async (request) => {
+            if (request.method !== 'POST') {
+                server.intercept(hold);
+                return undefined;
+            }
+            return (await released)(request);
+        };
+        server.intercept(hold);
+        return release;
+    }
+
+    const refuse: Respond = (request) => {
+        const [op] = (request.body as { ops: Op[] }).ops;
+        return json(
+            {
+                status: 422,
+                title: 'Unprocessable Entity',
+                detail: 'op 0 is refused',
+                errors: [
+                    {
+                        field: 'ops/0',
+                        code: 'REJECTED',
+                        message: 'refused',
+                        context: { op_index: 0, client_op_id: op.client_op_id },
+                    },
+                ],
+            },
+            422
+        );
+    };
+
+    it.each<[string, Respond]>([
+        ['confirmed', () => undefined],
+        ['refused', refuse],
+    ])('leaves the focus on the analysis shown when it is %s', async (_, respond) => {
+        const { grid, saved, server, stores } = await open();
+        const release = holdBatch(server);
+        act(() => fakeHotIn(grid()).edit(0, 'z', 42));
+        act(() => stores.view.getState().focusAnalysis(HOUSES.key));
+        release(respond);
+        await saved();
+        expect(stores.view.getState().coordinates).toEqual({ analysis: HOUSES.key, point: null, selected: [] });
+        expect(screen.getByRole('group', { name: `${HOUSES.name}: card head` })).toBeInTheDocument();
     });
 });

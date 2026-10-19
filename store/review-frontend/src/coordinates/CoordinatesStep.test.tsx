@@ -45,7 +45,12 @@ const press = (key: string, init: KeyboardEventInit = {}, target: Element = docu
 const card = (name: string) => screen.getByRole('article', { name });
 const grid = (name: string) => screen.getByRole('grid', { name: `points of ${name}` });
 const rowsOf = (name: string) => within(grid(name)).getAllByRole('row').slice(1);
-const toolbar = () => screen.getByRole('toolbar', { name: 'coordinate actions' });
+const head = () => screen.getByRole('group', { name: /: card head$/ });
+const pointActions = () => screen.getByRole('group', { name: /^actions on (point \d+|the points) of / });
+const keyed = (holder: HTMLElement) =>
+    within(holder)
+        .getAllByRole('button')
+        .filter((b) => b.hasAttribute('aria-keyshortcuts'));
 const rowSpan = (text: string): [number, number] => [COORD_TEXT.indexOf(text), COORD_TEXT.indexOf(text) + text.length];
 const target = (analysis_key: string) => ({ kind: 'coordinate_analysis' as const, analysis_key });
 
@@ -209,20 +214,24 @@ describe('the coordinates step', () => {
     it('gives the grid, its rows and the actions roles and names, each action its key', () => {
         setup();
         expect(grid(FACES.name)).toHaveAttribute('aria-multiselectable', 'true');
-        const buttons = within(toolbar()).getAllByRole('button');
-        expect(buttons.map((b) => b.textContent)).toEqual([
+        expect(keyed(head()).map((b) => b.textContent)).toEqual([
+            'Previous',
+            'Next',
             'Accept',
             'Reject',
             'Note',
             'Edit analysis',
             'Change role',
-            'Edit point',
-            'Move',
             'Split',
             'Merge',
-            'Add analysis',
         ]);
-        for (const button of buttons) expect(button).toHaveAttribute('aria-keyshortcuts');
+        expect(
+            within(pointActions())
+                .getAllByRole('button')
+                .map((b) => b.textContent)
+        ).toEqual(['Edit point', 'Move to…']);
+        for (const button of within(pointActions()).getAllByRole('button'))
+            expect(button).toHaveAttribute('aria-keyshortcuts');
     });
 });
 
@@ -239,7 +248,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
 
     it('the Accept button does the same', () => {
         const { pending } = setup();
-        fireEvent.click(within(toolbar()).getByRole('button', { name: 'Accept' }));
+        fireEvent.click(within(head()).getByRole('button', { name: 'Accept' }));
         expect(pending()).toEqual([
             expect.objectContaining({ type: 'verdict', verdict: 'accept', target: target(FACES.key) }),
         ]);
@@ -280,7 +289,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
         press('Escape');
         expect(screen.queryByRole('group', { name: `reject ${FACES.name}` })).not.toBeInTheDocument();
         expect(pending()).toEqual([]);
-        fireEvent.click(within(toolbar()).getByRole('button', { name: 'Reject' }));
+        fireEvent.click(within(head()).getByRole('button', { name: 'Reject' }));
         expect(screen.getByRole('group', { name: `reject ${FACES.name}` })).toHaveFocus();
         press('4');
         press('Enter');
@@ -388,7 +397,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
         press('j');
         press('m');
         expect(screen.getByRole('combobox', { name: 'move 1 point to' })).toHaveFocus();
-        fireEvent.click(within(toolbar()).getByRole('button', { name: 'Move' }));
+        fireEvent.click(within(pointActions()).getByRole('button', { name: 'Move to…' }));
         expect(pending()).toEqual([]);
     });
 
@@ -431,7 +440,7 @@ describe('coordinate actions, each emitted as the server applies it', () => {
     it('the Merge button merges what Shift+click selected', () => {
         const { pending } = setup();
         fireEvent.click(within(card(LOCALIZER.name)).getByRole('heading'), { shiftKey: true });
-        fireEvent.click(within(toolbar()).getByRole('button', { name: 'Merge' }));
+        fireEvent.click(within(head()).getByRole('button', { name: 'Merge' }));
         const dialog = screen.getByRole('dialog', { name: `Merge 2 analyses into ${FACES.name}?` });
         expect(within(dialog).queryByRole('list', { name: 'cards removed' })).not.toBeInTheDocument();
         fireEvent.click(within(dialog).getByRole('button', { name: 'Merge' }));
@@ -712,9 +721,10 @@ describe('the coordinates step in a read-only tab', () => {
         act(() => stores.view.setState({ offer: { entity: 'ana_faces' } }));
         const open = screen.getByRole('button', { name: /^Open the record’s card for / });
         expect(open).toBeEnabled();
-        within(toolbar())
-            .getAllByRole('button')
-            .forEach((button) => expect(button).toBeDisabled());
+        const [previous, next, ...edits] = keyed(head());
+        expect(previous).toBeDisabled();
+        expect(next).toBeEnabled();
+        [...edits, ...within(pointActions()).getAllByRole('button')].forEach((button) => expect(button).toBeDisabled());
         screen
             .getAllByRole('button', { name: /^Add an analysis to / })
             .forEach((button) => expect(button).toBeDisabled());

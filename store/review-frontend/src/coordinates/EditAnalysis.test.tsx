@@ -18,14 +18,14 @@ function setup(bundle = coordinateBundle()) {
 
 const press = (key: string, init: KeyboardEventInit = {}, target: Element = document.activeElement ?? document.body) =>
     act(() => void fireEvent.keyDown(target, { key, ...init }));
-const toolbar = () => screen.getByRole('toolbar', { name: 'coordinate actions' });
+const head = () => screen.getByRole('group', { name: `${FACES.name}: card head` });
 const form = () => screen.getByRole('group', { name: `edit analysis ${FACES.name}` });
 const target = { kind: 'coordinate_analysis', analysis_key: FACES.key };
 
 describe('Edit analysis', () => {
-    it('opens one form for the name, the coordinate space and the role, from the toolbar', () => {
+    it('opens one form for the name, the coordinate space and the role, from the card head', () => {
         setup();
-        fireEvent.click(within(toolbar()).getByRole('button', { name: 'Edit analysis' }));
+        fireEvent.click(within(head()).getByRole('button', { name: 'Edit analysis' }));
         expect(within(form()).getByRole('textbox', { name: 'name' })).toHaveValue(FACES.name);
         expect(within(form()).getByRole('combobox', { name: 'coordinate space' })).toHaveValue('MNI');
         expect(within(form()).getByRole('combobox', { name: 'role' })).toHaveValue('result');
@@ -100,8 +100,8 @@ describe('Edit analysis', () => {
 
     it('calls the role action Change role', () => {
         setup();
-        expect(within(toolbar()).getByRole('button', { name: 'Change role' })).toBeInTheDocument();
-        expect(within(toolbar()).queryByRole('button', { name: 'Relabel' })).not.toBeInTheDocument();
+        expect(within(head()).getByRole('button', { name: 'Change role' })).toBeInTheDocument();
+        expect(within(head()).queryByRole('button', { name: 'Relabel' })).not.toBeInTheDocument();
     });
 });
 

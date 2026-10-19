@@ -3,7 +3,7 @@ import { takeHeldKeys } from '@neurosynth/coordinate-table/static';
 import { fakeHotIn } from '@neurosynth/coordinate-table/testing';
 import { StrictMode } from 'react';
 import { ReviewScreen } from '../review/ReviewScreen';
-import { COORD_TEXT, coordinateBundle, FACES, INSULA, LOCALIZER, PRECUNEUS } from '../test/coordinates';
+import { COORD_TEXT, coordinateBundle, FACES, HOUSES, INSULA, LOCALIZER, PRECUNEUS } from '../test/coordinates';
 import { engageGrid, staticTable } from '../test/grid';
 import { renderWithStores } from '../test/render';
 import { coordinateOpErrors } from '../test/schemas';
@@ -248,7 +248,7 @@ describe('the focused analysis’s points, in a spreadsheet', () => {
         expect(stores.view.getState().coordinates?.point).toBe(0);
         press('j');
         fireEvent.click(
-            within(screen.getByRole('toolbar', { name: 'coordinate actions' })).getByRole('button', {
+            within(screen.getByRole('group', { name: /^actions on (point \d+|the points) of / })).getByRole('button', {
                 name: 'Edit point',
             })
         );
@@ -262,6 +262,19 @@ describe('the focused analysis’s points, in a spreadsheet', () => {
         const grid = await engageGrid(LOCALIZER.name);
         expect(fakeHotIn(grid)).toBe(before);
         expect([...grid.querySelectorAll('tbody tr')].map((r) => r.querySelector('td')?.textContent)).toEqual(['4']);
+    });
+});
+
+describe('the grid hidden while another analysis shows', () => {
+    it('moves neither the focus nor the selection when it selects again, as Handsontable does on More columns', async () => {
+        const { stores } = await setup();
+        act(() => stores.view.getState().focusAnalysis(HOUSES.key));
+        fireEvent.click(screen.getByRole('button', { name: 'More columns' }));
+        const hidden = screen.getByRole('group', { name: `edit the points of ${FACES.name}`, hidden: true });
+        act(() => fakeHotIn(hidden).selectCell(1, 0));
+        expect(stores.view.getState().coordinates).toEqual({ analysis: HOUSES.key, point: null, selected: [] });
+        act(() => fakeHotIn(hidden).selectRows(0, 1));
+        expect(stores.view.getState().coordinates).toEqual({ analysis: HOUSES.key, point: null, selected: [] });
     });
 });
 

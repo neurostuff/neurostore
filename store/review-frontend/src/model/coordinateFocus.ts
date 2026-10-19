@@ -130,6 +130,15 @@ export function tableReveal(bundle: ReviewBundle, entity: EntityNode | undefined
     return table && [table.start, Math.min(table.start + 1, table.end)];
 }
 
+/** The analyses Shift+J and Shift+K walk, in guided order, and where the focused one is among them; -1 where it is not. */
+export function guidedIndex(
+    { bundle }: { bundle: ReviewBundle },
+    { coordinates, showNonCoordinate }: { coordinates: CoordinateFocus | null; showNonCoordinate: boolean }
+) {
+    const order = guidedOrder(currentAnalyses(bundle), showNonCoordinate);
+    return { order, at: order.findIndex((analysis) => analysis.key === coordinates?.analysis) };
+}
+
 /** The focus on the first analysis in guided order, or none when there are no analyses. */
 export function firstAnalysis(analyses: CoordinateAnalysis[], shown: boolean): CoordinateFocus | null {
     const first = guidedOrder(analyses, shown)[0];

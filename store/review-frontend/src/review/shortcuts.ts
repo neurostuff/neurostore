@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { acceptAnalysis, addSelectionToAnalysis, editPoint, removePoint, splitAnalysis } from '../coordinates/actions';
-import { COORDINATE_UNAVAILABLE as NOT, type CoordinateSession } from '../coordinates/availability';
+import { COORDINATE_UNAVAILABLE as NOT, type CoordinateSession, guidedEnd } from '../coordinates/availability';
 import { RECORD_UNAVAILABLE as RECORD, type RecordSession } from '../inspector/availability';
 import { accept, acceptFocusedCard, createOn } from '../inspector/actions';
 import type { Reason } from './reason';
@@ -17,10 +17,14 @@ export interface Shortcut {
     keys: string[];
     label: string;
     scope?: Scope;
-    /** The button that runs the shortcut, if it has one. */
-    button?: { label: string; color?: 'error' };
-    /** Whether its button is also beside the focused field, where it applies (D97). */
+    /** The button that runs the shortcut, if it has one; `readOnly` when it also works on a review you cannot edit. */
+    button?: { label: string; color?: 'error'; readOnly?: boolean };
+    /** Whether its button is beside the focused field, where it applies (D97). */
     field?: boolean;
+    /** Where a coordinate action's button is: on the analysis's card head, as its Previous or Next there, or beside its points. */
+    place?: 'head' | 'stepping' | 'points';
+    /** Whether, while its button is disabled, the reason is written on the head, not only in the button's hint. */
+    reasonOnHead?: boolean;
     /**
      * Its button on the focused card's head, acting on the card's entity: the label, given the entity's kind, and
      * whether the button focuses the entity first, for a shortcut that acts on the focused item.
@@ -177,8 +181,22 @@ export const SHORTCUTS: Shortcut[] = [
         label: 'previous point, from the first back to the analysis; previous change while the diff is shown',
         run: diffAware((s) => view(s).movePoint(-1), -1),
     }),
-    coordinates({ keys: ['Shift+J'], label: 'next analysis', run: (s) => view(s).moveAnalysis(1) }),
-    coordinates({ keys: ['Shift+K'], label: 'previous analysis', run: (s) => view(s).moveAnalysis(-1) }),
+    coordinates({
+        keys: ['Shift+K'],
+        label: 'previous analysis',
+        button: { label: 'Previous', readOnly: true },
+        place: 'stepping',
+        unavailable: guidedEnd(-1),
+        run: (s) => view(s).moveAnalysis(-1),
+    }),
+    coordinates({
+        keys: ['Shift+J'],
+        label: 'next analysis',
+        button: { label: 'Next', readOnly: true },
+        place: 'stepping',
+        unavailable: guidedEnd(1),
+        run: (s) => view(s).moveAnalysis(1),
+    }),
     coordinates({
         keys: ['e'],
         label: 'add the selection to the evidence of the record Analysis naming the focused analysis',
@@ -188,6 +206,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['a'],
         label: 'accept the focused analysis',
         button: { label: 'Accept' },
+        place: 'head',
         unavailable: NOT.judge,
         run: (s) => void acceptAnalysis(s),
     }),
@@ -195,6 +214,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['Shift+Backspace'],
         label: 'reject the focused analysis: with a reason (1–5) and an optional note',
         button: { label: 'Reject', color: 'error' },
+        place: 'head',
         unavailable: NOT.judge,
         run: (s) => openPanelOn(s, 'reject'),
     }),
@@ -202,6 +222,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: [';'],
         label: 'add a note to the focused analysis',
         button: { label: 'Note' },
+        place: 'head',
         unavailable: NOT.note,
         run: (s) => openPanelOn(s, 'note'),
     }),
@@ -209,6 +230,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['n'],
         label: 'edit the focused analysis: its name, coordinate space and role',
         button: { label: 'Edit analysis' },
+        place: 'head',
         unavailable: NOT.judge,
         run: (s) => openPanelOn(s, 'edit_analysis'),
     }),
@@ -216,6 +238,7 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['r'],
         label: 'change the focused analysis’s role',
         button: { label: 'Change role' },
+        place: 'head',
         unavailable: NOT.judge,
         run: (s) => openPanelOn(s, 'relabel'),
     }),
@@ -223,12 +246,13 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['Enter'],
         label: 'edit the points in the grid, from the focused point or the first',
         button: { label: 'Edit point' },
+        place: 'points',
         unavailable: NOT.editPoint,
         run: (s) => void editPoint(s),
     }),
     coordinates({
         keys: [' '],
-        label: 'select or unselect the focused point; on the analysis, select it for a merge',
+        label: 'select or unselect the focused point; on the analysis, select it for a merge; drag over rows in the grid, or Shift-click them, to select those points',
         run: (s) => view(s).togglePoint(),
     }),
     coordinates({
@@ -239,7 +263,8 @@ export const SHORTCUTS: Shortcut[] = [
     coordinates({
         keys: ['m'],
         label: 'move the selected points, or the focused one, to another analysis',
-        button: { label: 'Move' },
+        button: { label: 'Move to…' },
+        place: 'points',
         unavailable: NOT.move,
         run: (s) => openPanelOn(s, 'move'),
     }),
@@ -247,6 +272,8 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['s'],
         label: 'split the focused analysis: the selected points, then the rest',
         button: { label: 'Split' },
+        place: 'head',
+        reasonOnHead: true,
         unavailable: NOT.split,
         run: (s) => void splitAnalysis(s),
     }),
@@ -254,14 +281,14 @@ export const SHORTCUTS: Shortcut[] = [
         keys: ['g'],
         label: 'merge the analyses selected for a merge with the focused one, after confirming',
         button: { label: 'Merge' },
+        place: 'head',
+        reasonOnHead: true,
         unavailable: NOT.merge,
         run: (s) => openPanelOn(s, 'merge'),
     }),
     coordinates({
         keys: ['c'],
         label: 'add an analysis to the focused analysis’s table',
-        button: { label: 'Add analysis' },
-        unavailable: NOT.addAnalysis,
         run: (s) => openPanelOn(s, 'add_analysis'),
     }),
     { keys: ['Alt+Shift+J'], label: 'next step', run: (s) => view(s).moveStep(1) },

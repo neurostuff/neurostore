@@ -4,12 +4,15 @@ import { NotePanel, RejectPanel } from '../inspector/panels';
 import { reviewStatus } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import { targetKey } from '../model/targetKey';
-import { ActionToolbar } from '../review/actionButtons';
+import { VerdictStatus } from '../inspector/WayOn';
+import { AnalysisReasons, CoordinateHeadActions, PointActions } from '../review/actionButtons';
 import { useEditorName } from '../review/editor';
-import { useSession, useView } from '../store/context';
+import { useSession, useSessionView, useView } from '../store/context';
 import { focusedAnalysis } from '../model/coordinateFocus';
 import { analysisTarget } from '../model/targetKey';
-import { coordinatePending } from './availability';
+import type { CoordinateAnalysis } from '../model/coordinates';
+import { humanize } from '../model/labels';
+import { coordinatePending, guidedPosition } from './availability';
 import { AnalysisName } from './AnalysisName';
 import { AddAnalysisChooser } from './AddAnalysisChooser';
 import { AuthorshipChip } from './AuthorshipChip';
@@ -33,7 +36,31 @@ function Offer() {
     );
 }
 
-/** The inspector while a coordinate analysis is in focus: its actions, its summary and the panel open on it. */
+/** Where the focused analysis is in the order Shift+J and Shift+K walk. */
+function Position() {
+    const position = useSessionView((session, view) => {
+        const { at, of } = guidedPosition(session, view);
+        // Spelt through humanize: the check that this code names no schema class forbids the capitalised word itself.
+        return at ? `${humanize('analysis')} ${at} of ${of}` : '';
+    });
+    return (
+        <Typography variant="body2" color="text.secondary" component="span">
+            {position}
+        </Typography>
+    );
+}
+
+/** What the reviewer's last verdict on the analysis did, and the way on. */
+function JudgedStatus({ analysis }: { analysis: CoordinateAnalysis }) {
+    const verdict = useView((s) => (s.judged?.analysis === analysis.key ? s.judged.verdict : null));
+    return <VerdictStatus text={verdict ? `${verdict === 'accept' ? 'Accepted' : 'Rejected'} ${analysis.name}` : ''} />;
+}
+
+/** Which point the point actions act on: the focused one, else the analysis's points. */
+const pointsLabel = (analysis: CoordinateAnalysis, point: number | null) =>
+    point === null ? `the points of ${analysis.name}` : `point ${point + 1} of ${analysis.name}`;
+
+/** The inspector while a coordinate analysis is in focus: its head with its actions, the panel open on it, and its points. */
 export function CoordinatesInspector() {
     const coordinates = useView((s) => s.coordinates);
     const analysis = useSession((s) => focusedAnalysis({ bundle: s.bundle, coordinates }));
@@ -47,7 +74,6 @@ export function CoordinatesInspector() {
     const summary = useSession((s) => (analysis ? analysisSummary(s.bundle, s.index, analysis) : ''));
     return (
         <>
-            <ActionToolbar scope="coordinates" label="coordinate actions" />
             <Box role="status" aria-label="pending coordinate changes" sx={{ px: 2, typography: 'caption' }}>
                 {saving ? 'saving coordinate changes…' : ''}
             </Box>
@@ -73,6 +99,19 @@ export function CoordinatesInspector() {
                                 .filter(Boolean)
                                 .join(' · ')}
                         </Typography>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            useFlexGap
+                            flexWrap="wrap"
+                            sx={{ pt: 1 }}
+                        >
+                            <Position />
+                            <CoordinateHeadActions />
+                        </Stack>
+                        <AnalysisReasons />
+                        <JudgedStatus analysis={analysis} />
                         <NamedBy analysis={analysis} />
                         {panel?.kind === 'note' && <NotePanel target={panel.target} label={analysis.name} />}
                         {panel?.kind === 'edit_analysis' && <EditAnalysisPanel analysis={analysis} />}
@@ -82,7 +121,9 @@ export function CoordinatesInspector() {
                         {panel?.kind === 'merge' && <MergeDialog />}
                     </CardHead>
                     <Box sx={{ px: 2, py: 1 }}>
-                        <PointsView analysis={analysis} />
+                        <PointsView analysis={analysis}>
+                            <PointActions label={pointsLabel(analysis, coordinates.point)} />
+                        </PointsView>
                     </Box>
                 </Box>
             )}

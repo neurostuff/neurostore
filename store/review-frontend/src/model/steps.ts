@@ -2,7 +2,7 @@ export const STEPS = [
     {
         id: 'coordinates',
         label: 'Coordinates',
-        hint: 'Check each coordinate analysis: its points, its name and its role.',
+        hint: 'Check each coordinate analysis: its points, its name and its role. Shift+J and Shift+K move between analyses, j and k between points; drag over rows or press Space to select points.',
     },
     {
         id: 'analyses',

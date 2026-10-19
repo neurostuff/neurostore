@@ -1,10 +1,10 @@
-import { Button, Stack } from '@mui/material';
+import { Box, Stack } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { memo, type ReactNode } from 'react';
 import { entityKey } from '../model/targetKey';
 import { useIsEditable, useReviewStores, useSessionView } from '../store/context';
-import { Hint } from './Hint';
 import { quickButtons } from './quickButtons';
-import { keyLabel, type Scope, SHORTCUTS, type Shortcut } from './shortcuts';
+import { keyLabel, SHORTCUTS, type Shortcut } from './shortcuts';
 
 type Labelled = Shortcut & { button: NonNullable<Shortcut['button']> };
 
@@ -24,37 +24,15 @@ function useReasons(actions: Labelled[], entity?: string): string[] {
 const hintOf = ({ keys, label }: Labelled, reason: string) => reason || `${label} (${keyLabel(keys[0])})`;
 
 /** What a shortcut's button does: it runs the shortcut, and is disabled while `reason` says it does not apply. */
-function useActionProps({ keys, run }: Labelled, reason: string) {
+function useActionProps({ keys, run, button }: Labelled, reason: string) {
     const stores = useReviewStores();
     const editable = useIsEditable();
     return {
         'aria-keyshortcuts': keyLabel(keys[0]),
-        disabled: !editable || reason !== '',
+        disabled: (!editable && !button.readOnly) || reason !== '',
         onClick: () => run(stores),
     };
 }
-
-/** The button that runs a shortcut, disabled while `reason` says it does not apply. */
-const ActionButton = memo(function ActionButton({ action, reason }: { action: Labelled; reason: string }) {
-    const { button } = action;
-    const props = useActionProps(action, reason);
-    return (
-        <Button size="small" variant="outlined" color={button.color ?? 'primary'} {...props}>
-            {button.label}
-        </Button>
-    );
-});
-
-/** A shortcut's button with its hint in a tooltip, for a toolbar mounted once. */
-const ShortcutButton = memo(function ShortcutButton({ action, reason }: { action: Labelled; reason: string }) {
-    return (
-        <Hint title={hintOf(action, reason)}>
-            <span>
-                <ActionButton action={action} reason={reason} />
-            </span>
-        </Hint>
-    );
-});
 
 /**
  * A shortcut's plain button with its hint as the browser's own, for buttons mounted at each focus, where a tooltip
@@ -76,31 +54,16 @@ function QuickButton({ action, reason }: { action: Labelled; reason: string }) {
     );
 }
 
-const RECORD_FIELD = SHORTCUTS.filter((s): s is Labelled => s.scope === 'record' && s.field === true && hasButton(s));
+/** How a row of quick buttons beside what they act on is laid out. */
+const BESIDE = {
+    direction: 'row',
+    spacing: 0.5,
+    useFlexGap: true,
+    flexWrap: 'wrap',
+    sx: (theme: Theme) => ({ pt: 0.5, ...quickButtons(theme) }),
+} as const;
 
-/**
- * One button per shortcut in `scope` that has a label, in table order; each runs its shortcut. A button whose
- * shortcut does not apply to the focus is disabled, its tooltip saying why; otherwise the tooltip names its key.
- */
-export function ActionToolbar({ scope, label }: { scope: Scope; label: string }) {
-    const actions = SHORTCUTS.filter((s): s is Labelled => s.scope === scope && hasButton(s));
-    const reasons = useReasons(actions);
-    return (
-        <Stack
-            role="toolbar"
-            aria-label={label}
-            direction="row"
-            spacing={1}
-            useFlexGap
-            flexWrap="wrap"
-            sx={{ px: 2, pt: 1 }}
-        >
-            {actions.map((action, i) => (
-                <ShortcutButton key={action.button.label} action={action} reason={reasons[i]} />
-            ))}
-        </Stack>
-    );
-}
+const RECORD_FIELD = SHORTCUTS.filter((s): s is Labelled => s.scope === 'record' && s.field === true && hasButton(s));
 
 /** The actions on the focused field that apply to it, beside it (D97), then `children`; a click on one stays with the field. */
 export function FieldActions({ label, children }: { label: string; children?: ReactNode }) {
@@ -109,11 +72,7 @@ export function FieldActions({ label, children }: { label: string; children?: Re
         <Stack
             role="toolbar"
             aria-label={`actions on ${label}`}
-            direction="row"
-            spacing={0.5}
-            useFlexGap
-            flexWrap="wrap"
-            sx={(theme) => ({ pt: 0.5, ...quickButtons(theme) })}
+            {...BESIDE}
             onClick={(event) => event.stopPropagation()}
             onDoubleClick={(event) => event.stopPropagation()}
         >
@@ -147,3 +106,55 @@ export const CardActions = memo(function CardActions({ entity, kind }: { entity:
         <QuickButton key={action.button.label} action={onEntity(action, entity, kind)} reason={reasons[i]} />
     ));
 });
+
+const COORDINATE = SHORTCUTS.filter((s): s is Labelled => s.scope === 'coordinates' && hasButton(s));
+const placed = (place: Shortcut['place']) => COORDINATE.filter((s) => s.place === place);
+const STEPPING = placed('stepping');
+const ON_ANALYSIS = placed('head');
+const ON_POINTS = placed('points');
+
+/** One quick button per action, disabled while it does not apply to the focus, its hint saying why. */
+const QuickButtons = memo(function QuickButtons({ actions }: { actions: Labelled[] }) {
+    const reasons = useReasons(actions);
+    return actions.map((action, i) => <QuickButton key={action.button.label} action={action} reason={reasons[i]} />);
+});
+
+/** The buttons on the focused coordinate analysis's head: Previous and Next (Shift+K and Shift+J), then its actions. */
+export const CoordinateHeadActions = () => (
+    <>
+        <QuickButtons actions={STEPPING} />
+        <QuickButtons actions={ON_ANALYSIS} />
+    </>
+);
+
+const EXPLAINED = ON_ANALYSIS.filter((s) => s.reasonOnHead);
+
+/** Why those of the head's actions that say so do not apply, written out, as a hint shows only on hover. */
+export const AnalysisReasons = memo(function AnalysisReasons() {
+    const reasons = useReasons(EXPLAINED).filter(Boolean);
+    if (!reasons.length) return null;
+    return (
+        <Box
+            component="ul"
+            aria-label="why some actions do not apply"
+            sx={{ m: 0, p: 0, listStyle: 'none', typography: 'caption', color: 'text.secondary' }}
+        >
+            {reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+            ))}
+        </Box>
+    );
+});
+
+/**
+ * The actions on the focused point, or the selected ones, beside the points, laid out as `FieldActions`. Unlike the
+ * field's, they show disabled, their hints saying how to focus or select points, and they are a group, since the
+ * Coordinates step has no toolbar; nothing around them takes a click.
+ */
+export function PointActions({ label }: { label: string }) {
+    return (
+        <Stack role="group" aria-label={`actions on ${label}`} {...BESIDE}>
+            <QuickButtons actions={ON_POINTS} />
+        </Stack>
+    );
+}

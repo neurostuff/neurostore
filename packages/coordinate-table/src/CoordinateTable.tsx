@@ -58,8 +58,8 @@ export interface CoordinateTableProps {
   points: Row[];
   /** Called once for each committed change whose every cell is valid, with every row after it. */
   onChange(points: Row[]): void;
-  /** Called with the row a selection ends on, once the reviewer selects in the grid. */
-  onSelectRow?(row: number): void;
+  /** Called once the reviewer selects in the grid: the row the selection ends on, and the first and last rows it spans. */
+  onSelectRow?(selection: { row: number; first: number; last: number }): void;
   columns?: CoordinateColumn[];
   readOnly?: boolean;
   /** The accessible name of the grid. */
@@ -200,8 +200,12 @@ export function CoordinateTable({
         (hot.current?.hotInstance?.countRows() ?? 0) - amount >= minRows,
       afterRemoveRow: () => latestCommit.current(),
       afterAutofill: () => hot.current?.hotInstance?.validateCells(),
-      afterSelectionEnd: (_row: number, _column: number, row: number) =>
-        latestSelect.current?.(row),
+      afterSelectionEnd: (from: number, _column: number, row: number) =>
+        latestSelect.current?.({
+          row,
+          first: Math.min(from, row),
+          last: Math.max(from, row),
+        }),
       beforeRefreshDimensions: (before: Size, after: Size) =>
         before.width !== after.width,
     }),

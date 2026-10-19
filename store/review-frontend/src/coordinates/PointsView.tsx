@@ -1,6 +1,6 @@
 import { dropHeldKeys, StaticTable, type GridEngagement } from '@neurosynth/coordinate-table/static';
 import { Box, Button, Typography } from '@mui/material';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { CoordinateAnalysis } from '../model/coordinates';
 import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
 import { coordinatePending } from './availability';
@@ -19,9 +19,10 @@ void pointsTable.then((module) => (loaded = module.default));
 
 /**
  * The focused analysis's points: a read-only table until the reviewer begins to edit, then the point grid, which
- * carries on what they began. The grid, once mounted, stays mounted, hidden while another analysis's table shows.
+ * carries on what they began, then `children`. The grid, once mounted, stays mounted, hidden while another
+ * analysis's table shows.
  */
-export function PointsView({ analysis }: { analysis: CoordinateAnalysis }) {
+export function PointsView({ analysis, children }: { analysis: CoordinateAnalysis; children?: ReactNode }) {
     const request = useView((s) => s.gridEngagement);
     const stores = useReviewStores();
     const engageGrid = useView((s) => s.engageGrid);
@@ -79,6 +80,7 @@ export function PointsView({ analysis }: { analysis: CoordinateAnalysis }) {
                 </Box>
             )}
             {!engaged && table}
+            {children}
             <MoreColumns shown={allColumns} onToggle={() => setAllColumns((shown) => !shown)} />
         </>
     );

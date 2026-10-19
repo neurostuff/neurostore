@@ -16,31 +16,30 @@ function setup() {
     return { ...view, viewState: () => view.stores.view.getState() };
 }
 
-const button = (name: string) =>
-    within(screen.getByRole('toolbar', { name: 'coordinate actions' })).getByRole('button', { name });
+/** The keyed action buttons on the focused analysis's head, then those beside its points. */
+const actions = () =>
+    [
+        screen.queryByRole('group', { name: /: card head$/ }),
+        screen.queryByRole('group', { name: /^actions on (point \d+|the points) of / }),
+    ].flatMap((holder) =>
+        holder
+            ? within(holder)
+                  .getAllByRole('button')
+                  .filter((b) => b.hasAttribute('aria-keyshortcuts'))
+            : []
+    );
+const button = (name: string) => actions().find((b) => b.textContent === name)!;
 const enabled = () =>
-    within(screen.getByRole('toolbar', { name: 'coordinate actions' }))
-        .getAllByRole('button')
+    actions()
         .filter((b) => !b.hasAttribute('disabled'))
         .map((b) => b.textContent);
 
-async function reasonOf(name: string) {
-    fireEvent.mouseOver(button(name).parentElement!);
-    return (await screen.findByRole('tooltip')).textContent;
-}
+const reasonOf = (name: string) => button(name).getAttribute('title');
 
 describe('coordinate actions that do not apply to the focus', () => {
     it('are disabled on an analysis with nothing selected: move, split and merge', () => {
         setup();
-        expect(enabled()).toEqual([
-            'Accept',
-            'Reject',
-            'Note',
-            'Edit analysis',
-            'Change role',
-            'Edit point',
-            'Add analysis',
-        ]);
+        expect(enabled()).toEqual(['Next', 'Accept', 'Reject', 'Note', 'Edit analysis', 'Change role', 'Edit point']);
     });
 
     it('name their key for assistive technology, enabled or not', () => {
@@ -50,9 +49,9 @@ describe('coordinate actions that do not apply to the focus', () => {
         expect(button('Split')).toHaveAttribute('aria-keyshortcuts', 's');
     });
 
-    it('say why in a tooltip', async () => {
+    it('say why in their hint', () => {
         setup();
-        expect(await reasonOf('Split')).toBe('Select the points to split off with Space first');
+        expect(reasonOf('Split')).toBe('Select the points to split off: drag over rows or press Space');
     });
 
     it('come back when they apply', () => {
@@ -60,32 +59,34 @@ describe('coordinate actions that do not apply to the focus', () => {
         act(() => viewState().focusAnalysis(FACES.key, 1));
         act(() => viewState().togglePoint());
         act(() => viewState().toggleMerge(HOUSES.key));
-        expect(enabled()).toContain('Move');
+        expect(enabled()).toContain('Move to…');
         expect(enabled()).toContain('Split');
         expect(enabled()).toContain('Merge');
     });
 
-    it('a move needs a point focused or selected', async () => {
+    it('a move needs a point focused or selected', () => {
         setup();
-        expect(await reasonOf('Move')).toBe('Focus a point, or select points with Space, first');
+        expect(reasonOf('Move to…')).toBe('Focus a point, or select points: drag over rows or press Space');
     });
 
-    it('a move needs another analysis to move to', async () => {
+    it('a move needs another analysis to move to', () => {
         const view = renderWithStores(
             <ReviewScreen />,
             coordinateBundle({ coordinate_parse: { analyses: [FACES] } as ReviewBundle['coordinate_parse'] }),
             { now: () => 'now' }
         );
         act(() => view.stores.view.getState().focusAnalysis(FACES.key, 0));
-        expect(await reasonOf('Move')).toBe('There is no other analysis to move points to');
+        expect(reasonOf('Move to…')).toBe('There is no other analysis to move points to');
     });
 
-    it('a merge needs another analysis selected', async () => {
+    it('a merge needs another analysis selected', () => {
         setup();
-        expect(await reasonOf('Merge')).toBe('Shift-click another analysis to merge with this one');
+        expect(reasonOf('Merge')).toBe(
+            'Merge joins whole analyses: Shift-click another analysis’s card; to put these points in another analysis, use Move to…'
+        );
     });
 
-    it('a split leaves at least one point unselected', async () => {
+    it('a split leaves at least one point unselected', () => {
         const { viewState } = setup();
         act(() => viewState().focusAnalysis(FACES.key, 0));
         act(() => viewState().togglePoint());
@@ -93,34 +94,36 @@ describe('coordinate actions that do not apply to the focus', () => {
         act(() => viewState().togglePoint());
         expect(viewState().coordinates?.selected).toEqual([0, 1]);
         expect(button('Split')).toBeDisabled();
-        expect(await reasonOf('Split')).toBe('Leave at least one point unselected to split');
+        expect(reasonOf('Split')).toBe('Leave at least one point unselected to split');
     });
 
-    it('every action needs an analysis focused, not one the parse no longer has', async () => {
+    it('every action needs an analysis focused, not one the parse no longer has', () => {
         const { stores } = setup();
         act(() => stores.view.setState({ coordinates: { analysis: 'analysis#gone', point: null, selected: [] } }));
-        expect(enabled()).toEqual([]);
-        expect(await reasonOf('Note')).toBe('Focus an analysis first');
+        expect(actions()).toEqual([]);
+        act(() => void fireEvent.keyDown(document.body, { key: ';' }));
+        expect(stores.view.getState().panel).toBeNull();
     });
 
-    it('a text analysis has no table to add an analysis to', async () => {
+    it('a text analysis has no table for C to add an analysis to', () => {
         const { viewState } = setup();
         act(() => viewState().focusAnalysis(LOCALIZER.key));
-        expect(button('Add analysis')).toBeDisabled();
-        expect(await reasonOf('Add analysis')).toBe(
-            'A text analysis has no table: use Add an analysis below, from the selected text'
-        );
+        act(() => void fireEvent.keyDown(document.body, { key: 'c' }));
+        expect(viewState().panel).toBeNull();
+        act(() => viewState().focusAnalysis(FACES.key));
+        act(() => void fireEvent.keyDown(document.body, { key: 'c' }));
+        expect(viewState().panel).toMatchObject({ kind: 'add_analysis', table: FACES.table_id });
     });
 
-    it('an analysis with no points has none to edit', async () => {
+    it('an analysis with no points has none to edit', () => {
         const { viewState } = setup();
         act(() => viewState().toggleNonCoordinate());
         act(() => viewState().focusAnalysis(SCRAMBLED.key));
         expect(button('Edit point')).toBeDisabled();
-        expect(await reasonOf('Edit point')).toBe('This analysis has no points yet: add a row in its grid');
+        expect(reasonOf('Edit point')).toBe('This analysis has no points yet: add a row in its grid');
     });
 
-    it('wait while a coordinate change saves', async () => {
+    it('wait while a coordinate change saves', () => {
         const { stores } = setup();
         const relabel: Op = {
             client_op_id: 'c-pending',
@@ -130,12 +133,12 @@ describe('coordinate actions that do not apply to the focus', () => {
             role: 'anchor',
         };
         act(() => void stores.session.getState().emitBatch([relabel]));
-        expect(enabled()).toEqual(['Note']);
-        expect(await reasonOf('Accept')).toBe('Wait for the coordinate change to save');
+        expect(enabled()).toEqual(['Next', 'Note']);
+        expect(reasonOf('Accept')).toBe('Wait for the coordinate change to save');
     });
 
-    it('show their key in the tooltip when they apply', async () => {
+    it('show their key in their hint when they apply', () => {
         setup();
-        expect(await reasonOf('Accept')).toBe('accept the focused analysis (a)');
+        expect(reasonOf('Accept')).toBe('accept the focused analysis (a)');
     });
 });

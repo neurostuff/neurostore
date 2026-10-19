@@ -5,6 +5,7 @@ import {
     clamp,
     firstAnalysis,
     focusedAnalysis,
+    guidedIndex,
     placeReveal,
     nextFocus,
     tableReveal,
@@ -24,7 +25,7 @@ import { auditRows, isLinkStep, stepCards, type AuditLink } from '../model/guide
 import type { Json } from '../model/paths';
 import type { RecordIndex, SpanPair } from '../model/record';
 import { STEPS, type StepId } from '../model/steps';
-import { entityKey, relationshipKey, slotTarget } from '../model/targetKey';
+import { analysisTarget, entityKey, relationshipKey, slotTarget, targetKey } from '../model/targetKey';
 import { isFocused, selectDiff } from './diffSelectors';
 import { selectIsEditable, type Replaced, type SessionStore } from './sessionStore';
 import { selectEvidenceCursor, selectFocusedSpans, selectShown } from './viewSelectors';
@@ -83,6 +84,12 @@ export interface AcceptedCard {
     links: number;
 }
 
+/** A verdict the reviewer gave a coordinate analysis. */
+export interface JudgedAnalysis {
+    analysis: string;
+    verdict: 'accept' | 'reject';
+}
+
 export type OutlineFilter = 'all' | 'unreviewed' | 'changed' | 'noted' | 'doubtful';
 
 export interface ViewState {
@@ -112,6 +119,9 @@ export interface ViewState {
     /** The last card accept on the focused card, until the focus moves. */
     accepted: AcceptedCard | null;
     showAccepted(accepted: AcceptedCard): void;
+    /** The reviewer's last verdict on the focused coordinate analysis, until the focus moves to another. */
+    judged: JudgedAnalysis | null;
+    showJudged(judged: JudgedAnalysis): void;
     /** Gives the record entity the add `clientOpId` makes the slot values `values`, once the server has made it. */
     setOnMade(clientOpId: string, values: Record<string, string>): void;
     /**
@@ -131,6 +141,8 @@ export interface ViewState {
     moveAnalysis(delta: 1 | -1): void;
     /** Selects or unselects a point of the focused analysis, the focused point by default. */
     togglePoint(index?: number): void;
+    /** Makes `selected` the selected points of the focused analysis. */
+    selectPoints(selected: number[]): void;
     /** Selects or unselects an analysis for a merge, the focused one by default. */
     toggleMerge(key?: string): void;
     toggleNonCoordinate(): void;
@@ -140,7 +152,10 @@ export interface ViewState {
     focusLink(slot: string, target: string): void;
     moveSlot(delta: 1 | -1): void;
     moveEntity(delta: 1 | -1): void;
-    /** Focuses the step's next card after the focused one, round to its start, that is not hidden and no one has judged. */
+    /**
+     * Focuses the step's next card after the focused one, round to its start, that is not hidden and no one has
+     * judged; on the coordinates step, the next such analysis.
+     */
     focusNextUnjudged(): void;
     stepEvidence(delta: 1 | -1): void;
     /** Puts the evidence cursor on `span`, once it is among the focused spans. */
@@ -161,6 +176,10 @@ export interface ViewState {
 }
 
 export type ViewStore = ReturnType<typeof createViewStore>;
+
+/** The first item of `list` from `start` on, round to its start, that `keep` takes. */
+const nextRound = <T>(list: T[], start: number, keep: (item: T) => boolean) =>
+    list.map((_, i) => list[(start + i) % list.length]).find(keep);
 
 /** The position `delta` from `at` in a list of `length`, kept within it; `start` when `at` is in none of it. */
 const stepIn = (length: number, at: number, delta: number, start = 0) =>
@@ -219,12 +238,13 @@ export function createViewStore(session: SessionStore) {
                 coordinates: null,
                 offer: null,
                 accepted: null,
+                judged: null,
             });
         };
 
         /** Focuses `coordinates`; the point grid stays engaged on the same analysis, or on the one `kept` replaced. */
         const focusCoordinates = (coordinates: CoordinateFocus | null, kept = false) => {
-            const { reveal, gridEngagement } = get();
+            const { reveal, gridEngagement, judged } = get();
             const same = kept || coordinates?.analysis === get().coordinates?.analysis;
             set({
                 coordinates,
@@ -232,6 +252,7 @@ export function createViewStore(session: SessionStore) {
                 reveal: revealed(shownAt(coordinates), reveal),
                 panel: null,
                 gridEngagement: same ? gridEngagement : null,
+                judged: judged?.analysis === coordinates?.analysis ? judged : null,
             });
         };
 
@@ -333,12 +354,25 @@ export function createViewStore(session: SessionStore) {
         const focusNextUnjudgedLink = () => {
             const { rows, on, before } = linkRows();
             const { provenance } = documents();
-            const start = on !== -1 ? on + 1 : before;
             focusRow(
-                rows
-                    .map((_, i) => rows[(start + i) % rows.length])
-                    .find((row) => row.key !== get().focus.key && !provenance[row.key])
+                nextRound(
+                    rows,
+                    on !== -1 ? on + 1 : before,
+                    (row) => row.key !== get().focus.key && !provenance[row.key]
+                )
             );
+        };
+
+        /** The way on from a judged analysis: the next analysis in guided order, round to the start, no one has judged. */
+        const focusNextUnjudgedAnalysis = () => {
+            const { order, at } = guidedIndex(documents(), get());
+            const { provenance } = documents();
+            const next = nextRound(
+                order,
+                at + 1,
+                (a) => a.key !== get().coordinates?.analysis && !provenance[targetKey(analysisTarget(a.key))]
+            );
+            if (next) focusCoordinates({ analysis: next.key, point: null, selected: [] });
         };
 
         session.subscribe((state, previous) => {
@@ -363,6 +397,7 @@ export function createViewStore(session: SessionStore) {
             diffOn: false,
             offer: null,
             accepted: null,
+            judged: null,
             gridEngagement: null,
 
             engageGrid: () => {
@@ -371,6 +406,7 @@ export function createViewStore(session: SessionStore) {
             },
             setOnMade: (clientOpId, values) => void onMade.set(clientOpId, values),
             showAccepted: (accepted) => set({ accepted }),
+            showJudged: (judged) => set({ judged }),
             focusAnalysis: (key, point = null) => {
                 const { coordinates } = get();
                 const analysis = currentAnalyses(documents().bundle).find((a) => a.key === key);
@@ -392,8 +428,7 @@ export function createViewStore(session: SessionStore) {
                 if (next !== at) focusCoordinates({ ...coordinates, point: next });
             },
             moveAnalysis: (delta) => {
-                const order = guided();
-                const at = order.findIndex((a) => a.key === get().coordinates?.analysis);
+                const { order, at } = guidedIndex(documents(), get());
                 const next = stepIn(order.length, at, delta);
                 if (order[next] && next !== at)
                     focusCoordinates({ analysis: order[next].key, point: null, selected: [] });
@@ -406,6 +441,11 @@ export function createViewStore(session: SessionStore) {
                 const selected = coordinates.selected.includes(at)
                     ? coordinates.selected.filter((i) => i !== at)
                     : [...coordinates.selected, at].sort((a, b) => a - b);
+                set({ coordinates: { ...coordinates, selected } });
+            },
+            selectPoints: (selected) => {
+                const { coordinates } = get();
+                if (!coordinates || selected.join() === coordinates.selected.join()) return;
                 set({ coordinates: { ...coordinates, selected } });
             },
             toggleMerge: (key) => {
@@ -453,12 +493,15 @@ export function createViewStore(session: SessionStore) {
             },
             focusNextUnjudged: () => {
                 if (isLinkStep(get().step)) return focusNextUnjudgedLink();
+                if (get().step === 'coordinates') return focusNextUnjudgedAnalysis();
                 const cards = stepCards({ ...shownDocuments(), step: get().step }) ?? [];
                 const at = cards.findIndex((e) => e.id === get().focus.entity);
                 const { provenance } = documents();
-                const next = cards
-                    .map((_, i) => cards[(at + 1 + i) % cards.length])
-                    .find((e) => !e.hidden && e.id !== get().focus.entity && !provenance[entityKey(e.id)]);
+                const next = nextRound(
+                    cards,
+                    at + 1,
+                    (e) => !e.hidden && e.id !== get().focus.entity && !provenance[entityKey(e.id)]
+                );
                 if (next) focusOn({ entity: next.id, key: entityKey(next.id) });
             },
             stepEvidence: (delta) => {

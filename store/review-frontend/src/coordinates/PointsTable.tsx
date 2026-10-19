@@ -9,10 +9,14 @@ import { pairProblems, pointColumns, toPoints, toRows } from './pointRows';
 
 type Row = Record<string, unknown>;
 
+const rowsBetween = (first: number, last: number) =>
+    Array.from({ length: Math.max(last - first + 1, 0) }, (_, i) => first + i);
+
 /**
  * The points of `analysis` in a spreadsheet; each committed change is one edit_points op. While it is unconfirmed
  * the grid shows what was sent and takes no edits; a refusal brings back the analysis's points. It carries on what
- * the reviewer began on the static table, and commits the edit still open once hidden.
+ * the reviewer began on the static table, and commits the edit still open once hidden. A selection over rows selects
+ * those points, as Space does; hidden, a selection in it focuses and selects nothing.
  */
 export default function PointsTable({
     analysis,
@@ -38,6 +42,8 @@ export default function PointsTable({
     );
     const shown = saving && sent?.key === analysis.key ? sent.rows : rows;
 
+    /** Whether the points selected came from a selection over rows here, which a selection of one row clears. */
+    const spanned = useRef(false);
     const settled = useRef(false);
     useEffect(() => {
         queueMicrotask(() => (settled.current = true));
@@ -79,10 +85,17 @@ export default function PointsTable({
                 columns={columns}
                 readOnly={!editable || pending}
                 onChange={onChange}
-                onSelectRow={(row) => {
-                    const { coordinates, focusAnalysis } = stores.view.getState();
-                    if (row < (analysis.points?.length ?? 0) && coordinates?.point !== row) {
-                        focusAnalysis(analysis.key, row);
+                onSelectRow={({ row, first, last }) => {
+                    if (!active) return;
+                    const count = analysis.points?.length ?? 0;
+                    const { coordinates, focusAnalysis, selectPoints } = stores.view.getState();
+                    if (row < count && coordinates?.point !== row) focusAnalysis(analysis.key, row);
+                    if (first !== last) {
+                        spanned.current = true;
+                        selectPoints(rowsBetween(first, Math.min(last, count - 1)));
+                    } else if (spanned.current) {
+                        spanned.current = false;
+                        selectPoints([]);
                     }
                 }}
             />
