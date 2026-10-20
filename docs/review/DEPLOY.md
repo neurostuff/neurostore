@@ -4,7 +4,7 @@ The review app has two parts:
 - **the API:** `/api/review/…` routes in the neurostore backend, deployed with neurostore as usual;
 - **a static front end:** `store/review-frontend`, which the store's nginx serves at `/review/`.
 
-This page is the extra work a release with the review app needs. It sits on top of the store steps in [RELEASE_DEPLOYMENT.md](../../RELEASE_DEPLOYMENT.md). Run every command from the release checkout on the neurostore.org host unless it says otherwise.
+Staging and dev deploys (`scripts/deploy/deploy_environment.sh`) do all of this on their own: `build_review_frontend` writes the build settings from the main front end's env file and builds `dist/` before store_nginx starts, and the store smoke check fetches `/review/`. This page is the extra work a production release with the review app needs. It sits on top of the store steps in [RELEASE_DEPLOYMENT.md](../../RELEASE_DEPLOYMENT.md). Run every command from the release checkout on the neurostore.org host unless it says otherwise.
 
 ## Once, before the first deploy
 
