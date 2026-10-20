@@ -694,18 +694,19 @@ describe('the offline queue', () => {
         expect((await queue.read(reviewId))?.ops.map((op) => op.client_op_id)).toEqual(['kept-0001']);
     });
 
-    it('keeps the lock across a close and open in one task, and lets go of it a task after a close', async () => {
+    it('keeps the lock across a close and open in one task, and lets go of it once a close has written what is kept', async () => {
         const { locks, held } = fakeLocks();
         const lock = `neurostore-review:${reviewId}`;
         const tab = await openTab({ locks });
-        tab.close();
+        void tab.close();
         void tab.open();
         await vi.advanceTimersByTimeAsync(0);
         expect([...held]).toEqual([lock]);
         expect((await openTab({ locks })).stores.session.getState().device).toBe('readonly');
-        tab.close();
+        const closing = tab.close();
         expect([...held]).toEqual([lock]);
         await vi.advanceTimersByTimeAsync(0);
+        await closing;
         expect([...held]).toEqual([]);
         expect((await openTab({ locks })).stores.session.getState().device).toBe('kept');
     });

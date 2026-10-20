@@ -508,8 +508,8 @@ describe('a held op after a reload', () => {
         act(() => release());
         await waitFor(() => expect(one.stores.session.getState().heldOps).toHaveLength(1), SLOW);
         await one.client.settled();
-        one.close();
         shown.unmount();
+        await one.close();
 
         const two = await tab();
         stop = () => two.close();

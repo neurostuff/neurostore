@@ -49,6 +49,7 @@ export function createReviewSession(bundle: ReviewBundle, api: ReviewApi, device
     let teardown: ReturnType<typeof setTimeout> | undefined;
     let keeper: ReturnType<typeof keepPending> | null = null;
     let release = () => {};
+    let closed = () => {};
     let lost = false;
 
     const setDevice = (status: DeviceStatus, notice?: string) => session.getState().setDevice(status, notice);
@@ -76,17 +77,19 @@ export function createReviewSession(bundle: ReviewBundle, api: ReviewApi, device
         keeper = keepPending(session, queue, id);
     }
 
-    function letGo() {
+    /** Writes what is kept, then lets go of the lock, so the next tab to take it reads the write. */
+    function letGo(): Promise<void> {
         phase = 'released';
-        void keeper?.write();
+        const written = keeper?.write() ?? Promise.resolve();
         keeper?.stop();
         keeper = null;
-        release();
+        const free = release;
         release = () => {};
+        return written.catch(() => {}).then(free);
     }
 
     function begin() {
-        if (phase === 'released') return letGo();
+        if (phase === 'released') return void letGo();
         phase = 'editable';
         if (teardown !== undefined) return;
         client.start();
@@ -101,7 +104,7 @@ export function createReviewSession(bundle: ReviewBundle, api: ReviewApi, device
             const held = await takeLock(device.locks, `neurostore-review:${reviewId}`);
             if (!held) return setDevice('readonly', OTHER_TAB);
             release = held;
-            if (phase === 'released') return letGo();
+            if (phase === 'released') return void letGo();
         }
         if (device.indexedDB) await restore(device.indexedDB, reviewId);
         else notKept();
@@ -115,20 +118,30 @@ export function createReviewSession(bundle: ReviewBundle, api: ReviewApi, device
         open(): Promise<void> {
             clearTimeout(teardown);
             teardown = undefined;
+            closed();
+            closed = () => {};
             if (phase === 'idle') {
                 phase = 'loading';
                 loading = load();
             } else if (phase === 'editable') begin();
             return loading;
         },
-        /** Stops saving at once, and lets go of the queue and the lock unless opened again in the same task. */
-        close() {
+        /**
+         * Stops saving at once, and lets go of the queue and the lock unless opened again in the same task;
+         * settles once they are let go (the kept ops written), or at once when opened again.
+         */
+        close(): Promise<void> {
             client.stop();
             clearTimeout(teardown);
-            teardown = setTimeout(() => {
-                teardown = undefined;
-                letGo();
-            }, 0);
+            closed();
+            return new Promise<void>((resolve) => {
+                closed = resolve;
+                teardown = setTimeout(() => {
+                    teardown = undefined;
+                    closed = () => {};
+                    void letGo().then(resolve);
+                }, 0);
+            });
         },
     };
 }

@@ -29,7 +29,7 @@ export function useReviewSession(
     const [session] = useState(() => createReviewSession(bundle, api, device));
     useEffect(() => {
         void session.open();
-        return () => session.close();
+        return () => void session.close();
     }, [session]);
     return session;
 }
