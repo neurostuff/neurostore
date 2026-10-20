@@ -667,21 +667,22 @@ describe('while a coordinate op is pending', () => {
         role: 'anchor',
     };
 
-    it('no accept is sent, since the focused analysis’s key may change', () => {
+    it('an accept is queued behind it and applied at once', () => {
         const { pending, session } = setup();
         act(() => void session().emitBatch([accept]));
         press('a');
-        expect(pending()).toEqual([accept]);
+        expect(pending()).toEqual([accept, expect.objectContaining({ type: 'verdict', target: target(FACES.key) })]);
+        expect(session().provenance[`coordinate_analysis:${FACES.key}`]?.state).toBe('verified');
     });
 
-    it('no coordinate panel opens', () => {
+    it('its coordinate panels open', () => {
         const { session } = setup();
         act(() => void session().emitBatch([accept]));
         press('r');
-        expect(screen.queryByRole('combobox', { name: 'role' })).not.toBeInTheDocument();
+        expect(screen.getByRole('combobox', { name: 'role' })).toBeInTheDocument();
     });
 
-    it('a merge the dialog confirms is not sent', () => {
+    it('a merge the dialog confirms is queued behind it', () => {
         const { pending, session } = setup();
         press('J', { shiftKey: true });
         press(' ');
@@ -690,7 +691,10 @@ describe('while a coordinate op is pending', () => {
         const dialog = screen.getByRole('dialog', { name: `Merge 2 analyses into ${FACES.name}?` });
         act(() => void session().emitBatch([accept]));
         fireEvent.click(within(dialog).getByRole('button', { name: 'Merge' }));
-        expect(pending()).toEqual([accept]);
+        expect(pending()).toEqual([
+            accept,
+            expect.objectContaining({ action: 'merge', target: target(FACES.key), payload: { with: [HOUSES.key] } }),
+        ]);
     });
 
     it('an analysis the form adds is sent behind it, since its key is the server’s to give', async () => {
@@ -708,7 +712,7 @@ describe('while a coordinate op is pending', () => {
         ]);
     });
 
-    it('the analyses a pending merge takes show as saving, with the one it joins into', () => {
+    it('the analyses a pending merge takes are busy, with the one it joins into, and say nothing of saving', () => {
         const { session } = setup();
         const merge: Op = {
             client_op_id: 'c-merge',
@@ -718,8 +722,10 @@ describe('while a coordinate op is pending', () => {
             payload: { with: [HOUSES.key] },
         };
         act(() => void session().emitBatch([merge]));
-        expect(within(card(HOUSES.name)).getByText('saving…')).toBeInTheDocument();
-        expect(within(card(FACES.name)).getByText('saving…')).toBeInTheDocument();
+        for (const name of [HOUSES.name, FACES.name]) {
+            expect(card(name)).toHaveAttribute('aria-busy', 'true');
+            expect(within(card(name)).queryByText('saving…')).not.toBeInTheDocument();
+        }
     });
 });
 

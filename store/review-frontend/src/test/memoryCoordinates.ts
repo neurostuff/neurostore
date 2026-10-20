@@ -127,6 +127,21 @@ function editPoints(
     };
 }
 
+/** Gives an analysis the op's role, keeping its key, which its role is no part of; the record is left as it is. */
+function relabel(analyses: CoordinateAnalysis[], record: Json, op: CoordinateOp): CoordinateStep {
+    const at = analyses.findIndex((a) => op.target.kind === 'coordinate_analysis' && a.key === op.target.analysis_key);
+    if (at === -1) throw new Error('no such analysis in the revision');
+    const before = analyses[at];
+    const after = { ...before, role: op.role! };
+    return {
+        analyses: analyses.map((a, i) => (i === at ? after : a)),
+        record,
+        undo: [
+            restoreOf([{ index: at, analysis: after }], [{ index: at, analysis: before }], { remove: [], insert: [] }),
+        ],
+    };
+}
+
 function restore(analyses: CoordinateAnalysis[], record: Json, op: CoordinateOp): CoordinateStep {
     const {
         remove,
@@ -255,7 +270,7 @@ function merge(
 
 /**
  * Applies a coordinate op to the revision `current` of the original parse `parse` as the server does, for
- * edit_points, split, merge and restore; throws the refusal otherwise.
+ * edit_points, split, merge, relabel and restore; throws the refusal otherwise.
  */
 export function applyCoordinate(
     current: CoordinateParse | null,
@@ -270,5 +285,6 @@ export function applyCoordinate(
     if (op.action === 'split') return split(analyses, record, op, originals);
     if (op.action === 'merge') return merge(analyses, record, op, originals, order);
     if (op.action === 'restore') return restore(analyses, record, op);
+    if (op.action === 'relabel') return relabel(analyses, record, op);
     throw new Error(`the memory backend applies no ${op.action}`);
 }

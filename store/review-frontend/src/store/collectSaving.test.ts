@@ -7,6 +7,7 @@ import { COLLECT_PAUSE_MS, createOpClient, type OpClient } from './opClient';
 import { json } from '../test/fakeFetch';
 import { openDeviceQueue, QUEUE_VERSION } from './deviceQueue';
 import { KEPT_EDITS } from './pointEdits';
+import { heldId } from './queuedWork';
 import { createReviewSession } from './reviewSession';
 import { createReviewStores, type ReviewStores } from './reviewStores';
 import { selectIsEditable, selectSaveLabel, selectShownPoints } from './sessionStore';
@@ -310,12 +311,89 @@ describe('point edits not yet sent when the tab closes', () => {
             { kind: 'kept', slot: 'Faces > Houses, as edited', message: KEPT_EDITS },
         ]);
         expect(selectSaveLabel(session.getState())).toBe('1 unsaved');
+        expect(session.getState().collected).toEqual([]);
+        expect(session.getState().heldOps).toEqual([
+            expect.objectContaining({
+                name: 'Faces > Houses, as edited',
+                kept: expect.objectContaining({ message: KEPT_EDITS }),
+            }),
+        ]);
         await vi.advanceTimersByTimeAsync(COLLECT_PAUSE_MS);
         await second.client.settled();
         expect(posted()).toEqual([]);
         expect(unload()).toBe(true);
-        session.getState().discardCollected('analysis#gone');
+        session.getState().discardHeldOp(heldId(session.getState().heldOps[0]));
         expect(unload()).toBe(false);
+        second.close();
+    });
+
+    it('of an earlier tab, held there on an analysis since replaced, are read as held work, its message kept', async () => {
+        const reviewId = stores.session.getState().bundle.review!.id;
+        const queue = await openDeviceQueue(indexedDB, () => {});
+        const held = { message: 'the analysis was replaced before they could be sent', guess: HOUSES.key };
+        await queue.write({
+            version: QUEUE_VERSION,
+            review_id: reviewId,
+            ops: [],
+            groupOf: {},
+            intents: {},
+            collected: [
+                { key: 'analysis#gone', name: 'Faces > Houses, as edited', base: [INSULA], points: [PRECUNEUS], held },
+            ],
+            saved_at: 'then',
+        });
+        const second = await tab();
+        const [work] = second.stores.session.getState().heldOps;
+        expect(work).toEqual(
+            expect.objectContaining({
+                name: 'Faces > Houses, as edited',
+                kept: { message: held.message, guess: HOUSES.key },
+                ops: [expect.objectContaining({ action: 'edit_points', payload: { points: [PRECUNEUS] } })],
+            })
+        );
+        expect(Object.values(work.basis)).toEqual([{ points: [INSULA] }]);
+        expect(second.stores.session.getState().collected).toEqual([]);
+        second.close();
+    });
+
+    it('keep a held op and the points each pending op was made on, and the next tab shows the held op unsent', async () => {
+        const split = {
+            client_op_id: 'op-held-0001',
+            type: 'coordinate',
+            target: { kind: 'coordinate_analysis', analysis_key: 'analysis#gone' },
+            action: 'split',
+            payload: { parts: [{ indices: [0] }, { indices: [1] }] },
+        } as Op;
+        const held = [
+            {
+                ops: [split],
+                basis: { [split.client_op_id]: { points: FACES.points! } },
+                name: FACES.name,
+                kept: { message: 'the analysis was replaced before it could be sent' },
+            },
+        ];
+        const first = await tab();
+        server.intercept(networkDown);
+        first.stores.session.setState({ heldOps: held });
+        first.stores.session.getState().collect(FACES.key, [at(PRECUNEUS, 41), INSULA]);
+        first.close();
+        await vi.advanceTimersByTimeAsync(0);
+        await first.client.settled();
+        const entry = await kept();
+        expect(entry?.heldOps).toEqual(held);
+        expect(Object.values(entry?.basis ?? {})).toEqual([{ points: FACES.points, collected: true }]);
+
+        const second = await tab();
+        expect(second.stores.session.getState().heldOps).toEqual(held);
+        expect(second.stores.session.getState().basis).toEqual(entry?.basis);
+        await vi.advanceTimersByTimeAsync(0);
+        await second.client.settled();
+        expect(
+            posted()
+                .flat()
+                .map((op) => op.client_op_id)
+        ).not.toContain(split.client_op_id);
+        expect(unload()).toBe(true);
         second.close();
     });
 
@@ -394,6 +472,28 @@ describe('leaving the review with point edits collected', () => {
         expect(server.requests.some((r) => r.method === 'PATCH')).toBe(false);
         expect(stores.session.getState().bundle.review?.state).toBe('in_progress');
         expect(selectIsEditable(stores.session.getState())).toBe(true);
+    });
+});
+
+describe('leaving the review with an op held', () => {
+    it('blocks Submit and Set aside, naming it, until it is applied or discarded', async () => {
+        const split = {
+            client_op_id: 'op-held-0001',
+            type: 'coordinate',
+            target: { kind: 'coordinate_analysis', analysis_key: 'analysis#gone' },
+            action: 'split',
+            payload: { parts: [{ indices: [0] }, { indices: [1] }] },
+        } as Op;
+        stores.session.setState({
+            heldOps: [{ ops: [split], basis: {}, name: FACES.name, kept: { message: 'replaced' } }],
+        });
+        const reason = 'split of Faces > Houses is not saved: resolve them first';
+        await expect(client.changeState('submitted')).rejects.toThrow(reason);
+        await expect(client.changeState('set_aside', { reason: 'other', note: 'x' })).rejects.toThrow(reason);
+        expect(server.requests.some((r) => r.method === 'PATCH')).toBe(false);
+        stores.session.getState().discardHeldOp(split.client_op_id);
+        await client.changeState('submitted');
+        expect(stores.session.getState().bundle.review?.state).toBe('submitted');
     });
 });
 

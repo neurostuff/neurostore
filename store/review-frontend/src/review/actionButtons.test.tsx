@@ -3,6 +3,7 @@ import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
 import { coordinateBundle, FACES, HOUSES, LOCALIZER, SCRAMBLED } from '../test/coordinates';
 import { renderWithStores } from '../test/render';
+import { AnalysisReasons } from './actionButtons';
 import { ReviewScreen } from './ReviewScreen';
 
 // Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
@@ -123,8 +124,9 @@ describe('coordinate actions that do not apply to the focus', () => {
         expect(reasonOf('Edit point')).toBe('This analysis has no points yet: add a row in its grid');
     });
 
-    it('wait while a change to the analysis saves, but for editing its points', () => {
+    it('apply while a change to the analysis saves, as they do without it', () => {
         const { stores } = setup();
+        const before = enabled();
         const relabel: Op = {
             client_op_id: 'c-pending',
             type: 'coordinate',
@@ -133,12 +135,29 @@ describe('coordinate actions that do not apply to the focus', () => {
             role: 'anchor',
         };
         act(() => void stores.session.getState().emitBatch([relabel]));
-        expect(enabled()).toEqual(['Next', 'Note', 'Edit point']);
-        expect(reasonOf('Accept')).toBe('Wait for the coordinate change to save');
+        expect(enabled()).toEqual(before);
+        expect(reasonOf('Accept')).toBe('accept the focused analysis (a)');
     });
 
     it('show their key in their hint when they apply', () => {
         setup();
         expect(reasonOf('Accept')).toBe('accept the focused analysis (a)');
+    });
+});
+
+describe('the reasons written under the coordinate head', () => {
+    it('lists two actions giving the same reason once each, and leaves no stale line when they change', () => {
+        const view = renderWithStores(<AnalysisReasons />, coordinateBundle(), { now: () => 'now' });
+        act(() => view.stores.view.setState({ coordinates: { analysis: 'analysis#gone', point: null, selected: [] } }));
+        const lines = () =>
+            within(screen.getByRole('list', { name: 'why some actions do not apply' }))
+                .getAllByRole('listitem')
+                .map((line) => line.textContent);
+        expect(lines()).toEqual(['Focus an analysis first', 'Focus an analysis first']);
+        act(() => view.stores.view.getState().focusAnalysis(FACES.key));
+        expect(lines()).toEqual([
+            'Select the points to split off: drag over rows or press Space',
+            'Merge joins whole analyses: Shift-click another analysis’s card; to put these points in another analysis, use Move to…',
+        ]);
     });
 });

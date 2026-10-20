@@ -131,17 +131,15 @@ const EXPLAINED = ON_ANALYSIS.filter((s) => s.reasonOnHead);
 
 /** Why those of the head's actions that say so do not apply, written out, as a hint shows only on hover. */
 export const AnalysisReasons = memo(function AnalysisReasons() {
-    const reasons = useReasons(EXPLAINED).filter(Boolean);
-    if (!reasons.length) return null;
+    const reasons = useReasons(EXPLAINED);
+    if (!reasons.some(Boolean)) return null;
     return (
         <Box
             component="ul"
             aria-label="why some actions do not apply"
             sx={{ m: 0, p: 0, listStyle: 'none', typography: 'caption', color: 'text.secondary' }}
         >
-            {reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
-            ))}
+            {EXPLAINED.map((action, i) => (reasons[i] ? <li key={action.button.label}>{reasons[i]}</li> : null))}
         </Box>
     );
 });

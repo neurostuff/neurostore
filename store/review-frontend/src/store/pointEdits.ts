@@ -1,19 +1,25 @@
-import type { Op } from '../contract/generated/review-ops';
-import { aimedAt, isEditPoints, keysChanged, type Follower } from '../model/analysisFollow';
+import type { EditPointsPayload, Op } from '../contract/generated/review-ops';
+import { analysisKeyOf, isCoordinate, isEditPoints, keysChanged, type Follower } from '../model/analysisFollow';
 import { clamp } from '../model/coordinateFocus';
 import { guidedOrder, type CoordinateAnalysis, type CoordinatePoint } from '../model/coordinates';
 
+/** Why the reviewer's work is kept unsent, and the analysis it may be applied to instead. */
+export interface Kept {
+    message: string;
+    guess?: string;
+}
+
 /**
  * One edit the reviewer made to the points of the analysis `key` (named `name` then), collected until it is sent:
- * the points before and after. `held` says why it is not sent until the reviewer edits the analysis again, applies
- * or discards it: the server refused it, or the analysis it was made on was replaced and it could not follow.
+ * the points before and after. `held` says why it is not sent until the reviewer edits the analysis again or
+ * discards it: the server refused it.
  */
 export interface PointEdit {
     key: string;
     name: string;
     base: CoordinatePoint[];
     points: CoordinatePoint[];
-    held?: { message: string; guess?: string };
+    held?: Kept;
 }
 
 const sortedKeys = (_: string, value: unknown) =>
@@ -26,20 +32,34 @@ const canonical = (value: unknown) => JSON.stringify(value, sortedKeys);
 /** Whether two lists of points hold the same values, whatever the order of their fields. */
 export const samePoints = (a: unknown, b: unknown) => a === b || canonical(a) === canonical(b);
 
-/** The analysis keys the pending ops may replace; no collected edit to one is sent until their results land. */
+/** The analysis keys the pending ops may replace: their analyses show as saving until the results land. */
 export const pendingKeys = ({ pending }: { pending: Op[] }) => new Set(pending.flatMap(keysChanged));
 
-/** Whether a pending op may replace any of `keys`. */
-export const waitsOnKeys = (s: { pending: Op[] }, keys: string[]) => {
-    const held = pendingKeys(s);
-    return keys.some((key) => held.has(key));
-};
-
 /** The points of the analysis `key` the last pending edit_points of it gives; undefined when there is none. */
-export const pendingPoints = (pending: Op[], key: string) => {
+const pendingPoints = (pending: Op[], key: string) => {
     const op = pending.findLast((candidate) => isEditPoints(candidate, key));
     return op && isEditPoints(op) ? op.payload.points : undefined;
 };
+
+/** The points of the analysis `key` of `analyses` once `pending` is applied: its last pending edit_points's, else its own. */
+export const pointsAfter = (analyses: CoordinateAnalysis[], pending: Op[], key: string) =>
+    pendingPoints(pending, key) ?? analyses.find((analysis) => analysis.key === key)?.points;
+
+type ShownFields = Partial<Pick<CoordinateAnalysis, 'name' | 'role' | 'coordinate_space'>>;
+
+/** The name, role and coordinate space the pending ops of the analysis `key` give it, each set by the last that sets it. */
+export function pendingFields(pending: Op[], key: string): ShownFields {
+    const fields: ShownFields = {};
+    for (const op of pending) {
+        if (!isCoordinate(op) || analysisKeyOf(op) !== key) continue;
+        if (op.action === 'relabel' && op.role) fields.role = op.role;
+        if (!isEditPoints(op)) continue;
+        const { name, coordinate_space } = op.payload as EditPointsPayload;
+        if (name !== undefined) fields.name = name;
+        if (coordinate_space !== undefined) fields.coordinate_space = coordinate_space;
+    }
+    return fields;
+}
 
 /** The collected edits grouped by analysis, in the order each was first edited: the first base and the latest points. */
 export function collectedByAnalysis(collected: PointEdit[]): PointEdit[] {
@@ -93,7 +113,7 @@ export function carryEdit(
 }
 
 /** The analysis now in the guided place of `key`, the guess an edit that could not follow it may be applied to. */
-function guessFor(follower: Follower, key: string): string | undefined {
+export function guessFor(follower: Follower, key: string): string | undefined {
     const placed = guidedOrder(follower.was, true).findIndex((analysis) => analysis.key === key);
     if (placed === -1) return undefined;
     const order = guidedOrder(follower.now, true);
@@ -104,29 +124,34 @@ export const KEPT_EDITS = 'the analysis was replaced before they could be sent';
 
 /**
  * The collected edits on the analyses the follower leads to: those on an analysis replaced follow it, moved or
- * placed by `carryEdit`; those its replacement already holds are sent; those that cannot be placed are kept, held,
- * with a guess where one is, and listed as stranded, one per analysis.
+ * placed by `carryEdit`; those its lone replacement already holds are sent; those that cannot be placed, and those
+ * the server refused, leave the collected edits as stranded, one per analysis, with why and a guess where one is.
  */
 export function followCollected(collected: PointEdit[], follower: Follower) {
-    const stranded: PointEdit[] = [];
+    const stranded: { edit: PointEdit; kept: Kept }[] = [];
     let next = collected;
     for (const edit of collectedByAnalysis(collected)) {
-        if (follower.present.has(edit.key) || edit.held) continue;
+        if (follower.present.has(edit.key)) continue;
         const targets = follower.follow(edit.key);
         const others = next.filter((entry) => entry.key !== edit.key);
-        if (targets.some((target) => samePoints(target.points ?? [], edit.points))) {
+        if (!edit.held && targets.length === 1 && samePoints(targets[0].points ?? [], edit.points)) {
             next = others;
             continue;
         }
-        const carried = targets.length ? carryEdit(edit.base, edit.points, targets) : undefined;
+        const carried = !edit.held && targets.length ? carryEdit(edit.base, edit.points, targets) : undefined;
         if (carried?.kind === 'moved') {
             next = next.map((entry) => (entry.key === edit.key ? { ...entry, key: carried.key } : entry));
             continue;
         }
         if (!carried) {
-            const held = { message: KEPT_EDITS, guess: guessFor(follower, edit.key) };
-            next = next.map((entry) => (entry.key === edit.key ? { ...entry, held } : entry));
-            stranded.push({ ...edit, held });
+            next = others;
+            stranded.push({
+                edit,
+                kept: {
+                    message: edit.held?.message ?? KEPT_EDITS,
+                    guess: edit.held?.guess ?? guessFor(follower, edit.key),
+                },
+            });
             continue;
         }
         const at = next.findIndex((entry) => entry.key === edit.key);
@@ -134,15 +159,6 @@ export function followCollected(collected: PointEdit[], follower: Follower) {
         next = [...others.slice(0, at), ...placed, ...others.slice(at)];
     }
     return { collected: next, stranded };
-}
-
-/**
- * The one path that re-aims the reviewer's work once the follower's analyses replace the ones it was made on: each
- * pending op aimed at the analysis that took its key's place, and the collected edits followed by `followCollected`.
- */
-export function followAnalyses(follower: Follower, pending: Op[], collected: PointEdit[]) {
-    const to = (key: string) => (follower.present.has(key) ? key : (follower.successor(key) ?? key));
-    return { pending: pending.map((op) => aimedAt(op, to)), ...followCollected(collected, follower) };
 }
 
 /**
@@ -158,8 +174,8 @@ export function keptThroughRefusal(
 ): PointEdit[] {
     let next = collected;
     for (const { op, message } of refused) {
-        if (!isEditPoints(op) || op.target.kind !== 'coordinate_analysis') continue;
-        const key = op.target.analysis_key;
+        const key = analysisKeyOf(op);
+        if (!isEditPoints(op) || key === undefined) continue;
         const base = serverPoints(key);
         const own = next.filter((entry) => entry.key === key);
         const entries = own.length ? own : [{ key, name: nameOf(key), base, points: op.payload.points }];

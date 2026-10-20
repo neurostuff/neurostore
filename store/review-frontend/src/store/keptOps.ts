@@ -2,6 +2,7 @@ import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Evidence, Op, Span } from '../contract/generated/review-ops';
 import { applyBatch, isLocalOp, type Documents, type Paper } from '../model/applyOp';
 import type { CoordinateParse } from '../model/coordinates';
+import { isCoordinate } from '../model/analysisFollow';
 import { utf16Paper } from '../model/offsets';
 import { entityPath, getIn, readPath, type Json } from '../model/paths';
 import { targetKey } from '../model/targetKey';
@@ -80,7 +81,8 @@ function carried(record: Json, op: Op, intent: EvidenceIntent | undefined): Op {
 export const carrying = (intents: Record<string, EvidenceIntent>) => (record: Json, op: Op) =>
     carried(record, op, intents[op.client_op_id]);
 
-const only = <T>(byOp: Record<string, T>, ids: Set<string>) =>
+/** The entries of `byOp` for the ops `ids` names. */
+export const only = <T>(byOp: Record<string, T>, ids: Set<string>) =>
     Object.fromEntries(Object.entries(byOp).filter(([id]) => ids.has(id)));
 
 export const slotLabel = (op: Op) => {
@@ -103,8 +105,11 @@ const paperOf = (bundle: ReviewBundle, at: string): Paper => ({
     entities: bundle.entities,
 });
 
-/** Whether `op` waits for the server: it is one the server applies, or one is pending before it. */
-export const waits = (before: Op[], op: Op) => !isLocalOp(op) || before.some((p) => !isLocalOp(p));
+/**
+ * Whether `op` waits for the server: it is one the server applies, or one is pending before it that is not a
+ * coordinate op. The ops behind a coordinate op are applied again on the record its result brings.
+ */
+export const waits = (before: Op[], op: Op) => !isLocalOp(op) || before.some((p) => !isLocalOp(p) && !isCoordinate(p));
 
 /**
  * The ops kept pending, in order, with the documents after the ones applied: an op that waits is kept unapplied,

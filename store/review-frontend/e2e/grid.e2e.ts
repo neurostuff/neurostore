@@ -298,3 +298,36 @@ test('edits made while a batch waits for its answer stay editable and go out aft
     await expectEditable();
     await expect(cell(0, X)).toHaveText('5');
 });
+
+test('Accept and Change role pressed while a point edit waits for its answer apply at once and go out after it, in order', async ({
+    page,
+}) => {
+    const { cell, engage, batches, sent, holdNext } = await open(page);
+    const release = holdNext();
+    await engage(0, Z);
+    await typeIn(page, cell, 0, Z, '42');
+    await page.keyboard.press('Shift+J');
+    await page.keyboard.press('Shift+K');
+    await expect.poll(() => batches.length).toBe(1);
+    const head = page.getByRole('group', { name: `${FACES}: card head` });
+    await head.getByRole('button', { name: 'Accept' }).click();
+    await expect(head).toContainText('verified');
+    await head.getByRole('button', { name: 'Change role' }).click();
+    const role = page.getByRole('combobox', { name: 'role' });
+    await role.selectOption('anchor');
+    await role.press('Enter');
+    await expect(head.getByText('anchor', { exact: true })).toBeVisible();
+    await expect(page.getByText(/wait/i)).toHaveCount(0);
+    release();
+    await expect.poll(() => batches.flat().length).toBe(3);
+    const [first, ...rest] = await sent(batches.length);
+    expect(actions(first)).toEqual([['coordinate', 'edit_points']]);
+    const after = rest.flat();
+    expect(actions(after)).toEqual([
+        ['verdict', false],
+        ['coordinate', 'relabel'],
+    ]);
+    const keyOf = (op: Op) => (op as { target: { analysis_key: string } }).target.analysis_key;
+    expect(new Set(after.map(keyOf)).size).toBe(1);
+    expect(keyOf(after[0])).not.toBe(keyOf(first[0]));
+});

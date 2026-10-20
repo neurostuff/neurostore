@@ -597,6 +597,140 @@
           }
         }
       ]
+    },
+    {
+      "op": {
+        "client_op_id": "follow-relabel-0001",
+        "type": "coordinate",
+        "target": {
+          "kind": "coordinate_analysis",
+          "analysis_key": "analysis#e96e3e956bec488c"
+        },
+        "action": "relabel",
+        "role": "anchor"
+      },
+      "before": [
+        {
+          "index": 0,
+          "analysis": {
+            "origin": "table",
+            "table_id": "t1",
+            "cells": [
+              {
+                "row": 1,
+                "column_group": 0
+              },
+              {
+                "row": 2,
+                "column_group": 0
+              },
+              {
+                "row": 3,
+                "column_group": 0
+              }
+            ],
+            "name": "patients > controls",
+            "coordinate_space": "MNI",
+            "role": "result",
+            "points": [
+              {
+                "coordinates": [
+                  10,
+                  20,
+                  30
+                ],
+                "space": null,
+                "values": [
+                  {
+                    "kind": "t",
+                    "value": 3.5
+                  }
+                ]
+              },
+              {
+                "coordinates": [
+                  6,
+                  -8,
+                  4
+                ],
+                "space": null,
+                "values": [
+                  {
+                    "kind": "t",
+                    "value": -4.1
+                  }
+                ]
+              }
+            ],
+            "key": "analysis#e96e3e956bec488c",
+            "derived_from": [
+              "analysis#12d544dad3a9b2df",
+              "analysis#e0bab4775f2f5228"
+            ]
+          }
+        }
+      ],
+      "after": [
+        {
+          "index": 0,
+          "analysis": {
+            "origin": "table",
+            "table_id": "t1",
+            "cells": [
+              {
+                "row": 1,
+                "column_group": 0
+              },
+              {
+                "row": 2,
+                "column_group": 0
+              },
+              {
+                "row": 3,
+                "column_group": 0
+              }
+            ],
+            "name": "patients > controls",
+            "coordinate_space": "MNI",
+            "role": "anchor",
+            "points": [
+              {
+                "coordinates": [
+                  10,
+                  20,
+                  30
+                ],
+                "space": null,
+                "values": [
+                  {
+                    "kind": "t",
+                    "value": 3.5
+                  }
+                ]
+              },
+              {
+                "coordinates": [
+                  6,
+                  -8,
+                  4
+                ],
+                "space": null,
+                "values": [
+                  {
+                    "kind": "t",
+                    "value": -4.1
+                  }
+                ]
+              }
+            ],
+            "key": "analysis#e96e3e956bec488c",
+            "derived_from": [
+              "analysis#12d544dad3a9b2df",
+              "analysis#e0bab4775f2f5228"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

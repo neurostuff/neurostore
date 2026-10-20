@@ -4,6 +4,7 @@ import { isLocalOp } from '../model/applyOp';
 import { spansToCodePoints } from '../model/offsets';
 import { keysChanged, keysNamed } from '../model/analysisFollow';
 import type { PointEdit } from './pointEdits';
+import { groupsOf, heldPhrase, type HeldOp } from './queuedWork';
 import { selectIsBlocked, selectIsEditable, type Refusal, type SessionStore } from './sessionStore';
 
 export const DEBOUNCE_MS = 1000;
@@ -15,20 +16,6 @@ export const KEEPALIVE_LIMIT = 60 * 1024;
 const SIGN_IN_CODES = ['login_required', 'consent_required', 'missing_refresh_token', 'interaction_required'];
 
 const bytesOf = (ops: Op[]) => new TextEncoder().encode(JSON.stringify(ops)).length;
-
-/** The pending ops cut into groups: the ops of one emitBatch together, any other op alone. */
-function groupsOf(pending: Op[], groupOf: Record<string, string>): Op[][] {
-    const groups: Op[][] = [];
-    let previous: string | undefined;
-    for (const op of pending) {
-        const group = groupOf[op.client_op_id] ?? op.client_op_id;
-        const last = groups.at(-1);
-        if (last && group === previous) last.push(op);
-        else groups.push([op]);
-        previous = group;
-    }
-    return groups;
-}
 
 /** A batch of ops, as the store holds them (`batch`) and as the server takes them (`sent`), with the bytes `sent` takes. */
 interface Batch {
@@ -66,12 +53,16 @@ function nextBatch(pending: Op[], groupOf: Record<string, string>, text: string,
     return next;
 }
 
-/** Why the review cannot move on while point edits are kept unsent: how many, on which analysis. */
-export function unsavedEdits(collected: PointEdit[]): string {
+/** Why the review cannot move on while point edits or held ops are kept unsent: how many, on which analysis. */
+export function unsavedEdits(collected: PointEdit[], held: HeldOp[]): string {
     const byName = new Map<string, number>();
     for (const edit of collected) byName.set(edit.name, (byName.get(edit.name) ?? 0) + 1);
-    const each = [...byName].map(([name, count]) => `${count} point ${count === 1 ? 'edit' : 'edits'} on ${name}`);
-    return `${each.join('; ')} ${collected.length === 1 ? 'is' : 'are'} not saved: resolve them first`;
+    const each = [
+        ...[...byName].map(([name, count]) => `${count} point ${count === 1 ? 'edit' : 'edits'} on ${name}`),
+        ...held.map(heldPhrase),
+    ];
+    const count = collected.length + held.length;
+    return `${each.join('; ')} ${count === 1 ? 'is' : 'are'} not saved: resolve them first`;
 }
 
 function refusals(error: ApiError, batch: Op[]): Refusal[] {
@@ -267,7 +258,8 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
     const onOffline = () => showNetwork(false);
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
         sendAllNow();
-        if (state().pending.length === 0 && state().collected.length === 0) return;
+        const { pending, collected, heldOps } = state();
+        if (pending.length === 0 && collected.length === 0 && heldOps.length === 0) return;
         event.preventDefault();
         event.returnValue = '';
     };
@@ -318,7 +310,9 @@ export function createOpClient(store: SessionStore, api: ReviewApi) {
             if (!selectIsEditable(state())) return;
             await sendAll();
             if (selectIsBlocked(state())) return;
-            if (next !== 'in_progress' && state().collected.length) throw new Error(unsavedEdits(state().collected));
+            const { collected, heldOps } = state();
+            if (next !== 'in_progress' && (collected.length || heldOps.length))
+                throw new Error(unsavedEdits(collected, heldOps));
             const { review } = state().bundle;
             if (!review) return;
             const summary = await api.setState(review.id, next, setAside);

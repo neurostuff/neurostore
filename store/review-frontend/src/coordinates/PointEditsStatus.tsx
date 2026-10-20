@@ -2,9 +2,8 @@ import { Alert, Button, Stack, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { currentAnalyses, type CoordinateAnalysis } from '../model/coordinates';
 import { useIsEditable, useSession } from '../store/context';
-import { collectedByAnalysis, pendingKeys } from '../store/pointEdits';
-
-const editsText = (count: number) => `${count} point ${count === 1 ? 'edit' : 'edits'}`;
+import { pendingKeys } from '../store/pointEdits';
+import { heldId, heldOnto, heldPhrase, type HeldOp } from '../store/queuedWork';
 
 /** Whether the analysis's point edits are collected and not yet sent, saving, or saved; held ones say why, with Discard. */
 export function PointEditsSaved({ analysis }: { analysis: CoordinateAnalysis }) {
@@ -29,44 +28,52 @@ export function PointEditsSaved({ analysis }: { analysis: CoordinateAnalysis }) 
     );
 }
 
-/** The point edits kept because their analysis was replaced before they were sent, each to apply to a guess or discard. */
-export function StrandedEdits() {
-    const collected = useSession((s) => s.collected);
-    const bundle = useSession((s) => s.bundle);
-    const discard = useSession((s) => s.discardCollected);
-    const apply = useSession((s) => s.applyCollected);
+const capitalized = (text: string) => `${text[0].toUpperCase()}${text.slice(1)}`;
+
+/** One piece of the reviewer's work kept unsent: why, Apply to the guess (disabled, with why, where it cannot work) and Discard. */
+function KeptAlert({ held }: { held: HeldOp }) {
+    const analyses = useSession((s) => currentAnalyses(s.bundle));
+    const pending = useSession((s) => s.pending);
+    const apply = useSession((s) => s.applyHeldOp);
+    const discard = useSession((s) => s.discardHeldOp);
     const editable = useIsEditable();
-    const analyses = currentAnalyses(bundle);
-    const stranded = useMemo(() => {
-        const known = new Set(analyses.map((analysis) => analysis.key));
-        return collectedByAnalysis(collected)
-            .filter((edit) => !known.has(edit.key))
-            .map((edit) => ({ edit, count: collected.filter((entry) => entry.key === edit.key).length }));
-    }, [collected, analyses]);
-    if (!stranded.length) return null;
+    const phrase = heldPhrase(held);
+    const id = heldId(held);
+    const guess = analyses.find((analysis) => analysis.key === held.kept.guess);
+    const placed = useMemo(
+        () => guess && heldOnto(held, guess.key, analyses, pending),
+        [guess, held, analyses, pending]
+    );
+    const reason = placed && 'reason' in placed ? placed.reason : '';
+    return (
+        <Alert role="note" severity="warning" aria-label={`kept ${phrase}`}>
+            {`${capitalized(phrase)} kept, not sent: ${held.kept.message}`}
+            {guess && (
+                <Button size="small" disabled={!editable || reason !== ''} onClick={() => apply(id, guess.key)}>
+                    {`Apply to ${guess.name}`}
+                </Button>
+            )}
+            <Button size="small" disabled={!editable} onClick={() => discard(id)}>
+                Discard
+            </Button>
+            {reason && (
+                <Typography variant="caption" component="div">
+                    {`Apply cannot work: ${reason}`}
+                </Typography>
+            )}
+        </Alert>
+    );
+}
+
+/** The reviewer's work kept unsent, each piece to apply to a guess or discard. */
+export function KeptWork() {
+    const held = useSession((s) => s.heldOps);
+    if (!held.length) return null;
     return (
         <Stack spacing={0.5} sx={{ pt: 1 }}>
-            {stranded.map(({ edit, count }) => {
-                const guess = analyses.find((analysis) => analysis.key === edit.held?.guess);
-                return (
-                    <Alert
-                        key={edit.key}
-                        role="note"
-                        severity="warning"
-                        aria-label={`kept point edits on ${edit.name}`}
-                    >
-                        {`${editsText(count)} on ${edit.name} kept, not sent: ${edit.held?.message ?? ''}`}
-                        {guess && (
-                            <Button size="small" disabled={!editable} onClick={() => apply(edit.key, guess.key)}>
-                                {`Apply to ${guess.name}`}
-                            </Button>
-                        )}
-                        <Button size="small" disabled={!editable} onClick={() => discard(edit.key)}>
-                            Discard
-                        </Button>
-                    </Alert>
-                );
-            })}
+            {held.map((work) => (
+                <KeptAlert key={heldId(work)} held={work} />
+            ))}
         </Stack>
     );
 }

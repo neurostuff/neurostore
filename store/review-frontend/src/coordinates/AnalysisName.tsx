@@ -3,9 +3,8 @@ import { Box, ButtonBase, Typography, type TypographyProps } from '@mui/material
 import { useId, useState } from 'react';
 import { ScalarField } from '../inspector/SlotEditor';
 import type { CoordinateAnalysis } from '../model/coordinates';
-import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
+import { useIsEditable, useReviewStores, useView } from '../store/context';
 import { renameAnalysis } from './actions';
-import { waitsOnKeys } from '../store/pointEdits';
 import { analysisEditors } from './schema';
 
 const nameStyles = {
@@ -30,7 +29,6 @@ export function AnalysisName({
 }) {
     const stores = useReviewStores();
     const editable = useIsEditable();
-    const pending = useSession((s) => waitsOnKeys(s, [analysis.key]));
     const focusAnalysis = useView((s) => s.focusAnalysis);
     const editors = analysisEditors();
     const id = useId();
@@ -76,7 +74,7 @@ export function AnalysisName({
         <Typography variant={variant} component={component}>
             <ButtonBase
                 sx={nameStyles}
-                disabled={!editable || pending}
+                disabled={!editable}
                 aria-label={`rename ${analysis.name}`}
                 title={analysis.key}
                 onClick={(event) => {

@@ -17,7 +17,8 @@ import { analysisPlace } from '../model/coordinateFocus';
 import type { RecordIndex } from '../model/record';
 import { selectSourceUnknown } from '../store/viewSelectors';
 import { addAnalysisPanel } from './actions';
-import { pendingKeys, waitsOnKeys } from '../store/pointEdits';
+import { pendingKeys } from '../store/pointEdits';
+import { useAnalysisWithPending } from './pendingAnalysis';
 import { namingSlot } from './availability';
 import { AnalysisName } from './AnalysisName';
 import { AuthorshipChip } from './AuthorshipChip';
@@ -46,7 +47,8 @@ const asideStyles = (theme: Theme) => ({
     ...statusColors(theme.palette),
 });
 
-const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: CoordinateAnalysis }) {
+const AnalysisCard = memo(function AnalysisCard({ analysis: given }: { analysis: CoordinateAnalysis }) {
+    const analysis = useAnalysisWithPending(given);
     const focused = useView((s) => s.coordinates?.analysis === analysis.key);
     const focusedPoint = useView((s) => (s.coordinates?.analysis === analysis.key ? s.coordinates.point : null));
     const selected = useView((s) => (s.coordinates?.analysis === analysis.key ? s.coordinates.selected : null));
@@ -81,11 +83,6 @@ const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: Coordi
                         selected for merge
                     </Typography>
                 )}
-                {saving && (
-                    <Typography variant="caption" color="text.secondary">
-                        saving…
-                    </Typography>
-                )}
             </Stack>
             <Typography variant="caption" color="text.secondary" component="div">
                 {summary}
@@ -101,14 +98,13 @@ const AnalysisCard = memo(function AnalysisCard({ analysis }: { analysis: Coordi
 function EditAnalysisButton({ analysis }: { analysis: CoordinateAnalysis }) {
     const stores = useReviewStores();
     const editable = useIsEditable();
-    const pending = useSession((s) => waitsOnKeys(s, [analysis.key]));
     return (
         <Hint title="Edit analysis: its name, coordinate space and role (n)">
             <span>
                 <IconButton
                     size="small"
                     aria-label={`edit analysis ${analysis.name}`}
-                    disabled={!editable || pending}
+                    disabled={!editable}
                     onClick={(event) => {
                         event.stopPropagation();
                         stores.view.getState().focusAnalysis(analysis.key);

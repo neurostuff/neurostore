@@ -1,6 +1,8 @@
 import { Alert, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { CardHead } from '../inspector/CardHead';
+import { NoteMark } from '../inspector/NoteMark';
 import { NotePanel, RejectPanel } from '../inspector/panels';
+import { selectNotes } from '../review/outline';
 import { reviewStatus } from '../inspector/status';
 import { StatusLabel } from '../inspector/StatusLabel';
 import { targetKey } from '../model/targetKey';
@@ -12,9 +14,10 @@ import { focusedAnalysis } from '../model/coordinateFocus';
 import { analysisTarget } from '../model/targetKey';
 import type { CoordinateAnalysis } from '../model/coordinates';
 import { humanize } from '../model/labels';
-import { PointEditsSaved, StrandedEdits } from './PointEditsStatus';
+import { KeptWork, PointEditsSaved } from './PointEditsStatus';
 import { guidedPosition } from './availability';
 import { AnalysisName } from './AnalysisName';
+import { useAnalysisWithPending } from './pendingAnalysis';
 import { AddAnalysisChooser } from './AddAnalysisChooser';
 import { AuthorshipChip } from './AuthorshipChip';
 import { NamedBy } from './RecordLinks';
@@ -64,7 +67,7 @@ const pointsLabel = (analysis: CoordinateAnalysis, point: number | null) =>
 /** The inspector while a coordinate analysis is in focus: its head with its actions, the panel open on it, and its points. */
 export function CoordinatesInspector() {
     const coordinates = useView((s) => s.coordinates);
-    const analysis = useSession((s) => focusedAnalysis({ bundle: s.bundle, coordinates }));
+    const analysis = useAnalysisWithPending(useSession((s) => focusedAnalysis({ bundle: s.bundle, coordinates })));
     const panel = useView((s) => s.panel);
     const merging = useView((s) => s.merging.length);
     const reviewed = useSession((s) =>
@@ -72,6 +75,13 @@ export function CoordinatesInspector() {
     );
     const editor = useEditorName(analysis ? targetKey(analysisTarget(analysis.key)) : '');
     const summary = useSession((s) => (analysis ? analysisSummary(s.bundle, s.index, analysis) : ''));
+    const notes = useSession((s) =>
+        analysis
+            ? selectNotes(s)
+                  .get(targetKey(analysisTarget(analysis.key)))
+                  ?.join('\n')
+            : undefined
+    );
     return (
         <>
             <Offer />
@@ -86,6 +96,7 @@ export function CoordinatesInspector() {
                             <Chip size="small" variant="outlined" label={analysis.role} />
                             <AuthorshipChip analysis={analysis} judged={reviewed !== undefined} />
                             <StatusLabel id={reviewStatus(reviewed)} by={editor} />
+                            {notes && <NoteMark notes={notes} />}
                             <PointEditsSaved analysis={analysis} />
                         </Stack>
                         <Typography variant="caption" color="text.secondary" component="div">
@@ -108,7 +119,7 @@ export function CoordinatesInspector() {
                             <Position />
                             <CoordinateHeadActions />
                         </Stack>
-                        <StrandedEdits />
+                        <KeptWork />
                         <AnalysisReasons />
                         <JudgedStatus analysis={analysis} />
                         <NamedBy analysis={analysis} />

@@ -10,7 +10,8 @@ import type { SessionStoreOptions } from '../store/sessionStore';
 import { theme } from '../theme';
 import type { FakeServer } from './fakeServer';
 
-function renderOver(ui: ReactElement, stores: ReviewStores, client?: OpClient) {
+/** Renders `ui` over the stores given, under the op client given, if any. */
+export function renderStores(ui: ReactElement, stores: ReviewStores, client?: OpClient) {
     const withClient = client ? <OpClientProvider client={client}>{ui}</OpClientProvider> : ui;
     const result = render(
         <ThemeProvider theme={theme}>
@@ -24,7 +25,7 @@ function renderOver(ui: ReactElement, stores: ReviewStores, client?: OpClient) {
 }
 
 export function renderWithStores(ui: ReactElement, bundle: ReviewBundle, options?: SessionStoreOptions) {
-    return renderOver(ui, createReviewStores(bundle, options));
+    return renderStores(ui, createReviewStores(bundle, options));
 }
 
 /** Renders `ui` on a review of the source `id` the fake server holds, saving through a started op client. */
@@ -33,5 +34,5 @@ export async function renderThroughServer(ui: ReactElement, server: FakeServer, 
     const stores = createReviewStores(await server.backend.getBundle(id));
     const client = createOpClient(stores.session, server.api());
     client.start();
-    return { ...renderOver(ui, stores, client), client };
+    return { ...renderStores(ui, stores, client), client };
 }

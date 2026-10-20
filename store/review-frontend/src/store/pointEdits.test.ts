@@ -3,6 +3,7 @@ import type { CoordinateAnalysis, CoordinatePoint } from '../model/coordinates';
 import {
     coordinateBundle,
     coordinateResult,
+    CUNEUS,
     FACES,
     HOUSES,
     INSULA,
@@ -12,6 +13,7 @@ import {
     SCRAMBLED,
 } from '../test/coordinates';
 import { heldClient } from '../test/heldClient';
+import { heldId } from './queuedWork';
 import { createReviewStores } from './reviewStores';
 import { selectCanUndo, selectSaveLabel, selectShownPoints } from './sessionStore';
 
@@ -103,17 +105,19 @@ describe('point edits to an analysis a pending op changes', () => {
         points: [at(PRECUNEUS, 42), INSULA],
     };
 
-    it('wait while it is pending, then follow the analysis to the key its result gives', () => {
+    it('are queued behind it, then follow the analysis to the key its result gives', () => {
         const { session } = open();
         session.getState().emitBatch([sent]);
         const later = [at(PRECUNEUS, 42), at(INSULA, 7)];
         session.getState().collect(FACES.key, later);
         expect(selectShownPoints(session.getState(), FACES.key)).toEqual(later);
-        expect(session.getState().sendCollected()).toBe(false);
-        expect(session.getState().pending).toEqual([sent]);
+        expect(session.getState().sendCollected()).toBe(true);
+        expect(session.getState().pending.map((op) => [targetOf(op), sentPoints(op)])).toEqual([
+            [FACES.key, sentPoints(sent)],
+            [FACES.key, later],
+        ]);
         session.getState().confirm(coordinateResult([sent], [edited, HOUSES, LOCALIZER, SCRAMBLED]), [sent]);
         expect(selectShownPoints(session.getState(), edited.key)).toEqual(later);
-        expect(session.getState().sendCollected()).toBe(true);
         expect(session.getState().pending.map((op) => [targetOf(op), sentPoints(op)])).toEqual([[edited.key, later]]);
     });
 
@@ -184,7 +188,7 @@ describe('point edits to an analysis a pending op changes', () => {
         expect(selectShownPoints(other.getState(), FACES.key)).toEqual(FACES.points);
     });
 
-    it('leave the edits of another analysis and the ops queued behind it as they are', () => {
+    it('leave the edits of another analysis and the ops queued behind it, but hold a split made on the refused points', () => {
         const { session } = open();
         const name: Op = {
             client_op_id: 'op-name',
@@ -212,7 +216,10 @@ describe('point edits to an analysis a pending op changes', () => {
         session.getState().emit(name);
         session.getState().collect(HOUSES.key, [INSULA]);
         session.getState().refuse([{ op: sent, message: 'too far out' }]);
-        expect(session.getState().pending).toEqual([relabel, split, name]);
+        expect(session.getState().pending).toEqual([relabel, name]);
+        expect(session.getState().heldOps).toEqual([
+            expect.objectContaining({ ops: [split], kept: { message: 'too far out', guess: FACES.key } }),
+        ]);
         expect(session.getState().collected).toEqual([
             { key: HOUSES.key, name: HOUSES.name, base: HOUSES.points, points: [INSULA] },
             expect.objectContaining({ key: FACES.key, held: { message: 'too far out' } }),
@@ -260,12 +267,14 @@ describe('point edits to an analysis a pending op changes', () => {
     it('are kept, and the reviewer told, when the result gives the analysis no replacement', () => {
         const { session } = open();
         session.getState().emitBatch([sent]);
-        session.getState().collect(FACES.key, [at(PRECUNEUS, 42), at(INSULA, 7)]);
+        const later = [at(PRECUNEUS, 42), at(INSULA, 7)];
+        session.getState().collect(FACES.key, later);
         session.getState().confirm(coordinateResult([sent], [HOUSES, LOCALIZER, SCRAMBLED]), [sent]);
-        expect(session.getState().collected).toEqual([
+        expect(session.getState().collected).toEqual([]);
+        expect(session.getState().heldOps).toEqual([
             expect.objectContaining({
-                key: FACES.key,
-                held: { message: 'the analysis was replaced before they could be sent', guess: HOUSES.key },
+                name: FACES.name,
+                kept: { message: 'the analysis was replaced before they could be sent', guess: HOUSES.key },
             }),
         ]);
         expect(session.getState().sendCollected()).toBe(false);
@@ -276,16 +285,30 @@ describe('point edits to an analysis a pending op changes', () => {
         ]);
     });
 
-    it('that were kept can be applied to the guess, or discarded', () => {
+    it('that were kept cannot be applied to a guess that does not hold the points they were made on', () => {
         const { session } = open();
+        session.getState().emitBatch([sent]);
+        session.getState().collect(FACES.key, [at(PRECUNEUS, 42), at(INSULA, 7)]);
+        session.getState().confirm(coordinateResult([sent], [HOUSES, LOCALIZER, SCRAMBLED]), [sent]);
+        const [work] = session.getState().heldOps;
+        expect(session.getState().applyHeldOp(heldId(work), HOUSES.key)).toBe(false);
+        expect(session.getState().heldOps).toEqual([work]);
+        expect(session.getState().pending).toEqual([]);
+    });
+
+    it('that were kept are applied to a guess holding the points they were made on, the rest of its points kept', () => {
+        const { session } = open();
+        const merged = { ...HOUSES, key: key(0xb22), points: [CUNEUS, at(PRECUNEUS, 42), INSULA] };
         session.getState().emitBatch([sent]);
         const later = [at(PRECUNEUS, 42), at(INSULA, 7)];
         session.getState().collect(FACES.key, later);
-        session.getState().confirm(coordinateResult([sent], [HOUSES, LOCALIZER, SCRAMBLED]), [sent]);
-        expect(session.getState().applyCollected(FACES.key, HOUSES.key)).toBe(true);
-        expect(selectShownPoints(session.getState(), HOUSES.key)).toEqual(later);
-        expect(session.getState().sendCollected()).toBe(true);
-        expect(session.getState().pending.map((op) => [targetOf(op), sentPoints(op)])).toEqual([[HOUSES.key, later]]);
+        session.getState().confirm(coordinateResult([sent], [merged, LOCALIZER, SCRAMBLED]), [sent]);
+        const [work] = session.getState().heldOps;
+        expect(session.getState().applyHeldOp(heldId(work), merged.key)).toBe(true);
+        expect(session.getState().pending.map((op) => [targetOf(op), sentPoints(op)])).toEqual([
+            [merged.key, [CUNEUS, ...later]],
+        ]);
+        expect(session.getState().heldOps).toEqual([]);
     });
 });
 

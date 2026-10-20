@@ -1,16 +1,14 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { fakeHotIn } from '@neurosynth/coordinate-table/testing';
 import type { Op } from '../contract/generated/review-ops';
 import { currentAnalyses, type CoordinatePoint } from '../model/coordinates';
-import { ReviewScreen } from '../review/ReviewScreen';
-import { createOpClient, type OpClient } from '../store/opClient';
+import type { OpClient } from '../store/opClient';
 import {
-    coordinateBundle,
     coordinateResult,
     CUNEUS,
     FACES,
     HOUSES,
     INSULA,
+    key,
     LOCALIZER,
     PRECUNEUS,
     SCRAMBLED,
@@ -19,9 +17,7 @@ import type { ReviewStores } from '../store/reviewStores';
 import { selectSaveLabel, selectShownPoints } from '../store/sessionStore';
 import { addAnalysis, mergeAnalyses, relabelAnalysis } from './actions';
 import { json } from '../test/fakeFetch';
-import { fakeServer } from '../test/fakeServer';
-import { engageGrid } from '../test/grid';
-import { renderWithStores } from '../test/render';
+import { at, openSaving, SLOW } from '../test/savingView';
 
 // Handsontable does not lay out in jsdom; these tests drive the package's stand-in, which runs its hooks as it does.
 vi.mock('@handsontable/react-wrapper', () => import('@neurosynth/coordinate-table/testing'));
@@ -32,43 +28,10 @@ vi.setConfig({ testTimeout: 30_000 });
 let client: OpClient | undefined;
 afterEach(() => client?.stop());
 
-const SLOW = { timeout: 10_000 };
-
-const at = (point: CoordinatePoint, z: number): CoordinatePoint => ({
-    ...point,
-    coordinates: [point.coordinates[0], point.coordinates[1], z],
-});
-
 async function open() {
-    const server = fakeServer([coordinateBundle({ review: null })]);
-    await server.backend.startReview('P1');
-    const view = renderWithStores(<ReviewScreen />, await server.backend.getBundle('P1'), { now: () => 'now' });
-    client = createOpClient(view.stores.session, server.api());
-    client.start();
-    await engageGrid(FACES.name);
-    const hot = () => fakeHotIn(screen.getByRole('group', { name: `edit the points of ${FACES.name}` }));
-    const posted = () => server.requests.filter((r) => r.method === 'POST').map((r) => (r.body as { ops: Op[] }).ops);
-    const saved = () =>
-        waitFor(() => {
-            expect(view.stores.session.getState().pending).toEqual([]);
-            expect(view.stores.session.getState().collected).toEqual([]);
-        }, SLOW);
-    const faces = () =>
-        currentAnalyses(view.stores.session.getState().bundle).find((a) => a.name.startsWith(FACES.name));
-    /** Whether the grid takes edits: no column read-only. */
-    const editable = () => (hot().props.columns ?? []).every((column) => !column.readOnly);
-    /** Holds back the next op batch until the returned function is called; `respond` answers it, else the server does. */
-    const hold = () => {
-        let release: (respond?: (body: { ops: Op[] }) => Response) => void = () => {};
-        const released = new Promise<((body: { ops: Op[] }) => Response) | undefined>((resolve) => (release = resolve));
-        server.intercept(async (request) => (await released)?.(request.body as { ops: Op[] }));
-        return release;
-    };
-    const status = () =>
-        within(screen.getByRole('group', { name: `${faces()!.name}: card head` })).getByRole('status', {
-            name: 'point edits',
-        });
-    return { ...view, server, hot, posted, saved, faces, editable, hold, status };
+    const view = await openSaving();
+    client = view.client;
+    return view;
 }
 
 const pointsOf = (ops: Op[]) => ops.map((op) => (op as { payload: { points: CoordinatePoint[] } }).payload.points);
@@ -282,7 +245,7 @@ describe('the point grid while edits save', () => {
         expect(status()).toHaveTextContent(/^saved$/);
     });
 
-    it('offers to apply edits kept when their analysis went to the analysis now in its place, or to discard them', async () => {
+    it('offers to apply edits kept to the analysis now in its place, holding the points they were made on, or to discard them', async () => {
         const { stores: own, hold } = await open();
         const release = hold();
         const sent: Op = {
@@ -295,13 +258,14 @@ describe('the point grid while edits save', () => {
         act(() => void own.session.getState().emitBatch([sent]));
         const later = [at(PRECUNEUS, 42), at(INSULA, 7)];
         act(() => void own.session.getState().collect(FACES.key, later));
-        act(() => own.session.getState().confirm(coordinateResult([sent], [HOUSES, LOCALIZER, SCRAMBLED]), [sent]));
+        const merged = { ...HOUSES, key: key(0xb22), points: [CUNEUS, at(PRECUNEUS, 42), INSULA] };
+        act(() => own.session.getState().confirm(coordinateResult([sent], [merged, LOCALIZER, SCRAMBLED]), [sent]));
         const head = () => screen.getByRole('group', { name: `${HOUSES.name}: card head` });
         const kept = within(head()).getByRole('note', { name: `kept point edits on ${FACES.name}` });
-        expect(kept).toHaveTextContent(`1 point edit on ${FACES.name} kept, not sent`);
+        expect(kept).toHaveTextContent(`Point edits on ${FACES.name} kept, not sent`);
         expect(selectSaveLabel(own.session.getState())).toBe('1 unsaved');
         fireEvent.click(within(kept).getByRole('button', { name: `Apply to ${HOUSES.name}` }));
-        expect(selectShownPoints(own.session.getState(), HOUSES.key)).toEqual(later);
+        expect(selectShownPoints(own.session.getState(), merged.key)).toEqual([CUNEUS, ...later]);
         expect(
             within(head()).queryByRole('note', { name: `kept point edits on ${FACES.name}` })
         ).not.toBeInTheDocument();

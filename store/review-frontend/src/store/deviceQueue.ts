@@ -68,8 +68,8 @@ export async function openDeviceQueue(factory: IDBFactory, onFail: () => void): 
 }
 
 /**
- * Writes the store's pending ops and collected point edits to `queue` at most every WRITE_EVERY_MS, and at once
- * when the page is hidden.
+ * Writes the store's pending ops, collected point edits and held ops to `queue` at most every WRITE_EVERY_MS, and
+ * at once when the page is hidden.
  */
 export function keepPending(store: SessionStore, queue: DeviceQueue, reviewId: string) {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -77,8 +77,8 @@ export function keepPending(store: SessionStore, queue: DeviceQueue, reviewId: s
     function write(): Promise<void> {
         clearTimeout(timer);
         timer = undefined;
-        const { pending, groupOf, intents, collected } = store.getState();
-        if (pending.length === 0 && collected.length === 0) return queue.remove(reviewId);
+        const { pending, groupOf, intents, collected, basis, heldOps } = store.getState();
+        if (pending.length === 0 && collected.length === 0 && heldOps.length === 0) return queue.remove(reviewId);
         return queue.write({
             version: QUEUE_VERSION,
             review_id: reviewId,
@@ -86,6 +86,8 @@ export function keepPending(store: SessionStore, queue: DeviceQueue, reviewId: s
             groupOf,
             intents,
             ...(collected.length > 0 && { collected }),
+            ...(Object.keys(basis).length > 0 && { basis }),
+            ...(heldOps.length > 0 && { heldOps }),
             saved_at: new Date().toISOString(),
         });
     }
@@ -97,7 +99,11 @@ export function keepPending(store: SessionStore, queue: DeviceQueue, reviewId: s
         if (document.visibilityState === 'hidden') writeAfter();
     };
     const unsubscribe = store.subscribe((next, previous) => {
-        if ((next.pending === previous.pending && next.collected === previous.collected) || timer !== undefined) return;
+        const same =
+            next.pending === previous.pending &&
+            next.collected === previous.collected &&
+            next.heldOps === previous.heldOps;
+        if (same || timer !== undefined) return;
         timer = setTimeout(writeNow, WRITE_EVERY_MS);
     });
     document.addEventListener('visibilitychange', onVisibility);

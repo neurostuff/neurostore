@@ -11,23 +11,34 @@ import type { Json } from '../model/paths';
 import { buildRecordIndex, withSlotFrom, type RecordIndex, type SlotNode, type SpanPair } from '../model/record';
 import { slotTarget, targetKey } from '../model/targetKey';
 import { declaredOf } from './declared';
-import { followerOf, type Follower } from '../model/analysisFollow';
+import { followerOf, keysNamed, type Follower } from '../model/analysisFollow';
 import {
     collectedByAnalysis,
-    followAnalyses,
+    followCollected,
     keptThroughRefusal,
     KEPT_EDITS,
-    pendingKeys,
-    pendingPoints,
+    pointsAfter,
     samePoints,
     type PointEdit,
 } from './pointEdits';
+import {
+    basisOf,
+    followQueued,
+    heldEdit,
+    heldId,
+    heldOnto,
+    KEPT_ACTION,
+    pullStaleWork,
+    type Bases,
+    type HeldOp,
+} from './queuedWork';
 import {
     blockedFrom,
     carrying,
     documentsOf,
     evidenceFor,
     KEPT_REFUSED,
+    only,
     replay,
     restored,
     slotLabel,
@@ -95,6 +106,10 @@ export interface KeptOps {
     intents: Record<string, EvidenceIntent>;
     /** The point edits collected and not yet sent; absent when there are none. */
     collected?: PointEdit[];
+    /** The basis of each pending op made on its analysis's points; absent when there are none. */
+    basis?: Bases;
+    /** The ops kept unsent because their analysis no longer holds the points they were made on; absent when none. */
+    heldOps?: HeldOp[];
 }
 
 export interface SessionState {
@@ -108,6 +123,8 @@ export interface SessionState {
     /** The client_op_id that opens the emitBatch group each pending op came in, keyed by op. */
     groupOf: Record<string, string>;
     intents: Record<string, EvidenceIntent>;
+    /** The points each pending split or edit_points is applied over, by client_op_id, checked when it is re-aimed. */
+    basis: Bases;
     blocked: Blocked | null;
     save: SaveStatus;
     saveMessage: string;
@@ -161,19 +178,25 @@ export interface SessionState {
     /** Collects an edit giving the analysis `key` the points `points`; false when it changes nothing. */
     collect(key: string, points: CoordinatePoint[]): boolean;
     /**
-     * Sends the collected edits as one batch and one undo step: an edit_points of each analysis's latest points. An
-     * analysis a pending op changes keeps its edits until that op's result names its key, and held edits stay;
-     * false when none is sent. Only the op client calls it.
+     * Sends the collected edits as one batch and one undo step: an edit_points of each analysis's latest points,
+     * queued behind any pending op on it; held edits stay. False when none is sent. Only the op client calls it.
      */
     sendCollected(): boolean;
     /** Drops the collected edits of the analysis `key`, which then shows the points the server has. */
     discardCollected(key: string): void;
-    /** Collects the latest edited points of the analysis `key`, held, as an edit of the analysis `to`. */
-    applyCollected(key: string, to: string): boolean;
     /** How many times a view or an action asked for the collected edits to be sent now; the op client sends them. */
     sendAsked: number;
     /** Asks the op client to send the collected edits now. */
     askToSend(): void;
+    /**
+     * The reviewer's work kept unsent, in the order kept: ops whose analysis no longer holds the points they were
+     * made on, and collected edits that could not follow their analysis.
+     */
+    heldOps: HeldOp[];
+    /** Sends the held op `id` on the analysis `to`, its points remapped there; false when they cannot be. */
+    applyHeldOp(id: string, to: string): boolean;
+    /** Drops the held op `id`. */
+    discardHeldOp(id: string): void;
 }
 
 export type SessionStore = ReturnType<typeof createSessionStore>;
@@ -201,9 +224,7 @@ const NO_POINTS: CoordinatePoint[] = [];
 
 /** The points of the analysis `key` as the server has them, or as its last pending edit_points gives them. */
 const sentPoints = ({ bundle, pending }: Pick<SessionState, 'bundle' | 'pending'>, key: string): CoordinatePoint[] =>
-    pendingPoints(pending, key) ??
-    currentAnalyses(bundle).find((analysis) => analysis.key === key)?.points ??
-    NO_POINTS;
+    pointsAfter(currentAnalyses(bundle), pending, key) ?? NO_POINTS;
 
 /** The points of the analysis `key` as the reviewer last left them: collected, pending, or as the server has them. */
 export const selectShownPoints = (s: Pick<SessionState, 'bundle' | 'pending' | 'collected'>, key: string) =>
@@ -216,12 +237,13 @@ export function selectSaveLabel({
     blocked,
     device,
     collected,
-}: Pick<SessionState, 'save' | 'saveMessage' | 'pending' | 'blocked' | 'device' | 'collected'>): string {
+    heldOps,
+}: Pick<SessionState, 'save' | 'saveMessage' | 'pending' | 'blocked' | 'device' | 'collected' | 'heldOps'>): string {
     if (save === 'failed' || blocked != null) return saveMessage;
     if (save === 'signin') return 'sign in to save';
     if (save === 'offline') return device === 'kept' ? 'offline; saved on this device' : save;
     if (save === 'saving') return save;
-    const unsaved = pending.length + collected.length;
+    const unsaved = pending.length + collected.length + heldOps.length;
     return unsaved ? `${unsaved} unsaved` : 'saved';
 }
 
@@ -258,8 +280,9 @@ const EDITS = [
     'collect',
     'sendCollected',
     'discardCollected',
-    'applyCollected',
     'askToSend',
+    'applyHeldOp',
+    'discardHeldOp',
 ] as const satisfies (keyof SessionState)[];
 
 function whileEditable<K extends keyof SessionState>(
@@ -275,16 +298,36 @@ function whileEditable<K extends keyof SessionState>(
 }
 
 /** The notice that the edits collected on the analysis named `slot` are kept, not sent. */
-const keptNotice = (slot: string): Notice => ({ kind: 'kept', slot, message: KEPT_EDITS });
+const keptNotice = (slot: string, message: string): Notice => ({ kind: 'kept', slot, message });
 
 /**
- * The pending ops and collected edits re-aimed by `followAnalyses`, with a notice for each analysis whose edits
- * could not follow it.
+ * The one path that re-aims the reviewer's work once the follower's analyses replace the ones it was made on: the
+ * pending ops by `followQueued`, the collected edits by `followCollected`; what cannot follow is held, with a notice
+ * for each analysis it was on.
  */
-function followed(follower: Follower, pending: Op[], collected: PointEdit[]) {
-    const { stranded, ...rest } = followAnalyses(follower, pending, collected);
-    return { ...rest, notices: stranded.map((edit) => keptNotice(edit.name)) };
+function followed(
+    follower: Follower,
+    pending: Op[],
+    groupOf: Record<string, string>,
+    collected: PointEdit[],
+    bases: Bases
+) {
+    const queued = followQueued(follower, pending, groupOf, bases);
+    const edits = followCollected(collected, follower);
+    const held = [...queued.held, ...edits.stranded.map(({ edit, kept }) => heldEdit(edit, kept))];
+    return {
+        ...queued,
+        collected: edits.collected,
+        held,
+        notices: [
+            ...queued.held.map((work) => keptNotice(work.name, KEPT_ACTION)),
+            ...edits.stranded.map(({ edit }) => keptNotice(edit.name, KEPT_EDITS)),
+        ],
+    };
 }
+
+/** The entries of `byOp` for the ops `ops`. */
+const onlyOf = <T>(byOp: Record<string, T>, ops: Op[]) => only(byOp, new Set(ops.map((op) => op.client_op_id)));
 
 /** What `withDocuments` replays besides the documents: by default nothing more, and the edits collected now. */
 interface Rebuild {
@@ -324,16 +367,12 @@ export function createSessionStore(
             const state = get();
             const unchanged = currentAnalyses(state.bundle) === currentAnalyses(next);
             const aimed = unchanged
-                ? { pending: given, collected, notices: [] }
-                : followed(followerOf(state.bundle, next), given, collected);
+                ? { pending: given, collected, notices: [], held: [], groupOf: {}, basis: {} }
+                : followed(followerOf(state.bundle, next), given, state.groupOf, collected, state.basis);
             const { pending } = aimed;
             const replayed = replay(next, documentsOf(next), pending, now(), 'conflict', carry);
             const { record } = replayed.documents;
-            const intents = Object.fromEntries(
-                replayed.pending
-                    .filter((op) => op.client_op_id in state.intents)
-                    .map((op) => [op.client_op_id, state.intents[op.client_op_id]])
-            );
+            const intents = onlyOf(state.intents, replayed.pending);
             const sameEntities =
                 JSON.stringify(next.hidden) === JSON.stringify(state.bundle.hidden) &&
                 JSON.stringify(next.entities) === JSON.stringify(state.bundle.entities);
@@ -341,11 +380,7 @@ export function createSessionStore(
                 touched && sameEntities
                     ? touched.reduce((edited, key) => withSlotFrom(edited, record, key), state.index)
                     : rebuiltIndex(next, record);
-            const groupOf = Object.fromEntries(
-                replayed.pending
-                    .filter((op) => op.client_op_id in state.groupOf)
-                    .map((op) => [op.client_op_id, state.groupOf[op.client_op_id]])
-            );
+            const groupOf = onlyOf({ ...state.groupOf, ...aimed.groupOf }, replayed.pending);
             set({
                 bundle: next,
                 ops: next.ops,
@@ -353,6 +388,8 @@ export function createSessionStore(
                 pending: replayed.pending,
                 groupOf,
                 intents,
+                basis: onlyOf({ ...state.basis, ...aimed.basis }, replayed.pending),
+                heldOps: aimed.held.length ? [...state.heldOps, ...aimed.held] : state.heldOps,
                 index,
                 collected: aimed.collected,
                 uncollected: aimed.collected === state.collected ? state.uncollected : [],
@@ -370,9 +407,16 @@ export function createSessionStore(
          * Puts `ops` in pending as one batch, in the update that makes `also`: applied at once when none waits for
          * the server, else held unapplied. False, with a notice of `kind`, when the core refuses one.
          */
-        const pushBatch = (ops: Op[], kind: Notice['kind'], also: Partial<SessionState>): boolean => {
+        const pushBatch = (
+            ops: Op[],
+            kind: Notice['kind'],
+            also: Partial<SessionState>,
+            collected: boolean
+        ): boolean => {
             const state = get();
             const pending = [...state.pending, ...ops];
+            const made = basisOf(currentAnalyses(state.bundle), state.pending, ops, collected);
+            const basis = Object.keys(made).length ? { ...state.basis, ...made } : state.basis;
             const groupOf =
                 ops.length > 1
                     ? {
@@ -381,7 +425,7 @@ export function createSessionStore(
                       }
                     : state.groupOf;
             if (ops.some((op) => waits(state.pending, op))) {
-                set({ pending, groupOf, ...also });
+                set({ pending, groupOf, basis, ...also });
                 return true;
             }
             const replayed = replay(state.bundle, state, ops, now(), kind);
@@ -396,19 +440,24 @@ export function createSessionStore(
                     ? rebuiltIndex(state.bundle, documents.record)
                     : withSlotFrom(edited, documents.record, key);
             }, state.index);
-            set({ ...documents, index, pending, groupOf, ...also });
+            set({ ...documents, index, pending, groupOf, basis, ...also });
             return true;
         };
 
         /** Puts the ops of one user intent in pending, as one undo step; false when the core refuses them. */
-        const pushEdit = (ops: Op[]): boolean => {
+        const pushEdit = (ops: Op[], collected = false): boolean => {
             const { undoStack, redoStack } = get();
             const undone = ops.filter((op) => !NOT_UNDONE.has(op.type)).map((op) => op.client_op_id);
-            return pushBatch(ops, 'refused', {
-                undoStack: undone.length ? [...undoStack, { ops: undone, inverses: {} }] : undoStack,
-                redoStack: redoStack.length ? [] : redoStack,
-                waitingTo: null,
-            });
+            return pushBatch(
+                ops,
+                'refused',
+                {
+                    undoStack: undone.length ? [...undoStack, { ops: undone, inverses: {} }] : undoStack,
+                    redoStack: redoStack.length ? [] : redoStack,
+                    waitingTo: null,
+                },
+                collected
+            );
         };
 
         /** The edit_points op giving the analysis `key` the points `points`. */
@@ -447,7 +496,7 @@ export function createSessionStore(
                 from === 'undo'
                     ? { undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, sent] }
                     : { redoStack: redoStack.slice(0, -1), undoStack: [...undoStack, sent] };
-            if (!pushBatch(ops, from, { ...moved, waitingTo: null })) set({ waitingTo: null });
+            if (!pushBatch(ops, from, { ...moved, waitingTo: null }, false)) set({ waitingTo: null });
         };
 
         /** The set_evidence op giving `slot` the evidence `intent` makes of its own; null when the intent is refused. */
@@ -511,6 +560,7 @@ export function createSessionStore(
             pending: [],
             groupOf: {},
             intents: {},
+            basis: {},
             blocked: null,
             save: 'idle',
             saveMessage: '',
@@ -524,6 +574,7 @@ export function createSessionStore(
             collected: [],
             uncollected: [],
             sendAsked: 0,
+            heldOps: [],
 
             addEvidence: (key, span, setIndex) => {
                 const slot = get().index.slot(key);
@@ -556,7 +607,7 @@ export function createSessionStore(
                 }),
             discardPending: () => {
                 withDocuments(get().bundle, [], { collected: [] });
-                set({ uncollected: [], save: 'idle', saveMessage: '', blocked: null });
+                set({ uncollected: [], heldOps: [], save: 'idle', saveMessage: '', blocked: null });
             },
             undoBlocked: () => {
                 const { blocked, bundle: current, pending } = get();
@@ -641,12 +692,20 @@ export function createSessionStore(
                 const aimed = followed(
                     followerOf(current, current, current.ops),
                     unstored(current, entry.ops),
-                    entry.collected ?? []
+                    entry.groupOf,
+                    entry.collected ?? [],
+                    entry.basis ?? {}
                 );
-                const { documents, blocked, ...kept } = restored(current, { ...entry, ops: aimed.pending }, now());
+                const { documents, blocked, ...kept } = restored(
+                    current,
+                    { ...entry, ops: aimed.pending, groupOf: { ...entry.groupOf, ...aimed.groupOf } },
+                    now()
+                );
                 set({
                     ...documents,
                     ...kept,
+                    basis: onlyOf({ ...entry.basis, ...aimed.basis }, kept.pending),
+                    heldOps: [...(entry.heldOps ?? []), ...aimed.held],
                     collected: aimed.collected,
                     notices: [...get().notices, ...aimed.notices],
                     index: rebuiltIndex(current, documents.record),
@@ -656,12 +715,22 @@ export function createSessionStore(
                 });
             },
             refuse: (refusals) => {
-                const { undoStack, redoStack, bundle: current, pending, collected } = get();
+                const { undoStack, redoStack, bundle: current, pending, groupOf, collected, basis, heldOps } = get();
                 const refused = new Set(refusals.map((r) => r.op.client_op_id));
                 const { kinds, dropped } = revertedBy({ undoStack, redoStack }, refused);
-                const left = pending.filter((op) => !dropped.has(op.client_op_id));
-                const named = (key: string) =>
-                    currentAnalyses(current).find((analysis) => analysis.key === key)?.name ?? key;
+                const analyses = currentAnalyses(current);
+                const named = (key: string) => analyses.find((analysis) => analysis.key === key)?.name ?? key;
+                const messageOf = (key: string) =>
+                    (refusals.find(({ op }) => keysNamed(op).includes(key)) ?? refusals[0]).message;
+                const stale = pullStaleWork(
+                    pending.filter((op) => !dropped.has(op.client_op_id)),
+                    groupOf,
+                    basis,
+                    analyses,
+                    messageOf
+                );
+                const left = stale.kept;
+                set({ heldOps: [...heldOps, ...stale.held] });
                 withDocuments(current, left, {
                     notices: refusals.map(({ op, message }) => ({
                         kind: kinds[op.client_op_id] ?? 'refused',
@@ -670,7 +739,7 @@ export function createSessionStore(
                         op,
                     })),
                     collected: keptThroughRefusal(
-                        collected,
+                        [...stale.edits, ...collected],
                         refusals,
                         (key) => sentPoints({ bundle: current, pending: left }, key),
                         named
@@ -708,18 +777,15 @@ export function createSessionStore(
             },
             sendCollected: () => {
                 const state = get();
-                const held = pendingKeys(state);
                 const known = new Set(currentAnalyses(state.bundle).map((analysis) => analysis.key));
-                const ready = collectedByAnalysis(state.collected).filter(
-                    (edit) => known.has(edit.key) && !held.has(edit.key) && !edit.held
-                );
+                const ready = collectedByAnalysis(state.collected).filter((edit) => known.has(edit.key) && !edit.held);
                 if (!ready.length) return false;
                 const sending = new Set(ready.map((edit) => edit.key));
                 set({ collected: state.collected.filter((edit) => !sending.has(edit.key)), uncollected: [] });
                 const ops = ready
                     .filter((edit) => !samePoints(edit.points, sentPoints(state, edit.key)))
                     .map((edit) => editPointsOp(edit.key, edit.points));
-                return ops.length > 0 && pushEdit(ops);
+                return ops.length > 0 && pushEdit(ops, true);
             },
             discardCollected: (key) => {
                 const { collected, uncollected } = get();
@@ -728,13 +794,17 @@ export function createSessionStore(
                     uncollected: uncollected.filter((edit) => edit.key !== key),
                 });
             },
-            applyCollected: (key, to) => {
-                const edit = collectedByAnalysis(get().collected).find((candidate) => candidate.key === key);
-                if (!edit) return false;
-                get().discardCollected(key);
-                return get().collect(to, edit.points);
-            },
             askToSend: () => set((s) => ({ sendAsked: s.sendAsked + 1 })),
+            applyHeldOp: (id, to) => {
+                const state = get();
+                const held = state.heldOps.find((work) => heldId(work) === id);
+                if (!held) return false;
+                const placed = heldOnto(held, to, currentAnalyses(state.bundle), state.pending);
+                if (!('ops' in placed)) return false;
+                state.discardHeldOp(id);
+                return pushEdit(placed.ops);
+            },
+            discardHeldOp: (id) => set((s) => ({ heldOps: s.heldOps.filter((work) => heldId(work) !== id) })),
         };
         return { ...initial, ...whileEditable(initial, EDITS, () => selectIsEditable(get())) };
     });

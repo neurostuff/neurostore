@@ -6,18 +6,24 @@ type CoordinateOp = Extract<Op, { type: 'coordinate' }>;
 
 export const isCoordinate = (op: Op): op is CoordinateOp => op.type === 'coordinate';
 
-/** Whether `op` is an edit_points of the analysis `key`. */
-export const isEditPoints = (op: Op, key?: string): op is CoordinateOp & { payload: { points: CoordinatePoint[] } } =>
-    isCoordinate(op) &&
-    op.action === 'edit_points' &&
-    op.target.kind === 'coordinate_analysis' &&
-    (key === undefined || op.target.analysis_key === key);
+/** The coordinate analysis an op targets; undefined for any other target. */
+export const analysisKeyOf = (op: Op): string | undefined =>
+    'target' in op && op.target.kind === 'coordinate_analysis' ? op.target.analysis_key : undefined;
+
+/** Whether `op` is an edit_points of the analysis `key`, or of any analysis. */
+export const isEditPoints = (op: Op, key?: string): op is CoordinateOp & { payload: { points: CoordinatePoint[] } } => {
+    const target = analysisKeyOf(op);
+    return (
+        isCoordinate(op) && op.action === 'edit_points' && target !== undefined && (key === undefined || target === key)
+    );
+};
 
 /** The analysis keys an op names: its coordinate analysis target and, for a merge, the analyses it takes. */
 export function keysNamed(op: Op): string[] {
-    if (!('target' in op) || op.target.kind !== 'coordinate_analysis') return [];
+    const key = analysisKeyOf(op);
+    if (key === undefined) return [];
     const merged = isCoordinate(op) && op.payload && 'with' in op.payload ? op.payload.with : [];
-    return [op.target.analysis_key, ...merged];
+    return [key, ...merged];
 }
 
 /** The analysis keys a coordinate op may replace once applied: those it names, and those a restore takes away. */
