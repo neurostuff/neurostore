@@ -19,26 +19,12 @@ class Served(NamedTuple):
     etag: str
 
 
-def strip_descriptions(value):
-    """A copy of ``value`` without its description annotations; a property named description
-    is kept."""
-    if isinstance(value, list):
-        return [strip_descriptions(item) for item in value]
-    if not isinstance(value, dict):
-        return value
-    return {
-        key: strip_descriptions(item)
-        for key, item in value.items()
-        if not (key == "description" and isinstance(item, str))
-    }
-
-
 @cache
 def served(name):
-    """The body and ETag of the ``name`` schema: study_schema's without its descriptions, or a
-    review contract whole; None when it is not served."""
+    """The body and ETag of the ``name`` schema, study_schema's or a review contract, whole; None
+    when it is not served."""
     if name in SERVED:
-        schema = strip_descriptions(load(name))
+        schema = load(name)
     elif name in CONTRACTS:
         schema = json.loads((SCHEMA_DIR / f"{name}.schema.json").read_text("utf-8"))
     else:

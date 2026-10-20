@@ -8,7 +8,6 @@ import pytest
 from study_schema.jsonschema import load, references
 
 from neurostore.review.core import SCHEMA_DIR
-from neurostore.review.core.schemas import strip_descriptions
 from neurostore.tests.review import golden
 from neurostore.tests.review.layouts import OTHER, REVIEWER, assert_matches_spec
 
@@ -23,26 +22,22 @@ def path(name):
     return f"/api/review/schemas/{name}"
 
 
-def test_strip_descriptions_drops_any_depth_and_keeps_a_property_named_description():
-    value = {
-        "description": "top",
-        "properties": {"description": {"type": "string", "description": "nested"}},
-        "items": [{"description": "in a list"}],
-    }
-
-    assert strip_descriptions(value) == {
-        "properties": {"description": {"type": "string"}},
-        "items": [{}],
-    }
-
-
 @pytest.mark.parametrize("name", NAMES)
-async def test_a_schema_is_study_schemas_packaged_schema_without_its_descriptions(clients, name):
+async def test_a_schema_is_study_schemas_packaged_schema(clients, name):
     response = await clients[REVIEWER].get(path(name))
 
     assert response.status_code == 200
-    assert response.json() == strip_descriptions(load(name))
+    assert response.json() == load(name)
     assert_matches_spec(response, "/review/schemas/{name}", "get")
+
+
+async def test_the_served_schema_keeps_its_descriptions(clients):
+    served = (await clients[REVIEWER].get(path("extraction-record"))).json()
+
+    assert served["$defs"]["MRI"]["properties"]["mr_acquisition_type"].get("description") == (
+        "Acquisition dimensionality, such as 2D or 3D; useful for distinguishing protocols with"
+        " materially different spatial sampling."
+    )
 
 
 async def test_the_served_schema_keeps_a_property_named_description(clients):
@@ -88,7 +83,7 @@ async def test_a_stale_if_none_match_gets_the_schema(clients):
         path("extraction-record"), headers={"If-None-Match": '"stale"'}
     )
     assert response.status_code == 200
-    assert response.json() == strip_descriptions(load("extraction-record"))
+    assert response.json() == load("extraction-record")
 
 
 @pytest.mark.parametrize("name", ["review-bundle", "review-ops"])

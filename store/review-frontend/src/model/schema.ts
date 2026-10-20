@@ -1,6 +1,6 @@
 import { referenceSlots, type Reference } from '../contract/references';
-import { schemaOf } from '../contract/schemas';
-import { isObject, parsePath } from './paths';
+import { fromSchemaKeyed, schemaOf } from '../contract/schemas';
+import { isKeyedPath, isObject, parsePath } from './paths';
 import { isReferenceSlot } from './record';
 
 export type Schema = { [key: string]: unknown };
@@ -289,3 +289,29 @@ export function referenceSlotOf(
 /** The class a reference slot links to. */
 export const referenceTarget = (row: { entity_class: string; schema_class: string }, path: string) =>
     referenceSlotOf(row, path)?.target;
+
+/** The description of the property at the end of `path` on an item of `className`; a list item's is its list's. */
+function describe(root: Schema, className: string, path: string): string | undefined {
+    let node = defOf(root, className);
+    let description: unknown;
+    for (const step of parsePath(path)) {
+        if (!node) return undefined;
+        const defs = branchesOf(root, node);
+        node = defs
+            .map((def) => (typeof step === 'number' ? asSchema(def.items) : propertyOf(def, step)))
+            .find((child) => child !== undefined);
+        if (node && typeof step === 'string') description = node.description;
+    }
+    return node && typeof description === 'string' ? description : undefined;
+}
+
+const describedAt = fromSchemaKeyed('extraction-record', (root, key: string) => {
+    const [className, path] = key.split(' ');
+    return describe(root, className, path);
+});
+
+const ITEM_PLACE = /\[#\d+\]/g;
+
+/** The schema's description of the field at `path` on an item of `className`, the same for every item of a list. */
+export const descriptionOf = (className: string, path: string) =>
+    isKeyedPath(path) ? undefined : describedAt(`${className} ${path.replace(ITEM_PLACE, '[#0]')}`);

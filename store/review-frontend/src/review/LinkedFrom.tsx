@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import { memo, useState, type ReactNode } from 'react';
 import { acceptLinksOf, pendingStructure, unlink } from '../inspector/actions';
+import { useFieldHint } from '../inspector/fieldHint';
 import { OpenButton, openStyles } from '../inspector/OpenButton';
 import { LinkPanel, NotePanel, RejectPanel } from '../inspector/panels';
 import { reviewStatus, statusColors } from '../inspector/status';
@@ -104,13 +105,15 @@ function FocusedLink({ link }: { link: SaidLink }) {
 
 /**
  * A row of one link into the card's entity, read out as its sentence, with its status mark; a click focuses the link,
- * so the text highlights both entities' evidence and the row shows its actions.
+ * so the text highlights both entities' evidence and the row shows its actions; the linker's slot's description is its
+ * hover hint.
  */
 const LinkRow = memo(function LinkRow({ link, children }: { link: SaidLink; children: ReactNode }) {
     const focusLinkInto = useView((s) => s.focusLinkInto);
     const focused = useView((s) => s.focus.key === link.key);
     const state = useSession((s) => s.provenance[link.key]?.state);
     const editor = useEditorName(link.key);
+    const hint = useFieldHint(link.slot);
     return (
         <li
             className="rv-linked"
@@ -120,7 +123,9 @@ const LinkRow = memo(function LinkRow({ link, children }: { link: SaidLink; chil
                 if (!focused) focusLinkInto(link.slot.key, link.target.target_entity);
             }}
         >
-            <span className="rv-linked-text">{children}</span>
+            <span className="rv-linked-text" title={hint}>
+                {children}
+            </span>
             <StatusMark id={reviewStatus(state)} by={editor} explained />
             {focused && <FocusedLink link={link} />}
         </li>
@@ -149,10 +154,11 @@ function LinkGroup({ group, target }: { group: Group; target: string }) {
     const { links, lead, rest } = group;
     const left = useSession((s) => links.filter((link) => !s.provenance[link.key]).length);
     const all = left === 0 || left === links.length;
+    const hint = useFieldHint(links[0].slot);
     return (
         <li className="rv-linked-group" aria-label={sentenceOf(group)}>
             <div className="rv-linked">
-                <span className="rv-linked-text">
+                <span className="rv-linked-text" title={hint}>
                     <button
                         type="button"
                         className="rv-fold-toggle"

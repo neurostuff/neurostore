@@ -380,3 +380,14 @@ describe.each(['light', 'dark'] as const)('the chips’ colours, %s', (mode) => 
         expect(lessRed, 'less is orange').toBeGreaterThan(lessBlue);
     });
 });
+
+describe('a chip’s field description', () => {
+    it('is its hover hint, and shows collapsed under the focused chip’s details', () => {
+        setup('a_held');
+        const pos = chip('status', /^\+ Pos/);
+        expect(pos).toHaveAttribute('title', expect.stringMatching(/: How this cell entered the contrast: /));
+        fireEvent.click(pos);
+        const about = within(compared()).getByRole('region', { name: 'About this field' });
+        expect(about).toHaveTextContent(/^How this cell entered the contrast: .*…More$/);
+    });
+});

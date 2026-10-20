@@ -413,3 +413,14 @@ describe('Linked from, on the entities step', () => {
         expect(said).not.toMatch(/\[#|\[\d|\w\.\w|_/);
     });
 });
+
+describe('a Linked from row’s field description', () => {
+    it('is the hover hint of a row’s and a group’s text, for the linker’s slot, not of their controls', () => {
+        setup('grp_a');
+        const hint = /: The participant cohorts carrying this level, by identifier\.$/;
+        for (const item of [linkItem(COHORT), groupItem()]) {
+            expect(item).not.toHaveAttribute('title');
+            expect(item.querySelector('.rv-linked-text')).toHaveAttribute('title', expect.stringMatching(hint));
+        }
+    });
+});

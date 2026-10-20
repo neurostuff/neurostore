@@ -14,6 +14,8 @@ import {
 import { counted, labelOf } from '../model/labels';
 import type { EntityNode } from '../model/record';
 import { useSession, useView } from '../store/context';
+import { FieldAbout } from './FieldAbout';
+import { fieldHint } from './fieldHint';
 import { SlotBody, SlotHead } from './SlotParts';
 import { slotStyles } from './slotStyles';
 import { reviewStatus, STATUSES } from './status';
@@ -36,7 +38,10 @@ const DIRECTION_CHOICES = Object.fromEntries(
 
 const MISSING = <span className="rv-missing-sign">{SIDE_WORDS.missing.way}</span>;
 
-/** One cell as a chip: a click focuses its direction; `name` and its review status are its accessible name. */
+/**
+ * One cell as a chip: a click focuses its direction; `name` and its review status are its accessible name, and its
+ * direction's description its hover hint.
+ */
 const SignChip = memo(function SignChip({
     entry,
     side,
@@ -52,6 +57,10 @@ const SignChip = memo(function SignChip({
     const status = reviewStatus(useSession((s) => s.provenance[key]?.state));
     const focused = useView((s) => s.focus.slot === key);
     const focusSlot = useView((s) => s.focusSlot);
+    const hint = useSession((s) => {
+        const slot = s.index.slot(key);
+        return slot && fieldHint(s.index, slot);
+    });
     const ref = useScrollIntoViewWhen<HTMLButtonElement>(focused);
     return (
         <button
@@ -61,6 +70,7 @@ const SignChip = memo(function SignChip({
             data-slot-key={key}
             aria-current={focused ? 'true' : undefined}
             aria-label={`${name}, ${STATUSES[status].label}`}
+            title={hint}
             onClick={() => focusSlot(key)}
         >
             {children}
@@ -179,6 +189,7 @@ function FocusedSign({ slotKey }: { slotKey: string }) {
     return (
         <div className="rv-focused-sign">
             <SlotHead slot={slot} label={label} />
+            <FieldAbout slot={slot} />
             <SlotBody slot={slot} label={label} panel={panel} valueLabels={DIRECTION_CHOICES} />
         </div>
     );

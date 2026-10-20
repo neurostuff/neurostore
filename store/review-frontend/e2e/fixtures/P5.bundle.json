@@ -1242,6 +1242,42 @@
             "status": "not_applicable"
           }
         },
+        "magnetic_field_strength_tesla": {
+          "extraction_status": "extracted",
+          "value": 3,
+          "value_source": "reported",
+          "evidence": {
+            "status": "present",
+            "sets": [
+              {
+                "source": "model_quote",
+                "spans": [
+                  {
+                    "start_char": 142,
+                    "end_char": 144,
+                    "text": "3T"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "pulse_sequence_type": {
+          "extraction_status": "extracted",
+          "value": "gradient-echo EPI",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "mr_acquisition_type": {
+          "extraction_status": "extracted",
+          "value": "2D",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
         "device": "dev_1"
       }
     ],
@@ -1897,6 +1933,42 @@
             "extraction_status": "not_reported",
             "evidence": {
               "status": "not_applicable"
+            }
+          },
+          "magnetic_field_strength_tesla": {
+            "extraction_status": "extracted",
+            "value": 3,
+            "value_source": "reported",
+            "evidence": {
+              "status": "present",
+              "sets": [
+                {
+                  "source": "model_quote",
+                  "spans": [
+                    {
+                      "start_char": 142,
+                      "end_char": 144,
+                      "text": "3T"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "pulse_sequence_type": {
+            "extraction_status": "extracted",
+            "value": "gradient-echo EPI",
+            "value_source": "reported",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "mr_acquisition_type": {
+            "extraction_status": "extracted",
+            "value": "2D",
+            "value_source": "reported",
+            "evidence": {
+              "status": "not_found"
             }
           },
           "device": "dev_1"

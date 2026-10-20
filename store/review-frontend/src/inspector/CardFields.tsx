@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
-import { memo, useMemo, useState } from 'react';
+import { memo, useId, useMemo, useState } from 'react';
 import { analysedByN } from '../model/analysed';
 import {
     cardLayoutOf,
@@ -20,6 +20,8 @@ import { selectNotes } from '../review/outline';
 import { useIsEditable, useReviewStores, useSession, useSessionView, useShown, useView } from '../store/context';
 import { selectEvidenceCursor, selectFocusedSpans } from '../store/viewSelectors';
 import { pendingLinks, unlink } from './actions';
+import { FieldAbout } from './FieldAbout';
+import { describedInProse, useDescription, useFieldHint } from './fieldHint';
 import { NoteMark } from './NoteMark';
 import { chipStyle, OpenButton, openStyles } from './OpenButton';
 import { openPanelOn } from './openPanel';
@@ -63,19 +65,41 @@ function useSlotHandlers(slot: SlotNode) {
 
 const useFocused = (slot: SlotNode) => useView((s) => s.focus.slot === slot.key);
 
-/** A slot's words as a button, dashed while no reviewer has judged it, then its marks. */
-function SlotValue({ slot, text, className }: { slot: SlotNode; text: string; className?: string }) {
+/**
+ * A slot's words as a button, dashed while no reviewer has judged it, then its marks; its hover hint its words, then its
+ * field's label and description; described, while focused, by them.
+ */
+function SlotValue({
+    slot,
+    text,
+    focused,
+    className,
+}: {
+    slot: SlotNode;
+    text: string;
+    focused: boolean;
+    className?: string;
+}) {
     const unchecked = useSession((s) => !s.provenance[slot.key]);
+    const hint = useFieldHint(slot);
+    const id = useId();
+    const described = focused && hint !== undefined;
     return (
         <>
             <button
                 type="button"
                 className={className ? `rv-value-text ${className}` : 'rv-value-text'}
                 data-unchecked={unchecked || undefined}
-                title={text}
+                title={hint === undefined ? text : `${text} — ${hint}`}
+                aria-describedby={described ? id : undefined}
             >
                 {text}
             </button>
+            {described && (
+                <span id={id} hidden>
+                    {hint}
+                </span>
+            )}
             <SlotMarks slot={slot} />
         </>
     );
@@ -94,7 +118,7 @@ const Value = memo(function Value({ slot, text }: { slot: SlotNode; text: string
             aria-current={focused ? 'true' : undefined}
             {...handlers}
         >
-            <SlotValue slot={slot} text={text} />
+            <SlotValue slot={slot} text={text} focused={focused} />
         </span>
     );
 });
@@ -116,8 +140,18 @@ function Pieces({ pieces }: { pieces: Piece[] }) {
     });
 }
 
-/** A field on one line: its label, its value cut to the line, its marks. */
-const SlotRow = memo(function SlotRow({ label, slot, text }: { label: string; slot: SlotNode; text: string }) {
+/** A field on one line: its label, the field's description its hint, its value cut to the line, its marks. */
+const SlotRow = memo(function SlotRow({
+    label,
+    description,
+    slot,
+    text,
+}: {
+    label: string;
+    description?: string;
+    slot: SlotNode;
+    text: string;
+}) {
     const focused = useFocused(slot);
     const handlers = useSlotHandlers(slot);
     const ref = useScrollIntoViewWhen<HTMLDivElement>(focused);
@@ -129,19 +163,24 @@ const SlotRow = memo(function SlotRow({ label, slot, text }: { label: string; sl
             aria-current={focused ? 'true' : undefined}
             {...handlers}
         >
-            <span className="rv-row-label">{label}</span>
-            <SlotValue slot={slot} text={text} className="rv-row-value" />
+            <span className="rv-row-label" title={description}>
+                {label}
+            </span>
+            <SlotValue slot={slot} text={text} focused={focused} className="rv-row-value" />
         </div>
     );
 });
 
-function LineRow({ row }: { row: Row }) {
+function LineRow({ row, schemaClass }: { row: Row; schemaClass: string }) {
     const [only] = row.pieces;
+    const description = describedInProse(schemaClass, row.path);
     if (row.pieces.length === 1 && only.kind === 'value')
-        return <SlotRow label={row.label} slot={only.slot} text={only.text} />;
+        return <SlotRow label={row.label} description={description} slot={only.slot} text={only.text} />;
     return (
         <div className="rv-row rv-row-list" role="group" aria-label={row.label}>
-            <span className="rv-row-label">{row.label}</span>
+            <span className="rv-row-label" title={description}>
+                {row.label}
+            </span>
             <span className="rv-row-line">
                 <Pieces pieces={row.pieces} />
             </span>
@@ -258,12 +297,17 @@ function SlotChips({ slot, chips }: { slot: SlotNode; chips: Chip[] }) {
     );
 }
 
-function LinkGroupView({ group }: { group: LinkGroup }) {
+function LinkGroupView({ group, schemaClass }: { group: LinkGroup; schemaClass: string }) {
     const [first] = group.chips;
     const held = first && (first.kind === 'link' || first.kind === 'none') ? first.slot : undefined;
     return (
         <span className="rv-link-group" role="group" aria-label={group.label}>
-            <span className="rv-link-label">{group.label}</span>
+            <span
+                className="rv-link-label"
+                title={group.path === undefined ? undefined : describedInProse(schemaClass, group.path)}
+            >
+                {group.label}
+            </span>
             {held ? (
                 <SlotChips slot={held} chips={group.chips} />
             ) : (
@@ -284,7 +328,8 @@ function LinkGroupView({ group }: { group: LinkGroup }) {
 function FoldedRow({ slot }: { slot: SlotNode }) {
     const label = useSession((s) => labelOf(s.index, slot));
     const text = useShown((index) => valueWords(index, slot));
-    return <SlotRow label={label} slot={slot} text={text} />;
+    const description = useDescription(slot);
+    return <SlotRow label={label} description={description} slot={slot} text={text} />;
 }
 
 function Fold({ entity, folded }: { entity: EntityNode; folded: SlotNode[] }) {
@@ -328,16 +373,19 @@ function ItemField({ slot, field }: { slot: SlotNode; field: string }) {
     const handlers = useSlotHandlers(slot);
     const focused = useFocused(slot);
     const text = useShown((index) => valueWords(index, slot));
+    const description = useDescription(slot);
     return (
         <>
-            <span className="rv-row-label">{inWords(field)}</span>
+            <span className="rv-row-label" title={description}>
+                {inWords(field)}
+            </span>
             <span
                 className="rv-value"
                 data-slot-key={slot.key}
                 aria-current={focused ? 'true' : undefined}
                 {...handlers}
             >
-                <SlotValue slot={slot} text={text} />
+                <SlotValue slot={slot} text={text} focused={focused} />
             </span>
         </>
     );
@@ -393,13 +441,15 @@ function SelectedSlot({ slot, layout }: { slot: SlotNode; layout: CardLayout }) 
     const field = item ? [...item.fields].find(([, s]) => s.key === slot.key)?.[0] : undefined;
     const check = item?.distribution ? checkDistribution(item.fields) : undefined;
     const section = item ? `${placement.section} · ${item.name}` : placement?.section;
+    const description = useDescription(slot);
     return (
         <Box component="section" aria-label="Selected field" className="rv-selected">
-            <Typography variant="overline" component="div" color="primary" className="rv-overline">
+            <Typography variant="overline" component="div" color="primary" className="rv-overline" title={description}>
                 {`Selected · ${section} · ${field === undefined ? label : inWords(field)}`}
             </Typography>
             <div className="rv-selected-body">
                 <SlotHead slot={slot} label={label} />
+                <FieldAbout slot={slot} />
                 {!editing &&
                     (slot.kind === 'reference' ? (
                         <SelectedLinks slot={slot} />
@@ -671,7 +721,7 @@ export const CardFields = memo(function CardFields({ entity }: { entity: EntityN
                     {layout.rows.length > 0 && (
                         <div className="rv-rows">
                             {layout.rows.map((row) => (
-                                <LineRow key={row.label} row={row} />
+                                <LineRow key={row.label} row={row} schemaClass={entity.schemaClass} />
                             ))}
                         </div>
                     )}
@@ -684,7 +734,7 @@ export const CardFields = memo(function CardFields({ entity }: { entity: EntityN
                     </Typography>
                     <div className="rv-links">
                         {layout.links.map((group) => (
-                            <LinkGroupView key={group.label} group={group} />
+                            <LinkGroupView key={group.label} group={group} schemaClass={entity.schemaClass} />
                         ))}
                     </div>
                 </section>

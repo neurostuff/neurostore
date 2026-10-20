@@ -21,6 +21,8 @@ export type Piece =
 
 export interface Row {
     label: string;
+    /** The slot or list the row says. */
+    path: string;
     pieces: Piece[];
 }
 
@@ -33,6 +35,8 @@ export type Chip =
 
 export interface LinkGroup {
     label: string;
+    /** The slot or list the group says; none for a group of child entities the schema holds nowhere. */
+    path?: string;
     chips: Chip[];
 }
 
@@ -355,11 +359,11 @@ class Builder {
 
     row(path: string, label: string, leftover?: boolean): Row | undefined {
         const listed = this.list(path, 'row', label, label, leftover);
-        if (listed) return { label, pieces: listed.flatMap((item, i) => (i ? [text(' · '), ...item] : item)) };
+        if (listed) return { label, path, pieces: listed.flatMap((item, i) => (i ? [text(' · '), ...item] : item)) };
         const slot = this.bySlot.get(path);
         if (!slot || this.has(slot.key, leftover)) return undefined;
         this.place(slot, 'row', label, undefined, leftover);
-        return isFolded(slot) ? undefined : { label, pieces: [this.value(slot, lineWords(this.index, slot))] };
+        return isFolded(slot) ? undefined : { label, path, pieces: [this.value(slot, lineWords(this.index, slot))] };
     }
 
     link(path: string, label: string, leftover?: boolean): LinkGroup | undefined {
@@ -367,7 +371,11 @@ class Builder {
         if (items) {
             const listed = this.list(path, 'link', label, label, leftover);
             if (!listed) return undefined;
-            return { label, chips: [...items.keys()].map((at, i) => ({ kind: 'item', item: at, pieces: listed[i] })) };
+            return {
+                label,
+                path,
+                chips: [...items.keys()].map((at, i) => ({ kind: 'item', item: at, pieces: listed[i] })),
+            };
         }
         const slot = this.bySlot.get(path);
         if (!slot || this.has(slot.key, leftover)) return undefined;
@@ -376,6 +384,7 @@ class Builder {
         if (slot.kind !== 'reference')
             return {
                 label,
+                path,
                 chips: [{ kind: 'item', item: path, pieces: [this.value(slot, valueWords(this.index, slot))] }],
             };
         this.order.push(slot);
@@ -387,7 +396,7 @@ class Builder {
                   name: this.index.entity(target)?.name ?? target,
               }))
             : [{ kind: 'none', slot }];
-        return { label, chips };
+        return { label, path, chips };
     }
 }
 
@@ -464,7 +473,11 @@ function layOut(index: RecordIndex, entity: EntityNode): CardLayout {
         if (held && !built.has(held.key)) built.place(held, 'link', spec.label);
         const children = index.visible.filter((e) => e.parent === entity.id && e.entityClass === spec.entityClass);
         if (children.length)
-            links.push({ label: spec.label, chips: children.map((child) => ({ kind: 'entity', entity: child })) });
+            links.push({
+                label: spec.label,
+                path: spec.slot,
+                chips: children.map((child) => ({ kind: 'entity', entity: child })),
+            });
     }
     for (const slot of left) {
         if (built.places.has(slot.key)) continue;

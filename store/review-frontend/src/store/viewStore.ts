@@ -23,6 +23,7 @@ import { analysisTarget, entityKey, relationshipKey, slotTarget, targetKey } fro
 import { isFocused, selectDiff } from './diffSelectors';
 import { followerOf, type Follower } from '../model/analysisFollow';
 import { selectIsEditable, type Replaced, type SessionStore } from './sessionStore';
+import { readAboutOpen, writeAboutOpen } from './aboutField';
 import { readFolds, writeFolds } from './folds';
 import { selectEvidenceCursor, selectFocusedSpans, selectShown } from './viewSelectors';
 
@@ -146,6 +147,9 @@ export interface ViewState {
     /** The schema classes whose cards show their folded fields, as this device keeps them. */
     openFolds: string[];
     toggleFold(schemaClass: string): void;
+    /** Whether the selected field's About line shows its whole description, as the viewer left it on this device. */
+    aboutOpen: boolean;
+    toggleAbout(): void;
     /** The analysed n of the focused entity whose analyses the card lists, while it does. */
     analysedOpen: { entity: string; n: string } | null;
     /** Focuses the entity and lists the analyses that analysed `n` of it. */
@@ -425,6 +429,7 @@ export function createViewStore(session: SessionStore) {
             judged: null,
             gridEngagement: null,
             openFolds: readFolds(),
+            aboutOpen: readAboutOpen(bundle.review?.user_id),
             analysedOpen: null,
 
             toggleFold: (schemaClass) => {
@@ -434,6 +439,11 @@ export function createViewStore(session: SessionStore) {
                     : [...openFolds, schemaClass];
                 writeFolds(next);
                 set({ openFolds: next });
+            },
+            toggleAbout: () => {
+                const aboutOpen = !get().aboutOpen;
+                writeAboutOpen(documents().bundle.review?.user_id, aboutOpen);
+                set({ aboutOpen });
             },
             openAnalysed: (entity, n) => {
                 if (!documents().index.entity(entity)) return;
