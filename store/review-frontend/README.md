@@ -2,6 +2,10 @@
 
 The review app is served under `/review/`. It reuses the main site's Auth0 session, so in development it is opened through the main app's dev server.
 
+## Deploying
+
+Production serves the build at neurostore.org/review through the store's nginx. The steps (Auth0, the build settings, building `dist/`, granting the role, loading papers) are in [docs/review/DEPLOY.md](../../docs/review/DEPLOY.md).
+
 ## Running in development
 
 The main app's first-time setup (`npm install`, `.env.dev`) is in `.github/copilot-instructions.md`.

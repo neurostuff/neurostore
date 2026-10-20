@@ -147,7 +147,7 @@ Both directions use study_schema's layout (`review/core/layout.py`):
 
 ## Front end
 
-`store/review-frontend/`, served under `/review/` (`vite.config.ts` `base`). It reuses the main site's Auth0 session. In development the main app's dev server on port 3000 proxies `/review/` to this one on port 3001 (`store/review-frontend/README.md`).
+`store/review-frontend/`, served under `/review/` (`vite.config.ts` `base`). In production the store's nginx serves the build from `store/review-frontend/dist/` at neurostore.org/review; [DEPLOY.md](DEPLOY.md) has the steps. It reuses the main site's Auth0 session. In development the main app's dev server on port 3000 proxies `/review/` to this one on port 3001 (`store/review-frontend/README.md`).
 
 **Two stores per paper** (`src/store/reviewStores.ts`):
 
