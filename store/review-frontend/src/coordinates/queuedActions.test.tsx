@@ -514,7 +514,7 @@ describe('a held op after a reload', () => {
         const two = await tab();
         stop = () => two.close();
         renderStores(<ReviewScreen />, two.stores, two.client);
-        const note = kept(`move from ${FACES.name}`);
+        const note = await screen.findByRole('note', { name: `kept move from ${FACES.name}` }, SLOW);
         expect(within(note).getByRole('button', { name: /^Apply to / })).toBeDisabled();
         expect(note).toHaveTextContent(/the points it was made on are no longer in /);
         fireEvent.click(within(note).getByRole('button', { name: 'Discard' }));
