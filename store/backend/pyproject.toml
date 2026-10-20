@@ -28,7 +28,7 @@ dependencies = [
     "python-jose~=3.5",
     "redis",
     "shortuuid~=1.0",
-    "starlette>=1.7.0,<2",
+    "starlette>=1.8.0,<2",
     "sqlalchemy[asyncio]~=2.1.4",
     "sqladmin~=0.32",
     "sqltap",
@@ -39,7 +39,7 @@ dependencies = [
     "orjson~=3.13",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.22.1",
-    "openai~=3.28",
+    "openai~=3.31",
     "tenacity~=9.2",
     "sentry-sdk~=2.71",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
