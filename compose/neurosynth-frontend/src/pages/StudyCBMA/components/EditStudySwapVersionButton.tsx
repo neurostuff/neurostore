@@ -20,8 +20,8 @@ import { useSnackbar } from 'notistack';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAnnotationId } from 'stores/annotation/AnnotationStore.getters';
 import {
+    useProjectExtractionAnnotationId,
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
     useProjectId,
@@ -43,7 +43,7 @@ const EditStudySwapVersionButton = () => {
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
 
-    const annotationId = useAnnotationId();
+    const annotationId = useProjectExtractionAnnotationId();
 
     const [isSwapping, setIsSwapping] = useState(false);
     const [unsavedChangesConfirmationDialog, setUnsavedChangesConfirmationDialog] = useState(false);

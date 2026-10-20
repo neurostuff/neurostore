@@ -1,6 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
 import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useCreateStudy, useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
+import {
+    useCreateStudy,
+    useGetStudysetNonNestedById,
+    useUpdateAnnotationByAnnotationAndAnalysisIds,
+    useUpdateAnnotationById,
+    useUpdateStudyset,
+} from 'hooks';
 import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
@@ -12,17 +19,9 @@ import {
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import {
-    useUpdateDBWithAnnotationFromStore,
-    useUpdateAnnotationNotes,
-} from 'stores/annotation/AnnotationStore.actions';
-import {
-    useAnnotationIsEdited,
-    useAnnotationNotes,
-    useUpdateAnnotationIsLoading,
-} from 'stores/annotation/AnnotationStore.getters';
 import API from 'api/api.config';
 import { arrayToMetadata } from 'pages/StudyCBMA/components/EditStudyMetadata';
+import { StudyAnnotationEdits, StudyAnnotationsTableHandle } from 'pages/StudyCBMA/context/StudyCBMAContext';
 import {
     useStudy,
     useStudyAnalyses,
@@ -34,9 +33,20 @@ import {
 import { storeAnalysesToStudyAnalyses } from 'stores/study/StudyStore.helpers';
 import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './useSaveStudy.helpers';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
+import annotationQueries from 'hooks/annotations/annotationQueries';
 import studysetQueries from 'hooks/studysets/studysetQueries';
 
-const useSaveStudy = () => {
+const annotationEditsHaveChanges = (
+    annotationEdits: StudyAnnotationEdits | undefined
+): annotationEdits is StudyAnnotationEdits =>
+    !!annotationEdits && (annotationEdits.noteKeysHaveChanged || annotationEdits.editedRowIndexes.size > 0);
+
+/** Called once by StudyCBMAProvider, which passes in the study annotations table and its edit flag. */
+const useSaveStudy = (
+    studyAnnotationsTableRef: React.RefObject<StudyAnnotationsTableHandle | null>,
+    annotationHasEdits: boolean,
+    setAnnotationHasEdits: (hasEdits: boolean) => void
+) => {
     const { user } = useAuth0();
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
@@ -55,11 +65,10 @@ const useSaveStudy = () => {
     const analyses = useStudyAnalyses();
     const updateStudyInDB = useUpdateStudyInDB();
     // annotation stuff
-    const updateAnnotationIsLoading = useUpdateAnnotationIsLoading();
-    const notes = useAnnotationNotes();
-    const annotationIsEdited = useAnnotationIsEdited();
-    const updateAnnotationInDB = useUpdateDBWithAnnotationFromStore();
-    const updateNotesInStore = useUpdateAnnotationNotes();
+    const { mutateAsync: updateAnnotation, isPending: updateAnnotationIsLoading } =
+        useUpdateAnnotationById(annotationId);
+    const { mutateAsync: updateAnnotationAnalyses, isPending: updateAnnotationAnalysesIsLoading } =
+        useUpdateAnnotationByAnnotationAndAnalysisIds(annotationId);
 
     const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
@@ -67,91 +76,84 @@ const useSaveStudy = () => {
 
     const [isCloning, setIsCloning] = useState(false);
 
-    const handleUpdateBothInDB = async () => {
-        try {
-            const updatedStudy = await updateStudyInDB();
-            const updatedNotes = [...(notes || [])];
+    // PUT the whole annotation when the columns changed, otherwise POST only the edited rows
+    const updateAnnotationInDB = async (annotationEdits: StudyAnnotationEdits) => {
+        if (!annotationId) throw new Error('no annotation id');
 
-            // for new analyses, temporary uuids() are given to them. During study update, any new analyses are instantiated
-            // in the database and given a real ID. We need to update the notes to reflect this.
-            // we use the analysis name (which we validate to be unique) to find the analysis.
-            updatedNotes.forEach((note, index) => {
-                if (note.isNew) {
-                    const foundAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
-                        (analysis) => analysis.study === note.study && analysis.name === note.analysis_name
+        if (annotationEdits.noteKeysHaveChanged) {
+            await updateAnnotation({
+                argAnnotationId: annotationId,
+                annotation: {
+                    note_keys: noteKeyArrToObj(annotationEdits.noteKeys),
+                    notes: annotationEdits.rows.map((row) => ({
+                        analysis: row.analysis,
+                        study: row.study,
+                        note: row.note,
+                    })),
+                },
+            });
+        } else {
+            await updateAnnotationAnalyses(
+                annotationEdits.rows
+                    .filter((_, rowIndex) => annotationEdits.editedRowIndexes.has(rowIndex))
+                    .map((row) => ({
+                        id: `${annotationId}_${row.analysis}`,
+                        note: row.note,
+                    }))
+            );
+        }
+    };
+
+    const handleUpdateDB = async (annotationEdits: StudyAnnotationEdits | undefined) => {
+        const annotationHasChanges = annotationEditsHaveChanges(annotationEdits);
+        try {
+            if (studyHasBeenEdited) {
+                // new analyses have temporary ids until the study save creates them. Analysis names are unique,
+                // so each saved analysis is found by the name it had before saving
+                const tempIdToAnalysisName = new Map(
+                    (annotationEdits?.rows ?? [])
+                        .filter((row) => row.isNew)
+                        .map((row) => [
+                            row.analysis,
+                            analyses.find((analysis) => analysis.id === row.analysis)?.name,
+                        ])
+                );
+                const updatedStudy = await updateStudyInDB();
+                const tempIdToAnalysisId = new Map<string, string>();
+                tempIdToAnalysisName.forEach((analysisName, temporaryAnalysisId) => {
+                    const savedAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
+                        (analysis) => analysis.name === analysisName
                     );
-                    if (!foundAnalysis) return;
+                    if (savedAnalysis?.id) tempIdToAnalysisId.set(temporaryAnalysisId, savedAnalysis.id);
+                });
 
-                    updatedNotes[index] = {
-                        ...updatedNotes[index],
-                        analysis: foundAnalysis.id,
-                    };
+                if (annotationHasChanges) {
+                    await updateAnnotationInDB({
+                        ...annotationEdits,
+                        rows: annotationEdits.rows.map((row) => ({
+                            ...row,
+                            analysis: tempIdToAnalysisId.get(row.analysis) ?? row.analysis,
+                        })),
+                    });
                 }
-            });
-            updateNotesInStore(updatedNotes);
-            await updateAnnotationInDB();
-            unsetUnloadHandler('study');
-            unsetUnloadHandler('annotation');
-
-            queryClient.invalidateQueries({
-                queryKey: ['studies']
-            });
-            queryClient.invalidateQueries({
-                queryKey: ['annotations']
-            });
-
-            enqueueSnackbar('Study and annotation saved', { variant: 'success' });
-        } catch (e) {
-            console.error(e);
-            enqueueSnackbar('There was an error', { variant: 'error' });
-        }
-    };
-
-    const handleUpdateStudyInDB = async () => {
-        try {
-            await updateStudyInDB();
-            unsetUnloadHandler('study');
-            unsetUnloadHandler('annotation');
-            queryClient.invalidateQueries({
-                queryKey: ['studies']
-            });
-            queryClient.invalidateQueries({
-                queryKey: ['annotations']
-            });
-
-            enqueueSnackbar('Study saved', { variant: 'success' });
-        } catch (e) {
-            console.error(e);
-            enqueueSnackbar('There was an error saving the study', { variant: 'error' });
-        }
-    };
-
-    const handleUpdateAnnotationInDB = async () => {
-        try {
-            await updateAnnotationInDB();
-            unsetUnloadHandler('study');
-            unsetUnloadHandler('annotation');
-            queryClient.invalidateQueries({
-                queryKey: ['annotations']
-            });
-            enqueueSnackbar('Annotation saved', { variant: 'success' });
-        } catch (e) {
-            console.error(e);
-            enqueueSnackbar('There was an issue saving the annotation', { variant: 'error' });
-        }
-    };
-
-    const handleUpdateDB = async () => {
-        try {
-            const newAnalysesWereCreated = storeStudy.analyses.some((analysis) => analysis.isNew);
-
-            if (studyHasBeenEdited && (annotationIsEdited || newAnalysesWereCreated)) {
-                await handleUpdateBothInDB();
-            } else if (studyHasBeenEdited) {
-                await handleUpdateStudyInDB();
-            } else if (annotationIsEdited) {
-                await handleUpdateAnnotationInDB();
+                studyAnnotationsTableRef.current?.markSaved(tempIdToAnalysisId);
+                enqueueSnackbar(annotationHasChanges ? 'Study and annotation saved' : 'Study saved', {
+                    variant: 'success',
+                });
+            } else if (annotationHasChanges) {
+                await updateAnnotationInDB(annotationEdits);
+                studyAnnotationsTableRef.current?.markSaved();
+                enqueueSnackbar('Annotation saved', { variant: 'success' });
             }
+
+            setAnnotationHasEdits(false);
+            unsetUnloadHandler('study');
+            queryClient.invalidateQueries({
+                queryKey: ['studies'],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['annotations'],
+            });
         } catch (e) {
             console.error(e);
             enqueueSnackbar('There was an error saving to the database', {
@@ -176,7 +178,7 @@ const useSaveStudy = () => {
         return updatedStudy;
     };
 
-    const handleClone = async () => {
+    const handleClone = async (annotationEdits: StudyAnnotationEdits | undefined) => {
         if (
             !storeStudy.id ||
             !studysetId ||
@@ -239,26 +241,27 @@ const useSaveStudy = () => {
             // 4. as this is a completely new study, that we've just created, the annotations are cleared.
             // We need to update the annotations with our latest changes, and associate newly created analyses with their corresponding analysis changes.
             //      - we do this based on the analysis names since the IDs are reinitialized by neurostore
-            const updatedNotes = [...(notes || [])];
-            ((updatedClone.analyses || []) as AnalysisReturn[]).forEach((analysis) => {
-                const foundNoteIndex = updatedNotes.findIndex(
-                    (note) => note.study === storeStudy.id && note.analysis_name === analysis.name
+            if (annotationEditsHaveChanges(annotationEdits)) {
+                const analysisIdToName = new Map(analyses.map((analysis) => [analysis.id, analysis.name]));
+                const cloneAnalysisNameToId = new Map(
+                    ((updatedClone.analyses || []) as AnalysisReturn[]).map((analysis) => [analysis.name, analysis.id])
                 );
-                if (foundNoteIndex < 0) return;
-                updatedNotes[foundNoteIndex] = {
-                    ...updatedNotes[foundNoteIndex],
-                    analysis: analysis.id,
-                    study: clonedStudyId,
-                    note: {
-                        ...updatedNotes[foundNoteIndex].note,
-                    },
-                };
-            });
-            updateNotesInStore(updatedNotes);
-            await updateAnnotationInDB();
+                await updateAnnotationInDB({
+                    ...annotationEdits,
+                    rows: annotationEdits.rows.map((row) => {
+                        if (row.study !== storeStudy.id) return row;
+                        const clonedAnalysisId = cloneAnalysisNameToId.get(analysisIdToName.get(row.analysis));
+                        if (!clonedAnalysisId) return row;
+                        return { ...row, analysis: clonedAnalysisId, study: clonedStudyId };
+                    }),
+                });
+            }
 
+            setAnnotationHasEdits(false);
             unsetUnloadHandler('study');
-            unsetUnloadHandler('annotation');
+
+            // the cloned study's page builds its annotations table from this query, so it must not start from stale data
+            await queryClient.refetchQueries({ queryKey: annotationQueries.byId(annotationId).queryKey });
 
             navigate(`/projects/${projectId}/extraction/studies/${clonedStudyId}/edit`);
             enqueueSnackbar('Made a new a copy and saved succesfully', {
@@ -290,20 +293,24 @@ const useSaveStudy = () => {
             return;
         }
 
+        // the study annotations table holds the draft annotation until now
+        const annotationEdits = studyAnnotationsTableRef.current?.getAnnotationEdits();
+
         const currentUserOwnsThisStudy = (studyOwnerUser || null) === (user?.sub || undefined);
         if (currentUserOwnsThisStudy) {
-            await handleUpdateDB();
+            await handleUpdateDB(annotationEdits);
         } else {
             if (studyHasBeenEdited) {
-                return await handleClone();
+                return await handleClone(annotationEdits);
             } else {
-                await handleUpdateDB();
+                await handleUpdateDB(annotationEdits);
             }
         }
     };
 
-    const isLoading = updateStudyIsLoading || updateAnnotationIsLoading || isCloning;
-    const hasEdits = studyHasBeenEdited || annotationIsEdited;
+    const isLoading =
+        updateStudyIsLoading || updateAnnotationIsLoading || updateAnnotationAnalysesIsLoading || isCloning;
+    const hasEdits = studyHasBeenEdited || annotationHasEdits;
 
     return { isLoading, hasEdits, handleSave };
 };

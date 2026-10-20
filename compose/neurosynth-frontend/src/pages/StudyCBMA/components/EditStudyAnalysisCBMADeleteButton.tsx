@@ -2,7 +2,7 @@ import { Button, ButtonOwnProps } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useDeleteAnalysis } from 'stores/study/StudyStore';
 import { useState } from 'react';
-import { useDeleteAnnotationNote } from 'stores/annotation/AnnotationStore.actions';
+import { useStudyCBMAContext } from 'pages/StudyCBMA/context/StudyCBMAContext';
 
 const EditStudyAnalysisCBMADeleteButton = ({
     analysisId,
@@ -13,14 +13,14 @@ const EditStudyAnalysisCBMADeleteButton = ({
     onDeleteAnalysis: () => void;
 }) => {
     const deleteAnalysis = useDeleteAnalysis();
-    const deleteAnnotationNote = useDeleteAnnotationNote();
+    const { studyAnnotationsTableRef } = useStudyCBMAContext();
 
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
     const handleCloseDialog = (confirm?: boolean) => {
         if (confirm && analysisId) {
             deleteAnalysis(analysisId);
-            deleteAnnotationNote(analysisId);
+            studyAnnotationsTableRef.current?.removeAnalysisRow(analysisId);
             onDeleteAnalysis();
         }
         setDialogIsOpen(false);

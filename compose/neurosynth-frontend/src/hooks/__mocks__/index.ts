@@ -61,7 +61,7 @@ const useUpdateImage = vi.fn().mockReturnValue({
 });
 
 const useUpdateAnnotationByAnnotationAndAnalysisIds = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
     mutateAsync: vi.fn().mockResolvedValue({}),
 });

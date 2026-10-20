@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetAnnotationById } from 'hooks';
-import EditAnnotationsHotTable from 'pages/Annotations/components/EditAnnotationsHotTable';
+import EditAnnotationsContainer from 'pages/Annotations/components/EditAnnotationsContainer';
 import { useProjectExtractionAnnotationId, useProjectName } from 'stores/projects/ProjectStore';
 import { useParams } from 'react-router-dom';
 
@@ -53,7 +53,7 @@ const AnnotationsPage = () => {
                     </Typography>
                     <Typography sx={{ color: 'muted.main' }}>{data?.description || ''}</Typography>
                 </Box>
-                <EditAnnotationsHotTable annotationId={annotationIdFromProject || annotationId} />
+                <EditAnnotationsContainer annotationId={annotationIdFromProject || annotationId} />
             </StateHandlerComponent>
         </Box>
     );

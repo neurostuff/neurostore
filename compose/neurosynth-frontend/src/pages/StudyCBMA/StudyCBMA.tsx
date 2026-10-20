@@ -10,6 +10,7 @@ import EditStudyAnnotations from 'pages/StudyCBMA/components/EditStudyAnnotation
 import EditStudyDetails from 'pages/StudyCBMA/components/EditStudyDetails';
 import EditStudyMetadata from 'pages/StudyCBMA/components/EditStudyMetadata';
 import EditStudyPageHeader from 'pages/StudyCBMA/components/EditStudyPageHeader';
+import { StudyCBMAProvider } from 'pages/StudyCBMA/context/StudyCBMAContext';
 import StudyCBMAPageStyles from 'pages/StudyCBMA/StudyCBMA.styles';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -68,110 +69,113 @@ const StudyCBMAPage: React.FC = () => {
     };
 
     return (
-        <StateHandlerComponent disableShrink={false} isError={false} isLoading={!studyStoreId || getStudyIsLoading}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <NeurosynthBreadcrumbs
-                    breadcrumbItems={[
-                        {
-                            text: 'Projects',
-                            link: '/projects',
-                            isCurrentPage: false,
-                        },
-                        {
-                            text: projectName || '',
-                            link: `/projects/${projectId}`,
-                            isCurrentPage: false,
-                        },
-                        {
-                            text: 'Extraction',
-                            link: `/projects/${projectId}/extraction`,
-                            isCurrentPage: false,
-                        },
-                        {
-                            text: studyName || '',
-                            link: '',
-                            isCurrentPage: true,
-                        },
-                    ]}
-                />
-                <LoadingStateIndicatorProject />
-            </Box>
-            <EditStudyPageHeader />
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: {
-                        xs: 'column-reverse',
-                        md: 'row',
-                    },
-                    mt: 1,
-                }}
-            >
+        // keyed so that each study, including a clone after saving, starts without annotation edits
+        <StudyCBMAProvider key={studyId}>
+            <StateHandlerComponent disableShrink={false} isError={false} isLoading={!studyStoreId || getStudyIsLoading}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <NeurosynthBreadcrumbs
+                        breadcrumbItems={[
+                            {
+                                text: 'Projects',
+                                link: '/projects',
+                                isCurrentPage: false,
+                            },
+                            {
+                                text: projectName || '',
+                                link: `/projects/${projectId}`,
+                                isCurrentPage: false,
+                            },
+                            {
+                                text: 'Extraction',
+                                link: `/projects/${projectId}/extraction`,
+                                isCurrentPage: false,
+                            },
+                            {
+                                text: studyName || '',
+                                link: '',
+                                isCurrentPage: true,
+                            },
+                        ]}
+                    />
+                    <LoadingStateIndicatorProject />
+                </Box>
+                <EditStudyPageHeader />
                 <Box
                     sx={{
-                        width: {
-                            xs: '100%',
-                            md: 'calc(100% - 62px - 1rem)',
+                        display: 'flex',
+                        flexDirection: {
+                            xs: 'column-reverse',
+                            md: 'row',
                         },
-                        mr: {
-                            xs: 0,
-                            md: 2,
-                        },
+                        mt: 1,
                     }}
                 >
-                    <EditStudyAnnotations />
-                    <EditStudyAnalysesCBMA />
-                    <EditStudyDetails />
-                    <Box sx={{ marginBottom: '5rem' }}>
-                        <EditStudyMetadata />
-                    </Box>
-                    <Box sx={[StudyCBMAPageStyles.loadingButtonContainer]}>
-                        <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
-                            <ConfirmationDialog
-                                isOpen={confirmationDialogIsOpen}
-                                dialogTitle="You have unsaved changes"
-                                dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
-                                onCloseDialog={handleCloseConfirmationDialog}
-                                rejectText="Cancel"
-                                confirmText="Continue"
-                            />
-                            <Button
-                                color="secondary"
-                                disableElevation
-                                size="small"
-                                sx={{ width: mdDown ? '40px' : '160px' }}
-                                variant="contained"
-                                onClick={handleBackToExtraction}
+                    <Box
+                        sx={{
+                            width: {
+                                xs: '100%',
+                                md: 'calc(100% - 62px - 1rem)',
+                            },
+                            mr: {
+                                xs: 0,
+                                md: 2,
+                            },
+                        }}
+                    >
+                        <EditStudyAnnotations />
+                        <EditStudyAnalysesCBMA />
+                        <EditStudyDetails />
+                        <Box sx={{ marginBottom: '5rem' }}>
+                            <EditStudyMetadata />
+                        </Box>
+                        <Box sx={[StudyCBMAPageStyles.loadingButtonContainer]}>
+                            <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
+                                <ConfirmationDialog
+                                    isOpen={confirmationDialogIsOpen}
+                                    dialogTitle="You have unsaved changes"
+                                    dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                                    onCloseDialog={handleCloseConfirmationDialog}
+                                    rejectText="Cancel"
+                                    confirmText="Continue"
+                                />
+                                <Button
+                                    color="secondary"
+                                    disableElevation
+                                    size="small"
+                                    sx={{ width: mdDown ? '40px' : '160px' }}
+                                    variant="contained"
+                                    onClick={handleBackToExtraction}
+                                >
+                                    {mdDown ? <ArrowBack /> : 'Back to extraction'}
+                                </Button>
+                            </Box>
+                            <Box
+                                sx={{
+                                    width: '60%',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                }}
                             >
-                                {mdDown ? <ArrowBack /> : 'Back to extraction'}
-                            </Button>
-                        </Box>
-                        <Box
-                            sx={{
-                                width: '60%',
-                                display: 'flex',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <DisplayExtractionTableState />
-                        </Box>
-                        <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
-                            <EditStudyCompleteButton />
+                                <DisplayExtractionTableState />
+                            </Box>
+                            <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
+                                <EditStudyCompleteButton />
+                            </Box>
                         </Box>
                     </Box>
+                    <Box
+                        sx={{
+                            position: 'sticky', // this is needed when the toolbar is on top of the edit study content
+                            top: '0',
+                            zIndex: 999,
+                            mb: 1,
+                        }}
+                    >
+                        <EditStudyToolbar />
+                    </Box>
                 </Box>
-                <Box
-                    sx={{
-                        position: 'sticky', // this is needed when the toolbar is on top of the edit study content
-                        top: '0',
-                        zIndex: 999,
-                        mb: 1,
-                    }}
-                >
-                    <EditStudyToolbar />
-                </Box>
-            </Box>
-        </StateHandlerComponent>
+            </StateHandlerComponent>
+        </StudyCBMAProvider>
     );
 };
 

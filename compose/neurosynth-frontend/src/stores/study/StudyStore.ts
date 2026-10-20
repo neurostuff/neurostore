@@ -13,7 +13,7 @@ import {
     storeAnalysesToStudyAnalyses,
     studyAnalysesToStoreAnalyses,
 } from './StudyStore.helpers';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import API from 'api/api.config';
 import { v4 as uuid } from 'uuid';
@@ -196,7 +196,7 @@ const useStudyStore = create<
                             },
                         }));
                         console.error(e);
-                        throw new Error('Could not update study in DB');
+                        throw new Error('Could not update study in DB', { cause: e });
                     }
                 },
                 addOrUpdateStudyMetadataRow: (row) => {
@@ -650,21 +650,6 @@ export const useStudyAnalysisImages = (analysisId?: string) =>
 
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
-export const useDebouncedStudyAnalyses = () => {
-    const studyAnalyses = useStudyAnalyses();
-    const [debouncedAnalyses, setDebouncedAnalyses] = useState(useStudyStore.getState().study.analyses);
-    useEffect(() => {
-        const debounce: NodeJS.Timeout = setTimeout(() => {
-            setDebouncedAnalyses(studyAnalyses);
-        }, 500);
-
-        return () => {
-            clearTimeout(debounce);
-        };
-    }, [studyAnalyses]);
-    return debouncedAnalyses;
-};
-
 export const useStudyStoreIsError = () => useStudyStore((state) => state.storeMetadata.isError);
 export const useStudyUser = () => useStudyStore((state) => state.study.user);
 export const useStudyUsername = () => useStudyStore((state) => state.study.username);

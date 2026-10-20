@@ -1,8 +1,14 @@
+import { AnnotationNoteType } from 'components/HotTables/HotTables.types';
 import { ColumnSettings } from 'handsontable/settings';
-import { IStoreNoteCollectionReturn } from 'stores/annotation/AnnotationStore.types';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 
-export interface EditStudyAnnotationsNoteCollectionReturn extends IStoreNoteCollectionReturn {
+export interface EditStudyAnnotationsNoteCollectionReturn extends NoteCollectionReturn {
+    analysis: string;
+    study: string;
+    note: AnnotationNoteType;
     analysisDescription?: string;
+    /** not a column. New analyses have a temporary id until the study is saved */
+    isNew?: boolean;
 }
 
 export interface IEditStudyAnnotationsDataRef {

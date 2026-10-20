@@ -7,104 +7,81 @@ import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import {
     annotationNotesToHotData,
-    createColumnHeader,
+    createColumnHeaders,
     getMergeCells,
     createColumns,
     getRowHeights,
     MergeCellRange,
 } from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
 
-const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean) => {
-    const {
-        data: annotations,
-        isLoading: getAnnotationIsLoading,
-        isError: getAnnotationIsError,
-    } = useGetAnnotationById(annotationId);
+export type EditAnnotationsHotSnapshot = {
+    annotationId: string;
+    hotData: AnnotationNoteValue[][];
+    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>;
+    noteKeys: NoteKeyType[];
+    hotColumns: ColumnSettings[];
+    hotColumnHeaders: string[];
+    colWidths: number[];
+    rowHeights: number[];
+    mergeCells: MergeCellRange[];
+};
+
+/**
+ * Builds the initial table data once per annotation id. Later react-query updates for the same annotation
+ * (e.g. the refetch after saving) do not replace the snapshot, because Handsontable owns the edits.
+ */
+const useEditAnnotationsHotTable = (annotationId?: string) => {
+    const { data: annotations } = useGetAnnotationById(annotationId);
     const { user } = useAuth0();
-    const [annotationsHotState, setAnnotationsHotState] = useState<{
-        hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>;
-        noteKeys: NoteKeyType[];
-        hotData: AnnotationNoteValue[][];
-        hotColumns: ColumnSettings[];
-        mergeCells: MergeCellRange[];
-        isEdited: boolean;
-        isReordered: boolean;
-        noteKeysHaveChanged: boolean;
-    }>({
-        hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string; isEdited: boolean }>(),
-        noteKeys: [],
-        hotData: [],
-        hotColumns: [],
-        mergeCells: [],
-        isEdited: false,
-        isReordered: false,
-        noteKeysHaveChanged: false,
-    });
+    const [snapshot, setSnapshot] = useState<EditAnnotationsHotSnapshot>();
 
     useEffect(() => {
-        if (!annotations) return;
+        if (!annotations?.id) return;
+        const loadedAnnotationId = annotations.id;
 
-        const noteKeys = noteKeyObjToArr(annotations.note_keys);
-        const { hotData, hotDataToStudyMapping } = annotationNotesToHotData(
-            noteKeys,
-            annotations.notes as NoteCollectionReturn[] | undefined,
-            (annotationNote) => {
-                const studyName =
-                    annotationNote.study_name && annotationNote.study_year
-                        ? `(${annotationNote.study_year}) ${annotationNote.study_name}`
-                        : annotationNote.study_name
-                          ? annotationNote.study_name
-                          : '';
+        setSnapshot((prev) => {
+            if (prev?.annotationId === loadedAnnotationId) return prev;
 
-                const analysisName = annotationNote.analysis_name || '';
+            const noteKeys = noteKeyObjToArr(annotations.note_keys);
+            const { hotData, hotDataToStudyMapping } = annotationNotesToHotData(
+                noteKeys,
+                annotations.notes as NoteCollectionReturn[] | undefined,
+                (annotationNote) => {
+                    const studyName =
+                        annotationNote.study_name && annotationNote.study_year
+                            ? `(${annotationNote.study_year}) ${annotationNote.study_name}`
+                            : annotationNote.study_name
+                              ? annotationNote.study_name
+                              : '';
 
-                return [studyName, analysisName];
-            }
-        );
+                    const analysisName = annotationNote.analysis_name || '';
 
-        setAnnotationsHotState({
-            hotDataToStudyMapping,
-            noteKeys,
-            hotColumns: createColumns(noteKeys, disableEdit),
-            hotData: hotData,
-            mergeCells: getMergeCells(hotDataToStudyMapping),
-            isEdited: false,
-            isReordered: false,
-            noteKeysHaveChanged: false,
+                    return [studyName, analysisName];
+                }
+            );
+            const mergeCells = getMergeCells(hotDataToStudyMapping);
+
+            return {
+                annotationId: loadedAnnotationId,
+                hotData,
+                hotDataToStudyMapping,
+                noteKeys,
+                hotColumns: createColumns(noteKeys),
+                hotColumnHeaders: createColumnHeaders(noteKeys),
+                colWidths: createColWidths(noteKeys, 300, 150, 150),
+                rowHeights: getRowHeights(hotData, mergeCells, 300),
+                mergeCells,
+            };
         });
-    }, [annotations, disableEdit]);
+    }, [annotations]);
 
     const theUserOwnsThisAnnotation = useMemo(() => {
         return (user?.sub || null) === (annotations?.user || undefined);
     }, [user?.sub, annotations?.user]);
 
-    const hotColumnHeaders = useMemo(() => {
-        return [
-            ...['Study', 'Analysis'],
-            ...annotationsHotState.noteKeys.map((col) => {
-                const allowRemoveColumn = col.key !== 'included';
-                return createColumnHeader(col.key, col.type, allowRemoveColumn);
-            }),
-        ];
-    }, [annotationsHotState.noteKeys]);
-
-    const colWidths = useMemo(() => {
-        return createColWidths(annotationsHotState.noteKeys, 300, 150, 150);
-    }, [annotationsHotState.noteKeys]);
-
-    const rowHeights = useMemo(() => {
-        return getRowHeights(annotationsHotState.hotData, annotationsHotState.mergeCells, 300);
-    }, [annotationsHotState.hotData, annotationsHotState.mergeCells]);
-
     return {
         theUserOwnsThisAnnotation,
-        getAnnotationIsLoading,
-        getAnnotationIsError,
-        hotColumnHeaders,
-        setAnnotationsHotState,
-        colWidths,
-        rowHeights,
-        ...annotationsHotState,
+        snapshot,
     };
 };
 

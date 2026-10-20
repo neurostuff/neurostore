@@ -1,7 +1,5 @@
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import { useGetAnnotationById } from 'hooks';
-import { useInitAnnotationStoreIfRequired } from 'stores/annotation/AnnotationStore.actions';
-import { useGetAnnotationIsLoading } from 'stores/annotation/AnnotationStore.getters';
 import {
     useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
@@ -11,10 +9,8 @@ import {
 const AnnotationGuard: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const projectIsLoading = useGetProjectIsLoading();
     const annotationId = useProjectExtractionAnnotationId();
-    const annotationIsLoading = useGetAnnotationIsLoading();
 
     useInitProjectStoreIfRequired();
-    useInitAnnotationStoreIfRequired();
 
     const {
         isLoading: getAnnotationIsLoading,
@@ -22,7 +18,7 @@ const AnnotationGuard: React.FC<{ children?: React.ReactNode }> = ({ children })
         error: getAnnotationError,
     } = useGetAnnotationById(annotationId);
 
-    if (getAnnotationIsLoading || annotationIsLoading || projectIsLoading) {
+    if (getAnnotationIsLoading || projectIsLoading) {
         return <NeurosynthLoader loaded={false} />;
     }
 

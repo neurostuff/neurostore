@@ -275,11 +275,11 @@ describe(PAGE_NAME, () => {
         });
 
         it('included column header should not have a remove icon', () => {
-            cy.get('.htCore').first().contains('th', 'included').find('[data-testid="CancelIcon"]').should('not.exist');
+            cy.get('.htCore').first().contains('th', 'included').find('[data-testid="RemoveCircleIcon"]').should('not.exist');
         });
 
         it('should show confirmation when deleting an annotation column', () => {
-            cy.get('[data-testid="CancelIcon"]').eq(1).click({ force: true });
+            cy.get('[data-testid="RemoveCircleIcon"]').eq(1).parent().click({ force: true });
             cy.contains('Are you sure you want to remove this column?').should('be.visible');
             cy.contains('This will remove annotation data in all other studies for').should('be.visible');
             cy.contains('button', 'Cancel').click();
@@ -375,7 +375,7 @@ describe(PAGE_NAME, () => {
                 'postAnnotationAnalyses'
             );
 
-            cy.get('[data-testid="CancelIcon"]').eq(1).click({ force: true });
+            cy.get('[data-testid="RemoveCircleIcon"]').eq(1).parent().click({ force: true });
             cy.contains('Are you sure you want to remove this column?').should('be.visible');
             cy.contains('button', 'Remove').click();
             cy.get('button').find('[data-testid="SaveIcon"]').parent().click();
@@ -422,6 +422,45 @@ describe(PAGE_NAME, () => {
                             Object.values(item.note).includes('_cell_updated')
                     );
                     expect(hasUpdatedValue).to.be.true;
+                });
+        });
+
+        it('when a new analysis row is updated, request body should use the saved analysis id', () => {
+            cy.intercept('PUT', '**/api/studies/b-mock-study-id', (req) => req.reply(200, {})).as('saveStudy');
+            cy.intercept('POST', '**/api/annotation-analyses/**', (req) => req.reply(200, [])).as(
+                'postAnnotationAnalyses'
+            );
+
+            cy.contains('button', 'analysis').click();
+            cy.contains('Analysis Details')
+                .parent()
+                .parent()
+                .within(() => {
+                    cy.get('input').first().type('New analysis');
+                });
+
+            // the study fetched after saving has the new analysis with the id neurostore gave it
+            cy.fixture('study').then((study) => {
+                const savedStudy = study as Record<string, unknown> & { analyses: Array<Record<string, unknown>> };
+                savedStudy.id = 'b-mock-study-id';
+                savedStudy.analyses = [
+                    ...savedStudy.analyses,
+                    { ...savedStudy.analyses[0], id: 'saved-new-analysis-id', name: 'New analysis', points: [] },
+                ];
+                cy.intercept('GET', '**/api/studies/*', savedStudy).as('studyAfterSave');
+            });
+
+            cy.get('.htCore').first().find('tbody tr').last().find('td').eq(3).dblclick();
+            cy.get('textarea.handsontableInput:visible').clear().type('new_row_value{enter}');
+            cy.get('button').find('[data-testid="SaveIcon"]').parent().click();
+
+            cy.wait('@saveStudy');
+            cy.get('@postAnnotationAnalyses')
+                .its('request.body')
+                .then((body: Array<{ id: string; note: Record<string, unknown> }>) => {
+                    expect(body).to.have.length(1);
+                    expect(body[0].id).to.match(/_saved-new-analysis-id$/);
+                    expect(body[0].note).to.have.property('string_key', 'new_row_value');
                 });
         });
     });

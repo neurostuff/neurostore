@@ -8,3 +8,7 @@ export interface NoteKeyType {
 }
 
 export type AnnotationNoteValue = string | number | boolean | null;
+
+export type AnnotationNoteType = {
+    [key: string]: AnnotationNoteValue;
+};

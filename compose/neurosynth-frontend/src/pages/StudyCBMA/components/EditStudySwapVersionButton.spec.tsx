@@ -16,7 +16,6 @@ vi.mock('stores/projects/ProjectStore');
 vi.mock('stores/study/StudyStore');
 vi.mock('components/Dialogs/ConfirmationDialog');
 vi.mock('notistack');
-vi.mock('stores/annotation/AnnotationStore.getters');
 
 describe('EditStudySwapVersionButton Component', () => {
     it('should render', async () => {

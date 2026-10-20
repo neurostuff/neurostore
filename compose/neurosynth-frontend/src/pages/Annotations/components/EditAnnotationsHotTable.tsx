@@ -1,469 +1,152 @@
 import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
-import { Box, Button, Typography } from '@mui/material';
-import LoadingButton from 'components/Buttons/LoadingButton';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
-import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
-import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
-import { getDefaultForNoteKey, noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
+import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import { CellChange, CellCoords } from 'handsontable';
 import { registerAllModules } from 'handsontable/registry';
-import { useGetWindowHeight, useUpdateAnnotationByAnnotationAndAnalysisIds, useUpdateAnnotationById } from 'hooks';
-import useUserCanEdit from 'hooks/useUserCanEdit';
-import { useSnackbar } from 'notistack';
-import { useProjectUser } from 'stores/projects/ProjectStore';
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
-import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
+import { EditAnnotationsHotSnapshot } from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
+import React, { useRef } from 'react';
+import { hotSettings, isRemoveColumnButton, moveNoteKeys, reloadNoteColumns } from './EditAnnotationsHotTable.helpers';
 
 registerAllModules();
 
-const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
-    const { enqueueSnackbar } = useSnackbar();
-    const { projectId } = useParams<{ projectId: string }>();
-    const navigate = useNavigate();
-    const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
-    const { mutate: updateAnnotation, isPending: updateAnnotationIsLoading } = useUpdateAnnotationById(
-        props.annotationId
-    );
-    const { mutate: updateAnnotationNoNoteKeys, isPending: updateAnnotationNoNoteKeysIsLoading } =
-        useUpdateAnnotationByAnnotationAndAnalysisIds(props.annotationId);
-    const projectUser = useProjectUser();
-    const canEdit = useUserCanEdit(projectUser || undefined);
-    const hotTableRef = useRef<HotTableRef>(null);
-    const isColumnDraggingRef = useRef<boolean>(false);
-    const windowSize = useGetWindowHeight();
-    const {
-        hotColumnHeaders,
-        theUserOwnsThisAnnotation,
-        setAnnotationsHotState,
-        hotData,
-        mergeCells,
-        colWidths,
-        hotColumns,
-        noteKeys,
-        hotDataToStudyMapping,
-        isEdited,
-        rowHeights,
-        noteKeysHaveChanged,
-    } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
+/** Bookkeeping needed to pick between the PUT /annotations and POST /annotation-analyses save paths. */
+export type PendingAnnotationEdits = {
+    noteKeys: NoteKeyType[];
+    dirtyRowIndexes: Set<number>;
+    noteKeysHaveChanged: boolean;
+};
 
-    useEffect(() => {
-        const timeout = window.setTimeout(() => {
-            if (!hotTableRef.current?.hotInstance) return;
-            const sizes = [
-                '64px', // NAV_HEIGHT
-                '3rem', // MARGIN_SPACING
-                '40px', // BREADCRUMBS
-                '1rem', // ADD_METADATA_INPUT_MARGIN_TOP
-                '40px', // ADD_METADATA_INPUT
-                '25px', // ADD_METADATA_INPUT_MARGIN_BOTTOM
-                '75px', // BOTTOM_BUTTON_CONTAINER
-                '1rem', // EXTRA SPACE
-            ];
-            const sizeStr = sizes.reduce((acc, curr, index, list) => {
-                if (index === 0) {
-                    return `calc(${windowSize}px - ${curr} - `;
-                } else if (index === list.length - 1) {
-                    return `${acc}${curr})`;
-                } else {
-                    return `${acc}${curr} - `;
-                }
-            }, '');
+/**
+ * The react wrapper calls updateSettings (including data) on every render, so this component must not re-render
+ * after mount: every prop is stable and handlers only read refs.
+ */
+const EditAnnotationsHotTable = React.memo(
+    (props: {
+        initialState: EditAnnotationsHotSnapshot;
+        hotTableRef: React.RefObject<HotTableRef | null>;
+        canEditRef: React.RefObject<boolean>;
+        pendingEditsRef: React.RefObject<PendingAnnotationEdits>;
+        onHasEdits: (hasEdits: boolean) => void;
+    }) => {
+        const { initialState: snapshot, hotTableRef, canEditRef, pendingEditsRef, onHasEdits } = props;
+        const deleteButtonPressedColumnRef = useRef<number | null>(null);
 
-            hotTableRef.current.hotInstance.updateSettings({
-                height: sizeStr,
-            });
-        }, 400);
+        const handleRemoveHotColumn = (colKey: string) => {
+            const hot = hotTableRef.current?.hotInstance;
+            if (!canEditRef.current || !hot) return;
+            const pendingEdits = pendingEditsRef.current;
+            const foundIndex = pendingEdits.noteKeys.findIndex((x) => x.key === colKey && x.key !== 'included');
+            if (foundIndex < 0) return;
 
-        return () => {
-            if (timeout) clearTimeout(timeout);
+            const updatedNoteKeys = pendingEdits.noteKeys
+                .filter((_, index) => index !== foundIndex)
+                .map((noteKey, index) => ({ ...noteKey, order: index }));
+            const updatedHotData = (hot.getData() as AnnotationNoteValue[][]).map((row) =>
+                row.filter((_, col) => col !== foundIndex + 2)
+            );
+
+            reloadNoteColumns(hot, updatedHotData, updatedNoteKeys);
+            pendingEdits.noteKeys = updatedNoteKeys;
+            pendingEdits.noteKeysHaveChanged = true;
+            onHasEdits(true);
         };
-    }, [windowSize]);
 
-    const handleBackToProject = () => {
-        if (isEdited) {
-            setConfirmationDialogIsOpen(true);
-            return;
-        }
+        /**
+         * This handler
+         * 1) prevents the first two columns from being selected or dragged
+         * 2) records which column's remove button the press started on, if any
+         */
+        const handleCellMouseDown = (event: MouseEvent, coords: CellCoords): void => {
+            const isColumnHeader = coords.row != null && coords.row < 0;
+            const isDeleteButton = isRemoveColumnButton(event.target);
+            // A column is only removed when the press and the release both land on its remove button, so column moves
+            // and multi-cell selections that end on a remove button do not remove it
+            deleteButtonPressedColumnRef.current = isColumnHeader && isDeleteButton ? coords.col : null;
 
-        navigate(`/projects/${projectId}`);
-    };
+            // the study name and analysis name columns cannot be selected or dragged
+            const isStudyOrAnalysisColumn = coords.col != null && coords.col < 2;
+            if (isStudyOrAnalysisColumn) {
+                event.stopImmediatePropagation();
+                return;
+            }
+        };
 
-    const handleCloseConfirmationDialog = (ok: boolean | undefined) => {
-        setConfirmationDialogIsOpen(false);
-        if (!ok) return;
+        /**
+         * This handler checks if the press and release both land on the same column's remove button.
+         * If so, it removes the column.
+         */
+        const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement): void => {
+            const deleteButtonPressedColumn = deleteButtonPressedColumnRef.current;
+            deleteButtonPressedColumnRef.current = null;
 
-        navigate(`/projects/${projectId}`);
-    };
+            const isColumnHeader = coords.row != null && coords.row < 0;
+            const isDeleteButton = isRemoveColumnButton(event.target);
+            if (isColumnHeader && isDeleteButton && coords.col === deleteButtonPressedColumn) {
+                handleRemoveHotColumn(TD.innerText);
+            }
+        };
 
-    const handleClickSave = () => {
-        if (!props.annotationId) return;
-        if (!theUserOwnsThisAnnotation) {
-            enqueueSnackbar('You do not have permission to edit this annotation', {
-                variant: 'error',
-            });
-            return;
-        }
+        const handleBeforeColumnMove = (movedColumns: number[], finalIndex: number) => {
+            if (!canEditRef.current) return false;
 
-        const updatedAnnotationNotes = hotDataToAnnotationNotes(hotData, hotDataToStudyMapping, noteKeys);
-        const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
+            // Prevent moving locked columns (first two columns are study name and analysis name)
+            if (movedColumns.some((col) => col < 2) || finalIndex < 2) return false;
 
-        if (noteKeysHaveChanged) {
-            updateAnnotation(
-                {
-                    argAnnotationId: props.annotationId,
-                    annotation: {
-                        notes: updatedAnnotationNotes.map((annotationNote) => ({
-                            note: annotationNote.note,
-                            analysis: annotationNote.analysis,
-                            study: annotationNote.study,
-                            annotation: props.annotationId,
-                        })),
-                        note_keys: updatedNoteKeyObj,
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        setAnnotationsHotState((prev) => ({ ...prev, noteKeysHaveChanged: false, isEdited: false }));
-                        enqueueSnackbar('annotation updated successfully', { variant: 'success' });
-                    },
-                }
+            return true;
+        };
+
+        const handleAfterColumnMove = (
+            movedColumns: number[],
+            finalIndex: number,
+            _dropIndex: number | undefined,
+            _movePossible: boolean,
+            orderChanged: boolean
+        ) => {
+            if (!orderChanged) return;
+            const pendingEdits = pendingEditsRef.current;
+            // subtract 2 for the study name and analysis name columns
+            pendingEdits.noteKeys = moveNoteKeys(
+                pendingEdits.noteKeys,
+                movedColumns.map((col) => col - 2),
+                finalIndex - 2
             );
-        } else {
-            updateAnnotationNoNoteKeys(
-                updatedAnnotationNotes
-                    .filter((_, index) => {
-                        const studyMapping = hotDataToStudyMapping.get(index);
-                        return studyMapping?.isEdited;
-                    })
-                    .map((annotationNote) => ({
-                        id: `${props.annotationId}_${annotationNote.analysis}`,
-                        note: annotationNote.note,
-                    })),
-                {
-                    onSuccess: () => {
-                        setAnnotationsHotState((prev) => {
-                            const newMapping = new Map(prev.hotDataToStudyMapping);
-                            for (const [index, studyMapping] of newMapping.entries()) {
-                                if (studyMapping.isEdited) {
-                                    newMapping.set(index, { ...studyMapping, isEdited: false });
-                                }
-                            }
-                            return {
-                                // reset state to reflect that no changes have been made
-                                ...prev,
-                                hotDataToStudyMapping: newMapping,
-                                isEdited: false,
-                            };
-                        });
-                        enqueueSnackbar('annotation updated successfully', { variant: 'success' });
-                    },
-                }
-            );
-        }
-    };
+            pendingEdits.noteKeysHaveChanged = true;
+            onHasEdits(true);
+        };
 
-    const handleRemoveHotColumn = (colKey: string) => {
-        if (!canEdit) return;
-        const foundIndex = noteKeys.findIndex((x) => x.key === colKey && x.key !== 'included');
-        if (foundIndex < 0) return;
+        /**
+         * On top of being triggered when a change occurs, this hook is also triggered during initial mergeCells and on initial update.
+         * CellChange is represented by [row, column, prevValue, nextValue]
+         */
+        const handleAfterChange = (changes: CellChange[] | null) => {
+            if (!changes) return;
+            const isDoingMergeCellOperation = changes.some((x) => x[1] === 0);
+            if (isDoingMergeCellOperation) return; // We don't want update to occur when handsontable is merging cells, only when a user update occurs
 
-        setAnnotationsHotState((prev) => {
-            const updatedNoteKeys = [...prev.noteKeys];
-            updatedNoteKeys.splice(foundIndex, 1);
-            const reindexedNoteKeys = updatedNoteKeys.map((noteKey, index) => ({
-                ...noteKey,
-                order: index,
-            }));
+            changes.forEach(([row]) => pendingEditsRef.current.dirtyRowIndexes.add(row));
+            onHasEdits(true);
+        };
 
-            return {
-                ...prev,
-                isEdited: true,
-                noteKeysHaveChanged: true,
-                noteKeys: reindexedNoteKeys,
-                hotColumns: createColumns(reindexedNoteKeys, !canEdit),
-                hotData: [...prev.hotData].map((row) => {
-                    const updatedRow = [...row];
-                    updatedRow.splice(foundIndex + 2, 1);
-                    return updatedRow;
-                }),
-            };
-        });
-    };
+        return (
+            <HotTable
+                {...hotSettings}
+                ref={hotTableRef}
+                readOnly={!canEditRef.current}
+                manualColumnMove={canEditRef.current}
+                disableVisualSelection={!canEditRef.current}
+                data={snapshot.hotData}
+                mergeCells={snapshot.mergeCells}
+                colHeaders={snapshot.hotColumnHeaders}
+                colWidths={snapshot.colWidths}
+                rowHeights={snapshot.rowHeights}
+                columns={snapshot.hotColumns}
+                afterChange={handleAfterChange}
+                afterOnCellMouseUp={handleCellMouseUp}
+                beforeOnCellMouseDown={handleCellMouseDown}
+                beforeColumnMove={handleBeforeColumnMove}
+                afterColumnMove={handleAfterColumnMove}
+            />
+        );
+    }
+);
 
-    /**
-     * Fixed columns + mergeCells can desync sticky vs scrollable row heights on horizontal
-     * scroll when row virtualization is enabled. We use renderAllRows: true in hotSettings
-     * (see EditAnnotationsHotTable.helpers) so rowHeights stay consistent across overlays.
-     *
-     * Row headers (width 0 / empty labels) are still required so MergeCells does not apply
-     * sum-of-merge heights to every row. handleCellMouseDown blocks selecting the first two
-     * columns as a full row for UX.
-     */
-    const handleCellMouseDown = (event: MouseEvent, coords: CellCoords): void => {
-        const isRowHeader = coords.col != null && coords.col < 2;
-        if (isRowHeader) {
-            event.stopImmediatePropagation();
-            return;
-        }
-
-        const target = event.target as HTMLElement;
-
-        // Track when user starts dragging a column header (but not when clicking the X button)
-        const isClickingDeleteButton = target.tagName === 'svg' || target.tagName === 'path';
-        if (!isClickingDeleteButton) {
-            // User is pressing down on a moveable column header (not the X button)
-            isColumnDraggingRef.current = true;
-        }
-    };
-
-    const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement): void => {
-        // Don't delete if we're in the middle of a column drag operation
-        if (isColumnDraggingRef.current) {
-            isColumnDraggingRef.current = false;
-            return;
-        }
-
-        const target = event.target as HTMLButtonElement;
-        if (coords.row != null && coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
-            handleRemoveHotColumn(TD.innerText);
-        }
-    };
-
-    const reorderArray = <T,>(arr: T[], from: number, to: number) => {
-        if (from === to) return [...arr];
-        const updated = [...arr];
-        const [removed] = updated.splice(from, 1);
-        updated.splice(to, 0, removed);
-        return updated;
-    };
-
-    const handleBeforeColumnMove = (movedColumns: number[], finalIndex: number) => {
-        if (!canEdit) return false;
-        if (!movedColumns.length) return false;
-        if (movedColumns.length > 1) return false;
-
-        const fromVisualIndex = movedColumns[0];
-        const toVisualIndex = finalIndex;
-
-        // Prevent moving locked columns (first two columns are study name and analysis name)
-        if (fromVisualIndex < 2 || toVisualIndex < 2) {
-            return false;
-        }
-
-        // Calculate logical indices (subtract 2 for the fixed metadata columns)
-        const from = fromVisualIndex - 2;
-        let to = toVisualIndex - 2;
-
-        // Update React state with the new column order
-        // Returning false will prevent Handsontable from doing its own move,
-        // and React will re-render with the correct order
-        setAnnotationsHotState((prev) => {
-            if (from >= prev.noteKeys.length || from < 0) return prev;
-            if (to < 0) to = 0;
-            // Allow to === noteKeys.length for appending to the end
-            if (to > prev.noteKeys.length) to = prev.noteKeys.length;
-
-            // Don't do anything if moving to the same position
-            if (from === to) return prev;
-
-            const updatedNoteKeys = reorderArray(prev.noteKeys, from, to).map((noteKey, index) => ({
-                ...noteKey,
-                order: index,
-            }));
-
-            const updatedHotData = prev.hotData.map((row) => {
-                const metadataCols = row.slice(0, 2);
-                const noteCols = reorderArray(row.slice(2), from, to);
-                return [...metadataCols, ...noteCols];
-            });
-
-            return {
-                ...prev,
-                isEdited: true,
-                noteKeysHaveChanged: true,
-                noteKeys: updatedNoteKeys,
-                hotColumns: createColumns(updatedNoteKeys, !canEdit),
-                hotData: updatedHotData,
-            };
-        });
-
-        // This should technically be handled by handleCellMouseUp, but we'll add it here for safety
-        setTimeout(() => {
-            isColumnDraggingRef.current = false;
-        }, 100);
-
-        // Return false to prevent Handsontable from performing its own column move - React will handle the re-render with the updated data
-        return false;
-    };
-
-    const handleAddHotColumn = (row: IMetadataRowModel) => {
-        const trimmedKey = row.metadataKey.trim();
-        if (noteKeys.find((x) => x.key === trimmedKey)) return false;
-        const columnType = getType(row.metadataValue);
-        const defaultValue = getDefaultForNoteKey(trimmedKey, columnType);
-
-        setAnnotationsHotState((prev) => {
-            const updatedNoteKeys: NoteKeyType[] = [
-                {
-                    key: trimmedKey,
-                    type: columnType,
-                    order: 0,
-                    default: defaultValue,
-                },
-                ...prev.noteKeys,
-            ].map((noteKey, index) => ({ ...noteKey, order: index }));
-
-            return {
-                ...prev,
-                isEdited: true,
-                noteKeysHaveChanged: true,
-                noteKeys: updatedNoteKeys,
-                hotColumns: createColumns(updatedNoteKeys, !canEdit),
-                hotData: [...prev.hotData].map((row) => {
-                    const updatedRow = [...row];
-                    updatedRow.splice(2, 0, defaultValue);
-                    return updatedRow;
-                }),
-            };
-        });
-
-        return true;
-    };
-
-    /**
-     * On top of being triggered when a change occurs, this hook is also triggered during initial mergeCells and on initial update.
-     */
-    const handleAfterChange = (changes: CellChange[] | null) => {
-        if (!changes) return;
-        const isDoingMergeCellOperation = changes.some((x) => x[1] === 0);
-        if (isDoingMergeCellOperation) return; // We don't want update to occur when handsontable is merging cells, only when a user update occurs
-
-        setAnnotationsHotState((prev) => {
-            const updatedHotData = [...prev.hotData];
-            changes.forEach(([row, col, , valChangedTo]) => {
-                updatedHotData[row] = [...updatedHotData[row]];
-                updatedHotData[row][col as number] = valChangedTo as AnnotationNoteValue;
-
-                const studyMapping = prev.hotDataToStudyMapping.get(row);
-                if (!studyMapping) return prev;
-                hotDataToStudyMapping.set(row, {
-                    ...studyMapping,
-                    isEdited: true,
-                });
-            });
-
-            return {
-                ...prev,
-                hotData: updatedHotData,
-                isEdited: true,
-            };
-        });
-    };
-
-    return (
-        <Box>
-            {theUserOwnsThisAnnotation && canEdit && (
-                <Box
-                    sx={{
-                        mb: 1,
-                        width: {
-                            xs: '100%',
-                            md: '60%',
-                            lg: '50%',
-                        },
-                        display: 'grid',
-                        gridTemplateColumns: 'auto 1fr auto',
-                        gap: 4,
-                        height: '70px',
-                    }}
-                >
-                    <AddMetadataRow
-                        keyPlaceholderText="New Annotation Key"
-                        onAddMetadataRow={handleAddHotColumn}
-                        defaultType={EPropertyType.BOOLEAN}
-                        showMetadataValueInput={false}
-                        allowNone={false}
-                        errorMessage="can't add column (key already exists)"
-                    />
-                </Box>
-            )}
-            <Box className="hot-container" style={{ width: '100%', marginBottom: '1rem' }}>
-                {hotData.length > 0 ? (
-                    <HotTable
-                        {...hotSettings}
-                        afterChange={handleAfterChange}
-                        ref={hotTableRef}
-                        mergeCells={mergeCells}
-                        disableVisualSelection={!canEdit}
-                        colHeaders={hotColumnHeaders}
-                        manualColumnMove={canEdit}
-                        colWidths={colWidths}
-                        rowHeights={rowHeights}
-                        columns={hotColumns}
-                        data={JSON.parse(JSON.stringify(hotData))}
-                        afterOnCellMouseUp={handleCellMouseUp}
-                        beforeOnCellMouseDown={handleCellMouseDown}
-                        beforeColumnMove={handleBeforeColumnMove}
-                    />
-                ) : (
-                    <Typography sx={{ color: 'warning.dark' }}>
-                        There are no analyses to annotate. Get started by adding analyses to your studies.
-                    </Typography>
-                )}
-            </Box>
-            <Box
-                sx={{
-                    bottom: 0,
-                    padding: '1rem 0',
-                    backgroundColor: 'white',
-                    position: 'fixed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: {
-                        xs: '90%',
-                        md: '80%',
-                    },
-                    zIndex: 999,
-                }}
-            >
-                <ConfirmationDialog
-                    isOpen={confirmationDialogIsOpen}
-                    dialogTitle="You have unsaved changes"
-                    dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
-                    onCloseDialog={handleCloseConfirmationDialog}
-                    rejectText="Cancel"
-                    confirmText="Continue"
-                />
-                <Button
-                    color="secondary"
-                    disableElevation
-                    size="medium"
-                    variant="contained"
-                    onClick={handleBackToProject}
-                >
-                    Back to project
-                </Button>
-                {canEdit && (
-                    <LoadingButton
-                        size="medium"
-                        text="save"
-                        disableElevation
-                        disabled={!isEdited || !canEdit}
-                        isLoading={updateAnnotationIsLoading || updateAnnotationNoNoteKeysIsLoading}
-                        loaderColor="secondary"
-                        color="primary"
-                        variant="contained"
-                        sx={{ width: '150px' }}
-                        onClick={handleClickSave}
-                    />
-                )}
-            </Box>
-        </Box>
-    );
-});
-
-export default AnnotationsHotTable;
+export default EditAnnotationsHotTable;

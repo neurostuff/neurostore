@@ -14,7 +14,7 @@ import EditStudyToolbar from './EditStudyToolbar';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 vi.mock('hooks');
-vi.mock('pages/StudyCBMA/hooks/useSaveStudy');
+vi.mock('pages/StudyCBMA/context/StudyCBMAContext');
 vi.mock('react-router-dom');
 vi.mock('stores/projects/ProjectStore');
 vi.mock('stores/study/StudyStore');

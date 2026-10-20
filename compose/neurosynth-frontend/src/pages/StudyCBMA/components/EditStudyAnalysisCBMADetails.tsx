@@ -1,19 +1,21 @@
 import { Box, TextField, Typography } from '@mui/material';
+import { useStudyCBMAContext } from 'pages/StudyCBMA/context/StudyCBMAContext';
 import { useAddOrUpdateAnalysis, useStudyAnalysisDescription, useStudyAnalysisName } from 'stores/study/StudyStore';
-import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import EditStudyAnalysisCBMADeleteButton from './EditStudyAnalysisCBMADeleteButton';
 
 const EditStudyAnalysisCBMADetails = (props: { analysisId?: string; onDeleteAnalysis: () => void }) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
+    const { studyAnnotationsTableRef } = useStudyCBMAContext();
     const name = useStudyAnalysisName(props.analysisId);
     const description = useStudyAnalysisDescription(props.analysisId);
 
-    const handleUpdateAnalysisDetails = (field: keyof IStoreAnalysis, analysisId: string, value: string) => {
+    const handleUpdateAnalysisDetails = (field: 'name' | 'description', analysisId: string, value: string) => {
         if (!analysisId) return;
         addOrUpdateAnalysis({
             id: analysisId,
             [field]: value,
         });
+        studyAnnotationsTableRef.current?.updateAnalysisDetails(analysisId, field, value);
     };
 
     return (
