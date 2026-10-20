@@ -1,6 +1,14 @@
 import type { Theme } from '@mui/material/styles';
 import { statusColors } from './status';
 
+/** A field's head and value, as a row, the comparison and the selection's details show them. */
+export const slotHeadStyles = {
+    '& .rv-slot-head': { typography: 'caption', display: 'flex', flexWrap: 'wrap', gap: 1.5 },
+    '& .rv-slot-label': { color: 'text.secondary', fontWeight: 500 },
+    '& .rv-slot-value': { typography: 'body2', overflowWrap: 'anywhere' },
+    '& .rv-values': { m: 0, pl: 2.5 },
+} as const;
+
 /** The rows of a card's fields, the focused one marked. */
 export const slotStyles = (theme: Theme) => ({
     '& .rv-slot': {
@@ -12,9 +20,6 @@ export const slotStyles = (theme: Theme) => ({
         '&:hover': { bgcolor: 'action.hover' },
     },
     '& .rv-slot[aria-current="true"]': { borderColor: 'primary.main', bgcolor: 'action.selected' },
-    '& .rv-slot-head': { typography: 'caption', display: 'flex', gap: 1.5 },
-    '& .rv-slot-label': { color: 'text.secondary', fontWeight: 500 },
-    '& .rv-slot-value': { typography: 'body2', overflowWrap: 'anywhere' },
-    '& .rv-values': { m: 0, pl: 2.5 },
+    ...slotHeadStyles,
     ...statusColors(theme.palette),
 });

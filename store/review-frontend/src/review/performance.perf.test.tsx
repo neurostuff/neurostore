@@ -8,7 +8,9 @@ import { registeredSpans } from '../test/highlights';
 import { renderWithStores } from '../test/render';
 import { focusedSpans } from '../test/stores';
 import { auditCards } from '../model/guided';
+import { cardLayoutOf } from '../model/cardLayout';
 import { comparisonOf, entriesOf, isCellSlot } from '../model/comparison';
+import { Inspector } from '../inspector/FocusedCard';
 import { SHORTCUTS } from './shortcuts';
 import { ReviewScreen } from './ReviewScreen';
 import { buildPaletteIndex, searchPalette } from './search';
@@ -301,6 +303,47 @@ describe('relationships step performance', () => {
             expect(opened).toBeLessThan(analyses * 1.5);
             expect(clicked).toBeLessThan(CLICK_BUDGET_MS);
             expect(median(timings)).toBeLessThan(BUDGET_MS);
+        },
+        RENDER_TIMEOUT_MS
+    );
+});
+
+describe.skipIf(!hasFixture(HEAVY))(`the condensed cards of ${HEAVY}`, () => {
+    it(
+        `lays out every card within ${BUDGET_MS} ms, once for each index and entity`,
+        () => {
+            const { index } = open(HEAVY);
+            const started = performance.now();
+            for (const entity of index.visible) cardLayoutOf(index, entity);
+            expect(performance.now() - started).toBeLessThan(BUDGET_MS);
+            const [first] = index.visible;
+            expect(cardLayoutOf(index, first)).toBe(cardLayoutOf(index, first));
+        },
+        RENDER_TIMEOUT_MS
+    );
+
+    // The Entities step of this paper takes several hundred ms in jsdom for any focus, by its card list, so the
+    // card is timed in the inspector alone.
+    it(
+        `focuses each value of the group with the most fields from a click within ${CLICK_BUDGET_MS} ms`,
+        () => {
+            const { stores } = renderWithStores(<Inspector />, loadFixture(HEAVY));
+            const { index } = stores.session.getState();
+            const [group] = index.visible
+                .filter((e) => e.entityClass === 'Group')
+                .sort((a, b) => b.slots.length - a.slots.length);
+            act(() => stores.view.getState().focusEntity(group.id));
+            const values = cardLayoutOf(index, group).order.slice(0, RUNS + 1);
+            const click = (key: string) =>
+                fireEvent.click(document.querySelector(`[data-slot-key="${CSS.escape(key)}"]`)!);
+            act(() => void click(values[0].key));
+            const timings = values.slice(1).map((slot) => {
+                const elapsed = timed(() => void click(slot.key));
+                expect(stores.view.getState().focus.slot).toBe(slot.key);
+                expect(document.querySelector('[aria-label="Selected field"]')).not.toBeNull();
+                return elapsed;
+            });
+            expect(median(timings)).toBeLessThan(CLICK_BUDGET_MS);
         },
         RENDER_TIMEOUT_MS
     );

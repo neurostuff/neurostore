@@ -35,7 +35,7 @@ test('text selected inside a sentence several other fields use is added to the f
     const { batches } = await serve(page);
     await page.goto('/review/e2e/index.html?paper=P3');
     await page.getByRole('button', { name: 'Next: Analyses →' }).click({ timeout: 20_000 });
-    await page.locator('[data-slot-key="slot:ana_1:name"]').getByText('Name', { exact: true }).click();
+    await page.locator('[data-slot-key="slot:ana_1:name"]').getByRole('button').click();
     await expect.poll(() => focusHighlight(page)).toEqual(['larger putamen volume']);
 
     const { from, to } = await pointsOf(page, 'SAD-patients and');
@@ -61,7 +61,7 @@ test('focusing a reference field highlights the evidence of the entity it refere
     await serve(page);
     await page.goto('/review/e2e/index.html?paper=P3');
     await page.getByRole('button', { name: 'Next: Analyses →' }).click({ timeout: 20_000 });
-    await page.locator('[data-slot-key="slot:ana_1:groups[#0].group"] .rv-slot-label').click();
+    await page.locator('[data-slot-key="slot:ana_1:groups[#0].group"]').click();
     await expect
         .poll(() => focusHighlight(page))
         .toEqual(['We scanned 251 SAD-patients and 213 HC-participants.', '31.2 years']);

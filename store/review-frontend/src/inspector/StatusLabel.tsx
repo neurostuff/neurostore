@@ -31,11 +31,17 @@ export function StatusLabel({ id, by }: { id: StatusId; by?: string }) {
     );
 }
 
-/** A status by its mark alone, its label on hover. */
-export function StatusMark({ id }: { id: StatusId }) {
-    const { label, shape } = STATUSES[id];
+/** A status by its mark alone, its label on hover; where `explained`, what it means too, and an image named by its label. */
+export function StatusMark({ id, explained }: { id: StatusId; explained?: boolean }) {
+    const { label, shape, means } = STATUSES[id];
     return (
-        <span className="rv-status" data-status={id} data-status-shape={shape} title={label}>
+        <span
+            className="rv-status"
+            data-status={id}
+            data-status-shape={shape}
+            title={explained ? `${label}: ${means}` : label}
+            {...(explained && { role: 'img', 'aria-label': label })}
+        >
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                 {SHAPES[shape]}
             </svg>
@@ -43,26 +49,32 @@ export function StatusMark({ id }: { id: StatusId }) {
     );
 }
 
-/** The statuses a slot shows, as the legend lists them. */
-const SLOT_STATUSES: StatusId[] = [
-    'present',
-    'not_found',
-    'generated',
-    'ambiguous',
-    'not_reported',
-    'absent',
-    'reference',
+/** The statuses a field shows, as the legend names them in a word or two: its evidence, then its review. */
+const LEGEND: [StatusId, string][] = [
+    ['present', 'evidence'],
+    ['not_found', 'not found'],
+    ['generated', 'generated'],
+    ['ambiguous', 'ambiguous'],
+    ['not_reported', 'not reported'],
+    ['absent', 'not in record'],
+    ['reference', 'link'],
+    ['verified', 'verified'],
+    ['edited', 'edited'],
+    ['rejected', 'rejected'],
+    ['unchecked', 'unchecked'],
 ];
 
-/** One line naming each slot status by its mark, each explained on hover. */
+/** One line naming each field status by its mark, each explained on hover, and what a dashed underline means. */
 export const StatusLegend = memo(function StatusLegend() {
     return (
         <ul className="rv-legend" aria-label="what the marks mean">
-            {SLOT_STATUSES.map((id) => (
-                <li key={id}>
-                    <StatusLabel id={id} />
+            {LEGEND.map(([id, words]) => (
+                <li key={id} className="rv-legend-item" data-status={id}>
+                    <StatusMark id={id} explained />
+                    {words}
                 </li>
             ))}
+            <li className="rv-legend-item">dashed = to check</li>
         </ul>
     );
 });

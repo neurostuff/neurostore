@@ -193,21 +193,27 @@
           }
         },
         "definition": {
-          "extraction_status": "not_reported",
+          "extraction_status": "extracted",
+          "value": "Patients versus controls, for incongruent versus congruent trials, in a whole-brain voxelwise analysis.",
+          "value_source": "reported",
           "evidence": {
-            "status": "not_applicable"
+            "status": "not_found"
           }
         },
         "prespecification": {
-          "extraction_status": "not_reported",
+          "extraction_status": "extracted",
+          "value": "planned",
+          "value_source": "reported",
           "evidence": {
-            "status": "not_applicable"
+            "status": "not_found"
           }
         },
         "spatial_scope": {
-          "extraction_status": "not_reported",
+          "extraction_status": "extracted",
+          "value": "whole_brain",
+          "value_source": "reported",
           "evidence": {
-            "status": "not_applicable"
+            "status": "not_found"
           }
         },
         "measure": "msr_1",
@@ -217,6 +223,17 @@
             "n": {
               "value": 20,
               "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "group": "grp_b",
+            "n": {
+              "extraction_status": "extracted",
+              "value": 18,
+              "value_source": "reported",
               "evidence": {
                 "status": "not_found"
               }
@@ -296,9 +313,27 @@
           ],
           "statistic": {
             "family": {
-              "extraction_status": "not_reported",
+              "extraction_status": "extracted",
+              "value": "f",
+              "value_source": "reported",
               "evidence": {
-                "status": "not_applicable"
+                "status": "not_found"
+              }
+            },
+            "degrees_of_freedom_numerator": {
+              "extraction_status": "extracted",
+              "value": 1,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "degrees_of_freedom_denominator": {
+              "extraction_status": "extracted",
+              "value": 36,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
               }
             }
           },
@@ -326,6 +361,48 @@
           "evidence": {
             "status": "not_found"
           }
+        },
+        "interpretations": {
+          "extraction_status": "extracted",
+          "value": [
+            "Patients showed a larger Stroop effect in the anterior cingulate.",
+            "The effect held after adjusting for age."
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "outcome": {
+          "extraction_status": "extracted",
+          "value": "significant_effect",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "coordinate_space": {
+          "extraction_status": "extracted",
+          "value": "MNI",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "regions": [
+          "reg_1"
+        ],
+        "defines_regions": [],
+        "assessments": [
+          "asm_1"
+        ],
+        "model_representation_notes": {
+          "extraction_status": "extracted",
+          "value": "Group by condition interaction from a 2 × 2 mixed ANOVA.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
         }
       }
     ],
@@ -340,9 +417,11 @@
           }
         },
         "species": {
-          "extraction_status": "not_reported",
+          "extraction_status": "extracted",
+          "value": "human",
+          "value_source": "reported",
           "evidence": {
-            "status": "not_applicable"
+            "status": "not_found"
           }
         },
         "age_mean": {
@@ -364,7 +443,705 @@
               }
             ]
           }
-        }
+        },
+        "description": {
+          "extraction_status": "extracted",
+          "value": "Adults with a diagnosis of social anxiety disorder recruited from two outpatient clinics.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "approached_count": {
+          "extraction_status": "extracted",
+          "value": 64,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "consented_count": {
+          "extraction_status": "extracted",
+          "value": 40,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "enrolled_count": {
+          "extraction_status": "extracted",
+          "value": 36,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "acquired_count": {
+          "extraction_status": "extracted",
+          "value": 28,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "excluded_count": {
+          "extraction_status": "extracted",
+          "value": 8,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "inclusion_criteria": {
+          "extraction_status": "extracted",
+          "value": [
+            "Aged 18 to 55",
+            "Primary diagnosis of social anxiety disorder",
+            "Right-handed"
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "exclusion_criteria": {
+          "extraction_status": "extracted",
+          "value": [
+            "Current major depressive episode",
+            "History of neurological illness",
+            "MRI contraindications"
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "recruitment_method": {
+          "extraction_status": "extracted",
+          "value": "Referrals from two outpatient anxiety clinics and community advertisements.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "recruitment_dates": {
+          "extraction_status": "extracted",
+          "value": "March 2018 to June 2020",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_standard_deviation": {
+          "extraction_status": "extracted",
+          "value": 8.1,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_minimum": {
+          "extraction_status": "extracted",
+          "value": 19,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_maximum": {
+          "extraction_status": "extracted",
+          "value": 54,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_median": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "age_unit": {
+          "extraction_status": "extracted",
+          "value": "years",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "sex_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Female",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 15,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 53.6,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Sex",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "female",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Male",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 13,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 46.4,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Sex",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "male",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "gender_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Female",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 15,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 53.6,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Gender",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "female",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Male",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 13,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 46.4,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Gender",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "male",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "handedness_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Right",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 100,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Handedness",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "right",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "population_characteristics": {
+          "extraction_status": "extracted",
+          "value": [
+            "Outpatients",
+            "Medication-free for at least four weeks"
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "medical_condition": {
+          "extraction_status": "extracted",
+          "value": [
+            "Social anxiety disorder"
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "diagnostic_system": {
+          "extraction_status": "extracted",
+          "value": "DSM-5",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "clinical_characteristics": {
+          "extraction_status": "extracted",
+          "value": "Mean LSAS score of 82, moderate to severe symptoms.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "medications": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "medication_status": {
+          "extraction_status": "extracted",
+          "value": "Medication-free for at least four weeks before scanning.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "education_summary": {
+          "extraction_status": "extracted",
+          "value": "Mean of 14.2 years of education.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "socioeconomic_status_summary": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "sample_source": {
+          "extraction_status": "extracted",
+          "value": "recruited",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "sample_source_reference": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "sample_overlap_count": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "is_healthy": {
+          "extraction_status": "extracted",
+          "value": false,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_unit_normalized": {
+          "extraction_status": "extracted",
+          "value": "years",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "other_characteristics": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          },
+          "unreported_reason": "ambiguous"
+        },
+        "arm": "arm_1",
+        "diagnostic_instrument": [
+          "asm_1"
+        ],
+        "race_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "White",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 20,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 71.4,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Race",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "white",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Asian",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 8,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 28.6,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Race",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "asian",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "ethnicity_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Not Hispanic",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 26,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 92.9,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Ethnicity",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "not hispanic",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Hispanic",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 2,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 7.1,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Ethnicity",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "hispanic",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ]
       },
       {
         "local_id": "grp_b",

@@ -205,30 +205,20 @@ export function comparisonOf(index: RecordIndex, analysis: EntityNode): Comparis
 /** The row's cells in the order the comparison shows them: greater, less, held, either way, then missing a sign. */
 export const entriesOf = (row: TermRow) => SIDE_ORDER.flatMap((side) => row[side]);
 
-const others = new WeakMap<EntityNode, SlotNode[]>();
-
-/** The entity's fields the card lists: an analysis's other than its cells', which its comparison shows; else every slot. */
-export const otherFields = (entity: EntityNode): SlotNode[] =>
-    comparesTerms(entity)
-        ? cached(others, entity, () => entity.slots.filter((slot) => !isCellSlot(slot)))
-        : entity.slots;
-
 const orders = new WeakMap<RecordIndex, WeakMap<EntityNode, SlotNode[]>>();
 
 /**
- * The entity's fields in the order j and k move through them: for an analysis that compares terms, its cells'
- * directions as the comparison shows them, then its fields other than the cells'; for any other entity, its slots.
+ * The direction slots of an analysis's cells, in the order its comparison shows them; none for an entity that does
+ * not compare terms. Worked out once for each index and entity.
  */
-export function fieldOrder(index: RecordIndex, entity: EntityNode): SlotNode[] {
-    if (!comparesTerms(entity)) return entity.slots;
+export function comparisonSlots(index: RecordIndex, entity: EntityNode): SlotNode[] {
+    if (!comparesTerms(entity)) return [];
     return cached(
         cached(orders, index, () => new WeakMap()),
         entity,
-        () => [
-            ...comparisonOf(index, entity).rows.flatMap((row) =>
+        () =>
+            comparisonOf(index, entity).rows.flatMap((row) =>
                 entriesOf(row).flatMap((entry) => index.slot(entry.slots.direction) ?? [])
-            ),
-            ...otherFields(entity),
-        ]
+            )
     );
 }

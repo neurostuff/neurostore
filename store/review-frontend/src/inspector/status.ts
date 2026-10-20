@@ -120,3 +120,6 @@ export const statusColors = (palette: Palette) => ({
         Object.entries(STATUSES).map(([id, status]) => [`& [data-status="${id}"]`, { color: status.color(palette) }])
     ),
 });
+
+/** The underline of a value still to check, and of one a reviewer has judged. */
+export const underlines = (palette: Palette) => ({ unchecked: palette.primary.main, judged: palette.text.secondary });

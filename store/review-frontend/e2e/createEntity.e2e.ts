@@ -7,7 +7,7 @@ test('New analysis on an analysis’s card adds an analysis the server takes, wi
     const { batches } = await serve(page, { createdProblems: problemsWithCreated });
     await page.goto('/review/e2e/index.html?paper=P4');
     await page.getByRole('button', { name: /^Analyses \d/ }).click({ timeout: 20_000 });
-    await page.locator('[data-slot-key="slot:an_1:name"]').getByText('Name', { exact: true }).click();
+    await page.locator('[data-slot-key="slot:an_1:name"]').getByRole('button').click();
     await page.getByRole('button', { name: 'New analysis' }).click();
     await expect.poll(() => batches.length).toBe(1);
     const [op] = batches[0] as CreateEntityOp[];

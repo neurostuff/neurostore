@@ -1,3 +1,4 @@
+import { cardOrder } from '../model/cardLayout';
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import type { ReviewBundle } from '../contract/generated/review-bundle';
 import type { Op } from '../contract/generated/review-ops';
@@ -36,10 +37,8 @@ describe('review shortcuts', () => {
         const { stores } = setup();
         press('J', { shiftKey: true });
         expect(stores.view.getState().focus).toEqual({ entity: 'grp_a', key: 'entity:grp_a' });
-        const [first, second] = stores.session
-            .getState()
-            .index.entity('grp_a')!
-            .slots.map((s) => s.key);
+        const { index } = stores.session.getState();
+        const [first, second] = cardOrder(index, index.entity('grp_a')!, false).map((s) => s.key);
         press('j');
         press('j');
         expect(stores.view.getState().focus.key).toBe(second);

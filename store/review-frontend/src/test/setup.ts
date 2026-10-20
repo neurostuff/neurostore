@@ -18,7 +18,10 @@ if (isDom && !Range.prototype.getClientRects) {
 
 beforeEach(() => {
     setSchemas(GOLDEN_SCHEMAS);
-    if (isDom) installHighlightAdapter();
+    if (isDom) {
+        localStorage.clear();
+        installHighlightAdapter();
+    }
 });
 afterEach(() => {
     vi.restoreAllMocks();

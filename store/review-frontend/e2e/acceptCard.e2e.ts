@@ -49,6 +49,9 @@ test('the card head stays at the top of its fields while they scroll, and Accept
     const pane = page.getByRole('complementary', { name: 'review' });
     const fields = page.getByRole('region', { name: /^Fields of / });
     const head = fields.getByRole('group', { name: /: card head$/ });
+    await fields.getByRole('button', { name: /more fields/ }).click();
+    await fields.getByRole('region', { name: 'Links' }).locator('[data-slot-key]').first().click();
+    await expect(fields.getByRole('region', { name: 'Selected field' })).toBeVisible();
     const region = (await fields.boundingBox())!;
     const pageTop = (await pane.boundingBox())!.y;
     await pane.evaluate((el, middle) => el.scrollBy(0, middle), region.y - pageTop + region.height / 2);

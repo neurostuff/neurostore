@@ -37,3 +37,24 @@ export function analysedCounts(index: RecordIndex, entity: string): AnalysedCoun
     if (!counts) countsOf.set(index, (counts = allCounts(index)));
     return counts.get(entity) ?? NONE;
 }
+
+export interface AnalysedByN {
+    n: string;
+    counts: AnalysedCount[];
+}
+
+const byN = new WeakMap<RecordIndex, Map<string, AnalysedByN[]>>();
+
+/** The counts of `entity` grouped by their n, in the order each n first appears; worked out once for each index. */
+export function analysedByN(index: RecordIndex, entity: string): AnalysedByN[] {
+    let grouped = byN.get(index);
+    if (!grouped) byN.set(index, (grouped = new Map()));
+    let found = grouped.get(entity);
+    if (!found) {
+        const groups = new Map<string, AnalysedCount[]>();
+        for (const count of analysedCounts(index, entity))
+            groups.set(String(count.n), [...(groups.get(String(count.n)) ?? []), count]);
+        grouped.set(entity, (found = [...groups].map(([n, counts]) => ({ n, counts }))));
+    }
+    return found;
+}

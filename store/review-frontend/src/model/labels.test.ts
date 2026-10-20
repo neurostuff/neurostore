@@ -1,5 +1,5 @@
 import { entityRows, ev, makeBundle, row } from '../test/bundles';
-import { humanize, slotLabel } from './labels';
+import { humanize, plural, slotLabel } from './labels';
 import { buildRecordIndex } from './record';
 
 const record = {
@@ -140,5 +140,16 @@ describe('the item of a list with no name', () => {
         ['performance_metrics', 'Performance metric 1'],
     ])('is named by its list, %s, in the singular', (list, name) => {
         expect(slotLabel(lists, { entity: 'a_1', path: `${list}[#0].score` })).toBe(`${name}: score`);
+    });
+});
+
+describe('plurals', () => {
+    it('name several of a thing', () => {
+        expect(['acquisition', 'analysis', 'inference settings', 'study'].map(plural)).toEqual([
+            'acquisitions',
+            'analyses',
+            'inference settings',
+            'studies',
+        ]);
     });
 });

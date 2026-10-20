@@ -1,6 +1,6 @@
 import type { SlotNode } from '../model/record';
 import { inWords } from '../model/labels';
-import { formatValue } from './formatValue';
+import { formatValue } from '../model/valueText';
 
 const itemText = (item: unknown) =>
     item !== null && typeof item === 'object'

@@ -1,4 +1,4 @@
-import { readKept, writeKept } from './kept';
+import { readKept, writeKept } from '../store/kept';
 
 /** The text pane's share of the width, in percent, before the reviewer moves the divider. */
 export const DEFAULT_SHARE = 60;

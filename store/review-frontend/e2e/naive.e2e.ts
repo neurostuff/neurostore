@@ -19,14 +19,15 @@ test('a reviewer new to the app reviews a paper by mouse, from help to submit', 
 
     await page.getByRole('button', { name: 'Next: Analyses →' }).click();
     const field = page.locator('[data-slot-key="slot:ana_1:groups[#0].n"]');
-    await field.getByText('SAD-patients: n').click();
-    const beside = field.getByRole('toolbar', { name: 'actions on SAD-patients: n' });
+    await field.click();
+    const selected = page.getByRole('region', { name: 'Selected field' });
+    const beside = selected.getByRole('toolbar', { name: 'actions on SAD-patients: n' });
     await beside.getByRole('button', { name: 'Edit' }).click();
-    await field.getByRole('spinbutton', { name: 'SAD-patients: n' }).fill('175');
-    await field.getByRole('button', { name: 'Save' }).click();
-    await expect(field.locator('.rv-slot-value')).toHaveText('175');
+    await selected.getByRole('spinbutton', { name: 'SAD-patients: n' }).fill('175');
+    await selected.getByRole('button', { name: 'Save' }).click();
+    await expect(field.locator('.rv-value-text')).toHaveText('175');
 
-    await field
+    await selected
         .getByRole('toolbar', { name: 'actions on SAD-patients: n' })
         .getByRole('button', { name: 'Accept' })
         .click();

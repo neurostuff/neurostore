@@ -53,6 +53,11 @@ function setup(step: 'analyses' | 'entities' | 'leftovers' | 'relationships') {
 }
 
 const cardList = (name: string) => screen.getByRole('list', { name });
+/** The button of the step's card named `name`, not a value inside the open card that reads the same. */
+const cardButton = (list: string, name: RegExp) =>
+    within(cardList(list))
+        .getAllByRole('button', { name })
+        .find((b) => b.hasAttribute('data-card'))!;
 const cardNames = (name: string) =>
     within(cardList(name))
         .getAllByRole('button', { name: /./ })
@@ -71,11 +76,9 @@ describe('step 2, analyses', () => {
         const { stores } = setup('analyses');
         expect(stores.view.getState().focus.entity).toBe('a_1');
         const card = screen.getByRole('region', { name: 'Patients > Controls' });
-        expect(within(card).getByText('Statistic')).toBeInTheDocument();
-        expect(within(card).getByText('Patients: n')).toBeInTheDocument();
-        expect(within(cardList('analyses')).getByRole('button', { name: /Patients > Controls/ })).toHaveTextContent(
-            '3 evidence spans'
-        );
+        expect(card.querySelector('[data-slot-key="slot:a_1:statistic"]')).toHaveTextContent('t');
+        expect(card.querySelector('[data-slot-key="slot:a_1:groups[#0].n"]')).toHaveTextContent('20');
+        expect(cardButton('analyses', /Patients > Controls/)).toHaveTextContent('3 evidence spans');
         expect(focusedSpans(stores)).toEqual([at('Twenty'), at('patients'), at('Stroop')]);
     });
 
@@ -94,7 +97,7 @@ describe('step 2, analyses', () => {
 
     it('accepts and rejects on the card as the inspector does, and shows a judged card as done', () => {
         const { stores } = setup('analyses');
-        const card = () => within(cardList('analyses')).getByRole('button', { name: /Patients > Controls/ });
+        const card = () => cardButton('analyses', /Patients > Controls/);
         expect(card()).not.toHaveTextContent('done');
         press('a');
         expect(stores.session.getState().provenance['entity:a_1']?.state).toBe('verified');
@@ -106,7 +109,7 @@ describe('step 2, analyses', () => {
 
     it('focuses an analysis when its card is clicked', () => {
         const { stores } = setup('analyses');
-        fireEvent.click(within(cardList('analyses')).getByRole('button', { name: /Controls > Patients/ }));
+        fireEvent.click(cardButton('analyses', /Controls > Patients/));
         expect(stores.view.getState().focus.entity).toBe('a_2');
     });
 });
@@ -166,7 +169,7 @@ describe('step 3, entities outward from the analyses', () => {
         });
         const view = renderWithStores(<ReviewScreen />, judged);
         act(() => view.stores.view.getState().setStep('entities'));
-        const card = (name: RegExp) => within(cardList('entities')).getByRole('button', { name });
+        const card = (name: RegExp) => cardButton('entities', name);
         expect(card(/^Patients/)).toHaveTextContent('done');
         expect(card(/^fMRI/)).not.toHaveTextContent('done');
     });
@@ -481,9 +484,7 @@ describe('done means judged, accepted or rejected', () => {
         const { stores } = setup('analyses');
         reject(stores, { kind: 'entity', entity: 'a_1' });
         expect(stepButton(/^Analyses/)).toHaveTextContent('1 of 2');
-        expect(within(cardList('analyses')).getByRole('button', { name: /Patients > Controls/ })).toHaveTextContent(
-            'done'
-        );
+        expect(cardButton('analyses', /Patients > Controls/)).toHaveTextContent('done');
     });
 
     it('counts a rejected link in the relationships step', () => {
@@ -626,9 +627,9 @@ describe('the steps in a read-only tab', () => {
 
     it('still focuses an entity from its card, and disables accepting and unlinking the links into it', () => {
         const { stores } = readOnly('entities');
-        fireEvent.click(within(cardList('entities')).getByRole('button', { name: /^Patients/ }));
+        fireEvent.click(cardButton('entities', /^Patients/));
         expect(stores.view.getState().focus.entity).toBe('grp_a');
-        fireEvent.click(within(cardList('entities')).getByRole('button', { name: /^fMRI/ }));
+        fireEvent.click(cardButton('entities', /^fMRI/));
         expect(stores.view.getState().focus.entity).toBe('acq_1');
         const links = screen.getByRole('list', { name: 'linked from' });
         [

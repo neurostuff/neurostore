@@ -18,7 +18,7 @@ export function FocusedCard({
     return diffOn ? (
         <DiffCard entity={entity} focusedSlot={focusedSlot} />
     ) : (
-        <EntityCard entity={entity} focusedSlot={focusedSlot} stickyHead={stickyHead} />
+        <EntityCard entity={entity} stickyHead={stickyHead} />
     );
 }
 

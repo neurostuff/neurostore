@@ -121,3 +121,17 @@ export function entityPath(record: Json, id: string): Step[] | null {
     };
     return search(record, []);
 }
+
+/** A path's last attribute, its list places left out: `groups[#0].n` → `n`. */
+export const leafOf = (path: string) =>
+    path
+        .replace(/\[#\d+\]/g, '')
+        .split('.')
+        .at(-1) ?? path;
+
+/** The first list a path goes through: its path, the item's path, and the path within the item; undefined for none. */
+export function listOf(path: string): { list: string; item: string; field: string } | undefined {
+    const match = /^(.*?)\[#\d+\]/.exec(path);
+    if (!match) return undefined;
+    return { list: match[1], item: match[0], field: path.slice(match[0].length + 1) };
+}

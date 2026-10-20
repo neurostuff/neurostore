@@ -1,131 +1,41 @@
-import { Box, Chip, List, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import { memo, type ReactNode, useMemo } from 'react';
-import type { EntityNode, SlotNode } from '../model/record';
+import { type ReactNode, useMemo } from 'react';
+import type { EntityNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
 import { CardActions } from '../review/actionButtons';
-import { openPanelOn } from './openPanel';
 import { useEditorName } from '../review/editor';
-import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
-import type { Panel } from '../store/viewStore';
+import { useSession, useView } from '../store/context';
 import { CoordinatesOf } from '../coordinates/RecordLinks';
-import { acceptedText, pendingLinks, pendingStructure, unlink } from './actions';
+import { acceptedText, pendingStructure } from './actions';
 import { AcceptCardDialog, CreateDialog, DeleteDialog, NotePanel, RejectPanel } from './panels';
-import { RemoveIcon } from './RemoveIcon';
-import { SlotBody, SlotHead } from './SlotParts';
 import { ComparisonSection } from './Comparison';
-import { comparesTerms, otherFields } from '../model/comparison';
+import { comparesTerms } from '../model/comparison';
 import { CardHead } from './CardHead';
-import { ValueView } from './ValueView';
-import { AnalysedN } from './AnalysedN';
 import { selectNotes } from '../review/outline';
 import { NoteMark } from './NoteMark';
 import { reviewStatus, statusColors } from './status';
-import { classWords, labelOf } from '../model/labels';
+import { classWords } from '../model/labels';
 import { StatusLabel, StatusLegend } from './StatusLabel';
-import { slotStyles } from './slotStyles';
-import { useScrollIntoViewWhen } from './useScrollIntoViewWhen';
+import { CardFields, CardTitle } from './CardFields';
 import { VerdictStatus } from './WayOn';
-
-function ReferenceChips({ slot }: { slot: SlotNode }) {
-    const stores = useReviewStores();
-    const editable = useIsEditable();
-    const index = useSession((s) => s.index);
-    const pending = useSession((s) => s.pending);
-    const focusEntity = useView((s) => s.focusEntity);
-    const focusLink = useView((s) => s.focusLink);
-    const { linking, unlinking } = useMemo(() => pendingLinks({ pending }, slot.key), [pending, slot.key]);
-    const nameOf = (id: string) => index.entity(id)?.name ?? id;
-    if (slot.references.length === 0 && linking.length === 0) return <Typography variant="body2">—</Typography>;
-    return (
-        <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
-            {slot.references.map((id) => {
-                const going = unlinking.has(id);
-                const label = going ? `${nameOf(id)} · unlinking` : nameOf(id);
-                return (
-                    <Chip
-                        key={id}
-                        size="small"
-                        variant="outlined"
-                        label={label}
-                        aria-label={label}
-                        title={id}
-                        aria-busy={going || undefined}
-                        onFocus={() => focusLink(slot.key, id)}
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            focusEntity(id);
-                        }}
-                        onDelete={going || !editable ? undefined : () => void unlink(stores, slot, id)}
-                        deleteIcon={<RemoveIcon label={`unlink ${nameOf(id)}`} />}
-                    />
-                );
-            })}
-            {linking
-                .filter((id) => !slot.references.includes(id))
-                .map((id) => (
-                    <Chip key={`linking:${id}`} size="small" label={`${nameOf(id)} · linking`} aria-busy disabled />
-                ))}
-        </Stack>
-    );
-}
-
-const SlotRow = memo(function SlotRow({
-    slot,
-    focused,
-    panel,
-}: {
-    slot: SlotNode;
-    focused: boolean;
-    panel: Panel | null;
-}) {
-    const stores = useReviewStores();
-    const focusSlot = useView((s) => s.focusSlot);
-    const label = useSession((s) => labelOf(s.index, slot));
-    const ref = useScrollIntoViewWhen<HTMLLIElement>(focused);
-    const editing = panel?.kind === 'edit' || panel?.kind === 'not_reported';
-
-    return (
-        <li
-            ref={ref}
-            className="rv-slot"
-            data-slot-key={slot.key}
-            aria-current={focused ? 'true' : undefined}
-            onClick={() => {
-                if (!panel) focusSlot(slot.key);
-            }}
-            onDoubleClick={() => {
-                if (panel) return;
-                focusSlot(slot.key);
-                openPanelOn(stores, slot.kind === 'reference' ? 'link' : 'edit');
-            }}
-        >
-            <SlotHead slot={slot} label={label} />
-            {!editing &&
-                (slot.kind === 'reference' ? (
-                    <ReferenceChips slot={slot} />
-                ) : (
-                    <div className="rv-slot-value">
-                        <ValueView slot={slot} />
-                    </div>
-                ))}
-            {(focused || panel) && <SlotBody slot={slot} label={label} panel={panel} />}
-        </li>
-    );
-});
 
 const legendStyles = (theme: Theme) => ({
     px: 2,
     '& .rv-legend': {
         display: 'flex',
-        flexWrap: 'wrap',
-        columnGap: 1.5,
+        flexWrap: 'nowrap',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        columnGap: 1,
+        fontSize: '0.6875rem',
         listStyle: 'none',
         p: 0,
         my: 0.5,
         opacity: 0.85,
     },
     ...statusColors(theme.palette),
+    '& .rv-legend-item': { display: 'inline-flex', alignItems: 'center', gap: 0.5 },
 });
 
 /** What the last accept of the card took, and the way on. */
@@ -134,33 +44,27 @@ export function AcceptedStatus({ entity, kind }: { entity: string; kind: string 
     return <VerdictStatus text={accepted ? acceptedText(accepted, kind) : ''} />;
 }
 
-export function EntityCard({
-    entity,
-    focusedSlot,
-    stickyHead,
-}: {
-    entity: EntityNode;
-    focusedSlot?: string;
-    stickyHead?: boolean;
-}) {
+export function EntityCard({ entity, stickyHead }: { entity: EntityNode; stickyHead?: boolean }) {
     const panel = useView((s) => s.panel);
     const reviewed = useSession((s) => s.provenance[entityKey(entity.id)]?.state);
     const entityEditor = useEditorName(entityKey(entity.id));
     const deleting = useSession((s) => pendingStructure(s).deleting.has(entity.id));
     const notes = useSession((s) => selectNotes(s).get(entityKey(entity.id))?.join('\n'));
-    const panelSlot = useView((s) => s.panel?.slot);
     const classLabel =
         entity.schemaClass === entity.entityClass
             ? entity.entityClass
             : `${entity.entityClass} · ${entity.schemaClass}`;
     const kind = classWords(entity.entityClass);
-    const compares = comparesTerms(entity);
-    const fields = otherFields(entity);
     const entityPanel =
         panel && !panel.slot && panel.target.kind === 'entity' && panel.target.entity === entity.id ? panel : null;
     return (
         <Box component="section" aria-label={entity.name}>
-            <CardHead overline={classLabel} title={entity.name} titleTooltip={entity.localId} sticky={stickyHead}>
+            <CardHead
+                overline={classLabel}
+                title={entity.name}
+                heading={<CardTitle entity={entity} />}
+                sticky={stickyHead}
+            >
                 <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
                     <StatusLabel id={reviewStatus(reviewed)} by={entityEditor} />
                     {notes && <NoteMark notes={notes} />}
@@ -172,27 +76,12 @@ export function EntityCard({
                     )}
                 </Stack>
                 <AcceptedStatus entity={entity.id} kind={kind} />
-                <AnalysedN entity={entity} />
                 <CoordinatesOf entity={entity} />
                 {entityPanel?.kind === 'reject' && <RejectPanel target={entityPanel.target} label={entity.name} />}
                 {entityPanel?.kind === 'note' && <NotePanel target={entityPanel.target} label={entity.name} />}
             </CardHead>
-            {compares && <ComparisonSection entity={entity} />}
-            {compares && (
-                <Typography variant="overline" component="h3" color="text.secondary" sx={{ px: 2, pt: 1 }}>
-                    Other fields
-                </Typography>
-            )}
-            <List dense disablePadding sx={slotStyles}>
-                {fields.map((slot) => (
-                    <SlotRow
-                        key={slot.key}
-                        slot={slot}
-                        focused={slot.key === focusedSlot}
-                        panel={panelSlot === slot.key ? panel : null}
-                    />
-                ))}
-            </List>
+            {comparesTerms(entity) && <ComparisonSection entity={entity} />}
+            <CardFields entity={entity} />
         </Box>
     );
 }
@@ -220,11 +109,11 @@ export function InspectorFrame({ children }: { children?: ReactNode }) {
     );
     return (
         <>
+            <PendingChanges />
+            {children}
             <Box sx={legendStyles}>
                 <StatusLegend />
             </Box>
-            <PendingChanges />
-            {children}
             {deleting && <DeleteDialog entity={deleting} />}
             {creating && <CreateDialog />}
             {accepting && <AcceptCardDialog entity={accepting} />}

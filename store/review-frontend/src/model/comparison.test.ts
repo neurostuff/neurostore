@@ -2,7 +2,7 @@ import type { ReviewBundle } from '../contract/generated/review-bundle';
 import { hasFixture, loadFixture } from '../test/bundles';
 import { comparisonBundle } from '../test/comparisons';
 import golden from '../test/golden/bundle.json';
-import { comparisonOf, fieldOrder, otherFields, type TermRow } from './comparison';
+import { comparisonOf, comparisonSlots, type TermRow } from './comparison';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { buildRecordIndex } from './record';
@@ -78,16 +78,12 @@ describe('what an analysis compares', () => {
     it('shows a term’s cells greater, less, held, either way, missing, whatever their order in the record', () => {
         const [status] = of('a_mixed').rows;
         expect(levels(status.positive)).toEqual(['Pos']);
-        expect(
-            fieldOrder(index, index.entity('a_mixed')!)
-                .map((slot) => slot.key)
-                .slice(0, 4)
-        ).toEqual([
+        expect(comparisonSlots(index, index.entity('a_mixed')!).map((slot) => slot.key)).toEqual([
             'slot:a_mixed:effect.cells[#2].direction',
             'slot:a_mixed:effect.cells[#0].direction',
             'slot:a_mixed:effect.cells[#1].direction',
-            'slot:a_mixed:name',
         ]);
+        expect(comparisonSlots(index, index.entity('grp_a')!)).toEqual([]);
     });
 
     it('reads a continuous term going either way, and a term with no type and no levels as continuous', () => {
@@ -95,15 +91,6 @@ describe('what an analysis compares', () => {
             ['score C', 'either'],
             ['untyped score', 'up'],
         ]);
-    });
-
-    it('leaves the cells’ slots out of an analysis’s other fields, and keeps every slot of any other entity', () => {
-        const analysis = index.entity('a_held')!;
-        expect(otherFields(analysis).map((slot) => slot.path)).toEqual(
-            analysis.slots.map((slot) => slot.path).filter((p) => !p.startsWith('effect.cells'))
-        );
-        expect(otherFields(analysis)).toBe(otherFields(analysis));
-        expect(otherFields(index.entity('grp_a')!)).toBe(index.entity('grp_a')!.slots);
     });
 
     it('is worked out once for each index and analysis', () => {

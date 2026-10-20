@@ -11,7 +11,7 @@ describe('navigating the view', () => {
         expect(store.view.getState().focus).toEqual({ entity: 'study', key: 'entity:study' });
     });
 
-    it('steps through the focused entity’s slots in inspector order and stops at the ends', () => {
+    it('steps through the focused entity’s slots in the order its card shows them and stops at the ends', () => {
         const store = setup();
         store.view.getState().focusEntity('grp_a');
         const keys = store.session
@@ -25,15 +25,24 @@ describe('navigating the view', () => {
             'slot:grp_a:species',
             'slot:grp_a:sex',
         ]);
-        const seen = keys.map(() => {
+        // The card: its title (name), its sentence (species), its pairs (sex), its rows (description), its links.
+        const shown = ['name', 'species', 'sex', 'description', 'arm', 'diagnostic_instrument'].map(
+            (path) => `slot:grp_a:${path}`
+        );
+        const seen = shown.map(() => {
             store.view.getState().moveSlot(1);
             return store.view.getState().focus.key;
         });
-        expect(seen).toEqual(keys);
+        expect(seen).toEqual(shown);
         store.view.getState().moveSlot(1);
-        expect(store.view.getState().focus.key).toBe(keys.at(-1));
+        expect(store.view.getState().focus.key).toBe(shown.at(-1));
         store.view.getState().moveSlot(-1);
-        expect(store.view.getState().focus.key).toBe(keys.at(-2));
+        expect(store.view.getState().focus.key).toBe(shown.at(-2));
+        store.view.getState().focusSlot(shown[1]);
+        store.view.getState().moveSlot(-1);
+        expect(store.view.getState().focus.key).toBe(shown[0]);
+        store.view.getState().moveSlot(-1);
+        expect(store.view.getState().focus.key).toBe(shown[0]);
     });
 
     it('steps through visible entities, skipping hidden ones', () => {

@@ -15,7 +15,7 @@ import { currentAnalyses, entitiesNaming, guidedOrder, hasPoints, type Coordinat
 import { randomUUID } from '../model/uuid';
 import { analysisItemFor, diffTarget, nextChange, resolveTarget, visibleItems } from '../model/diff';
 import { auditRows, isLinkStep, stepCards, type AuditLink } from '../model/guided';
-import { fieldOrder } from '../model/comparison';
+import { cardOrder } from '../model/cardLayout';
 import type { Json } from '../model/paths';
 import type { RecordIndex, SpanPair } from '../model/record';
 import { STEPS, type StepId } from '../model/steps';
@@ -23,6 +23,7 @@ import { analysisTarget, entityKey, relationshipKey, slotTarget, targetKey } fro
 import { isFocused, selectDiff } from './diffSelectors';
 import { followerOf, type Follower } from '../model/analysisFollow';
 import { selectIsEditable, type Replaced, type SessionStore } from './sessionStore';
+import { readFolds, writeFolds } from './folds';
 import { selectEvidenceCursor, selectFocusedSpans, selectShown } from './viewSelectors';
 
 export interface Focus {
@@ -142,6 +143,13 @@ export interface ViewState {
     toggleMerge(key?: string): void;
     toggleNonCoordinate(): void;
     focusEntity(id: string): void;
+    /** The schema classes whose cards show their folded fields, as this device keeps them. */
+    openFolds: string[];
+    toggleFold(schemaClass: string): void;
+    /** The analysed n of the focused entity whose analyses the card lists, while it does. */
+    analysedOpen: { entity: string; n: string } | null;
+    /** Focuses the entity and lists the analyses that analysed `n` of it. */
+    openAnalysed(entity: string, n: string): void;
     focusSlot(key: string): void;
     /** Focuses the link from the reference slot `slot` to the entity `target`. */
     focusLink(slot: string, target: string): void;
@@ -235,6 +243,7 @@ export function createViewStore(session: SessionStore) {
                 offer: null,
                 accepted: null,
                 judged: null,
+                analysedOpen: null,
             });
         };
 
@@ -406,6 +415,22 @@ export function createViewStore(session: SessionStore) {
             accepted: null,
             judged: null,
             gridEngagement: null,
+            openFolds: readFolds(),
+            analysedOpen: null,
+
+            toggleFold: (schemaClass) => {
+                const { openFolds } = get();
+                const next = openFolds.includes(schemaClass)
+                    ? openFolds.filter((name) => name !== schemaClass)
+                    : [...openFolds, schemaClass];
+                writeFolds(next);
+                set({ openFolds: next });
+            },
+            openAnalysed: (entity, n) => {
+                if (!documents().index.entity(entity)) return;
+                if (get().focus.key !== entityKey(entity)) focusOn({ entity, key: entityKey(entity) });
+                set({ analysedOpen: { entity, n } });
+            },
 
             engageGrid: () => {
                 set({ gridEngagement: ++engagements });
@@ -487,8 +512,10 @@ export function createViewStore(session: SessionStore) {
                 const { focus } = get();
                 const listed = shown();
                 const entity = listed.entity(focus.entity);
-                const slots = entity ? fieldOrder(listed, entity) : [];
-                const at = slots.findIndex((s) => s.key === focus.key);
+                const open = !!entity && get().openFolds.includes(entity.schemaClass);
+                const slots = entity ? cardOrder(listed, entity, open) : [];
+                const on = slots.findIndex((s) => s.key === focus.key);
+                const at = on === -1 ? slots.findIndex((s) => s.key === focus.slot) : on;
                 const next = stepIn(slots.length, at, delta, delta > 0 ? 0 : slots.length - 1);
                 if (slots[next] && next !== at)
                     focusOn({ entity: focus.entity, key: slots[next].key, slot: slots[next].key });

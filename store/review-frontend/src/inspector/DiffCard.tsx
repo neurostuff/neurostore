@@ -6,7 +6,7 @@ import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
 import { useSession, useView } from '../store/context';
 import { selectDiff, selectOriginalIndex } from '../store/diffSelectors';
 import { CardHead } from './CardHead';
-import { formatValue } from './formatValue';
+import { formatValue } from '../model/valueText';
 import { statusColors, statusOf } from './status';
 import { StatusLabel } from './StatusLabel';
 import { slotLabel } from '../model/labels';

@@ -1,5 +1,5 @@
 import { STEPS, type StepId } from '../model/steps';
-import { readKept, writeKept } from './kept';
+import { readKept, writeKept } from '../store/kept';
 
 const KEY = 'neurostore-review:dismissed-step-hints:v1';
 

@@ -54,10 +54,10 @@ describe('an analysis card shows what is compared', () => {
         const fields = screen.getByRole('region', { name: /^Fields of Pos versus Neg/ });
         const head = within(fields).getByRole('group', { name: /: card head$/ });
         const section = within(fields).getByRole('region', { name: 'What is compared' });
-        const firstField = fields.querySelector('.rv-slot')!;
+        const firstField = within(fields).getByRole('region', { name: 'About' });
         expect(head.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(section.compareDocumentPosition(firstField) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(within(fields).getByText('Other fields')).toBeInTheDocument();
+        expect(firstField.querySelector('[data-slot-key]')).not.toBeNull();
     });
 
     it('a contrast within held levels: the headline, then a row per term', () => {
@@ -165,7 +165,10 @@ describe('the cells’ slots', () => {
     it('are not listed again among the fields', () => {
         setup('a_held');
         const fields = screen.getByRole('region', { name: /^Fields of Pos versus Neg/ });
-        const listed = [...fields.querySelectorAll('.rv-slot')].map((li) => li.getAttribute('data-slot-key'));
+        const section = within(fields).getByRole('region', { name: 'What is compared' });
+        const listed = [...fields.querySelectorAll('[data-slot-key]')]
+            .filter((field) => !section.contains(field))
+            .map((field) => field.getAttribute('data-slot-key'));
         expect(listed.filter((key) => key?.includes('effect.cells'))).toEqual([]);
         expect(listed).toContain('slot:a_held:effect.statistic.family');
     });
@@ -187,16 +190,17 @@ describe('j and k on an analysis', () => {
     it('move through the comparison’s chips, then on into the fields', () => {
         const { viewState } = setup('a_held');
         const slots: (string | undefined)[] = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 6; i++) {
             press('j');
             slots.push(viewState().focus.slot);
         }
         expect(slots).toEqual([
+            'slot:a_held:name',
             DIRECTION('a_held', 0),
             DIRECTION('a_held', 1),
             DIRECTION('a_held', 2),
             DIRECTION('a_held', 3),
-            'slot:a_held:name',
+            'slot:a_held:effect.kind',
         ]);
         press('k');
         expect(viewState().focus.slot).toBe(DIRECTION('a_held', 3));
@@ -299,11 +303,11 @@ describe('a term’s chips, whatever the order of its cells in the record', () =
             b.getAttribute('data-slot-key')
         );
         expect(order).toEqual([DIRECTION('a_mixed', 2), DIRECTION('a_mixed', 0), DIRECTION('a_mixed', 1)]);
-        const stepped = [1, 2, 3].map(() => {
+        const stepped = [0, 1, 2, 3].map(() => {
             press('j');
             return viewState().focus.slot;
         });
-        expect(stepped).toEqual(order);
+        expect(stepped).toEqual(['slot:a_mixed:name', ...order]);
     });
 
     it('show a continuous term going either way', () => {

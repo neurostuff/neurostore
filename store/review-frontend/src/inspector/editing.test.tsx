@@ -131,7 +131,7 @@ describe('editing a slot', () => {
         expectValid(last());
         expect(screen.queryByRole('group', { name: 'edit Acquired count' })).not.toBeInTheDocument();
         expect(rowOf('slot:grp_a:acquired_count')).toHaveTextContent('18');
-        expect(reviewIn('slot:grp_a:acquired_count', 'edited')).toHaveTextContent('edited');
+        expect(reviewIn('slot:grp_a:acquired_count', 'edited')).toHaveAccessibleName('edited');
     });
 
     it('Esc cancels the edit, emitting nothing', () => {
@@ -170,7 +170,9 @@ describe('editing a slot', () => {
             value: { extraction_status: 'not_reported', unreported_reason: 'cited_elsewhere' },
         });
         expectValid(last());
-        expect(rowOf('slot:grp_a:name')).toHaveTextContent('not reported (cited_elsewhere)');
+        expect(screen.getByRole('region', { name: 'Selected field' })).toHaveTextContent(
+            'not reported (cited_elsewhere)'
+        );
     });
 });
 
@@ -178,7 +180,7 @@ describe('verdicts and notes', () => {
     it('A accepts the focused slot, and its status reads verified', () => {
         const { last, viewState } = setup();
         act(() => viewState().focusSlot('slot:grp_a:name'));
-        expect(statusIn('slot:grp_a:name')).toHaveTextContent('evidence present');
+        expect(statusIn('slot:grp_a:name')).toHaveAccessibleName('evidence present');
         press('a', {}, document.body);
         expect(last()).toMatchObject({
             type: 'verdict',
@@ -186,9 +188,9 @@ describe('verdicts and notes', () => {
             target: { kind: 'slot', entity: 'grp_a', path: 'name' },
         });
         expectValid(last());
-        expect(reviewIn('slot:grp_a:name', 'verified')).toHaveTextContent('verified');
+        expect(reviewIn('slot:grp_a:name', 'verified')).toHaveAccessibleName('verified');
         expect(reviewIn('slot:grp_a:name', 'verified')).toHaveAttribute('data-status-shape', 'check');
-        expect(statusIn('slot:grp_a:name')).toHaveTextContent('evidence present');
+        expect(statusIn('slot:grp_a:name')).toHaveAccessibleName('evidence present');
     });
 
     it('A accepts the focused entity, shown on its card', () => {
@@ -233,7 +235,7 @@ describe('verdicts and notes', () => {
         ).toEqual(['acquired_count', 'entity', 'species']);
         expect(accepted.every((op) => op.type === 'verdict' && op.verdict === 'accept')).toBe(true);
         expectValid(...accepted);
-        expect(statusIn('slot:grp_a:is_healthy')).toHaveTextContent('evidence not found');
+        expect(statusIn('slot:grp_a:is_healthy')).toHaveAccessibleName('evidence not found');
     });
 
     it('R opens the reason chips; a digit picks one, and Enter rejects with the note', () => {

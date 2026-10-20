@@ -64,7 +64,9 @@ describe('actions beside the focused field (D97)', () => {
         act(() => viewState().focusSlot('slot:grp_a:acquired_count'));
         expect(fieldActions()).toHaveLength(1);
         const [actions] = fieldActions();
-        expect(rowOf('slot:grp_a:acquired_count')).toContainElement(actions);
+        const details = screen.getByRole('region', { name: 'Selected field' });
+        expect(details).toContainElement(actions);
+        expect(details).toHaveTextContent(/^Selected · About · Acquired count/);
         expect(
             within(actions)
                 .getAllByRole('button')
@@ -78,7 +80,6 @@ describe('actions beside the focused field (D97)', () => {
         fireEvent.mouseOver(rowOf('slot:grp_a:name'));
         fireEvent.mouseEnter(rowOf('slot:grp_a:name'));
         expect(fieldActions()).toHaveLength(1);
-        expect(within(rowOf('slot:grp_a:name')).queryByRole('toolbar')).toBeNull();
     });
 
     it('offer Link, not Edit, on a reference field', () => {

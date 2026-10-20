@@ -137,7 +137,7 @@ describe('adding evidence from a text selection', () => {
         select(TEXT.indexOf('scanner'), TEXT.indexOf('scanner') + 7);
         press('e');
         expect(status()).toHaveAttribute('data-status', 'present');
-        expect(status()).toHaveTextContent('evidence present');
+        expect(status()).toHaveAccessibleName('evidence present');
     });
 
     it('adds to the first set of a field the evidence cursor is not on, though another field’s cursor span is in its second', () => {
