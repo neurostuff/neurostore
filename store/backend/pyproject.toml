@@ -41,7 +41,7 @@ dependencies = [
     "NiMARE[parquet]==0.21.0",
     "openai~=3.31",
     "tenacity~=9.2",
-    "sentry-sdk~=2.71",
+    "sentry-sdk~=2.72",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read, pinned to study_schema main.
     "study-schema @ git+https://github.com/neurostuff/study_schema.git@2cc7bec2a2c67c4ac7feb4e74a04f4e013e9329a",
