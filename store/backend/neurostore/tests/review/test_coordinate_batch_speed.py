@@ -167,11 +167,12 @@ def _hundred_ops_the_last_invalid():
     return text, state, ops
 
 
-def _assert_refused_at_the_last_op(refusal):
+def _assert_refused_at_the_last_op(refusal, record):
+    at = next(i for i, a in enumerate(record["analyses"]) if a["local_id"] == "bench_an_0")
     assert isinstance(refusal, OpError)
     assert str(refusal) == f"op {RELABELS - 1} leaves an invalid document"
     assert refusal.problems[0].startswith(
-        f"op {RELABELS - 1}: extraction-record /analyses/1/groups/0/n/value"
+        f"op {RELABELS - 1}: extraction-record /analyses/{at}/groups/0/n/value"
     )
 
 
@@ -182,7 +183,7 @@ def test_a_hundred_op_batch_whose_last_op_is_invalid_is_refused_naming_that_op_a
         apply_batch(state, {"ops": ops}, text=text, user_id="u1", at=AT,
                     stable_ids=records.minting())
 
-    _assert_refused_at_the_last_op(raised.value)
+    _assert_refused_at_the_last_op(raised.value, state.record)
 
 
 @performance_test
@@ -191,5 +192,5 @@ def test_a_refused_hundred_op_batch_whose_last_op_is_invalid_is_refused_within_t
 
     elapsed, refusal = _fastest(state, ops, text)
 
-    _assert_refused_at_the_last_op(refusal)
+    _assert_refused_at_the_last_op(refusal, state.record)
     assert elapsed < BOUND_SECONDS, f"the refused batch took {elapsed:.2f}s"
