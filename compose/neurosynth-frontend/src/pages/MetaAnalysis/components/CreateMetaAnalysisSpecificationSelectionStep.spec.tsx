@@ -104,6 +104,62 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
         expect(screen.getByTestId('CreateMetaAnalysisSpecificationSelectionStepMultiGroup')).toBeInTheDocument();
     });
 
+    it('should show the multigroup selection component for a boolean column once the column is selected', () => {
+        algorithmMock = {
+            estimator: {
+                label: MULTIGROUP_ALGORITHMS[0],
+                description: 'text estimator description',
+            },
+            estimatorArgs: {},
+            corrector: null,
+            correctorArgs: {},
+        };
+        selectedValueMock = {
+            selectionKey: 'included',
+            type: EPropertyType.BOOLEAN,
+            selectionValue: undefined,
+        };
+
+        render(
+            <CreateMetaAnalysisSpecificationSelectionStep
+                algorithm={algorithmMock}
+                selection={selectedValueMock}
+                onChooseSelection={mockOnChooseSelection}
+                onNavigate={mockOnNavigate}
+            />
+        );
+
+        expect(screen.getByTestId('CreateMetaAnalysisSpecificationSelectionStepMultiGroup')).toBeInTheDocument();
+    });
+
+    it('should hide the multigroup selection component until a non-boolean column has a value', () => {
+        algorithmMock = {
+            estimator: {
+                label: MULTIGROUP_ALGORITHMS[0],
+                description: 'text estimator description',
+            },
+            estimatorArgs: {},
+            corrector: null,
+            correctorArgs: {},
+        };
+        selectedValueMock = {
+            selectionKey: 'group',
+            type: EPropertyType.STRING,
+            selectionValue: undefined,
+        };
+
+        render(
+            <CreateMetaAnalysisSpecificationSelectionStep
+                algorithm={algorithmMock}
+                selection={selectedValueMock}
+                onChooseSelection={mockOnChooseSelection}
+                onNavigate={mockOnNavigate}
+            />
+        );
+
+        expect(screen.queryByTestId('CreateMetaAnalysisSpecificationSelectionStepMultiGroup')).not.toBeInTheDocument();
+    });
+
     describe('navigation', () => {
         it('should go back', async () => {
             render(

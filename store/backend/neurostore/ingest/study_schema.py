@@ -486,6 +486,12 @@ def _bibliography(parsed_paper):
         return {}
     bib = parsed_paper["bibliography"]
     authors = [a.get("name") if isinstance(a, dict) else a for a in bib.get("authors") or []]
+    # NOTE (licensing, 2026-10-16): the abstract is stored and shown whatever its
+    # licence. Open question: should an abstract whose licence does not permit
+    # redistribution be hidden? study_schema will carry the paper's licence and a
+    # redistribution rule (study_schema.licensing.permits_redistribution); decide
+    # here once it does. Tracked in the pipeline work plan; do not open an issue
+    # for this.
     fields = {
         "name": bib.get("title"),
         "description": bib.get("abstract"),

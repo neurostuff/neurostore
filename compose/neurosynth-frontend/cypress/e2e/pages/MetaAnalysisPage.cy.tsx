@@ -372,6 +372,30 @@ describe(PAGE_NAME, () => {
         });
     });
 
+    describe('ALE subtraction large reference', () => {
+        it('should disable the cloud run when ALE subtraction uses the neurostore reference dataset', () => {
+            cy.fixture('MetaAnalysis/specification').then((specification) => {
+                specification.database_studyset = 'neurostore';
+                specification.estimator.type = 'ALESubtraction';
+                cy.intercept('GET', `**/api/specifications/**`, specification).as('specificationFixture');
+            });
+            cy.intercept('GET', `**/api/meta-analyses/**`, {
+                fixture: 'MetaAnalysis/metaAnalysisNoResults',
+            }).as('metaAnalysisFixture');
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
+                fixture: 'MetaAnalysis/jobs/noJobs',
+            }).as('jobsFixture');
+
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
+
+            cy.contains('Specifying ALE subtraction with a large reference dataset is not recommended.').should(
+                'exist'
+            );
+            cy.contains('button', 'run meta-analysis').should('be.disabled');
+            cy.contains('a', 'Read more about ALE and MKDA').should('have.attr', 'href').and('include', 'ale-and-mkda');
+        });
+    });
+
     describe('Status chip', () => {
         it('should update the status chip after running a meta-analysis', () => {
             cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(

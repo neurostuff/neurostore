@@ -1,4 +1,17 @@
-import { sortByOrder } from 'helpers/utils';
+import { notUndefinedOrNull, sortByOrder } from 'helpers/utils';
+
+describe('notUndefinedOrNull', () => {
+    it('returns false for null and undefined', () => {
+        expect(notUndefinedOrNull(null)).toBe(false);
+        expect(notUndefinedOrNull(undefined)).toBe(false);
+    });
+
+    it('returns true for other values, including empty and falsey ones', () => {
+        expect(notUndefinedOrNull('')).toBe(true);
+        expect(notUndefinedOrNull(0)).toBe(true);
+        expect(notUndefinedOrNull(false)).toBe(true);
+    });
+});
 
 describe('sortByOrder', () => {
     it('sorts by order ascending', () => {
