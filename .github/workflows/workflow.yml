@@ -717,6 +717,13 @@ jobs:
       run: |
         cd compose
         docker compose exec -T compose manage create-meta-analyses --n-studysets 1 --neurostore-url http://store_nginx
+    # Chrome 155 intermittently never fires the page load event in CI; unpin once fixed upstream
+    -
+      name: Install Chrome 154
+      id: setup-chrome
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: 154
     -
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6
@@ -740,6 +747,6 @@ jobs:
         build: npm run build:staging
         record: false
         start: npm run serve-build
-        browser: chrome
+        browser: ${{ steps.setup-chrome.outputs.chrome-path }}
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
