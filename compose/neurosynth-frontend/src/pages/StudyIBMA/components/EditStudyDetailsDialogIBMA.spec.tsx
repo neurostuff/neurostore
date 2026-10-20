@@ -57,7 +57,7 @@ describe('EditStudyDetailsDialogIBMA', () => {
         });
         (useUpdateStudy as Mock).mockReturnValue({
             mutateAsync: mockMutateAsync,
-            isLoading: false,
+            isPending: false,
         });
         (useEnsureWritableStudy as Mock).mockReturnValue({
             ensureWritableStudy: mockEnsureWritableStudy,
