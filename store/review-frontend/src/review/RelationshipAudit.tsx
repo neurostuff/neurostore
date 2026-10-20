@@ -28,7 +28,7 @@ const rowStyles = (theme: Theme) => ({
 });
 
 /** The panel on the link `key`, while one is open on it. */
-const panelOn = (panel: Panel | null, key: string) =>
+export const panelOn = (panel: Panel | null, key: string) =>
     panel?.target.kind === 'relationship' && targetKey(panel.target) === key ? panel : null;
 
 /** Opens the picker of the group whose first slot is `slot`: a link panel on it. */

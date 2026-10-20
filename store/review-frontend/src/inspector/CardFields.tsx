@@ -21,6 +21,7 @@ import { useIsEditable, useReviewStores, useSession, useSessionView, useShown, u
 import { selectEvidenceCursor, selectFocusedSpans } from '../store/viewSelectors';
 import { pendingLinks, unlink } from './actions';
 import { NoteMark } from './NoteMark';
+import { chipStyle, OpenButton, openStyles } from './OpenButton';
 import { openPanelOn } from './openPanel';
 import { RemoveIcon } from './RemoveIcon';
 import { SlotBody, SlotHead } from './SlotParts';
@@ -212,24 +213,6 @@ function NoneChip({ slot }: { slot: SlotNode }) {
         >
             none
             <StatusMark id={reviewStatus(reviewed)} explained />
-        </button>
-    );
-}
-
-/** A button that opens an entity, or a field of one, elsewhere. */
-function OpenButton({ name, title, onOpen }: { name: string; title: string; onOpen(): void }) {
-    return (
-        <button
-            type="button"
-            className="rv-open"
-            aria-label={`open ${name}`}
-            title={title}
-            onClick={(event) => {
-                event.stopPropagation();
-                onOpen();
-            }}
-        >
-            {`${name} →`}
         </button>
     );
 }
@@ -468,7 +451,7 @@ function Selected({ entity, layout }: { entity: EntityNode; layout: CardLayout }
     const analysed = useView((s) => (s.analysedOpen?.entity === entity.id ? s.analysedOpen.n : null));
     const slot = useShown((index) => (key === undefined ? undefined : index.slot(key)));
     if (analysed !== null && !slot) return <AnalysedList entity={entity} n={analysed} />;
-    if (!slot || layout.places.get(slot.key)?.where === 'comparison') return null;
+    if (!slot || slot.entity !== entity.id || layout.places.get(slot.key)?.where === 'comparison') return null;
     return <SelectedSlot slot={slot} layout={layout} />;
 }
 
@@ -560,19 +543,7 @@ const titleStyles = (theme: Theme) => ({
 
 const cardFieldStyles = (theme: Theme) => {
     const lines = underlines(theme.palette);
-    const chip = {
-        typography: 'body2',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.5,
-        px: 1,
-        py: 0.125,
-        border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
-        borderRadius: 3,
-        bgcolor: 'transparent',
-        color: 'text.primary',
-        cursor: 'pointer',
-    };
+    const chip = chipStyle(theme);
     return {
         px: 2,
         py: 1,
@@ -645,11 +616,7 @@ const cardFieldStyles = (theme: Theme) => {
         },
         '& .rv-link-label': { typography: 'body2', color: 'text.secondary' },
         '& .rv-link-chip, & .rv-item-chip': chip,
-        '& .rv-open': {
-            ...chip,
-            color: 'primary.main',
-            borderStyle: 'dotted',
-        },
+        ...openStyles(theme),
         '& .rv-chip-name': {
             font: 'inherit',
             color: 'inherit',
@@ -666,15 +633,6 @@ const cardFieldStyles = (theme: Theme) => {
         '& .rv-link-chip[aria-current="true"], & .rv-chips[aria-current="true"] .rv-none': {
             outline: `2px solid ${theme.palette.primary.main}`,
             outlineOffset: 1,
-        },
-        '& .rv-fold-toggle': {
-            typography: 'body2',
-            color: 'primary.main',
-            background: 'none',
-            border: 0,
-            p: 0,
-            cursor: 'pointer',
-            textAlign: 'start',
         },
         '& .rv-fold .rv-rows': { mt: 0.5 },
         '& .rv-selected': { borderTop: 1, borderColor: 'divider', pt: 1 },

@@ -35,11 +35,14 @@ export interface GuidedCards {
     reach: Map<string, number>;
     /** The links pointing at an entity, in record order. */
     linksInto(id: string): Link[];
+    /** Each entity's place in the guided steps: the analyses, then step 3's entities, then the leftovers. */
+    places: Map<string, number>;
 }
 
 const hiddenLast = (nodes: EntityNode[]) => [...nodes.filter((n) => !n.hidden), ...nodes.filter((n) => n.hidden)];
 
-const pushTo = <T>(map: Map<string, T[]>, key: string, value: T) => map.set(key, [...(map.get(key) ?? []), value]);
+export const pushTo = <T>(map: Map<string, T[]>, key: string, value: T) =>
+    map.set(key, [...(map.get(key) ?? []), value]);
 
 /**
  * An analysis reaches the entities that link to it, and from it and every entity it reaches, the entities they
@@ -90,12 +93,13 @@ function build(index: RecordIndex): GuidedCards {
     const leftovers = index.visible.filter(
         (e) => e.entityClass !== analysis && e.id !== ROOT_ENTITY && !reach.has(e.id)
     );
+    const cards = { analyses, entities: hiddenLast(entities), leftovers: hiddenLast(leftovers) };
+    const ordered = [...cards.analyses, ...cards.entities, ...cards.leftovers];
     return {
-        analyses,
-        entities: hiddenLast(entities),
-        leftovers: hiddenLast(leftovers),
+        ...cards,
         reach,
         linksInto: (id) => into.get(id) ?? [],
+        places: new Map(ordered.map((entity, place) => [entity.id, place])),
     };
 }
 

@@ -53,6 +53,15 @@ function setup(step: 'analyses' | 'entities' | 'leftovers' | 'relationships') {
 }
 
 const cardList = (name: string) => screen.getByRole('list', { name });
+/** The rows of fMRI's two links from the analyses, said as one entry, opened. */
+function linkRows() {
+    const entry = within(screen.getByRole('list', { name: 'linked from' })).getByRole('listitem', {
+        name: 'In 2 analyses: its acquisitions include this acquisition',
+    });
+    const toggle = within(entry).getByRole('button', { name: 'In 2 analyses' });
+    if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle);
+    return within(entry).getAllByRole('listitem');
+}
 /** The button of the step's card named `name`, not a value inside the open card that reads the same. */
 const cardButton = (list: string, name: RegExp) =>
     within(cardList(list))
@@ -132,22 +141,23 @@ describe('step 3, entities outward from the analyses', () => {
                 provenance: { 'relationship:a_1:acquisitions:acq_1': { state: 'verified', user_id: 'u1', at: 'then' } },
             })
         );
-        const links = screen.getByRole('list', { name: 'linked from' });
-        expect(within(links).getAllByRole('listitem')[0]).toHaveTextContent('verified by Ana');
+        const rows = linkRows();
+        expect(within(rows[0]).getByRole('img', { name: 'verified by Ana' })).toBeInTheDocument();
     });
 
     it('shows the analyses linked to the focused entity, so the links are checked there', () => {
         const { stores } = setup('entities');
-        const links = screen.getByRole('list', { name: 'linked from' });
-        expect(
-            within(links)
-                .getAllByRole('listitem')
-                .map((li) => li.firstChild?.textContent)
-        ).toEqual(['Patients > Controls · Acquisitions', 'Controls > Patients · Acquisitions']);
-        fireEvent.click(within(links).getAllByRole('button', { name: 'Accept link' })[0]);
+        const rows = linkRows();
+        expect(rows.map((li) => li.getAttribute('aria-label'))).toEqual([
+            "Analysis 'Patients > Controls': its acquisitions include this acquisition",
+            "Analysis 'Controls > Patients': its acquisitions include this acquisition",
+        ]);
+        fireEvent.click(rows[0]);
+        fireEvent.click(within(rows[0]).getByRole('button', { name: 'Accept' }));
         expect(stores.session.getState().provenance['relationship:a_1:acquisitions:acq_1']?.state).toBe('verified');
-        expect(within(links).getAllByRole('listitem')[0]).toHaveTextContent('verified');
-        fireEvent.click(within(links).getAllByRole('button', { name: 'Unlink' })[1]);
+        expect(within(rows[0]).getByRole('img', { name: 'verified' })).toBeInTheDocument();
+        fireEvent.click(rows[1]);
+        fireEvent.click(within(rows[1]).getByRole('button', { name: 'Unlink' }));
         expect(stores.session.getState().pending.at(-1)).toMatchObject({
             type: 'unlink',
             target: { kind: 'relationship', entity: 'a_2', path: 'acquisitions', target_entity: 'acq_1' },
@@ -186,7 +196,9 @@ describe('step 5, the relationship audit', () => {
     it('has a card per analysis and in it a group per class the analysis links to, a row per link', () => {
         setup('relationships');
         expect(cards().map((c) => c.querySelector('[data-card]')?.getAttribute('data-card'))).toEqual(['a_1', 'a_2']);
-        expect(within(links('Patients > Controls')).getByRole('group', { name: 'Acquisitions (1 linked)' }));
+        expect(
+            within(links('Patients > Controls')).getByRole('group', { name: 'Acquisitions (1 linked)' })
+        ).toBeInTheDocument();
         expect(rowNames('Patients > Controls')).toEqual(['fMRI']);
     });
 
@@ -631,11 +643,11 @@ describe('the steps in a read-only tab', () => {
         expect(stores.view.getState().focus.entity).toBe('grp_a');
         fireEvent.click(cardButton('entities', /^fMRI/));
         expect(stores.view.getState().focus.entity).toBe('acq_1');
-        const links = screen.getByRole('list', { name: 'linked from' });
-        [
-            ...within(links).getAllByRole('button', { name: 'Accept link' }),
-            ...within(links).getAllByRole('button', { name: 'Unlink' }),
-        ].forEach((button) => expect(button).toBeDisabled());
+        expect(screen.getByRole('button', { name: 'Accept all 2' })).toBeDisabled();
+        linkRows().forEach((li) => {
+            fireEvent.click(li);
+            ['Accept', 'Unlink'].forEach((name) => expect(within(li).getByRole('button', { name })).toBeDisabled());
+        });
     });
 
     it('disables the audit’s accept, reject and remove controls', () => {

@@ -153,6 +153,8 @@ export interface ViewState {
     focusSlot(key: string): void;
     /** Focuses the link from the reference slot `slot` to the entity `target`. */
     focusLink(slot: string, target: string): void;
+    /** Focuses the link from the reference slot `slot` to the entity `target`, on the card of `target`. */
+    focusLinkInto(slot: string, target: string): void;
     moveSlot(delta: 1 | -1): void;
     moveEntity(delta: 1 | -1): void;
     /**
@@ -226,6 +228,13 @@ export function createViewStore(session: SessionStore) {
         const shown = () => selectShown(documents(), get());
         const shownDocuments = () => ({ index: shown(), bundle: documents().bundle });
         const spans = () => selectFocusedSpans(documents(), get());
+
+        /** The focus key and slot of the link from the reference slot `slot` to `target`, and the slot's entity. */
+        const linkFocus = (slot: string, target: string) => {
+            const node = documents().index.slot(slot);
+            if (node?.kind !== 'reference' || !node.references.includes(target)) return undefined;
+            return { from: node.entity, key: relationshipKey(node.entity, node.path, target), slot: node.key };
+        };
 
         const focusOn = (focus: Focus) => {
             const { reveal } = get();
@@ -502,10 +511,12 @@ export function createViewStore(session: SessionStore) {
                 if (slot) focusOn({ entity: slot.entity, key, slot: key });
             },
             focusLink: (slot, target) => {
-                const node = documents().index.slot(slot);
-                if (node?.kind !== 'reference' || !node.references.includes(target)) return;
-                const key = relationshipKey(node.entity, node.path, target);
-                focusOn({ entity: node.entity, key, slot: node.key });
+                const link = linkFocus(slot, target);
+                if (link) focusOn({ entity: link.from, key: link.key, slot: link.slot });
+            },
+            focusLinkInto: (slot, target) => {
+                const link = linkFocus(slot, target);
+                if (link) focusOn({ entity: target, key: link.key, slot: link.slot });
             },
             moveSlot: (delta) => {
                 if (isLinkStep(get().step)) return moveLink(delta);

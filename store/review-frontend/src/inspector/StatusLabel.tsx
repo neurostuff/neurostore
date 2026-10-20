@@ -31,16 +31,20 @@ export function StatusLabel({ id, by }: { id: StatusId; by?: string }) {
     );
 }
 
-/** A status by its mark alone, its label on hover; where `explained`, what it means too, and an image named by its label. */
-export function StatusMark({ id, explained }: { id: StatusId; explained?: boolean }) {
+/**
+ * A status by its mark alone, its label on hover; where `explained`, what it means too, and an image named by its
+ * label, with who gave it where `by` names them.
+ */
+export function StatusMark({ id, explained, by }: { id: StatusId; explained?: boolean; by?: string }) {
     const { label, shape, means } = STATUSES[id];
+    const named = by ? `${label} by ${by}` : label;
     return (
         <span
             className="rv-status"
             data-status={id}
             data-status-shape={shape}
-            title={explained ? `${label}: ${means}` : label}
-            {...(explained && { role: 'img', 'aria-label': label })}
+            title={by ? named : explained ? `${label}: ${means}` : label}
+            {...(explained && { role: 'img', 'aria-label': named })}
         >
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                 {SHAPES[shape]}

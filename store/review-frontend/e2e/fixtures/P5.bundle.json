@@ -1255,9 +1255,10 @@
           }
         },
         "model_type": {
-          "extraction_status": "not_reported",
+          "value": "GLM of group and condition",
+          "extraction_status": "extracted",
           "evidence": {
-            "status": "not_applicable"
+            "status": "not_found"
           }
         },
         "stage": {
@@ -1282,7 +1283,33 @@
               "evidence": {
                 "status": "not_found"
               }
-            }
+            },
+            "levels": [
+              {
+                "level": {
+                  "value": "patients",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "groups": [
+                  "grp_a"
+                ]
+              },
+              {
+                "level": {
+                  "value": "controls",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "groups": [
+                  "grp_b"
+                ]
+              }
+            ]
           },
           {
             "local_id": "trm_2",
@@ -1300,6 +1327,73 @@
                 "status": "not_found"
               }
             }
+          }
+        ]
+      },
+      {
+        "local_id": "mdl_2",
+        "model_family": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "model_type": {
+          "value": "GLM of group alone",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "stage": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "terms": [
+          {
+            "local_id": "trm_3",
+            "name": {
+              "value": "group",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "type": {
+              "value": "categorical",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "levels": [
+              {
+                "level": {
+                  "value": "patients",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "groups": [
+                  "grp_a"
+                ]
+              },
+              {
+                "level": {
+                  "value": "controls",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "groups": [
+                  "grp_b"
+                ]
+              }
+            ]
           }
         ]
       }
@@ -1465,6 +1559,20 @@
       "entity_class": "ModelTerm",
       "schema_class": "ModelTerm",
       "parent": "mdl_1",
+      "list_path": "terms"
+    },
+    {
+      "local_id": "mdl_2",
+      "entity_class": "ModelEstimation",
+      "schema_class": "ModelEstimation",
+      "parent": "study",
+      "list_path": "model_estimations"
+    },
+    {
+      "local_id": "trm_3",
+      "entity_class": "ModelTerm",
+      "schema_class": "ModelTerm",
+      "parent": "mdl_2",
       "list_path": "terms"
     },
     {
@@ -1804,9 +1912,10 @@
             }
           },
           "model_type": {
-            "extraction_status": "not_reported",
+            "value": "GLM of group and condition",
+            "extraction_status": "extracted",
             "evidence": {
-              "status": "not_applicable"
+              "status": "not_found"
             }
           },
           "stage": {
@@ -1831,7 +1940,33 @@
                 "evidence": {
                   "status": "not_found"
                 }
-              }
+              },
+              "levels": [
+                {
+                  "level": {
+                    "value": "patients",
+                    "extraction_status": "extracted",
+                    "evidence": {
+                      "status": "not_found"
+                    }
+                  },
+                  "groups": [
+                    "grp_a"
+                  ]
+                },
+                {
+                  "level": {
+                    "value": "controls",
+                    "extraction_status": "extracted",
+                    "evidence": {
+                      "status": "not_found"
+                    }
+                  },
+                  "groups": [
+                    "grp_b"
+                  ]
+                }
+              ]
             },
             {
               "local_id": "trm_2",
@@ -1849,6 +1984,73 @@
                   "status": "not_found"
                 }
               }
+            }
+          ]
+        },
+        {
+          "local_id": "mdl_2",
+          "model_family": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "model_type": {
+            "value": "GLM of group alone",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "stage": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "terms": [
+            {
+              "local_id": "trm_3",
+              "name": {
+                "value": "group",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "value": "categorical",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "levels": [
+                {
+                  "level": {
+                    "value": "patients",
+                    "extraction_status": "extracted",
+                    "evidence": {
+                      "status": "not_found"
+                    }
+                  },
+                  "groups": [
+                    "grp_a"
+                  ]
+                },
+                {
+                  "level": {
+                    "value": "controls",
+                    "extraction_status": "extracted",
+                    "evidence": {
+                      "status": "not_found"
+                    }
+                  },
+                  "groups": [
+                    "grp_b"
+                  ]
+                }
+              ]
             }
           ]
         }
@@ -2012,6 +2214,20 @@
         "entity_class": "ModelTerm",
         "schema_class": "ModelTerm",
         "parent": "mdl_1",
+        "list_path": "terms"
+      },
+      {
+        "local_id": "mdl_2",
+        "entity_class": "ModelEstimation",
+        "schema_class": "ModelEstimation",
+        "parent": "study",
+        "list_path": "model_estimations"
+      },
+      {
+        "local_id": "trm_3",
+        "entity_class": "ModelTerm",
+        "schema_class": "ModelTerm",
+        "parent": "mdl_2",
         "list_path": "terms"
       },
       {

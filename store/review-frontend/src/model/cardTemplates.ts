@@ -34,6 +34,8 @@ export interface RowSpec {
 export interface LinkSpec {
     label: string;
     slot: string;
+    /** What the linker does to what the slot links, where the label reads as a verb: `mirrors` for `mirror of`. */
+    verb?: string;
 }
 
 /** The child entities of a class a card lists among its links, as chips that open them. */
@@ -198,7 +200,7 @@ export const CARD_TEMPLATES: Record<string, CardTemplate> = {
         ],
         links: [
             { label: 'arm', slot: 'arm' },
-            { label: 'diagnosed with', slot: 'diagnostic_instrument' },
+            { label: 'diagnosed with', slot: 'diagnostic_instrument', verb: 'is diagnosed with' },
         ],
     },
     Task: {
@@ -339,7 +341,7 @@ export const CARD_TEMPLATES: Record<string, CardTemplate> = {
         rows: [{ slot: 'model_settings', label: 'Settings' }],
         links: [
             { label: 'preprocessing', slot: 'preprocessing' },
-            { label: 'inputs from', slot: 'inputs_from' },
+            { label: 'inputs from', slot: 'inputs_from', verb: 'takes inputs from' },
         ],
         children: [{ label: 'terms', entityClass: 'ModelTerm' }],
     },
@@ -358,7 +360,7 @@ export const CARD_TEMPLATES: Record<string, CardTemplate> = {
         links: [
             { label: 'assessment', slot: 'assessment' },
             { label: 'region', slot: 'region' },
-            { label: 'interacts with', slot: 'interaction_with' },
+            { label: 'interacts with', slot: 'interaction_with', verb: 'interacts with' },
         ],
     },
     InferenceSettings: {
@@ -485,7 +487,7 @@ export const CARD_TEMPLATES: Record<string, CardTemplate> = {
             { label: 'model', slot: 'model_estimation' },
             { label: 'inference', slot: 'inference_settings' },
             { label: 'regions', slot: 'regions' },
-            { label: 'defines', slot: 'defines_regions' },
+            { label: 'defines', slot: 'defines_regions', verb: 'defines' },
             { label: 'seeds', slot: 'details.seed_regions' },
             { label: 'targets', slot: 'details.target_regions' },
             { label: 'second block', slot: 'details.second_block_assessments' },
@@ -493,7 +495,7 @@ export const CARD_TEMPLATES: Record<string, CardTemplate> = {
             { label: 'tasks', slot: 'tasks' },
             { label: 'assessments', slot: 'assessments' },
             { label: 'tables', slot: 'tables' },
-            { label: 'mirror of', slot: 'mirror_of' },
+            { label: 'mirror of', slot: 'mirror_of', verb: 'mirrors' },
         ],
     },
 };

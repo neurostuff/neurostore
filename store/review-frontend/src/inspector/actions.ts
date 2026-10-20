@@ -3,7 +3,7 @@ import { classWords, counted, listed, withArticle } from '../model/labels';
 import { entityPath, getIn, ROOT_ENTITY, writePath, type Json } from '../model/paths';
 import type { EntityNode, RecordIndex, SlotNode } from '../model/record';
 import { statusOf } from './status';
-import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget } from '../model/targetKey';
+import { entityKey, relationshipKey, relationshipTarget, slotKey, slotTarget, targetKey } from '../model/targetKey';
 import { auditCards, cardLinks, isLinkStep, linkTarget, type AuditCard } from '../model/guided';
 import { selectShown } from '../store/viewSelectors';
 import { randomUUID } from '../model/uuid';
@@ -37,9 +37,10 @@ type NewOp = DistributiveOmit<Op, 'client_op_id'>;
 const send = ({ session }: ReviewStores, op: NewOp) =>
     session.getState().emit({ client_op_id: randomUUID(), ...op } as Op);
 
-/** The reference slot and target of a link's focus key on `entity`. */
-function linkAt(index: RecordIndex, entity: string, key: string) {
-    for (const slot of index.entity(entity)?.slots ?? []) {
+/** The reference slot and target of a link's focus key on `entity`, or held in the slot `holding`. */
+function linkAt(index: RecordIndex, entity: string, key: string, holding?: string) {
+    const held = holding === undefined ? undefined : index.slot(holding);
+    for (const slot of [...(held ? [held] : []), ...(index.entity(entity)?.slots ?? [])]) {
         if (slot.kind !== 'reference') continue;
         const target = slot.references.find((id) => relationshipKey(slot.entity, slot.path, id) === key);
         if (target !== undefined) return { slot, target };
@@ -47,12 +48,18 @@ function linkAt(index: RecordIndex, entity: string, key: string) {
     return undefined;
 }
 
-/** The op target of a focus key on the entity `focused`. */
-export function targetOf(index: RecordIndex, focused: string, key: string): AnyTarget | undefined {
+/**
+ * The op target of a focus; a link's key resolves in the focus's slot, where the link is focused from the card of the
+ * entity it points at, or on the focused entity.
+ */
+export function targetOf(
+    index: RecordIndex,
+    { entity, key, slot: holding }: Pick<Focus, 'entity' | 'key' | 'slot'>
+): AnyTarget | undefined {
     const slot = index.slot(key);
     if (slot) return slotTarget(slot.entity, slot.path);
-    if (key === entityKey(focused)) return { kind: 'entity', entity: focused };
-    const link = linkAt(index, focused, key);
+    if (key === entityKey(entity)) return { kind: 'entity', entity };
+    const link = linkAt(index, entity, key, holding);
     return link && relationshipTarget(link.slot.entity, link.slot.path, link.target);
 }
 
@@ -92,7 +99,7 @@ export const acceptTarget = (stores: ReviewStores, target: AnyTarget) => judge(s
 /** Accepts the slot, entity or link of the focus key `key` on the focused entity, the focused one by default. */
 export function accept(stores: ReviewStores, key?: string) {
     const { focus } = stores.view.getState();
-    const target = targetOf(stores.session.getState().index, focus.entity, key ?? focus.key);
+    const target = targetOf(stores.session.getState().index, { ...focus, key: key ?? focus.key });
     return target ? acceptTarget(stores, target) : false;
 }
 
@@ -169,21 +176,28 @@ export function linkProgress(s: Pick<SessionState, 'provenance'>, card: AuditCar
     return { done: total - unjudgedLinks(s, card).length, total };
 }
 
-/** Accepts a step 5 card's unjudged links as one batch; how many, or undefined where there were none. */
-export function acceptLinks(stores: ReviewStores, card: AuditCard): AcceptedCard | undefined {
+/** Accepts those of `targets` no one has judged yet as one batch; how many, or 0 where it sent none. */
+export function acceptUnjudged(stores: ReviewStores, targets: AnyTarget[]): number {
     const session = stores.session.getState();
-    const targets = unjudgedLinks(session, card).map(linkTarget);
-    if (targets.length === 0 || !session.emitBatch(acceptOps(targets))) return undefined;
-    const accepted = {
-        card: card.analysis.id,
-        entity: false,
-        fields: 0,
-        links: targets.length,
-        withoutEvidenceLeft: 0,
-    };
+    const unjudged = targets.filter((target) => !session.provenance[targetKey(target)]);
+    return unjudged.length > 0 && session.emitBatch(acceptOps(unjudged)) ? unjudged.length : 0;
+}
+
+/**
+ * Accepts the unjudged links of `links` as one batch, showing it on the card of `card`; what it accepted, or
+ * undefined where there were none.
+ */
+export function acceptLinksOf(stores: ReviewStores, card: string, links: AnyTarget[]): AcceptedCard | undefined {
+    const count = acceptUnjudged(stores, links);
+    if (count === 0) return undefined;
+    const accepted = { card, entity: false, fields: 0, links: count, withoutEvidenceLeft: 0 };
     stores.view.getState().showAccepted(accepted);
     return accepted;
 }
+
+/** Accepts a step 5 card's unjudged links as one batch; how many, or undefined where there were none. */
+export const acceptLinks = (stores: ReviewStores, card: AuditCard) =>
+    acceptLinksOf(stores, card.analysis.id, cardLinks(card).map(linkTarget));
 
 /** The step 5 card of the analysis `analysis`, as the view lists the cards. */
 export function cardOf(stores: ReviewStores, analysis: string) {
@@ -371,7 +385,7 @@ export function panelFor(s: Documents, focus: Focus, kind: PanelKind): Panel | u
         }
         case 'reject':
         case 'note': {
-            const target = targetOf(s.index, focus.entity, focus.key);
+            const target = targetOf(s.index, focus);
             return target ? { kind, target, slot: slot?.key } : undefined;
         }
         case 'link':

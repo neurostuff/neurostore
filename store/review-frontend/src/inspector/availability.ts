@@ -21,7 +21,7 @@ const onValue: Reason = (session, view) => {
 
 /** Why each record action does not apply to the focus, by action; the card head and the field's actions read it. */
 export const RECORD_UNAVAILABLE = {
-    judge: (session, view) => (targetOf(session.index, view.focus.entity, view.focus.key) ? undefined : NOTHING),
+    judge: (session, view) => (targetOf(session.index, view.focus) ? undefined : NOTHING),
     edit: onValue,
     notReported: onValue,
     link: (session, view) =>

@@ -88,9 +88,18 @@ function itemSlots(entity: EntityNode | undefined): ItemSlots {
     return found;
 }
 
-/** The name an item has of its own or from the entities it refers to through a slot other than `labelled`, if any. */
-function namedBy(index: RecordIndex, entity: string, at: string, labelled: string): string | undefined {
-    const own = nameIn((name) => index.slot(slotKey(entity, `${at}.${name}`))?.value?.value);
+/**
+ * The name an item of the list `list` has: of its own (a name slot, else the slot named for one of the list's items, a
+ * level's `level`, else its `level`, a cell's), else from the entities it refers to through a slot other than
+ * `labelled`, if any.
+ */
+function namedBy(index: RecordIndex, entity: string, at: string, labelled: string, list: string): string | undefined {
+    const value = (name: string) => index.slot(slotKey(entity, `${at}.${name}`))?.value?.value;
+    const text = (name: string) => {
+        const said = value(name);
+        return typeof said === 'string' && said ? said : undefined;
+    };
+    const own = nameIn(value) ?? text(singular(list)) ?? text('level');
     if (own) return own;
     const referenced = itemSlots(index.entity(entity))
         .references.get(at)
@@ -98,25 +107,57 @@ function namedBy(index: RecordIndex, entity: string, at: string, labelled: strin
     return referenced?.references.map((id) => index.entity(id)?.name ?? id).join(', ');
 }
 
+/** The last list item a slot's path goes through, as `slotItem` gives it. */
+export interface SlotItem {
+    /** The item's path: `levels[#1]`. */
+    at: string;
+    /** The list's name in the path: `levels`; `items` where the list is not named. */
+    list: string;
+    /** The item's place in its list, from 0. */
+    place: number;
+    /** The item's name, as `namedBy` gives it. */
+    name?: string;
+    /** The names in the path before the list: `effect` of `effect.cells[#0].term`. */
+    owners: string[];
+    /** The names in the path after the item: `groups` of `levels[#1].groups`. */
+    leaf: string[];
+}
+
+const names = (steps: Step[]) => steps.filter((step): step is string => typeof step === 'string');
+
+/** The last list item the path of `slot` goes through, if any. */
+export function slotItem(index: RecordIndex, slot: { entity: string; path: string }): SlotItem | undefined {
+    const steps = parsePath(slot.path);
+    const last = steps.findLastIndex((step) => typeof step === 'number');
+    if (last === -1) return undefined;
+    const named = steps[last - 1];
+    const list = typeof named === 'string' ? named : 'items';
+    const at = pathOf(steps.slice(0, last + 1));
+    return {
+        at,
+        list,
+        place: steps[last] as number,
+        name: namedBy(index, slot.entity, at, slot.path, list),
+        owners: names(steps.slice(0, Math.max(last - 1, 0))),
+        leaf: names(steps.slice(last + 1)),
+    };
+}
+
 /**
- * A list item's name: its own label or name, else the entities it refers to through a slot other than `labelled`,
- * with its place in its list where another item of the list has the same name, else its list and place in it.
+ * A list item's name: its name as `namedBy` gives it, with its place in its list where another item of the list has
+ * the same name, else its list and place in it.
  */
-function itemName(index: RecordIndex, entity: string, item: Step[], labelled: string): string {
-    const at = pathOf(item);
-    const list = item.at(-2);
-    const place = item.at(-1) as number;
-    const kind = inWords(singular(typeof list === 'string' ? list : 'item'));
-    const name = namedBy(index, entity, at, labelled);
-    if (!name) return `${humanize(kind)} ${place + 1}`;
-    const listPath = pathOf(item.slice(0, -1));
-    const tail = labelled.slice(at.length);
+function itemName(index: RecordIndex, entity: string, item: SlotItem, labelled: string): string {
+    const kind = inWords(singular(item.list));
+    if (!item.name) return `${humanize(kind)} ${item.place + 1}`;
+    const listPath = item.at.slice(0, item.at.lastIndexOf('['));
+    const tail = labelled.slice(item.at.length);
     const shared = (itemSlots(index.entity(entity)).lists.get(listPath) ?? []).some(
         (other) =>
-            other !== place &&
-            namedBy(index, entity, `${listPath}[#${other}]`, `${listPath}[#${other}]${tail}`) === name
+            other !== item.place &&
+            namedBy(index, entity, `${listPath}[#${other}]`, `${listPath}[#${other}]${tail}`, item.list) === item.name
     );
-    return shared ? `${name} · ${kind} ${place + 1}` : name;
+    return shared ? `${item.name} · ${kind} ${item.place + 1}` : item.name;
 }
 
 const labelsOf = new WeakMap<RecordIndex, Map<string, string>>();
@@ -131,16 +172,11 @@ export function labelOf(index: RecordIndex, slot: { key: string; entity: string;
 }
 
 export function slotLabel(index: RecordIndex, slot: { entity: string; path: string }): string {
-    const steps = parsePath(slot.path);
-    const lastItem = steps.findLastIndex((step) => typeof step === 'number');
-    if (lastItem !== -1) {
-        const rest = steps.slice(lastItem + 1).filter((step): step is string => typeof step === 'string');
-        const item = itemName(index, slot.entity, steps.slice(0, lastItem + 1), slot.path);
-        return `${item}: ${rest.map(inWords).join(' ')}`;
-    }
-    const names = steps as string[];
-    const leaf = names.at(-1) ?? slot.path;
-    return names.length > 1 ? `${humanize(names.at(-2)!)}: ${inWords(leaf)}` : humanize(leaf);
+    const item = slotItem(index, slot);
+    if (item) return `${itemName(index, slot.entity, item, slot.path)}: ${item.leaf.map(inWords).join(' ')}`;
+    const steps = names(parsePath(slot.path));
+    const leaf = steps.at(-1) ?? slot.path;
+    return steps.length > 1 ? `${humanize(steps.at(-2)!)}: ${inWords(leaf)}` : humanize(leaf);
 }
 
 /** The slot as the reviewer reads it beside other entities' slots: its entity's name, then its own label. */
