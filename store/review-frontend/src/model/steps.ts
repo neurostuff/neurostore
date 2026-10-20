@@ -7,7 +7,7 @@ export const STEPS = [
     {
         id: 'analyses',
         label: 'Analyses',
-        hint: 'Check each analysis the record reports, then accept it from its head (Shift+A), with its fields that have evidence.',
+        hint: 'Check each analysis the record reports: first what is compared (j and k move through its signs, + greater and − less), then its other fields; accept it from its head (Shift+A), with its fields that have evidence.',
     },
     {
         id: 'entities',

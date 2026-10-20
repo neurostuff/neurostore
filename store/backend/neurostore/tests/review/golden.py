@@ -66,7 +66,9 @@ DIFF_OPS = [
 
 
 def build_bundle():
-    return _build("golden-1", "golden-base-1", "Golden synthetic paper", REVIEW_OPS)
+    return _build(
+        "golden-1", "golden-base-1", "Golden synthetic paper", REVIEW_OPS, records.golden_bundle()
+    )
 
 
 def build_diff():
@@ -84,8 +86,11 @@ def build_diff():
     return document, judged["verdicts"]
 
 
-def _build(source_id, base_study_id, label, review_ops):
-    base = ReviewState(record=records.golden(), coordinate_parse=records.coordinate_parse())
+def _build(source_id, base_study_id, label, review_ops, record=None):
+    base = ReviewState(
+        record=record if record is not None else records.golden(),
+        coordinate_parse=records.coordinate_parse(),
+    )
     state, stored = apply_batch(
         base, {"ops": review_ops}, text=records.TEXT, user_id=USER, at=AT,
         stable_ids=records.Minter(source_id).stable_ids(),

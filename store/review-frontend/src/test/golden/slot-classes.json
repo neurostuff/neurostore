@@ -93,6 +93,144 @@
               "status": "not_found"
             }
           }
+        },
+        {
+          "local_id": "an_3",
+          "name": {
+            "value": "group by condition",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "definition": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "prespecification": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "spatial_scope": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "measure": "x",
+          "groups": [],
+          "effect": {
+            "cells": [
+              {
+                "term": "trm_2",
+                "level": {
+                  "value": "patients",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "positive",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_2",
+                "level": {
+                  "value": "controls",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "negative",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_3",
+                "level": {
+                  "value": "incongruent",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "positive",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_3",
+                "level": {
+                  "value": "congruent",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "negative",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_4",
+                "level": {
+                  "value": "first",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "held",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              }
+            ],
+            "statistic": {
+              "family": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            "kind": {
+              "value": "interaction",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          "details": {
+            "details_type": "MassUnivariateDetails"
+          },
+          "model_estimation": "x"
         }
       ],
       "groups": [
@@ -262,6 +400,54 @@
                 "extraction_status": "not_reported",
                 "evidence": {
                   "status": "not_applicable"
+                }
+              },
+              "type": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            {
+              "local_id": "trm_2",
+              "name": {
+                "value": "group",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            {
+              "local_id": "trm_3",
+              "name": {
+                "value": "condition",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            {
+              "local_id": "trm_4",
+              "name": {
+                "value": "session",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
                 }
               },
               "type": {
@@ -514,6 +700,51 @@
         "class": "ExtractedTermType"
       },
       {
+        "entity": "trm_2",
+        "path": "",
+        "class": "ModelTerm"
+      },
+      {
+        "entity": "trm_2",
+        "path": "name",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "trm_2",
+        "path": "type",
+        "class": "ExtractedTermType"
+      },
+      {
+        "entity": "trm_3",
+        "path": "",
+        "class": "ModelTerm"
+      },
+      {
+        "entity": "trm_3",
+        "path": "name",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "trm_3",
+        "path": "type",
+        "class": "ExtractedTermType"
+      },
+      {
+        "entity": "trm_4",
+        "path": "",
+        "class": "ModelTerm"
+      },
+      {
+        "entity": "trm_4",
+        "path": "name",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "trm_4",
+        "path": "type",
+        "class": "ExtractedTermType"
+      },
+      {
         "entity": "msr_1",
         "path": "",
         "class": "Measure"
@@ -602,6 +833,131 @@
         "entity": "an_1",
         "path": "source_table_analysis",
         "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "",
+        "class": "Analysis"
+      },
+      {
+        "entity": "an_3",
+        "path": "name",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "definition",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "prespecification",
+        "class": "ExtractedPrespecification"
+      },
+      {
+        "entity": "an_3",
+        "path": "spatial_scope",
+        "class": "ExtractedSpatialScope"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect",
+        "class": "Effect"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=patients]",
+        "class": "Cell"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=patients].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=patients].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=controls]",
+        "class": "Cell"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=controls].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=controls].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=incongruent]",
+        "class": "Cell"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=incongruent].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=incongruent].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=congruent]",
+        "class": "Cell"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=congruent].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=congruent].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_4,level=first]",
+        "class": "Cell"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_4,level=first].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_4,level=first].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.statistic",
+        "class": "Statistic"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.statistic.family",
+        "class": "ExtractedStatisticFamily"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.kind",
+        "class": "ExtractedEffectKind"
+      },
+      {
+        "entity": "an_3",
+        "path": "details",
+        "class": "MassUnivariateDetails"
       },
       {
         "entity": "arm_1",
@@ -736,6 +1092,36 @@
         "class": "ExtractedTermType"
       },
       {
+        "entity": "trm_2",
+        "path": "name",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "trm_2",
+        "path": "type",
+        "class": "ExtractedTermType"
+      },
+      {
+        "entity": "trm_3",
+        "path": "name",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "trm_3",
+        "path": "type",
+        "class": "ExtractedTermType"
+      },
+      {
+        "entity": "trm_4",
+        "path": "name",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "trm_4",
+        "path": "type",
+        "class": "ExtractedTermType"
+      },
+      {
         "entity": "msr_1",
         "path": "family",
         "class": "ExtractedMeasureFamily"
@@ -789,6 +1175,86 @@
         "entity": "an_1",
         "path": "source_table_analysis",
         "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "name",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "definition",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "prespecification",
+        "class": "ExtractedPrespecification"
+      },
+      {
+        "entity": "an_3",
+        "path": "spatial_scope",
+        "class": "ExtractedSpatialScope"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=patients].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=patients].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=controls].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_2,level=controls].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=incongruent].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=incongruent].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=congruent].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_3,level=congruent].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_4,level=first].level",
+        "class": "ExtractedString"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.cells[term=trm_4,level=first].direction",
+        "class": "ExtractedDirection"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.statistic.family",
+        "class": "ExtractedStatisticFamily"
+      },
+      {
+        "entity": "an_3",
+        "path": "effect.kind",
+        "class": "ExtractedEffectKind"
       },
       {
         "entity": "arm_1",

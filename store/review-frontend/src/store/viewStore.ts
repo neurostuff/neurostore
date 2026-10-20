@@ -15,6 +15,7 @@ import { currentAnalyses, entitiesNaming, guidedOrder, hasPoints, type Coordinat
 import { randomUUID } from '../model/uuid';
 import { analysisItemFor, diffTarget, nextChange, resolveTarget, visibleItems } from '../model/diff';
 import { auditRows, isLinkStep, stepCards, type AuditLink } from '../model/guided';
+import { fieldOrder } from '../model/comparison';
 import type { Json } from '../model/paths';
 import type { RecordIndex, SpanPair } from '../model/record';
 import { STEPS, type StepId } from '../model/steps';
@@ -484,7 +485,9 @@ export function createViewStore(session: SessionStore) {
             moveSlot: (delta) => {
                 if (isLinkStep(get().step)) return moveLink(delta);
                 const { focus } = get();
-                const slots = shown().entity(focus.entity)?.slots ?? [];
+                const listed = shown();
+                const entity = listed.entity(focus.entity);
+                const slots = entity ? fieldOrder(listed, entity) : [];
                 const at = slots.findIndex((s) => s.key === focus.key);
                 const next = stepIn(slots.length, at, delta, delta > 0 ? 0 : slots.length - 1);
                 if (slots[next] && next !== at)

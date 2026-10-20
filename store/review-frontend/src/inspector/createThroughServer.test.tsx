@@ -14,6 +14,7 @@ vi.setConfig({ testTimeout: 30_000 });
 
 const golden: ReviewBundle = JSON.parse(readFileSync(path.resolve(__dirname, '../test/golden/bundle.json'), 'utf8'));
 const bundle: ReviewBundle = { ...golden, review: null, ops: [], reviewers: [] };
+const GOLDEN_ANALYSES = golden.entities.filter((e) => e.entity_class === 'Analysis').map((e) => e.local_id);
 
 async function open() {
     const server = fakeServer([bundle], { createdProblems: problemsWithCreated });
@@ -29,7 +30,7 @@ describe('creating an entity through a server that validates it', () => {
         act(() => stores.view.getState().focusEntity('an_1'));
         fireEvent.click(screen.getByRole('button', { name: 'New analysis' }));
         await saved();
-        expect(analyses()).toHaveLength(2);
+        expect(analyses()).toHaveLength(GOLDEN_ANALYSES.length + 1);
         expect(screen.queryByText(/Couldn’t/)).not.toBeInTheDocument();
         client.stop();
     });
@@ -47,7 +48,7 @@ describe('creating an entity through a server that validates it', () => {
                 })
         );
         await saved();
-        expect(analyses()).toHaveLength(1);
+        expect(analyses()).toHaveLength(GOLDEN_ANALYSES.length);
         const notice = (await screen.findByText('Couldn’t add the analysis')).closest('ul')!;
         const lines = within(notice).getAllByRole('listitem');
         expect(lines).toHaveLength(1);
@@ -68,7 +69,7 @@ describe('creating an entity through a server that validates it', () => {
         act(() => stores.view.getState().focusEntity('an_1'));
         fireEvent.click(screen.getByRole('button', { name: 'New analysis' }));
         await saved();
-        const created = analyses().find((e) => e.local_id !== 'an_1')!.local_id;
+        const created = analyses().find((e) => !GOLDEN_ANALYSES.includes(e.local_id))!.local_id;
         expect(session().provenance[relationshipKey(created, 'measure', 'msr_1')]).toBeUndefined();
         expect(session().provenance[relationshipKey(created, 'model_estimation', 'mdl_1')]).toBeUndefined();
         const after = selectStepProgress(session(), 'relationships');

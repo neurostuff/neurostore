@@ -269,6 +269,144 @@
             "status": "not_found"
           }
         }
+      },
+      {
+        "local_id": "an_3",
+        "name": {
+          "value": "group by condition",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "definition": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "prespecification": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "spatial_scope": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "measure": "x",
+        "groups": [],
+        "effect": {
+          "cells": [
+            {
+              "term": "trm_2",
+              "level": {
+                "value": "patients",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "positive",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            },
+            {
+              "term": "trm_2",
+              "level": {
+                "value": "controls",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "negative",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            },
+            {
+              "term": "trm_3",
+              "level": {
+                "value": "incongruent",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "positive",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            },
+            {
+              "term": "trm_3",
+              "level": {
+                "value": "congruent",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "negative",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            },
+            {
+              "term": "trm_4",
+              "level": {
+                "value": "first",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "held",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            }
+          ],
+          "statistic": {
+            "family": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            }
+          },
+          "kind": {
+            "value": "interaction",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          }
+        },
+        "details": {
+          "details_type": "MassUnivariateDetails"
+        },
+        "model_estimation": "x"
       }
     ],
     "groups": [
@@ -438,6 +576,54 @@
               "extraction_status": "not_reported",
               "evidence": {
                 "status": "not_applicable"
+              }
+            },
+            "type": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            }
+          },
+          {
+            "local_id": "trm_2",
+            "name": {
+              "value": "group",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "type": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            }
+          },
+          {
+            "local_id": "trm_3",
+            "name": {
+              "value": "condition",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "type": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            }
+          },
+          {
+            "local_id": "trm_4",
+            "name": {
+              "value": "session",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
               }
             },
             "type": {
@@ -702,6 +888,27 @@
       "list_path": "terms"
     },
     {
+      "local_id": "trm_2",
+      "entity_class": "ModelTerm",
+      "schema_class": "ModelTerm",
+      "parent": "mdl_1",
+      "list_path": "terms"
+    },
+    {
+      "local_id": "trm_3",
+      "entity_class": "ModelTerm",
+      "schema_class": "ModelTerm",
+      "parent": "mdl_1",
+      "list_path": "terms"
+    },
+    {
+      "local_id": "trm_4",
+      "entity_class": "ModelTerm",
+      "schema_class": "ModelTerm",
+      "parent": "mdl_1",
+      "list_path": "terms"
+    },
+    {
       "local_id": "msr_1",
       "entity_class": "Measure",
       "schema_class": "Measure",
@@ -710,6 +917,13 @@
     },
     {
       "local_id": "an_1",
+      "entity_class": "Analysis",
+      "schema_class": "Analysis",
+      "parent": "study",
+      "list_path": "analyses"
+    },
+    {
+      "local_id": "an_3",
       "entity_class": "Analysis",
       "schema_class": "Analysis",
       "parent": "study",
@@ -731,7 +945,9 @@
     }
   ],
   "hidden": {
-    "analyses": [],
+    "analyses": [
+      "an_3"
+    ],
     "entities": []
   },
   "original": {
@@ -828,6 +1044,144 @@
               "status": "not_found"
             }
           }
+        },
+        {
+          "local_id": "an_3",
+          "name": {
+            "value": "group by condition",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "definition": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "prespecification": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "spatial_scope": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "measure": "x",
+          "groups": [],
+          "effect": {
+            "cells": [
+              {
+                "term": "trm_2",
+                "level": {
+                  "value": "patients",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "positive",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_2",
+                "level": {
+                  "value": "controls",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "negative",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_3",
+                "level": {
+                  "value": "incongruent",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "positive",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_3",
+                "level": {
+                  "value": "congruent",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "negative",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_4",
+                "level": {
+                  "value": "first",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "held",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              }
+            ],
+            "statistic": {
+              "family": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            "kind": {
+              "value": "interaction",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          "details": {
+            "details_type": "MassUnivariateDetails"
+          },
+          "model_estimation": "x"
         }
       ],
       "groups": [
@@ -1005,6 +1359,54 @@
                   "status": "not_applicable"
                 }
               }
+            },
+            {
+              "local_id": "trm_2",
+              "name": {
+                "value": "group",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            {
+              "local_id": "trm_3",
+              "name": {
+                "value": "condition",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            {
+              "local_id": "trm_4",
+              "name": {
+                "value": "session",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
             }
           ]
         }
@@ -1164,6 +1566,27 @@
         "list_path": "terms"
       },
       {
+        "local_id": "trm_2",
+        "entity_class": "ModelTerm",
+        "schema_class": "ModelTerm",
+        "parent": "mdl_1",
+        "list_path": "terms"
+      },
+      {
+        "local_id": "trm_3",
+        "entity_class": "ModelTerm",
+        "schema_class": "ModelTerm",
+        "parent": "mdl_1",
+        "list_path": "terms"
+      },
+      {
+        "local_id": "trm_4",
+        "entity_class": "ModelTerm",
+        "schema_class": "ModelTerm",
+        "parent": "mdl_1",
+        "list_path": "terms"
+      },
+      {
         "local_id": "msr_1",
         "entity_class": "Measure",
         "schema_class": "Measure",
@@ -1172,6 +1595,13 @@
       },
       {
         "local_id": "an_1",
+        "entity_class": "Analysis",
+        "schema_class": "Analysis",
+        "parent": "study",
+        "list_path": "analyses"
+      },
+      {
+        "local_id": "an_3",
         "entity_class": "Analysis",
         "schema_class": "Analysis",
         "parent": "study",
@@ -1193,7 +1623,9 @@
       }
     ],
     "hidden": {
-      "analyses": [],
+      "analyses": [
+        "an_3"
+      ],
       "entities": []
     }
   },

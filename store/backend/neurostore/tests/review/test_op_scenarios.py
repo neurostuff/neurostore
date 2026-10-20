@@ -463,8 +463,8 @@ SCENARIOS = {
 
 
 #: Scenarios played on records.linked_analyses(), where an_1 and an_2 read the parse's first
-#: two analyses; the paged list plays on records.golden(), the record of the front end's test
-#: server; the others play on records.hidden_reach().
+#: two analyses; the paged list plays on records.golden_bundle(), the record of the front
+#: end's test server; the others play on records.hidden_reach().
 COORDINATE_RECORD = {name for name in SCENARIOS if name.startswith("coordinate")} | {
     "the bundle of the linked-analyses record"
 }
@@ -496,11 +496,11 @@ async def _play(clients, session, steps, name=None):
         # The undo re-creates the merged-away assessment with the stable_id an import gave it.
         record = records.stamped(records.merge_assessments())
     elif name in ("sources, paged", UNDO_ROUND, UNDO_ROUND_BARE):
-        record = records.golden()
+        record = records.golden_bundle()
     else:
         record = records.hidden_reach()
     source = add_source(session, record=record)
-    other = add_source(session, label="Another paper")
+    other = add_source(session, label="Another paper", record=records.golden_bundle())
     ids = {
         source.id: "<source_id>",
         source.fulltext.base_study_id: "<base_study_id>",

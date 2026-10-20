@@ -3,32 +3,24 @@ import type { Theme } from '@mui/material/styles';
 import { memo, type ReactNode, useMemo } from 'react';
 import type { EntityNode, SlotNode } from '../model/record';
 import { entityKey } from '../model/targetKey';
-import { CardActions, FieldActions } from '../review/actionButtons';
+import { CardActions } from '../review/actionButtons';
 import { openPanelOn } from './openPanel';
 import { useEditorName } from '../review/editor';
 import { useIsEditable, useReviewStores, useSession, useView } from '../store/context';
 import type { Panel } from '../store/viewStore';
-import { saveSlotValue } from '../coordinates/actions';
 import { CoordinatesOf } from '../coordinates/RecordLinks';
-import { acceptedText, pendingLinks, pendingStructure, slotSchema, unlink } from './actions';
-import {
-    AcceptCardDialog,
-    CreateDialog,
-    DeleteDialog,
-    LinkPanel,
-    MoveEvidencePanel,
-    NotePanel,
-    RejectPanel,
-} from './panels';
+import { acceptedText, pendingLinks, pendingStructure, unlink } from './actions';
+import { AcceptCardDialog, CreateDialog, DeleteDialog, NotePanel, RejectPanel } from './panels';
 import { RemoveIcon } from './RemoveIcon';
-import { extractionSchema } from '../model/schema';
-import { SlotEditor } from './SlotEditor';
+import { SlotBody, SlotHead } from './SlotParts';
+import { ComparisonSection } from './Comparison';
+import { comparesTerms, otherFields } from '../model/comparison';
 import { CardHead } from './CardHead';
 import { ValueView } from './ValueView';
 import { AnalysedN } from './AnalysedN';
 import { selectNotes } from '../review/outline';
 import { NoteMark } from './NoteMark';
-import { reviewStatus, statusColors, statusOf } from './status';
+import { reviewStatus, statusColors } from './status';
 import { classWords, labelOf } from '../model/labels';
 import { StatusLabel, StatusLegend } from './StatusLabel';
 import { slotStyles } from './slotStyles';
@@ -78,57 +70,6 @@ function ReferenceChips({ slot }: { slot: SlotNode }) {
     );
 }
 
-function SlotPanel({
-    panel,
-    slot,
-    label,
-    panelLabel,
-}: {
-    panel: Panel;
-    slot: SlotNode;
-    label: string;
-    panelLabel: string;
-}) {
-    const stores = useReviewStores();
-    const closePanel = useView((s) => s.closePanel);
-    const bundle = useSession((s) => s.bundle);
-    const record = useSession((s) => s.record);
-    const schema = useMemo(() => slotSchema({ bundle, record }, slot), [bundle, record, slot]);
-    switch (panel.kind) {
-        case 'edit':
-        case 'not_reported':
-            if (!schema)
-                return (
-                    <Typography variant="body2" color="error">
-                        no schema for this slot
-                    </Typography>
-                );
-            return (
-                <SlotEditor
-                    label={label}
-                    schema={schema}
-                    root={extractionSchema()}
-                    value={slot.value}
-                    mode={panel.kind}
-                    onSave={(value) => {
-                        if (saveSlotValue(stores, slot, value)) closePanel();
-                    }}
-                    onCancel={closePanel}
-                />
-            );
-        case 'reject':
-            return <RejectPanel target={panel.target} label={panelLabel} />;
-        case 'note':
-            return <NotePanel target={panel.target} label={panelLabel} />;
-        case 'link':
-            return <LinkPanel slot={slot} label={`link ${label} to`} />;
-        case 'move_evidence':
-            return panel.span ? <MoveEvidencePanel slot={slot} span={panel.span} /> : null;
-        default:
-            return null;
-    }
-}
-
 const SlotRow = memo(function SlotRow({
     slot,
     focused,
@@ -140,15 +81,7 @@ const SlotRow = memo(function SlotRow({
 }) {
     const stores = useReviewStores();
     const focusSlot = useView((s) => s.focusSlot);
-    const reviewed = useSession((s) => s.provenance[slot.key]?.state);
-    const slotEditor = useEditorName(slot.key);
     const label = useSession((s) => labelOf(s.index, slot));
-    const panelLabel = useSession((s) => {
-        const target = panel?.target;
-        if (target?.kind !== 'relationship') return label;
-        return `${label} → ${s.index.entity(target.target_entity)?.name ?? target.target_entity}`;
-    });
-    const notes = useSession((s) => selectNotes(s).get(slot.key)?.join('\n'));
     const ref = useScrollIntoViewWhen<HTMLLIElement>(focused);
     const editing = panel?.kind === 'edit' || panel?.kind === 'not_reported';
 
@@ -167,14 +100,7 @@ const SlotRow = memo(function SlotRow({
                 openPanelOn(stores, slot.kind === 'reference' ? 'link' : 'edit');
             }}
         >
-            <div className="rv-slot-head">
-                <span className="rv-slot-label" title={slot.path}>
-                    {label}
-                </span>
-                <StatusLabel id={statusOf(slot)} />
-                {reviewed && <StatusLabel id={reviewStatus(reviewed)} by={slotEditor} />}
-                {notes && <NoteMark notes={notes} />}
-            </div>
+            <SlotHead slot={slot} label={label} />
             {!editing &&
                 (slot.kind === 'reference' ? (
                     <ReferenceChips slot={slot} />
@@ -183,8 +109,7 @@ const SlotRow = memo(function SlotRow({
                         <ValueView slot={slot} />
                     </div>
                 ))}
-            {focused && !panel && <FieldActions label={label} />}
-            {panel && <SlotPanel panel={panel} slot={slot} label={label} panelLabel={panelLabel} />}
+            {(focused || panel) && <SlotBody slot={slot} label={label} panel={panel} />}
         </li>
     );
 });
@@ -229,6 +154,8 @@ export function EntityCard({
             ? entity.entityClass
             : `${entity.entityClass} · ${entity.schemaClass}`;
     const kind = classWords(entity.entityClass);
+    const compares = comparesTerms(entity);
+    const fields = otherFields(entity);
     const entityPanel =
         panel && !panel.slot && panel.target.kind === 'entity' && panel.target.entity === entity.id ? panel : null;
     return (
@@ -250,8 +177,14 @@ export function EntityCard({
                 {entityPanel?.kind === 'reject' && <RejectPanel target={entityPanel.target} label={entity.name} />}
                 {entityPanel?.kind === 'note' && <NotePanel target={entityPanel.target} label={entity.name} />}
             </CardHead>
+            {compares && <ComparisonSection entity={entity} />}
+            {compares && (
+                <Typography variant="overline" component="h3" color="text.secondary" sx={{ px: 2, pt: 1 }}>
+                    Other fields
+                </Typography>
+            )}
             <List dense disablePadding sx={slotStyles}>
-                {entity.slots.map((slot) => (
+                {fields.map((slot) => (
                     <SlotRow
                         key={slot.key}
                         slot={slot}

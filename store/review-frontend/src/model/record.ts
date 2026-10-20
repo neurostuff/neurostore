@@ -74,6 +74,12 @@ export const nameIn = (get: (slot: string) => unknown): string | undefined => {
 };
 const SKIPPED = new Set(['local_id', 'extraction_metadata']);
 
+/** The text a value slot holds, where it is extracted and a non-empty string. */
+export const extractedText = (slot: Pick<SlotNode, 'value'> | undefined): string | undefined => {
+    const value = slot?.value?.extraction_status === 'extracted' ? slot.value.value : undefined;
+    return typeof value === 'string' && value ? value : undefined;
+};
+
 export const isExtractedValue = (value: unknown): value is ExtractedValue =>
     isObject(value) && 'extraction_status' in value;
 const isEntity = (value: unknown): value is Json => isObject(value) && typeof value.local_id === 'string';

@@ -31,6 +31,18 @@ export function StatusLabel({ id, by }: { id: StatusId; by?: string }) {
     );
 }
 
+/** A status by its mark alone, its label on hover. */
+export function StatusMark({ id }: { id: StatusId }) {
+    const { label, shape } = STATUSES[id];
+    return (
+        <span className="rv-status" data-status={id} data-status-shape={shape} title={label}>
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                {SHAPES[shape]}
+            </svg>
+        </span>
+    );
+}
+
 /** The statuses a slot shows, as the legend lists them. */
 const SLOT_STATUSES: StatusId[] = [
     'present',

@@ -28,6 +28,8 @@ export interface SlotEditorProps {
     root?: Schema;
     value: ExtractedValue | undefined;
     mode: 'edit' | 'not_reported';
+    /** The words for a closed choice's values, where they are not the values as written. */
+    valueLabels?: Record<string, string>;
     onSave(value: SetValue): void;
     onCancel(): void;
 }
@@ -116,8 +118,15 @@ export function ScalarField({
     value,
     onChange,
     optional = false,
+    valueLabels,
     ...field
-}: FieldProps & { spec: Scalar; value: string; onChange(value: string): void; optional?: boolean }) {
+}: FieldProps & {
+    spec: Scalar;
+    value: string;
+    onChange(value: string): void;
+    optional?: boolean;
+    valueLabels?: Record<string, string>;
+}) {
     const { id, label, error, autoFocus } = field;
     if (spec.kind === 'boolean') return <SwitchField {...field} value={value} onChange={onChange} />;
     if (spec.kind === 'enum' && !spec.open) {
@@ -128,6 +137,7 @@ export function ScalarField({
                 label={label}
                 value={value}
                 options={value === '' || optional ? ['', ...options] : options}
+                labels={valueLabels}
                 error={error}
                 fullWidth
                 autoFocus={autoFocus}
@@ -226,7 +236,16 @@ function parsedList(item: Scalar, list: unknown[]): Parsed {
 }
 
 /** An editor for one slot's value wrapper, generated from its schema: the value, its status, reason and source. */
-export function SlotEditor({ label, schema, root = schema, value, mode, onSave, onCancel }: SlotEditorProps) {
+export function SlotEditor({
+    label,
+    schema,
+    root = schema,
+    value,
+    mode,
+    valueLabels,
+    onSave,
+    onCancel,
+}: SlotEditorProps) {
     const id = useId();
     const spec = useMemo(() => wrapperSpec(root, schema), [root, schema]);
     const editor = spec.value ?? inferredEditor(value?.value);
@@ -339,7 +358,13 @@ export function SlotEditor({ label, schema, root = schema, value, mode, onSave, 
                         onRemove={(i) => setList(list.filter((_, j) => j !== i))}
                     />
                 ) : (
-                    <ScalarField {...field} spec={editor} value={text} onChange={clearError(setText)} />
+                    <ScalarField
+                        {...field}
+                        spec={editor}
+                        value={text}
+                        valueLabels={valueLabels}
+                        onChange={clearError(setText)}
+                    />
                 ))}
             <Stack direction="row" spacing={1}>
                 <Button size="small" variant="contained" onClick={save}>

@@ -77,6 +77,10 @@ def test_the_record_has_the_shapes_the_front_end_tests_need():
         "extracted"
     )
     assert _slot(index["grp_b"].item, "age_mean").get("extraction_status") == "not_reported"
+    cells = index["an_3"].item["effect"]["cells"]
+    assert [cell["direction"]["value"] for cell in cells] == [
+        "positive", "negative", "positive", "negative", "held"
+    ]
     sets = _slot(index["grp_a"].item, "age_mean").get("evidence", {}).get("sets", [])
     assert [evidence_set.get("source") for evidence_set in sets] == ["model_quote"]
 

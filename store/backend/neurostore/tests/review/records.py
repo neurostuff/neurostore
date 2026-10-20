@@ -147,6 +147,30 @@ def golden():
     return record
 
 
+def golden_bundle():
+    """golden() plus an_3, an interaction of two terms with a third held, for the golden
+    bundle's multi-cell effect."""
+    record = golden()
+    record["model_estimations"][0]["terms"].extend(
+        item("ModelTerm", local_id, name=fx.extracted(name))
+        for local_id, name in (("trm_2", "group"), ("trm_3", "condition"), ("trm_4", "session"))
+    )
+    interaction = item("Analysis", "an_3", name=fx.extracted("group by condition"))
+    interaction["effect"]["kind"] = fx.extracted("interaction")
+    interaction["effect"]["cells"] = [
+        {"term": term, "level": fx.extracted(level), "direction": fx.extracted(direction)}
+        for term, level, direction in (
+            ("trm_2", "patients", "positive"),
+            ("trm_2", "controls", "negative"),
+            ("trm_3", "incongruent", "positive"),
+            ("trm_3", "congruent", "negative"),
+            ("trm_4", "first", "held"),
+        )
+    ]
+    record["analyses"].append(interaction)
+    return record
+
+
 def hidden_reach():
     """golden() plus a non-coordinate analysis that reaches reg_1, so reg_1 stays hidden until
     a link from the shown analysis an_1 reaches it."""

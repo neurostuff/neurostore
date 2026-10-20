@@ -8,6 +8,7 @@ import { registeredSpans } from '../test/highlights';
 import { renderWithStores } from '../test/render';
 import { focusedSpans } from '../test/stores';
 import { auditCards } from '../model/guided';
+import { comparisonOf, entriesOf, isCellSlot } from '../model/comparison';
 import { SHORTCUTS } from './shortcuts';
 import { ReviewScreen } from './ReviewScreen';
 import { buildPaletteIndex, searchPalette } from './search';
@@ -133,6 +134,50 @@ describe.skipIf(!hasFixture(HEAVY))(`focus performance on ${HEAVY}’s heaviest 
                 expect(registeredSpans('rv-focus', textRoot())).toEqual(slot.spans);
                 expect(median(timings), `${slot.key}, ${slot.spans.length} spans`).toBeLessThan(BUDGET_MS);
             }
+        },
+        RENDER_TIMEOUT_MS
+    );
+});
+
+describe.skipIf(!hasFixture(HEAVY))(`what each analysis of ${HEAVY} compares`, () => {
+    it(
+        `is worked out for every analysis within ${BUDGET_MS} ms`,
+        () => {
+            const { index } = open(HEAVY);
+            const analyses = index.visible.filter((e) => e.entityClass === 'Analysis');
+            const started = performance.now();
+            for (const analysis of analyses) comparisonOf(index, analysis);
+            expect(performance.now() - started).toBeLessThan(BUDGET_MS);
+        },
+        RENDER_TIMEOUT_MS
+    );
+
+    // Any focus on the Analyses step of this paper takes several hundred ms in jsdom with or without the
+    // comparison, so a sign is held to what a field of the same card takes.
+    it(
+        `focuses a sign of each of the ${RUNS} analyses with the most cells no slower than a field of the card`,
+        () => {
+            const { stores, index } = open(HEAVY);
+            act(() => stores.view.getState().setStep('analyses'));
+            const cells = (id: string) => index.entity(id)!.slots.filter(isCellSlot).length;
+            const analyses = index.visible
+                .filter((e) => e.entityClass === 'Analysis')
+                .sort((a, b) => cells(b.id) - cells(a.id))
+                .slice(0, RUNS);
+            const signs: number[] = [];
+            const fields: number[] = [];
+            for (const analysis of analyses) {
+                act(() => stores.view.getState().focusEntity(analysis.id));
+                const direction = entriesOf(comparisonOf(index, analysis).rows[0])[0].slots.direction;
+                const field = analysis.slots.find((slot) => !isCellSlot(slot))!.key;
+                fields.push(timed(() => stores.view.getState().focusSlot(field)));
+                signs.push(timed(() => stores.view.getState().focusSlot(direction)));
+                expect(document.querySelector(`button[data-slot-key="${direction}"]`)).toHaveAttribute(
+                    'aria-current',
+                    'true'
+                );
+            }
+            expect(median(signs), `signs ${signs}, fields ${fields}`).toBeLessThan(median(fields) * 1.5);
         },
         RENDER_TIMEOUT_MS
     );

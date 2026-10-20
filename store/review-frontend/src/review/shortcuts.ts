@@ -55,12 +55,12 @@ const diffAware = (normal: (s: ReviewStores) => void, delta: 1 | -1) => (s: Revi
 export const SHORTCUTS: Shortcut[] = [
     record({
         keys: ['j'],
-        label: 'next slot, or next link on the relationships step; next change while the diff is shown',
+        label: 'next slot (on an analysis, the comparison’s signs first), or next link on the relationships step; next change while the diff is shown',
         run: diffAware((s) => view(s).moveSlot(1), 1),
     }),
     record({
         keys: ['k'],
-        label: 'previous slot, or previous link on the relationships step; previous change while the diff is shown',
+        label: 'previous slot (on an analysis, back through the comparison’s signs), or previous link on the relationships step; previous change while the diff is shown',
         run: diffAware((s) => view(s).moveSlot(-1), -1),
     }),
     record({ keys: ['Shift+J'], label: 'next entity', run: (s) => view(s).moveEntity(1) }),
