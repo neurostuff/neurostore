@@ -47,52 +47,46 @@ def is_user_admin(user=_UNSET):
     if user is _UNSET:
         # No argument provided, get current user from context
         user = get_current_user()
+    return user_has_role(user, "admin")
 
+
+def user_has_role(user, name):
+    """Check if the user has the role called ``name``; False for no user."""
     if user is None:
         return False
+    return name in _user_role_names(user)
 
-    # Fast-path: memoized on request context or user instance
+
+def _user_role_names(user):
+    """Return the user's role names, memoized per user id on the request."""
+    user_identity = sa.inspect(user).identity
+    if not user_identity:
+        return frozenset()
+    user_id = user_identity[0]
+
     try:
-        cached = context.get("is_admin")
-        if cached is not None:
-            return cached
+        request_cache = context.setdefault("user_role_names", {})
     except Exception:
-        cached = None
-
-    cached = getattr(user, "_is_admin", None)
-    if cached is not None:
-        return cached
+        request_cache = {}
+    if user_id in request_cache:
+        return request_cache[user_id]
 
     # Load roles eagerly to avoid lazy loading when raise_on_sql is enabled.
     from sqlalchemy.orm import selectinload
-
-    user_identity = sa.inspect(user).identity
-    if not user_identity:
-        return False
 
     with db.session.no_autoflush:
         user_with_roles = db.session.scalar(
             sa.select(models.User)
             .options(selectinload(models.User.roles))
-            .where(models.User.id == user_identity[0])
+            .where(models.User.id == user_id)
         )
 
-    if user_with_roles is None:
-        is_admin = False
-    else:
-        is_admin = any(role.name == "admin" for role in user_with_roles.roles)
+    role_names = frozenset(
+        role.name for role in (user_with_roles.roles if user_with_roles else ())
+    )
 
-    # Memoize for the remainder of the request and on the user instance
-    try:
-        context["is_admin"] = is_admin
-    except Exception:
-        pass
-    try:
-        setattr(user, "_is_admin", is_admin)
-    except Exception:
-        pass
-
-    return is_admin
+    request_cache[user_id] = role_names
+    return role_names
 
 
 def view_maker(cls):

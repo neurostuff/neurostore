@@ -29,6 +29,13 @@ from neurostore.models.data import (
     StudysetStudy,
     Table,
 )
+from neurostore.models.fulltext import Fulltext
+from neurostore.models.review import (
+    Review,
+    ReviewAssignment,
+    ReviewOp,
+    ReviewSource,
+)
 
 __all__ = [
     "Studyset",
@@ -61,4 +68,9 @@ __all__ = [
     "FieldClaim",
     "FieldClaimRun",
     "FieldClaimEvidence",
+    "Fulltext",
+    "ReviewSource",
+    "Review",
+    "ReviewOp",
+    "ReviewAssignment",
 ]

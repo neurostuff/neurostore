@@ -20,6 +20,7 @@ dependencies = [
     "uvicorn-worker~=0.4",
     "ipython~=9.17",
     "itsdangerous~=2.2",
+    "jsonschema~=4.26",
     "marshmallow~=4.3",
     "numpy<3.0.0",
     "pandas~=3.0",
@@ -44,7 +45,7 @@ dependencies = [
     "sentry-sdk~=2.72",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read, pinned to study_schema main.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@2cc7bec2a2c67c4ac7feb4e74a04f4e013e9329a",
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@7c0425a35c6ae1c3f7754cd97a4d8e2f35ec5530",
 ]
 
 [tool.setuptools.packages.find]
@@ -59,6 +60,8 @@ dev = [
     "pytest~=9.1",
     "vcrpy~=8.3",
     "pytest-recording~=0.14.0",
+    # study_schema.layouts (check_revision) imports pyarty.
+    "pyarty @ git+https://github.com/jdkent/pyarty.git@d63f77274856500ccd7da125bdc5543adadeb77e",
 ]
 
 [project.scripts]

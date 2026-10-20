@@ -26,7 +26,7 @@ Claims (field_claims) hang off StudyEntity rows identified by ``entity_hash``
 (``study_entity_hash``); for an analysis or coordinate set the hash covers its content key,
 once a stored parse holds that key. An analysis a new version extracts unchanged keeps its
 key and its claims untouched; one it drops keeps its claims on its history analysis
-(``orphaned_claims``). A revision's split and merge verdicts copy the claims, evidence and
+(``orphaned_claims``). A revision's replacing verdicts copy the claims, evidence and
 runs on the old entity to each replacement, each copy naming its origin in ``carried_from``.
 Record keys that are positional rather than content keys, or that no stored parse holds,
 are set aside (the record summary's ``parked`` and ``claims.parked_entities``), never made
@@ -39,14 +39,15 @@ run_id, same documents) returns the same results and adds none; the same run_id 
 different document for the paper is refused (RUN_ID_REUSED).
 
 Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
-refused (NOT_CURRENT). A record that read an older parse reports the keys that resolve to
+refused (NOT_CURRENT), and so is a revision of a parse that is not current, unless the
+current parse descends from the one it revises and the revision's header inputs name the
+current parse as one it read (a review of a pipeline's revision, exported as a revision of
+the original). A record that read an older parse reports the keys that resolve to
 history as ``superseded`` (a FAILURE row), and its claims are carried through the revisions
 since. The sign of a contrast lives on its condition weights: the inverse half of a sign
 split gets its original half's conditions, negated.
 """
 
-import hashlib
-import json
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -54,12 +55,11 @@ from datetime import datetime, timezone
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
-from jsonschema import validators
-from study_schema import keys as parse_keys
 from study_schema.jsonschema import load as load_json_schema
-from study_schema.models.paper_parse import CorrectionKind, ParsedAnalysis
+from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
+from neurostore.base_studies import VERSION_OF_RECORD_IDS, find_base_study
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore.exceptions.factories import create_unprocessable_error, make_field_error
@@ -68,13 +68,15 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_unprocessable,
     abort_validation,
 )
+from neurostore.exceptions.utils.errors import ErrorDetail
 from neurostore.ingest.study_entities import (
-    CHILD_LISTS,
     CONTENT_KEYED_CLASSES,
+    stable_id_problems,
     sync_record_entities,
 )
 from neurostore.models.data import (
     HISTORY_SOURCE,
+    PARSE_PIPELINE,
     PIPELINE_STUDY_SOURCES,
     RECORD_SCHEMA_NAME,
     STUDY_SOURCE,
@@ -100,8 +102,21 @@ from neurostore.models import (
     Table,
 )
 from neurostore.services.has_media_flags import recompute_media_flags
+from neurostore.stored_parses import stored_parse, stored_parse_result
+from neurostore.study_schema_tools import (
+    CHILD_LISTS,
+    DECLARED_KEYS,
+    canonical,
+    class_of,
+    expected_key,
+    extracted_value,
+    is_extracted,
+    refs,
+    schema_errors,
+    sha256_of,
+    version_mismatch,
+)
 
-PARSE_PIPELINE = "coordinate-parse"
 DEFAULT_RECORD_PIPELINE = "pondie"
 
 # Every analysis of a parse is stored whatever its role (result, anchor, localization,
@@ -116,16 +131,11 @@ OUTCOME_WITHHELD_REASON = (
     "as a claim and applied if the set's role becomes result"
 )
 
-# The storage schema's unique_key_slots: the only nested lists a claim path may index.
-DECLARED_KEYS = {
-    "Cell": ("term", "level"),
-    "AnalysisGroup": ("group",),
-    "ModelTerm": ("name",),
-    "FactorLevel": ("level",),
-}
-
 # Analysis fields the skeleton keeps as columns or points rather than in metadata.
 _ANALYSIS_COLUMNS = {"key", "name", "description", "points", "role", "from_prior_study"}
+
+# The verdicts that name, in replaced_by, the keys an analysis became.
+REPLACING = ("split", "merge", "edit")
 
 SUPERSEDED_REASON = (
     "the record read an older parse; a revision since replaced this key, and its claims "
@@ -203,6 +213,8 @@ def ingest_upload(body, user=None):
         sa.select(BaseStudy.id).where(BaseStudy.id == base_study.id).with_for_update()
     )
     _check_entity_hashes(base_study)
+    if record is not None:
+        _check_stable_ids(base_study, record)
     _set_retraction(base_study, parsed_paper)
 
     summary = {
@@ -288,19 +300,30 @@ def _check_entity_hashes(base_study):
         )
 
 
+def _check_stable_ids(base_study, record):
+    """Refuse a record whose stable_ids repeat or name an entity of another paper or class."""
+    problems = stable_id_problems(base_study.id, record)
+    if problems:
+        abort_unprocessable(
+            "Each stable_id names one entity of the paper, of the item's class.",
+            [
+                ErrorDetail(
+                    field=f"record/{path}/stable_id" if path else "record/stable_id",
+                    code=code,
+                    message=message,
+                )
+                for path, code, message in problems
+            ],
+        )
+
+
 # ---------------------------------------------------------------------------
 # validation
 # ---------------------------------------------------------------------------
 
 
-_validators = {}
-
-
 def _validate(name, document):
-    if name not in _validators:
-        schema = load_json_schema(name)
-        _validators[name] = validators.validator_for(schema)(schema)
-    errors = sorted(_validators[name].iter_errors(document), key=lambda e: list(e.path))
+    errors = schema_errors(name, document)
     if errors:
         abort_unprocessable(
             f"The {name} does not validate against study_schema.",
@@ -313,17 +336,25 @@ def _validate(name, document):
                 for error in errors[:_MAX_REPORTED_ERRORS]
             ],
         )
-
-
-def _expected_key(analysis):
-    return parse_keys.key_for(ParsedAnalysis.model_validate(analysis))
+    mismatch = version_mismatch(name, document)
+    if mismatch:
+        abort_unprocessable(
+            f"The {name} is not at the schema version this server takes.",
+            [
+                make_field_error(
+                    f"{name}/header/schema_version",
+                    {"schema_version": mismatch[0], "pinned": mismatch[1]},
+                    code="SCHEMA_VERSION",
+                )
+            ],
+        )
 
 
 def _check_keys(parse):
     """Every key is the one its name, space and points give, and no two analyses share one."""
     errors, seen = [], set()
     for index, analysis in enumerate(parse["analyses"]):
-        expected = _expected_key(analysis)
+        expected = expected_key(analysis)
         if analysis["key"] != expected:
             errors.append(
                 make_field_error(
@@ -370,7 +401,7 @@ def _check_verdicts(revision, revised):
                     code="VERDICT_KEY_NOT_IN_REVISION",
                 )
             )
-        if verdict["verdict"] in ("split", "merge") and not replaced_by:
+        if verdict["verdict"] in REPLACING and not replaced_by:
             errors.append(
                 make_field_error(
                     f"coordinate_parse/verdicts/{index}/replaced_by", None, code="MISSING"
@@ -396,10 +427,9 @@ def _check_verdicts(revision, revised):
 
 
 def _resolve_base_study(body, parse, parsed_paper, create):
-    identifiers = {}
-    if parse is not None:
-        identifiers = parse["header"]["identifiers"] or {}
-    base_study_id = body.get("base_study_id") or identifiers.get("neurostore_base_study_id")
+    header = {} if parse is None else parse["header"]
+    identifiers = header.get("identifiers") or {}
+    base_study_id = body.get("base_study_id") or header.get("neurostore_base_study_id")
     if base_study_id:
         base_study = db.session.get(BaseStudy, base_study_id)
         if base_study is None:
@@ -407,33 +437,23 @@ def _resolve_base_study(body, parse, parsed_paper, create):
         return base_study
 
     _lock_identifiers(identifiers)
-    for field in ("doi", "pmid", "pmcid"):
-        value = identifiers.get(field)
-        if not value:
-            continue
-        base_study = (
-            BaseStudy.query.filter(getattr(BaseStudy, field) == value)
-            .filter(BaseStudy.is_active.is_(True))
-            .order_by(BaseStudy.created_at)
-            .first()
-        )
-        if base_study is not None:
-            return base_study
+    base_study = find_base_study(db.session, header)
+    if base_study is not None:
+        return base_study
 
     if not create:
         abort_validation(
             "A record uploaded alone must name its base study.",
             [make_field_error("base_study_id", None, code="MISSING")],
         )
-    if not any(identifiers.get(field) for field in ("doi", "pmid", "pmcid")):
+    created_from = {field: identifiers.get(field) for field in VERSION_OF_RECORD_IDS}
+    if not any(created_from.values()):
         abort_validation(
-            "The parse names no identifier to find or create its base study by.",
+            "The parse names no version-of-record identifier to create its base study from.",
             [make_field_error("coordinate_parse/header/identifiers", identifiers)],
         )
     base_study = BaseStudy(
-        doi=identifiers.get("doi"),
-        pmid=identifiers.get("pmid"),
-        pmcid=identifiers.get("pmcid"),
+        **created_from,
         level="group",
         **_bibliography(parsed_paper),
     )
@@ -443,14 +463,15 @@ def _resolve_base_study(body, parse, parsed_paper, create):
 
 
 def _lock_identifiers(identifiers):
-    """Serialize lookups of one paper until commit.
+    """Locks the ids a base study is created from; preprint ids only find.
 
-    BaseStudy has no unique doi/pmid/pmcid, so two first uploads of a paper would each
-    create one. Locks are taken in one order, so uploads sharing identifiers cannot deadlock.
+    Serializes lookups of one paper until commit. BaseStudy has no unique doi/pmid/pmcid, so
+    two first uploads of a paper would each create one. Locks are taken in one order, so
+    uploads sharing identifiers cannot deadlock.
     """
     for key in sorted(
         f"{field}:{identifiers[field]}"
-        for field in ("doi", "pmid", "pmcid")
+        for field in VERSION_OF_RECORD_IDS
         if identifiers.get(field)
     ):
         db.session.execute(
@@ -546,21 +567,13 @@ def _history_study(base_study, current, parse_id, superseded_by, user):
     return study
 
 
-def _canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
-
-
-def _hash(value):
-    return hashlib.sha256(_canonical(value).encode("utf-8")).hexdigest()
-
-
 def _get_config(pipeline_name, version, config_args, schema=None):
     pipeline = Pipeline.query.filter_by(name=pipeline_name).first()
     if pipeline is None:
         pipeline = Pipeline(name=pipeline_name)
         db.session.add(pipeline)
         db.session.flush()
-    config_hash = _hash(config_args)
+    config_hash = sha256_of(config_args)
     config = PipelineConfig.query.filter_by(
         pipeline_id=pipeline.id, version=version, config_hash=config_hash
     ).first()
@@ -742,21 +755,11 @@ def _resolve_set_aside(base_study, new_keys):
 
 
 def _stored_parse_result(base_study, parse_id):
-    return (
-        PipelineStudyResult.query.join(PipelineConfig)
-        .join(Pipeline)
-        .filter(
-            Pipeline.name == PARSE_PIPELINE,
-            PipelineStudyResult.base_study_id == base_study.id,
-            PipelineStudyResult.result_data["parse_id"].astext == parse_id,
-        )
-        .first()
-    )
+    return stored_parse_result(db.session, base_study.id, parse_id)
 
 
 def _stored_parse(base_study, parse_id):
-    result = _stored_parse_result(base_study, parse_id)
-    return result.result_data if result is not None else None
+    return stored_parse(db.session, base_study.id, parse_id)
 
 
 def _iso(value):
@@ -796,9 +799,10 @@ def _apply_parse(study, parse, parsed_paper, user):
     base_study = study.base_study
     current_parse_id = study.source_id
     revision_of = parse.get("revision_of")
-    if revision_of and current_parse_id not in (None, parse["parse_id"], revision_of):
+    if revision_of and not _revises_current(base_study, study, parse):
         abort_unprocessable(
-            "A revision must revise the paper's current parse.",
+            "A revision must revise the paper's current parse, or a parse the current one "
+            "revises and name the current one in its inputs as the parse it was read from.",
             [
                 make_field_error(
                     "coordinate_parse/revision_of",
@@ -909,6 +913,20 @@ def _apply_parse(study, parse, parsed_paper, user):
     return counts
 
 
+def _revises_current(base_study, study, revision):
+    """Whether ``revision`` revises the paper's current parse, or revises a parse the current
+    one descends from and its header inputs name the current one as a parse it read."""
+    current = study.source_id
+    if current in (None, revision["parse_id"], revision["revision_of"]):
+        return True
+    read = {
+        entry["fingerprint"]
+        for entry in revision["header"].get("inputs") or ()
+        if entry["artifact_kind"] == "coordinate_parse"
+    }
+    return current in read and bool(_revisions_since(base_study, revision["revision_of"], study))
+
+
 def _table(study, tables, t_id, source):
     """The study's Table for ``t_id``, created from a parsed table or another Table."""
     table = tables.get(t_id)
@@ -1013,7 +1031,7 @@ def _relabels_dropped(superseded, revision_of):
 def _orphaned_claims(base_study, superseded, parse):
     """The entities with claims that a superseded analysis keeps, each with its reason.
 
-    An entity the revision's verdict split or merged is left out: its claims are copied
+    An entity a replacing verdict of the revision replaced is left out: its claims are copied
     on to the replacements.
     """
     verdicts = {v["key"]: v["verdict"] for v in parse.get("verdicts") or []}
@@ -1021,7 +1039,7 @@ def _orphaned_claims(base_study, superseded, parse):
     orphaned = []
     for analysis in superseded:
         key = analysis.source_id
-        if verdicts.get(key) in ("split", "merge"):
+        if verdicts.get(key) in REPLACING:
             continue
         for entity_class in CONTENT_KEYED_CLASSES:
             entity = _stored_entity(base_study, entity_class, analysis)
@@ -1126,11 +1144,11 @@ def _entity(base_study, entity_class, key, config=None):
 
 
 def _carry_claims(base_study, study, revision):
-    """Copy what is stored against each split or merged key to its replacements."""
+    """Copy what is stored against each key a replacing verdict replaced to its replacements."""
     current = {a.source_id: a for a in study.analyses}
     carried = {"claims": 0}
     for verdict in revision.get("verdicts") or []:
-        if verdict["verdict"] not in ("split", "merge"):
+        if verdict["verdict"] not in REPLACING:
             continue
         hashes = [
             h
@@ -1186,7 +1204,7 @@ def _copy_claims(source, target):
 
 
 def _evidence_key(evidence):
-    return (evidence.status, evidence.source, _canonical(evidence.spans), evidence.config_id)
+    return (evidence.status, evidence.source, canonical(evidence.spans), evidence.config_id)
 
 
 def _merge_claim(claim, copy):
@@ -1269,7 +1287,7 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
             [make_field_error("run_id", run_id, code="RUN_ID_REUSED")],
         )
 
-    # A record that read an older parse: its keys the revisions since split or merged
+    # A record that read an older parse: its keys the revisions since replacing verdicts
     # resolve to history, and its claims are carried on to their replacements.
     revisions = _revisions_since(base_study, parse["parse_id"], study)
     analyses = {"resolved": 0, "unresolved": [], "parked": [], "superseded": []}
@@ -1405,13 +1423,13 @@ def _revisions_since(base_study, parse_id, study):
 
 
 def _replaced_by(revisions, key):
-    """The keys ``key`` became through the split and merge verdicts of ``revisions``."""
+    """The keys ``key`` became through the replacing verdicts of ``revisions``."""
     keys = [key]
     for revision in revisions:
         mapped = {
             v["key"]: v["replaced_by"]
             for v in revision.get("verdicts") or []
-            if v["verdict"] in ("split", "merge")
+            if v["verdict"] in REPLACING
         }
         keys = [new for k in keys for new in mapped.get(k, [k])]
     return sorted(set(keys)) if keys != [key] else []
@@ -1718,11 +1736,8 @@ def _def_name(defs, def_names, record_entity):
     dotted = record_entity.path[len(prefix):].rsplit("[", 1)[0]
     schema = {"$ref": f"#/$defs/{owner}"}
     for attribute in dotted.split("."):
-        schema = defs[_refs(schema)[0]]["properties"][attribute]
-    refs = _refs(schema.get("items", {}))
-    for option in schema.get("anyOf", []):
-        refs.extend(_refs(option.get("items", {})))
-    return _pick(defs, refs, record_entity.item) or record_entity.entity_class
+        schema = defs[refs(schema)[0]]["properties"][attribute]
+    return class_of(defs, schema, record_entity.item) or record_entity.entity_class
 
 
 def _local_id_names(record):
@@ -1755,35 +1770,8 @@ def _record_key(cls, item):
     return None
 
 
-def _refs(schema):
-    """The $defs names a property schema can hold."""
-    out = []
-    if "$ref" in schema:
-        out.append(schema["$ref"].rsplit("/", 1)[-1])
-    for option in schema.get("anyOf", []):
-        out.extend(_refs(option))
-    return out
-
-
-def _is_extracted(defs, name):
-    props = defs.get(name, {}).get("properties", {})
-    return "extraction_status" in props and "evidence" in props
-
-
-def _pick(defs, names, value):
-    """The class among ``names`` that ``value`` is an instance of."""
-    classes = [n for n in names if defs.get(n, {}).get("type") == "object"]
-    for name in classes:
-        props = defs[name].get("properties", {})
-        required = defs[name].get("required", [])
-        if all(r in value for r in required) and set(value) <= set(props):
-            return name
-    return classes[0] if classes else None
-
-
 def _key_value(value, names):
-    if isinstance(value, dict):
-        value = value.get("value")
+    value = extracted_value(value)
     return names.get(value, value)
 
 
@@ -1799,21 +1787,18 @@ def _walk(defs, name, obj, prefix, names, leaves, rejected, skip=()):
             continue
         schema = props[attribute]
         if isinstance(value, dict):
-            cls = _pick(defs, _refs(schema), value)
+            cls = class_of(defs, schema, value)
             if cls is None:
                 continue
-            if _is_extracted(defs, cls):
+            if is_extracted(defs, cls):
                 leaves.append((path, value))
             else:
                 _walk(defs, cls, value, f"{path}.", names, leaves, rejected, skip)
         elif isinstance(value, list) and value and all(isinstance(v, dict) for v in value):
-            item_refs = _refs(schema.get("items", {}))
-            for option in schema.get("anyOf", []):
-                item_refs.extend(_refs(option.get("items", {})))
             for item in value:
-                cls = _pick(defs, item_refs, item)
+                cls = class_of(defs, schema, item)
                 key_slots = DECLARED_KEYS.get(cls)
-                if cls is None or _is_extracted(defs, cls) or key_slots is None:
+                if cls is None or is_extracted(defs, cls) or key_slots is None:
                     # No declared key: an index would be positional, so the path is
                     # rejected rather than stored as a guess.
                     rejected.append(f"{path}[]")
@@ -1837,7 +1822,7 @@ def _upsert_claims(entity, leaves, config, schema_version, counts):
     }
     for path, leaf in leaves:
         value = leaf.get("value")
-        value_hash = _hash(value)
+        value_hash = sha256_of(value)
         claim = existing.get((path, value_hash))
         if claim is None:
             claim = FieldClaim(
