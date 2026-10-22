@@ -870,5 +870,57 @@ def transfer_user_ownership_command(source_user_id, destination_user_id, execute
         click.echo(f"{table_name}: {count}")
 
 
+def _echo_merge_outcomes(outcomes, dry_run):
+    """Print each pair's outcome and every change; exit 1 if any pair was refused."""
+
+    def shown(value):
+        text = repr(value)
+        return text if len(text) <= 100 else text[:97] + "..."
+
+    for outcome in outcomes:
+        if outcome.refusal is not None:
+            click.echo(f"REFUSED {outcome.old_id} -> {outcome.keeper_id}: {outcome.refusal}")
+            continue
+        verb = "would merge" if dry_run else "merged"
+        click.echo(
+            f"{verb} {outcome.old_id} -> {outcome.keeper_id}: "
+            f"{len(outcome.changes)} change(s)"
+        )
+        for change in outcome.changes:
+            click.echo(
+                f"  {change.table} {change.row_id} {change.field}: "
+                f"{shown(change.before)} -> {shown(change.after)}"
+            )
+    if any(outcome.refusal is not None for outcome in outcomes):
+        raise SystemExit(1)
+
+
+@main.command("merge-base-studies")
+@click.argument("plan", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    "--execute",
+    is_flag=True,
+    help="Commit each pair. Without this flag, each pair is rolled back after printing.",
+)
+def merge_base_studies_command(plan, execute):
+    """Make each plan pair's old base study a superseded copy of its keeper.
+
+    Each pair runs in its own transaction and prints every row and JSON change. A pair
+    naming a missing or inactive base study, or whose rows would clash with the
+    keeper's, is refused and changes nothing.
+    """
+    from neurostore.scripts.merge_base_studies import load_plan, merge_base_studies
+
+    try:
+        pairs = load_plan(plan)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    def _run(_app, _db):
+        return merge_base_studies(pairs, dry_run=not execute)
+
+    _echo_merge_outcomes(_run_with_runtime(_run), dry_run=not execute)
+
+
 if __name__ == "__main__":
     main()

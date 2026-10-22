@@ -2,26 +2,38 @@ import datetime as dt
 import re
 import threading
 import time
+from dataclasses import dataclass
+from typing import NamedTuple
 from xml.etree import ElementTree
 
 import requests
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.postgresql import ARRAY, insert as pg_insert
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import aliased
+from sqlalchemy.orm.attributes import flag_modified
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from neurostore import corresponding_authors
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
+from neurostore.ingest.study_entities import rehash_base_study_entities
 from neurostore.models import (
     BaseStudy,
     BaseStudyFlagOutbox,
     BaseStudyMetadataOutbox,
+    Fulltext,
+    PipelineAnalysisResult,
     PipelineEmbedding,
     PipelineStudyResult,
+    Review,
+    ReviewAssignment,
+    ReviewSource,
     Study,
+    StudyEntity,
     StudysetStudy,
 )
+from neurostore.models.data import HISTORY_SOURCE, STUDY_SOURCE
 from neurostore.resources.common import merge_unique_ids, normalize_ids
 from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
 
@@ -694,70 +706,234 @@ def _copy_missing_attrs(target, source, fields=CONTENT_FIELDS):
     return changed
 
 
-def _merge_duplicate_into_primary(primary, duplicate):
-    cache_ids = {"base-studies": {primary.id, duplicate.id}, "studies": set()}
+class Change(NamedTuple):
+    """One field of one row a merge sets, or a row it deletes (field ``deleted``)."""
 
-    duplicate_identifiers = _extract_identifiers(duplicate)
-    _copy_missing_attrs(primary, duplicate)
-    # Mark duplicate inactive first so active-only doi+pmid uniqueness is preserved
-    # while we copy any missing identifiers onto the canonical study.
+    table: str
+    row_id: str
+    field: str
+    before: object
+    after: object
+
+
+class BaseStudyMergeClash(Exception):
+    """Merging would give the keeper two rows where it may hold one."""
+
+    def __init__(self, keeper_id, old_id, clashes):
+        self.clashes = clashes
+        super().__init__(f"cannot merge {old_id} into {keeper_id}: " + "; ".join(clashes))
+
+
+@dataclass
+class BaseStudyMerge:
+    cache_ids: dict
+    changes: list
+
+
+# (model, the columns two rows share when they would collide on the keeper, a filter
+# on the rows compared, what the collision means). Each mirrors a unique constraint or
+# the one-current-parse-per-paper rule of the study_schema ingest.
+_CLASH_RULES = (
+    (Study, ("source",), lambda m: m.source == STUDY_SOURCE, "a current parse version"),
+    (
+        Study,
+        ("source", "source_id"),
+        lambda m: m.source == HISTORY_SOURCE,
+        "a history version of the same parse",
+    ),
+    (
+        PipelineStudyResult,
+        ("config_id", "run_id"),
+        lambda m: m.run_id.is_not(None),
+        "a result of the same pipeline run",
+    ),
+    (
+        PipelineAnalysisResult,
+        ("config_id", "source_table_analysis"),
+        None,
+        "a result for the same pipeline config and analysis",
+    ),
+    (Fulltext, ("sha256",), None, "the same full text"),
+    (ReviewAssignment, ("user_id",), None, "an assignment to the same reviewer"),
+)
+
+# Rows whose base_study_id names the paper; each moves to the keeper.
+_MOVED = (
+    Study,
+    PipelineStudyResult,
+    PipelineEmbedding,
+    PipelineAnalysisResult,
+    StudyEntity,
+    Fulltext,
+    ReviewAssignment,
+)
+
+# study_schema documents kept whole, whose header may name the paper's base study.
+_HEADER_DOCUMENTS = (
+    (PipelineStudyResult, "result_data"),
+    (ReviewSource, "parsed_paper"),
+    (ReviewSource, "coordinate_parse"),
+    (ReviewSource, "coordinate_revision"),
+    (ReviewSource, "record"),
+    (Review, "record"),
+    (Review, "coordinate_revision"),
+)
+_HEADER_ID_PATH = ("header", "neurostore_base_study_id")
+
+
+def _clashes(keeper_id, old_id):
+    found = []
+    for model, columns, rows_compared, meaning in _CLASH_RULES:
+        kept, moved = aliased(model), aliased(model)
+        query = (
+            sa.select(*(getattr(moved, c) for c in columns))
+            .join(kept, sa.and_(*(getattr(kept, c) == getattr(moved, c) for c in columns)))
+            .where(moved.base_study_id == old_id, kept.base_study_id == keeper_id)
+        )
+        if rows_compared is not None:
+            query = query.where(rows_compared(moved), rows_compared(kept))
+        for row in db.session.execute(query.distinct()).all():
+            shared = ", ".join(f"{c}={v!r}" for c, v in zip(columns, row))
+            found.append(f"{model.__tablename__}: both hold {meaning} ({shared})")
+    # Two claim trees for one paper would need their entities matched; nothing does that.
+    if all(
+        db.session.scalar(sa.select(sa.exists().where(StudyEntity.base_study_id == bid)))
+        for bid in (keeper_id, old_id)
+    ):
+        found.append("study_entities: both hold claim entities")
+    return found
+
+
+def _field_values(base_study):
+    return {
+        field: getattr(base_study, field)
+        for field in CONTENT_FIELDS + ID_FIELDS + ("fulltext_id",)
+    }
+
+
+def merge_base_study(keeper, old):
+    """Make ``old`` a superseded copy of ``keeper``: its versions, pipeline results,
+    entities, full texts and review assignments move to the keeper, base studies it
+    superseded are superseded by the keeper, study_schema documents whose header names
+    it name the keeper, and the keeper gains only the fields and identifiers it lacks.
+
+    Study versions keep their ids, so studysets, annotations and compose snapshots,
+    which hold version and analysis ids, are untouched. Raises BaseStudyMergeClash,
+    before writing anything, when a moved row would collide with one of the keeper's.
+    """
+    clashes = _clashes(keeper.id, old.id)
+    if clashes:
+        raise BaseStudyMergeClash(keeper.id, old.id, clashes)
+
+    changes = []
+    cache_ids = {"base-studies": {keeper.id, old.id}, "studies": set()}
+    before = _field_values(keeper)
+    before_metadata = dict(keeper.metadata_) if isinstance(keeper.metadata_, dict) else None
+
+    old_identifiers = _extract_identifiers(old)
+    _copy_missing_attrs(keeper, old)
+    # Deactivate first so the active-only doi+pmid index holds while the keeper
+    # takes the identifiers it lacks.
     db.session.execute(
         sa.update(BaseStudy)
-        .where(BaseStudy.id == duplicate.id)
-        .values(is_active=False, superseded_by=primary.id)
+        .where(BaseStudy.id == old.id)
+        .values(is_active=False, superseded_by=keeper.id)
     )
-    duplicate.is_active = False
-    duplicate.superseded_by = primary.id
-    _apply_missing_ids(primary, duplicate_identifiers)
+    changes.append(Change("base_studies", old.id, "is_active", old.is_active, False))
+    changes.append(Change("base_studies", old.id, "superseded_by", old.superseded_by, keeper.id))
+    old.is_active = False
+    old.superseded_by = keeper.id
+    _apply_missing_ids(keeper, old_identifiers)
+    if keeper.fulltext_id is None and old.fulltext_id is not None:
+        keeper.fulltext_id = old.fulltext_id
 
-    moved_study_ids = list(
-        db.session.scalars(
-            sa.select(Study.id).where(Study.base_study_id == duplicate.id)
+    after = _field_values(keeper)
+    changes.extend(
+        Change("base_studies", keeper.id, field, before[field], after[field])
+        for field in before
+        if before[field] != after[field]
+    )
+    if isinstance(keeper.metadata_, dict):
+        added = [
+            Change("base_studies", keeper.id, f"metadata.{key}", None, value)
+            for key, value in keeper.metadata_.items()
+            if before_metadata is None or key not in before_metadata
+        ]
+        if added:
+            # metadata_ is plain JSONB: keys added in place are not tracked.
+            flag_modified(keeper, "metadata_")
+        changes.extend(added)
+
+    superseded = db.session.scalars(
+        sa.update(BaseStudy)
+        .where(BaseStudy.superseded_by == old.id)
+        .values(superseded_by=keeper.id)
+        .returning(BaseStudy.id)
+    ).all()
+    changes.extend(
+        Change("base_studies", row_id, "superseded_by", old.id, keeper.id)
+        for row_id in superseded
+    )
+    cache_ids["base-studies"].update(superseded)
+
+    for model in _MOVED:
+        moved = db.session.scalars(
+            sa.update(model)
+            .where(model.base_study_id == old.id)
+            .values(base_study_id=keeper.id)
+            .returning(model.id)
         ).all()
-    )
-    if moved_study_ids:
-        db.session.execute(
-            sa.update(Study)
-            .where(Study.id.in_(moved_study_ids))
-            .values(base_study_id=primary.id)
+        changes.extend(
+            Change(model.__tablename__, row_id, "base_study_id", old.id, keeper.id)
+            for row_id in sorted(moved)
         )
-        cache_ids["studies"].update(moved_study_ids)
-
-        moved_studyset_ids = list(
-            db.session.scalars(
-                sa.select(StudysetStudy.studyset_id).where(
-                    StudysetStudy.study_id.in_(moved_study_ids)
-                )
+        if model is Study and moved:
+            cache_ids["studies"].update(moved)
+            studysets = db.session.scalars(
+                sa.select(StudysetStudy.studyset_id).where(StudysetStudy.study_id.in_(moved))
             ).all()
+            if studysets:
+                cache_ids["studysets"] = set(studysets)
+        if model is StudyEntity and moved:
+            # An entity's hash covers its base study.
+            rehash_base_study_entities([keeper.id])
+
+    for model, column in _HEADER_DOCUMENTS:
+        document = getattr(model, column)
+        rewritten = db.session.scalars(
+            sa.update(model)
+            .where(document[_HEADER_ID_PATH].astext == old.id)
+            .values({
+                column: sa.func.jsonb_set(
+                    document,
+                    sa.literal(list(_HEADER_ID_PATH), ARRAY(sa.Text)),
+                    sa.func.to_jsonb(sa.cast(keeper.id, sa.Text)),
+                )
+            })
+            .returning(model.id)
+        ).all()
+        changes.extend(
+            Change(
+                model.__tablename__,
+                row_id,
+                f"{column}.header.neurostore_base_study_id",
+                old.id,
+                keeper.id,
+            )
+            for row_id in sorted(rewritten)
         )
-        if moved_studyset_ids:
-            cache_ids["studysets"] = set(moved_studyset_ids)
 
-    db.session.execute(
-        sa.update(PipelineStudyResult)
-        .where(PipelineStudyResult.base_study_id == duplicate.id)
-        .values(base_study_id=primary.id)
-    )
-    db.session.execute(
-        sa.update(PipelineEmbedding)
-        .where(PipelineEmbedding.base_study_id == duplicate.id)
-        .values(base_study_id=primary.id)
-    )
-
-    corresponding_authors.move_emails(duplicate.id, primary.id)
-
-    db.session.execute(
-        sa.delete(BaseStudyFlagOutbox).where(
-            BaseStudyFlagOutbox.base_study_id == duplicate.id
+    for outbox in (BaseStudyFlagOutbox, BaseStudyMetadataOutbox):
+        deleted = db.session.scalars(
+            sa.delete(outbox)
+            .where(outbox.base_study_id == old.id)
+            .returning(outbox.base_study_id)
+        ).all()
+        changes.extend(
+            Change(outbox.__tablename__, row_id, "deleted", None, None) for row_id in deleted
         )
-    )
-    db.session.execute(
-        sa.delete(BaseStudyMetadataOutbox).where(
-            BaseStudyMetadataOutbox.base_study_id == duplicate.id
-        )
-    )
 
-    return cache_ids
+    return BaseStudyMerge(cache_ids=cache_ids, changes=changes)
 
 
 def _merge_ids_in_place(target_identifiers, source_identifiers):
@@ -898,14 +1074,14 @@ def _merge_duplicates(primary):
         canonical = _oldest_base_study(cluster)
 
         if canonical.id != primary.id:
-            ids_from_primary_merge = _merge_duplicate_into_primary(canonical, primary)
+            ids_from_primary_merge = merge_base_study(canonical, primary).cache_ids
             cache_ids = merge_unique_ids(cache_ids, ids_from_primary_merge)
             primary = canonical
 
         for duplicate in duplicates:
             if duplicate.id == primary.id:
                 continue
-            duplicate_cache_ids = _merge_duplicate_into_primary(primary, duplicate)
+            duplicate_cache_ids = merge_base_study(primary, duplicate).cache_ids
             cache_ids = merge_unique_ids(cache_ids, duplicate_cache_ids)
 
     return primary, cache_ids

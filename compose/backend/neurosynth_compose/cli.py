@@ -174,5 +174,51 @@ def transfer_user_ownership_command(source_user_id, destination_user_id, execute
         click.echo(f"{table_name}: {count}")
 
 
+@main.command("merge-base-studies")
+@click.argument("plan", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--execute",
+    is_flag=True,
+    help="Commit each pair. Without this flag, each pair is rolled back after printing.",
+)
+def merge_base_studies_command(plan, execute):
+    """Point project curation stubs at the keeper of each merged base study pair.
+
+    Run after neurostore's merge-base-studies has applied the same plan. Each pair runs
+    in its own transaction and prints every JSON change; a pair whose old base study
+    appears anywhere but a curation stub is refused and changes nothing.
+    """
+    from neurosynth_compose.scripts.merge_base_studies import (
+        load_plan,
+        merge_base_studies,
+    )
+
+    try:
+        pairs = load_plan(plan)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    def _run(_app, _db):
+        return merge_base_studies(pairs, dry_run=not execute)
+
+    outcomes = _run_with_runtime(_run)
+    for outcome in outcomes:
+        if outcome.refusal is not None:
+            click.echo(f"REFUSED {outcome.old_id} -> {outcome.keeper_id}: {outcome.refusal}")
+            continue
+        verb = "would merge" if not execute else "merged"
+        click.echo(
+            f"{verb} {outcome.old_id} -> {outcome.keeper_id}: "
+            f"{len(outcome.changes)} change(s)"
+        )
+        for change in outcome.changes:
+            click.echo(
+                f"  {change.table} {change.row_id} {change.field}: "
+                f"{change.before!r} -> {change.after!r}"
+            )
+    if any(outcome.refusal is not None for outcome in outcomes):
+        raise SystemExit(1)
+
+
 if __name__ == "__main__":
     main()

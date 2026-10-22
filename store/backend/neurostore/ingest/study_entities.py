@@ -449,7 +449,7 @@ def rehash_entities(base_study_id=None, batch_size=500):
     study_ids = db.session.execute(studies).scalars().all()
     moved = 0
     for start in range(0, len(study_ids), batch_size):
-        moved += _rehash_batch(study_ids[start:start + batch_size])
+        moved += rehash_base_study_entities(study_ids[start:start + batch_size])
         db.session.commit()
     return moved
 
@@ -458,8 +458,8 @@ def current_identity(identity):
     """``identity`` as the current rule writes it.
 
     Every sibling name is normalized again, so a change to `normalize_name`
-    reaches stored rows. A sibling's ordinal is kept; `_rehash_batch` moves it
-    on if two siblings come to share a name. A content key is a string that
+    reaches stored rows. A sibling's ordinal is kept; `rehash_base_study_entities`
+    moves it on if two siblings come to share a name. A content key is a string that
     study_schema writes and the ingester checks, so it is returned unchanged.
     """
     if not isinstance(identity, list):
@@ -467,7 +467,8 @@ def current_identity(identity):
     return sibling_identity(identity[0], identity[1])
 
 
-def _rehash_batch(base_study_ids):
+def rehash_base_study_entities(base_study_ids):
+    """Re-hash the entities of ``base_study_ids``; return how many changed."""
     rows = db.session.execute(
         sa.select(
             StudyEntity.id,
