@@ -26,6 +26,12 @@ export default ({ mode }) => {
             host: 'localhost',
             open: true,
             port: 3000,
+            proxy: {
+                '/review/': {
+                    target: 'http://localhost:3001',
+                    ws: true,
+                },
+            },
         },
 
         test: {

@@ -76,7 +76,7 @@ def _claims(entity):
 
 
 def test_same_named_groups_stay_two_entities(base_study):
-    # Two groups both printed "patients" (n=20 and n=35) used to become one entity
+    # Two groups both printed "patients" (n=20 and n=35) must not become one entity
     # holding two conflicting enrolled counts.
     result = _sync(base_study, {"groups": [_named("patients"), _named("patients")]})
     first, second = _entity(result, "groups[0]"), _entity(result, "groups[1]")
@@ -153,7 +153,7 @@ def test_a_version_bump_rehashes_without_stranding_claims(base_study, monkeypatc
     monkeypatch.setattr(data, "ENTITY_HASH_VERSION", "study-entity/test-bump")
     assert rehash_entities() == before
     assert rehash_entities() == 0
-    # Re-ingesting under the new version used to double the entities (4 -> 8).
+    # Re-ingesting under the new version must not double the entities (4 -> 8).
     again = _sync(base_study, record)
     assert _count(base_study) == before and again["created"] == 0
     assert _entity(again, "groups[0]").id == group.id
@@ -181,7 +181,7 @@ def test_a_version_bump_works_through_base_studies_in_batches(base_study, monkey
 
 
 def test_rewording_a_name_keeps_the_entity(base_study):
-    # "healthy controls" re-extracted as "Healthy Controls" used to be a second entity.
+    # "healthy controls" re-extracted as "Healthy Controls" must not be a second entity.
     first = _sync(base_study, {"groups": [_named("healthy controls"), _named("Café users")]})
     reworded = [_named(" Healthy\n Controls "), _named(unicodedata.normalize("NFD", "CAFÉ users"))]
     again = _sync(base_study, {"groups": reworded})
@@ -224,7 +224,7 @@ def test_a_renamed_group_is_a_candidate_and_keeps_its_claims(base_study):
 
 
 def test_a_different_task_does_not_take_the_old_tasks_claims(base_study):
-    # Stroop re-extracted as flanker used to pass as a rename: flanker and its
+    # Stroop re-extracted as flanker must not pass as a rename: flanker and its
     # "incongruent" took Stroop's entities and claims.
     first = _sync(base_study, {"tasks": [
         _named("n-back", conditions=[_named("2-back")]),
@@ -280,7 +280,7 @@ def test_a_rename_candidate_needs_the_same_ordinal(base_study):
 
 
 def test_an_acquisition_is_named_by_its_modality(base_study):
-    # PET inserted before EEG used to take EEG's entity, ordinals counting every acquisition.
+    # PET inserted before EEG must not take EEG's entity, ordinals counting every acquisition.
     def acquisitions(*modalities):
         return {"acquisitions": [{"modality": {"value": m}} for m in modalities]}
 
@@ -304,7 +304,7 @@ def test_an_entity_needs_its_identity(base_study):
 
 
 def test_two_items_naming_one_key_are_reported_not_merged(base_study):
-    # An analysis and its mirror used to become one entity holding both names.
+    # An analysis and its mirror must not become one entity holding both names.
     record = {"analyses": [_set("A > B"), _set("B > A"), _set("a > b")]}
     result = _sync(base_study, record)
     assert result["duplicates"] == ["analyses[2]"]

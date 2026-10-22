@@ -11,6 +11,9 @@ from study_schema import keys
 from study_schema.jsonschema import load
 from study_schema.models.paper_parse import ParsedAnalysis
 
+from neurostore import study_schema_tools
+from neurostore.base_studies import VERSION_OF_RECORD_IDS
+
 SCHEMA_VERSION = load("coordinate-parse")["version"]
 
 
@@ -65,13 +68,34 @@ def text_analysis(spans, name, points=(), role="result", space="MNI"):
     })
 
 
+CC_BY = {
+    "license_id": "cc-by",
+    "determination": "stated",
+    "stated_by": "jats",
+    "stated_as": "https://creativecommons.org/licenses/by/4.0/",
+}
+ALL_RIGHTS_RESERVED = {"license_id": "all-rights-reserved", "determination": "assumed"}
+
+
+def identifiers(**ids):
+    """Header identifiers with the publication_status ``ids`` give."""
+    published = any(ids.get(field) for field in VERSION_OF_RECORD_IDS)
+    preprint = any(value for field, value in ids.items() if field.startswith("preprint_"))
+    status = "preprint" if preprint and not published else "published"
+    return {**ids, "publication_status": status}
+
+
+def text_copy(version="vor", license=CC_BY, route="pmc", access="public"):
+    return {"route": route, "version": version, "access": access, "license": license}
+
+
 def parse(analyses, pmid="12345678", revision_of=None, verdicts=None, producer="ingestion"):
     document = {
         "header": {
             "artifact_kind": "coordinate_parse",
             "schema_version": SCHEMA_VERSION,
             "article_id": f"art-{pmid}",
-            "identifiers": {"pmid": pmid},
+            "identifiers": identifiers(pmid=pmid),
             "producer": {"name": producer, "version": "1.0.0", "stage": "analyses"},
         },
         "parse_id": hashlib.sha256(
@@ -91,38 +115,11 @@ def verdict(key, kind, replaced_by=None, reason="audited"):
     return {"key": key, "verdict": kind, "replaced_by": replaced_by, "reason": reason}
 
 
-_defs = load("extraction-record")["$defs"]
+defs = load("extraction-record")["$defs"]
 
 
-def _resolve(schema, defs):
-    while "$ref" in schema:
-        schema = defs[schema["$ref"].rsplit("/", 1)[-1]]
-    return schema
-
-
-def _minimal(schema, defs=_defs):
-    schema = _resolve(schema, defs)
-    if "anyOf" in schema:
-        options = [o for o in schema["anyOf"] if o.get("type") != "null"]
-        return _minimal(options[0], defs) if options else None
-    props = schema.get("properties", {})
-    if "extraction_status" in props and "evidence" in props:
-        return {"extraction_status": "not_reported", "evidence": {"status": "not_applicable"}}
-    kind = schema.get("type")
-    kind = [k for k in kind if k != "null"][0] if isinstance(kind, list) else kind
-    if "enum" in schema:
-        return schema["enum"][0]
-    if kind == "object" or props:
-        return {name: _minimal(props[name], defs) for name in schema.get("required", [])}
-    if kind == "array":
-        return [_minimal(schema["items"], defs) for _ in range(schema.get("minItems", 0))]
-    if kind == "string":
-        return "x"
-    if kind in ("integer", "number"):
-        return schema.get("minimum", 1)
-    if kind == "boolean":
-        return False
-    return None
+def minimal(schema, defs=defs):
+    return study_schema_tools.minimal(defs, schema, string="x")
 
 
 def extracted(value):
@@ -134,7 +131,7 @@ def extracted(value):
 
 
 def record_analysis(local_id, key, name):
-    analysis = _minimal(_defs["Analysis"])
+    analysis = minimal(defs["Analysis"])
     analysis.update(
         local_id=local_id,
         name=extracted(name),
@@ -145,7 +142,7 @@ def record_analysis(local_id, key, name):
 
 
 def record(analyses, coordinate_sets=(), local_id="study-1"):
-    document = _minimal(load("extraction-record"))
+    document = minimal(load("extraction-record"))
     document.update(
         local_id=local_id,
         extraction_metadata={"extractor_model": "gpt-6.1-sol", "extractor_version": "1.0.0"},
@@ -161,9 +158,11 @@ def record(analyses, coordinate_sets=(), local_id="study-1"):
 def parsed_paper(pmid="12345678", corrections=None):
     """A minimal parsed paper; ``corrections`` are its bibliography's notices."""
     schema = load("parsed-paper")
-    document = _minimal(schema, schema["$defs"])
-    document["header"]["identifiers"] = {"pmid": pmid}
-    document["bibliography"] = {"title": "A paper"}
+    document = minimal(schema, schema["$defs"])
+    document["header"]["schema_version"] = SCHEMA_VERSION
+    document["header"]["identifiers"] = identifiers(pmid=pmid)
+    document["text_copy"] = text_copy()
+    document["bibliography"] = {"title": "A paper", "license": ALL_RIGHTS_RESERVED}
     if corrections is not None:
         document["bibliography"]["corrections"] = corrections
     return document

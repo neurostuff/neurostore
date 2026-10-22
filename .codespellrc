@@ -1,5 +1,5 @@
 [codespell]
-skip = .git,*.pdf,*.svg,*.ts,*.tsx,package-lock.json,data-*vocabulary.txt,sample_*.csv,CHANGELOG.rst,ingest_neurovault.yml,./compose/neurosynth-frontend/cypress/fixtures
+skip = .git,*.pdf,*.svg,*.ts,*.tsx,package-lock.json,data-*vocabulary.txt,sample_*.csv,CHANGELOG.rst,ingest_neurovault.yml,./compose/neurosynth-frontend/cypress/fixtures,./store/review-frontend/src/test/golden/schemas
 # regexes
 ignore-regex = r"\(\?i\).*\\\\1
-ignore-words-list = te,fwe,connexion,zoon,covert,rime,selectin
+ignore-words-list = te,fwe,connexion,zoon,covert,rime,selectin,vor

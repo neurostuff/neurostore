@@ -1,6 +1,6 @@
 {
     "name": "neurosynth",
-    "version": "0.23.3",
+    "version": "0.24.0",
     "private": true,
     "scripts": {
         "start:dev": "vite --mode dev",

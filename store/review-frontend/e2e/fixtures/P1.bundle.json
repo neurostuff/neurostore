@@ -1,0 +1,280 @@
+{
+  "source": {
+    "id": "P1",
+    "base_study_id": "P1",
+    "label": "A paper",
+    "origin": "upload",
+    "text_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "schema_versions": {
+      "paper_parse": "0.6.0",
+      "extraction": "test"
+    }
+  },
+  "text": "Paper title\n## Results\nThe precuneus peaked at x = 4, y = -60, z = 40 in the localizer.\nTable 1\nRegion\tx\ty\tz\tt\nPrecuneus\t4\t−60\t40\t5.1\nInsula\t-36\t20\t2\t4.2\nCuneus\t10\t-80\t12\t3.3\n\nTable 2\nContrast\tresult\nFaces > Scrambled\tn.s.\n",
+  "parsed_paper": {
+    "bibliography": {
+      "title": "Paper title"
+    },
+    "tables": [
+      {
+        "table_id": "t1",
+        "label": "Table 1"
+      },
+      {
+        "table_id": "t2",
+        "label": "Table 2"
+      }
+    ]
+  },
+  "coordinate_parse": {
+    "analyses": [
+      {
+        "key": "analysis#00000000000000a1",
+        "origin": "table",
+        "table_id": "t1",
+        "name": "Faces > Houses",
+        "role": "result",
+        "coordinate_space": "MNI",
+        "cells": [],
+        "points": [
+          {
+            "coordinates": [
+              4,
+              -60,
+              40
+            ],
+            "values": [
+              {
+                "kind": "t",
+                "value": 5.1
+              }
+            ],
+            "label": "Precuneus"
+          },
+          {
+            "coordinates": [
+              -36,
+              20,
+              2
+            ],
+            "values": [
+              {
+                "kind": "t",
+                "value": 4.2
+              }
+            ],
+            "cluster_size": 12
+          }
+        ]
+      },
+      {
+        "key": "analysis#00000000000000b2",
+        "origin": "table",
+        "table_id": "t1",
+        "name": "Houses > Faces",
+        "role": "result",
+        "coordinate_space": "MNI",
+        "cells": [],
+        "points": [
+          {
+            "coordinates": [
+              10,
+              -80,
+              12
+            ],
+            "values": [
+              {
+                "kind": "t",
+                "value": 3.3
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "analysis#00000000000000c3",
+        "origin": "text",
+        "text_spans": [
+          {
+            "start_char": 47,
+            "end_char": 69
+          }
+        ],
+        "name": "Precuneus localizer",
+        "role": "anchor",
+        "coordinate_space": "MNI",
+        "points": [
+          {
+            "coordinates": [
+              4,
+              -60,
+              40
+            ],
+            "text_span": {
+              "start_char": 47,
+              "end_char": 69
+            }
+          }
+        ]
+      },
+      {
+        "key": "analysis#00000000000000d4",
+        "origin": "table",
+        "table_id": "t2",
+        "name": "Faces > Scrambled",
+        "role": "result",
+        "cells": [],
+        "points": []
+      }
+    ]
+  },
+  "record": {
+    "local_id": "P1",
+    "analyses": [
+      {
+        "local_id": "ana_faces",
+        "name": {
+          "extraction_status": "extracted",
+          "value": "Faces > Houses",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "source_table_analysis": {
+          "extraction_status": "extracted",
+          "value": "analysis#00000000000000a1",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "mirror_of": "ana_houses"
+      },
+      {
+        "local_id": "ana_houses",
+        "name": {
+          "extraction_status": "extracted",
+          "value": "Houses > Faces",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "source_table_analysis": {
+          "extraction_status": "extracted",
+          "value": "analysis#00000000000000b2",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        }
+      }
+    ]
+  },
+  "coordinate_revision": null,
+  "review": null,
+  "ops": [],
+  "entities": [
+    {
+      "local_id": "study",
+      "entity_class": "Study",
+      "schema_class": "Study",
+      "parent": null,
+      "list_path": null
+    },
+    {
+      "local_id": "ana_faces",
+      "entity_class": "Analysis",
+      "schema_class": "Analysis",
+      "parent": "study",
+      "list_path": "analyses"
+    },
+    {
+      "local_id": "ana_houses",
+      "entity_class": "Analysis",
+      "schema_class": "Analysis",
+      "parent": "study",
+      "list_path": "analyses"
+    }
+  ],
+  "hidden": {
+    "analyses": [],
+    "entities": []
+  },
+  "reviewers": [],
+  "original": {
+    "record": {
+      "local_id": "P1",
+      "analyses": [
+        {
+          "local_id": "ana_faces",
+          "name": {
+            "extraction_status": "extracted",
+            "value": "Faces > Houses",
+            "value_source": "reported",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "source_table_analysis": {
+            "extraction_status": "extracted",
+            "value": "analysis#00000000000000a1",
+            "value_source": "reported",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "mirror_of": "ana_houses"
+        },
+        {
+          "local_id": "ana_houses",
+          "name": {
+            "extraction_status": "extracted",
+            "value": "Houses > Faces",
+            "value_source": "reported",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "source_table_analysis": {
+            "extraction_status": "extracted",
+            "value": "analysis#00000000000000b2",
+            "value_source": "reported",
+            "evidence": {
+              "status": "not_found"
+            }
+          }
+        }
+      ]
+    },
+    "coordinate_revision": null,
+    "entities": [
+      {
+        "local_id": "study",
+        "entity_class": "Study",
+        "schema_class": "Study",
+        "parent": null,
+        "list_path": null
+      },
+      {
+        "local_id": "ana_faces",
+        "entity_class": "Analysis",
+        "schema_class": "Analysis",
+        "parent": "study",
+        "list_path": "analyses"
+      },
+      {
+        "local_id": "ana_houses",
+        "entity_class": "Analysis",
+        "schema_class": "Analysis",
+        "parent": "study",
+        "list_path": "analyses"
+      }
+    ],
+    "hidden": {
+      "analyses": [],
+      "entities": []
+    }
+  }
+}

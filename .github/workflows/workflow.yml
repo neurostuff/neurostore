@@ -14,6 +14,11 @@ permissions:
   issues: write
   packages: write
 
+# APIs of the local Store and Compose stacks (ports from docker-compose.dev.yml)
+env:
+  LOCAL_NEUROSTORE_API_DOMAIN: http://localhost:82/api
+  LOCAL_NEUROSYNTH_API_DOMAIN: http://localhost:81/api
+
 jobs:
   clean:
     strategy:
@@ -586,15 +591,59 @@ jobs:
           -e "VITE_APP_AUTH0_AUDIENCE=https://neurostore.xyz/api/" \
           -e "VITE_APP_AUTH0_CLIENT_SECRET=${VITE_APP_AUTH0_CLIENT_SECRET}" \
           -e "VITE_APP_ENV=STAGING" \
-          -e "VITE_APP_NEUROSTORE_API_DOMAIN=http://localhost/api" \
+          -e "VITE_APP_NEUROSTORE_API_DOMAIN=${LOCAL_NEUROSTORE_API_DOMAIN}" \
           -e "CI=true" \
-          -e "VITE_APP_NEUROSYNTH_API_DOMAIN=http://localhost:81/api" \
+          -e "VITE_APP_NEUROSYNTH_API_DOMAIN=${LOCAL_NEUROSYNTH_API_DOMAIN}" \
           -e "VITEST_MAX_WORKERS=2" \
           -e "VITE_GENERATE_SEO=false" \
           --rm -w /compose/neurosynth-frontend \
           compose \
           bash -c "cd /compose/neurosynth-frontend && \
           npm install && npm run test"
+
+  review_frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: store/review-frontend
+    steps:
+    -
+      name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+    -
+      name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: store/review-frontend/package-lock.json
+    -
+      name: Install
+      run: npm ci
+    -
+      name: Generated types are fresh
+      run: npm run check:types
+    -
+      name: Typecheck
+      run: npm run typecheck
+    -
+      name: Lint
+      run: npm run lint
+    -
+      name: Unit tests
+      run: npm run test
+    -
+      name: Install the end-to-end browser
+      run: npx playwright install --with-deps chromium
+    -
+      name: End-to-end tests
+      run: npm run test:e2e
+    -
+      name: Build
+      run: npm run build
 
   neurosynth_compose_cypress_tests:
     runs-on: ubuntu-latest
@@ -712,6 +761,13 @@ jobs:
       run: |
         cd compose
         docker compose exec -T compose manage create-meta-analyses --n-studysets 1 --neurostore-url http://store_nginx
+    # Chrome 155 intermittently never fires the page load event in CI; unpin once fixed upstream
+    -
+      name: Install Chrome 154
+      id: setup-chrome
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: 154
     -
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6
@@ -727,14 +783,14 @@ jobs:
         VITE_APP_AUTH0_DOMAIN: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
         VITE_APP_AUTH0_CLIENT_SECRET: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
         VITE_APP_ENV: STAGING
-        VITE_APP_NEUROSTORE_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSTORE_API_DOMAIN }}
-        VITE_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSYNTH_API_DOMAIN }}
+        VITE_APP_NEUROSTORE_API_DOMAIN: ${{ env.LOCAL_NEUROSTORE_API_DOMAIN }}
+        VITE_APP_NEUROSYNTH_API_DOMAIN: ${{ env.LOCAL_NEUROSYNTH_API_DOMAIN }}
         VITE_GENERATE_SEO: "true"
         VITE_APP_SITE_URL: http://localhost:3000
       with:
         build: npm run build:staging
         record: false
         start: npm run serve-build
-        browser: chrome
+        browser: ${{ steps.setup-chrome.outputs.chrome-path }}
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
