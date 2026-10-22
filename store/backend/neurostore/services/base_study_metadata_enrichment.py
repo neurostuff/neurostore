@@ -17,7 +17,6 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 from neurostore import corresponding_authors
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
-from neurostore.ingest.study_entities import rehash_base_study_entities
 from neurostore.models import (
     BaseStudy,
     BaseStudyFlagOutbox,
@@ -895,6 +894,9 @@ def merge_base_study(keeper, old):
             if studysets:
                 cache_ids["studysets"] = set(studysets)
         if model is StudyEntity and moved:
+            # Local so that importing the package does not load the ingest stack.
+            from neurostore.ingest.study_entities import rehash_base_study_entities
+
             # An entity's hash covers its base study.
             rehash_base_study_entities([keeper.id])
 
