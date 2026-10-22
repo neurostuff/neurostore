@@ -1,0 +1,49 @@
+{
+  "client_op_id": "frontend-create-analysis",
+  "type": "create_entity",
+  "parent": "study",
+  "list": "analyses",
+  "entity": {
+    "name": {
+      "extraction_status": "not_reported",
+      "evidence": {
+        "status": "not_applicable"
+      }
+    },
+    "definition": {
+      "extraction_status": "not_reported",
+      "evidence": {
+        "status": "not_applicable"
+      }
+    },
+    "prespecification": {
+      "extraction_status": "not_reported",
+      "evidence": {
+        "status": "not_applicable"
+      }
+    },
+    "spatial_scope": {
+      "extraction_status": "not_reported",
+      "evidence": {
+        "status": "not_applicable"
+      }
+    },
+    "measure": "msr_1",
+    "groups": [],
+    "effect": {
+      "cells": [],
+      "statistic": {
+        "family": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        }
+      }
+    },
+    "details": {
+      "details_type": "MassUnivariateDetails"
+    },
+    "model_estimation": "mdl_1"
+  }
+}

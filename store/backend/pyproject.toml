@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurostore"
-version = "0.23.3"
+version = "0.24.0"
 description = "neurostore"
 authors = [
     { name = "James Kent", email = "jamesdkent21@gmail.com" }
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=6.7",
+    "auth0-python~=6.8",
     "alembic~=1.20",
     "connexion[swagger-ui,uvicorn]==3.3.0",
     "cachelib~=0.17",
@@ -20,6 +20,7 @@ dependencies = [
     "uvicorn-worker~=0.4",
     "ipython~=9.17",
     "itsdangerous~=2.2",
+    "jsonschema~=4.26",
     "marshmallow~=4.3",
     "numpy<3.0.0",
     "pandas~=3.0",
@@ -28,7 +29,7 @@ dependencies = [
     "python-jose~=3.5",
     "redis",
     "shortuuid~=1.0",
-    "starlette>=1.7.0,<2",
+    "starlette>=1.8.0,<2",
     "sqlalchemy[asyncio]~=2.1.4",
     "sqladmin~=0.32",
     "sqltap",
@@ -39,12 +40,12 @@ dependencies = [
     "orjson~=3.13",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.21.0",
-    "openai~=3.28",
+    "openai~=3.31",
     "tenacity~=9.2",
-    "sentry-sdk~=2.71",
+    "sentry-sdk~=2.72",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read, pinned to study_schema main.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@2cc7bec2a2c67c4ac7feb4e74a04f4e013e9329a",
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@7c0425a35c6ae1c3f7754cd97a4d8e2f35ec5530",
 ]
 
 [tool.setuptools.packages.find]
@@ -59,6 +60,8 @@ dev = [
     "pytest~=9.1",
     "vcrpy~=8.3",
     "pytest-recording~=0.14.0",
+    # study_schema.layouts (check_revision) imports pyarty.
+    "pyarty @ git+https://github.com/jdkent/pyarty.git@d63f77274856500ccd7da125bdc5543adadeb77e",
 ]
 
 [project.scripts]

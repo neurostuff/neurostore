@@ -1,0 +1,2339 @@
+{
+  "source": {
+    "id": "P5",
+    "base_study_id": "P5",
+    "label": "A synthetic paper with an interaction",
+    "origin": "upload",
+    "text_sha256": "de4a9224b9cbd73d6c570458b7e8aa1dc63d5303cfc9850128d433b4ba5aba22",
+    "schema_versions": {
+      "paper_parse": "0.6.0",
+      "extraction": "0.5.0"
+    }
+  },
+  "text": "Twenty patients and eighteen controls performed a Stroop task during fMRI. Patients were 34.2 years old on average. Images were acquired on a 3T scanner.",
+  "parsed_paper": {
+    "header": {
+      "artifact_kind": "parsed_paper",
+      "schema_version": "0.8.0",
+      "article_id": "x",
+      "identifiers": {
+        "pmid": "12345678",
+        "publication_status": "published"
+      },
+      "producer": {
+        "name": "x",
+        "version": "x"
+      }
+    },
+    "source": "pmc",
+    "text_copy": {
+      "route": "pmc",
+      "version": "vor",
+      "access": "public",
+      "license": {
+        "license_id": "cc-by",
+        "determination": "stated",
+        "stated_by": "jats",
+        "stated_as": "https://creativecommons.org/licenses/by/4.0/"
+      }
+    },
+    "text_path": "x",
+    "text_sha256": "x",
+    "bibliography": {
+      "title": "A paper",
+      "license": {
+        "license_id": "all-rights-reserved",
+        "determination": "assumed"
+      }
+    },
+    "is_meta_analysis": false
+  },
+  "coordinate_parse": {
+    "header": {
+      "artifact_kind": "coordinate_parse",
+      "schema_version": "0.8.0",
+      "article_id": "art-12345678",
+      "identifiers": {
+        "pmid": "12345678",
+        "publication_status": "published"
+      },
+      "producer": {
+        "name": "ingestion",
+        "version": "1.0.0",
+        "stage": "analyses"
+      }
+    },
+    "parse_id": "17fa67d36be6375d35455beb09a1990b3d650f15342ea9f5b6a577d68ffffbf8",
+    "text_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "analyses": [
+      {
+        "origin": "table",
+        "table_id": "t1",
+        "cells": [
+          {
+            "row": 1,
+            "column_group": 0
+          }
+        ],
+        "name": "patients > controls",
+        "coordinate_space": "MNI",
+        "role": "result",
+        "points": [
+          {
+            "coordinates": [
+              10,
+              20,
+              30
+            ],
+            "space": null,
+            "values": [
+              {
+                "kind": "t",
+                "value": 3.5
+              }
+            ]
+          }
+        ],
+        "key": "analysis#12d544dad3a9b2df"
+      },
+      {
+        "origin": "table",
+        "table_id": "t1",
+        "cells": [
+          {
+            "row": 2,
+            "column_group": 0
+          },
+          {
+            "row": 3,
+            "column_group": 0
+          }
+        ],
+        "name": "controls > patients",
+        "coordinate_space": "MNI",
+        "role": "result",
+        "points": [
+          {
+            "coordinates": [
+              -4,
+              2,
+              8
+            ],
+            "space": null,
+            "values": [
+              {
+                "kind": "t",
+                "value": -3.5
+              }
+            ]
+          },
+          {
+            "coordinates": [
+              6,
+              -8,
+              4
+            ],
+            "space": null,
+            "values": [
+              {
+                "kind": "t",
+                "value": -4.1
+              }
+            ]
+          }
+        ],
+        "key": "analysis#e0bab4775f2f5228"
+      },
+      {
+        "origin": "table",
+        "table_id": "t2",
+        "cells": [
+          {
+            "row": 1,
+            "column_group": 0
+          }
+        ],
+        "name": "seed",
+        "coordinate_space": "MNI",
+        "role": "anchor",
+        "points": [
+          {
+            "coordinates": [
+              0,
+              0,
+              0
+            ],
+            "space": null,
+            "values": [
+              {
+                "kind": "t",
+                "value": 3.5
+              }
+            ]
+          }
+        ],
+        "key": "analysis#25dc160a851819c3"
+      }
+    ]
+  },
+  "record": {
+    "extraction_metadata": {
+      "extractor_model": "gpt-6.1-sol",
+      "extractor_version": "1.0.0"
+    },
+    "local_id": "study-1",
+    "analyses": [
+      {
+        "local_id": "an_1",
+        "name": {
+          "value": "patients > controls, incongruent > congruent",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "definition": {
+          "extraction_status": "extracted",
+          "value": "Patients versus controls, for incongruent versus congruent trials, in a whole-brain voxelwise analysis.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "prespecification": {
+          "extraction_status": "extracted",
+          "value": "planned",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "spatial_scope": {
+          "extraction_status": "extracted",
+          "value": "whole_brain",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "measure": "msr_1",
+        "groups": [
+          {
+            "group": "grp_a",
+            "n": {
+              "value": 20,
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "group": "grp_b",
+            "n": {
+              "extraction_status": "extracted",
+              "value": 18,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "effect": {
+          "cells": [
+            {
+              "term": "trm_1",
+              "level": {
+                "value": "patients",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "positive",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            },
+            {
+              "term": "trm_1",
+              "level": {
+                "value": "controls",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "negative",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            },
+            {
+              "term": "trm_2",
+              "level": {
+                "value": "incongruent",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "positive",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            },
+            {
+              "term": "trm_2",
+              "level": {
+                "value": "congruent",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "direction": {
+                "value": "negative",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            }
+          ],
+          "statistic": {
+            "family": {
+              "extraction_status": "extracted",
+              "value": "f",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "degrees_of_freedom_numerator": {
+              "extraction_status": "extracted",
+              "value": 1,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "degrees_of_freedom_denominator": {
+              "extraction_status": "extracted",
+              "value": 36,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          "kind": {
+            "value": "interaction",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          }
+        },
+        "details": {
+          "details_type": "MassUnivariateDetails"
+        },
+        "model_estimation": "mdl_1",
+        "tasks": [
+          "tsk_1"
+        ],
+        "acquisitions": [
+          "acq_1"
+        ],
+        "source_table_analysis": {
+          "value": "analysis#12d544dad3a9b2df",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "interpretations": {
+          "extraction_status": "extracted",
+          "value": [
+            "Patients showed a larger Stroop effect in the anterior cingulate.",
+            "The effect held after adjusting for age."
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "outcome": {
+          "extraction_status": "extracted",
+          "value": "significant_effect",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "coordinate_space": {
+          "extraction_status": "extracted",
+          "value": "MNI",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "regions": [
+          "reg_1"
+        ],
+        "defines_regions": [],
+        "assessments": [
+          "asm_1"
+        ],
+        "model_representation_notes": {
+          "extraction_status": "extracted",
+          "value": "Group by condition interaction from a 2 × 2 mixed ANOVA.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        }
+      }
+    ],
+    "groups": [
+      {
+        "local_id": "grp_a",
+        "name": {
+          "value": "patients",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "species": {
+          "extraction_status": "extracted",
+          "value": "human",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_mean": {
+          "extraction_status": "extracted",
+          "value": 34.2,
+          "value_source": "reported",
+          "evidence": {
+            "status": "present",
+            "sets": [
+              {
+                "source": "model_quote",
+                "spans": [
+                  {
+                    "start_char": 75,
+                    "end_char": 115,
+                    "text": "Patients were 34.2 years old on average."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "description": {
+          "extraction_status": "extracted",
+          "value": "Adults with a diagnosis of social anxiety disorder recruited from two outpatient clinics.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "approached_count": {
+          "extraction_status": "extracted",
+          "value": 64,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "consented_count": {
+          "extraction_status": "extracted",
+          "value": 40,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "enrolled_count": {
+          "extraction_status": "extracted",
+          "value": 36,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "acquired_count": {
+          "extraction_status": "extracted",
+          "value": 28,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "excluded_count": {
+          "extraction_status": "extracted",
+          "value": 8,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "inclusion_criteria": {
+          "extraction_status": "extracted",
+          "value": [
+            "Aged 18 to 55",
+            "Primary diagnosis of social anxiety disorder",
+            "Right-handed"
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "exclusion_criteria": {
+          "extraction_status": "extracted",
+          "value": [
+            "Current major depressive episode",
+            "History of neurological illness",
+            "MRI contraindications"
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "recruitment_method": {
+          "extraction_status": "extracted",
+          "value": "Referrals from two outpatient anxiety clinics and community advertisements.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "recruitment_dates": {
+          "extraction_status": "extracted",
+          "value": "March 2018 to June 2020",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_standard_deviation": {
+          "extraction_status": "extracted",
+          "value": 8.1,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_minimum": {
+          "extraction_status": "extracted",
+          "value": 19,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_maximum": {
+          "extraction_status": "extracted",
+          "value": 54,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_median": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "age_unit": {
+          "extraction_status": "extracted",
+          "value": "years",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "sex_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Female",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 15,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 53.6,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Sex",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "female",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Male",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 13,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 46.4,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Sex",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "male",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "gender_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Female",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 15,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 53.6,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Gender",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "female",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Male",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 13,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 46.4,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Gender",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "male",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "handedness_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Right",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 100,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Handedness",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "right",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "population_characteristics": {
+          "extraction_status": "extracted",
+          "value": [
+            "Outpatients",
+            "Medication-free for at least four weeks"
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "medical_condition": {
+          "extraction_status": "extracted",
+          "value": [
+            "Social anxiety disorder"
+          ],
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "diagnostic_system": {
+          "extraction_status": "extracted",
+          "value": "DSM-5",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "clinical_characteristics": {
+          "extraction_status": "extracted",
+          "value": "Mean LSAS score of 82, moderate to severe symptoms.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "medications": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "medication_status": {
+          "extraction_status": "extracted",
+          "value": "Medication-free for at least four weeks before scanning.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "education_summary": {
+          "extraction_status": "extracted",
+          "value": "Mean of 14.2 years of education.",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "socioeconomic_status_summary": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "sample_source": {
+          "extraction_status": "extracted",
+          "value": "recruited",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "sample_source_reference": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "sample_overlap_count": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "is_healthy": {
+          "extraction_status": "extracted",
+          "value": false,
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "age_unit_normalized": {
+          "extraction_status": "extracted",
+          "value": "years",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "other_characteristics": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          },
+          "unreported_reason": "ambiguous"
+        },
+        "arm": "arm_1",
+        "diagnostic_instrument": [
+          "asm_1"
+        ],
+        "race_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "White",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 20,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 71.4,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Race",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "white",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Asian",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 8,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 28.6,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Race",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "asian",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ],
+        "ethnicity_distribution": [
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Not Hispanic",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 26,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 92.9,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Ethnicity",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "not hispanic",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          {
+            "category": {
+              "extraction_status": "extracted",
+              "value": "Hispanic",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "count": {
+              "extraction_status": "extracted",
+              "value": 2,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "percentage": {
+              "extraction_status": "extracted",
+              "value": 7.1,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "denominator": {
+              "extraction_status": "extracted",
+              "value": 28,
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "reporting_framework": {
+              "extraction_status": "extracted",
+              "value": "Ethnicity",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "category_normalized": {
+              "extraction_status": "extracted",
+              "value": "hispanic",
+              "value_source": "reported",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "local_id": "grp_b",
+        "name": {
+          "value": "controls",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "species": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "age_mean": {
+          "extraction_status": "not_reported",
+          "unreported_reason": "ambiguous",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "local_id": "tsk_1",
+        "name": {
+          "value": "Stroop",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "conditions": [
+          {
+            "local_id": "cnd_1",
+            "name": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            }
+          },
+          {
+            "local_id": "cnd_2",
+            "name": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "assessments": [
+      {
+        "local_id": "asm_1",
+        "name": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        }
+      }
+    ],
+    "regions": [
+      {
+        "local_id": "reg_1",
+        "name": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "definition_method": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        }
+      }
+    ],
+    "devices": [
+      {
+        "local_id": "dev_1"
+      }
+    ],
+    "acquisitions": [
+      {
+        "local_id": "acq_1",
+        "acquisition_type": "MRI",
+        "modality": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "magnetic_field_strength_tesla": {
+          "extraction_status": "extracted",
+          "value": 3,
+          "value_source": "reported",
+          "evidence": {
+            "status": "present",
+            "sets": [
+              {
+                "source": "model_quote",
+                "spans": [
+                  {
+                    "start_char": 142,
+                    "end_char": 144,
+                    "text": "3T"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "pulse_sequence_type": {
+          "extraction_status": "extracted",
+          "value": "gradient-echo EPI",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "mr_acquisition_type": {
+          "extraction_status": "extracted",
+          "value": "2D",
+          "value_source": "reported",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "device": "dev_1"
+      }
+    ],
+    "model_estimations": [
+      {
+        "local_id": "mdl_1",
+        "model_family": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "model_type": {
+          "value": "GLM of group and condition",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "stage": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "terms": [
+          {
+            "local_id": "trm_1",
+            "name": {
+              "value": "group",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "type": {
+              "value": "categorical",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "levels": [
+              {
+                "level": {
+                  "value": "patients",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "groups": [
+                  "grp_a"
+                ]
+              },
+              {
+                "level": {
+                  "value": "controls",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "groups": [
+                  "grp_b"
+                ]
+              }
+            ]
+          },
+          {
+            "local_id": "trm_2",
+            "name": {
+              "value": "condition",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "type": {
+              "value": "categorical",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "local_id": "mdl_2",
+        "model_family": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "model_type": {
+          "value": "GLM of group alone",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        },
+        "stage": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "terms": [
+          {
+            "local_id": "trm_3",
+            "name": {
+              "value": "group",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "type": {
+              "value": "categorical",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            },
+            "levels": [
+              {
+                "level": {
+                  "value": "patients",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "groups": [
+                  "grp_a"
+                ]
+              },
+              {
+                "level": {
+                  "value": "controls",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "groups": [
+                  "grp_b"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "measures": [
+      {
+        "local_id": "msr_1",
+        "family": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        },
+        "type": {
+          "extraction_status": "not_reported",
+          "evidence": {
+            "status": "not_applicable"
+          }
+        }
+      }
+    ],
+    "design": {
+      "arms": [
+        {
+          "local_id": "arm_1",
+          "name": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "arm_kind": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          }
+        }
+      ],
+      "timepoints": [
+        {
+          "local_id": "tp_1",
+          "name": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "relation_to_intervention": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          }
+        }
+      ],
+      "description": {
+        "value": "Two groups tested in one session.",
+        "extraction_status": "extracted",
+        "evidence": {
+          "status": "not_found"
+        }
+      }
+    },
+    "description": {
+      "value": "Two groups, one session.",
+      "extraction_status": "extracted",
+      "evidence": {
+        "status": "not_found"
+      }
+    }
+  },
+  "coordinate_revision": null,
+  "review": null,
+  "ops": [],
+  "entities": [
+    {
+      "local_id": "study",
+      "entity_class": "Study",
+      "schema_class": "Study",
+      "parent": null,
+      "list_path": null
+    },
+    {
+      "local_id": "grp_a",
+      "entity_class": "Group",
+      "schema_class": "Group",
+      "parent": "study",
+      "list_path": "groups"
+    },
+    {
+      "local_id": "grp_b",
+      "entity_class": "Group",
+      "schema_class": "Group",
+      "parent": "study",
+      "list_path": "groups"
+    },
+    {
+      "local_id": "tsk_1",
+      "entity_class": "Task",
+      "schema_class": "Task",
+      "parent": "study",
+      "list_path": "tasks"
+    },
+    {
+      "local_id": "cnd_1",
+      "entity_class": "Condition",
+      "schema_class": "Condition",
+      "parent": "tsk_1",
+      "list_path": "conditions"
+    },
+    {
+      "local_id": "cnd_2",
+      "entity_class": "Condition",
+      "schema_class": "Condition",
+      "parent": "tsk_1",
+      "list_path": "conditions"
+    },
+    {
+      "local_id": "asm_1",
+      "entity_class": "Assessment",
+      "schema_class": "Assessment",
+      "parent": "study",
+      "list_path": "assessments"
+    },
+    {
+      "local_id": "reg_1",
+      "entity_class": "Region",
+      "schema_class": "Region",
+      "parent": "study",
+      "list_path": "regions"
+    },
+    {
+      "local_id": "dev_1",
+      "entity_class": "Device",
+      "schema_class": "Device",
+      "parent": "study",
+      "list_path": "devices"
+    },
+    {
+      "local_id": "acq_1",
+      "entity_class": "Acquisition",
+      "schema_class": "MRI",
+      "parent": "study",
+      "list_path": "acquisitions"
+    },
+    {
+      "local_id": "mdl_1",
+      "entity_class": "ModelEstimation",
+      "schema_class": "ModelEstimation",
+      "parent": "study",
+      "list_path": "model_estimations"
+    },
+    {
+      "local_id": "trm_1",
+      "entity_class": "ModelTerm",
+      "schema_class": "ModelTerm",
+      "parent": "mdl_1",
+      "list_path": "terms"
+    },
+    {
+      "local_id": "trm_2",
+      "entity_class": "ModelTerm",
+      "schema_class": "ModelTerm",
+      "parent": "mdl_1",
+      "list_path": "terms"
+    },
+    {
+      "local_id": "mdl_2",
+      "entity_class": "ModelEstimation",
+      "schema_class": "ModelEstimation",
+      "parent": "study",
+      "list_path": "model_estimations"
+    },
+    {
+      "local_id": "trm_3",
+      "entity_class": "ModelTerm",
+      "schema_class": "ModelTerm",
+      "parent": "mdl_2",
+      "list_path": "terms"
+    },
+    {
+      "local_id": "msr_1",
+      "entity_class": "Measure",
+      "schema_class": "Measure",
+      "parent": "study",
+      "list_path": "measures"
+    },
+    {
+      "local_id": "an_1",
+      "entity_class": "Analysis",
+      "schema_class": "Analysis",
+      "parent": "study",
+      "list_path": "analyses"
+    },
+    {
+      "local_id": "arm_1",
+      "entity_class": "Arm",
+      "schema_class": "Arm",
+      "parent": "study",
+      "list_path": "design.arms"
+    },
+    {
+      "local_id": "tp_1",
+      "entity_class": "Timepoint",
+      "schema_class": "Timepoint",
+      "parent": "study",
+      "list_path": "design.timepoints"
+    }
+  ],
+  "hidden": {
+    "analyses": [],
+    "entities": []
+  },
+  "reviewers": [],
+  "original": {
+    "record": {
+      "extraction_metadata": {
+        "extractor_model": "gpt-6.1-sol",
+        "extractor_version": "1.0.0"
+      },
+      "local_id": "study-1",
+      "analyses": [
+        {
+          "local_id": "an_1",
+          "name": {
+            "value": "patients > controls, incongruent > congruent",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "definition": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "prespecification": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "spatial_scope": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "measure": "msr_1",
+          "groups": [
+            {
+              "group": "grp_a",
+              "n": {
+                "value": 20,
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            }
+          ],
+          "effect": {
+            "cells": [
+              {
+                "term": "trm_1",
+                "level": {
+                  "value": "patients",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "positive",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_1",
+                "level": {
+                  "value": "controls",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "negative",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_2",
+                "level": {
+                  "value": "incongruent",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "positive",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              },
+              {
+                "term": "trm_2",
+                "level": {
+                  "value": "congruent",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                },
+                "direction": {
+                  "value": "negative",
+                  "extraction_status": "extracted",
+                  "evidence": {
+                    "status": "not_found"
+                  }
+                }
+              }
+            ],
+            "statistic": {
+              "family": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            "kind": {
+              "value": "interaction",
+              "extraction_status": "extracted",
+              "evidence": {
+                "status": "not_found"
+              }
+            }
+          },
+          "details": {
+            "details_type": "MassUnivariateDetails"
+          },
+          "model_estimation": "mdl_1",
+          "tasks": [
+            "tsk_1"
+          ],
+          "acquisitions": [
+            "acq_1"
+          ],
+          "source_table_analysis": {
+            "value": "analysis#12d544dad3a9b2df",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          }
+        }
+      ],
+      "groups": [
+        {
+          "local_id": "grp_a",
+          "name": {
+            "value": "patients",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "species": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "age_mean": {
+            "extraction_status": "extracted",
+            "value": 34.2,
+            "value_source": "reported",
+            "evidence": {
+              "status": "present",
+              "sets": [
+                {
+                  "source": "model_quote",
+                  "spans": [
+                    {
+                      "start_char": 75,
+                      "end_char": 115,
+                      "text": "Patients were 34.2 years old on average."
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "local_id": "grp_b",
+          "name": {
+            "value": "controls",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "species": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "age_mean": {
+            "extraction_status": "not_reported",
+            "unreported_reason": "ambiguous",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          }
+        }
+      ],
+      "tasks": [
+        {
+          "local_id": "tsk_1",
+          "name": {
+            "value": "Stroop",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "conditions": [
+            {
+              "local_id": "cnd_1",
+              "name": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            },
+            {
+              "local_id": "cnd_2",
+              "name": {
+                "extraction_status": "not_reported",
+                "evidence": {
+                  "status": "not_applicable"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "assessments": [
+        {
+          "local_id": "asm_1",
+          "name": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          }
+        }
+      ],
+      "regions": [
+        {
+          "local_id": "reg_1",
+          "name": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "definition_method": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          }
+        }
+      ],
+      "devices": [
+        {
+          "local_id": "dev_1"
+        }
+      ],
+      "acquisitions": [
+        {
+          "local_id": "acq_1",
+          "acquisition_type": "MRI",
+          "modality": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "magnetic_field_strength_tesla": {
+            "extraction_status": "extracted",
+            "value": 3,
+            "value_source": "reported",
+            "evidence": {
+              "status": "present",
+              "sets": [
+                {
+                  "source": "model_quote",
+                  "spans": [
+                    {
+                      "start_char": 142,
+                      "end_char": 144,
+                      "text": "3T"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "pulse_sequence_type": {
+            "extraction_status": "extracted",
+            "value": "gradient-echo EPI",
+            "value_source": "reported",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "mr_acquisition_type": {
+            "extraction_status": "extracted",
+            "value": "2D",
+            "value_source": "reported",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "device": "dev_1"
+        }
+      ],
+      "model_estimations": [
+        {
+          "local_id": "mdl_1",
+          "model_family": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "model_type": {
+            "value": "GLM of group and condition",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "stage": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "terms": [
+            {
+              "local_id": "trm_1",
+              "name": {
+                "value": "group",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "value": "categorical",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "levels": [
+                {
+                  "level": {
+                    "value": "patients",
+                    "extraction_status": "extracted",
+                    "evidence": {
+                      "status": "not_found"
+                    }
+                  },
+                  "groups": [
+                    "grp_a"
+                  ]
+                },
+                {
+                  "level": {
+                    "value": "controls",
+                    "extraction_status": "extracted",
+                    "evidence": {
+                      "status": "not_found"
+                    }
+                  },
+                  "groups": [
+                    "grp_b"
+                  ]
+                }
+              ]
+            },
+            {
+              "local_id": "trm_2",
+              "name": {
+                "value": "condition",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "value": "categorical",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "local_id": "mdl_2",
+          "model_family": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "model_type": {
+            "value": "GLM of group alone",
+            "extraction_status": "extracted",
+            "evidence": {
+              "status": "not_found"
+            }
+          },
+          "stage": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "terms": [
+            {
+              "local_id": "trm_3",
+              "name": {
+                "value": "group",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "type": {
+                "value": "categorical",
+                "extraction_status": "extracted",
+                "evidence": {
+                  "status": "not_found"
+                }
+              },
+              "levels": [
+                {
+                  "level": {
+                    "value": "patients",
+                    "extraction_status": "extracted",
+                    "evidence": {
+                      "status": "not_found"
+                    }
+                  },
+                  "groups": [
+                    "grp_a"
+                  ]
+                },
+                {
+                  "level": {
+                    "value": "controls",
+                    "extraction_status": "extracted",
+                    "evidence": {
+                      "status": "not_found"
+                    }
+                  },
+                  "groups": [
+                    "grp_b"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "local_id": "msr_1",
+          "family": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          },
+          "type": {
+            "extraction_status": "not_reported",
+            "evidence": {
+              "status": "not_applicable"
+            }
+          }
+        }
+      ],
+      "design": {
+        "arms": [
+          {
+            "local_id": "arm_1",
+            "name": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            },
+            "arm_kind": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            }
+          }
+        ],
+        "timepoints": [
+          {
+            "local_id": "tp_1",
+            "name": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            },
+            "relation_to_intervention": {
+              "extraction_status": "not_reported",
+              "evidence": {
+                "status": "not_applicable"
+              }
+            }
+          }
+        ],
+        "description": {
+          "value": "Two groups tested in one session.",
+          "extraction_status": "extracted",
+          "evidence": {
+            "status": "not_found"
+          }
+        }
+      },
+      "description": {
+        "value": "Two groups, one session.",
+        "extraction_status": "extracted",
+        "evidence": {
+          "status": "not_found"
+        }
+      }
+    },
+    "coordinate_revision": null,
+    "entities": [
+      {
+        "local_id": "study",
+        "entity_class": "Study",
+        "schema_class": "Study",
+        "parent": null,
+        "list_path": null
+      },
+      {
+        "local_id": "grp_a",
+        "entity_class": "Group",
+        "schema_class": "Group",
+        "parent": "study",
+        "list_path": "groups"
+      },
+      {
+        "local_id": "grp_b",
+        "entity_class": "Group",
+        "schema_class": "Group",
+        "parent": "study",
+        "list_path": "groups"
+      },
+      {
+        "local_id": "tsk_1",
+        "entity_class": "Task",
+        "schema_class": "Task",
+        "parent": "study",
+        "list_path": "tasks"
+      },
+      {
+        "local_id": "cnd_1",
+        "entity_class": "Condition",
+        "schema_class": "Condition",
+        "parent": "tsk_1",
+        "list_path": "conditions"
+      },
+      {
+        "local_id": "cnd_2",
+        "entity_class": "Condition",
+        "schema_class": "Condition",
+        "parent": "tsk_1",
+        "list_path": "conditions"
+      },
+      {
+        "local_id": "asm_1",
+        "entity_class": "Assessment",
+        "schema_class": "Assessment",
+        "parent": "study",
+        "list_path": "assessments"
+      },
+      {
+        "local_id": "reg_1",
+        "entity_class": "Region",
+        "schema_class": "Region",
+        "parent": "study",
+        "list_path": "regions"
+      },
+      {
+        "local_id": "dev_1",
+        "entity_class": "Device",
+        "schema_class": "Device",
+        "parent": "study",
+        "list_path": "devices"
+      },
+      {
+        "local_id": "acq_1",
+        "entity_class": "Acquisition",
+        "schema_class": "MRI",
+        "parent": "study",
+        "list_path": "acquisitions"
+      },
+      {
+        "local_id": "mdl_1",
+        "entity_class": "ModelEstimation",
+        "schema_class": "ModelEstimation",
+        "parent": "study",
+        "list_path": "model_estimations"
+      },
+      {
+        "local_id": "trm_1",
+        "entity_class": "ModelTerm",
+        "schema_class": "ModelTerm",
+        "parent": "mdl_1",
+        "list_path": "terms"
+      },
+      {
+        "local_id": "trm_2",
+        "entity_class": "ModelTerm",
+        "schema_class": "ModelTerm",
+        "parent": "mdl_1",
+        "list_path": "terms"
+      },
+      {
+        "local_id": "mdl_2",
+        "entity_class": "ModelEstimation",
+        "schema_class": "ModelEstimation",
+        "parent": "study",
+        "list_path": "model_estimations"
+      },
+      {
+        "local_id": "trm_3",
+        "entity_class": "ModelTerm",
+        "schema_class": "ModelTerm",
+        "parent": "mdl_2",
+        "list_path": "terms"
+      },
+      {
+        "local_id": "msr_1",
+        "entity_class": "Measure",
+        "schema_class": "Measure",
+        "parent": "study",
+        "list_path": "measures"
+      },
+      {
+        "local_id": "an_1",
+        "entity_class": "Analysis",
+        "schema_class": "Analysis",
+        "parent": "study",
+        "list_path": "analyses"
+      },
+      {
+        "local_id": "arm_1",
+        "entity_class": "Arm",
+        "schema_class": "Arm",
+        "parent": "study",
+        "list_path": "design.arms"
+      },
+      {
+        "local_id": "tp_1",
+        "entity_class": "Timepoint",
+        "schema_class": "Timepoint",
+        "parent": "study",
+        "list_path": "design.timepoints"
+      }
+    ],
+    "hidden": {
+      "analyses": [],
+      "entities": []
+    }
+  }
+}

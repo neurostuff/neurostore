@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neurostore.org/schemas/review-bundle/1",
+  "title": "ReviewBundle",
+  "description": "Everything the review app needs to open one paper for one reviewer.",
+  "version": "1",
+  "type": "object",
+  "required": ["source", "text", "parsed_paper", "coordinate_parse", "record", "coordinate_revision", "review", "ops", "entities", "hidden", "original", "reviewers"],
+  "additionalProperties": false,
+  "properties": {
+    "source": {
+      "type": "object",
+      "required": ["id", "base_study_id", "label", "origin", "text_sha256", "schema_versions"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "base_study_id": {"type": "string"},
+        "label": {"type": "string"},
+        "origin": {"enum": ["upload", "pipeline_run"]},
+        "text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "schema_versions": {
+          "type": "object",
+          "required": ["paper_parse", "extraction"],
+          "properties": {"paper_parse": {"type": "string"}, "extraction": {"type": "string"}}
+        }
+      }
+    },
+    "text": {"description": "The parsed paper's text; every span offset indexes it.", "type": "string"},
+    "parsed_paper": {"type": "object"},
+    "coordinate_parse": {"description": "The parse as loaded, unchanged.", "type": "object"},
+    "record": {"description": "The extraction record with the reviewer's ops applied (the loaded record when there is no review yet).", "type": "object"},
+    "coordinate_revision": {"description": "The reviewer's revision of the coordinate parse, or null when coordinates are unchanged; before a review starts, the revision the source was loaded with.", "type": ["object", "null"]},
+    "review": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["id", "user_id", "state", "last_seq", "provenance", "annotations"],
+          "additionalProperties": false,
+          "properties": {
+            "id": {"type": "string"},
+            "user_id": {"type": "string"},
+            "state": {"enum": ["in_progress", "submitted", "reference", "set_aside"]},
+            "set_aside": {
+              "description": "Why the paper was set aside; present only while the review is.",
+              "type": "object",
+              "required": ["reason", "note"],
+              "additionalProperties": false,
+              "properties": {
+                "reason": {"enum": ["no_usable_text", "out_of_scope", "no_results", "duplicate", "other"]},
+                "note": {"type": ["string", "null"]}
+              }
+            },
+            "last_seq": {"type": "integer", "minimum": 0},
+            "provenance": {
+              "description": "Target key -> what a person did to it. A target with no entry is unchecked.",
+              "type": "object",
+              "propertyNames": {"$ref": "#/$defs/TargetKey"},
+              "additionalProperties": {"$ref": "#/$defs/Provenance"}
+            },
+            "annotations": {
+              "description": "Target key -> evidence a reviewer set on an entity or a relationship.",
+              "type": "object",
+              "propertyNames": {"$ref": "#/$defs/TargetKey"},
+              "additionalProperties": {"$ref": "#/$defs/Annotation"}
+            }
+          }
+        }
+      ]
+    },
+    "ops": {"type": "array", "items": {"$ref": "#/$defs/StoredOp"}},
+    "entities": {"$ref": "#/$defs/EntityIndex"},
+    "hidden": {"$ref": "#/$defs/HiddenSet"},
+    "original": {
+      "description": "The extraction record and coordinates as loaded, before any of the reviewer's ops, with the record's entity index and hidden set.",
+      "type": "object",
+      "required": ["record", "coordinate_revision", "entities", "hidden"],
+      "additionalProperties": false,
+      "properties": {
+        "record": {"type": "object"},
+        "coordinate_revision": {"description": "The pipeline's revision of the coordinate parse the source was loaded with, or null when it was loaded with the parse alone.", "type": ["object", "null"]},
+        "entities": {"$ref": "#/$defs/EntityIndex"},
+        "hidden": {"$ref": "#/$defs/HiddenSet"}
+      }
+    },
+    "reviewers": {
+      "description": "Everyone who has a review of this paper, newest edit first.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["user_id", "name", "state", "op_count", "last_edit_at"],
+        "additionalProperties": false,
+        "properties": {
+          "user_id": {"type": "string"},
+          "name": {"type": ["string", "null"]},
+          "state": {"enum": ["in_progress", "submitted", "reference", "set_aside"]},
+          "op_count": {"type": "integer", "minimum": 0},
+          "last_edit_at": {"type": ["string", "null"], "format": "date-time"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "EntityIndex": {
+      "description": "The record's entity index (review.entities.index_rows), in record order.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["local_id", "entity_class", "schema_class", "parent", "list_path"],
+        "additionalProperties": false,
+        "properties": {
+          "local_id": {"type": "string"},
+          "entity_class": {"type": "string"},
+          "schema_class": {"type": "string"},
+          "parent": {"type": ["string", "null"]},
+          "list_path": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "HiddenSet": {
+      "description": "Local ids hidden by default: non-coordinate analyses and the entities only they reach.",
+      "type": "object",
+      "required": ["analyses", "entities"],
+      "additionalProperties": false,
+      "properties": {
+        "analyses": {"type": "array", "items": {"type": "string"}},
+        "entities": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "TargetKey": {
+      "pattern": "^(slot:[^:]+:.+|entity:[^:]+|relationship:[^:]+:[^:]+:[^:]+|coordinate_analysis:analysis#[0-9a-f]{16}|paper)$",
+      "description": "A target written as one string: its kind, then its fields, colon-separated: slot:<entity>:<path>, entity:<entity>, relationship:<entity>:<path>:<target_entity>, coordinate_analysis:<analysis_key>, paper.",
+      "type": "string"
+    },
+    "Annotation": {
+      "description": "An entity's or relationship's evidence with each span's text filled from the paper.",
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["present", "not_found", "not_applicable"]},
+        "sets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["spans"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"anyOf": [{"enum": ["model_quote", "retriever", "literal_match", "repair_pass"]}, {"type": "null"}]},
+              "spans": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["start_char", "end_char", "text"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "start_char": {"type": "integer", "minimum": 0},
+                    "end_char": {"type": "integer", "minimum": 1},
+                    "text": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "unlocated_quotes": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "Provenance": {
+      "type": "object",
+      "required": ["state", "user_id", "at"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"enum": ["verified", "edited", "added", "removed"]},
+        "user_id": {"type": "string"},
+        "at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "StoredOp": {
+      "type": "object",
+      "required": ["seq", "op", "before", "after", "user_id", "created_at"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": {"type": "integer", "minimum": 1},
+        "op": {"$ref": "review-ops.schema.json#/$defs/Op"},
+        "before": {"description": "What the op replaced; its shape depends on the op type."},
+        "after": {"description": "What the op wrote; its shape depends on the op type."},
+        "user_id": {"type": "string"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "inverse": {
+          "description": "In an op result only: the ops that undo this one, in order, each an Op without its client_op_id. Absent for a verdict or a note.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {"type": {"type": "string"}},
+            "not": {"required": ["client_op_id"]}
+          }
+        }
+      }
+    }
+  }
+}

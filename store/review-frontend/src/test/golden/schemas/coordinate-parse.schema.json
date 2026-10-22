@@ -1,0 +1,2844 @@
+{
+  "$defs": {
+    "AnalysisOutcome": {
+      "description": "Whether the tested effect produced any finding at the threshold the source applied. Closed: the two are the only answers, and a source that does not say takes `not_reported` rather than a third value.",
+      "enum": [
+        "significant_effect",
+        "no_significant_effect"
+      ],
+      "title": "AnalysisOutcome",
+      "type": "string"
+    },
+    "AnalysisType": {
+      "description": "The method that produced the statistical map, independent of what was tested about it. A between-group comparison of connectivity, decoding accuracy, or component loadings keeps the method here and records the comparison in Effect. Bound only by ConjunctionComponent.analysis_type; an Analysis states its method by which AnalysisDetails subclass it fills. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "mass_univariate",
+        "multivariate_decoding",
+        "representational_similarity",
+        "connectivity",
+        "conjunction",
+        "latent_decomposition",
+        "not_structurable"
+      ],
+      "title": "AnalysisType",
+      "type": "string"
+    },
+    "AnalysisVerdict": {
+      "additionalProperties": false,
+      "description": "pondie's verdict on one analysis of the parse a revision revises, reached while extracting the whole record. The verdict overrides the original's proposal, grouping and role alike.\nWhat a verdict does to what is stored against the analysis -- claims, their evidence, and users' votes on them:\n- accept, relabel: nothing moves. The key is unchanged, so everything stored against\n  it applies to the revision as it stands.\n- edit: everything is copied to the one analysis in `replaced_by`, whose points are\n  the corrected ones.\n- split: everything is copied to each analysis in `replaced_by`. - merge: everything stored against each merged analysis is copied to the one\n  analysis they merge into. Two copies of the same field with the same value become\n  one claim; with different values they stay competing claims, resolved like any\n  other.\n- omit: nothing is copied. - add: nothing to copy; the analysis is new.\nEvery copy records the key and parse it was copied from, so a reviewer can tell a copied claim from one made against the revision. The revised parse and everything stored against it are kept, unchanged, as history: superseded rather than deleted, and left out of projections and studysets.",
+      "properties": {
+        "key": {
+          "description": "The revised parse's analysis key; for `add`, the new analysis's key in this revision.",
+          "type": "string"
+        },
+        "verdict": {
+          "$ref": "#/$defs/AuditVerdict"
+        },
+        "replaced_by": {
+          "description": "The keys in this revision that take the analysis's place: itself for accept and relabel, the one corrected analysis for edit, the replacements for split and merge, none for omit.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "role": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoordinateRole"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For relabel, the role the points have instead."
+        },
+        "reason": {
+          "type": "string"
+        },
+        "evidence": {
+          "description": "The sentences of the paper the verdict rests on.",
+          "items": {
+            "$ref": "#/$defs/TextSpan"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "key",
+        "verdict",
+        "reason"
+      ],
+      "title": "AnalysisVerdict",
+      "type": "object"
+    },
+    "AnchorKind": {
+      "description": "What an `anchor` coordinate set defines. Open vocabulary.",
+      "enum": [
+        "roi",
+        "seed",
+        "stimulation_target",
+        "node"
+      ],
+      "title": "AnchorKind",
+      "type": "string"
+    },
+    "ArticleIdentifiers": {
+      "additionalProperties": false,
+      "description": "Every identifier known for the paper when the artifact was written. Carried whole, so no consumer has to choose between them or look one up. `doi`, `pmid` and `pmcid` name the version of record; a preprint's identifiers are kept beside them in the `preprint_` fields, so a paper and its preprint are one article.",
+      "properties": {
+        "pmid": {
+          "description": "PubMed's record of the version of record. Never PubMed's record of a preprint, which is `preprint_pmid`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pmcid": {
+          "description": "PubMed Central's copy of the version of record. Never PMC's copy of a preprint, which is `preprint_pmcid`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doi": {
+          "description": "The DOI of the version of record. Never a preprint server's DOI, which is in `preprint_dois`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preprint_dois": {
+          "description": "Every DOI a preprint server registered for the paper. A server that registers each version separately, such as Research Square's `/v2`, gives one entry per version, each kept as registered.",
+          "items": {
+            "$ref": "#/$defs/PreprintDoi"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "preprint_pmid": {
+          "description": "PubMed's record of the preprint, which PubMed types `Preprint`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preprint_pmcid": {
+          "description": "PubMed Central's copy of the preprint.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "publication_status": {
+          "$ref": "#/$defs/PublicationStatus",
+          "description": "`preprint` when a `preprint_` field is set and `doi`, `pmid` and `pmcid` are all empty, `published` otherwise. The producer states it so that no consumer re-derives it."
+        }
+      },
+      "required": [
+        "publication_status"
+      ],
+      "title": "ArticleIdentifiers",
+      "type": "object"
+    },
+    "ArtifactHeader": {
+      "additionalProperties": false,
+      "description": "Who made an artifact, from what, for which paper.",
+      "properties": {
+        "artifact_kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "schema_version": {
+          "description": "The version of this schema the artifact validates against.",
+          "type": "string"
+        },
+        "article_id": {
+          "description": "The ingestion catalog's key for the paper. Minted once, at download, and never recomputed from the identifiers below.",
+          "type": "string"
+        },
+        "identifiers": {
+          "$ref": "#/$defs/ArticleIdentifiers"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "inputs": {
+          "description": "Every artifact this one was made from, by fingerprint.",
+          "items": {
+            "$ref": "#/$defs/InputRef"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "created_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "neurostore_base_study_id": {
+          "description": "Set once the paper has been uploaded; neurostore's BaseStudy id. An upload pointer, not a bibliographic identifier, so it sits here and not in `identifiers`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "schema_version",
+        "article_id",
+        "identifiers",
+        "producer"
+      ],
+      "title": "ArtifactHeader",
+      "type": "object"
+    },
+    "ArtifactKind": {
+      "description": "Which of the two parse artifacts a header belongs to.",
+      "enum": [
+        "parsed_paper",
+        "coordinate_parse"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "AuditVerdict": {
+      "description": "pondie's verdict on one analysis of the parse it revises.",
+      "enum": [
+        "accept",
+        "relabel",
+        "edit",
+        "split",
+        "merge",
+        "omit",
+        "add"
+      ],
+      "title": "AuditVerdict",
+      "type": "string"
+    },
+    "Bibliography": {
+      "additionalProperties": false,
+      "description": "The paper's bibliographic facts, as the metadata lookup returned them. Defined once: the parsed paper carries it, and the storage Study holds the same object as `Study.bibliography`, so nothing is copied field by field and nothing is extracted.",
+      "else": {
+        "properties": {
+          "abstract_provider": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/MetadataSource"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "abstract": {
+            "anyOf": [
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "abstract"
+        ]
+      },
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "authors": {
+          "description": "Author names in published order.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "journal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "publication_year": {
+          "description": "Year in which the study was first published or made publicly available.",
+          "minimum": 1600,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "volume": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "issue": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pages": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "abstract": {
+          "description": "Absent (null) when no source gave one; never an empty string.",
+          "pattern": "\\S",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "abstract_provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetadataSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The source whose abstract `abstract` is. It may differ from `provider`. The abstract is the publisher's abstract of the version `license` describes, so its licence is `license`."
+        },
+        "language": {
+          "description": "Languages of the article, as the E-utilities API reports them -- the three-letter codes PubMed assigns, `eng` and the rest, and not read off the paper: the text a reader is given is in one language whatever the article is indexed as.\nAt least six of the benchmark's sixteen meta-analyses state \"English language\" as an inclusion criterion. On the 1,804 records measured it excludes exactly one paper, so it buys precision rather than recall; the criterion is stated, so the field states it.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "publication_types": {
+          "description": "PubMed publication types for this record, verbatim as the E-utilities API returns them (https://pubmed.ncbi.nlm.nih.gov/help/#publication-types). Multivalued because PubMed assigns several: every article is `Journal Article` and the design of the study motivates other labels. `StudyType` lists the known types only; any other type PubMed returns is kept verbatim.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StudyType"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "keywords": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "license": {
+          "$ref": "#/$defs/License",
+          "description": "The paper's licence: the version of record's, or the latest preprint's while the header's `publication_status` is `preprint`. Not the licence of a copy of another version, which that copy carries."
+        },
+        "oa_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OaStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "corrections": {
+          "description": "Notices attached to the paper -- errata, retractions, expressions of concern -- as the indexer lists them. A retracted paper is still parsed and stored, marked by its `retraction` notice, and left out of studysets by default; a filter can ask for it explicitly.",
+          "items": {
+            "$ref": "#/$defs/Correction"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetadataSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The metadata service the facts came from."
+        }
+      },
+      "required": [
+        "title",
+        "license"
+      ],
+      "then": {
+        "properties": {
+          "abstract_provider": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/MetadataSource"
+              }
+            ]
+          }
+        },
+        "required": [
+          "abstract_provider"
+        ]
+      },
+      "title": "Bibliography",
+      "type": "object"
+    },
+    "CellRef": {
+      "additionalProperties": false,
+      "description": "One table cell an analysis was read from, by row and column group.",
+      "properties": {
+        "row": {
+          "description": "The TableRow's `row`.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "column_group": {
+          "description": "As on ParsedPoint; 0 in a table with one block of coordinate columns.",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "row",
+        "column_group"
+      ],
+      "title": "CellRef",
+      "type": "object"
+    },
+    "Citation": {
+      "additionalProperties": false,
+      "description": "One in-text citation and the reference entries it names. A grouped citation (\"[3-5]\", \"(Smith, 2001; Jones, 2003)\") is one Citation with several references.",
+      "properties": {
+        "text_span": {
+          "$ref": "#/$defs/TextSpan",
+          "description": "The citation marker in the text."
+        },
+        "references": {
+          "description": "The entries it names, by `Reference.id`. Empty when it could not be aligned.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-reference": "Reference"
+        },
+        "method": {
+          "$ref": "#/$defs/CitationAlignment",
+          "description": "How the marker was tied to its entries -- what its reliability rests on."
+        },
+        "confidence": {
+          "description": "For a heuristic alignment, how sure; absent for an exact one.",
+          "maximum": 1,
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "text_span",
+        "method"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "CitationAlignment": {
+      "description": "How an in-text citation was tied to its reference entries.",
+      "enum": [
+        "xref",
+        "numbered",
+        "author_year",
+        "unaligned"
+      ],
+      "title": "CitationAlignment",
+      "type": "string"
+    },
+    "ClusterMeasure": {
+      "description": "The unit of a reported cluster size.",
+      "enum": [
+        "voxels",
+        "mm3",
+        "cm3",
+        "other"
+      ],
+      "title": "ClusterMeasure",
+      "type": "string"
+    },
+    "ConjunctionImplementation": {
+      "description": "Procedure used to compute the conjunction, which is not the same statement as the null hypothesis it tested: a minimum-statistic test is the usual implementation of the conjunction null. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "minimum_statistic",
+        "masking",
+        "logical_or"
+      ],
+      "title": "ConjunctionImplementation",
+      "type": "string"
+    },
+    "ConnectivityMethod": {
+      "description": "Method used to estimate connectivity. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "ppi",
+        "gppi",
+        "seed_based",
+        "dcm",
+        "granger",
+        "coherence",
+        "structural_covariance",
+        "multivariate"
+      ],
+      "title": "ConnectivityMethod",
+      "type": "string"
+    },
+    "CoordinateOrigin": {
+      "description": "Where a parsed analysis's points were read from.",
+      "enum": [
+        "table",
+        "text",
+        "figure"
+      ],
+      "title": "CoordinateOrigin",
+      "type": "string"
+    },
+    "CoordinateParse": {
+      "additionalProperties": false,
+      "description": "Every coordinate a paper reports, grouped into analyses. An original parse is written by the ingestion workflow; a revision is written by pondie when its audit disagrees with the original.\nA parse is never edited after it is written. A reader that disagrees with it writes a revision instead, and the revision is a complete parse on its own: neurostore can store it as a new version of the paper's analyses without consulting the parse it revises.\nAnalyses that pondie accepts or relabels keep their keys, because their name, space and points are unchanged, so claims made against them carry over to the revision untouched. Only a split, a merge or an omission changes which keys exist.",
+      "properties": {
+        "header": {
+          "$ref": "#/$defs/ArtifactHeader",
+          "description": "`inputs` names the parsed paper by `text_sha256`, and for a revision also the parse it revises by `parse_id`."
+        },
+        "parse_id": {
+          "description": "This parse's identity, the fingerprint every later artifact cites. Unique per paper; a sha256 of the canonical JSON of `analyses` is recommended, so two producers that reach the same analyses reach the same id.",
+          "type": "string"
+        },
+        "text_sha256": {
+          "description": "The parsed paper's fingerprint. Every point's cells and spans address it.",
+          "type": "string"
+        },
+        "revision_of": {
+          "description": "The `parse_id` of the parse this one revises. Absent on an original parse, which is how a reader tells the two apart.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "analyses": {
+          "description": "May be empty: the parse ran and found no analysis. A paper the parse never ran on has no CoordinateParse at all, so the two are never confused, and `tables` says what reading each table found.",
+          "items": {
+            "$ref": "#/$defs/ParsedAnalysis"
+          },
+          "type": "array"
+        },
+        "tables": {
+          "description": "One entry per table of the parsed paper: what reading it for coordinates found, or why it was not read. A table with no entry was not considered.",
+          "items": {
+            "$ref": "#/$defs/TableReading"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "omitted_analyses": {
+          "description": "Text or figure analyses the producer read and left out of `analyses`, each with the reason. A table's omissions are in `tables`. Absent when nothing was left out.",
+          "items": {
+            "$ref": "#/$defs/OmittedAnalysis"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "text_sweep": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSweep"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How much of the text was searched for coordinates outside tables. Absent when the text was not searched."
+        },
+        "verdicts": {
+          "description": "On a revision only: one verdict for every analysis of the revised parse, so nothing in it is silently dropped, and an `add` verdict for every analysis the revision introduces that the revised parse lacked. An original parse has none.",
+          "items": {
+            "$ref": "#/$defs/AnalysisVerdict"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "header",
+        "parse_id",
+        "text_sha256",
+        "analyses"
+      ],
+      "title": "CoordinateParse",
+      "type": "object"
+    },
+    "CoordinateRole": {
+      "description": "What a set of reported coordinates is, by what it is to the study and not by where the paper prints it. A coordinate that appears in a figure takes the role of what it is: peaks the study found are results even when a figure shows them. The role is judged for the coordinate-based meta-analysis these coordinates feed. When a set could be a `result` or another role, it is a `result`: a result missed costs the meta-analysis more than a non-result kept. Open vocabulary: write the source's own wording when nothing here fits.",
+      "enum": [
+        "result",
+        "anchor",
+        "localization",
+        "reference",
+        "other"
+      ],
+      "title": "CoordinateRole",
+      "type": "string"
+    },
+    "Copy": {
+      "additionalProperties": false,
+      "description": "One copy of a paper, where it is, which version it is, and its licence.",
+      "else": {
+        "properties": {
+          "preprint_server": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PreprintServer"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "route": {
+            "const": "preprint_server"
+          }
+        },
+        "required": [
+          "route"
+        ]
+      },
+      "properties": {
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CopyVersion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Absent when no source says which version the copy is."
+        },
+        "license": {
+          "$ref": "#/$defs/License",
+          "description": "This copy's own licence. A manuscript or preprint can be licensed differently from the version of record."
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preprint_server": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreprintServer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "route",
+        "license"
+      ],
+      "then": {
+        "properties": {
+          "preprint_server": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PreprintServer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "preprint_server"
+        ]
+      },
+      "title": "Copy",
+      "type": "object"
+    },
+    "CopyAccess": {
+      "description": "How we obtained a copy we hold. The `redistribution` annotation says whether the access itself allows passing the copy on: `by_license` leaves that to the copy's licence, `never` forbids it whatever the licence says.",
+      "enum": [
+        "public",
+        "tdm_grant",
+        "unrecorded"
+      ],
+      "title": "CopyAccess",
+      "type": "string"
+    },
+    "CopyRoute": {
+      "description": "Where a copy of a paper is hosted.",
+      "enum": [
+        "pmc",
+        "publisher",
+        "repository",
+        "preprint_server",
+        "unrecorded"
+      ],
+      "title": "CopyRoute",
+      "type": "string"
+    },
+    "CopyVersion": {
+      "description": "Which version of the paper a copy is, in the NISO Journal Article Versions terms. OpenAlex's `publishedVersion`, `acceptedVersion` and `submittedVersion` are `vor`, `am` and `submitted`.",
+      "enum": [
+        "vor",
+        "am",
+        "submitted"
+      ],
+      "title": "CopyVersion",
+      "type": "string"
+    },
+    "Correction": {
+      "additionalProperties": false,
+      "description": "One notice attached to a paper.",
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CorrectionKind"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "pmid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "Correction",
+      "type": "object"
+    },
+    "CorrectionKind": {
+      "description": "A notice attached to a paper by its publisher or indexer.",
+      "enum": [
+        "erratum",
+        "retraction",
+        "expression_of_concern",
+        "comment",
+        "update"
+      ],
+      "title": "CorrectionKind",
+      "type": "string"
+    },
+    "CorrectionMethod": {
+      "description": "How a p value or threshold was corrected for multiple comparisons.",
+      "enum": [
+        "uncorrected",
+        "fwe",
+        "fdr",
+        "bonferroni",
+        "monte_carlo",
+        "permutation",
+        "small_volume"
+      ],
+      "title": "CorrectionMethod",
+      "type": "string"
+    },
+    "DecompositionMethod": {
+      "description": "The algorithm that produced the components or latent variables, which decides what their values and signs mean. Independent of `second_block`, since one block structure is reachable by several algorithms: a brain-behaviour covariance can be decomposed by PLS or by CCA. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "ica",
+        "tensor_ica",
+        "joint_ica",
+        "parallel_ica",
+        "pca",
+        "nmf",
+        "dictionary_learning",
+        "pls",
+        "pls_correlation",
+        "pls_regression",
+        "cca",
+        "mcca"
+      ],
+      "title": "DecompositionMethod",
+      "type": "string"
+    },
+    "Direction": {
+      "description": "How a term entered or came out of an analysis, using one vocabulary for every term type. Both a categorical level on the plus side of a comparison and a continuous term with a positive coefficient are `positive`. The referenced term's `type` distinguishes them. For a cell over a **product** term, this field gives the interaction coefficient's sign, not either component's slope.\nIt is a sign, not a magnitude: numeric contrast weights are never recorded, and a contrast whose magnitudes matter keeps them in `Analysis.definition`. There is no value for a zero weight either -- a level the contrast did not weight has no `Cell` at all.\nOnly `positive` and `negative` are directional. A cell can record no sign three ways -- `undirected`, `held`, or `extraction_status: not_reported` -- and choosing between them is the decision rule in extraction-readme.md §2.",
+      "enum": [
+        "positive",
+        "negative",
+        "undirected",
+        "held"
+      ],
+      "title": "Direction",
+      "type": "string"
+    },
+    "DocumentSource": {
+      "description": "Where the parsed text came from. Open vocabulary: a new source is added here when it is added to the download order, not discovered by a consumer.",
+      "enum": [
+        "pmc",
+        "europepmc",
+        "pubget",
+        "elsevier",
+        "springer",
+        "ace",
+        "pdf"
+      ],
+      "title": "DocumentSource",
+      "type": "string"
+    },
+    "EdgeDirectionality": {
+      "description": "Whether a connectivity edge is genuinely directed. Only directed models such as DCM and Granger causality qualify; a seed-to-voxel PPI or correlation is undirected, and its sign travels with the edge rather than implying a direction.\nThe one vocabulary nothing reads off the page: `ConnectivityEdge.directionality` is derived from `ConnectivityDetails.connectivity_method`, since the method decides it and no wording can override it.",
+      "enum": [
+        "directed",
+        "undirected"
+      ],
+      "title": "EdgeDirectionality",
+      "type": "string"
+    },
+    "EffectKind": {
+      "description": "What kind of test an effect's cells describe. The range of `Effect.kind`, and also the output of deriving the same thing from the cells -- the two are compared, and a disagreement is a record contradicting itself.\nThis once had no slot at all, on the reasoning that the kind follows entirely from the cells and storing it would put one fact in two places. It does put it in two places, and that turned out to be the reason to store it: a cell pattern that derives nothing, or derives something other than what the analysis is, was invisible while the record stated the shape only once. There is no free-text branch: a cell pattern yields one of these labels or none, and a pattern yielding none is a record whose cells do not describe a test. The derivation is stated once, in extraction-readme.md §3.",
+      "enum": [
+        "simple_effect",
+        "contrast",
+        "interaction",
+        "parametric_modulation",
+        "cross_subject_regression",
+        "omnibus"
+      ],
+      "title": "EffectKind",
+      "type": "string"
+    },
+    "EffectPath": {
+      "description": "The path through a mediation model represented by an effect's map. Without it, an indirect-effect map is structurally identical to a plain regression on the same predictor, and a synthesis would pool the two.\nNo `not_applicable` value is needed: an effect outside a mediated path has no `Mediation` object or slot to fill.",
+      "enum": [
+        "direct",
+        "indirect",
+        "total"
+      ],
+      "title": "EffectPath",
+      "type": "string"
+    },
+    "FunctionalForm": {
+      "description": "Shape of a term's relationship to the measure. A squared term with a negative coefficient is an inverted-U relationship, not a negative association, so non-linear and transformed terms must not be reported as linear. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "linear",
+        "quadratic",
+        "absolute",
+        "log"
+      ],
+      "title": "FunctionalForm",
+      "type": "string"
+    },
+    "HeldCopy": {
+      "additionalProperties": false,
+      "description": "A copy we downloaded.",
+      "else": {
+        "properties": {
+          "preprint_server": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PreprintServer"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "route": {
+            "const": "preprint_server"
+          }
+        },
+        "required": [
+          "route"
+        ]
+      },
+      "properties": {
+        "access": {
+          "$ref": "#/$defs/CopyAccess"
+        },
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CopyVersion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Absent when no source says which version the copy is."
+        },
+        "license": {
+          "$ref": "#/$defs/License",
+          "description": "This copy's own licence. A manuscript or preprint can be licensed differently from the version of record."
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preprint_server": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreprintServer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "access",
+        "route",
+        "license"
+      ],
+      "then": {
+        "properties": {
+          "preprint_server": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PreprintServer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "preprint_server"
+        ]
+      },
+      "title": "HeldCopy",
+      "type": "object"
+    },
+    "InferenceTarget": {
+      "description": "What the connectivity analysis drew inference about. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "connectivity_parameter",
+        "model_comparison",
+        "network"
+      ],
+      "title": "InferenceTarget",
+      "type": "string"
+    },
+    "InputRef": {
+      "additionalProperties": false,
+      "description": "One artifact another was made from.",
+      "properties": {
+        "artifact_kind": {
+          "description": "A parse ArtifactKind, or the name of another artifact kind such as an extraction record or a downloaded file.",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The input's identity: `text_sha256` for a parsed paper, `parse_id` for a coordinate parse, a sha256 otherwise.",
+          "type": "string"
+        },
+        "producer_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "artifact_kind",
+        "fingerprint"
+      ],
+      "title": "InputRef",
+      "type": "object"
+    },
+    "License": {
+      "additionalProperties": false,
+      "description": "A licence as one source stated it, or all rights reserved assumed because no source stated one.",
+      "else": {
+        "properties": {
+          "license_id": {
+            "const": "all-rights-reserved"
+          },
+          "stated_by": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/MetadataSource"
+                }
+              ]
+            }
+          },
+          "stated_as": {
+            "not": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "determination": {
+            "const": "stated"
+          }
+        },
+        "required": [
+          "determination"
+        ]
+      },
+      "properties": {
+        "license_id": {
+          "$ref": "#/$defs/LicenseId",
+          "description": "Which licence, as OpenAlex's licence slugs name them (`cc-by`, `cc-by-nc`, ...). Not an SPDX License Identifier: sources rarely state the licence's version, and SPDX identifiers require one."
+        },
+        "determination": {
+          "$ref": "#/$defs/LicenseDetermination"
+        },
+        "stated_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetadataSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The source whose statement this is."
+        },
+        "stated_as": {
+          "description": "The statement exactly as the source gave it: a licence URL, a licence name, or a copyright line. What `other` holds, and what attribution quotes. Never empty: a source that gave no statement did not state a licence.",
+          "pattern": "\\S",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "license_id",
+        "determination"
+      ],
+      "then": {
+        "properties": {
+          "stated_by": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/MetadataSource"
+              }
+            ]
+          },
+          "stated_as": {
+            "anyOf": [
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "stated_by",
+          "stated_as"
+        ]
+      },
+      "title": "License",
+      "type": "object"
+    },
+    "LicenseDetermination": {
+      "description": "Whether a source stated the licence.",
+      "enum": [
+        "stated",
+        "assumed"
+      ],
+      "title": "LicenseDetermination",
+      "type": "string"
+    },
+    "LicenseId": {
+      "description": "The terms a licence grants. A value annotated `redistributable` lets the text it covers be passed on verbatim with attribution: every Creative Commons licence, including ND, because converting a format to text is a change CC 4.0 2(a)(4) allows, and NC, because neurostore's use is non-commercial. That reading of ND and NC is this project's policy, not legal advice, and no lawyer has confirmed it.",
+      "enum": [
+        "cc-by",
+        "cc-by-sa",
+        "cc-by-nc",
+        "cc-by-nc-sa",
+        "cc-by-nd",
+        "cc-by-nc-nd",
+        "cc0",
+        "public-domain",
+        "all-rights-reserved",
+        "other"
+      ],
+      "title": "LicenseId",
+      "type": "string"
+    },
+    "MapQuantity": {
+      "description": "What the values of a component or latent-variable map represent. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "loading",
+        "weight",
+        "salience",
+        "z_score",
+        "spatial_map"
+      ],
+      "title": "MapQuantity",
+      "type": "string"
+    },
+    "MeasureFamily": {
+      "description": "Broad imaging or signal family, for coarse filtering. A BOLD-derived connectivity or decoding result stays functional_bold: derived measures take the family of the underlying signal. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "functional_bold",
+        "structural_morphometry",
+        "diffusion",
+        "perfusion",
+        "molecular_imaging",
+        "electrophysiology"
+      ],
+      "title": "MeasureFamily",
+      "type": "string"
+    },
+    "MeasureType": {
+      "description": "Normalized scientific quantity of the map, for cross-study queries. Activation and deactivation are directions rather than measure types; both are bold_response and the directional roles carry the direction. Gray-matter density is not collapsed into volume. A paper that does not identify the measure leaves the slot `extraction_status: not_reported`. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "bold_response",
+        "bold_derived_metric",
+        "gray_matter_volume",
+        "gray_matter_density",
+        "white_matter_volume",
+        "cortical_thickness",
+        "surface_area",
+        "structural_morphometry_other",
+        "diffusion_metric",
+        "cerebral_blood_flow",
+        "cerebral_blood_volume",
+        "metabolic_rate",
+        "receptor_binding",
+        "tracer_uptake",
+        "electrophysiological_amplitude",
+        "electrophysiological_power",
+        "connectivity_strength",
+        "decoding_performance",
+        "representational_similarity",
+        "component_loading"
+      ],
+      "title": "MeasureType",
+      "type": "string"
+    },
+    "MetaAnalysisBasis": {
+      "description": "What `ParsedPaper.is_meta_analysis` was decided from.",
+      "enum": [
+        "publication_type",
+        "title",
+        "publication_type_and_title"
+      ],
+      "title": "MetaAnalysisBasis",
+      "type": "string"
+    },
+    "MetadataSource": {
+      "description": "Who stated a bibliographic fact.",
+      "enum": [
+        "jats",
+        "elsevier",
+        "pmc_cloud",
+        "publisher_page",
+        "pubmed",
+        "crossref",
+        "openalex",
+        "semantic_scholar",
+        "europepmc"
+      ],
+      "title": "MetadataSource",
+      "type": "string"
+    },
+    "ModelFamily": {
+      "description": "Statistical model family used to estimate the effect. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "glm",
+        "mixed_effects",
+        "anova",
+        "ancova",
+        "robust_regression"
+      ],
+      "title": "ModelFamily",
+      "type": "string"
+    },
+    "NotStructurableReason": {
+      "description": "Why a grounded effect has no stable structured decomposition. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "method_specific_derived_metric",
+        "insufficient_standard_structure",
+        "source_too_vague"
+      ],
+      "title": "NotStructurableReason",
+      "type": "string"
+    },
+    "NullHypothesis": {
+      "description": "The null hypothesis tested by a conjunction. Only the conjunction null supports the interpretation that every component effect is present, so the hypothesis is recorded separately from the procedure that implemented it.",
+      "enum": [
+        "global_null",
+        "conjunction_null"
+      ],
+      "title": "NullHypothesis",
+      "type": "string"
+    },
+    "OaStatus": {
+      "description": "How a paper is open to read, in OpenAlex's terms (https://help.openalex.org/hc/en-us/articles/24347035046295-Open-Access-OA).",
+      "enum": [
+        "gold",
+        "diamond",
+        "hybrid",
+        "bronze",
+        "green",
+        "closed"
+      ],
+      "title": "OaStatus",
+      "type": "string"
+    },
+    "OmittedAnalysis": {
+      "additionalProperties": false,
+      "description": "A text or figure analysis the producer read but did not keep, the text counterpart of a `TableReading` with a reason.",
+      "properties": {
+        "name": {
+          "description": "The analysis's label as the producer read it.",
+          "type": "string"
+        },
+        "text_spans": {
+          "description": "The sentences it was read from, when it was located.",
+          "items": {
+            "$ref": "#/$defs/TextSpan"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "reason": {
+          "description": "Why it was left out, for example that it repeats a kept analysis (the same key) or that its passage is not in the text.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "reason"
+      ],
+      "title": "OmittedAnalysis",
+      "type": "object"
+    },
+    "ParsedAnalysis": {
+      "additionalProperties": false,
+      "description": "The points a paper reports together for one tested effect, or for one non-result purpose such as the regions of interest an analysis used.\nIn an original parse, the grouping is the ingestion workflow's proposal, made from a table and its caption. pondie confirms or overrides it with the whole paper in view. The role is required and is set in the ingestion workflow by the `roles` classifier stage, after the analyses are identified. It is also the ingestion workflow's proposal: pondie's accept confirms it, and a relabel overrides it with a reviewed correction that wins.",
+      "properties": {
+        "key": {
+          "description": "The analysis's identity, derived from what was extracted -- its `name`, `coordinate_space` and `points` -- never from where it was read, so the same analysis read from two sources (a table and its HTML copy, a table and the sentence restating it) reaches the same key, and a re-run that extracts the same content reaches it again. A rename or a changed point is a new key. The name is part of the key because differently named analyses can print identical points.\n`analysis#<h>`, where `h` is the first 16 hex characters of the sha256 of the UTF-8 bytes of the compact JSON array `[<name>, <space>, [<point>, ...]]` (no whitespace, non-ASCII characters unescaped). `<name>` is `name` normalized: Unicode NFKC, casefolded, every dash (Unicode Pd and U+2212 minus) as `-`, zero-width characters and all whitespace dropped, so `PO > Sil` and `PO>Sil` are one name. `<space>` is `coordinate_space`, or `\"\"` when absent.\nEach `<point>` is `[<x>, <y>, <z>, <space>, [[<kind>, <value>], ...]]`: the coordinates rounded to 0.01 mm and written with two decimals (`\"-4.00\"`); the point's own `space` when it differs from the analysis's, else `\"\"`; and each of its `values` as its `kind` and its value written to 6 significant digits (`\"5.8\"`, `\"3.2e-12\"`). Negative zero is written as zero. Each point's values, and then the points, are sorted by their own compact JSON, in code point order.\nAn analysis with no points -- a contrast a table lists as \"n.s.\" -- hashes its name and space alone. The two halves of a sign split hold different points under different names, so each has its own key. `study_schema.keys.analysis_key` computes it.\nThis key is what the extraction record's `Analysis.source_table_analysis` and `CoordinateSet.id` name, and what neurostore stores as `Analysis.source_id`. Two analyses of one parse never share a name, space and points, so never share a key.",
+          "type": "string"
+        },
+        "cells": {
+          "description": "For a table analysis, every cell it was read from: each point's row and column group, and the rows that name the contrast without coordinates. Required for `origin: table`; every point's row and column group is among them.",
+          "items": {
+            "$ref": "#/$defs/CellRef"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "text_spans": {
+          "description": "For a text or figure analysis, the sentences or legend it was read from: those holding its coordinates, or the one stating a result that has none.",
+          "items": {
+            "$ref": "#/$defs/TextSpan"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "origin": {
+          "$ref": "#/$defs/CoordinateOrigin"
+        },
+        "table_id": {
+          "description": "The ParsedTable the points were read from. Present exactly when `origin` is `table`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "description": "The analysis's label, as printed where the paper prints one.",
+          "type": "string"
+        },
+        "name_is_printed": {
+          "description": "False when the producer composed the name because the paper printed none, so a reader never mistakes a placeholder for the paper's wording.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coordinate_space": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedSpace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The space of the analysis's points; absent when the paper states none. A point states its own only when it differs."
+        },
+        "space_as_printed": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "space_basis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpaceBasis"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "role": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoordinateRole"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "What the points are for. Only a `result` is an analysis with a statistic in the extraction record; an `anchor` -- a region of interest, a seed, a stimulation target -- becomes a CoordinateSet there, and never enters a studyset as an analysis.\nRequired. Set in the ingestion workflow by the `roles` classifier stage, after the analyses are identified: a classifier that reads each set and its context, named by `role_source`. It is the ingestion workflow's proposal, which pondie audits: accept confirms it, and relabel overrides it with a reviewed correction that wins. The extractors never propose a role, and nothing supplies a default.\nNumbers that are not brain coordinates, such as channel numbers or lattice points, get no role. They are not a coordinate set."
+        },
+        "anchor_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnchorKind"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For an `anchor`, what it defines."
+        },
+        "from_prior_study": {
+          "description": "The coordinates come from another publication rather than from this study: a peak quoted for comparison (always true for `role: reference`), another study's peak taken as this study's ROI or seed, or a peak from the authors' own earlier publication given with its statistics, which is `role: result` with this flag true so that a meta-analysis can avoid counting the earlier study twice. Separate from the role, because a borrowed seed is still the seed this study's analysis used. False when the study defined them itself, including an ROI built from its own earlier result, meaning an earlier analysis in this same paper such as a localizer.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "prior_study_evidence": {
+          "description": "The citation or sentence showing the coordinates come from another publication.",
+          "items": {
+            "$ref": "#/$defs/TextSpan"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "role_confidence": {
+          "description": "The classifier's probability for `role` (and `anchor_kind`).",
+          "maximum": 1,
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "role_source": {
+          "description": "The classifier that set the role, by name and version, such as `set-role-encoder@2026-10-09`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "split": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SignSplit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Present on both halves of an analysis split by sign, and only there. The split is declared here and nowhere else: a reader never infers it from a name."
+        },
+        "derived_from": {
+          "description": "On a revision, the keys of the revised parse's analyses this one was made from by a split or a merge. Absent on an analysis carried over unchanged.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "statistic": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StatisticKind"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The test statistic of this analysis's one test -- t, z, F, chi_square -- whatever the columns call it. One analysis is one test. Every value at a point that describes the same test belongs to that point: the statistic, its p value (uncorrected and corrected), an effect size, the cluster's p. A different test is a different analysis, even on the same rows: an omnibus F and the directional post-hoc t that follows it are two analyses, told apart by `column_group` when one table prints both."
+        },
+        "statistic_df": {
+          "description": "Degrees of freedom as printed, such as \"1, 38\" or \"27\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "thresholds": {
+          "description": "The thresholds the analysis's results survived, at every level the paper states: most often a voxel-level height (\"p < .001 uncorrected\") together with a cluster-level correction (\"FWE p < .05\"), which one method cannot express. Read from the caption, footer or Methods; each threshold cites where.",
+          "items": {
+            "$ref": "#/$defs/Threshold"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "points": {
+          "description": "Empty when the paper names the analysis but reports no coordinates for it -- most often because nothing survived the threshold. Whether it found an effect is the extraction record's `Analysis.outcome`; an empty list here only says that no coordinates were printed.",
+          "items": {
+            "$ref": "#/$defs/ParsedPoint"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "key",
+        "origin",
+        "name",
+        "role"
+      ],
+      "title": "ParsedAnalysis",
+      "type": "object"
+    },
+    "ParsedPaper": {
+      "additionalProperties": false,
+      "description": "One paper as text, tables and bibliographic facts. The same shape for every download source.\nThe text is the only offset space. Every evidence span an extraction record cites, every table row's position and every text-read point addresses `text_sha256`'s characters, so a span can be checked by slicing the text, and a span made against a different text is detectably wrong.",
+      "properties": {
+        "header": {
+          "$ref": "#/$defs/ArtifactHeader"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DocumentSource"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "source_reason": {
+          "description": "Why this source's text was chosen over the others downloaded, such as \"most tables\" or \"first in download order\". Every stage reads this one text, so the choice is made once and recorded.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text_copy": {
+          "$ref": "#/$defs/HeldCopy",
+          "description": "The copy the text was read from. Its licence and access, not the paper's licence, decide whether the text may be passed on."
+        },
+        "reported_copies": {
+          "description": "Copies of the paper that a source lists and that we do not hold, each with its own licence. Where an open copy is, when `bibliography.oa_status` says one exists.",
+          "items": {
+            "$ref": "#/$defs/ReportedCopy"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "text_path": {
+          "description": "The text file's path, relative to the paper's bundle directory.",
+          "type": "string"
+        },
+        "text_sha256": {
+          "description": "sha256 of the text file's UTF-8 bytes. This artifact's fingerprint.",
+          "type": "string"
+        },
+        "text_length": {
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "bibliography": {
+          "$ref": "#/$defs/Bibliography"
+        },
+        "is_meta_analysis": {
+          "description": "Whether the paper is itself a meta-analysis or review, decided here once. Every consumer reads this field; none applies its own test.",
+          "type": "boolean"
+        },
+        "is_meta_analysis_basis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetaAnalysisBasis"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/Section"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "supplements": {
+          "description": "Supplementary material the paper links to, and whether it was fetched. A result the text cites to a supplement that was not fetched is reported elsewhere, not missing.",
+          "items": {
+            "$ref": "#/$defs/Supplement"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "references": {
+          "description": "The paper's reference list, in order. Usually fetched from an API by the paper's identifiers rather than parsed from the text (`Reference.provider` says which), so it is complete and carries DOIs even when the text's list is badly extracted.",
+          "items": {
+            "$ref": "#/$defs/Reference"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "citations": {
+          "description": "Every in-text citation, where it sits in the text and which reference it points to. The link from a sentence to a work, which the reference list alone cannot give: what resolves the citations a task's description makes (storage `Task.reference_ids`) and traces a task to the paper that introduced it.",
+          "items": {
+            "$ref": "#/$defs/Citation"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "tables": {
+          "items": {
+            "$ref": "#/$defs/ParsedTable"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "header",
+        "source",
+        "text_copy",
+        "text_path",
+        "text_sha256",
+        "bibliography",
+        "is_meta_analysis"
+      ],
+      "title": "ParsedPaper",
+      "type": "object"
+    },
+    "ParsedPoint": {
+      "additionalProperties": false,
+      "description": "One reported coordinate. `coordinates`, `space` and `values` are NIMADS's point fields with NIMADS's meaning, so the projection to a studyset copies them; everything else is the parse's own.",
+      "properties": {
+        "coordinates": {
+          "description": "x, y, z in millimetres.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "space": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedSpace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Only when it differs from the analysis's `coordinate_space`."
+        },
+        "row": {
+          "description": "For a table point, the TableRow it was read from.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "column_group": {
+          "description": "For a table point, which block of coordinate columns it was read from, numbered from 0 left to right. 0 in a table with one block. Two contrasts printed side by side share rows and differ here.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "text_span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSpan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For a text point, the characters it was read from."
+        },
+        "values": {
+          "description": "The values at the point. They are the only record of its sign (StatisticKind gives the rule): a negative value makes it negative, and a point with only p, F or chi-square values, or none, is unsigned and takes the side of its analysis's `split` half. On the inverse half the directional statistic values are negated so they read positive; p, F and chi-square stay as printed. `split` declares the inverse half, and a consumer records the inverse on the contrast's conditions (negated weights), not per point. There is no point-level deactivation flag, and the parse never writes neurostore's Point.deactivation.",
+          "items": {
+            "$ref": "#/$defs/PointValue"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "cluster_size": {
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cluster_measure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ClusterMeasure"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "is_subpeak": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "label": {
+          "description": "The region name printed beside the point.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "coordinates"
+      ],
+      "title": "ParsedPoint",
+      "type": "object"
+    },
+    "ParsedTable": {
+      "additionalProperties": false,
+      "description": "A table of the paper, cell by cell.",
+      "properties": {
+        "table_id": {
+          "description": "The table's key, as the source's parser names it. Stable for the life of the parsed paper and used unchanged by every consumer: the coordinate parse's `table_id`s, the record's Table.id, neurostore's Table.t_id. Never renumbered from the printed label and never sanitized differently on disk.",
+          "type": "string"
+        },
+        "label": {
+          "description": "The printed label, such as Table 2 or Supplementary Table S4.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "number": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "caption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "footer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "raw_path": {
+          "description": "The source's raw table file, relative to the bundle directory.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "column_headings": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "rows": {
+          "description": "The body rows, in printed order.",
+          "items": {
+            "$ref": "#/$defs/TableRow"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "text_span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSpan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the table's rows are inlined in the text, when the source inlines them."
+        },
+        "coordinate_space_hint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedSpace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The source parser's own guess at the table's space. A hint for the coordinate stages, not an answer: the space a point is stored in is the coordinate parse's."
+        },
+        "triage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TableTriage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "table_id"
+      ],
+      "title": "ParsedTable",
+      "type": "object"
+    },
+    "PerformanceRelation": {
+      "description": "Direction of a decoding performance metric relative to its reference value.",
+      "enum": [
+        "above_reference",
+        "below_reference",
+        "not_applicable"
+      ],
+      "title": "PerformanceRelation",
+      "type": "string"
+    },
+    "PointValue": {
+      "additionalProperties": false,
+      "description": "A value reported at a point. NIMADS's point value.",
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StatisticKind"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "kind_as_printed": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "value": {
+          "type": "number"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ValueLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Whether the value describes the peak or the cluster the peak belongs to. A cluster-level p printed on the peak's row is the cluster's."
+        },
+        "correction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CorrectionMethod"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For a p value, the correction it is under; absent for a statistic or effect size."
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "PointValue",
+      "type": "object"
+    },
+    "PolaritySemantics": {
+      "description": "Whether the sign of a component map carries meaning. Decomposition methods can return components whose polarity is arbitrary, in which case a negative loading is not a decrease.",
+      "enum": [
+        "meaningful",
+        "arbitrary",
+        "unsigned"
+      ],
+      "title": "PolaritySemantics",
+      "type": "string"
+    },
+    "PreprintDoi": {
+      "additionalProperties": false,
+      "description": "A DOI a preprint server registered, with the server that registered it.",
+      "properties": {
+        "doi": {
+          "type": "string"
+        },
+        "server": {
+          "$ref": "#/$defs/PreprintServer",
+          "description": "Named by the producer from the DOI, so that no consumer needs a table of preprint servers' DOI patterns."
+        }
+      },
+      "required": [
+        "doi",
+        "server"
+      ],
+      "title": "PreprintDoi",
+      "type": "object"
+    },
+    "PreprintServer": {
+      "description": "The preprint server that registered a DOI. A server hosted on the Open Science Framework is named by its provider, which has a DOI prefix of its own. A server is added here when a producer learns to recognise its DOIs.",
+      "enum": [
+        "biorxiv",
+        "medrxiv",
+        "arxiv",
+        "researchsquare",
+        "osf_preprints",
+        "arabixiv",
+        "metaarxiv",
+        "engrxiv",
+        "focus_archive",
+        "frenxiv",
+        "ina_rxiv",
+        "lawarxiv",
+        "lis_scholarship_archive",
+        "marxiv",
+        "mindrxiv",
+        "nutrixiv",
+        "paleorxiv",
+        "psyarxiv",
+        "socarxiv",
+        "sportrxiv",
+        "africarxiv",
+        "mediarxiv",
+        "bodoarxiv",
+        "edarxiv",
+        "biohackrxiv",
+        "ssrn",
+        "preprints_org",
+        "authorea",
+        "techrxiv",
+        "chemrxiv",
+        "jmir_preprints"
+      ],
+      "title": "PreprintServer",
+      "type": "string"
+    },
+    "Prespecification": {
+      "description": "Whether a contrast was planned before the data were seen. A preregistered primary contrast and a post-hoc sweep from the same paper are not equivalent evidence, and a synthesis that cannot tell them apart cannot address selective reporting.",
+      "enum": [
+        "preregistered",
+        "planned",
+        "exploratory"
+      ],
+      "title": "Prespecification",
+      "type": "string"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "description": "The program and stage that wrote an artifact.",
+      "properties": {
+        "name": {
+          "description": "ns-pond-ingestion-workflow or pondie.",
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "stage": {
+          "description": "The stage within the producer, such as extract, space or audit.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "description": "The language model a stage called, if any.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prompt_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "PublicationStatus": {
+      "description": "Whether a paper's version of record is known, or only its preprint.",
+      "enum": [
+        "published",
+        "preprint"
+      ],
+      "title": "PublicationStatus",
+      "type": "string"
+    },
+    "Reference": {
+      "additionalProperties": false,
+      "description": "One entry of a paper's reference list.",
+      "properties": {
+        "id": {
+          "description": "Stable within the paper: the source's own id where it has one (a JATS `ref` id such as `B12`), else `ref<position>`.",
+          "type": "string"
+        },
+        "position": {
+          "description": "1-based order in the list, which a numbered citation style cites by.",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReferenceProvider"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the entry came from."
+        },
+        "label": {
+          "description": "How the text cites it: the number of a numbered style (\"12\"), or the author-year key of an author-year style (\"Stroop 1935\").",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text": {
+          "description": "The entry as printed.",
+          "type": "string"
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pmid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "year": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ],
+      "title": "Reference",
+      "type": "object"
+    },
+    "ReferenceProvider": {
+      "description": "Where a reference-list entry came from.",
+      "enum": [
+        "europepmc",
+        "crossref",
+        "semantic_scholar",
+        "pubmed",
+        "source_xml",
+        "parsed_text"
+      ],
+      "title": "ReferenceProvider",
+      "type": "string"
+    },
+    "ReportedCopy": {
+      "additionalProperties": false,
+      "description": "A copy a metadata source lists and we do not hold.",
+      "else": {
+        "properties": {
+          "preprint_server": {
+            "not": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PreprintServer"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "route": {
+            "const": "preprint_server"
+          }
+        },
+        "required": [
+          "route"
+        ]
+      },
+      "properties": {
+        "reported_by": {
+          "$ref": "#/$defs/MetadataSource"
+        },
+        "route": {
+          "$ref": "#/$defs/CopyRoute"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CopyVersion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Absent when no source says which version the copy is."
+        },
+        "license": {
+          "$ref": "#/$defs/License",
+          "description": "This copy's own licence. A manuscript or preprint can be licensed differently from the version of record."
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preprint_server": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreprintServer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "reported_by",
+        "route",
+        "license"
+      ],
+      "then": {
+        "properties": {
+          "preprint_server": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PreprintServer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "preprint_server"
+        ]
+      },
+      "title": "ReportedCopy",
+      "type": "object"
+    },
+    "ReportedSpace": {
+      "description": "The coordinate space a point is in, normalized to the values NiMARE transforms between by `study_schema.spaces.normalize_space`. Absent when no space is stated, or when the wording names both MNI and TAL; never defaulted to MNI: a rat study stored as MNI is a wrong coordinate, and a missing one is an honest gap. What the paper printed stays in `space_as_printed`.",
+      "enum": [
+        "MNI",
+        "TAL",
+        "OTHER"
+      ],
+      "title": "ReportedSpace",
+      "type": "string"
+    },
+    "ResultKind": {
+      "description": "The kind of analysis a `result` came from, coarse enough to read from a table or a sentence. An analysis the record models in full states its method in `details` and its test in `Effect.kind`; this is the label for a coordinate set either way. Open vocabulary.",
+      "enum": [
+        "contrast",
+        "association",
+        "multivariate",
+        "morphometric",
+        "lesion",
+        "connectivity"
+      ],
+      "title": "ResultKind",
+      "type": "string"
+    },
+    "SecondBlock": {
+      "description": "What a decomposition crossed the brain block with, one value per block. This decides whether two decompositions answer the same question, so it is the payload's one required vocabulary -- a task PLS and a behavioural PLS are not poolable, and neither is a one-block ICA with either of them.\nMultivalued, and `none` is a value rather than an absent field: a one-block decomposition is a positive assertion, not a gap. Name the blocks and not their number -- a design-plus-behaviour PLS is `[design, behavioral]`, and the count follows from the list's length.\nOpen vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "none",
+        "design",
+        "behavioral",
+        "seed_activity",
+        "other_imaging_modality",
+        "genetic"
+      ],
+      "title": "SecondBlock",
+      "type": "string"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "description": "A span of the text and what it is.",
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SectionKind"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "heading": {
+          "description": "The heading as printed.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "start_char": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "end_char": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "start_char",
+        "end_char"
+      ],
+      "title": "Section",
+      "type": "object"
+    },
+    "SectionKind": {
+      "description": "What a span of the text is.",
+      "enum": [
+        "title",
+        "abstract",
+        "introduction",
+        "methods",
+        "results",
+        "discussion",
+        "figure_legend",
+        "table",
+        "supplement",
+        "references",
+        "other"
+      ],
+      "title": "SectionKind",
+      "type": "string"
+    },
+    "SignSplit": {
+      "additionalProperties": false,
+      "description": "One half of an analysis the producer split by the sign of its points (see StatisticKind). The original half is the analysis as named and holds the points whose printed values are positive or unsigned. The inverse half is the reversed contrast and holds the points printed negative, whose directional statistic values are negated so they read positive. p, F and chi-square are unsigned and stay as printed, except a value printed negative, which counts as signed and is negated like any other.\n`half: inverse` with `original_analysis` (the original's `key`) records the inversion. The inverse half is named by the derived reversed contrast where one can be derived, otherwise \"X (inverse)\" for the original's name X. Direction lives on the condition weights, not on points: the inverse's weights are the original's, negated. Positive and negative describe statistic values only, never a half: a table of decreases has decreases in its original half.\npondie extracts the original half and derives the inverse half's record from it by flipping the direction of its cells, so the two never disagree and the inverse half costs no extraction. The derived record carries `mirror_of`, which keeps a meta-analysis from counting one contrast twice.\nThe half lives on the analysis, not its points: an unsigned point (only p, F or chi-square values, or none) in a split analysis is on that analysis's side.",
+      "properties": {
+        "half": {
+          "$ref": "#/$defs/SplitHalf"
+        },
+        "original_analysis": {
+          "description": "On the inverse half, the `key` of the original analysis (the other half of this split) in the same parse. Absent on the original half, and on an inverse half whose original is not in the parse.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rule": {
+          "$ref": "#/$defs/SplitRule"
+        }
+      },
+      "required": [
+        "half",
+        "rule"
+      ],
+      "title": "SignSplit",
+      "type": "object"
+    },
+    "SpaceBasis": {
+      "description": "Where a space was read from, most specific first.",
+      "enum": [
+        "point",
+        "table_header",
+        "caption",
+        "footer",
+        "methods",
+        "results",
+        "extractor"
+      ],
+      "title": "SpaceBasis",
+      "type": "string"
+    },
+    "SpatialScope": {
+      "description": "Spatial domain of the analysis, and a meta-analysis inclusion criterion. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "whole_brain",
+        "roi",
+        "searchlight"
+      ],
+      "title": "SpatialScope",
+      "type": "string"
+    },
+    "SpatialUnit": {
+      "description": "The element an analysis was carried out over: the surface-versus-volume distinction as well as the univariate-versus-parcellated one. Gives the element, where SpatialScope gives the extent. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "voxel",
+        "vertex",
+        "roi",
+        "parcel"
+      ],
+      "title": "SpatialUnit",
+      "type": "string"
+    },
+    "SplitHalf": {
+      "description": "Which half of a sign split an analysis is.",
+      "enum": [
+        "original",
+        "inverse"
+      ],
+      "title": "SplitHalf",
+      "type": "string"
+    },
+    "SplitRule": {
+      "description": "The deterministic rule that split an analysis.",
+      "enum": [
+        "sign_of_directional_statistic"
+      ],
+      "title": "SplitRule",
+      "type": "string"
+    },
+    "StatisticFamily": {
+      "description": "Test statistic family for the tested effect, independent of the thresholding procedure recorded in InferenceSettings. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "t",
+        "z",
+        "f",
+        "chi_square",
+        "likelihood_ratio",
+        "beta",
+        "correlation"
+      ],
+      "title": "StatisticFamily",
+      "type": "string"
+    },
+    "StatisticKind": {
+      "description": "The kind of a value reported at a point. One vocabulary for the parse, the extraction record's `Statistic.family`, and neurostore's `PointValue.kind`. The ingestion workflow's letters map one to one: T, Z, F, D, G, R, B, P.\nWhich side of a sign split a point is on follows from its values:\n- A negative value is always on the inverse side, whatever its kind. A negative p, F\n  or chi-square means the column is signed or mislabelled.\n- Only p, F and chi-square are non-directional. Every other kind is directional,\n  `other` included.\n- A missing or unknown kind splits by the value's sign, like a directional kind. - A point whose values are all p, F or chi-square, or that has none, is unsigned.\nThe parse stores no sign of its own; readers derive it from `values` with `study_schema.statistics`.",
+      "enum": [
+        "t",
+        "z",
+        "f",
+        "chi_square",
+        "d",
+        "g",
+        "r",
+        "beta",
+        "p",
+        "other"
+      ],
+      "title": "StatisticKind",
+      "type": "string"
+    },
+    "StudyType": {
+      "description": "PubMed publication types, spelled as the E-utilities API returns them so that a value needs no translation. Only the design-relevant types are listed; PubMed also returns funding and indexing types, and the vocabulary is open, so any unlisted type passes through verbatim.",
+      "enum": [
+        "Journal Article",
+        "Meta-Analysis",
+        "Systematic Review",
+        "Review",
+        "Randomized Controlled Trial",
+        "Clinical Trial",
+        "Observational Study",
+        "Comparative Study",
+        "Multicenter Study",
+        "Validation Study",
+        "Case Reports",
+        "Editorial",
+        "Letter",
+        "Comment",
+        "Preprint",
+        "Retracted Publication"
+      ],
+      "title": "StudyType",
+      "type": "string"
+    },
+    "Supplement": {
+      "additionalProperties": false,
+      "description": "One item of supplementary material.",
+      "properties": {
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fetched": {
+          "type": "boolean"
+        },
+        "path": {
+          "description": "Where the fetched file is, relative to the bundle directory.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "fetched"
+      ],
+      "title": "Supplement",
+      "type": "object"
+    },
+    "TablePurpose": {
+      "description": "What a table is for. A coordinate table is not an analysis merely by having coordinates in it: a study's ROI definitions, its atlas parcels, its connectivity seeds and the peaks of its independent components are all locations rather than findings, and `reported_effect` is what says the rows ARE a finding. Open vocabulary: write the source's own wording when nothing here fits.",
+      "enum": [
+        "reported_effect",
+        "region_definitions",
+        "atlas_or_parcellation",
+        "connectivity_seeds",
+        "component_peaks",
+        "prior_literature_coordinates",
+        "stimulus_or_task_list",
+        "demographics",
+        "descriptive_statistics"
+      ],
+      "title": "TablePurpose",
+      "type": "string"
+    },
+    "TableReading": {
+      "additionalProperties": false,
+      "description": "What reading one table for coordinates found.",
+      "properties": {
+        "table_id": {
+          "type": "string"
+        },
+        "reading": {
+          "$ref": "#/$defs/TableReadingKind"
+        },
+        "reason": {
+          "description": "For a table not read, why; for an excluded one, who excluded it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "table_id",
+        "reading"
+      ],
+      "title": "TableReading",
+      "type": "object"
+    },
+    "TableReadingKind": {
+      "description": "What reading a table for coordinates found.",
+      "enum": [
+        "coordinates",
+        "contrasts_without_coordinates",
+        "no_coordinates",
+        "rejected_by_triage",
+        "excluded_by_hand"
+      ],
+      "title": "TableReadingKind",
+      "type": "string"
+    },
+    "TableRow": {
+      "additionalProperties": false,
+      "description": "One body row of a table.",
+      "properties": {
+        "row": {
+          "description": "The row's index among the table's body rows, from 0. What a coordinate parse's point cites.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "cells": {
+          "description": "The row's cells, as printed, in column order.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "text_span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSpan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the row sits in the text, when the table is inlined there."
+        }
+      },
+      "required": [
+        "row"
+      ],
+      "title": "TableRow",
+      "type": "object"
+    },
+    "TableTriage": {
+      "additionalProperties": false,
+      "description": "Whether a table is worth reading for coordinates, and why.",
+      "properties": {
+        "passes": {
+          "type": "boolean"
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "route": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "located_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "excluded_by_hand": {
+          "description": "A person marked the table as not holding coordinates. Overrides `passes`, and no consumer reads coordinates from it.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "exclusion_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "passes"
+      ],
+      "title": "TableTriage",
+      "type": "object"
+    },
+    "TermType": {
+      "description": "Whether a model term is categorical or continuous.",
+      "enum": [
+        "categorical",
+        "continuous"
+      ],
+      "title": "TermType",
+      "type": "string"
+    },
+    "TextSpan": {
+      "additionalProperties": false,
+      "description": "A range of the parsed paper's text, by character offset.",
+      "properties": {
+        "start_char": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "end_char": {
+          "description": "Exclusive.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "text": {
+          "description": "The characters in the range, kept so a reader can check the offsets.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "start_char",
+        "end_char"
+      ],
+      "title": "TextSpan",
+      "type": "object"
+    },
+    "TextSweep": {
+      "additionalProperties": false,
+      "description": "How much of the text was searched for coordinates outside tables, so a reader can tell a complete search that found nothing from one cut short.",
+      "properties": {
+        "passages_found": {
+          "description": "Passages that looked like they hold coordinates.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "passages_read": {
+          "description": "Of those, how many were read; fewer when a cap cut the search short.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "points_dropped_as_table_restatements": {
+          "description": "Points found in the text but dropped because a table already reports them.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "truncated"
+      ],
+      "title": "TextSweep",
+      "type": "object"
+    },
+    "Threshold": {
+      "additionalProperties": false,
+      "description": "One threshold an analysis's results survived. Maps onto the storage schema's InferenceSettings: a `height` threshold is height_threshold_value and _type, a `cluster_extent` is cluster_extent_threshold, a `cluster_level` is clusterwise_threshold_value, `tfce` sets tfce_used; `correction` is multiple_comparison_method at that level.",
+      "properties": {
+        "level": {
+          "$ref": "#/$defs/ThresholdLevel"
+        },
+        "quantity": {
+          "$ref": "#/$defs/ThresholdQuantity",
+          "description": "What `value` is measured in."
+        },
+        "value": {
+          "description": "Absent when the paper names the correction but not the number.",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "correction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CorrectionMethod"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope_as_printed": {
+          "description": "What the correction ran over, as printed, such as \"whole brain\" or \"within the amygdala mask\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text_span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSpan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the threshold was read."
+        }
+      },
+      "required": [
+        "level",
+        "quantity"
+      ],
+      "title": "Threshold",
+      "type": "object"
+    },
+    "ThresholdLevel": {
+      "description": "The level a threshold applies at.",
+      "enum": [
+        "height",
+        "cluster_extent",
+        "cluster_level",
+        "peak_level",
+        "tfce"
+      ],
+      "title": "ThresholdLevel",
+      "type": "string"
+    },
+    "ThresholdQuantity": {
+      "description": "What a threshold's value is.",
+      "enum": [
+        "p",
+        "t",
+        "z",
+        "f",
+        "voxels",
+        "mm3"
+      ],
+      "title": "ThresholdQuantity",
+      "type": "string"
+    },
+    "ValueLevel": {
+      "description": "What a value at a point describes.",
+      "enum": [
+        "peak",
+        "cluster"
+      ],
+      "title": "ValueLevel",
+      "type": "string"
+    },
+    "VariationLevel": {
+      "description": "The level at which a term varies -- whether it moves within a participant or only across the sample. A property of **any** term, categorical or continuous: a repeated-measures factor and a trial-wise modulator are both within-subject, and a diagnosis factor and an age covariate are both between-subject.\nFor a continuous term it is what separates a parametric modulation from a cross-subject regression, and the derived kind of an effect testing it reads this. For a categorical factor it feeds no derivation; it is the factor's scope, and two studies that crossed a factor within participants and between them did not estimate the same thing. Open vocabulary: write the source's own wording in the field when nothing here fits.",
+      "enum": [
+        "within_subject",
+        "between_subject",
+        "mixed"
+      ],
+      "title": "VariationLevel",
+      "type": "string"
+    }
+  },
+  "$id": "https://neurostuff.org/schemas/neuroimaging-paper-parse",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "additionalProperties": false,
+  "description": "Every coordinate a paper reports, grouped into analyses. An original parse is written by the ingestion workflow; a revision is written by pondie when its audit disagrees with the original.\nA parse is never edited after it is written. A reader that disagrees with it writes a revision instead, and the revision is a complete parse on its own: neurostore can store it as a new version of the paper's analyses without consulting the parse it revises.\nAnalyses that pondie accepts or relabels keep their keys, because their name, space and points are unchanged, so claims made against them carry over to the revision untouched. Only a split, a merge or an omission changes which keys exist.",
+  "metamodel_version": "1.12.0",
+  "properties": {
+    "header": {
+      "$ref": "#/$defs/ArtifactHeader",
+      "description": "`inputs` names the parsed paper by `text_sha256`, and for a revision also the parse it revises by `parse_id`."
+    },
+    "parse_id": {
+      "description": "This parse's identity, the fingerprint every later artifact cites. Unique per paper; a sha256 of the canonical JSON of `analyses` is recommended, so two producers that reach the same analyses reach the same id.",
+      "type": "string"
+    },
+    "text_sha256": {
+      "description": "The parsed paper's fingerprint. Every point's cells and spans address it.",
+      "type": "string"
+    },
+    "revision_of": {
+      "description": "The `parse_id` of the parse this one revises. Absent on an original parse, which is how a reader tells the two apart.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "analyses": {
+      "description": "May be empty: the parse ran and found no analysis. A paper the parse never ran on has no CoordinateParse at all, so the two are never confused, and `tables` says what reading each table found.",
+      "items": {
+        "$ref": "#/$defs/ParsedAnalysis"
+      },
+      "type": "array"
+    },
+    "tables": {
+      "description": "One entry per table of the parsed paper: what reading it for coordinates found, or why it was not read. A table with no entry was not considered.",
+      "items": {
+        "$ref": "#/$defs/TableReading"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "omitted_analyses": {
+      "description": "Text or figure analyses the producer read and left out of `analyses`, each with the reason. A table's omissions are in `tables`. Absent when nothing was left out.",
+      "items": {
+        "$ref": "#/$defs/OmittedAnalysis"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "text_sweep": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TextSweep"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "How much of the text was searched for coordinates outside tables. Absent when the text was not searched."
+    },
+    "verdicts": {
+      "description": "On a revision only: one verdict for every analysis of the revised parse, so nothing in it is silently dropped, and an `add` verdict for every analysis the revision introduces that the revised parse lacked. An original parse has none.",
+      "items": {
+        "$ref": "#/$defs/AnalysisVerdict"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "header",
+    "parse_id",
+    "text_sha256",
+    "analyses"
+  ],
+  "title": "neuroimaging-paper-parse",
+  "type": "object",
+  "version": "0.8.0"
+}

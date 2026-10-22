@@ -1,5 +1,6 @@
 import hashlib
 import json
+import uuid
 
 import shortuuid
 import sqlalchemy as sa
@@ -50,6 +51,10 @@ def _check_type(x):
 
 def generate_id():
     return shortuuid.ShortUUID().random(length=12)
+
+
+def generate_stable_id():
+    return str(uuid.uuid4())
 
 
 class BaseMixin(object):
@@ -214,8 +219,21 @@ class BaseStudy(BaseMixin, db.Model):
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    #: Legacy; fulltexts holds the reviewed text (docs/adr/0005-fulltexts-table.md).
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
+    fulltext_id = db.Column(
+        db.Text,
+        db.ForeignKey(
+            "fulltexts.id",
+            name="fk_base_studies_fulltext_id",
+            ondelete="SET NULL",
+            use_alter=True,
+        ),
+        nullable=True,
+        index=True,
+    )
+    fulltext = relationship("Fulltext", foreign_keys=[fulltext_id], lazy="raise", viewonly=True)
     is_active = db.Column(
         db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
     )
@@ -1211,7 +1229,11 @@ class StudyEntity(BaseMixin, db.Model):
     __tablename__ = "study_entities"
     __table_args__ = (
         sa.UniqueConstraint("entity_hash", name="uq_study_entity__hash"),
+        sa.UniqueConstraint("stable_id", name="uq_study_entity__stable_id"),
     )
+
+    #: The id a record's entity carries as study_schema's ``stable_id``.
+    stable_id = db.Column(db.Text, nullable=False, default=generate_stable_id)
 
     base_study_id = db.Column(
         db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True
@@ -1403,6 +1425,8 @@ HISTORY_SOURCE = "study_schema:superseded"
 PIPELINE_STUDY_SOURCES = (STUDY_SOURCE, HISTORY_SOURCE)
 # The PipelineConfig schema name of a pondie extraction record (study_schema's record).
 RECORD_SCHEMA_NAME = "neuroimaging-study-extraction"
+# The pipeline whose PipelineStudyResults are the coordinate parses the ingester stored whole.
+PARSE_PIPELINE = "coordinate-parse"
 RESULT_ROLE = "result"
 
 
@@ -1448,8 +1472,10 @@ def analysis_role_clause(role):
     return Analysis.role == role
 
 
+from neurostore.models import fulltext_listeners  # noqa E402
 from neurostore.models import image_count_listeners  # noqa E402
 from neurostore.models import point_count_listeners  # noqa E402
 
+del fulltext_listeners
 del image_count_listeners
 del point_count_listeners
