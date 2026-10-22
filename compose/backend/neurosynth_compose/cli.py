@@ -199,24 +199,27 @@ def merge_base_studies_command(plan, execute):
         raise click.ClickException(str(exc)) from exc
 
     def _run(_app, _db):
-        return merge_base_studies(pairs, dry_run=not execute)
-
-    outcomes = _run_with_runtime(_run)
-    for outcome in outcomes:
-        if outcome.refusal is not None:
-            click.echo(f"REFUSED {outcome.old_id} -> {outcome.keeper_id}: {outcome.refusal}")
-            continue
-        verb = "would merge" if not execute else "merged"
-        click.echo(
-            f"{verb} {outcome.old_id} -> {outcome.keeper_id}: "
-            f"{len(outcome.changes)} change(s)"
-        )
-        for change in outcome.changes:
+        refused = False
+        for outcome in merge_base_studies(pairs, dry_run=not execute):
+            if outcome.status == "refused":
+                refused = True
+                click.echo(
+                    f"REFUSED {outcome.old_id} -> {outcome.keeper_id}: {outcome.refusal}"
+                )
+                continue
+            verb = "merged" if execute else "would merge"
             click.echo(
-                f"  {change.table} {change.row_id} {change.field}: "
-                f"{change.before!r} -> {change.after!r}"
+                f"{verb} {outcome.old_id} -> {outcome.keeper_id}: "
+                f"{len(outcome.changes)} change(s)"
             )
-    if any(outcome.refusal is not None for outcome in outcomes):
+            for change in outcome.changes:
+                click.echo(
+                    f"  {change.table} {change.row_id} {change.field}: "
+                    f"{change.before!r} -> {change.after!r}"
+                )
+        return refused
+
+    if _run_with_runtime(_run):
         raise SystemExit(1)
 
 

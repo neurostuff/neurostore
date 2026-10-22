@@ -1463,6 +1463,9 @@ class FieldClaimEvidence(BaseMixin, db.Model):
 # the superseded history.
 STUDY_SOURCE = "study_schema"
 HISTORY_SOURCE = "study_schema:superseded"
+#: Study.metadata_ key naming the base study a version was merged from. The release
+#: ranks such versions after the keeper's own.
+MERGED_FROM = "merged_from"
 PIPELINE_STUDY_SOURCES = (STUDY_SOURCE, HISTORY_SOURCE)
 # The PipelineConfig schema name of a pondie extraction record (study_schema's record).
 RECORD_SCHEMA_NAME = "neuroimaging-study-extraction"

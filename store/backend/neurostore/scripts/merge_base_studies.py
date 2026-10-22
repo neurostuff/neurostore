@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
 from neurostore.models import BaseStudy
+from neurostore.resources.common import merge_unique_ids
 from neurostore.services.base_study_metadata_enrichment import (
     BaseStudyMergeClash,
     Change,
@@ -23,11 +24,14 @@ class BaseStudyMergeError(ValueError):
     """The plan, or one pair of it, names something the merge cannot act on."""
 
 
+MERGED, ALREADY_MERGED, REFUSED = "merged", "already merged", "refused"
+
+
 @dataclass
 class PairOutcome:
     keeper_id: str
     old_id: str
-    merged: bool
+    status: str
     refusal: str | None = None
     changes: list[Change] = field(default_factory=list)
 
@@ -59,36 +63,45 @@ def load_plan(path):
     return pairs
 
 
-def _active(base_study_id, role):
+def _locked(base_study_id, role):
     base_study = db.session.get(BaseStudy, base_study_id, with_for_update=True)
     if base_study is None:
         raise BaseStudyMergeError(f"{role} {base_study_id} not found")
-    if not base_study.is_active:
-        raise BaseStudyMergeError(
-            f"{role} {base_study_id} is inactive (superseded by {base_study.superseded_by})"
-        )
     return base_study
+
+
+def _inactive(base_study, role):
+    return BaseStudyMergeError(
+        f"{role} {base_study.id} is inactive (superseded by {base_study.superseded_by})"
+    )
 
 
 def merge_base_studies(pairs, *, dry_run=True):
     """Merge each (keeper, old) pair in its own transaction, rolled back on a dry run,
-    and return what each pair changed or why it was refused."""
-    outcomes = []
+    yielding each pair's outcome once its transaction ends. A pair whose old base study
+    is already superseded by its keeper is already merged and changes nothing."""
     for keeper_id, old_id in pairs:
         try:
-            keeper = _active(keeper_id, "keeper")
-            old = _active(old_id, "old")
+            keeper = _locked(keeper_id, "keeper")
+            old = _locked(old_id, "old")
+            if not keeper.is_active:
+                raise _inactive(keeper, "keeper")
+            if not old.is_active:
+                if old.superseded_by == keeper.id:
+                    db.session.rollback()
+                    yield PairOutcome(keeper_id, old_id, ALREADY_MERGED)
+                    continue
+                raise _inactive(old, "old")
             merge = merge_base_study(keeper, old)
             db.session.flush()
-            recompute_media_flags([keeper.id])
+            flagged = recompute_media_flags([keeper.id, old.id])
         except (BaseStudyMergeError, BaseStudyMergeClash) as error:
             db.session.rollback()
-            outcomes.append(PairOutcome(keeper_id, old_id, merged=False, refusal=str(error)))
+            yield PairOutcome(keeper_id, old_id, REFUSED, refusal=str(error))
             continue
         if dry_run:
             db.session.rollback()
         else:
             db.session.commit()
-            bump_cache_versions(merge.cache_ids)
-        outcomes.append(PairOutcome(keeper_id, old_id, merged=True, changes=merge.changes))
-    return outcomes
+            bump_cache_versions(merge_unique_ids(merge.cache_ids, flagged))
+        yield PairOutcome(keeper_id, old_id, MERGED, changes=merge.changes)

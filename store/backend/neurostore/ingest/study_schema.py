@@ -59,7 +59,11 @@ from study_schema.jsonschema import load as load_json_schema
 from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
-from neurostore.base_studies import VERSION_OF_RECORD_IDS, find_base_study
+from neurostore.base_studies import (
+    VERSION_OF_RECORD_IDS,
+    find_base_study,
+    superseding_base_study,
+)
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore.exceptions.factories import create_unprocessable_error, make_field_error
@@ -433,7 +437,7 @@ def _resolve_base_study(body, parse, parsed_paper, create):
     identifiers = header.get("identifiers") or {}
     base_study_id = body.get("base_study_id") or header.get("neurostore_base_study_id")
     if base_study_id:
-        base_study = db.session.get(BaseStudy, base_study_id)
+        base_study = superseding_base_study(db.session, base_study_id)
         if base_study is None:
             abort_not_found("BaseStudy", base_study_id)
         return base_study

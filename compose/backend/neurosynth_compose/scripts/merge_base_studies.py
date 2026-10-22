@@ -29,11 +29,14 @@ class Change:
     after: object
 
 
+MERGED, REFUSED = "merged", "refused"
+
+
 @dataclass
 class PairOutcome:
     keeper_id: str
     old_id: str
-    merged: bool
+    status: str
     refusal: str | None = None
     changes: list[Change] = field(default_factory=list)
 
@@ -123,10 +126,10 @@ def _repoint_stubs(project, keeper_id, old_id):
 
 def merge_base_studies(pairs, *, dry_run=True):
     """Repoint each pair's curation stubs in its own transaction, rolled back on a dry
-    run. A pair is refused, changing nothing, when a project would hold stubs for both
-    base studies in one column or names the old one anywhere else, or a meta-analysis's
-    provenance names it at all."""
-    outcomes = []
+    run, yielding each pair's outcome once its transaction ends. A pair is refused,
+    changing nothing, when a project would hold stubs for both base studies in one
+    column or names the old one anywhere else, or a meta-analysis's provenance names it
+    at all. A pair already applied finds nothing to change."""
     for keeper_id, old_id in pairs:
         try:
             changes = []
@@ -141,11 +144,10 @@ def merge_base_studies(pairs, *, dry_run=True):
             db.session.flush()
         except BaseStudyMergeError as error:
             db.session.rollback()
-            outcomes.append(PairOutcome(keeper_id, old_id, merged=False, refusal=str(error)))
+            yield PairOutcome(keeper_id, old_id, REFUSED, refusal=str(error))
             continue
         if dry_run:
             db.session.rollback()
         else:
             db.session.commit()
-        outcomes.append(PairOutcome(keeper_id, old_id, merged=True, changes=changes))
-    return outcomes
+        yield PairOutcome(keeper_id, old_id, MERGED, changes=changes)

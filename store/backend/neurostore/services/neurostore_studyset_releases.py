@@ -12,6 +12,7 @@ from pathlib import Path
 
 import orjson
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import load_only, selectinload
 from study_schema.models.paper_parse import AnalysisOutcome
 
@@ -35,6 +36,7 @@ from neurostore.models import (
     StudysetStudy,
 )
 from neurostore.models.data import (
+    MERGED_FROM,
     RECORD_SCHEMA_NAME,
     STUDY_SOURCE,
     generate_id,
@@ -280,10 +282,13 @@ def release_tier():
 def release_version_order(freshness):
     """The order that picks a paper's version for the release; the first eligible wins.
 
-    By ``release_tier``, then the freshest, then the highest id. A pipeline Study that
-    loses stays reachable by id.
+    The paper's own versions before those merged in from a duplicate base study (whose
+    metadata names MERGED_FROM), then by ``release_tier``, then the freshest, then the
+    highest id. A pipeline Study that loses stays reachable by id.
     """
-    return (release_tier(), freshness.desc(), Study.id.desc())
+    # studies.metadata_ is json in the database, whatever the model declares.
+    merged_in = sa.func.coalesce(sa.cast(Study.metadata_, JSONB).has_key(MERGED_FROM), False)
+    return (merged_in, release_tier(), freshness.desc(), Study.id.desc())
 
 
 def select_coordinate_studies(include_retracted=False):

@@ -1,0 +1,656 @@
+interactions:
+- request:
+    body: '{"ids": ["PMID:12667850"]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '26'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.semanticscholar.org/graph/v1/paper/batch?fields=externalIds
+  response:
+    body:
+      string: '{"message":"Forbidden"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '23'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 22 Oct 2026 22:05:48 GMT
+      Via:
+      - 1.1 e9bcf307d6ed54e3e501e39bc538dcfc.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - czLwzd5zYzV2OJ2UXcPLC8aBnGk0RUh0CANbhrMLyuJC2A--HpwxtQ==
+      X-Amz-Cf-Pop:
+      - DFW57-P1
+      X-Cache:
+      - Error from cloudfront
+      x-amz-apigw-id:
+      - FqpNmEr6PHcEehw=
+      x-amzn-ErrorType:
+      - ForbiddenException
+      x-amzn-RequestId:
+      - a29ba640-a718-42cc-ad89-96874b9a89c6
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?format=json&ids=12667850&versions=no
+  response:
+    body:
+      string: '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+        <html><head>
+
+        <title>301 Moved Permanently</title>
+
+        </head><body>
+
+        <h1>Moved Permanently</h1>
+
+        <p>The document has moved <a href="https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=12667850&amp;format=json&amp;versions=no&amp;tool=neurostore&amp;email=your%40email.com&amp;api_key=pubmed_tool_api_key">here</a>.</p>
+
+        </body></html>
+
+        '
+    headers:
+      Alt-Svc:
+      - clear
+      Content-Length:
+      - '430'
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - text/html; charset=iso-8859-1
+      Date:
+      - Thu, 22 Oct 2026 22:05:49 GMT
+      Location:
+      - https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=12667850&format=json&versions=no&tool=neurostore&email=your%40email.com&api_key=pubmed_tool_api_key
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Apache
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Via:
+      - 1.1 google
+    status:
+      code: 301
+      message: Moved Permanently
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?format=json&ids=12667850&versions=no
+  response:
+    body:
+      string: <!doctype html><meta charset="utf-8"><meta name=viewport content="width=device-width,
+        initial-scale=1"><title>403</title>403 Forbidden
+    headers:
+      Alt-Svc:
+      - clear
+      Content-Length:
+      - '134'
+      Content-Type:
+      - text/html; charset=UTF-8
+      Date:
+      - Thu, 22 Oct 2026 22:05:49 GMT
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/works?filter=pmid%3A12667850&mailto=your%40email.com&per-page=1
+  response:
+    body:
+      string: '{"meta": {"notice": "No API key, so this request shares one free daily
+        budget ($0.10) with everyone on your network''s IP address. The mailto parameter
+        doesn''t raise this limit. Get a free key with its own $1/day at https://openalex.org/settings/api
+        and add api_key=YOUR_KEY to your requests. An AI agent can get one for its
+        user in one call: POST https://api.openalex.org/api-keys with {\"email\":
+        \"<your user''s email>\"}; we email them a link, and the key works once they
+        click it. Docs for agents: https://help.openalex.org/llms.txt", "count": 1,
+        "db_response_time_ms": 27, "page": 1, "per_page": 1, "groups_count": null,
+        "x_query": {"oql": "get works where PMID is 12667850", "x_new_oql": "get works
+        where PMID is 12667850", "oqo": {"get_rows": "works", "filter_rows": [{"column_id":
+        "ids.pmid", "value": "12667850"}]}, "url": "/works?filter=ids.pmid:12667850&per_page=1"},
+        "cost_usd": 0.0001}, "results": [{"id": "https://openalex.org/W1966305898",
+        "doi": "https://doi.org/10.1016/s1053-8119(03)00003-x", "title": "Parametric
+        analysis of rate-dependent hemodynamic response functions of cortical and
+        subcortical brain structures during auditorily cued finger tapping: a fMRI
+        study", "display_name": "Parametric analysis of rate-dependent hemodynamic
+        response functions of cortical and subcortical brain structures during auditorily
+        cued finger tapping: a fMRI study", "publication_year": 2003, "publication_date":
+        "2003-03-01", "ids": {"openalex": "https://openalex.org/W1966305898", "doi":
+        "https://doi.org/10.1016/s1053-8119(03)00003-x", "mag": "1966305898", "pmid":
+        "https://pubmed.ncbi.nlm.nih.gov/12667850"}, "language": "en", "primary_location":
+        {"id": "doi:10.1016/s1053-8119(03)00003-x", "doi": "https://doi.org/10.1016/s1053-8119(03)00003-x",
+        "is_oa": false, "landing_page_url": "https://doi.org/10.1016/s1053-8119(03)00003-x",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S103225281", "display_name":
+        "NeuroImage", "issn_l": "1053-8119", "issn": ["1053-8119", "1095-9572"], "is_oa":
+        false, "is_in_doaj": true, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "doaj", "dongbi-a", "doyens", "jufo-3", "ki-jl-1", "medline",
+        "norway-2", "poland-140", "vabb-shw"], "host_organization": "https://openalex.org/P4310320990",
+        "host_organization_name": "Elsevier BV", "host_organization_lineage": ["https://openalex.org/P4310320990"],
+        "host_organization_lineage_names": ["Elsevier BV"], "type": "journal"}, "license":
+        null, "license_id": null, "version": "publishedVersion", "is_accepted": true,
+        "is_published": true, "raw_source_name": "NeuroImage", "raw_type": "journal-article"},
+        "volume": null, "type": "article", "indexed_in": ["crossref", "doaj", "pubmed"],
+        "open_access": {"is_oa": false, "oa_status": "closed", "oa_url": null, "any_repository_has_fulltext":
+        false}, "authorships": [{"author_position": "first", "author": {"id": "https://openalex.org/A5083944265",
+        "display_name": "Axel Riecker", "orcid": null, "observed_orcids": []}, "institutions":
+        [{"id": "https://openalex.org/I8087733", "display_name": "University of T\u00fcbingen",
+        "ror": "https://ror.org/03a1kwz48", "country_code": "DE", "type": "education",
+        "lineage": ["https://openalex.org/I8087733"]}], "countries": ["DE"], "is_corresponding":
+        true, "raw_author_name": "Axel Riecker", "raw_affiliation_strings": ["Department
+        of Neurology, University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076, Tuebingen,
+        Germany. axel.riecker@med.uni-tuebingen.de", "Department of Neurology, University
+        of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076 Tuebingen, Germany", "Section
+        on Experimental NMR of the CNS, Department of Neuroradiology, University of
+        Tuebingen, Hoppe-Seyler-Strasse 3, D-72076 Tuebingen, Germany"], "raw_orcid":
+        null, "affiliations": [{"raw_affiliation_string": "Department of Neurology,
+        University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076, Tuebingen, Germany.
+        axel.riecker@med.uni-tuebingen.de", "institution_ids": ["https://openalex.org/I8087733"]},
+        {"raw_affiliation_string": "Department of Neurology, University of Tuebingen,
+        Hoppe-Seyler-Strasse 3, D-72076 Tuebingen, Germany", "institution_ids": ["https://openalex.org/I8087733"]},
+        {"raw_affiliation_string": "Section on Experimental NMR of the CNS, Department
+        of Neuroradiology, University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076
+        Tuebingen, Germany", "institution_ids": ["https://openalex.org/I8087733"]}]},
+        {"author_position": "middle", "author": {"id": "https://openalex.org/A5003818170",
+        "display_name": "Dirk Wildgruber", "orcid": "https://orcid.org/0000-0003-3047-5173",
+        "observed_orcids": ["https://orcid.org/0000-0003-3047-5173"]}, "institutions":
+        [{"id": "https://openalex.org/I8087733", "display_name": "University of T\u00fcbingen",
+        "ror": "https://ror.org/03a1kwz48", "country_code": "DE", "type": "education",
+        "lineage": ["https://openalex.org/I8087733"]}], "countries": ["DE"], "is_corresponding":
+        false, "raw_author_name": "Dirk Wildgruber", "raw_affiliation_strings": ["Department
+        of Neurology, University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076 Tuebingen,
+        Germany", "Section on Experimental NMR of the CNS, Department of Neuroradiology,
+        University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076 Tuebingen, Germany"],
+        "raw_orcid": null, "affiliations": [{"raw_affiliation_string": "Department
+        of Neurology, University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076 Tuebingen,
+        Germany", "institution_ids": ["https://openalex.org/I8087733"]}, {"raw_affiliation_string":
+        "Section on Experimental NMR of the CNS, Department of Neuroradiology, University
+        of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076 Tuebingen, Germany", "institution_ids":
+        ["https://openalex.org/I8087733"]}]}, {"author_position": "middle", "author":
+        {"id": "https://openalex.org/A5008315515", "display_name": "Klaus Mathiak",
+        "orcid": "https://orcid.org/0000-0002-2276-7726", "observed_orcids": ["https://orcid.org/0000-0002-2276-7726"]},
+        "institutions": [{"id": "https://openalex.org/I8087733", "display_name": "University
+        of T\u00fcbingen", "ror": "https://ror.org/03a1kwz48", "country_code": "DE",
+        "type": "education", "lineage": ["https://openalex.org/I8087733"]}], "countries":
+        ["DE"], "is_corresponding": false, "raw_author_name": "Klaus Mathiak", "raw_affiliation_strings":
+        ["Department of Neurology, University of Tuebingen, Hoppe-Seyler-Strasse 3,
+        D-72076 Tuebingen, Germany", "Section on Experimental NMR of the CNS, Department
+        of Neuroradiology, University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076
+        Tuebingen, Germany"], "raw_orcid": null, "affiliations": [{"raw_affiliation_string":
+        "Department of Neurology, University of Tuebingen, Hoppe-Seyler-Strasse 3,
+        D-72076 Tuebingen, Germany", "institution_ids": ["https://openalex.org/I8087733"]},
+        {"raw_affiliation_string": "Section on Experimental NMR of the CNS, Department
+        of Neuroradiology, University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076
+        Tuebingen, Germany", "institution_ids": ["https://openalex.org/I8087733"]}]},
+        {"author_position": "middle", "author": {"id": "https://openalex.org/A5037698686",
+        "display_name": "Wolfgang Grodd", "orcid": null, "observed_orcids": []}, "institutions":
+        [{"id": "https://openalex.org/I8087733", "display_name": "University of T\u00fcbingen",
+        "ror": "https://ror.org/03a1kwz48", "country_code": "DE", "type": "education",
+        "lineage": ["https://openalex.org/I8087733"]}], "countries": ["DE"], "is_corresponding":
+        false, "raw_author_name": "Wolfgang Grodd", "raw_affiliation_strings": ["Section
+        on Experimental NMR of the CNS, Department of Neuroradiology, University of
+        Tuebingen, Hoppe-Seyler-Strasse 3, D-72076 Tuebingen, Germany"], "raw_orcid":
+        null, "affiliations": [{"raw_affiliation_string": "Section on Experimental
+        NMR of the CNS, Department of Neuroradiology, University of Tuebingen, Hoppe-Seyler-Strasse
+        3, D-72076 Tuebingen, Germany", "institution_ids": ["https://openalex.org/I8087733"]}]},
+        {"author_position": "last", "author": {"id": "https://openalex.org/A5038741708",
+        "display_name": "Hermann Ackermann", "orcid": "https://orcid.org/0009-0003-4316-7847",
+        "observed_orcids": ["https://orcid.org/0009-0003-4316-7847"]}, "institutions":
+        [{"id": "https://openalex.org/I8087733", "display_name": "University of T\u00fcbingen",
+        "ror": "https://ror.org/03a1kwz48", "country_code": "DE", "type": "education",
+        "lineage": ["https://openalex.org/I8087733"]}], "countries": ["DE"], "is_corresponding":
+        false, "raw_author_name": "Hermann Ackermann", "raw_affiliation_strings":
+        ["Department of Neurology, University of Tuebingen, Hoppe-Seyler-Strasse 3,
+        D-72076 Tuebingen, Germany"], "raw_orcid": null, "affiliations": [{"raw_affiliation_string":
+        "Department of Neurology, University of Tuebingen, Hoppe-Seyler-Strasse 3,
+        D-72076 Tuebingen, Germany", "institution_ids": ["https://openalex.org/I8087733"]}]}],
+        "institutions": [], "countries_distinct_count": 1, "institutions_distinct_count":
+        1, "corresponding_author_ids": ["https://openalex.org/A5083944265"], "corresponding_institution_ids":
+        ["https://openalex.org/I8087733"], "apc_list": {"value": 3540, "currency":
+        "USD", "value_usd": 3540}, "apc_paid": null, "fwci": 4.6872, "has_fulltext":
+        false, "cited_by_count": 143, "citation_normalized_percentile": {"value":
+        0.94931683, "is_in_top_1_percent": false, "is_in_top_10_percent": true}, "cited_by_percentile_year":
+        {"min": 88, "max": 100}, "biblio": {"volume": "18", "issue": "3", "first_page":
+        "731", "last_page": "739"}, "is_retracted": false, "is_paratext": false, "is_xpac":
+        false, "primary_topic": {"id": "https://openalex.org/T10982", "display_name":
+        "Motor Control and Adaptation", "score": 0.9028000235557556, "subfield": {"id":
+        "https://openalex.org/subfields/2805", "display_name": "Cognitive Neuroscience"},
+        "field": {"id": "https://openalex.org/fields/28", "display_name": "Neuroscience"},
+        "domain": {"id": "https://openalex.org/domains/1", "display_name": "Life Sciences"}},
+        "topics": [{"id": "https://openalex.org/T10982", "display_name": "Motor Control
+        and Adaptation", "score": 0.9028000235557556, "subfield": {"id": "https://openalex.org/subfields/2805",
+        "display_name": "Cognitive Neuroscience"}, "field": {"id": "https://openalex.org/fields/28",
+        "display_name": "Neuroscience"}, "domain": {"id": "https://openalex.org/domains/1",
+        "display_name": "Life Sciences"}}, {"id": "https://openalex.org/T10378", "display_name":
+        "Advanced MRI Techniques and Applications", "score": 0.03009999915957451,
+        "subfield": {"id": "https://openalex.org/subfields/2741", "display_name":
+        "Radiology, Nuclear Medicine and Imaging"}, "field": {"id": "https://openalex.org/fields/27",
+        "display_name": "Medicine"}, "domain": {"id": "https://openalex.org/domains/4",
+        "display_name": "Health Sciences"}}, {"id": "https://openalex.org/T10042",
+        "display_name": "Neural and Behavioral Psychology Studies", "score": 0.020500000566244125,
+        "subfield": {"id": "https://openalex.org/subfields/2805", "display_name":
+        "Cognitive Neuroscience"}, "field": {"id": "https://openalex.org/fields/28",
+        "display_name": "Neuroscience"}, "domain": {"id": "https://openalex.org/domains/1",
+        "display_name": "Life Sciences"}}], "keywords": [{"id": "https://openalex.org/keywords/auditory-cueing",
+        "display_name": "auditory cueing", "score": 0.6309999823570251}, {"id": "https://openalex.org/keywords/finger-tapping",
+        "display_name": "finger tapping", "score": 0.9900000095367432}, {"id": "https://openalex.org/keywords/sensorimotor-cortex",
+        "display_name": "sensorimotor cortex", "score": 0.925000011920929}, {"id":
+        "https://openalex.org/keywords/supplementary-motor-area", "display_name":
+        "supplementary motor area", "score": 0.9010000228881836}, {"id": "https://openalex.org/keywords/pre-supplementary-motor-area",
+        "display_name": "pre-supplementary motor area", "score": 0.8349999785423279},
+        {"id": "https://openalex.org/keywords/cerebellum", "display_name": "cerebellum",
+        "score": 0.9729999899864197}, {"id": "https://openalex.org/keywords/basal-ganglia",
+        "display_name": "basal ganglia", "score": 0.9539999961853027}, {"id": "https://openalex.org/keywords/caudate-nucleus",
+        "display_name": "caudate nucleus", "score": 0.8740000128746033}, {"id": "https://openalex.org/keywords/putamen",
+        "display_name": "putamen", "score": 0.9959999918937683}, {"id": "https://openalex.org/keywords/external-pallidum",
+        "display_name": "external pallidum", "score": 0.9779999852180481}, {"id":
+        "https://openalex.org/keywords/movement-frequency", "display_name": "movement
+        frequency", "score": 0.6840000152587891}, {"id": "https://openalex.org/keywords/motor-control",
+        "display_name": "motor control", "score": 0.3700000047683716}], "concepts":
+        [{"id": "https://openalex.org/C2992114214", "wikidata": "https://www.wikidata.org/wiki/Q7684805",
+        "display_name": "Finger tapping", "level": 2, "score": 0.6409468650817871},
+        {"id": "https://openalex.org/C169760540", "wikidata": "https://www.wikidata.org/wiki/Q207011",
+        "display_name": "Neuroscience", "level": 1, "score": 0.5877924561500549},
+        {"id": "https://openalex.org/C2779226451", "wikidata": "https://www.wikidata.org/wiki/Q903809",
+        "display_name": "Functional magnetic resonance imaging", "level": 2, "score":
+        0.5859169960021973}, {"id": "https://openalex.org/C15744967", "wikidata":
+        "https://www.wikidata.org/wiki/Q9418", "display_name": "Psychology", "level":
+        0, "score": 0.5773292183876038}, {"id": "https://openalex.org/C26170363",
+        "wikidata": "https://www.wikidata.org/wiki/Q1981408", "display_name": "Haemodynamic
+        response", "level": 4, "score": 0.5163401365280151}, {"id": "https://openalex.org/C2778373776",
+        "wikidata": "https://www.wikidata.org/wiki/Q18696", "display_name": "Motor
+        cortex", "level": 3, "score": 0.4333673417568207}, {"id": "https://openalex.org/C548259974",
+        "wikidata": "https://www.wikidata.org/wiki/Q569965", "display_name": "Audiology",
+        "level": 1, "score": 0.21167531609535217}, {"id": "https://openalex.org/C86803240",
+        "wikidata": "https://www.wikidata.org/wiki/Q420", "display_name": "Biology",
+        "level": 0, "score": 0.15507495403289795}, {"id": "https://openalex.org/C71924100",
+        "wikidata": "https://www.wikidata.org/wiki/Q11190", "display_name": "Medicine",
+        "level": 0, "score": 0.12897080183029175}, {"id": "https://openalex.org/C2777953023",
+        "wikidata": "https://www.wikidata.org/wiki/Q1073121", "display_name": "Heart
+        rate", "level": 3, "score": 0.10077396035194397}, {"id": "https://openalex.org/C84393581",
+        "wikidata": "https://www.wikidata.org/wiki/Q82642", "display_name": "Blood
+        pressure", "level": 2, "score": 0.0}, {"id": "https://openalex.org/C134018914",
+        "wikidata": "https://www.wikidata.org/wiki/Q162606", "display_name": "Endocrinology",
+        "level": 1, "score": 0.0}, {"id": "https://openalex.org/C24998067", "wikidata":
+        "https://www.wikidata.org/wiki/Q4114622", "display_name": "Stimulation", "level":
+        2, "score": 0.0}], "mesh": [{"descriptor_ui": "D000328", "descriptor_name":
+        "Adult", "qualifier_ui": null, "qualifier_name": null, "is_major_topic": false},
+        {"descriptor_ui": "D000328", "descriptor_name": "Adult", "qualifier_ui": null,
+        "qualifier_name": null, "is_major_topic": false}, {"descriptor_ui": "D000328",
+        "descriptor_name": "Adult", "qualifier_ui": null, "qualifier_name": null,
+        "is_major_topic": false}, {"descriptor_ui": "D001288", "descriptor_name":
+        "Attention", "qualifier_ui": "Q000502", "qualifier_name": "physiology", "is_major_topic":
+        false}, {"descriptor_ui": "D001288", "descriptor_name": "Attention", "qualifier_ui":
+        "Q000502", "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D001288", "descriptor_name": "Attention", "qualifier_ui": "Q000502", "qualifier_name":
+        "physiology", "is_major_topic": false}, {"descriptor_ui": "D001479", "descriptor_name":
+        "Basal Ganglia", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D001479", "descriptor_name":
+        "Basal Ganglia", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D001479", "descriptor_name":
+        "Basal Ganglia", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D001479", "descriptor_name":
+        "Basal Ganglia", "qualifier_ui": "Q000502", "qualifier_name": "physiology",
+        "is_major_topic": false}, {"descriptor_ui": "D001479", "descriptor_name":
+        "Basal Ganglia", "qualifier_ui": "Q000502", "qualifier_name": "physiology",
+        "is_major_topic": false}, {"descriptor_ui": "D001479", "descriptor_name":
+        "Basal Ganglia", "qualifier_ui": "Q000502", "qualifier_name": "physiology",
+        "is_major_topic": false}, {"descriptor_ui": "D001931", "descriptor_name":
+        "Brain Mapping", "qualifier_ui": null, "qualifier_name": null, "is_major_topic":
+        false}, {"descriptor_ui": "D001931", "descriptor_name": "Brain Mapping", "qualifier_ui":
+        null, "qualifier_name": null, "is_major_topic": false}, {"descriptor_ui":
+        "D001931", "descriptor_name": "Brain Mapping", "qualifier_ui": null, "qualifier_name":
+        null, "is_major_topic": false}, {"descriptor_ui": "D002531", "descriptor_name":
+        "Cerebellum", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D002531", "descriptor_name":
+        "Cerebellum", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D002531", "descriptor_name":
+        "Cerebellum", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D002531", "descriptor_name":
+        "Cerebellum", "qualifier_ui": "Q000502", "qualifier_name": "physiology", "is_major_topic":
+        false}, {"descriptor_ui": "D002531", "descriptor_name": "Cerebellum", "qualifier_ui":
+        "Q000502", "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D002531", "descriptor_name": "Cerebellum", "qualifier_ui": "Q000502", "qualifier_name":
+        "physiology", "is_major_topic": false}, {"descriptor_ui": "D002540", "descriptor_name":
+        "Cerebral Cortex", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D002540", "descriptor_name":
+        "Cerebral Cortex", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D002540", "descriptor_name":
+        "Cerebral Cortex", "qualifier_ui": "Q000098", "qualifier_name": "blood supply",
+        "is_major_topic": false}, {"descriptor_ui": "D002540", "descriptor_name":
+        "Cerebral Cortex", "qualifier_ui": "Q000502", "qualifier_name": "physiology",
+        "is_major_topic": false}, {"descriptor_ui": "D002540", "descriptor_name":
+        "Cerebral Cortex", "qualifier_ui": "Q000502", "qualifier_name": "physiology",
+        "is_major_topic": false}, {"descriptor_ui": "D002540", "descriptor_name":
+        "Cerebral Cortex", "qualifier_ui": "Q000502", "qualifier_name": "physiology",
+        "is_major_topic": false}, {"descriptor_ui": "D003463", "descriptor_name":
+        "Cues", "qualifier_ui": null, "qualifier_name": null, "is_major_topic": false},
+        {"descriptor_ui": "D003463", "descriptor_name": "Cues", "qualifier_ui": null,
+        "qualifier_name": null, "is_major_topic": false}, {"descriptor_ui": "D003463",
+        "descriptor_name": "Cues", "qualifier_ui": null, "qualifier_name": null, "is_major_topic":
+        false}, {"descriptor_ui": "D005260", "descriptor_name": "Female", "qualifier_ui":
+        null, "qualifier_name": null, "is_major_topic": false}, {"descriptor_ui":
+        "D005260", "descriptor_name": "Female", "qualifier_ui": null, "qualifier_name":
+        null, "is_major_topic": false}, {"descriptor_ui": "D005260", "descriptor_name":
+        "Female", "qualifier_ui": null, "qualifier_name": null, "is_major_topic":
+        false}, {"descriptor_ui": "D006439", "descriptor_name": "Hemodynamics", "qualifier_ui":
+        "Q000502", "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D006439", "descriptor_name": "Hemodynamics", "qualifier_ui": "Q000502", "qualifier_name":
+        "physiology", "is_major_topic": false}, {"descriptor_ui": "D006439", "descriptor_name":
+        "Hemodynamics", "qualifier_ui": "Q000502", "qualifier_name": "physiology",
+        "is_major_topic": false}, {"descriptor_ui": "D006801", "descriptor_name":
+        "Humans", "qualifier_ui": null, "qualifier_name": null, "is_major_topic":
+        false}, {"descriptor_ui": "D006801", "descriptor_name": "Humans", "qualifier_ui":
+        null, "qualifier_name": null, "is_major_topic": false}, {"descriptor_ui":
+        "D006801", "descriptor_name": "Humans", "qualifier_ui": null, "qualifier_name":
+        null, "is_major_topic": false}, {"descriptor_ui": "D007091", "descriptor_name":
+        "Image Processing, Computer-Assisted", "qualifier_ui": null, "qualifier_name":
+        null, "is_major_topic": true}, {"descriptor_ui": "D007091", "descriptor_name":
+        "Image Processing, Computer-Assisted", "qualifier_ui": null, "qualifier_name":
+        null, "is_major_topic": true}, {"descriptor_ui": "D007091", "descriptor_name":
+        "Image Processing, Computer-Assisted", "qualifier_ui": null, "qualifier_name":
+        null, "is_major_topic": true}, {"descriptor_ui": "D008279", "descriptor_name":
+        "Magnetic Resonance Imaging", "qualifier_ui": null, "qualifier_name": null,
+        "is_major_topic": true}, {"descriptor_ui": "D008279", "descriptor_name": "Magnetic
+        Resonance Imaging", "qualifier_ui": null, "qualifier_name": null, "is_major_topic":
+        true}, {"descriptor_ui": "D008279", "descriptor_name": "Magnetic Resonance
+        Imaging", "qualifier_ui": null, "qualifier_name": null, "is_major_topic":
+        true}, {"descriptor_ui": "D008297", "descriptor_name": "Male", "qualifier_ui":
+        null, "qualifier_name": null, "is_major_topic": false}, {"descriptor_ui":
+        "D008297", "descriptor_name": "Male", "qualifier_ui": null, "qualifier_name":
+        null, "is_major_topic": false}, {"descriptor_ui": "D008297", "descriptor_name":
+        "Male", "qualifier_ui": null, "qualifier_name": null, "is_major_topic": false},
+        {"descriptor_ui": "D009043", "descriptor_name": "Motor Activity", "qualifier_ui":
+        "Q000502", "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D009043", "descriptor_name": "Motor Activity", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D009043", "descriptor_name": "Motor Activity", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D010101", "descriptor_name": "Oxygen Consumption", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D010101", "descriptor_name": "Oxygen Consumption", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D010101", "descriptor_name": "Oxygen Consumption", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D010898", "descriptor_name": "Pitch Perception", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D010898", "descriptor_name": "Pitch Perception", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D010898", "descriptor_name": "Pitch Perception", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D011930", "descriptor_name": "Reaction Time", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D011930", "descriptor_name": "Reaction Time", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}, {"descriptor_ui":
+        "D011930", "descriptor_name": "Reaction Time", "qualifier_ui": "Q000502",
+        "qualifier_name": "physiology", "is_major_topic": false}], "locations_count":
+        3, "locations": [{"id": "doi:10.1016/s1053-8119(03)00003-x", "doi": "https://doi.org/10.1016/s1053-8119(03)00003-x",
+        "is_oa": false, "landing_page_url": "https://doi.org/10.1016/s1053-8119(03)00003-x",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S103225281", "display_name":
+        "NeuroImage", "issn_l": "1053-8119", "issn": ["1053-8119", "1095-9572"], "is_oa":
+        false, "is_in_doaj": true, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "doaj", "dongbi-a", "doyens", "jufo-3", "ki-jl-1", "medline",
+        "norway-2", "poland-140", "vabb-shw"], "host_organization": "https://openalex.org/P4310320990",
+        "host_organization_name": "Elsevier BV", "host_organization_lineage": ["https://openalex.org/P4310320990"],
+        "host_organization_lineage_names": ["Elsevier BV"], "type": "journal"}, "license":
+        null, "license_id": null, "version": "publishedVersion", "is_accepted": true,
+        "is_published": true, "raw_source_name": "NeuroImage", "raw_type": "journal-article"},
+        {"id": "pmid:12667850", "doi": null, "is_oa": false, "landing_page_url": "https://pubmed.ncbi.nlm.nih.gov/12667850",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306525036", "display_name":
+        "PubMed", "issn_l": null, "issn": null, "is_oa": false, "is_in_doaj": false,
+        "is_core": false, "listed_in": [], "host_organization": "https://openalex.org/I1299303238",
+        "host_organization_name": "National Institutes of Health", "host_organization_lineage":
+        ["https://openalex.org/I1299303238"], "host_organization_lineage_names": [],
+        "type": "repository"}, "license": null, "license_id": null, "version": "publishedVersion",
+        "is_accepted": true, "is_published": true, "raw_source_name": "NeuroImage",
+        "raw_type": "Journal Article"}, {"id": "pmh:oai:pure.mpg.de:item_3184614",
+        "doi": null, "is_oa": false, "landing_page_url": "http://hdl.handle.net/21.11116/0000-0005-6ACE-D",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400654", "display_name":
+        "MPG.PuRe (Max Planck Society)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I149899117", "host_organization_name": "Max Planck Society",
+        "host_organization_lineage": ["https://openalex.org/I149899117"], "host_organization_lineage_names":
+        [], "type": "repository"}, "license": null, "license_id": null, "version":
+        "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
+        "NeuroImage", "raw_type": "info:eu-repo/semantics/article"}], "best_oa_location":
+        null, "sustainable_development_goals": [{"id": "https://metadata.un.org/sdg/3",
+        "score": 0.6240000128746033, "display_name": "Good health and well-being"}],
+        "sustainable_development_goals_aurora": [], "study_designs": [], "awards":
+        [], "funders": [], "has_content": {"grobid_xml": false, "pdf": false}, "content_urls":
+        null, "referenced_works_count": 60, "referenced_works": ["https://openalex.org/W52487473",
+        "https://openalex.org/W609302666", "https://openalex.org/W631805375", "https://openalex.org/W1552444893",
+        "https://openalex.org/W1591367364", "https://openalex.org/W1685150300", "https://openalex.org/W1853456766",
+        "https://openalex.org/W1966364231", "https://openalex.org/W1971471296", "https://openalex.org/W1975146184",
+        "https://openalex.org/W1975458527", "https://openalex.org/W1978534573", "https://openalex.org/W1980226257",
+        "https://openalex.org/W1981137657", "https://openalex.org/W2002314838", "https://openalex.org/W2002660165",
+        "https://openalex.org/W2003219654", "https://openalex.org/W2030561821", "https://openalex.org/W2031170958",
+        "https://openalex.org/W2033547811", "https://openalex.org/W2036930326", "https://openalex.org/W2045595373",
+        "https://openalex.org/W2045913053", "https://openalex.org/W2046026874", "https://openalex.org/W2049430110",
+        "https://openalex.org/W2053214069", "https://openalex.org/W2072192835", "https://openalex.org/W2073630554",
+        "https://openalex.org/W2077773836", "https://openalex.org/W2086012932", "https://openalex.org/W2087421440",
+        "https://openalex.org/W2088495343", "https://openalex.org/W2089250340", "https://openalex.org/W2097578007",
+        "https://openalex.org/W2099581737", "https://openalex.org/W2099652807", "https://openalex.org/W2103945486",
+        "https://openalex.org/W2111637278", "https://openalex.org/W2112212626", "https://openalex.org/W2113334426",
+        "https://openalex.org/W2115462438", "https://openalex.org/W2124481262", "https://openalex.org/W2126873017",
+        "https://openalex.org/W2129912334", "https://openalex.org/W2134235065", "https://openalex.org/W2156035733",
+        "https://openalex.org/W2156969587", "https://openalex.org/W2157684416", "https://openalex.org/W2169131702",
+        "https://openalex.org/W2247063884", "https://openalex.org/W2260596396", "https://openalex.org/W2319958880",
+        "https://openalex.org/W2330157697", "https://openalex.org/W2410707679", "https://openalex.org/W2413433872",
+        "https://openalex.org/W2426908849", "https://openalex.org/W2467233387", "https://openalex.org/W2477416481",
+        "https://openalex.org/W2892278891", "https://openalex.org/W3012733143"], "related_works":
+        ["https://openalex.org/W2031510212", "https://openalex.org/W1989187153", "https://openalex.org/W2088138660",
+        "https://openalex.org/W1968130569", "https://openalex.org/W2067841959", "https://openalex.org/W2093518292",
+        "https://openalex.org/W2884361874", "https://openalex.org/W2353511225", "https://openalex.org/W4367315711",
+        "https://openalex.org/W2097280009"], "abstract_inverted_index": null, "counts_by_year":
+        [{"year": 2025, "cited_by_count": 2}, {"year": 2024, "cited_by_count": 1},
+        {"year": 2023, "cited_by_count": 3}, {"year": 2022, "cited_by_count": 1},
+        {"year": 2021, "cited_by_count": 5}, {"year": 2020, "cited_by_count": 4},
+        {"year": 2019, "cited_by_count": 4}, {"year": 2018, "cited_by_count": 3},
+        {"year": 2017, "cited_by_count": 3}, {"year": 2016, "cited_by_count": 6},
+        {"year": 2015, "cited_by_count": 5}, {"year": 2014, "cited_by_count": 8},
+        {"year": 2013, "cited_by_count": 5}, {"year": 2012, "cited_by_count": 15}],
+        "updated_date": "2026-10-16T09:59:22.235173", "created_date": "2025-10-10T00:00:00"}],
+        "group_by": []}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a4ebce3f6ee94b83-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 22 Oct 2026 22:05:49 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0.0001'
+      X-RateLimit-Credits-Used:
+      - '1'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '998'
+      X-RateLimit-Remaining-USD:
+      - '0.0998'
+      X-RateLimit-Reset:
+      - '6851'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=RuKW69aTU9RZ6oe7VpFUXyIGQNIXW8ZX66poHCzEwH4%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1792706749"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=RuKW69aTU9RZ6oe7VpFUXyIGQNIXW8ZX66poHCzEwH4%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1792706749"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"ids": ["DOI:10.1016/s1053-8119(03)00003-x", "PMID:12667850"]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '63'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.semanticscholar.org/graph/v1/paper/batch?fields=title%2Cabstract%2Cvenue%2Cyear%2Cauthors%2CisOpenAccess%2Cjournal%2CexternalIds
+  response:
+    body:
+      string: '{"message":"Forbidden"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '23'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 22 Oct 2026 22:05:49 GMT
+      Via:
+      - 1.1 9dbecd95f02024b36225d6b521598db6.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - mOWBuaXbFfM00NdUlXvtNusUqxsTM8i3q1g5K_XLQ3bLG6APaVXxPg==
+      X-Amz-Cf-Pop:
+      - DFW57-P1
+      X-Cache:
+      - Error from cloudfront
+      x-amz-apigw-id:
+      - FqpNvFZOvHcEUpw=
+      x-amzn-ErrorType:
+      - ForbiddenException
+      x-amzn-RequestId:
+      - 875de973-f060-4976-befc-fa8e0cdca6bf
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=12667850&retmode=xml
+  response:
+    body:
+      string: '{"error":"API key invalid","api-key":"pubmed_tool_api_key","type":"invalid",
+
+        "status":"unknown"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 22 Oct 2026 22:05:49 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '3'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 400
+      message: Bad Request
+version: 1

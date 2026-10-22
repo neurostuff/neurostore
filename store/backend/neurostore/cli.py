@@ -871,15 +871,21 @@ def transfer_user_ownership_command(source_user_id, destination_user_id, execute
 
 
 def _echo_merge_outcomes(outcomes, dry_run):
-    """Print each pair's outcome and every change; exit 1 if any pair was refused."""
+    """Print each pair's outcome and every change as the pair finishes; exit 1 if any
+    pair was refused."""
 
     def shown(value):
         text = repr(value)
         return text if len(text) <= 100 else text[:97] + "..."
 
+    refused = False
     for outcome in outcomes:
-        if outcome.refusal is not None:
+        if outcome.status == "refused":
+            refused = True
             click.echo(f"REFUSED {outcome.old_id} -> {outcome.keeper_id}: {outcome.refusal}")
+            continue
+        if not outcome.changes:
+            click.echo(f"{outcome.status} {outcome.old_id} -> {outcome.keeper_id}: no change")
             continue
         verb = "would merge" if dry_run else "merged"
         click.echo(
@@ -891,7 +897,7 @@ def _echo_merge_outcomes(outcomes, dry_run):
                 f"  {change.table} {change.row_id} {change.field}: "
                 f"{shown(change.before)} -> {shown(change.after)}"
             )
-    if any(outcome.refusal is not None for outcome in outcomes):
+    if refused:
         raise SystemExit(1)
 
 
@@ -917,9 +923,9 @@ def merge_base_studies_command(plan, execute):
         raise click.ClickException(str(exc)) from exc
 
     def _run(_app, _db):
-        return merge_base_studies(pairs, dry_run=not execute)
+        _echo_merge_outcomes(merge_base_studies(pairs, dry_run=not execute), not execute)
 
-    _echo_merge_outcomes(_run_with_runtime(_run), dry_run=not execute)
+    _run_with_runtime(_run)
 
 
 if __name__ == "__main__":
