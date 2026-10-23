@@ -2,7 +2,7 @@ from connexion import request
 import sqlalchemy as sa
 from marshmallow import fields as marshmallow_fields
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import joinedload, raiseload, selectinload
+from sqlalchemy.orm import joinedload, raiseload, selectinload, undefer
 from webargs import fields
 
 from neurostore.base_studies import (
@@ -120,7 +120,7 @@ class BaseStudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         return self._eager_load_versions(q, args or {}).options(
-            selectinload(BaseStudy.identifier_rows)
+            undefer(BaseStudy.identifiers)
         )
 
     def _eager_load_versions(self, q, args):
@@ -245,6 +245,8 @@ class BaseStudiesView(ObjectView, ListView):
             db.session.add_all(to_commit)
             db.session.flush()
 
+        # Read before the commit expires the records: each id read after it is a query.
+        response_ids = [base_study.id for base_study in base_studies]
         changed_base_study_ids = sorted(
             {record.id for record in changed_base_study_records if record.id}
         )
@@ -253,9 +255,7 @@ class BaseStudiesView(ObjectView, ListView):
             clear_cache(unique_ids)
             self.update_base_studies(unique_ids.get("base-studies"))
             db.session.commit()
-            response_records = load_base_study_response_records(
-                [base_study.id for base_study in base_studies], User
-            )
+            response_records = load_base_study_response_records(response_ids, User)
         else:
             response_records = base_studies
 

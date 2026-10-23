@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from sqlalchemy.orm import raiseload, selectinload, undefer
+
 from neurostore.base_studies import (
     ARTICLE_ID_FIELDS,
     ARTICLE_ID_LISTS,
@@ -17,14 +19,12 @@ from neurostore.resources.utils import get_current_user
 
 
 def _base_study_response_load_options(user_model):
-    from sqlalchemy.orm import raiseload, selectinload
-
     return (
         raiseload("*", sql_only=True),
         selectinload(BaseStudy.user)
         .load_only(user_model.external_id, user_model.name)
         .options(raiseload("*", sql_only=True)),
-        selectinload(BaseStudy.identifier_rows),
+        undefer(BaseStudy.identifiers),
         selectinload(BaseStudy.versions)
         .load_only(
             Study.id,
@@ -47,12 +47,18 @@ def _base_study_response_load_options(user_model):
     )
 
 
-def load_base_study_records(base_study_ids, user_model):
+def load_held_base_studies(base_study_ids):
+    """The base studies a bulk POST found by their ids, with only their versions' ids: all
+    the write reads of them; the response is loaded after the commit."""
     if not base_study_ids:
         return []
     return (
         BaseStudy.query.filter(BaseStudy.id.in_(list(base_study_ids)))
-        .options(*_base_study_response_load_options(user_model))
+        .options(
+            selectinload(BaseStudy.versions)
+            .load_only(Study.id)
+            .options(raiseload("*", sql_only=True))
+        )
         .all()
     )
 
@@ -61,7 +67,11 @@ def load_response_records(base_study_ids, user_model):
     if not base_study_ids:
         return []
 
-    records = load_base_study_records(base_study_ids, user_model)
+    records = (
+        BaseStudy.query.filter(BaseStudy.id.in_(list(base_study_ids)))
+        .options(*_base_study_response_load_options(user_model))
+        .all()
+    )
     records_by_id = {record.id: record for record in records}
     return [records_by_id[base_study_id] for base_study_id in base_study_ids]
 
@@ -113,8 +123,8 @@ class BaseStudyBulkPostService:
         held = held_by(db.session, every_identifier)
         records = {
             record.id: record
-            for record in load_base_study_records(
-                sorted({holder.base_study_id for holder in held.values()}), self.user_model
+            for record in load_held_base_studies(
+                sorted({holder.base_study_id for holder in held.values()})
             )
         }
 

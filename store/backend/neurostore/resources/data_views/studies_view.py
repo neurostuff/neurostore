@@ -92,7 +92,7 @@ class StudyMutationPolicy(DefaultMutationPolicy):
                     record.name, r"[" + string.punctuation + "]", "", "g"
                 )
                 base_study = BaseStudy.query.filter(
-                    BaseStudy.is_active.is_(True), BaseStudy.name.ilike(f"%{name_search}%")
+                    BaseStudy.name.ilike(f"%{name_search}%")
                 ).first()
             if base_study is None:
                 self.context.record = record

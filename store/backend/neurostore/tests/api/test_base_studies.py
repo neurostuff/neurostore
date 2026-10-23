@@ -1155,8 +1155,11 @@ def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(
     )
     session.commit()
 
+    # The pmid a provider finds for the paper is the one the duplicate holds.
     monkeypatch.setattr(
-        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+        metadata_service,
+        "lookup_ids_semantic_scholar",
+        lambda *_args, **_kwargs: {"pmid": "950001"},
     )
     monkeypatch.setattr(
         metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
@@ -1216,11 +1219,11 @@ def test_metadata_worker_merge_reassigns_pipeline_rows(
         shared_identifier is not None
     ), "Expected seeded base study to have an identifier"
 
-    duplicate_kwargs = {
-        "name": "Pipeline Duplicate",
-        "level": "group",
-        identifier_field: shared_identifier,
-    }
+    # The duplicate holds another id of its own; a provider finds the primary's for it.
+    own_field, own_value = (
+        ("pmid", "9999991") if identifier_field == "doi" else ("doi", "10.9999/pipeline-dup")
+    )
+    duplicate_kwargs = {"name": "Pipeline Duplicate", "level": "group", own_field: own_value}
     duplicate = BaseStudy(**duplicate_kwargs)
     session.add(duplicate)
     session.commit()
@@ -1261,7 +1264,9 @@ def test_metadata_worker_merge_reassigns_pipeline_rows(
     session.commit()
 
     monkeypatch.setattr(
-        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+        metadata_service,
+        "lookup_ids_semantic_scholar",
+        lambda *_args, **_kwargs: {identifier_field: shared_identifier},
     )
     monkeypatch.setattr(
         metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
@@ -2714,7 +2719,9 @@ def test_superseded_by_no_self_reference(session):
         # Expected behavior
 
 
-def test_doi_pmid_unique_applies_only_to_active_base_studies(session):
+def test_an_active_base_study_sharing_ids_with_another_is_accepted_and_left_to_be_merged(
+    session,
+):
     shared_doi = "10.1234/active-only-unique"
     shared_pmid = "77777777"
     active = BaseStudy(

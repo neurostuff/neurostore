@@ -951,15 +951,49 @@ def test_raw_sql_writing_a_loser_is_not_refused(session, shape):
 
 
 @pytest.mark.parametrize("shape", LOSER_SHAPES)
-def test_an_enrichment_of_a_loser_merges_it_into_its_keeper(session, shape):
+def test_an_enrichment_of_a_loser_leaves_its_pair_to_a_reviewed_plan(session, shape):
     keeper, loser, _ = _loser_pair(session, shape)
 
     _enrich(session, loser, pmcid="PMC5")
 
     session.expire_all()
+    assert session.get(BaseStudy, loser.id).is_active
+    assert session.get(BaseStudy, loser.id).pmcid == "PMC5"
+    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((keeper.id, loser.id)))]
+
+
+@pytest.mark.parametrize("shape", LOSER_SHAPES)
+def test_an_enrichment_finding_a_loser_an_id_its_keeper_holds_merges_them(session, shape):
+    keeper, loser, _ = _loser_pair(session, shape)
+    keeper.pmcid = "PMC9"
+    session.commit()
+
+    _enrich(session, loser, pmcid="PMC9")
+
+    session.expire_all()
     assert session.get(BaseStudy, loser.id).superseded_by == keeper.id
-    assert ("vor", "pmcid", "PMC5") in _held(session, keeper.id)
     assert _candidates(session) == []
+
+
+async def test_an_id_a_user_posted_does_not_merge_two_papers_on_the_next_enrichment(
+    auth_client, session
+):
+    first = _base_study(session, "first", created=1, doi="10.1016/j.neuroimage.2010.01.001")
+    second = _base_study(session, "second", created=2, doi="10.1016/j.neuroimage.2011.02.002")
+
+    posted = await _post(
+        auth_client,
+        {"name": "second", "doi": second.doi, "alternative_dois": [first.doi]},
+    )
+    assert posted["id"] == second.id
+    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((first.id, second.id)))]
+
+    _enrich(session, session.get(BaseStudy, second.id), pmid=PMID)
+
+    session.expire_all()
+    assert session.get(BaseStudy, second.id).is_active
+    assert session.get(BaseStudy, second.id).pmid == PMID
+    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((first.id, second.id)))]
 
 
 def test_a_write_that_hits_a_held_id_updates_the_pairs_candidate(session):
@@ -971,6 +1005,105 @@ def test_a_write_that_hits_a_held_id_updates_the_pairs_candidate(session):
     ((first, second, matched, source),) = _candidates(session)
     assert (first, second, source) == (*sorted((keeper.id, loser.id)), "trigger")
     assert {m["scheme"] for m in matched} == {"pmid", "doi"}
+
+
+# --- which base study keeps a paper -----------------------------------------------
+
+
+def _text(session, base_study, version, source="ace"):
+    from neurostore.models import Fulltext
+
+    session.add(
+        Fulltext(
+            base_study_id=base_study.id,
+            source=source,
+            source_version="1",
+            text=f"{base_study.name} {version}",
+            sha256=f"{base_study.id}{version}".ljust(64, "0"),
+            text_copy={"version": version},
+        )
+    )
+    session.commit()
+
+
+def _in_studysets(session, base_study, count):
+    from neurostore.models import Study, Studyset, StudysetStudy
+
+    study = Study(name="version", level="group", base_study=base_study)
+    session.add(study)
+    for n in range(count):
+        studyset = Studyset(name=f"set {n}")
+        session.add(studyset)
+        session.add(StudysetStudy(study=study, studyset=studyset))
+    session.commit()
+
+
+def _keeper_names(session, *base_studies):
+    from neurostore.services.base_study_metadata_enrichment import keeper_order
+
+    return [b.name for b in keeper_order(list(base_studies))]
+
+
+def test_the_better_full_text_copy_keeps_the_paper_before_use_and_age(session):
+    oldest = _base_study(session, "oldest", created=1)
+    best_text = _base_study(session, "best text", created=3)
+    other_text = _base_study(session, "other text", created=2)
+    used = _base_study(session, "used", created=4)
+    _in_studysets(session, used, 3)
+    _text(session, best_text, "vor")
+    _text(session, other_text, "am")
+
+    assert _keeper_names(session, oldest, best_text, other_text, used) == [
+        "best text",
+        "other text",
+        "used",
+        "oldest",
+    ]
+
+
+def test_more_studysets_keep_the_paper_before_age_and_age_breaks_the_last_tie(session):
+    oldest = _base_study(session, "oldest", created=1)
+    newer = _base_study(session, "newer", created=2)
+    used_once = _base_study(session, "used once", created=3)
+    used_twice = _base_study(session, "used twice", created=4)
+    _in_studysets(session, used_once, 1)
+    _in_studysets(session, used_twice, 2)
+
+    assert _keeper_names(session, newer, used_twice, oldest, used_once) == [
+        "used twice",
+        "used once",
+        "oldest",
+        "newer",
+    ]
+
+
+def test_the_worker_merges_into_the_base_study_with_the_better_copy_not_the_older(session):
+    older = _base_study(session, "older", created=1, pmid="1")
+    better = _base_study(session, "better", created=2, doi=DOI)
+    _text(session, better, "vor")
+
+    _enrich(session, older, doi=DOI)
+
+    session.expire_all()
+    assert session.get(BaseStudy, older.id).superseded_by == better.id
+    assert session.get(BaseStudy, better.id).pmid == "1"
+
+
+def test_the_plan_keeps_the_base_study_in_more_studysets_not_the_older(
+    session, tmp_path, db, monkeypatch
+):
+    monkeypatch.setattr(cli, "_run_with_runtime", lambda callback: callback(None, db))
+    older = _base_study(session, "older", created=1, pmid="1")
+    used = _base_study(session, "used", created=2, pmid="1-DUPLICATE")
+    _in_studysets(session, used, 2)
+    plan_path = tmp_path / "plan.json"
+
+    written = CliRunner().invoke(cli.main, ["plan-base-study-merges", "--output", str(plan_path)])
+
+    assert written.exit_code == 0, written.output
+    assert [(m["keeper"], m["old"]) for m in json.loads(plan_path.read_text())["merges"]] == [
+        (used.id, older.id)
+    ]
 
 
 # --- merge candidates -----------------------------------------------------------------
@@ -1182,6 +1315,38 @@ def test_a_loader_run_finds_the_base_study_an_earlier_row_made_and_merges_a_pair
         index, {"pmcid": "1234567"}, lambda: BaseStudy(name="made twice", level="group")
     )
     assert (is_new, again_new, again is made) == (True, False, True)
+
+
+async def test_a_bulk_post_waits_for_the_lock_of_its_ids(auth_client, session):
+    import anyio
+    from sqlalchemy.orm import Session
+
+    results = []
+
+    async def post():
+        results.append(
+            await auth_client.post("/api/base-studies/", data=[{"name": "paper", "doi": DOI}])
+        )
+
+    with Session(session.bind) as holder:
+        lock_identifiers(holder, article_identifiers({"doi": DOI}))
+        waiting = 0
+        async with anyio.create_task_group() as tasks:
+            tasks.start_soon(post)
+            for _ in range(100):
+                await anyio.sleep(0.05)
+                waiting = session.execute(
+                    sa.text(
+                        "SELECT count(*) FROM pg_stat_activity "
+                        "WHERE wait_event_type = 'Lock' AND wait_event = 'advisory'"
+                    )
+                ).scalar()
+                if waiting:
+                    break
+            holder.commit()
+
+    assert waiting == 1
+    assert results[0].status_code == 200
 
 
 # --- the migration --------------------------------------------------------------------

@@ -938,9 +938,10 @@ def merge_base_studies_command(plan, execute):
 def plan_base_study_merges_command(output):
     """Write a merge plan from the open merge candidates, for review.
 
-    The older base study of each pair is its keeper; the plan is run with
-    merge-base-studies, whose merges close the candidates they settle. Candidates that
-    name a base study already in the plan wait for the next run.
+    The keeper of each pair is the base study with the better full-text copy, then the one
+    in more studysets, then the older; the plan is run with merge-base-studies, whose merges
+    close the candidates they settle. Candidates that name a base study already in the plan
+    wait for the next run.
     """
     from neurostore.scripts.merge_base_studies import plan_from_candidates
 

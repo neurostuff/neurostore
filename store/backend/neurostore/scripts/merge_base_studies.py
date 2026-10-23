@@ -19,6 +19,7 @@ from neurostore.resources.common import merge_unique_ids
 from neurostore.services.base_study_metadata_enrichment import (
     BaseStudyMergeClash,
     Change,
+    keeper_order,
     merge_base_study,
 )
 from neurostore.services.has_media_flags import recompute_media_flags
@@ -42,9 +43,10 @@ class PairOutcome:
 
 def plan_from_candidates():
     """A plan of the open merge candidates, for a person to review, and the number of
-    candidates left out of it. The keeper of a pair is its older base study; a candidate
-    naming a base study already in the plan, or one no longer active, is left out (a later
-    run plans it once the others are merged, which closes the candidates it settles)."""
+    candidates left out of it. The keeper of a pair is the one ``keeper_order`` puts first
+    (the better full-text copy, then more studysets, then the older); a candidate naming a
+    base study already in the plan, or one no longer active, is left out (a later run plans
+    it once the others are merged, which closes the candidates it settles)."""
     first, second = aliased(BaseStudy), aliased(BaseStudy)
     rows = db.session.execute(
         sa.select(BaseStudyMergeCandidate, first, second)
@@ -54,7 +56,7 @@ def plan_from_candidates():
     ).all()
     pairs = []
     for candidate, one, other in rows:
-        keeper, old = sorted((one, other), key=lambda b: age_key(b.created_at, b.id))
+        keeper, old = keeper_order([one, other])
         pairs.append((age_key(keeper.created_at, keeper.id), keeper, old, candidate))
     pairs.sort(key=lambda pair: (pair[0], age_key(pair[2].created_at, pair[2].id)))
     used, merges = set(), []

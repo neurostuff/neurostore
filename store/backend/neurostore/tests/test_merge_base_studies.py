@@ -969,35 +969,19 @@ def _run_worker(app, logger=None):
 
 
 @pytest.mark.vcr
-def test_the_worker_merges_two_pipeline_duplicates(session, app):
+def test_the_worker_does_not_merge_on_a_shared_stored_id_alone(session, app):
+    """Two base studies that store one pmid were written so, not found to be one paper by a
+    source: the doi the lookup finds is held by neither, so they wait for a reviewed plan."""
     first_id, second_id = _pipeline_duplicates(session, with_records=False)
 
     assert _run_worker(app) == 1
     session.expire_all()
 
-    second = session.get(BaseStudy, second_id)
-    assert (second.is_active, second.superseded_by) == (False, first_id)
-    assert session.get(BaseStudy, first_id).doi == LOOKED_UP_DOI
-    assert Study.query.filter_by(base_study_id=first_id, source=STUDY_SOURCE).count() == 1
-    assert Study.query.filter_by(base_study_id=first_id, source=HISTORY_SOURCE).count() == 1
-    assert BaseStudyMetadataOutbox.query.count() == 0
-
-
-@pytest.mark.vcr
-def test_a_refused_worker_merge_keeps_the_enrichment_and_is_done(session, app, caplog):
-    first_id, second_id = _pipeline_duplicates(session, with_records=True)
-
-    with caplog.at_level(logging.WARNING):
-        assert _run_worker(app, logging.getLogger("worker-test")) == 1
-    session.expire_all()
-
     first, second = session.get(BaseStudy, first_id), session.get(BaseStudy, second_id)
     assert first.is_active and second.is_active
-    assert second.doi == LOOKED_UP_DOI
-    assert any("both hold claim entities" in r.getMessage() for r in caplog.records)
-    # Done, not re-claimed on the next pass.
+    assert (second.doi, first.doi) == (LOOKED_UP_DOI, None)
+    assert Study.query.filter_by(base_study_id=first_id, source=STUDY_SOURCE).count() == 1
     assert BaseStudyMetadataOutbox.query.count() == 0
-    assert _run_worker(app) == 0
 
 
 @pytest.mark.vcr

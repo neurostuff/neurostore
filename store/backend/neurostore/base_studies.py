@@ -273,6 +273,9 @@ def attach_identifiers(session, base_study, identifiers, held, *, source):
         )
         taken.append(identifier)
         held[identifier.key] = Holder(base_study.id, now, kind)
+    if taken and sa.inspect(base_study).persistent:
+        # Its ids are read again, with the rows just added, when the response is built.
+        session.expire(base_study, ["identifiers"])
     if contested:
         report_shared_identifiers(session, base_study.id, contested, source=source)
     return Attached(taken, contested)

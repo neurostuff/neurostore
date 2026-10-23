@@ -68,8 +68,8 @@ def _coerce_optional_int(value):
 
 def _find_or_create_base_study(index, identifiers, create):
     """The base study ``identifiers`` name, with the ids it lacked added, or ``create()``.
-    Base studies a found one shares ids with are merged into the oldest of them, as the
-    enrichment worker does, unless the merge is refused; the ids then stay where they are."""
+    Base studies a found one shares ids with are merged with it, into the best keeper, as
+    the enrichment worker does, unless the merge is refused; the ids then stay where they are."""
     base_study, is_new = index.find_or_create(identifiers, create)
     if index.contested and sa.inspect(base_study).persistent:
         merged = {base_study.id, *index.contested}

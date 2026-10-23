@@ -62,7 +62,7 @@ CREATE FUNCTION sync_base_study_identifiers() RETURNS trigger LANGUAGE plpgsql A
 DECLARE
     sch text;
     wanted text;
-    held text;
+    raw text;
     holder text;
     matched jsonb;
     inserted integer;
@@ -83,52 +83,66 @@ BEGIN
         RETURN NULL;
     END IF;
     FOREACH sch IN ARRAY ARRAY['doi', 'pmid', 'pmcid'] LOOP
-        wanted := normalize_base_study_identifier(
-            sch,
-            CASE sch WHEN 'doi' THEN NEW.doi WHEN 'pmid' THEN NEW.pmid ELSE NEW.pmcid END
-        );
-        SELECT value INTO held FROM base_study_identifiers
-        WHERE base_study_id = NEW.id AND base_study_identifiers.scheme = sch AND kind = 'vor';
-        IF wanted IS NOT DISTINCT FROM held THEN
-            CONTINUE;
+        raw := CASE sch WHEN 'doi' THEN NEW.doi WHEN 'pmid' THEN NEW.pmid ELSE NEW.pmcid END;
+        IF TG_OP = 'UPDATE' AND OLD.is_active THEN
+            IF raw IS NOT DISTINCT FROM (
+                CASE sch WHEN 'doi' THEN OLD.doi WHEN 'pmid' THEN OLD.pmid ELSE OLD.pmcid END
+            ) THEN
+                -- Unchanged: it needs its row only if it has none, as when the base study
+                -- that held its id is gone.
+                IF raw IS NULL OR EXISTS (
+                    SELECT 1 FROM base_study_identifiers
+                    WHERE base_study_id = NEW.id AND base_study_identifiers.scheme = sch
+                        AND kind = 'vor'
+                ) THEN
+                    CONTINUE;
+                END IF;
+            ELSE
+                DELETE FROM base_study_identifiers
+                WHERE base_study_id = NEW.id AND base_study_identifiers.scheme = sch
+                    AND kind = 'vor';
+            END IF;
         END IF;
-        DELETE FROM base_study_identifiers
-        WHERE base_study_id = NEW.id AND base_study_identifiers.scheme = sch AND kind = 'vor';
+        wanted := normalize_base_study_identifier(sch, raw);
         IF wanted IS NULL THEN
             CONTINUE;
         END IF;
-        UPDATE base_study_identifiers SET kind = 'vor', server = NULL
-        WHERE base_study_identifiers.scheme = sch AND value = wanted AND base_study_id = NEW.id;
-        IF NOT FOUND THEN
-            -- An id another active base study holds stays with it, as the migration leaves
-            -- it: this base study keeps it in its column, and the pair is a merge candidate.
-            INSERT INTO base_study_identifiers (base_study_id, kind, scheme, value)
-            VALUES (NEW.id, 'vor', sch, wanted)
-            ON CONFLICT (scheme, value) DO NOTHING;
-            GET DIAGNOSTICS inserted = ROW_COUNT;
-            IF inserted = 0 THEN
-                SELECT base_study_id INTO holder FROM base_study_identifiers
-                WHERE base_study_identifiers.scheme = sch AND value = wanted;
-                matched := jsonb_build_array(
-                    jsonb_build_object('scheme', sch, 'value', wanted, 'kind', 'vor'));
-                INSERT INTO base_study_merge_candidates
-                    (id, created_at, first_base_study_id, second_base_study_id, matched, source)
-                VALUES (
-                    left(replace(gen_random_uuid()::text, '-', ''), 12), now(),
-                    least(NEW.id COLLATE "C", holder COLLATE "C"),
-                    greatest(NEW.id COLLATE "C", holder COLLATE "C"),
-                    matched, 'trigger')
-                ON CONFLICT (first_base_study_id, second_base_study_id) DO UPDATE
-                SET matched = CASE
-                    WHEN base_study_merge_candidates.matched @> EXCLUDED.matched
-                        THEN base_study_merge_candidates.matched
-                    ELSE base_study_merge_candidates.matched || EXCLUDED.matched END
-                RETURNING (xmax = 0) INTO fresh;
-                IF fresh THEN
-                    RAISE WARNING 'identifiers span active base studies: %',
-                        jsonb_build_object('source', 'trigger', 'base_study_id', NEW.id,
-                                           'also_held_by', jsonb_build_object(holder, matched));
-                END IF;
+        IF TG_OP = 'UPDATE' THEN
+            UPDATE base_study_identifiers SET kind = 'vor', server = NULL
+            WHERE base_study_identifiers.scheme = sch AND value = wanted
+                AND base_study_id = NEW.id;
+            IF FOUND THEN
+                CONTINUE;
+            END IF;
+        END IF;
+        -- An id another active base study holds stays with it, as the migration leaves
+        -- it: this base study keeps it in its column, and the pair is a merge candidate.
+        INSERT INTO base_study_identifiers (base_study_id, kind, scheme, value)
+        VALUES (NEW.id, 'vor', sch, wanted)
+        ON CONFLICT (scheme, value) DO NOTHING;
+        GET DIAGNOSTICS inserted = ROW_COUNT;
+        IF inserted = 0 THEN
+            SELECT base_study_id INTO holder FROM base_study_identifiers
+            WHERE base_study_identifiers.scheme = sch AND value = wanted;
+            matched := jsonb_build_array(
+                jsonb_build_object('scheme', sch, 'value', wanted, 'kind', 'vor'));
+            INSERT INTO base_study_merge_candidates
+                (id, created_at, first_base_study_id, second_base_study_id, matched, source)
+            VALUES (
+                left(replace(gen_random_uuid()::text, '-', ''), 12), now(),
+                least(NEW.id COLLATE "C", holder COLLATE "C"),
+                greatest(NEW.id COLLATE "C", holder COLLATE "C"),
+                matched, 'trigger')
+            ON CONFLICT (first_base_study_id, second_base_study_id) DO UPDATE
+            SET matched = CASE
+                WHEN base_study_merge_candidates.matched @> EXCLUDED.matched
+                    THEN base_study_merge_candidates.matched
+                ELSE base_study_merge_candidates.matched || EXCLUDED.matched END
+            RETURNING (xmax = 0) INTO fresh;
+            IF fresh THEN
+                RAISE WARNING 'identifiers span active base studies: %',
+                    jsonb_build_object('source', 'trigger', 'base_study_id', NEW.id,
+                                       'also_held_by', jsonb_build_object(holder, matched));
             END IF;
         END IF;
     END LOOP;

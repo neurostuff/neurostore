@@ -16,7 +16,9 @@ One resolver (`neurostore.base_studies.resolve`) reads all of a write's ids in o
 - the ids belong to one base study: use it and add the ids it lacks;
 - the ids belong to several: use the base study of the strongest id (a version of record's doi, pmid, pmcid, then a preprint's, then an alternative; the oldest on a tie, by creation time and then id), take only the ids no other base study holds, log a structured warning naming every base study and the ids that matched, and record a row in `base_study_merge_candidates`. A POST is never refused for this.
 
-POST /base-studies (one study or many), POST /studies, PUT /base-studies/{id}, the study_schema ingest, the dataset loaders and the enrichment worker all go through it. A PUT is taken as it is, and an id it names that another base study holds stays with that base study. The enrichment worker and the loaders merge a base study into the oldest one it shares an id with, through `merge_base_study`, unless the merge is refused; the ids of a refused pair stay where they are.
+POST /base-studies (one study or many), POST /studies, PUT /base-studies/{id}, the study_schema ingest, the dataset loaders and the enrichment worker all go through it. A PUT is taken as it is, and an id it names that another base study holds stays with that base study. The enrichment worker merges a base study with the base studies that hold an id a provider found for it, through `merge_base_study`, and so do the dataset loaders for the ids of their rows; the merge is refused when the pair's rows would clash, and the ids of a refused pair stay where they are. A pair that shares an id because someone wrote it (a POST, a PUT, the migration) is never merged by the worker: it waits for the reviewed plan.
+
+The keeper of a merge, wherever it is chosen (the worker, the loaders, the plan), is the base study with the better full-text copy (`fulltext_preference`: copy version, then source), then the one in more studysets, then the oldest. Studysets are counted in this database; the meta-analyses that use a base study are in compose's database, which neurostore cannot read. Where a POST lands is a different question, answered by the strongest id (above).
 
 An id another base study holds is never written to the table twice: the trigger leaves it with its holder and records the pair, so no write can fail on it. A base study left holding an id in its column only (the migration leaves 252 on production's data) can be written like any other.
 
@@ -26,7 +28,7 @@ The migration gives an id two active base studies shared to the oldest and recor
 
 ## Consequences
 
-- `manage plan-base-study-merges --output plan.json` writes the open candidates as a plan for `manage merge-base-studies`, the older base study of each pair as its keeper. A merge, by the command or by the worker, closes the candidates it settles.
+- `manage plan-base-study-merges --output plan.json` writes the open candidates as a plan for `manage merge-base-studies`, the keeper of each pair chosen as above. A merge, by the command or by the worker, closes the candidates it settles.
 - A base study can exist with only a preprint's ids (`publication_status` `preprint`).
 
 ## Rejected

@@ -5,7 +5,7 @@ import uuid
 import shortuuid
 import sqlalchemy as sa
 from sqlalchemy import ForeignKeyConstraint, exists, func, text
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, aggregate_order_by
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -202,14 +202,14 @@ class AnnotationAnalysis(db.Model):
 
 
 def _identifiers_of(kind, scheme):
-    """The base study's ``kind`` ids of ``scheme``, as the API lists them. The views load
-    ``identifier_rows`` with the base studies they list."""
+    """The base study's ``kind`` ids of ``scheme``, as the API lists them, from
+    ``identifiers`` (which the views load with the base studies they list)."""
 
     def read(self):
-        rows = [r for r in self.identifier_rows if (r.kind, r.scheme) == (kind, scheme)]
+        rows = [r for r in self.identifiers if (r["kind"], r["scheme"]) == (kind, scheme)]
         if (kind, scheme) == ("preprint", "doi"):
-            return [{"doi": r.value, "server": r.server} for r in rows]
-        return [r.value for r in rows]
+            return [{"doi": r["value"], "server": r["server"]} for r in rows]
+        return [r["value"] for r in rows]
 
     return property(read)
 
@@ -546,6 +546,37 @@ class BaseStudyIdentifier(db.Model):
             postgresql_where=sa.text("kind = 'vor'"),
         ),
     )
+
+
+# Every id of the base study as JSON, loaded with it: listing a page of base studies with
+# their ids costs one correlated lookup per row, where a relationship costs a query and an
+# object per id. Deferred, so only the views that serve the ids load it.
+BaseStudy.identifiers = sa.orm.column_property(
+    sa.select(
+        sa.func.coalesce(
+            sa.func.jsonb_agg(
+                aggregate_order_by(
+                    sa.func.jsonb_build_object(
+                        "kind",
+                        BaseStudyIdentifier.kind,
+                        "scheme",
+                        BaseStudyIdentifier.scheme,
+                        "value",
+                        BaseStudyIdentifier.value,
+                        "server",
+                        BaseStudyIdentifier.server,
+                    ),
+                    BaseStudyIdentifier.value,
+                )
+            ),
+            sa.text("'[]'::jsonb"),
+        )
+    )
+    .where(BaseStudyIdentifier.base_study_id == BaseStudy.id)
+    .correlate_except(BaseStudyIdentifier)
+    .scalar_subquery(),
+    deferred=True,
+)
 
 
 class BaseStudyMergeCandidate(BaseMixin, db.Model):
