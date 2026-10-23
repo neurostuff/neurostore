@@ -19,8 +19,8 @@ def superseding_base_study(session, base_study_id):
 def find_base_study(session, header):
     """The oldest active base study matching a parse artifact's ``header``, tried by its
     neurostore_base_study_id (followed to the base study superseding it), then the
-    version of record's doi, pmid and pmcid, then each preprint DOI, the preprint pmid
-    and the preprint pmcid; None when none matches."""
+    version of record's doi, pmid and pmcid, then each preprint DOI, each preprint pmid
+    and each preprint pmcid; None when none matches."""
     for label, value in searched_identifiers(header):
         if label == "neurostore_base_study_id":
             found = superseding_base_study(session, value)
@@ -47,10 +47,10 @@ def searched_identifiers(header):
             yield field, identifiers[field]
     for preprint_doi in identifiers.get("preprint_dois") or ():
         yield "preprint_doi", preprint_doi["doi"]
-    if identifiers.get("preprint_pmid"):
-        yield "preprint_pmid", identifiers["preprint_pmid"]
-    if identifiers.get("preprint_pmcid"):
-        yield "preprint_pmcid", identifiers["preprint_pmcid"]
+    for preprint_pmid in identifiers.get("preprint_pmids") or ():
+        yield "preprint_pmid", preprint_pmid
+    for preprint_pmcid in identifiers.get("preprint_pmcids") or ():
+        yield "preprint_pmcid", preprint_pmcid
 
 
 _COLUMN_OF = {

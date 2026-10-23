@@ -516,8 +516,8 @@ def test_a_version_of_record_id_beats_a_preprint_id_on_an_older_base_study(
     "column, value, ids",
     [
         ("doi", PREPRINT_DOI["doi"], {"preprint_dois": [PREPRINT_DOI]}),
-        ("pmid", "40000001", {"preprint_pmid": "40000001"}),
-        ("pmcid", "PMC40000001", {"preprint_pmcid": "PMC40000001"}),
+        ("pmid", "40000001", {"preprint_pmids": ["40000001"]}),
+        ("pmcid", "PMC40000001", {"preprint_pmcids": ["PMC40000001"]}),
     ],
 )
 def test_a_preprint_finds_the_base_study_first_seen_as_that_preprint(
@@ -538,7 +538,7 @@ OTHER_PREPRINT_DOI = {"doi": "10.1101/2025.02.02.000002", "server": "medrxiv"}
     "column, value, ids",
     [
         ("pmid", "1001", {"pmid": "1001"}),
-        ("pmid", "40000001", {"preprint_pmid": "40000001"}),
+        ("pmid", "40000001", {"preprint_pmids": ["40000001"]}),
         ("doi", PREPRINT_DOI["doi"], {"preprint_dois": [PREPRINT_DOI]}),
     ],
 )
@@ -579,6 +579,25 @@ def test_a_later_preprint_doi_is_tried_when_the_first_has_no_base_study(
     assert report["loaded"][0]["base_study_id"] == by_second.id
 
 
+@pytest.mark.parametrize(
+    "column, ids",
+    [
+        ("pmid", {"preprint_pmids": ["40000001", "40000002"]}),
+        ("pmcid", {"preprint_pmcids": ["PMC40000001", "PMC40000002"]}),
+    ],
+)
+def test_a_later_preprint_pmid_or_pmcid_is_tried_when_the_first_has_no_base_study(
+    session, make_user, tmp_path, column, ids
+):
+    """A preprint indexed on two servers has a PubMed record, or a PMC copy, for each."""
+    make_user(REVIEWER, "admin-reviewer")
+    by_second = add_base_study(session, **{column: list(ids.values())[0][1]})
+
+    report = import_with_identifiers(session, tmp_path, **ids)
+
+    assert report["loaded"][0]["base_study_id"] == by_second.id
+
+
 def test_a_preprint_doi_beats_a_preprint_pmid_and_pmcid_on_an_older_base_study(
     session, make_user, tmp_path
 ):
@@ -590,8 +609,8 @@ def test_a_preprint_doi_beats_a_preprint_pmid_and_pmcid_on_an_older_base_study(
     report = import_with_identifiers(
         session,
         tmp_path,
-        preprint_pmid="40000001",
-        preprint_pmcid="PMC40000001",
+        preprint_pmids=["40000001"],
+        preprint_pmcids=["PMC40000001"],
         preprint_dois=[PREPRINT_DOI],
     )
 
@@ -606,7 +625,7 @@ def test_a_preprint_pmid_beats_a_preprint_pmcid_on_an_older_base_study(
     by_pmid = add_base_study(session, pmid="40000001")
 
     report = import_with_identifiers(
-        session, tmp_path, preprint_pmid="40000001", preprint_pmcid="PMC40000001"
+        session, tmp_path, preprint_pmids=["40000001"], preprint_pmcids=["PMC40000001"]
     )
 
     assert report["loaded"][0]["base_study_id"] == by_pmid.id
@@ -621,8 +640,8 @@ def test_a_paper_matching_no_base_study_names_every_identifier_searched_in_order
     paper["header"]["neurostore_base_study_id"] = "missing"
     paper["header"]["identifiers"] = fx.identifiers(
         pmid="1001",
-        preprint_pmcid="PMC40000001",
-        preprint_pmid="40000001",
+        preprint_pmcids=["PMC40000001"],
+        preprint_pmids=["40000001"],
         preprint_dois=[PREPRINT_DOI, {"doi": "10.1101/2025.02.02.000002", "server": "medrxiv"}],
     )
     write_layout(tmp_path, "1001", paper, coordinate_parse, record)

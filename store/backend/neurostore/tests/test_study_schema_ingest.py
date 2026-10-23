@@ -1072,7 +1072,7 @@ def preprint_parse(**ids):
 
 
 def test_a_preprint_only_parse_matching_no_base_study_is_refused(session):
-    parse = preprint_parse(preprint_pmid="40000001", preprint_dois=[PREPRINT_DOI])
+    parse = preprint_parse(preprint_pmids=["40000001"], preprint_dois=[PREPRINT_DOI])
     with pytest.raises(NeuroStoreException) as error:
         ingest_upload({"coordinate_parse": parse})
     assert "names no version-of-record identifier to create its base study from" in str(
@@ -1092,7 +1092,9 @@ def test_a_parse_with_only_preprint_dois_finds_the_base_study_of_that_doi(sessio
 
 
 def test_the_base_study_lookup_locks_version_of_record_ids_only(session):
-    ingest_upload({"coordinate_parse": preprint_parse(pmid="12345678", preprint_pmid="40000001")})
+    ingest_upload(
+        {"coordinate_parse": preprint_parse(pmid="12345678", preprint_pmids=["40000001"])}
+    )
     locks = session.execute(
         sa.text(
             "SELECT count(*) FROM pg_locks "

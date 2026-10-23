@@ -93,31 +93,61 @@
     },
     "ArticleIdentifiers": {
       "additionalProperties": false,
-      "description": "Every identifier known for the paper when the artifact was written. Carried whole, so no consumer has to choose between them or look one up. `doi`, `pmid` and `pmcid` name the version of record; a preprint's identifiers are kept beside them in the `preprint_` fields, so a paper and its preprint are one article.",
+      "description": "Every identifier known for the paper when the artifact was written. Carried whole, so no consumer has to choose between them or look one up. `doi`, `pmid` and `pmcid` name the version of record; a preprint's identifiers are kept beside them in the `preprint_` fields, so a paper and its preprint are one article. An identifier appears in one slot only: `doi`, `alternative_dois` and `preprint_dois` never share a DOI (compared case-insensitively), and likewise for PMIDs and PMCIDs; `check_paper` and `check_revision` verify it.",
       "properties": {
         "pmid": {
-          "description": "PubMed's record of the version of record. Never PubMed's record of a preprint, which is `preprint_pmid`.",
+          "description": "PubMed's record of the version of record. Never PubMed's record of a preprint, which is `preprint_pmids`.",
           "type": [
             "string",
             "null"
           ]
         },
         "pmcid": {
-          "description": "PubMed Central's copy of the version of record. Never PMC's copy of a preprint, which is `preprint_pmcid`.",
+          "description": "PubMed Central's copy of the version of record. Never PMC's copy of a preprint, which is `preprint_pmcids`.",
           "type": [
             "string",
             "null"
           ]
         },
         "doi": {
-          "description": "The DOI of the version of record. Never a preprint server's DOI, which is in `preprint_dois`.",
+          "description": "The DOI of the version of record. Never a preprint server's DOI, which is in `preprint_dois`. An eLife base DOI is the version of record's only once the journal has published one; before that it is a `preprint_dois` entry.",
           "type": [
             "string",
             "null"
           ]
         },
+        "alternative_pmids": {
+          "description": "Any other PMID of this work that is neither the version of record's `pmid` nor a preprint's: a duplicate record, another version.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "alternative_pmcids": {
+          "description": "Any other PMCID of this work that is neither the version of record's `pmcid` nor a preprint's: a second PMC record, another version.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "alternative_dois": {
+          "description": "Any other DOI of this work that is neither the version of record's `doi` nor a preprint's: another version's, such as eLife's `.1`, `.2`, a Crossref alias, a DOI from before a publisher move.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "preprint_dois": {
-          "description": "Every DOI a preprint server registered for the paper. A server that registers each version separately, such as Research Square's `/v2`, gives one entry per version, each kept as registered.",
+          "description": "Every DOI a preprint server registered for the paper. A server that registers each version separately, such as Research Square's `/v2`, gives one entry per version, each kept as registered. A reviewed preprint with no version of record yet has its eLife base DOI and its `.1`, `.2` DOIs here, with server `elife`.",
           "items": {
             "$ref": "#/$defs/PreprintDoi"
           },
@@ -126,23 +156,29 @@
             "null"
           ]
         },
-        "preprint_pmid": {
-          "description": "PubMed's record of the preprint, which PubMed types `Preprint`.",
+        "preprint_pmids": {
+          "description": "PubMed's records of the preprint, which PubMed types `Preprint`: one per indexed preprint server, or a duplicate record. Never a version of record's PMID.",
+          "items": {
+            "type": "string"
+          },
           "type": [
-            "string",
+            "array",
             "null"
           ]
         },
-        "preprint_pmcid": {
-          "description": "PubMed Central's copy of the preprint.",
+        "preprint_pmcids": {
+          "description": "PubMed Central's copies of the preprint, one per indexed preprint server. Never a version of record's PMCID.",
+          "items": {
+            "type": "string"
+          },
           "type": [
-            "string",
+            "array",
             "null"
           ]
         },
         "publication_status": {
           "$ref": "#/$defs/PublicationStatus",
-          "description": "`preprint` when a `preprint_` field is set and `doi`, `pmid` and `pmcid` are all empty, `published` otherwise. The producer states it so that no consumer re-derives it."
+          "description": "`preprint` when a `preprint_` field is set and `doi`, `pmid` and `pmcid` are all empty, `published` otherwise. `alternative_` fields do not count. The producer states it so that no consumer re-derives it."
         }
       },
       "required": [
@@ -2055,6 +2091,7 @@
         "arxiv",
         "researchsquare",
         "osf_preprints",
+        "elife",
         "arabixiv",
         "metaarxiv",
         "engrxiv",
@@ -2966,5 +3003,5 @@
   ],
   "title": "neuroimaging-paper-parse",
   "type": "object",
-  "version": "0.8.0"
+  "version": "0.9.0"
 }
