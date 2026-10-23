@@ -1388,14 +1388,19 @@ def _gather_base_study_enrichment(base_study_id, *, settings, logger):
 
 
 def _withhold_active_pair(base_study, identifiers):
-    """``identifiers`` without the doi the enrichment would add when, with the pmid the
-    base study has or gains, it completes the doi and pmid of another active base
-    study, which the active-only unique index forbids. The pmid is kept, so that base
-    study is found by it and merged next, and the merge carries the doi onto whichever
-    of the two is kept."""
-    doi = identifiers.get("doi")
-    pmid = base_study.pmid if _has_value(base_study.pmid) else identifiers.get("pmid")
-    if _has_value(base_study.doi) or not (_has_value(doi) and _has_value(pmid)):
+    """``identifiers`` without the one the enrichment would add that completes the doi
+    and pmid of another active base study, which the active-only unique index forbids.
+
+    The withheld id is the gained one: a stored doi or pmid is kept, so the base study
+    still shares it with the other and is merged next, and the merge carries the
+    identifiers onto whichever of the two is kept. A base study that stores neither
+    keeps the gained pmid and loses the doi, so the pmid is what it shares."""
+    stored = {field: _has_value(getattr(base_study, field)) for field in ("doi", "pmid")}
+    pair = {
+        field: getattr(base_study, field) if stored[field] else identifiers.get(field)
+        for field in ("doi", "pmid")
+    }
+    if not all(_has_value(value) for value in pair.values()):
         return identifiers
     with db.session.no_autoflush:
         taken = db.session.scalar(
@@ -1403,12 +1408,14 @@ def _withhold_active_pair(base_study, identifiers):
                 sa.exists().where(
                     BaseStudy.id != base_study.id,
                     BaseStudy.is_active.is_(True),
-                    BaseStudy.doi == doi,
-                    BaseStudy.pmid == pmid,
+                    BaseStudy.doi == pair["doi"],
+                    BaseStudy.pmid == pair["pmid"],
                 )
             )
         )
-    return {**identifiers, "doi": None} if taken else identifiers
+    if not taken:
+        return identifiers
+    return {**identifiers, ("pmid" if stored["doi"] else "doi"): None}
 
 
 def _apply_base_study_enrichment(gathered, *, logger):

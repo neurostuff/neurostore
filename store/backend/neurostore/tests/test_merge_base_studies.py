@@ -1023,15 +1023,28 @@ def _enrich(session, base_study, **gathered):
     session.expire_all()
 
 
-@pytest.mark.parametrize("with_records", [False, True])
-def test_a_pmcid_only_duplicate_is_found_by_the_pmid_it_gains(session, caplog, with_records):
+@pytest.mark.parametrize("with_records", [False, True], ids=["merged", "refused"])
+@pytest.mark.parametrize(
+    "stored, kept",
+    [
+        # What the newer base study stores, and the doi and pmid it holds when refused:
+        # the gained id completing the pair is withheld, a stored one is kept.
+        ({"doi": PAIR_DOI}, (PAIR_DOI, None)),
+        ({"pmid": PAIR_PMID}, (None, PAIR_PMID)),
+        ({"pmcid": "PMC1234567"}, (None, PAIR_PMID)),
+    ],
+    ids=["doi-only", "pmid-only", "pmcid-only"],
+)
+def test_an_enrichment_completing_an_active_pair(session, caplog, stored, kept, with_records):
+    """The enrichment finds the doi and pmid another active base study holds. The
+    newer one still shares an id with it, so it is merged, or refused and logged; it
+    never takes the full pair while both are active."""
     older = BaseStudy(
         name="Parametric analysis", doi=PAIR_DOI, pmid=PAIR_PMID, level="group",
         created_at=_at(2023, 6, 23),
     )
     newer = BaseStudy(
-        name="Parametric analysis.", pmcid="PMC1234567", level="group",
-        created_at=_at(2025, 1, 12),
+        name="Parametric analysis.", level="group", created_at=_at(2025, 1, 12), **stored
     )
     session.add_all([older, newer])
     session.commit()
@@ -1045,13 +1058,27 @@ def test_a_pmcid_only_duplicate_is_found_by_the_pmid_it_gains(session, caplog, w
 
     older, newer = session.get(BaseStudy, older_id), session.get(BaseStudy, newer_id)
     if with_records:
-        # Refused, and said so; the newer keeps the pmid, not the pair's doi.
         assert older.is_active and newer.is_active
-        assert (newer.doi, newer.pmid) == (None, PAIR_PMID)
+        assert (newer.doi, newer.pmid) == kept
         assert any("base-study merge refused" in r.getMessage() for r in caplog.records)
     else:
         assert (newer.is_active, newer.superseded_by) == (False, older_id)
-        assert older.pmcid == "PMC1234567"
+        assert (older.doi, older.pmid) == (PAIR_DOI, PAIR_PMID)
+
+
+def test_a_base_study_storing_no_identifier_is_not_enriched(session):
+    """With no doi, pmid or pmcid there is nothing to look up: the write phase leaves
+    it as it is, and nothing is merged."""
+    older = BaseStudy(name="older", doi=PAIR_DOI, pmid=PAIR_PMID, level="group")
+    newer = BaseStudy(name="Parametric analysis.", level="group")
+    session.add_all([older, newer])
+    session.commit()
+    newer_id = newer.id
+
+    _enrich(session, newer, doi=PAIR_DOI, pmid=PAIR_PMID)
+
+    newer = session.get(BaseStudy, newer_id)
+    assert (newer.is_active, newer.doi, newer.pmid) == (True, None, None)
 
 
 def test_a_pair_held_only_by_an_inactive_row_is_not_withheld(session, pair):
