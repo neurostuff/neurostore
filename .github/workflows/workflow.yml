@@ -770,7 +770,7 @@ jobs:
         chrome-version: 154
     -
       name: Frontend Cypress E2E Tests
-      uses: cypress-io/github-action@v6
+      uses: cypress-io/github-action@v7
       env:
         APP_ENV: docker_test
         CYPRESS_auth0ClientId: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
