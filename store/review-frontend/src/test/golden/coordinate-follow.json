@@ -2,7 +2,7 @@
   "parse": {
     "header": {
       "artifact_kind": "coordinate_parse",
-      "schema_version": "0.8.0",
+      "schema_version": "0.9.0",
       "article_id": "art-12345678",
       "identifiers": {
         "pmid": "12345678",
