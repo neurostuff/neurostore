@@ -137,6 +137,17 @@ class Attached(NamedTuple):
 class Holder(NamedTuple):
     base_study_id: str
     created_at: object
+    kind: str
+
+
+_LATEST = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
+
+
+def age_key(created_at, base_study_id):
+    """Sorts base studies oldest first, the one order of every tie: by creation time, then by
+    id as text compares by code point (the database compares it with COLLATE "C"); a base
+    study with no creation time is the newest."""
+    return created_at or _LATEST, base_study_id
 
 
 def held_by(session, identifiers):
@@ -157,6 +168,7 @@ def held_by(session, identifiers):
             BaseStudyIdentifier.value,
             BaseStudyIdentifier.base_study_id,
             BaseStudy.created_at,
+            BaseStudyIdentifier.kind,
         )
         .join(BaseStudy, BaseStudy.id == BaseStudyIdentifier.base_study_id)
         .where(
@@ -166,8 +178,8 @@ def held_by(session, identifiers):
         )
     )
     return {
-        (scheme, value): Holder(base_study_id, created_at)
-        for scheme, value, base_study_id, created_at in rows
+        (scheme, value): Holder(base_study_id, created_at, kind)
+        for scheme, value, base_study_id, created_at, kind in rows
     }
 
 
@@ -181,7 +193,7 @@ def resolve(identifiers, held):
         holder = held.get(identifier.key)
         if holder is None:
             continue
-        rank = (identifier.strength, holder.created_at, holder.base_study_id)
+        rank = (identifier.strength, *age_key(holder.created_at, holder.base_study_id))
         if holder.base_study_id not in best or rank < best[holder.base_study_id]:
             best[holder.base_study_id] = rank
     return min(best, key=best.get) if best else None
@@ -194,18 +206,26 @@ def settle_publication_status(base_study, status):
         base_study.publication_status = status
 
 
+LOCK_BUCKETS = 256
+
+
 def lock_identifiers(session, identifiers):
     """Serializes writes of one paper until commit. Two first uploads of a paper would
-    otherwise each create a base study, and the second then fail on the unique id. Keys
-    are locked in one order, so writes sharing ids cannot deadlock."""
+    otherwise each create a base study, and the second then fail on the unique id.
+
+    An id takes one of ``LOCK_BUCKETS`` locks by its hash, so a bulk POST of any size holds
+    at most that many of the server's shared locks; a lock per id ran the lock table out at
+    about 20,000 ids. Locks are taken in one order, so writes sharing ids cannot deadlock.
+    """
     keys = sorted({f"{i.scheme}:{i.value}" for i in identifiers})
     if keys:
         session.execute(
             sa.text(
-                "SELECT count(pg_advisory_xact_lock(hashtextextended('base_study:' || key, 0)))"
-                " FROM (SELECT key FROM unnest(CAST(:keys AS text[])) AS key ORDER BY key) AS k"
+                "SELECT count(pg_advisory_xact_lock(1717, bucket)) FROM ("
+                " SELECT DISTINCT CAST(abs(hashtextextended(key, 0) % :buckets) AS int) AS bucket"
+                " FROM unnest(CAST(:keys AS text[])) AS key ORDER BY bucket) AS b"
             ),
-            {"keys": keys},
+            {"keys": keys, "buckets": LOCK_BUCKETS},
         )
 
 
@@ -228,15 +248,17 @@ def attach_identifiers(session, base_study, identifiers, held, *, source):
         if holder is not None and holder.base_study_id != base_study.id:
             contested.setdefault(holder.base_study_id, []).append(identifier)
             continue
+        # An id the base study holds as an alternative becomes its record's through the trigger;
+        # a preprint's stays a preprint's.
         empty_column = (
             identifier.kind == "vor"
             and normalize(identifier.scheme, getattr(base_study, identifier.scheme)) is None
+            and not (holder is not None and holder.kind == "preprint")
         )
         if empty_column:
-            # The trigger makes the row of an id the base study already holds the record's.
             setattr(base_study, identifier.scheme, identifier.raw)
             taken.append(identifier)
-            held[identifier.key] = Holder(base_study.id, now)
+            held[identifier.key] = Holder(base_study.id, now, "vor")
             continue
         if holder is not None:
             continue
@@ -250,7 +272,7 @@ def attach_identifiers(session, base_study, identifiers, held, *, source):
             )
         )
         taken.append(identifier)
-        held[identifier.key] = Holder(base_study.id, now)
+        held[identifier.key] = Holder(base_study.id, now, kind)
     if contested:
         report_shared_identifiers(session, base_study.id, contested, source=source)
     return Attached(taken, contested)
@@ -325,3 +347,89 @@ def searched_identifiers(header):
         yield "neurostore_base_study_id", header["neurostore_base_study_id"]
     for identifier in article_identifiers(header.get("identifiers")):
         yield identifier.label, identifier.value
+
+
+def close_merge_candidates(session, keeper_id, old_id):
+    """Close the merge candidates a merge settles: the pair itself, and each other pair of
+    ``old_id``, which becomes a pair of ``keeper_id``."""
+    candidates = session.scalars(
+        sa.select(BaseStudyMergeCandidate).where(
+            sa.or_(
+                BaseStudyMergeCandidate.first_base_study_id == old_id,
+                BaseStudyMergeCandidate.second_base_study_id == old_id,
+            )
+        )
+    ).all()
+    for candidate in candidates:
+        other = (
+            candidate.second_base_study_id
+            if candidate.first_base_study_id == old_id
+            else candidate.first_base_study_id
+        )
+        if other != keeper_id:
+            first, second = sorted((keeper_id, other))
+            existing = session.scalar(
+                sa.select(BaseStudyMergeCandidate).where(
+                    BaseStudyMergeCandidate.first_base_study_id == first,
+                    BaseStudyMergeCandidate.second_base_study_id == second,
+                )
+            )
+            if existing is None:
+                session.add(
+                    BaseStudyMergeCandidate(
+                        first_base_study_id=first,
+                        second_base_study_id=second,
+                        matched=candidate.matched,
+                        source=candidate.source,
+                    )
+                )
+            else:
+                existing.matched = existing.matched + [
+                    m for m in candidate.matched if m not in existing.matched
+                ]
+        session.delete(candidate)
+    session.flush()
+
+
+class BaseStudyIndex:
+    """The base studies a run of writes (a dataset loader) finds or creates by their ids.
+
+    It keeps what the run has taken, so a base study created earlier in it is found by a
+    later row, and uses the resolver of every other write: the ids that name one base study
+    use it and add the ids it lacks, and ids that span several are left with their holders.
+    """
+
+    def __init__(self, session, *, source):
+        self.session = session
+        self.source = source
+        self.held = {}
+        self.created = {}
+        #: The other base studies the last ``find_or_create`` found holding its ids.
+        self.contested = {}
+
+    def find_or_create(self, identifiers, create):
+        """``(base_study, is_new)`` for the ``ArticleIdentifiers``-shaped ``identifiers``;
+        ``create()`` makes the base study, without its ids, when none holds any of them."""
+        ids = article_identifiers(identifiers)
+        self.held.update(held_by(self.session, [i for i in ids if i.key not in self.held]))
+        base_study_id = resolve(ids, self.held)
+        is_new = base_study_id is None
+        if is_new:
+            base_study = create()
+            self.session.add(base_study)
+        else:
+            base_study = self.created.get(base_study_id) or self.session.get(
+                BaseStudy, base_study_id
+            )
+        attached = attach_identifiers(
+            self.session, base_study, ids, self.held, source=self.source
+        )
+        self.contested = attached.contested
+        if is_new:
+            self.created[base_study.id] = base_study
+        return base_study, is_new
+
+    def forget(self, base_study_ids):
+        """Drop what the run knew of ids held by ``base_study_ids``, after they were merged."""
+        for key in [k for k, holder in self.held.items() if holder.base_study_id in base_study_ids]:
+            del self.held[key]

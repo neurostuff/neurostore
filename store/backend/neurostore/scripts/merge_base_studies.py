@@ -8,9 +8,13 @@ plan for the project provenance that names base studies.
 import json
 from dataclasses import dataclass, field
 
+import sqlalchemy as sa
+from sqlalchemy.orm import aliased
+
+from neurostore.base_studies import age_key
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
-from neurostore.models import BaseStudy
+from neurostore.models import BaseStudy, BaseStudyMergeCandidate
 from neurostore.resources.common import merge_unique_ids
 from neurostore.services.base_study_metadata_enrichment import (
     BaseStudyMergeClash,
@@ -34,6 +38,39 @@ class PairOutcome:
     status: str
     refusal: str | None = None
     changes: list[Change] = field(default_factory=list)
+
+
+def plan_from_candidates():
+    """A plan of the open merge candidates, for a person to review, and the number of
+    candidates left out of it. The keeper of a pair is its older base study; a candidate
+    naming a base study already in the plan, or one no longer active, is left out (a later
+    run plans it once the others are merged, which closes the candidates it settles)."""
+    first, second = aliased(BaseStudy), aliased(BaseStudy)
+    rows = db.session.execute(
+        sa.select(BaseStudyMergeCandidate, first, second)
+        .join(first, first.id == BaseStudyMergeCandidate.first_base_study_id)
+        .join(second, second.id == BaseStudyMergeCandidate.second_base_study_id)
+        .where(first.is_active.is_(True), second.is_active.is_(True))
+    ).all()
+    pairs = []
+    for candidate, one, other in rows:
+        keeper, old = sorted((one, other), key=lambda b: age_key(b.created_at, b.id))
+        pairs.append((age_key(keeper.created_at, keeper.id), keeper, old, candidate))
+    pairs.sort(key=lambda pair: (pair[0], age_key(pair[2].created_at, pair[2].id)))
+    used, merges = set(), []
+    for _, keeper, old, candidate in pairs:
+        if {keeper.id, old.id} & used:
+            continue
+        used.update((keeper.id, old.id))
+        merges.append(
+            {
+                "keeper": keeper.id,
+                "old": old.id,
+                "matched": candidate.matched,
+                "source": candidate.source,
+            }
+        )
+    return {"merges": merges}, len(rows) - len(merges)
 
 
 def load_plan(path):

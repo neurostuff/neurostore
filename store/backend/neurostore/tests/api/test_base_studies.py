@@ -14,10 +14,13 @@ from neurostore.models import (
     Analysis,
     BaseStudy,
     BaseStudyFlagOutbox,
+    BaseStudyIdentifier,
+    BaseStudyMergeCandidate,
     BaseStudyMetadataOutbox,
     Image,
     Pipeline,
     PipelineConfig,
+    PipelineEmbedding,
     PipelineStudyResult,
     Study,
     User,
@@ -989,6 +992,337 @@ async def test_base_study_bulk_create_enqueues_metadata_outbox(auth_client, app)
         assert outbox_entry is not None
     finally:
         app.config["BASE_STUDY_METADATA_ASYNC"] = async_original
+
+
+def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = BaseStudy(
+        name="Curated Title",
+        pmid="940001",
+        level="group",
+    )
+    duplicate = BaseStudy(
+        name="Duplicate Title",
+        doi="10.1000/metadata-merge",
+        level="group",
+    )
+    primary_study = Study(
+        name="primary-study-version",
+        level="group",
+        base_study=primary,
+    )
+    duplicate_study = Study(
+        name="duplicate-study-version",
+        level="group",
+        base_study=duplicate,
+    )
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
+    session.add_all([primary, duplicate, primary_study, duplicate_study])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=primary.id,
+            reason="test-enrichment",
+        )
+    )
+    session.commit()
+
+    def fake_lookup_semantic(_identifiers, api_key=None, **_kwargs):
+        return {"doi": "10.1000/metadata-merge", "pmcid": "PMC940001"}
+
+    def fake_lookup_pubmed(
+        _identifiers, email=None, api_key=None, tool=None, **_kwargs
+    ):
+        return {"pmcid": "PMC940001"}
+
+    def fake_lookup_openalex(_identifiers, email=None, **_kwargs):
+        return {"doi": "10.1000/metadata-merge"}
+
+    def fake_metadata_semantic(_identifiers, api_key=None, **_kwargs):
+        return {
+            "name": "Provider Title Should Not Override",
+            "description": "Provider abstract",
+            "publication": "Provider Journal",
+            "authors": "Provider A, Provider B",
+            "year": 2025,
+            "is_oa": True,
+            "doi": "10.1000/metadata-merge",
+            "pmcid": "PMC940001",
+        }
+
+    def fake_metadata_pubmed(
+        _identifiers, email=None, api_key=None, tool=None, **_kwargs
+    ):
+        return {"publication": "PubMed Journal", "year": 2024}
+
+    captured_cache_ids = []
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", fake_lookup_semantic
+    )
+    monkeypatch.setattr(metadata_service, "lookup_ids_pubmed", fake_lookup_pubmed)
+    monkeypatch.setattr(metadata_service, "lookup_ids_openalex", fake_lookup_openalex)
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", fake_metadata_semantic
+    )
+    monkeypatch.setattr(metadata_service, "fetch_metadata_pubmed", fake_metadata_pubmed)
+    monkeypatch.setattr(
+        metadata_service,
+        "bump_cache_versions",
+        lambda unique_ids: captured_cache_ids.append(unique_ids),
+    )
+
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    session.refresh(primary_study)
+    session.refresh(duplicate_study)
+
+    # Older record remains canonical and preserves curated metadata.
+    assert primary.name == "Curated Title"
+    assert primary.doi == "10.1000/metadata-merge"
+    assert primary.pmcid == "PMC940001"
+    assert primary.description == "Provider abstract"
+    assert primary.publication == "Provider Journal"
+    assert primary.authors == "Provider A, Provider B"
+    assert primary.year == 2025
+    assert primary.is_oa is True
+
+    # Newer duplicate is superseded and all versions are merged into canonical.
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+    assert primary_study.base_study_id == primary.id
+    assert duplicate_study.base_study_id == primary.id
+
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=primary.id).one_or_none()
+        is None
+    )
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=duplicate.id
+        ).one_or_none()
+        is None
+    )
+    assert BaseStudyFlagOutbox.query.filter_by(base_study_id=primary.id).first()
+
+    assert captured_cache_ids, "Expected metadata worker to invalidate cache versions"
+    assert any(
+        primary.id in ids.get("base-studies", set()) for ids in captured_cache_ids
+    )
+    assert any(
+        duplicate_study.id in ids.get("studies", set()) for ids in captured_cache_ids
+    )
+
+
+def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = BaseStudy(
+        name="Primary Record",
+        doi="10.2000/unique-merge",
+        level="group",
+    )
+    duplicate = BaseStudy(
+        name="Duplicate Record",
+        doi="10.2000/unique-merge",
+        pmid="950001",
+        level="group",
+    )
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
+    session.add_all([primary, duplicate])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=primary.id,
+            reason="test-unique-merge",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    assert primary.pmid == "950001"
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+    assert duplicate.doi == "10.2000/unique-merge"
+    assert duplicate.pmid == "950001"
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=primary.id).one_or_none()
+        is None
+    )
+
+
+def test_metadata_worker_merge_reassigns_pipeline_rows(
+    session, app, ingest_demographic_features, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = (
+        session.query(BaseStudy)
+        .join(PipelineStudyResult, PipelineStudyResult.base_study_id == BaseStudy.id)
+        .join(PipelineEmbedding, PipelineEmbedding.base_study_id == BaseStudy.id)
+        .first()
+    )
+    assert primary is not None
+
+    shared_identifier = None
+    identifier_field = None
+    for field in ("pmid", "doi", "pmcid"):
+        value = getattr(primary, field)
+        if value:
+            shared_identifier = value
+            identifier_field = field
+            break
+    assert (
+        shared_identifier is not None
+    ), "Expected seeded base study to have an identifier"
+
+    duplicate_kwargs = {
+        "name": "Pipeline Duplicate",
+        "level": "group",
+        identifier_field: shared_identifier,
+    }
+    duplicate = BaseStudy(**duplicate_kwargs)
+    session.add(duplicate)
+    session.commit()
+
+    # Ensure the seeded study remains canonical during duplicate merge.
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
+    session.commit()
+
+    pipeline_result = (
+        session.query(PipelineStudyResult)
+        .filter(PipelineStudyResult.base_study_id == primary.id)
+        .first()
+    )
+    pipeline_embedding = (
+        session.query(PipelineEmbedding)
+        .filter(PipelineEmbedding.base_study_id == primary.id)
+        .first()
+    )
+    assert pipeline_result is not None
+    assert pipeline_embedding is not None
+
+    pipeline_result_id = pipeline_result.id
+    pipeline_embedding_id = pipeline_embedding.id
+    pipeline_embedding_config_id = pipeline_embedding.config_id
+
+    pipeline_result.base_study_id = duplicate.id
+    pipeline_embedding.base_study_id = duplicate.id
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=duplicate.id,
+            reason="test-pipeline-row-reassign",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+
+    reassigned_result = (
+        session.query(PipelineStudyResult)
+        .filter(PipelineStudyResult.id == pipeline_result_id)
+        .one()
+    )
+    reassigned_embedding = (
+        session.query(PipelineEmbedding)
+        .filter(
+            PipelineEmbedding.id == pipeline_embedding_id,
+            PipelineEmbedding.config_id == pipeline_embedding_config_id,
+        )
+        .one()
+    )
+    assert reassigned_result.base_study_id == primary.id
+    assert reassigned_embedding.base_study_id == primary.id
+
+    assert (
+        session.query(PipelineStudyResult)
+        .filter(
+            PipelineStudyResult.id == pipeline_result_id,
+            PipelineStudyResult.base_study_id == duplicate.id,
+        )
+        .count()
+        == 0
+    )
+    assert (
+        session.query(PipelineEmbedding)
+        .filter(
+            PipelineEmbedding.id == pipeline_embedding_id,
+            PipelineEmbedding.config_id == pipeline_embedding_config_id,
+            PipelineEmbedding.base_study_id == duplicate.id,
+        )
+        .count()
+        == 0
+    )
 
 
 def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
@@ -2381,8 +2715,6 @@ def test_superseded_by_no_self_reference(session):
 
 
 def test_doi_pmid_unique_applies_only_to_active_base_studies(session):
-    from sqlalchemy.exc import IntegrityError
-
     shared_doi = "10.1234/active-only-unique"
     shared_pmid = "77777777"
     active = BaseStudy(
@@ -2410,16 +2742,19 @@ def test_doi_pmid_unique_applies_only_to_active_base_studies(session):
         is_active=True,
     )
     session.add(conflicting_active)
+    session.commit()
 
-    try:
-        session.commit()
-        assert False, "Should have raised IntegrityError for active duplicate"
-    except IntegrityError:
-        session.rollback()
-
+    # An active base study keeps what it is given; the id stays with the one that held it,
+    # and the pair is left to be merged.
     rows = session.query(BaseStudy).filter_by(doi=shared_doi, pmid=shared_pmid).all()
-    assert len(rows) == 2
+    assert len(rows) == 3
     assert {row.is_active for row in rows} == {True, False}
+    held_by = {
+        row.value: row.base_study_id
+        for row in session.query(BaseStudyIdentifier).filter_by(kind="vor")
+    }
+    assert set(held_by.values()) == {active.id}
+    assert session.query(BaseStudyMergeCandidate).count() == 1
 
 
 async def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):

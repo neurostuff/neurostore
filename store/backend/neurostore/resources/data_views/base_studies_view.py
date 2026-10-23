@@ -1,4 +1,5 @@
 from connexion import request
+import sqlalchemy as sa
 from marshmallow import fields as marshmallow_fields
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, raiseload, selectinload
@@ -10,6 +11,7 @@ from neurostore.base_studies import (
     attach_identifiers,
     held_by,
     lock_identifiers,
+    normalize,
 )
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_conflict
@@ -17,6 +19,7 @@ from neurostore.models import (
     Analysis,
     AnalysisConditions,
     Condition,
+    BaseStudyIdentifier,
     Image,
     PipelineConfig,
     PipelineStudyResult,
@@ -201,6 +204,15 @@ class BaseStudiesView(ObjectView, ListView):
             .options(raiseload("*", sql_only=True)),
         )
 
+    def pmid_match(self, model, search):
+        """Every pmid a base study holds counts, a preprint's and an alternative's too."""
+        return model.id.in_(
+            sa.select(BaseStudyIdentifier.base_study_id).where(
+                BaseStudyIdentifier.scheme == "pmid",
+                BaseStudyIdentifier.value == normalize("pmid", search),
+            )
+        )
+
     def view_search(self, q, args):
         return self.search_service.apply(q, args)
 
@@ -254,30 +266,31 @@ class BaseStudiesView(ObjectView, ListView):
         return self.__class__._schema().dump(response_records[0])
 
     def db_validation(self, record, data):
-        """A PUT adds the preprint and alternative ids it lists, and refuses an id
-        another base study holds: unlike a POST, it names this base study."""
-        posted = article_identifiers(data)
+        """A PUT is taken as it is. The ids it lists are added, and an id another base study
+        holds stays with that base study: it is logged and recorded as a merge candidate,
+        as for a POST. An id the record already stores is not asked of anyone."""
+        posted = [
+            identifier
+            for identifier in article_identifiers(data)
+            if not (
+                identifier.kind == "vor"
+                and normalize(identifier.scheme, getattr(record, identifier.scheme))
+                == identifier.value
+            )
+        ]
         lock_identifiers(db.session, posted)
         held = held_by(db.session, posted)
-        contested = {
-            identifier: holder.base_study_id
-            for identifier in posted
-            if (holder := held.get(identifier.key)) is not None
-            and holder.base_study_id != record.id
-        }
-        if contested:
-            abort_conflict(
-                "Another base study holds these identifiers.",
-                identifiers={
-                    f"{i.scheme}:{i.value}": base_study_id
-                    for i, base_study_id in contested.items()
-                },
-            )
-        listed = [i for i in posted if i.kind != "vor"]
         for field in ARTICLE_ID_LISTS:
             data.pop(field, None)
-        if listed:
-            attach_identifiers(db.session, record, listed, held, source="put")
+        # A version of record's id nobody holds is the column's to set; the rest is added
+        # here, or left with its holder.
+        attach_identifiers(
+            db.session,
+            record,
+            [i for i in posted if i.kind != "vor" or i.key in held],
+            held,
+            source="put",
+        )
 
     def delete(self, id):
         try:

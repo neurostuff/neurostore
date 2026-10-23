@@ -549,12 +549,13 @@ class BaseStudyIdentifier(db.Model):
 
 
 class BaseStudyMergeCandidate(BaseMixin, db.Model):
-    """Two active base studies a write found to name one paper, left for
-    ``manage merge-base-studies`` (neurostore.scripts.merge_base_studies).
+    """Two active base studies a write found to name one paper. ``manage
+    plan-base-study-merges`` writes the open ones as a plan for ``manage
+    merge-base-studies``, and a merge of the pair closes the row.
 
     ``matched`` lists the identifiers that tied them, as ``{scheme, value, kind}``;
-    ``source`` is the write that found them (``post``, ``ingest``, ``enrichment`` or
-    ``migration``). The pair is stored with the smaller id first, once.
+    ``source`` is the write that found them (``post``, ``put``, ``ingest``, ``enrichment``,
+    ``trigger`` or ``migration``). The pair is stored with the smaller id first, once.
     """
 
     __tablename__ = "base_study_merge_candidates"

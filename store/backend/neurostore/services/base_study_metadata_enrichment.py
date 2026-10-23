@@ -19,6 +19,7 @@ from neurostore.database import db
 from neurostore.models import (
     BaseStudy,
     BaseStudyFlagOutbox,
+    BaseStudyMergeCandidate,
     BaseStudyMetadataOutbox,
     Fulltext,
     Pipeline,
@@ -35,7 +36,14 @@ from neurostore.models import (
 )
 from neurostore.models.data import HISTORY_SOURCE, PARSE_PIPELINE, STUDY_SOURCE
 from neurostore.models.fulltext import fulltext_preference, refresh_fulltext_pointer
-from neurostore.base_studies import article_identifiers, attach_identifiers, held_by
+from neurostore.base_studies import (
+    age_key,
+    article_identifiers,
+    attach_identifiers,
+    close_merge_candidates,
+    held_by,
+    settle_publication_status,
+)
 from neurostore.resources.common import merge_unique_ids, normalize_ids
 from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
 
@@ -649,6 +657,45 @@ def fetch_metadata_pubmed(
     return metadata
 
 
+def _active_duplicates(primary, identifiers):
+    """The active base studies, other than ``primary``, that hold an id of ``identifiers`` or
+    are its merge candidates (a base study keeping an id another holds is found by those),
+    oldest first. A base study another transaction has locked is left out."""
+    ids = article_identifiers(identifiers)
+    others = {holder.base_study_id for holder in held_by(db.session, ids).values()}
+    candidates = BaseStudyMergeCandidate
+    others.update(
+        db.session.scalars(
+            sa.select(
+                sa.case(
+                    (candidates.first_base_study_id == primary.id, candidates.second_base_study_id),
+                    else_=candidates.first_base_study_id,
+                )
+            ).where(
+                sa.or_(
+                    candidates.first_base_study_id == primary.id,
+                    candidates.second_base_study_id == primary.id,
+                )
+            )
+        )
+    )
+    others.discard(primary.id)
+    if not others:
+        return []
+    query = (
+        sa.select(BaseStudy)
+        .where(BaseStudy.id.in_(others), BaseStudy.is_active.is_(True))
+        .with_for_update(of=BaseStudy, skip_locked=True)
+    )
+    return sorted(
+        db.session.scalars(query).all(), key=lambda study: age_key(study.created_at, study.id)
+    )
+
+
+def _oldest_base_study(base_studies):
+    return min(base_studies, key=lambda study: age_key(study.created_at, study.id))
+
+
 def _copy_missing_attrs(target, source, fields=CONTENT_FIELDS):
     changed = False
     for field in fields:
@@ -968,6 +1015,8 @@ def merge_base_study(keeper, old):
     old.is_active = False
     old.superseded_by = keeper.id
     _apply_missing_ids(keeper, old_identifiers)
+    settle_publication_status(keeper, old.publication_status)
+    close_merge_candidates(db.session, keeper.id, old.id)
 
     after = _base_field_values(keeper)
     changes.extend(
@@ -1234,6 +1283,46 @@ def _propagate_base_study_metadata_to_versions_post_commit(
             time.sleep(retry_sleep_seconds)
 
 
+def merge_duplicates(primary, identifiers):
+    """Merge every active base study holding an id of ``identifiers`` into the oldest of
+    them and ``primary``. Returns the survivor, the ids to bump, and why each refused merge
+    was refused; the ids of a refused pair stay with their holders."""
+    cache_ids = {"base-studies": {primary.id}, "studies": set()}
+    refused = []
+    refused_ids = set()
+
+    def merge(keeper, old):
+        try:
+            return merge_unique_ids(cache_ids, merge_base_study(keeper, old).cache_ids)
+        except BaseStudyMergeClash as clash:
+            refused.append(str(clash))
+            refused_ids.update({keeper.id, old.id} - {primary.id})
+            return None
+
+    while True:
+        duplicates = [
+            d for d in _active_duplicates(primary, identifiers) if d.id not in refused_ids
+        ]
+        if not duplicates:
+            break
+
+        canonical = _oldest_base_study([primary] + duplicates)
+        if canonical.id != primary.id:
+            merged = merge(canonical, primary)
+            if merged is not None:
+                cache_ids = merged
+                primary = canonical
+
+        for duplicate in duplicates:
+            if duplicate.id in (primary.id, canonical.id) or duplicate.id in refused_ids:
+                continue
+            merged = merge(primary, duplicate)
+            if merged is not None:
+                cache_ids = merged
+
+    return primary, cache_ids, refused
+
+
 _NO_OP_ENRICHMENT = object()
 
 
@@ -1332,7 +1421,7 @@ def _gather_base_study_enrichment(base_study_id, *, settings, logger):
     return _GatheredEnrichment(base_study_id, external_identifiers, metadata_candidates)
 
 
-def _apply_base_study_enrichment(gathered):
+def _apply_base_study_enrichment(gathered, *, logger):
     """Write phase: short, DB-only. Re-locks and applies gathered results."""
     base_study = db.session.scalar(
         sa.select(BaseStudy)
@@ -1350,6 +1439,14 @@ def _apply_base_study_enrichment(gathered):
     cache_ids = {"base-studies": {base_study.id}, "studies": set()}
     identifiers = _extract_identifiers(base_study)
     _merge_ids_in_place(identifiers, gathered.external_identifiers)
+    base_study, merged_cache_ids, refused = merge_duplicates(base_study, identifiers)
+    cache_ids = merge_unique_ids(cache_ids, merged_cache_ids)
+    # A refused merge leaves both base studies active and keeps the enrichment; the
+    # outbox row is then done, as for any enriched paper, until the paper is enqueued
+    # again.
+    for reason in refused:
+        logger.warning("base-study merge refused: %s", reason)
+
     _apply_missing_ids(base_study, identifiers)
     _apply_missing_metadata(base_study, gathered.metadata_candidates)
     cache_ids.setdefault("base-studies", set()).add(base_study.id)
@@ -1364,7 +1461,7 @@ def enrich_base_study_metadata(base_study_id, *, settings, logger):
         return {"base-studies": set(), "studies": set()}
     if gathered is _NO_OP_ENRICHMENT:
         return {"base-studies": {base_study_id}, "studies": set()}
-    return _apply_base_study_enrichment(gathered)
+    return _apply_base_study_enrichment(gathered, logger=logger)
 
 
 def enqueue_base_study_metadata_updates(base_study_ids, reason="api-write"):
@@ -1518,7 +1615,7 @@ def process_base_study_metadata_outbox_batch(batch_size=50, *, settings, logger)
                 elif gathered is _NO_OP_ENRICHMENT:
                     affected_ids = {"base-studies": {base_study_id}, "studies": set()}
                 else:
-                    affected_ids = _apply_base_study_enrichment(gathered)
+                    affected_ids = _apply_base_study_enrichment(gathered, logger=logger)
                 cache_ids = merge_unique_ids(cache_ids, affected_ids)
                 flag_update_ids.update(affected_ids.get("base-studies", set()))
                 successful_ids.append(base_study_id)

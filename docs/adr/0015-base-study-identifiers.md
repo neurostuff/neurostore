@@ -14,16 +14,19 @@ One resolver (`neurostore.base_studies.resolve`) reads all of a write's ids in o
 
 - no id held: create;
 - the ids belong to one base study: use it and add the ids it lacks;
-- the ids belong to several: use the base study of the strongest id (a version of record's doi, pmid, pmcid, then a preprint's, then an alternative; the oldest on a tie), take only the ids no other base study holds, log a structured warning naming every base study and the ids that matched, and record a row in `base_study_merge_candidates`. A POST is never refused for this.
+- the ids belong to several: use the base study of the strongest id (a version of record's doi, pmid, pmcid, then a preprint's, then an alternative; the oldest on a tie, by creation time and then id), take only the ids no other base study holds, log a structured warning naming every base study and the ids that matched, and record a row in `base_study_merge_candidates`. A POST is never refused for this.
 
-POST /base-studies (one study or many), the study_schema ingest and the enrichment worker all go through it. The enrichment worker no longer merges: an id another base study holds is left there and the pair recorded.
+POST /base-studies (one study or many), POST /studies, PUT /base-studies/{id}, the study_schema ingest, the dataset loaders and the enrichment worker all go through it. A PUT is taken as it is, and an id it names that another base study holds stays with that base study. The enrichment worker and the loaders merge a base study into the oldest one it shares an id with, through `merge_base_study`, unless the merge is refused; the ids of a refused pair stay where they are.
+
+An id another base study holds is never written to the table twice: the trigger leaves it with its holder and records the pair, so no write can fail on it. A base study left holding an id in its column only (the migration leaves 252 on production's data) can be written like any other.
+
+A bulk write holds at most 256 advisory locks, one per hash bucket of its ids; a lock per id ran the server's lock table out at about 20,000 ids.
 
 The migration gives an id two active base studies shared to the oldest and records the pair as a merge candidate; it changes no base study.
 
 ## Consequences
 
-- A person merges candidates with `manage merge-base-studies`.
-- A PUT naming an id another base study holds is a 409.
+- `manage plan-base-study-merges --output plan.json` writes the open candidates as a plan for `manage merge-base-studies`, the older base study of each pair as its keeper. A merge, by the command or by the worker, closes the candidates it settles.
 - A base study can exist with only a preprint's ids (`publication_status` `preprint`).
 
 ## Rejected

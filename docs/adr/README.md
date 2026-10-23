@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Decisions behind neurostore's /review app that are hard to reverse, surprising without context, or real trade-offs. The current design is in [../review/DESIGN.md](../review/DESIGN.md), and the glossary of terms in [../review/CONTEXT.md](../review/CONTEXT.md).
+Decisions behind neurostore's /review app and its base studies that are hard to reverse, surprising without context, or real trade-offs. The current design is in [../review/DESIGN.md](../review/DESIGN.md), and the glossary of terms in [../review/CONTEXT.md](../review/CONTEXT.md).
 
 | ADR | Decision | Status |
 | --- | --- | --- |

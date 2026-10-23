@@ -13,14 +13,13 @@ import requests
 import sqlalchemy as sa
 from dateutil.parser import parse as parse_date
 from scipy import sparse
-from sqlalchemy import or_
 
 from neurostore.analysis_levels import (
     NON_GROUP_NORMALIZED_VALUES,
     canonicalize_analysis_level,
     is_non_group_analysis_level,
 )
-from neurostore import corresponding_authors
+from neurostore.base_studies import BaseStudyIndex
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type
 from neurostore.models import (
@@ -29,8 +28,6 @@ from neurostore.models import (
     Annotation,
     AnnotationAnalysis,
     BaseStudy,
-    BaseStudyFlagOutbox,
-    BaseStudyMetadataOutbox,
     Condition,
     Entity,
     Image,
@@ -48,6 +45,7 @@ from neurostore.models.data import (
 from neurostore.note_keys import resolve_note_key_default
 from neurostore.services.annotation_links import backfill_annotation_analyses
 from neurostore.services.image_value_summary import NIFTI_SUFFIXES
+from neurostore.services.base_study_metadata_enrichment import merge_duplicates
 from neurostore.services.has_media_flags import recompute_media_flags
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
@@ -66,6 +64,20 @@ def _coerce_optional_int(value):
     if value is None:
         return None
     return int(float(value))
+
+
+def _find_or_create_base_study(index, identifiers, create):
+    """The base study ``identifiers`` name, with the ids it lacked added, or ``create()``.
+    Base studies a found one shares ids with are merged into the oldest of them, as the
+    enrichment worker does, unless the merge is refused; the ids then stay where they are."""
+    base_study, is_new = index.find_or_create(identifiers, create)
+    if index.contested and sa.inspect(base_study).persistent:
+        merged = {base_study.id, *index.contested}
+        base_study, _, refused = merge_duplicates(base_study, identifiers)
+        for reason in refused:
+            print(f"base-study merge refused: {reason}")
+        index.forget(merged)
+    return base_study, is_new
 
 
 def _invalidate_cached_responses(unique_ids):
@@ -644,24 +656,23 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
 
         collection_id = data.pop("id")
         doi = data.pop("DOI", None)
-        base_study = None
-        if doi:
-            base_study = BaseStudy.query.filter_by(doi=doi).one_or_none()
         existing_conditions = _load_conditions(
             img.get("cognitive_paradigm_cogatlas") for img in image_payloads
         )
 
         with db.session.no_autoflush:
-            if base_study is None:
-                base_study = BaseStudy(
+            base_study, _ = _find_or_create_base_study(
+                BaseStudyIndex(db.session, source="ingest"),
+                {"doi": doi},
+                lambda: BaseStudy(
                     name=data.pop("name", None),
                     description=data.pop("description", None),
-                    doi=doi,
                     authors=data.pop("authors", None),
                     publication=data.pop("journal_name", None),
                     metadata_=data,
                     level="group",
-                )
+                ),
+            )
             s = Study(
                 name=data.pop("name", None) or base_study.name,
                 description=data.pop("description", None) or base_study.description,
@@ -1252,70 +1263,29 @@ def ingest_neurosynth(max_rows=None):
     to_commit = []
     all_studies = {s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()}
     base_study_records = []
+    index = BaseStudyIndex(db.session, source="ingest")
     with db.session.no_autoflush:
         for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
         ):
-            base_study = None
             doi = _coerce_optional(metadata_row.doi)
             id_ = pmid = metadata_row.Index
 
-            # find an base_study based on available information
-            if doi is not None:
-                existing_base_studies = BaseStudy.query.filter(
-                    or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
-                ).all()
-
-                if len(existing_base_studies) == 1:
-                    base_study = existing_base_studies[0]
-                elif len(existing_base_studies) > 1:
-                    source_base_study = existing_base_studies[0]
-                    # do not overwrite the versions column
-                    # we want to append to this column
-                    columns = [
-                        c
-                        for c in source_base_study.__table__.columns
-                        if c not in ("versions", "__ts_vector__")
-                    ]
-                    for ab in existing_base_studies[1:]:
-                        for col in columns:
-                            source_attr = getattr(source_base_study, col)
-                            new_attr = getattr(ab, col)
-                            setattr(source_base_study, col, source_attr or new_attr)
-                        source_base_study.versions.extend(ab.versions)
-                        corresponding_authors.move_emails(ab.id, source_base_study.id)
-                        # delete the extraneous record
-                        db.session.execute(
-                            sa.delete(BaseStudyFlagOutbox).where(
-                                BaseStudyFlagOutbox.base_study_id == ab.id
-                            )
-                        )
-                        db.session.execute(
-                            sa.delete(BaseStudyMetadataOutbox).where(
-                                BaseStudyMetadataOutbox.base_study_id == ab.id
-                            )
-                        )
-                        db.session.delete(ab)
-
-            if doi is None:
-                base_study = BaseStudy.query.filter_by(pmid=pmid).one_or_none()
-
-            if base_study is None:
-                base_study = BaseStudy(
+            base_study, is_new = _find_or_create_base_study(
+                index,
+                {"doi": doi, "pmid": pmid},
+                lambda: BaseStudy(
                     name=metadata_row.title,
-                    doi=doi,
-                    pmid=pmid,
                     authors=metadata_row.authors,
                     publication=metadata_row.journal,
                     year=metadata_row.year,
                     level="group",
-                )
-            else:
+                ),
+            )
+            if not is_new:
                 # try to update the abstract study if information is missing
                 study_info = {
                     "name": metadata_row.title,
-                    "doi": doi,
-                    "pmid": pmid,
                     "authors": metadata_row.authors,
                     "publication": metadata_row.journal,
                     "year": metadata_row.year,
@@ -1458,12 +1428,13 @@ def ingest_neuroquery(max_rows=None):
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
 
-    # all_studies = {s.pmid: s for s in Study.query.filter(source="neuroquery").all()}
+    index = BaseStudyIndex(db.session, source="ingest")
     for id_, metadata_row in metadata.iterrows():
-        base_study = BaseStudy.query.filter_by(pmid=id_).one_or_none()
-
-        if base_study is None:
-            base_study = BaseStudy(name=metadata_row["title"], level="group", pmid=id_)
+        base_study, _ = _find_or_create_base_study(
+            index,
+            {"pmid": id_},
+            lambda: BaseStudy(name=metadata_row["title"], level="group"),
+        )
         base_studies.append(base_study)
         study_coord_data = coord_data.loc[[id_]]
         s = Study(
@@ -1553,66 +1524,6 @@ def load_ace_files(coordinates_file, metadata_file, text_file):
 
 
 def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=False):
-    def get_base_study(metadata_row):
-        doi = _coerce_optional(metadata_row.doi)
-        pmid = metadata_row.Index
-        base_studies = BaseStudy.query.filter(
-            or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
-        ).all()
-
-        if len(base_studies) == 1:
-            return base_studies[0]
-        elif len(base_studies) > 1:
-            return merge_base_studies(base_studies, doi, pmid)
-
-        else:
-            created_bs = [
-                bs for bs in all_base_studies if bs.doi == doi and bs.pmid == pmid
-            ]
-            if created_bs:
-                return created_bs[0]
-            return BaseStudy.query.filter_by(pmid=pmid).one_or_none()
-
-    def merge_base_studies(base_studies, doi, pmid):
-        if doi is None:
-            source_base_study = next(
-                filter(lambda bs: bs.pmid == pmid and bs.doi is not None, base_studies),
-                base_studies[0],
-            )
-        else:
-            source_base_study = next(
-                filter(lambda bs: bs.pmid == pmid and bs.doi == doi, base_studies),
-                base_studies[0],
-            )
-
-        other_base_studies = [
-            bs for bs in base_studies if bs.id != source_base_study.id
-        ]
-        columns = [
-            c.name
-            for c in source_base_study.__table__.columns
-            if c.name not in ("versions", "__ts_vector__")
-        ]
-        for ab in other_base_studies:
-            for col in columns:
-                source_attr = getattr(source_base_study, col)
-                new_attr = getattr(ab, col)
-                setattr(source_base_study, col, source_attr or new_attr)
-            source_base_study.versions.extend(ab.versions)
-            corresponding_authors.move_emails(ab.id, source_base_study.id)
-            db.session.execute(
-                sa.delete(BaseStudyFlagOutbox).where(
-                    BaseStudyFlagOutbox.base_study_id == ab.id
-                )
-            )
-            db.session.execute(
-                sa.delete(BaseStudyMetadataOutbox).where(
-                    BaseStudyMetadataOutbox.base_study_id == ab.id
-                )
-            )
-            db.session.delete(ab)
-        return source_base_study
-
     def update_study_info(study, metadata_row, text_row, doi, pmcid, year, level):
         study_info = {
             "name": metadata_row.title,
@@ -1690,6 +1601,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
     to_commit = []
     all_base_studies = []
     reused_study_ids = set()
+    index = BaseStudyIndex(db.session, source="ingest")
 
     with db.session.no_autoflush:
         all_studies = {
@@ -1705,34 +1617,32 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                 )
                 else "group"
             )
-            base_study = get_base_study(metadata_row)
             pmid = metadata_row.Index
             pmcid = _coerce_optional(metadata_row.pmcid)
             doi = _coerce_optional(metadata_row.doi)
             year = _coerce_optional_int(metadata_row.publication_year)
-
-            if (
-                skip_existing
-                and base_study is not None
-                and any(s.source == "neurosynth" for s in base_study.versions)
-            ):
-                continue
-
-            if base_study is None:
-
-                base_study = BaseStudy(
+            base_study, is_new = _find_or_create_base_study(
+                index,
+                {"doi": doi, "pmid": pmid, "pmcid": pmcid},
+                lambda: BaseStudy(
                     name=metadata_row.title,
-                    doi=doi,
-                    pmid=pmid,
-                    pmcid=pmcid,
                     authors=metadata_row.authors or None,
                     publication=metadata_row.journal or None,
                     description=text_row.abstract or None,
                     ace_fulltext=text_row.body or None,
                     year=year,
                     level=level,
-                )
-            else:
+                ),
+            )
+
+            if (
+                skip_existing
+                and not is_new
+                and any(s.source == "neurosynth" for s in base_study.versions)
+            ):
+                continue
+
+            if not is_new:
                 update_study_info(
                     base_study, metadata_row, text_row, doi, pmcid, year, level
                 )

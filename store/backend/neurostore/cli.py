@@ -928,5 +928,29 @@ def merge_base_studies_command(plan, execute):
     _run_with_runtime(_run)
 
 
+@main.command("plan-base-study-merges")
+@click.option(
+    "--output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    required=True,
+    help="Where to write the plan, in the format of merge-base-studies.",
+)
+def plan_base_study_merges_command(output):
+    """Write a merge plan from the open merge candidates, for review.
+
+    The older base study of each pair is its keeper; the plan is run with
+    merge-base-studies, whose merges close the candidates they settle. Candidates that
+    name a base study already in the plan wait for the next run.
+    """
+    from neurostore.scripts.merge_base_studies import plan_from_candidates
+
+    def _run(_app, _db):
+        plan, left_out = plan_from_candidates()
+        Path(output).write_text(json.dumps(plan, indent=2) + "\n")
+        click.echo(f"{len(plan['merges'])} pair(s) written to {output}; {left_out} left out")
+
+    _run_with_runtime(_run)
+
+
 if __name__ == "__main__":
     main()

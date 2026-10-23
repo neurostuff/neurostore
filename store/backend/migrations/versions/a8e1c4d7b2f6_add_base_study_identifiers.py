@@ -63,6 +63,10 @@ DECLARE
     sch text;
     wanted text;
     held text;
+    holder text;
+    matched jsonb;
+    inserted integer;
+    fresh boolean;
 BEGIN
     IF TG_OP = 'UPDATE' AND OLD.is_active AND NOT NEW.is_active THEN
         IF NEW.superseded_by IS NULL THEN
@@ -96,8 +100,36 @@ BEGIN
         UPDATE base_study_identifiers SET kind = 'vor', server = NULL
         WHERE base_study_identifiers.scheme = sch AND value = wanted AND base_study_id = NEW.id;
         IF NOT FOUND THEN
+            -- An id another active base study holds stays with it, as the migration leaves
+            -- it: this base study keeps it in its column, and the pair is a merge candidate.
             INSERT INTO base_study_identifiers (base_study_id, kind, scheme, value)
-            VALUES (NEW.id, 'vor', sch, wanted);
+            VALUES (NEW.id, 'vor', sch, wanted)
+            ON CONFLICT (scheme, value) DO NOTHING;
+            GET DIAGNOSTICS inserted = ROW_COUNT;
+            IF inserted = 0 THEN
+                SELECT base_study_id INTO holder FROM base_study_identifiers
+                WHERE base_study_identifiers.scheme = sch AND value = wanted;
+                matched := jsonb_build_array(
+                    jsonb_build_object('scheme', sch, 'value', wanted, 'kind', 'vor'));
+                INSERT INTO base_study_merge_candidates
+                    (id, created_at, first_base_study_id, second_base_study_id, matched, source)
+                VALUES (
+                    left(replace(gen_random_uuid()::text, '-', ''), 12), now(),
+                    least(NEW.id COLLATE "C", holder COLLATE "C"),
+                    greatest(NEW.id COLLATE "C", holder COLLATE "C"),
+                    matched, 'trigger')
+                ON CONFLICT (first_base_study_id, second_base_study_id) DO UPDATE
+                SET matched = CASE
+                    WHEN base_study_merge_candidates.matched @> EXCLUDED.matched
+                        THEN base_study_merge_candidates.matched
+                    ELSE base_study_merge_candidates.matched || EXCLUDED.matched END
+                RETURNING (xmax = 0) INTO fresh;
+                IF fresh THEN
+                    RAISE WARNING 'identifiers span active base studies: %',
+                        jsonb_build_object('source', 'trigger', 'base_study_id', NEW.id,
+                                           'also_held_by', jsonb_build_object(holder, matched));
+                END IF;
+            END IF;
         END IF;
     END LOOP;
     RETURN NULL;
@@ -119,7 +151,9 @@ WHERE b.is_active
 RANKED = r"""
 CREATE TEMPORARY TABLE _ranked AS
 SELECT id, scheme, value,
-       row_number() OVER (PARTITION BY scheme, value ORDER BY created_at NULLS LAST, id) AS rank
+       row_number() OVER (
+           PARTITION BY scheme, value ORDER BY created_at NULLS LAST, id COLLATE "C"
+       ) AS rank
 FROM _held WHERE value IS NOT NULL
 """
 

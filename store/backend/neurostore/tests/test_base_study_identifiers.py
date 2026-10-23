@@ -14,11 +14,17 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 
-from neurostore import service_migrations
+from click.testing import CliRunner
+
+from neurostore import cli, service_migrations
 from neurostore.base_studies import (
+    LOCK_BUCKETS,
+    Holder,
     article_identifiers,
     find_base_study,
+    lock_identifiers,
     normalize,
+    resolve,
     searched_identifiers,
 )
 from neurostore.ingest.study_schema import ingest_upload
@@ -29,6 +35,7 @@ from neurostore.services.base_study_metadata_enrichment import (
     merge_base_study,
 )
 from neurostore.tests import study_schema_fixtures as fx
+from neurostore.tests.test_merge_base_studies import GAIN
 from neurostore.tests.test_study_schema_ingest import preprint_parse
 
 pytestmark = pytest.mark.anyio
@@ -83,6 +90,15 @@ def _candidates(session):
         (c.first_base_study_id, c.second_base_study_id, c.matched, c.source)
         for c in session.scalars(sa.select(BaseStudyMergeCandidate))
     ]
+
+
+def _shared_report_of(caplog, source):
+    (record,) = [
+        r
+        for r in caplog.records
+        if r.name == "neurostore.base_studies" and r.base_study_identifiers["source"] == source
+    ]
+    return record.base_study_identifiers
 
 
 def _shared_report(caplog):
@@ -199,24 +215,26 @@ def test_a_column_taking_an_id_the_base_study_already_holds_as_an_alternative_ma
     assert _held(session, base_study.id) == {("vor", "pmid", PMID), ("vor", "doi", DOI.lower())}
 
 
-def test_no_two_active_base_studies_hold_an_id_whatever_its_case(session):
-    _base_study(session, "first", doi=DOI)
+def test_an_id_stays_with_its_holder_whatever_its_case_and_the_pair_is_recorded(session):
+    first = _base_study(session, "first", created=1, doi=DOI)
 
-    session.add(BaseStudy(name="second", level="group", doi=DOI.upper()))
-    with pytest.raises(IntegrityError):
-        session.commit()
-    session.rollback()
+    second = _base_study(session, "second", created=2, doi=DOI.upper())
 
-    assert session.scalar(sa.select(sa.func.count()).select_from(BaseStudy)) == 1
+    assert session.get(BaseStudy, second.id).doi == DOI.upper()
+    assert _held(session, first.id) == {("vor", "doi", DOI.lower())}
+    assert _held(session, second.id) == set()
+    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((first.id, second.id)))]
 
 
-def test_a_base_study_cannot_hold_an_id_another_holds_as_a_preprint_or_alternative(session):
-    holder = _base_study(session, "holder", pmid=PMID)
+def test_an_id_held_as_a_preprint_or_alternative_stays_with_its_holder(session):
+    holder = _base_study(session, "holder", created=1, pmid=PMID)
     _add(session, holder, "preprint", "doi", PREPRINT_DOI["doi"], server="biorxiv")
 
-    session.add(BaseStudy(name="taker", level="group", doi=PREPRINT_DOI["doi"]))
-    with pytest.raises(IntegrityError):
-        session.commit()
+    taker = _base_study(session, "taker", created=2, doi=PREPRINT_DOI["doi"])
+
+    assert _held(session, taker.id) == set()
+    assert ("preprint", "doi", PREPRINT_DOI["doi"]) in _held(session, holder.id)
+    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((holder.id, taker.id)))]
 
 
 def test_a_deactivated_base_study_gives_its_ids_to_its_successor_as_alternatives(session):
@@ -515,17 +533,35 @@ async def test_a_put_adds_the_ids_it_lists(auth_client, session):
     }
 
 
-async def test_a_put_naming_an_id_another_base_study_holds_is_a_conflict(auth_client, session):
+async def test_a_put_naming_an_id_another_base_study_holds_is_taken_as_it_is(
+    auth_client, session, caplog
+):
     base_study = await _post(auth_client, {"name": "paper", "doi": DOI})
     other = _base_study(session, "other", pmid=PMID)
 
-    response = await auth_client.put(
-        f"/api/base-studies/{base_study['id']}", data={"pmid": PMID}
-    )
+    with caplog.at_level(logging.WARNING, logger="neurostore.base_studies"):
+        response = await auth_client.put(
+            f"/api/base-studies/{base_study['id']}",
+            data={"pmid": PMID, "preprint_pmids": ["40000001"]},
+        )
 
-    assert response.status_code == 409
-    assert response.json()["identifiers"] == {f"pmid:{PMID}": other.id}
-    assert _held(session, base_study["id"]) == {("vor", "doi", DOI.lower())}
+    assert response.status_code == 200, response.text
+    assert response.json()["pmid"] == PMID
+    assert response.json()["preprint_pmids"] == ["40000001"]
+    # The id stays with the base study that held it, and the pair is left to be merged.
+    assert _held(session, other.id) == {("vor", "pmid", PMID)}
+    assert _held(session, base_study["id"]) == {
+        ("vor", "doi", DOI.lower()),
+        ("preprint", "pmid", "40000001"),
+    }
+    report = _shared_report(caplog)
+    assert (report["source"], report["also_held_by"]) == (
+        "put",
+        {other.id: [{"kind": "vor", "scheme": "pmid", "value": PMID}]},
+    )
+    assert [c[:2] for c in _candidates(session)] == [
+        tuple(sorted((base_study["id"], other.id)))
+    ]
 
 
 async def test_a_get_lists_the_ids_of_each_bucket(auth_client, session):
@@ -715,40 +751,116 @@ def _enrich(session, base_study, **gathered):
     _apply_base_study_enrichment(
         _GatheredEnrichment(
             base_study.id, {"doi": None, "pmid": None, "pmcid": None, **gathered}, []
-        )
+        ),
+        logger=logging.getLogger("worker-test"),
     )
     session.commit()
 
 
-def test_an_enrichment_gaining_an_id_another_base_study_holds_skips_it_and_records_the_pair(
-    session, caplog
-):
+def test_an_enrichment_gaining_an_id_another_base_study_holds_merges_into_the_older(session):
     holder = _base_study(session, "holder", created=1, doi=DOI)
     enriched = _base_study(session, "enriched", created=2, pmid=PMID)
 
-    with caplog.at_level(logging.WARNING, logger="neurostore.base_studies"):
-        _enrich(session, enriched, pmid=PMID, doi=DOI, pmcid=PMCID)
+    _enrich(session, enriched, pmid=PMID, doi=DOI, pmcid=PMCID)
 
-    enriched = session.get(BaseStudy, enriched.id)
-    assert (enriched.doi, enriched.pmid, enriched.pmcid) == (None, PMID, PMCID)
-    assert enriched.is_active
-    assert session.get(BaseStudy, holder.id).is_active
-    report = _shared_report(caplog)
-    assert (report["source"], report["base_study_id"]) == ("enrichment", enriched.id)
-    assert report["also_held_by"] == {
-        holder.id: [{"kind": "vor", "scheme": "doi", "value": DOI.lower()}]
+    session.expire_all()
+    enriched, holder = session.get(BaseStudy, enriched.id), session.get(BaseStudy, holder.id)
+    assert (enriched.is_active, enriched.superseded_by) == (False, holder.id)
+    assert (holder.doi, holder.pmid, holder.pmcid) == (DOI, PMID, PMCID)
+    assert _held(session, holder.id) == {
+        ("vor", "doi", DOI.lower()),
+        ("vor", "pmid", PMID),
+        ("vor", "pmcid", PMCID),
     }
-    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((holder.id, enriched.id)))]
+    assert _candidates(session) == []
 
 
-def test_an_enrichment_skips_an_id_held_as_another_base_studys_preprint(session):
+def test_an_enrichment_gaining_an_id_held_as_a_preprint_merges_into_the_holder(session):
     holder = _base_study(session, "holder", created=1, pmid="1")
     _add(session, holder, "preprint", "doi", PREPRINT_DOI["doi"], server="biorxiv")
     enriched = _base_study(session, "enriched", created=2, pmid=PMID)
 
     _enrich(session, enriched, pmid=PMID, doi=PREPRINT_DOI["doi"])
 
-    assert session.get(BaseStudy, enriched.id).doi is None
+    session.expire_all()
+    assert session.get(BaseStudy, enriched.id).superseded_by == holder.id
+    assert _held(session, holder.id) == {
+        ("vor", "pmid", "1"),
+        ("alternative", "pmid", PMID),
+        ("preprint", "doi", PREPRINT_DOI["doi"]),
+    }
+
+
+def test_a_refused_merge_leaves_the_id_with_its_holder_and_records_the_pair(session, caplog):
+    holder = _base_study(session, "holder", created=1, doi=DOI)
+    enriched = _base_study(session, "enriched", created=2, pmid=PMID)
+    for base_study in (holder, enriched):
+        parse = fx.parse([GAIN], pmid=None)
+        parse["header"]["neurostore_base_study_id"] = base_study.id
+        ingest_upload(
+            {
+                "coordinate_parse": parse,
+                "record": fx.record([fx.record_analysis("a0", GAIN["key"], GAIN["name"])]),
+            }
+        )
+    session.commit()
+
+    with caplog.at_level(logging.WARNING):
+        _enrich(session, enriched, pmid=PMID, doi=DOI, pmcid=PMCID)
+
+    session.expire_all()
+    enriched = session.get(BaseStudy, enriched.id)
+    assert enriched.is_active and session.get(BaseStudy, holder.id).is_active
+    assert (enriched.doi, enriched.pmcid) == (None, PMCID)
+    assert any("base-study merge refused" in r.getMessage() for r in caplog.records)
+    report = _shared_report_of(caplog, "enrichment")
+    assert report["also_held_by"] == {
+        holder.id: [{"kind": "vor", "scheme": "doi", "value": DOI.lower()}]
+    }
+    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((holder.id, enriched.id)))]
+
+
+def test_an_enrichment_does_not_ask_again_for_the_ids_a_loser_stores(session, caplog):
+    keeper = _base_study(session, "keeper", created=1, pmid="1")
+    loser = _base_study(session, "loser", created=2, pmid="1-DUPLICATE")
+    for base_study in (keeper, loser):
+        parse = fx.parse([GAIN], pmid=None)
+        parse["header"]["neurostore_base_study_id"] = base_study.id
+        ingest_upload(
+            {
+                "coordinate_parse": parse,
+                "record": fx.record([fx.record_analysis("a0", GAIN["key"], GAIN["name"])]),
+            }
+        )
+    session.commit()
+
+    with caplog.at_level(logging.WARNING, logger="neurostore.base_studies"):
+        _enrich(session, loser, pmcid=PMCID)
+
+    session.expire_all()
+    # The merge is refused, the new pmcid is taken, and the pmid the loser stores is not
+    # reported again: its pair is already a candidate.
+    assert session.get(BaseStudy, loser.id).pmcid == PMCID
+    assert session.get(BaseStudy, loser.id).is_active
+    assert not [r for r in caplog.records if r.name == "neurostore.base_studies"]
+    assert [c[3] for c in _candidates(session)] == ["trigger"]
+
+
+def test_an_enrichment_offers_only_the_ids_a_base_study_lacks(session, caplog):
+    other = _base_study(session, "other", created=1, pmid="40000009")
+    enriched = _base_study(session, "enriched", created=2, pmid=PMID)
+
+    with caplog.at_level(logging.WARNING, logger="neurostore.base_studies"):
+        # A pmid different from the stored one is not the base study's to take.
+        _enrich(session, enriched, pmid="40000009", doi=DOI)
+
+    session.expire_all()
+    assert session.get(BaseStudy, enriched.id).pmid == PMID
+    assert session.get(BaseStudy, enriched.id).doi == DOI
+    assert session.get(BaseStudy, enriched.id).is_active
+    assert session.get(BaseStudy, other.id).is_active
+    assert _candidates(session) == []
+    assert not [r for r in caplog.records if r.name == "neurostore.base_studies"]
 
 
 def test_an_enrichment_gaining_a_free_id_takes_it(session):
@@ -758,6 +870,316 @@ def test_an_enrichment_gaining_a_free_id_takes_it(session):
 
     assert session.get(BaseStudy, enriched.id).doi == DOI
     assert _held(session, enriched.id) == {("vor", "pmid", PMID), ("vor", "doi", DOI.lower())}
+
+
+# --- base studies the migration left holding an id another holds ----------------------
+
+# Production's shapes: a pmid stored as "NNN-DUPLICATE", and dois that differ in case only.
+# Each is a keeper (older) and a loser that keeps the id in its column; ``post`` is a body
+# naming an id the loser does hold, with an empty column to fill.
+LOSER_SHAPES = {
+    "duplicate-marker": (
+        {"pmid": "14715131"},
+        {"doi": "10.1/b", "pmid": "14715131-DUPLICATE"},
+        {"doi": "10.1/b", "pmcid": "PMC5"},
+        ("pmid", "14715131"),
+    ),
+    "case-only-doi": (
+        {"doi": "10.1/AbC", "pmid": "1"},
+        {"doi": "10.1/abc", "pmid": "2"},
+        {"pmid": "2", "pmcid": "PMC5"},
+        ("doi", "10.1/abc"),
+    ),
+}
+
+
+def _loser_pair(session, shape, user_id=None):
+    keeper_ids, loser_ids, post, lost = LOSER_SHAPES[shape]
+    keeper = _base_study(session, "keeper", created=1, **keeper_ids)
+    loser = _base_study(session, "loser", created=2, user_id=user_id, **loser_ids)
+    # The loser keeps its id in its column, the keeper holds the row, and the pair is a candidate.
+    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((keeper.id, loser.id)))]
+    assert ("vor", *lost) in _held(session, keeper.id)
+    assert ("vor", *lost) not in _held(session, loser.id)
+    return keeper, loser, post
+
+
+@pytest.mark.parametrize("shape", LOSER_SHAPES)
+async def test_a_post_naming_a_loser_fills_its_empty_column_without_error(
+    auth_client, session, shape
+):
+    keeper, loser, post = _loser_pair(session, shape)
+
+    single = await _post(auth_client, {"name": "again", **post})
+    assert single["id"] == loser.id
+    assert single["pmcid"] == "PMC5"
+    as_list = await _post(auth_client, [{"name": "again", **post, "preprint_pmids": ["7"]}])
+    assert as_list[0]["id"] == loser.id
+
+    assert ("vor", "pmcid", "PMC5") in _held(session, loser.id)
+    assert session.get(BaseStudy, keeper.id).is_active
+
+
+@pytest.mark.parametrize("shape", LOSER_SHAPES)
+async def test_a_put_of_a_losers_own_ids_is_taken_and_asks_nobody(
+    auth_client, session, shape, caplog
+):
+    keeper, loser, _ = _loser_pair(session, shape, user_id="user1-id")
+    stored = {k: getattr(session.get(BaseStudy, loser.id), k) for k in ("doi", "pmid")}
+
+    with caplog.at_level(logging.WARNING, logger="neurostore.base_studies"):
+        response = await auth_client.put(
+            f"/api/base-studies/{loser.id}", data={"name": "renamed", **stored}
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["name"] == "renamed"
+    assert not [r for r in caplog.records if r.name == "neurostore.base_studies"]
+
+
+@pytest.mark.parametrize("shape", LOSER_SHAPES)
+def test_raw_sql_writing_a_loser_is_not_refused(session, shape):
+    keeper, loser, _ = _loser_pair(session, shape)
+
+    session.execute(
+        sa.text("UPDATE base_studies SET pmcid = 'PMC5', name = 'x' WHERE id = :id"),
+        {"id": loser.id},
+    )
+    session.commit()
+
+    assert ("vor", "pmcid", "PMC5") in _held(session, loser.id)
+    assert session.get(BaseStudy, loser.id).is_active
+
+
+@pytest.mark.parametrize("shape", LOSER_SHAPES)
+def test_an_enrichment_of_a_loser_merges_it_into_its_keeper(session, shape):
+    keeper, loser, _ = _loser_pair(session, shape)
+
+    _enrich(session, loser, pmcid="PMC5")
+
+    session.expire_all()
+    assert session.get(BaseStudy, loser.id).superseded_by == keeper.id
+    assert ("vor", "pmcid", "PMC5") in _held(session, keeper.id)
+    assert _candidates(session) == []
+
+
+def test_a_write_that_hits_a_held_id_updates_the_pairs_candidate(session):
+    keeper = _base_study(session, "keeper", created=1, pmid=PMID, doi=DOI)
+    loser = _base_study(session, "loser", created=2, pmid=PMID)
+    loser.doi = DOI.upper()
+    session.commit()
+
+    ((first, second, matched, source),) = _candidates(session)
+    assert (first, second, source) == (*sorted((keeper.id, loser.id)), "trigger")
+    assert {m["scheme"] for m in matched} == {"pmid", "doi"}
+
+
+# --- merge candidates -----------------------------------------------------------------
+
+
+def test_merging_a_pair_closes_its_candidate_and_moves_the_others(session):
+    keeper = _base_study(session, "keeper", created=1, pmid="1")
+    old = _base_study(session, "old", created=2, pmid="1-DUPLICATE")
+    other_keeper = _base_study(session, "other keeper", created=3, pmid="7")
+    other_old = _base_study(session, "other old", created=4, pmid="8")
+    loser = _base_study(session, "loser", created=5, pmid="8-DUPLICATE")
+    assert [c[:2] for c in _candidates(session)] == [
+        tuple(sorted((keeper.id, old.id))),
+        tuple(sorted((other_old.id, loser.id))),
+    ]
+
+    merge_base_study(keeper, old)
+    merge_base_study(other_keeper, other_old)
+    session.commit()
+
+    # The pair merged is closed; a pair of a merged base study is now one of its keeper.
+    assert [c[:2] for c in _candidates(session)] == [tuple(sorted((other_keeper.id, loser.id)))]
+
+
+def test_a_merge_keeps_the_publication_status_of_the_version_of_record(session):
+    keeper = _base_study(session, "keeper", created=1, publication_status="preprint")
+    _add(session, keeper, "preprint", "doi", PREPRINT_DOI["doi"], server="biorxiv")
+    old = _base_study(session, "old", created=2, pmid=PMID, publication_status="published")
+
+    merge_base_study(keeper, old)
+    session.commit()
+
+    assert session.get(BaseStudy, keeper.id).publication_status == "published"
+    assert session.get(BaseStudy, keeper.id).pmid == PMID
+
+
+def test_the_plan_of_the_open_candidates_is_a_merge_plan_that_closes_them(
+    session, tmp_path, db, monkeypatch
+):
+    monkeypatch.setattr(cli, "_run_with_runtime", lambda callback: callback(None, db))
+    # One paper on three base studies, and an unrelated pair.
+    first = _base_study(session, "first", created=1, pmid="1")
+    second = _base_study(session, "second", created=2, pmid="1-DUPLICATE")
+    third = _base_study(session, "third", created=3, pmid="1 ")
+    fourth = _base_study(session, "fourth", created=4, doi=DOI)
+    fifth = _base_study(session, "fifth", created=5, doi=DOI.upper())
+    plan_path = tmp_path / "plan.json"
+
+    written = CliRunner().invoke(cli.main, ["plan-base-study-merges", "--output", str(plan_path)])
+
+    assert written.exit_code == 0, written.output
+    plan = json.loads(plan_path.read_text())
+    # The older base study of each pair is its keeper; first's second pair waits for the next run.
+    assert [(m["keeper"], m["old"]) for m in plan["merges"]] == [
+        (first.id, second.id),
+        (fourth.id, fifth.id),
+    ]
+    assert plan["merges"][0]["matched"] == [{"scheme": "pmid", "value": "1", "kind": "vor"}]
+    assert "1 left out" in written.output
+
+    applied = CliRunner().invoke(cli.main, ["merge-base-studies", str(plan_path), "--execute"])
+    assert applied.exit_code == 0, applied.output
+    again = CliRunner().invoke(cli.main, ["plan-base-study-merges", "--output", str(plan_path)])
+    assert again.exit_code == 0, again.output
+    assert [(m["keeper"], m["old"]) for m in json.loads(plan_path.read_text())["merges"]] == [
+        (first.id, third.id)
+    ]
+    session.expire_all()
+    assert session.get(BaseStudy, second.id).superseded_by == first.id
+    assert session.get(BaseStudy, fifth.id).superseded_by == fourth.id
+
+
+# --- one order for every tie ----------------------------------------------------------
+
+
+def test_the_strongest_id_of_a_base_study_decides_not_its_weakest():
+    older = Holder("older", _at(1), "preprint")
+    newer = Holder("newer", _at(2), "vor")
+    identifiers = article_identifiers(
+        {"doi": DOI, "preprint_dois": [PREPRINT_DOI], "alternative_pmids": [PMID]}
+    )
+    held = {
+        ("doi", DOI.lower()): newer,
+        ("pmid", PMID): newer,
+        ("doi", PREPRINT_DOI["doi"]): older,
+    }
+
+    # newer holds a version of record's doi and an alternative; older only a preprint's doi.
+    assert resolve(identifiers, held) == "newer"
+
+
+def test_equally_old_base_studies_tie_by_the_code_point_order_of_their_ids():
+    identifiers = article_identifiers({"alternative_pmids": ["1", "2"]})
+    held = {("pmid", "1"): Holder("abc", _at(1), "alternative"), ("pmid", "2"): Holder("Bcd", _at(1), "alternative")}
+
+    assert resolve(identifiers, held) == "Bcd"
+    held[("pmid", "2")] = Holder("Bcd", None, "alternative")
+    # A base study with no creation time is the newest.
+    assert resolve(identifiers, held) == "abc"
+
+
+def test_the_migration_breaks_a_tie_of_creation_time_as_the_resolver_does(session):
+    session.remove()
+    service_migrations.downgrade(BEFORE_IDENTIFIERS)
+    try:
+        with session.bind.begin() as conn:
+            conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO base_studies (id, name, level, pmid, is_active, created_at)
+                    VALUES ('abc', 'a', 'group', '1', true, '2025-01-01'),
+                           ('Bcd', 'b', 'group', '1-DUPLICATE', true, '2025-01-01')
+                    """
+                )
+            )
+        service_migrations.upgrade("heads")
+        # "Bcd" sorts before "abc" by code point, though not in a locale-aware collation.
+        assert _rows(session) == [("Bcd", "vor", "pmid", "1")]
+    finally:
+        service_migrations.upgrade("heads")
+
+
+# --- one lock strategy that scales ----------------------------------------------------
+
+
+def test_a_bulk_of_any_size_holds_a_bounded_number_of_locks(session):
+    identifiers = article_identifiers(
+        {"alternative_dois": [f"10.1/lock-{n}" for n in range(3000)]}
+    )
+
+    lock_identifiers(session, identifiers)
+
+    locks = session.execute(
+        sa.text(
+            "SELECT count(*) FROM pg_locks "
+            "WHERE locktype = 'advisory' AND pid = pg_backend_pid()"
+        )
+    ).scalar()
+    assert 0 < locks <= LOCK_BUCKETS
+    session.rollback()
+
+
+def test_a_second_write_of_one_paper_waits_for_the_first(session):
+    from sqlalchemy.orm import Session
+
+    identifiers = article_identifiers({"doi": DOI})
+    with Session(session.bind) as first, Session(session.bind) as second:
+        lock_identifiers(first, identifiers)
+        second.execute(sa.text("SET LOCAL lock_timeout = '200ms'"))
+        with pytest.raises(sa.exc.OperationalError, match="lock timeout"):
+            lock_identifiers(second, identifiers)
+        second.rollback()
+
+        first.commit()
+        second.execute(sa.text("SET LOCAL lock_timeout = '200ms'"))
+        lock_identifiers(second, identifiers)
+        second.rollback()
+
+
+# --- a pmid search --------------------------------------------------------------------
+
+
+async def test_a_pmid_search_finds_every_pmid_a_base_study_holds(auth_client, session):
+    by_column = _base_study(session, "by column", pmid=PMID)
+    by_alternative = _base_study(session, "by alternative")
+    _add(session, by_alternative, "alternative", "pmid", "13667850")
+    by_preprint = _base_study(session, "by preprint")
+    _add(session, by_preprint, "preprint", "pmid", "23667850")
+    _base_study(session, "unrelated", pmid="99999999")
+
+    for pmid, expected in (
+        (PMID, by_column),
+        ("13667850", by_alternative),
+        ("23667850", by_preprint),
+    ):
+        found = (await auth_client.get(f"/api/base-studies/?search={pmid}")).json()
+        assert [r["id"] for r in found["results"]] == [expected.id]
+
+
+# --- the dataset loaders --------------------------------------------------------------
+
+
+def test_a_loader_run_finds_the_base_study_an_earlier_row_made_and_merges_a_pair(session):
+    from neurostore.base_studies import BaseStudyIndex
+    from neurostore.ingest import _find_or_create_base_study
+
+    older = _base_study(session, "older", created=1, pmid=PMID)
+    newer = _base_study(session, "newer", created=2, doi=DOI)
+    index = BaseStudyIndex(session, source="ingest")
+
+    found, is_new = _find_or_create_base_study(
+        index, {"doi": DOI, "pmid": PMID}, lambda: BaseStudy(name="made", level="group")
+    )
+    assert not is_new
+    assert found.id == older.id
+    session.commit()
+    session.expire_all()
+    assert session.get(BaseStudy, newer.id).superseded_by == older.id
+    assert session.get(BaseStudy, older.id).doi == DOI
+    assert _candidates(session) == []
+
+    made, is_new = _find_or_create_base_study(
+        index, {"pmcid": PMCID}, lambda: BaseStudy(name="made", level="group")
+    )
+    again, again_new = _find_or_create_base_study(
+        index, {"pmcid": "1234567"}, lambda: BaseStudy(name="made twice", level="group")
+    )
+    assert (is_new, again_new, again is made) == (True, False, True)
 
 
 # --- the migration --------------------------------------------------------------------
