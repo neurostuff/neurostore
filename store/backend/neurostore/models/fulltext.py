@@ -59,22 +59,27 @@ class Fulltext(BaseMixin, db.Model):
         return text
 
 
+def fulltext_preference(fulltext=Fulltext):
+    """The order that ranks a paper's full texts, best first: the most preferred copy
+    version, then source, then the newest."""
+    return (
+        sa.case(
+            {version: rank for rank, version in enumerate(COPY_VERSIONS) if version},
+            value=fulltext.text_copy["version"].astext,
+            else_=COPY_VERSIONS.index(None),
+        ),
+        sa.case(FULLTEXT_SOURCE_PREFERENCE, value=fulltext.source),
+        fulltext.created_at.desc(),
+        fulltext.id,
+    )
+
+
 def refresh_fulltext_pointer(connection, base_study_id):
-    """Point the base study at its full text of the most preferred copy version, then
-    source, then the newest."""
+    """Point the base study at its full text that ranks first by fulltext_preference."""
     best = (
         sa.select(Fulltext.id)
         .where(Fulltext.base_study_id == base_study_id)
-        .order_by(
-            sa.case(
-                {version: rank for rank, version in enumerate(COPY_VERSIONS) if version},
-                value=Fulltext.text_copy["version"].astext,
-                else_=COPY_VERSIONS.index(None),
-            ),
-            sa.case(FULLTEXT_SOURCE_PREFERENCE, value=Fulltext.source),
-            Fulltext.created_at.desc(),
-            Fulltext.id,
-        )
+        .order_by(*fulltext_preference())
         .limit(1)
         .scalar_subquery()
     )

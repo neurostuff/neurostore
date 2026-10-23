@@ -581,6 +581,10 @@ class Study(BaseMixin, db.Model):
     source_id = db.Column(db.String, index=True)
     source_updated_at = db.Column(db.DateTime(timezone=True))
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    #: The base study this version was merged in from; the release ranks such versions
+    #: after the paper's own. No foreign key: a second one to base_studies would make the
+    #: Study-BaseStudy joins ambiguous.
+    merged_from = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)

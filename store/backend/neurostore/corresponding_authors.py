@@ -49,21 +49,31 @@ def add_emails(base_study_id: str, emails: Iterable[str]) -> int:
     return added
 
 
-def move_emails(from_id: str, to_id: str) -> None:
-    """Give `to_id` every address `from_id` holds; one both hold keeps either's marks."""
+def move_emails(from_id: str, to_id: str) -> list:
+    """Give `to_id` every address `from_id` holds; one both hold keeps either's marks.
+
+    Returns what was done, by row id and never by address: (row id, None, {}) for a row
+    moved, and (row id, id of the row kept, {mark: True}) for a row deleted as the same
+    address as one `to_id` holds, with the marks it set on that row.
+    """
     rows = db.session.scalars(
         sa.select(CorrespondingAuthorEmail).where(
             CorrespondingAuthorEmail.base_study_id.in_([from_id, to_id])
         )
     ).all()
     kept = {row.email_index: row for row in rows if row.base_study_id == to_id}
-    for row in (row for row in rows if row.base_study_id == from_id):
+    done = []
+    for row in sorted((row for row in rows if row.base_study_id == from_id), key=lambda r: r.id):
         same = kept.get(row.email_index)
         if same is None:
             row.base_study_id = to_id
             kept[row.email_index] = row
+            done.append((row.id, None, {}))
             continue
-        for mark in MARKS:
-            setattr(same, mark, getattr(same, mark) or getattr(row, mark))
+        marked = {mark: True for mark in MARKS if getattr(row, mark) and not getattr(same, mark)}
+        for mark in marked:
+            setattr(same, mark, True)
         db.session.delete(row)
+        done.append((row.id, same.id, marked))
     db.session.flush()
+    return done

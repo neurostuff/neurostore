@@ -280,10 +280,11 @@ def release_tier():
 def release_version_order(freshness):
     """The order that picks a paper's version for the release; the first eligible wins.
 
-    By ``release_tier``, then the freshest, then the highest id. A pipeline Study that
-    loses stays reachable by id.
+    The paper's own versions before those merged in from a duplicate base study
+    (``merged_from`` set), then by ``release_tier``, then the freshest, then the highest
+    id. A pipeline Study that loses stays reachable by id.
     """
-    return (release_tier(), freshness.desc(), Study.id.desc())
+    return (Study.merged_from.is_not(None), release_tier(), freshness.desc(), Study.id.desc())
 
 
 def select_coordinate_studies(include_retracted=False):
