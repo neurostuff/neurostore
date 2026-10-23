@@ -15,6 +15,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 
 import pytest
 import sqlalchemy as sa
@@ -49,7 +50,7 @@ from neurostore.models import (
     StudysetStudy,
     User,
 )
-from neurostore.models.data import HISTORY_SOURCE, MERGED_FROM, STUDY_SOURCE, study_entity_hash
+from neurostore.models.data import HISTORY_SOURCE, STUDY_SOURCE, study_entity_hash
 from neurostore.scripts.merge_base_studies import (
     BaseStudyMergeError,
     load_plan,
@@ -174,6 +175,9 @@ def _keeper(session):
     tasks = Pipeline(name="TaskExtractor")
     configs = {
         "demographics": PipelineConfig(pipeline=demographics, version="1.0.0", config_hash="pd"),
+        "demographics_v2": PipelineConfig(
+            pipeline=demographics, version="2.0.0", config_hash="pd2"
+        ),
         "tasks": PipelineConfig(pipeline=tasks, version="1.0.0", config_hash="te"),
         "analyses": PipelineConfig(pipeline=tasks, version="1.0.0", config_hash="pa"),
     }
@@ -209,6 +213,8 @@ def _duplicate(session, ids):
     nuextract = _version(
         old, "nuextract-v21", _at(2026, 10, 7, 19, 32), [[(1, 2, 3), (4, 5, 6)], [(7, 8, 9)]]
     )
+    # Stored as JSON null, as SQLAlchemy writes an explicit None.
+    nuextract.metadata_ = None
     release = Studyset(name="neurostore-studyset")
     session.add_all([old, predecessor, nuextract, release])
     session.flush()
@@ -228,6 +234,7 @@ def _duplicate(session, ids):
     session.add_all([newer_demographics, newer_tasks, analysis_result, fulltext])
     session.add(_embedding("emb-old-demographics", configs["demographics"], old))
     session.add(_embedding("emb-old-tasks", configs["tasks"], old))
+    session.add(_embedding("emb-old-demographics-v2", configs["demographics_v2"], old))
     session.add(User(external_id=OTHER_REVIEWER))
     session.flush()
     assignment = ReviewAssignment(base_study_id=old.id, user_id=OTHER_REVIEWER)
@@ -360,8 +367,9 @@ def test_execute_moves_the_duplicate_onto_the_keeper(session, pair):
         pair["keeper_nuextract"],
     }
     for study_id in old_studies:
-        assert session.get(Study, study_id).metadata_[MERGED_FROM] == old_id
-    assert MERGED_FROM not in (session.get(Study, pair["neurosynth"]).metadata_ or {})
+        assert session.get(Study, study_id).merged_from == old_id
+    assert session.get(Study, pair["neurosynth"]).merged_from is None
+    assert session.get(Study, pair["old_nuextract"]).metadata_ is None
     assert StudysetStudy.query.filter_by(studyset_id=pair["studyset"]).one().study_id == (
         pair["neurosynth"]
     )
@@ -380,6 +388,8 @@ def test_execute_moves_the_duplicate_onto_the_keeper(session, pair):
         "emb-keeper": keeper_id,
         "emb-old-demographics": old_id,
         "emb-old-tasks": keeper_id,
+        # A config the keeper has no embedding of moves, whatever its pipeline.
+        "emb-old-demographics-v2": keeper_id,
     }
     # The stored parse moves with its version, its header naming the keeper.
     stored = PipelineStudyResult.query.filter(
@@ -419,13 +429,26 @@ def test_execute_moves_the_duplicate_onto_the_keeper(session, pair):
 
 def test_the_release_and_latest_results_stay_the_keepers(session, pair):
     """The duplicate's version and results are newer; the keeper's own still win."""
+    # A paper whose version metadata holds a NUL escape, which json keeps and jsonb
+    # refuses, must not break the release.
+    other = BaseStudy(name="other", level="group", has_coordinates=True)
+    nul = _version(other, "neurosynth", _at(2022, 6, 2), [[(0, 0, 0)]])
+    session.add_all([other, nul])
+    session.flush()
+    session.execute(
+        sa.text("UPDATE studies SET metadata_ = CAST(:m AS json) WHERE id = :id"),
+        {"m": '{"note": "a\\u0000b"}', "id": nul.id},
+    )
+    session.commit()
     before_features = fetch_latest_feature_payloads([pair["keeper"]])[pair["keeper"]]
 
     _merge(pair)
     session.expire_all()
 
-    selected = [s for s in select_coordinate_studies() if s["base_study_id"] == pair["keeper"]]
+    released = select_coordinate_studies()
+    selected = [s for s in released if s["base_study_id"] == pair["keeper"]]
     assert [s["study_id"] for s in selected] == [pair["neurosynth"]]
+    assert nul.id in {s["study_id"] for s in released}
     after = fetch_latest_feature_payloads([pair["keeper"]])[pair["keeper"]]
     assert {name: f["result_id"] for name, f in after.items()} == {
         name: f["result_id"] for name, f in before_features.items()
@@ -465,6 +488,18 @@ def test_an_upload_naming_the_old_id_lands_on_the_keeper(session, pair):
     assert find_base_study(session, header).id == pair["keeper"]
 
 
+def test_a_record_naming_the_old_id_lands_on_the_keeper(session, pair):
+    _merge(pair)
+    record = fx.record([fx.record_analysis("a0", GAIN["key"], GAIN["name"])])
+
+    uploaded = ingest_upload(
+        {"record": record, "parse_id": pair["parse"]["parse_id"], "base_study_id": pair["old"]}
+    )
+    session.commit()
+
+    assert uploaded["base_study_id"] == pair["keeper"]
+
+
 def test_a_chain_of_supersessions_is_followed(session, pair):
     _merge(pair)
     # predecessor -> old was repointed to the keeper by the merge; make a two-hop chain.
@@ -473,6 +508,36 @@ def test_a_chain_of_supersessions_is_followed(session, pair):
 
     header = {"neurostore_base_study_id": pair["predecessor"], "identifiers": {}}
     assert find_base_study(session, header).id == pair["keeper"]
+
+
+def test_a_version_merged_in_earlier_keeps_its_first_origin(session, pair):
+    session.get(Study, pair["old_nuextract"]).merged_from = pair["predecessor"]
+    session.commit()
+
+    outcome = _merge(pair)
+    session.expire_all()
+
+    assert session.get(Study, pair["old_nuextract"]).merged_from == pair["predecessor"]
+    assert ("studies", pair["old_nuextract"], "merged_from") not in {
+        (c.table, c.row_id, c.field) for c in outcome.changes
+    }
+
+
+def test_an_inactive_base_study_with_no_successor_is_passed_over(session, pair):
+    """A pruned import is inactive with no successor; an upload naming it lands on the
+    active base study of its identifiers."""
+    pruned = BaseStudy(name="pruned", level="group", is_active=False)
+    session.add(pruned)
+    session.commit()
+    header = {"neurostore_base_study_id": pruned.id, "identifiers": {"pmid": "15850749"}}
+
+    assert find_base_study(session, header).id == pair["keeper"]
+    parse = fx.parse([LOSS], pmid="15850749")
+    parse["header"]["neurostore_base_study_id"] = pruned.id
+    uploaded = ingest_upload({"coordinate_parse": parse})
+    session.commit()
+    assert uploaded["base_study_id"] == pair["keeper"]
+    assert Study.query.filter_by(base_study_id=pruned.id).count() == 0
 
 
 def test_the_keeper_gains_identifiers_and_metadata_it_lacks_only(session, pair):
@@ -513,6 +578,30 @@ def test_the_keeper_points_at_the_better_copy(session, pair):
     assert ("base_studies", pair["keeper"], "fulltext_id", pdf.id, pair["fulltext"]) in (
         outcome.changes
     )
+
+
+def test_of_two_identical_copies_the_better_ranked_is_kept(session, pair):
+    """The same text as a keeper pdf copy and an old pubget copy of the version of
+    record: the old's copy ranks first, so the keeper's is deleted."""
+    keeper = session.get(BaseStudy, pair["keeper"])
+    old_copy = session.get(Fulltext, pair["fulltext"])
+    old_copy.text_copy = {"version": "vor"}
+    pdf = _text(keeper, "pdf", "the pubget copy of the paper")
+    session.add(pdf)
+    session.flush()
+    keeper_source = _review_source(pdf, pair["keeper"], record_sha256="b" * 64)
+    session.add(keeper_source)
+    session.commit()
+    pdf_id, keeper_source_id = pdf.id, keeper_source.id
+
+    outcome = _merge(pair)
+    session.expire_all()
+
+    assert session.get(Fulltext, pdf_id) is None
+    assert session.get(Fulltext, pair["fulltext"]).base_study_id == pair["keeper"]
+    assert session.get(ReviewSource, keeper_source_id).fulltext_id == pair["fulltext"]
+    assert session.get(BaseStudy, pair["keeper"]).fulltext_id == pair["fulltext"]
+    assert ("fulltexts", pdf_id, "deleted", None, pair["fulltext"]) in outcome.changes
 
 
 def test_an_identical_copy_and_assignment_are_deduplicated(session, pair):
@@ -564,6 +653,14 @@ def test_two_current_parses_leave_the_old_one_as_history(session, pair):
         False,
     )
     assert demoted.metadata_["superseded_by"] == keeper_parse["parse_id"]
+    # Both stored parses are the keeper's: a parse moves with its version.
+    stored = PipelineStudyResult.query.filter(
+        PipelineStudyResult.result_data["parse_id"].astext.in_(
+            [keeper_parse["parse_id"], pair["parse"]["parse_id"]]
+        )
+    ).all()
+    assert {r.base_study_id for r in stored} == {pair["keeper"]}
+    assert len(stored) == 2
 
 
 def _keeper_history_of_the_old_parse(session, pair):
@@ -675,7 +772,14 @@ def test_a_plan_run_again_changes_nothing(session, pair):
 
 
 def test_execute_bumps_the_cache_versions(session, pair):
+    # A stale analysis flag, which the merge's flag recompute corrects and reports.
+    stale = session.get(Study, pair["old_nuextract"]).analyses[0].id
+    session.execute(
+        sa.update(Analysis).where(Analysis.id == stale).values(has_coordinates=False)
+    )
+    session.commit()
     before = {
+        ("analyses", stale): get_cache_version("analyses", stale),
         ("studysets", pair["release"]): get_cache_version("studysets", pair["release"]),
         ("base-studies", pair["keeper"]): get_cache_version("base-studies", pair["keeper"]),
         ("studies", pair["old_nuextract"]): get_cache_version("studies", pair["old_nuextract"]),
@@ -755,7 +859,26 @@ def test_the_cli_exits_1_when_a_pair_is_refused(session, pair, tmp_path, db, mon
 
 
 # The worker path: the metadata-enrichment worker merges base studies that come to share
-# an identifier. Its provider lookups for pmid 12667850 (2flud7dzexni) are recorded.
+# an identifier. Its provider lookups for pmid 12667850 (2flud7dzexni) are recorded,
+# without keys; keys and contact emails are scrubbed from requests and responses.
+
+_SECRET_IN_BODY = re.compile(
+    r'(api[_-]key|email|mailto)(["\']?\s*[=:]\s*["\']?)[^&"\'\s<>]+', re.IGNORECASE
+)
+
+
+def _scrub(response):
+    body = response["body"].get("string")
+    if isinstance(body, bytes):
+        scrubbed = _SECRET_IN_BODY.sub(r"\1\2SCRUBBED", body.decode("utf-8", "replace"))
+        response["body"]["string"] = scrubbed.encode("utf-8")
+    for name in ("Location", "location"):
+        if name in response["headers"]:
+            response["headers"][name] = [
+                _SECRET_IN_BODY.sub(r"\1\2SCRUBBED", value)
+                for value in response["headers"][name]
+            ]
+    return response
 
 
 @pytest.fixture(scope="module")
@@ -764,14 +887,26 @@ def vcr_config():
         "cassette_library_dir": os.path.join(os.path.dirname(__file__), "cassettes"),
         "record_mode": "once",
         "filter_headers": ["authorization", "x-api-key"],
-        "filter_query_parameters": ["api_key", "email", "tool"],
+        "filter_query_parameters": ["api_key", "email", "tool", "mailto"],
+        "decode_compressed_response": True,
+        "before_record_response": _scrub,
     }
 
 
-def _pipeline_duplicates(session, with_records):
-    """Two base studies of pmid 12667850 made by pipeline uploads, each with its parse."""
-    first = BaseStudy(name="Parametric analysis", pmid="12667850", level="group",
-                      created_at=_at(2023, 6, 23))
+# The doi the recorded lookups give for pmid 12667850.
+LOOKED_UP_DOI = "10.1016/S1053-8119(03)00003-X"
+
+
+def _pipeline_duplicates(session, with_records, older_doi=None):
+    """Two base studies of pmid 12667850 made by pipeline uploads, each with its parse;
+    the newer one is queued for enrichment."""
+    first = BaseStudy(
+        name="Parametric analysis",
+        pmid="12667850",
+        doi=older_doi,
+        level="group",
+        created_at=_at(2023, 6, 23),
+    )
     second = BaseStudy(name="Parametric analysis.", level="group", created_at=_at(2025, 1, 12))
     session.add_all([first, second])
     session.commit()
@@ -790,18 +925,22 @@ def _pipeline_duplicates(session, with_records):
     return first.id, second.id
 
 
+def _run_worker(app, logger=None):
+    return process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=logger or app.logger
+    )
+
+
 @pytest.mark.vcr
 def test_the_worker_merges_two_pipeline_duplicates(session, app):
     first_id, second_id = _pipeline_duplicates(session, with_records=False)
 
-    processed = process_base_study_metadata_outbox_batch(
-        batch_size=10, settings=app.config, logger=app.logger
-    )
+    assert _run_worker(app) == 1
     session.expire_all()
 
-    assert processed == 1
     second = session.get(BaseStudy, second_id)
     assert (second.is_active, second.superseded_by) == (False, first_id)
+    assert session.get(BaseStudy, first_id).doi == LOOKED_UP_DOI
     assert Study.query.filter_by(base_study_id=first_id, source=STUDY_SOURCE).count() == 1
     assert Study.query.filter_by(base_study_id=first_id, source=HISTORY_SOURCE).count() == 1
     assert BaseStudyMetadataOutbox.query.count() == 0
@@ -812,19 +951,48 @@ def test_a_refused_worker_merge_keeps_the_enrichment_and_is_done(session, app, c
     first_id, second_id = _pipeline_duplicates(session, with_records=True)
 
     with caplog.at_level(logging.WARNING):
-        processed = process_base_study_metadata_outbox_batch(
-            batch_size=10, settings=app.config, logger=logging.getLogger("worker-test")
-        )
+        assert _run_worker(app, logging.getLogger("worker-test")) == 1
     session.expire_all()
 
-    assert processed == 1
     first, second = session.get(BaseStudy, first_id), session.get(BaseStudy, second_id)
     assert first.is_active and second.is_active
-    # PubMed's spelling of the doi, from the recorded lookup.
-    assert second.doi == "10.1016/s1053-8119(03)00003-x"
+    assert second.doi == LOOKED_UP_DOI
     assert any("both hold claim entities" in r.getMessage() for r in caplog.records)
     # Done, not re-claimed on the next pass.
     assert BaseStudyMetadataOutbox.query.count() == 0
-    assert process_base_study_metadata_outbox_batch(
-        batch_size=10, settings=app.config, logger=app.logger
-    ) == 0
+    assert _run_worker(app) == 0
+
+
+@pytest.mark.vcr
+def test_an_enrichment_completing_an_active_pair_merges(session, app):
+    """The older base study already has the doi and pmid the enrichment finds for the
+    newer: the newer is merged without first taking that doi."""
+    first_id, second_id = _pipeline_duplicates(
+        session, with_records=False, older_doi=LOOKED_UP_DOI
+    )
+
+    assert _run_worker(app) == 1
+    session.expire_all()
+
+    second = session.get(BaseStudy, second_id)
+    assert (second.is_active, second.superseded_by, second.doi) == (False, first_id, None)
+    assert BaseStudyMetadataOutbox.query.count() == 0
+
+
+@pytest.mark.vcr
+def test_a_refused_merge_completing_an_active_pair_withholds_the_doi(session, app, caplog):
+    first_id, second_id = _pipeline_duplicates(
+        session, with_records=True, older_doi=LOOKED_UP_DOI
+    )
+
+    with caplog.at_level(logging.WARNING):
+        assert _run_worker(app, logging.getLogger("worker-test")) == 1
+    session.expire_all()
+
+    first, second = session.get(BaseStudy, first_id), session.get(BaseStudy, second_id)
+    assert first.is_active and second.is_active
+    # Both active, so the newer cannot hold the same doi and pmid; it keeps what it had.
+    assert (second.doi, second.pmid) == (None, "12667850")
+    assert any("both hold claim entities" in r.getMessage() for r in caplog.records)
+    assert BaseStudyMetadataOutbox.query.count() == 0
+    assert _run_worker(app) == 0

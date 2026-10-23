@@ -198,6 +198,10 @@ def merge_base_studies_command(plan, execute):
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
 
+    def shown(value):
+        text = repr(value)
+        return text if len(text) <= 100 else text[:97] + "..."
+
     def _run(_app, _db):
         refused = False
         for outcome in merge_base_studies(pairs, dry_run=not execute):
@@ -205,6 +209,11 @@ def merge_base_studies_command(plan, execute):
                 refused = True
                 click.echo(
                     f"REFUSED {outcome.old_id} -> {outcome.keeper_id}: {outcome.refusal}"
+                )
+                continue
+            if not outcome.changes:
+                click.echo(
+                    f"{outcome.status} {outcome.old_id} -> {outcome.keeper_id}: no change"
                 )
                 continue
             verb = "merged" if execute else "would merge"
@@ -215,7 +224,7 @@ def merge_base_studies_command(plan, execute):
             for change in outcome.changes:
                 click.echo(
                     f"  {change.table} {change.row_id} {change.field}: "
-                    f"{change.before!r} -> {change.after!r}"
+                    f"{shown(change.before)} -> {shown(change.after)}"
                 )
         return refused
 

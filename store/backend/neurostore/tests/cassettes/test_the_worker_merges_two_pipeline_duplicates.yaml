@@ -18,33 +18,45 @@ interactions:
     uri: https://api.semanticscholar.org/graph/v1/paper/batch?fields=externalIds
   response:
     body:
-      string: '{"message":"Forbidden"}'
+      string: '[{"paperId": "0301062390c6add7a139bb3a1591efdbf823cfc1", "externalIds":
+        {"DBLP": "journals/neuroimage/RieckerWMGA03", "MAG": "1966305898", "DOI":
+        "10.1016/S1053-8119(03)00003-X", "CorpusId": 909465, "PubMed": "12667850"}}]
+
+        '
     headers:
+      Access-Control-Allow-Origin:
+      - '*'
       Connection:
       - keep-alive
       Content-Length:
-      - '23'
+      - '223'
       Content-Type:
       - application/json
       Date:
-      - Thu, 22 Oct 2026 22:05:46 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       Via:
-      - 1.1 a65725dd05dc27eea7ae75a2e122228e.cloudfront.net (CloudFront)
+      - 1.1 73e04d645babcbb9ee8f20cc865b009c.cloudfront.net (CloudFront)
       X-Amz-Cf-Id:
-      - n2xdujPQ4hqHCprC5TazucfB-DzrDtyo6SJpVJGGUB9oFQvR3Dx4yg==
+      - FiP1-KLDthhjGCIP8b7eGw1JaVkEaLHBr0BB_7Ete3f6zJbVzqykVw==
       X-Amz-Cf-Pop:
       - DFW57-P1
       X-Cache:
-      - Error from cloudfront
+      - Miss from cloudfront
       x-amz-apigw-id:
-      - FqpNRFXLvHcEckg=
-      x-amzn-ErrorType:
-      - ForbiddenException
+      - FrN_EGJEvHcEKcw=
+      x-amzn-Remapped-Connection:
+      - keep-alive
+      x-amzn-Remapped-Content-Length:
+      - '223'
+      x-amzn-Remapped-Date:
+      - Fri, 23 Oct 2026 02:16:51 GMT
+      x-amzn-Remapped-Server:
+      - gunicorn
       x-amzn-RequestId:
-      - 1aed61f4-1318-425f-bd03-3fda51837c6c
+      - 744924f9-f8e5-4536-80c0-b9a98a7049ed
     status:
-      code: 403
-      message: Forbidden
+      code: 200
+      message: OK
 - request:
     body: null
     headers:
@@ -57,7 +69,7 @@ interactions:
       User-Agent:
       - python-requests/2.34.2
     method: GET
-    uri: https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?format=json&ids=12667850&versions=no
+    uri: https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?format=json&ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&versions=no
   response:
     body:
       string: '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -70,7 +82,7 @@ interactions:
 
         <h1>Moved Permanently</h1>
 
-        <p>The document has moved <a href="https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=12667850&amp;format=json&amp;versions=no&amp;tool=neurostore&amp;email=your%40email.com&amp;api_key=pubmed_tool_api_key">here</a>.</p>
+        <p>The document has moved <a href="https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&amp;format=json&amp;versions=no&amp;tool=neurostore&amp;email=SCRUBBED">here</a>.</p>
 
         </body></html>
 
@@ -79,15 +91,15 @@ interactions:
       Alt-Svc:
       - clear
       Content-Length:
-      - '430'
+      - '450'
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
       - text/html; charset=iso-8859-1
       Date:
-      - Thu, 22 Oct 2026 22:05:46 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       Location:
-      - https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=12667850&format=json&versions=no&tool=neurostore&email=your%40email.com&api_key=pubmed_tool_api_key
+      - https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&format=json&versions=no&tool=neurostore&email=SCRUBBED
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
@@ -111,7 +123,7 @@ interactions:
       User-Agent:
       - python-requests/2.34.2
     method: GET
-    uri: https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?format=json&ids=12667850&versions=no
+    uri: https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?format=json&ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&versions=no
   response:
     body:
       string: <!doctype html><meta charset="utf-8"><meta name=viewport content="width=device-width,
@@ -124,7 +136,7 @@ interactions:
       Content-Type:
       - text/html; charset=UTF-8
       Date:
-      - Thu, 22 Oct 2026 22:05:47 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
     status:
       code: 403
       message: Forbidden
@@ -140,20 +152,21 @@ interactions:
       User-Agent:
       - python-requests/2.34.2
     method: GET
-    uri: https://api.openalex.org/works?filter=pmid%3A12667850&mailto=your%40email.com&per-page=1
+    uri: https://api.openalex.org/works?filter=doi%3Ahttps%3A%2F%2Fdoi.org%2F10.1016%2FS1053-8119%2803%2900003-X&per-page=1
   response:
     body:
       string: '{"meta": {"notice": "No API key, so this request shares one free daily
         budget ($0.10) with everyone on your network''s IP address. The mailto parameter
         doesn''t raise this limit. Get a free key with its own $1/day at https://openalex.org/settings/api
-        and add api_key=YOUR_KEY to your requests. An AI agent can get one for its
+        and add api_key=SCRUBBED to your requests. An AI agent can get one for its
         user in one call: POST https://api.openalex.org/api-keys with {\"email\":
         \"<your user''s email>\"}; we email them a link, and the key works once they
         click it. Docs for agents: https://help.openalex.org/llms.txt", "count": 1,
-        "db_response_time_ms": 23, "page": 1, "per_page": 1, "groups_count": null,
-        "x_query": {"oql": "get works where PMID is 12667850", "x_new_oql": "get works
-        where PMID is 12667850", "oqo": {"get_rows": "works", "filter_rows": [{"column_id":
-        "ids.pmid", "value": "12667850"}]}, "url": "/works?filter=ids.pmid:12667850&per_page=1"},
+        "db_response_time_ms": 9, "page": 1, "per_page": 1, "groups_count": null,
+        "x_query": {"oql": "get works where DOI is \"https://doi.org/10.1016/S1053-8119(03)00003-X\"",
+        "x_new_oql": "get works where DOI is \"https://doi.org/10.1016/S1053-8119(03)00003-X\"",
+        "oqo": {"get_rows": "works", "filter_rows": [{"column_id": "doi", "value":
+        "https://doi.org/10.1016/S1053-8119(03)00003-X"}]}, "url": "/works?filter=doi:https:%2F%2Fdoi.org%2F10.1016%2FS1053-8119%2803%2900003-X&per_page=1"},
         "cost_usd": 0.0001}, "results": [{"id": "https://openalex.org/W1966305898",
         "doi": "https://doi.org/10.1016/s1053-8119(03)00003-x", "title": "Parametric
         analysis of rate-dependent hemodynamic response functions of cortical and
@@ -458,10 +471,10 @@ interactions:
         [], "type": "repository"}, "license": null, "license_id": null, "version":
         "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
         "NeuroImage", "raw_type": "info:eu-repo/semantics/article"}], "best_oa_location":
-        null, "sustainable_development_goals": [{"display_name": "Good health and
-        well-being", "id": "https://metadata.un.org/sdg/3", "score": 0.6240000128746033}],
+        null, "sustainable_development_goals": [{"id": "https://metadata.un.org/sdg/3",
+        "display_name": "Good health and well-being", "score": 0.6240000128746033}],
         "sustainable_development_goals_aurora": [], "study_designs": [], "awards":
-        [], "funders": [], "has_content": {"pdf": false, "grobid_xml": false}, "content_urls":
+        [], "funders": [], "has_content": {"grobid_xml": false, "pdf": false}, "content_urls":
         null, "referenced_works_count": 60, "referenced_works": ["https://openalex.org/W52487473",
         "https://openalex.org/W609302666", "https://openalex.org/W631805375", "https://openalex.org/W1552444893",
         "https://openalex.org/W1591367364", "https://openalex.org/W1685150300", "https://openalex.org/W1853456766",
@@ -502,15 +515,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a4ebce321c23ad97-DFW
+      - a4ed3dfaaff64670-DFW
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Thu, 22 Oct 2026 22:05:47 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       Server:
       - cloudflare
       Transfer-Encoding:
@@ -530,11 +541,11 @@ interactions:
       X-RateLimit-Prepaid-Remaining-USD:
       - '0'
       X-RateLimit-Remaining:
-      - '999'
+      - '929'
       X-RateLimit-Remaining-USD:
-      - '0.0999'
+      - '0.0929'
       X-RateLimit-Reset:
-      - '6853'
+      - '78189'
       access-control-allow-headers:
       - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
         X-Impersonate-User
@@ -546,17 +557,19 @@ interactions:
         X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
         X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
         Content-Disposition, X-OpenAlex-UI-Token
+      content-length:
+      - '29730'
       nel:
       - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
       report-to:
-      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=nEBU6tKvyq6UGeF8hqBbPTZfg5TUxNrUGkgneBCBPMY%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1792706747"}],"max_age":3600}'
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=ycWITv1h540cFw3tSwg%2F96WB6eVFt9n3egKODvh6o%2B4%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1792721811"}],"max_age":3600}'
       reporting-endpoints:
-      - heroku-nel="https://nel.heroku.com/reports?s=nEBU6tKvyq6UGeF8hqBbPTZfg5TUxNrUGkgneBCBPMY%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1792706747"
+      - heroku-nel="https://nel.heroku.com/reports?s=ycWITv1h540cFw3tSwg%2F96WB6eVFt9n3egKODvh6o%2B4%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1792721811"
     status:
       code: 200
       message: OK
 - request:
-    body: '{"ids": ["DOI:10.1016/s1053-8119(03)00003-x", "PMID:12667850"]}'
+    body: '{"ids": ["DOI:10.1016/S1053-8119(03)00003-X", "PMID:12667850"]}'
     headers:
       Accept:
       - '*/*'
@@ -574,33 +587,75 @@ interactions:
     uri: https://api.semanticscholar.org/graph/v1/paper/batch?fields=title%2Cabstract%2Cvenue%2Cyear%2Cauthors%2CisOpenAccess%2Cjournal%2CexternalIds
   response:
     body:
-      string: '{"message":"Forbidden"}'
+      string: '[{"paperId": "0301062390c6add7a139bb3a1591efdbf823cfc1", "externalIds":
+        {"DBLP": "journals/neuroimage/RieckerWMGA03", "MAG": "1966305898", "DOI":
+        "10.1016/S1053-8119(03)00003-X", "CorpusId": 909465, "PubMed": "12667850"},
+        "title": "Parametric analysis of rate-dependent hemodynamic response functions
+        of cortical and subcortical brain structures during auditorily cued finger
+        tapping: a fMRI study", "venue": "NeuroImage", "year": 2003, "isOpenAccess":
+        false, "openAccessPdf": {"url": "", "status": "CLOSED", "license": null, "disclaimer":
+        "Notice: The following paper fields have been elided by the publisher: {''abstract''}.
+        Paper or abstract available at https://api.unpaywall.org/v2/10.1016/S1053-8119(03)00003-X?email=<INSERT_YOUR_EMAIL>
+        or https://doi.org/10.1016/S1053-8119(03)00003-X, which is subject to the
+        license by the author or copyright owner provided with this content. Please
+        go to the source to verify the license and copyright information for your
+        use."}, "journal": {"name": "NeuroImage", "pages": "\n          731-9\n        ",
+        "volume": "18 3"}, "authors": [{"authorId": "2185532", "name": "A. Riecker"},
+        {"authorId": "3022140", "name": "D. Wildgruber"}, {"authorId": "2448724",
+        "name": "K. Mathiak"}, {"authorId": "1763712", "name": "W. Grodd"}, {"authorId":
+        "2777054", "name": "H. Ackermann"}], "abstract": null}, {"paperId": "0301062390c6add7a139bb3a1591efdbf823cfc1",
+        "externalIds": {"DBLP": "journals/neuroimage/RieckerWMGA03", "MAG": "1966305898",
+        "DOI": "10.1016/S1053-8119(03)00003-X", "CorpusId": 909465, "PubMed": "12667850"},
+        "title": "Parametric analysis of rate-dependent hemodynamic response functions
+        of cortical and subcortical brain structures during auditorily cued finger
+        tapping: a fMRI study", "venue": "NeuroImage", "year": 2003, "isOpenAccess":
+        false, "openAccessPdf": {"url": "", "status": "CLOSED", "license": null, "disclaimer":
+        "Notice: The following paper fields have been elided by the publisher: {''abstract''}.
+        Paper or abstract available at https://api.unpaywall.org/v2/10.1016/S1053-8119(03)00003-X?email=<INSERT_YOUR_EMAIL>
+        or https://doi.org/10.1016/S1053-8119(03)00003-X, which is subject to the
+        license by the author or copyright owner provided with this content. Please
+        go to the source to verify the license and copyright information for your
+        use."}, "journal": {"name": "NeuroImage", "pages": "\n          731-9\n        ",
+        "volume": "18 3"}, "authors": [{"authorId": "2185532", "name": "A. Riecker"},
+        {"authorId": "3022140", "name": "D. Wildgruber"}, {"authorId": "2448724",
+        "name": "K. Mathiak"}, {"authorId": "1763712", "name": "W. Grodd"}, {"authorId":
+        "2777054", "name": "H. Ackermann"}], "abstract": null}]
+
+        '
     headers:
+      Access-Control-Allow-Origin:
+      - '*'
       Connection:
       - keep-alive
       Content-Length:
-      - '23'
+      - '2671'
       Content-Type:
       - application/json
       Date:
-      - Thu, 22 Oct 2026 22:05:47 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       Via:
-      - 1.1 edb5724c2fa0963fde9c6c5089b747ce.cloudfront.net (CloudFront)
+      - 1.1 cbe94ab27088fc4bb73abf8e3179b3d2.cloudfront.net (CloudFront)
       X-Amz-Cf-Id:
-      - DJm3TPbkqFYhchy_DQVGK_a-DQeuM9cdLAMBlcdVFG7yl52om99ktg==
+      - gdhIhW59PDM6i-tspQBO6X6jAkCMriRk1Mzw8wSIYhhp6mH-_WmM7w==
       X-Amz-Cf-Pop:
       - DFW57-P1
       X-Cache:
-      - Error from cloudfront
+      - Miss from cloudfront
       x-amz-apigw-id:
-      - FqpNbE1GvHcEgEQ=
-      x-amzn-ErrorType:
-      - ForbiddenException
+      - FrN_MGSCvHcED8A=
+      x-amzn-Remapped-Connection:
+      - keep-alive
+      x-amzn-Remapped-Content-Length:
+      - '2671'
+      x-amzn-Remapped-Date:
+      - Fri, 23 Oct 2026 02:16:51 GMT
+      x-amzn-Remapped-Server:
+      - gunicorn
       x-amzn-RequestId:
-      - 09d68e75-28eb-4ea1-b62f-e9e628819122
+      - 5ad1caa5-960d-4c16-b8af-2fe92fd11b44
     status:
-      code: 403
-      message: Forbidden
+      code: 200
+      message: OK
 - request:
     body: null
     headers:
@@ -616,26 +671,114 @@ interactions:
     uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=12667850&retmode=xml
   response:
     body:
-      string: '{"error":"API key invalid","api-key":"pubmed_tool_api_key","type":"invalid",
+      string: '<?xml version="1.0" ?>
 
-        "status":"unknown"}'
+        <!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January
+        2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
+
+        <PubmedArticleSet>
+
+        <PubmedArticle><MedlineCitation Status="MEDLINE" Owner="NLM" IndexingMethod="Manual"><PMID
+        Version="1">12667850</PMID><DateCompleted><Year>2003</Year><Month>05</Month><Day>19</Day></DateCompleted><DateRevised><Year>2019</Year><Month>11</Month><Day>07</Day></DateRevised><Article
+        PubModel="Print"><Journal><ISSN IssnType="Print">1053-8119</ISSN><JournalIssue
+        CitedMedium="Print"><Volume>18</Volume><Issue>3</Issue><PubDate><Year>2003</Year><Month>Mar</Month></PubDate></JournalIssue><Title>NeuroImage</Title><ISOAbbreviation>Neuroimage</ISOAbbreviation></Journal><ArticleTitle>Parametric
+        analysis of rate-dependent hemodynamic response functions of cortical and
+        subcortical brain structures during auditorily cued finger tapping: a fMRI
+        study.</ArticleTitle><Pagination><StartPage>731</StartPage><EndPage>739</EndPage><MedlinePgn>731-9</MedlinePgn></Pagination><Abstract><AbstractText>A
+        multitude of functional imaging studies revealed a mass activation effect
+        at the level of the sensorimotor cortex during repetitive finger-tapping or
+        finger-to-thumb opposition tasks in terms of either a stepwise or a monotonic
+        relationship between movement rate and hemodynamic response. With respect
+        to subcortical structures of the centralmotor system, there is, by contrast,
+        some preliminary evidence for nonlinear rate/response functions within basal
+        ganglia and cerebellum. To further specify these hemodynamic mechanisms, functional
+        magnetic resonance imaging (fMRI) was performed during a finger-tapping task
+        in response to acoustic stimuli (six different frequencies: 2.0, 2.5, 3.0,
+        4.0, 5.0 and 6.0 Hz; applied via headphones). Passive listening to the same
+        auditory stimuli served as a control condition. Statistical evaluation of
+        the obtained data considered two approaches: categorical and parametric analysis.
+        As expected, the magnitude of the elicited hemodynamic response within left
+        sensorimotor cortex (plateau phase at frequencies above 4 Hz) and mesiofrontal
+        cortex paralleled movement rate. The observed bipartite mesial response pattern,
+        most presumably, reflects functional compartmentalization of supplementary
+        motor area (SMA) in a rostral component (pre-SMA) and in a caudal (SMA proper)
+        component. At the level of the cerebellum, two significant hemodynamic responses
+        within the hemisphere ipsilateral to the hand engaged into finger tapping
+        (anterior/posterior quadrangular lobule and posterior quadrangular lobule)
+        could be observed. Both activation foci exhibited a stepwise rate/response
+        function. In accordance with clinical data, these data indicate different
+        cerebellar contributions to motor control at frequencies below or above about
+        3 Hz, respectively. Caudate nucleus, putamen, and external pallidum of the
+        left hemisphere displayed, by contrast, a negative linear rate/response relationship.
+        The physiological significance of these latter findings remains to be clarified.</AbstractText></Abstract><AuthorList
+        CompleteYN="Y"><Author ValidYN="Y"><LastName>Riecker</LastName><ForeName>Axel</ForeName><Initials>A</Initials><AffiliationInfo><Affiliation>Department
+        of Neurology, University of Tuebingen, Hoppe-Seyler-Strasse 3, D-72076, Tuebingen,
+        Germany. axel.riecker@med.uni-tuebingen.de</Affiliation></AffiliationInfo></Author><Author
+        ValidYN="Y"><LastName>Wildgruber</LastName><ForeName>Dirk</ForeName><Initials>D</Initials></Author><Author
+        ValidYN="Y"><LastName>Mathiak</LastName><ForeName>Klaus</ForeName><Initials>K</Initials></Author><Author
+        ValidYN="Y"><LastName>Grodd</LastName><ForeName>Wolfgang</ForeName><Initials>W</Initials></Author><Author
+        ValidYN="Y"><LastName>Ackermann</LastName><ForeName>Hermann</ForeName><Initials>H</Initials></Author></AuthorList><Language>eng</Language><PublicationTypeList><PublicationType
+        UI="D016428">Journal Article</PublicationType></PublicationTypeList></Article><MedlineJournalInfo><Country>United
+        States</Country><MedlineTA>Neuroimage</MedlineTA><NlmUniqueID>9215515</NlmUniqueID><ISSNLinking>1053-8119</ISSNLinking></MedlineJournalInfo><CitationSubset>IM</CitationSubset><MeshHeadingList><MeshHeading><DescriptorName
+        UI="D000328" MajorTopicYN="N">Adult</DescriptorName></MeshHeading><MeshHeading><DescriptorName
+        UI="D001288" MajorTopicYN="N">Attention</DescriptorName><QualifierName UI="Q000502"
+        MajorTopicYN="Y">physiology</QualifierName></MeshHeading><MeshHeading><DescriptorName
+        UI="D001479" MajorTopicYN="N">Basal Ganglia</DescriptorName><QualifierName
+        UI="Q000098" MajorTopicYN="Y">blood supply</QualifierName><QualifierName UI="Q000502"
+        MajorTopicYN="N">physiology</QualifierName></MeshHeading><MeshHeading><DescriptorName
+        UI="D001931" MajorTopicYN="N">Brain Mapping</DescriptorName></MeshHeading><MeshHeading><DescriptorName
+        UI="D002531" MajorTopicYN="N">Cerebellum</DescriptorName><QualifierName UI="Q000098"
+        MajorTopicYN="Y">blood supply</QualifierName><QualifierName UI="Q000502" MajorTopicYN="N">physiology</QualifierName></MeshHeading><MeshHeading><DescriptorName
+        UI="D002540" MajorTopicYN="N">Cerebral Cortex</DescriptorName><QualifierName
+        UI="Q000098" MajorTopicYN="Y">blood supply</QualifierName><QualifierName UI="Q000502"
+        MajorTopicYN="N">physiology</QualifierName></MeshHeading><MeshHeading><DescriptorName
+        UI="D003463" MajorTopicYN="N">Cues</DescriptorName></MeshHeading><MeshHeading><DescriptorName
+        UI="D005260" MajorTopicYN="N">Female</DescriptorName></MeshHeading><MeshHeading><DescriptorName
+        UI="D006439" MajorTopicYN="N">Hemodynamics</DescriptorName><QualifierName
+        UI="Q000502" MajorTopicYN="Y">physiology</QualifierName></MeshHeading><MeshHeading><DescriptorName
+        UI="D006801" MajorTopicYN="N">Humans</DescriptorName></MeshHeading><MeshHeading><DescriptorName
+        UI="D007091" MajorTopicYN="Y">Image Processing, Computer-Assisted</DescriptorName></MeshHeading><MeshHeading><DescriptorName
+        UI="D008279" MajorTopicYN="Y">Magnetic Resonance Imaging</DescriptorName></MeshHeading><MeshHeading><DescriptorName
+        UI="D008297" MajorTopicYN="N">Male</DescriptorName></MeshHeading><MeshHeading><DescriptorName
+        UI="D009043" MajorTopicYN="N">Motor Activity</DescriptorName><QualifierName
+        UI="Q000502" MajorTopicYN="Y">physiology</QualifierName></MeshHeading><MeshHeading><DescriptorName
+        UI="D010101" MajorTopicYN="N">Oxygen Consumption</DescriptorName><QualifierName
+        UI="Q000502" MajorTopicYN="N">physiology</QualifierName></MeshHeading><MeshHeading><DescriptorName
+        UI="D010898" MajorTopicYN="N">Pitch Perception</DescriptorName><QualifierName
+        UI="Q000502" MajorTopicYN="Y">physiology</QualifierName></MeshHeading><MeshHeading><DescriptorName
+        UI="D011930" MajorTopicYN="N">Reaction Time</DescriptorName><QualifierName
+        UI="Q000502" MajorTopicYN="N">physiology</QualifierName></MeshHeading></MeshHeadingList></MedlineCitation><PubmedData><History><PubMedPubDate
+        PubStatus="pubmed"><Year>2003</Year><Month>4</Month><Day>2</Day><Hour>5</Hour><Minute>0</Minute></PubMedPubDate><PubMedPubDate
+        PubStatus="medline"><Year>2003</Year><Month>5</Month><Day>20</Day><Hour>5</Hour><Minute>0</Minute></PubMedPubDate><PubMedPubDate
+        PubStatus="entrez"><Year>2003</Year><Month>4</Month><Day>2</Day><Hour>5</Hour><Minute>0</Minute></PubMedPubDate></History><PublicationStatus>ppublish</PublicationStatus><ArticleIdList><ArticleId
+        IdType="pubmed">12667850</ArticleId><ArticleId IdType="doi">10.1016/s1053-8119(03)00003-x</ArticleId><ArticleId
+        IdType="pii">S105381190300003X</ArticleId></ArticleIdList></PubmedData></PubmedArticle></PubmedArticleSet>'
     headers:
+      Access-Control-Allow-Origin:
+      - '*'
       Access-Control-Expose-Headers:
       - X-RateLimit-Limit,X-RateLimit-Remaining
       Alt-Svc:
       - clear
-      Content-Encoding:
-      - gzip
+      Cache-Control:
+      - private
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
-      - application/json
+      - text/xml; charset=UTF-8
       Date:
-      - Thu, 22 Oct 2026 22:05:47 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
+      Ncbi-Phid:
+      - 1D33C9B11FD1F98500003A2E92C8A6D5.1.1.m_4
+      Ncbi-Sid:
+      - AA7DD03550BF57B5_1E6CSID
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
       - Finatra
+      Set-Cookie:
+      - ncbi_sid=AA7DD03550BF57B5_1E6CSID; domain=.nih.gov; path=/; expires=Sat, 23
+        Oct 2027 02:16:52 GMT
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
@@ -645,12 +788,14 @@ interactions:
       X-Ratelimit-Limit:
       - '3'
       X-Ratelimit-Remaining:
-      - '3'
+      - '2'
       X-Ua-Compatible:
       - IE=Edge
       X-Xss-Protection:
       - 1; mode=block
+      content-length:
+      - '7596'
     status:
-      code: 400
-      message: Bad Request
+      code: 200
+      message: OK
 version: 1

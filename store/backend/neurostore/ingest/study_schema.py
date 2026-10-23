@@ -440,7 +440,10 @@ def _resolve_base_study(body, parse, parsed_paper, create):
         base_study = superseding_base_study(db.session, base_study_id)
         if base_study is None:
             abort_not_found("BaseStudy", base_study_id)
-        return base_study
+        # An inactive base study with no successor (a pruned import) is passed over, as
+        # find_base_study passes it over, for the paper's identifiers.
+        if base_study.is_active:
+            return base_study
 
     _lock_identifiers(identifiers)
     base_study = find_base_study(db.session, header)

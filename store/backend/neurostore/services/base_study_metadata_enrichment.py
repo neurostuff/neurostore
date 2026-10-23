@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 
 import requests
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, insert as pg_insert
+from sqlalchemy.dialects.postgresql import ARRAY, insert as pg_insert
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import aliased
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
@@ -33,8 +33,8 @@ from neurostore.models import (
     StudyEntity,
     StudysetStudy,
 )
-from neurostore.models.data import HISTORY_SOURCE, MERGED_FROM, PARSE_PIPELINE, STUDY_SOURCE
-from neurostore.models.fulltext import refresh_fulltext_pointer
+from neurostore.models.data import HISTORY_SOURCE, PARSE_PIPELINE, STUDY_SOURCE
+from neurostore.models.fulltext import fulltext_preference, refresh_fulltext_pointer
 from neurostore.resources.common import merge_unique_ids, normalize_ids
 from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
 
@@ -768,7 +768,7 @@ _CLASH_RULES = (
 )
 
 # Rows whose base_study_id names the paper; each moves to the keeper. Pipeline results
-# and embeddings of a pipeline the keeper already has stay on the old base study (see
+# and embeddings the keeper already has one of stay on the old base study (see
 # _kept_pipeline_rows), and identical full texts and assignments are deduplicated first.
 _MOVED = (
     Study,
@@ -842,27 +842,44 @@ def _base_field_values(base_study):
 
 
 def _kept_pipeline_rows(model, keeper_id, old_id):
-    """Ids of the old's ``model`` rows from a pipeline the keeper already has a row of,
-    with that pipeline's name. Latest-result lookups rank one row per paper and pipeline
-    by recency, so a moved row would replace the keeper's. Stored parses always move:
-    they are looked up by parse id, with the version they belong to."""
+    """The old's ``model`` rows that stay on it, by id, with the reason.
+
+    Each stays where the keeper already has a row under the key its readers rank by
+    recency, so a moved row would replace the keeper's: for pipeline results the
+    pipeline (the release's features and latest-record lookups), for embeddings the
+    config (semantic search). Stored parses always move: they are looked up by parse
+    id, with the version they belong to."""
+    if model is PipelineEmbedding:
+        kept = aliased(PipelineEmbedding)
+        rows = db.session.execute(
+            sa.select(PipelineEmbedding.id, PipelineEmbedding.config_id).where(
+                PipelineEmbedding.base_study_id == old_id,
+                sa.exists().where(
+                    kept.base_study_id == keeper_id,
+                    kept.config_id == PipelineEmbedding.config_id,
+                ),
+            )
+        ).all()
+        return {
+            row_id: f"keeper has an embedding of config {config_id}"
+            for row_id, config_id in rows
+        }
     keeper_pipelines = (
         sa.select(PipelineConfig.pipeline_id)
         .join(model, model.config_id == PipelineConfig.id)
         .where(model.base_study_id == keeper_id)
     )
-    return dict(
-        db.session.execute(
-            sa.select(model.id, Pipeline.name)
-            .join(PipelineConfig, model.config_id == PipelineConfig.id)
-            .join(Pipeline, PipelineConfig.pipeline_id == Pipeline.id)
-            .where(
-                model.base_study_id == old_id,
-                PipelineConfig.pipeline_id.in_(keeper_pipelines),
-                Pipeline.name != PARSE_PIPELINE,
-            )
-        ).all()
-    )
+    rows = db.session.execute(
+        sa.select(model.id, Pipeline.name)
+        .join(PipelineConfig, model.config_id == PipelineConfig.id)
+        .join(Pipeline, PipelineConfig.pipeline_id == Pipeline.id)
+        .where(
+            model.base_study_id == old_id,
+            PipelineConfig.pipeline_id.in_(keeper_pipelines),
+            Pipeline.name != PARSE_PIPELINE,
+        )
+    ).all()
+    return {row_id: f"keeper has a {name} result" for row_id, name in rows}
 
 
 def _demote_current_parse(keeper, old):
@@ -890,9 +907,10 @@ def _demote_current_parse(keeper, old):
 
 
 def _deduplicate(keeper, old):
-    """Delete the old's full texts and review assignments the keeper already holds:
-    a full text of the same text, after moving its review sources to the keeper's copy,
-    and an assignment of the same reviewer."""
+    """Delete the copies the keeper holds twice once the old's rows move: of two full
+    texts of the same text, the one fulltext_preference ranks lower, after moving its
+    review sources onto the other; and the old's assignment of a reviewer the keeper
+    already has."""
     changes = []
     kept_text = aliased(Fulltext)
     pairs = db.session.execute(
@@ -901,19 +919,26 @@ def _deduplicate(keeper, old):
         .where(Fulltext.base_study_id == old.id, kept_text.base_study_id == keeper.id)
         .order_by(Fulltext.id)
     ).all()
-    for duplicate_id, keeper_text_id in pairs:
+    for pair in pairs:
+        better = db.session.scalar(
+            sa.select(Fulltext.id)
+            .where(Fulltext.id.in_(pair))
+            .order_by(*fulltext_preference())
+            .limit(1)
+        )
+        worse = pair[1] if better == pair[0] else pair[0]
         moved = db.session.scalars(
             sa.update(ReviewSource)
-            .where(ReviewSource.fulltext_id == duplicate_id)
-            .values(fulltext_id=keeper_text_id)
+            .where(ReviewSource.fulltext_id == worse)
+            .values(fulltext_id=better)
             .returning(ReviewSource.id)
         ).all()
         changes.extend(
-            Change("review_sources", row_id, "fulltext_id", duplicate_id, keeper_text_id)
+            Change("review_sources", row_id, "fulltext_id", worse, better)
             for row_id in sorted(moved)
         )
-        db.session.execute(sa.delete(Fulltext).where(Fulltext.id == duplicate_id))
-        changes.append(Change("fulltexts", duplicate_id, "deleted", None, keeper_text_id))
+        db.session.execute(sa.delete(Fulltext).where(Fulltext.id == worse))
+        changes.append(Change("fulltexts", worse, "deleted", None, better))
     kept_assignment = aliased(ReviewAssignment)
     deleted = db.session.scalars(
         sa.delete(ReviewAssignment)
@@ -933,17 +958,10 @@ def _deduplicate(keeper, old):
     return changes
 
 
-def _study_metadata():
-    # studies.metadata_ is json in the database, whatever the model declares.
-    return sa.func.coalesce(
-        sa.cast(Study.metadata_, JSONB), sa.literal({}, JSONB), type_=JSONB
-    )
-
-
 def merge_base_study(keeper, old):
     """Make ``old`` a superseded copy of ``keeper``.
 
-    Its versions move to the keeper, marked MERGED_FROM, with its current parse version
+    Its versions move to the keeper, marked ``merged_from``, with its current parse version
     made history when the keeper has one. Its pipeline results, embeddings, entities,
     full texts and review assignments move too, but for those the keeper already holds
     (see _kept_pipeline_rows and _deduplicate). Base studies it superseded are superseded
@@ -1007,25 +1025,15 @@ def merge_base_study(keeper, old):
     cache_ids["base-studies"].update(superseded)
 
     changes.extend(_demote_current_parse(keeper, old))
+    # A version merged in earlier keeps the base study it first came from.
     marked = db.session.scalars(
         sa.update(Study)
-        .where(
-            Study.base_study_id == old.id,
-            sa.not_(_study_metadata().has_key(MERGED_FROM)),
-        )
-        .values(
-            metadata_=sa.cast(
-                _study_metadata().op("||")(
-                    sa.func.jsonb_build_object(MERGED_FROM, sa.cast(old.id, sa.Text))
-                ),
-                sa.JSON,
-            )
-        )
+        .where(Study.base_study_id == old.id, Study.merged_from.is_(None))
+        .values(merged_from=old.id)
         .returning(Study.id)
     ).all()
     changes.extend(
-        Change("studies", row_id, f"metadata.{MERGED_FROM}", None, old.id)
-        for row_id in sorted(marked)
+        Change("studies", row_id, "merged_from", None, old.id) for row_id in sorted(marked)
     )
     changes.extend(_deduplicate(keeper, old))
 
@@ -1034,8 +1042,8 @@ def merge_base_study(keeper, old):
         if model in (PipelineStudyResult, PipelineEmbedding):
             kept = _kept_pipeline_rows(model, keeper.id, old.id)
             changes.extend(
-                Change(model.__tablename__, row_id, "kept", None, f"keeper has a {name} row")
-                for row_id, name in sorted(kept.items())
+                Change(model.__tablename__, row_id, "kept", None, reason)
+                for row_id, reason in sorted(kept.items())
             )
         moved = db.session.scalars(
             sa.update(model)
@@ -1243,8 +1251,7 @@ def _propagate_base_study_metadata_to_versions_post_commit(
 
 def _merge_duplicates(primary):
     """Merge every active base study sharing an identifier into the oldest of them.
-    Returns the survivor, the ids to bump, and the refused merges as (base study left
-    active, reason)."""
+    Returns the survivor, the ids to bump, and why each refused merge was refused."""
     cache_ids = {"base-studies": {primary.id}, "studies": set()}
     refused = []
     refused_ids = set()
@@ -1253,7 +1260,7 @@ def _merge_duplicates(primary):
         try:
             return merge_unique_ids(cache_ids, merge_base_study(keeper, old).cache_ids)
         except BaseStudyMergeClash as clash:
-            refused.append((old if old.id != primary.id else keeper, str(clash)))
+            refused.append(str(clash))
             refused_ids.update({keeper.id, old.id} - {primary.id})
             return None
 
@@ -1380,24 +1387,33 @@ def _gather_base_study_enrichment(base_study_id, *, settings, logger):
     return _GatheredEnrichment(base_study_id, external_identifiers, metadata_candidates)
 
 
-def _record_refused_merges(enriched, stored_ids, refused, logger):
-    """Keep the enrichment of a paper whose duplicate could not be merged, logging each
-    refusal; the outbox row is then done, as for any enriched paper, until the paper is
-    enqueued again. An identifier the enrichment added is taken back only when it would
-    give the enriched base study the doi and pmid of a duplicate still active."""
-    for duplicate, reason in refused:
-        logger.warning("base-study merge refused: %s", reason)
-        same_pair = (
-            enriched.is_active
-            and duplicate.is_active
-            and enriched.doi
-            and enriched.pmid
-            and (enriched.doi, enriched.pmid) == (duplicate.doi, duplicate.pmid)
+def _withhold_active_pair(base_study, identifiers):
+    """``identifiers`` without the ones the enrichment would add that complete the doi
+    and pmid of another active base study, which the active-only unique index forbids.
+    That base study shares an identifier, so it is merged next, and the merge carries
+    its identifiers onto whichever of the two is kept."""
+    doi = base_study.doi if _has_value(base_study.doi) else identifiers.get("doi")
+    pmid = base_study.pmid if _has_value(base_study.pmid) else identifiers.get("pmid")
+    if not (_has_value(doi) and _has_value(pmid)):
+        return identifiers
+    with db.session.no_autoflush:
+        taken = db.session.scalar(
+            sa.select(
+                sa.exists().where(
+                    BaseStudy.id != base_study.id,
+                    BaseStudy.is_active.is_(True),
+                    BaseStudy.doi == doi,
+                    BaseStudy.pmid == pmid,
+                )
+            )
         )
-        if same_pair:
-            for field in ("doi", "pmid"):
-                if getattr(enriched, field) != stored_ids[field]:
-                    setattr(enriched, field, stored_ids[field])
+    if not taken:
+        return identifiers
+    return {
+        field: (None if field in ("doi", "pmid") and not _has_value(getattr(base_study, field))
+                else value)
+        for field, value in identifiers.items()
+    }
 
 
 def _apply_base_study_enrichment(gathered, *, logger):
@@ -1416,15 +1432,16 @@ def _apply_base_study_enrichment(gathered, *, logger):
         }
 
     cache_ids = {"base-studies": {base_study.id}, "studies": set()}
-    enriched = base_study
-    stored_ids = {field: getattr(enriched, field) for field in ID_FIELDS}
     identifiers = _extract_identifiers(base_study)
     _merge_ids_in_place(identifiers, gathered.external_identifiers)
-    _apply_missing_ids(base_study, identifiers)
+    _apply_missing_ids(base_study, _withhold_active_pair(base_study, identifiers))
     base_study, merged_cache_ids, refused = _merge_duplicates(base_study)
     cache_ids = merge_unique_ids(cache_ids, merged_cache_ids)
-    if refused:
-        _record_refused_merges(enriched, stored_ids, refused, logger)
+    # A refused merge leaves both base studies active and keeps the enrichment; the
+    # outbox row is then done, as for any enriched paper, until the paper is enqueued
+    # again.
+    for reason in refused:
+        logger.warning("base-study merge refused: %s", reason)
 
     _apply_missing_metadata(base_study, gathered.metadata_candidates)
     cache_ids.setdefault("base-studies", set()).add(base_study.id)

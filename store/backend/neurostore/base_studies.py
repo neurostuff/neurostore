@@ -16,22 +16,22 @@ def superseding_base_study(session, base_study_id):
     return base_study
 
 
-def find_base_study(session, header, *, active_only=True):
-    """The oldest base study matching a parse artifact's ``header``, tried by its
+def find_base_study(session, header):
+    """The oldest active base study matching a parse artifact's ``header``, tried by its
     neurostore_base_study_id (followed to the base study superseding it), then the
     version of record's doi, pmid and pmcid, then each preprint DOI, the preprint pmid
     and the preprint pmcid; None when none matches."""
     for label, value in searched_identifiers(header):
         if label == "neurostore_base_study_id":
             found = superseding_base_study(session, value)
-            if found is not None and (found.is_active or not active_only):
-                return found
-            continue
-        query = sa.select(BaseStudy).where(_COLUMN_OF[label] == value)
-        if active_only:
-            query = query.where(BaseStudy.is_active.is_(True))
-        found = session.scalar(query.order_by(BaseStudy.created_at).limit(1))
-        if found is not None:
+        else:
+            found = session.scalar(
+                sa.select(BaseStudy)
+                .where(_COLUMN_OF[label] == value, BaseStudy.is_active.is_(True))
+                .order_by(BaseStudy.created_at)
+                .limit(1)
+            )
+        if found is not None and found.is_active:
             return found
     return None
 

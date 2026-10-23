@@ -216,4 +216,4 @@ def test_the_cli_exits_1_when_a_pair_is_refused(session, tmp_path, in_process):
 
     assert result.exit_code == 1
     assert f"REFUSED {OLD} -> {KEEPER}: meta-analysis" in result.output
-    assert "merged 6ejr6ry3JpSo -> 7xKzE2rfw8dM: 0 change(s)" in result.output
+    assert "merged 6ejr6ry3JpSo -> 7xKzE2rfw8dM: no change" in result.output
