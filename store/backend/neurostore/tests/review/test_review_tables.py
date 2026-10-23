@@ -40,6 +40,7 @@ STABLE_ID_REVISION = "f2b4d6e8a0c3"
 TEXT_COPY_REVISION = "a3c5e7f9b1d4"
 CORRESPONDING_EMAILS_REVISION = "c7e9a1b3d5f8"
 MERGED_FROM_REVISION = "d4e6f8a0b2c4"
+AUTHORS_REVISION = "e7a9c1d3f5b8"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
 OPENAPI = (
@@ -640,9 +641,10 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_merged_from_migration_is_the_only_head():
+def test_the_authors_migration_is_the_only_head():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [MERGED_FROM_REVISION]
+    assert script.get_heads() == [AUTHORS_REVISION]
+    assert script.get_revision(AUTHORS_REVISION).down_revision == MERGED_FROM_REVISION
     assert script.get_revision(MERGED_FROM_REVISION).down_revision == (
         CORRESPONDING_EMAILS_REVISION
     )

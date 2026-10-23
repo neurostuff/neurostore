@@ -14,7 +14,7 @@
   "parsed_paper": {
     "header": {
       "artifact_kind": "parsed_paper",
-      "schema_version": "0.9.0",
+      "schema_version": "0.10.0",
       "article_id": "x",
       "identifiers": {
         "pmid": "12345678",
@@ -51,7 +51,7 @@
   "coordinate_parse": {
     "header": {
       "artifact_kind": "coordinate_parse",
-      "schema_version": "0.9.0",
+      "schema_version": "0.10.0",
       "article_id": "art-12345678",
       "identifiers": {
         "pmid": "12345678",
