@@ -63,7 +63,7 @@ interactions:
       Accept:
       - '*/*'
       Accept-Encoding:
-      - gzip, deflate, zstd
+      - gzip, deflate
       Connection:
       - keep-alive
       User-Agent:
@@ -82,7 +82,7 @@ interactions:
 
         <h1>Moved Permanently</h1>
 
-        <p>The document has moved <a href="https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&amp;format=json&amp;versions=no&amp;tool=neurostore&amp;email=SCRUBBED">here</a>.</p>
+        <p>The document has moved <a href="https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&amp;format=json&amp;versions=no&amp;tool=neurostore">here</a>.</p>
 
         </body></html>
 
@@ -91,15 +91,15 @@ interactions:
       Alt-Svc:
       - clear
       Content-Length:
-      - '450'
+      - '409'
       Content-Security-Policy:
       - upgrade-insecure-requests
       Content-Type:
       - text/html; charset=iso-8859-1
       Date:
-      - Fri, 23 Oct 2026 02:16:51 GMT
+      - Fri, 23 Oct 2026 06:39:05 GMT
       Location:
-      - https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&format=json&versions=no&tool=neurostore&email=SCRUBBED
+      - https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&format=json&versions=no&tool=neurostore
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
@@ -117,7 +117,7 @@ interactions:
       Accept:
       - '*/*'
       Accept-Encoding:
-      - gzip, deflate, zstd
+      - gzip, deflate
       Connection:
       - keep-alive
       User-Agent:
@@ -126,20 +126,52 @@ interactions:
     uri: https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?format=json&ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&versions=no
   response:
     body:
-      string: <!doctype html><meta charset="utf-8"><meta name=viewport content="width=device-width,
-        initial-scale=1"><title>403</title>403 Forbidden
+      string: '{"status":"error","http_status":"400","http_status_reason":"Bad Request","errors":[{"message":"All
+        values of query param `ids` must be DOIs.","code":"invalid_dois"}],"request":{"warnings":["query
+        param `email` is missing."],"versions":"no","format":"json","ids":"10.1016/S1053-8119(03)00003-X,12667850","tool":"neurostore","echo":"ids=10.1016%2FS1053-8119%2803%2900003-X%2C12667850&format=json&versions=no&tool=neurostore"},"response-date":"2026-10-23
+        02:39:06"}'
     headers:
       Alt-Svc:
       - clear
-      Content-Length:
-      - '134'
-      Content-Type:
-      - text/html; charset=UTF-8
       Date:
-      - Fri, 23 Oct 2026 02:16:51 GMT
+      - Fri, 23 Oct 2026 06:39:06 GMT
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-UA-Compatible:
+      - IE=Edge
+      X-XSS-Protection:
+      - 1; mode=block
+      allow:
+      - GET, HEAD, OPTIONS
+      content-length:
+      - '462'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      referrer-policy:
+      - same-origin
+      set-cookie:
+      - ncbi_sid=768495DEADAFFE73_2123SID; Domain=.nih.gov; expires=Sat, 23 Oct 2027
+        06:39:06 GMT; Max-Age=31536000; Path=/
+      vary:
+      - Accept,Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '5'
+      x-frame-options:
+      - DENY
     status:
-      code: 403
-      message: Forbidden
+      code: 400
+      message: Bad Request
 - request:
     body: null
     headers:

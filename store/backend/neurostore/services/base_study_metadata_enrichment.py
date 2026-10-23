@@ -1388,13 +1388,14 @@ def _gather_base_study_enrichment(base_study_id, *, settings, logger):
 
 
 def _withhold_active_pair(base_study, identifiers):
-    """``identifiers`` without the ones the enrichment would add that complete the doi
-    and pmid of another active base study, which the active-only unique index forbids.
-    That base study shares an identifier, so it is merged next, and the merge carries
-    its identifiers onto whichever of the two is kept."""
-    doi = base_study.doi if _has_value(base_study.doi) else identifiers.get("doi")
+    """``identifiers`` without the doi the enrichment would add when, with the pmid the
+    base study has or gains, it completes the doi and pmid of another active base
+    study, which the active-only unique index forbids. The pmid is kept, so that base
+    study is found by it and merged next, and the merge carries the doi onto whichever
+    of the two is kept."""
+    doi = identifiers.get("doi")
     pmid = base_study.pmid if _has_value(base_study.pmid) else identifiers.get("pmid")
-    if not (_has_value(doi) and _has_value(pmid)):
+    if _has_value(base_study.doi) or not (_has_value(doi) and _has_value(pmid)):
         return identifiers
     with db.session.no_autoflush:
         taken = db.session.scalar(
@@ -1407,13 +1408,7 @@ def _withhold_active_pair(base_study, identifiers):
                 )
             )
         )
-    if not taken:
-        return identifiers
-    return {
-        field: (None if field in ("doi", "pmid") and not _has_value(getattr(base_study, field))
-                else value)
-        for field, value in identifiers.items()
-    }
+    return {**identifiers, "doi": None} if taken else identifiers
 
 
 def _apply_base_study_enrichment(gathered, *, logger):

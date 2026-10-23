@@ -21,7 +21,7 @@ import pytest
 import sqlalchemy as sa
 from click.testing import CliRunner
 
-from neurostore import cli
+from neurostore import cli, service_migrations
 from neurostore.base_studies import find_base_study
 from neurostore.cache_versioning import get_cache_version
 from neurostore.ingest.extracted_features import ensure_partition_for_config_local
@@ -57,6 +57,8 @@ from neurostore.scripts.merge_base_studies import (
     merge_base_studies,
 )
 from neurostore.services.base_study_metadata_enrichment import (
+    _apply_base_study_enrichment,
+    _GatheredEnrichment,
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.neurostore_studyset_releases import (
@@ -996,3 +998,119 @@ def test_a_refused_merge_completing_an_active_pair_withholds_the_doi(session, ap
     assert any("both hold claim entities" in r.getMessage() for r in caplog.records)
     assert BaseStudyMetadataOutbox.query.count() == 0
     assert _run_worker(app) == 0
+
+
+# The worker's write phase, given what its lookups gathered: the probes of the enrichment
+# that would complete another active base study's doi and pmid.
+
+PAIR_DOI, PAIR_PMID = "10.1016/S1053-8119(03)00003-X", "12667850"
+
+
+def _parsed(session, base_study, with_records):
+    parse = fx.parse([GAIN], pmid=None)
+    parse["header"]["neurostore_base_study_id"] = base_study.id
+    body = {"coordinate_parse": parse}
+    if with_records:
+        body["record"] = fx.record([fx.record_analysis("a0", GAIN["key"], GAIN["name"])])
+    ingest_upload(body)
+
+
+def _enrich(session, base_study, **gathered):
+    _apply_base_study_enrichment(
+        _GatheredEnrichment(base_study.id, gathered, []), logger=logging.getLogger("worker-test")
+    )
+    session.commit()
+    session.expire_all()
+
+
+@pytest.mark.parametrize("with_records", [False, True])
+def test_a_pmcid_only_duplicate_is_found_by_the_pmid_it_gains(session, caplog, with_records):
+    older = BaseStudy(
+        name="Parametric analysis", doi=PAIR_DOI, pmid=PAIR_PMID, level="group",
+        created_at=_at(2023, 6, 23),
+    )
+    newer = BaseStudy(
+        name="Parametric analysis.", pmcid="PMC1234567", level="group",
+        created_at=_at(2025, 1, 12),
+    )
+    session.add_all([older, newer])
+    session.commit()
+    for base_study in (older, newer):
+        _parsed(session, base_study, with_records)
+    session.commit()
+    older_id, newer_id = older.id, newer.id
+
+    with caplog.at_level(logging.WARNING):
+        _enrich(session, newer, doi=PAIR_DOI, pmid=PAIR_PMID)
+
+    older, newer = session.get(BaseStudy, older_id), session.get(BaseStudy, newer_id)
+    if with_records:
+        # Refused, and said so; the newer keeps the pmid, not the pair's doi.
+        assert older.is_active and newer.is_active
+        assert (newer.doi, newer.pmid) == (None, PAIR_PMID)
+        assert any("base-study merge refused" in r.getMessage() for r in caplog.records)
+    else:
+        assert (newer.is_active, newer.superseded_by) == (False, older_id)
+        assert older.pmcid == "PMC1234567"
+
+
+def test_a_pair_held_only_by_an_inactive_row_is_not_withheld(session, pair):
+    """A superseded base study keeps its keeper's identifiers; it does not hold them."""
+    inactive = BaseStudy(
+        name="superseded", doi=PAIR_DOI, pmid=PAIR_PMID, level="group", is_active=False
+    )
+    newer = BaseStudy(name="newer", pmid=PAIR_PMID, level="group")
+    session.add_all([inactive, newer])
+    session.commit()
+    newer_id = newer.id
+
+    _enrich(session, newer, doi=PAIR_DOI)
+
+    assert session.get(BaseStudy, newer_id).doi == PAIR_DOI
+
+
+def test_a_doi_without_a_pmid_is_not_withheld(session):
+    """With no pmid there is no doi and pmid pair to complete: the doi is the
+    enrichment's, and finds the base study holding it."""
+    older = BaseStudy(name="older", doi=PAIR_DOI, level="group", created_at=_at(2023, 6, 23))
+    newer = BaseStudy(name="newer", pmcid="PMC1234567", level="group", created_at=_at(2025, 1, 12))
+    session.add_all([older, newer])
+    session.commit()
+    older_id, newer_id = older.id, newer.id
+
+    _enrich(session, newer, doi=PAIR_DOI)
+
+    newer = session.get(BaseStudy, newer_id)
+    assert newer.doi == PAIR_DOI
+    assert (newer.is_active, newer.superseded_by) == (False, older_id)
+
+
+def test_the_merged_from_migration_goes_down_and_up_over_existing_rows(session, pair):
+    _merge(pair)
+    session.remove()
+
+    def rows():
+        with session.bind.connect() as conn:
+            return [
+                dict(r)
+                for r in conn.execute(sa.text("SELECT * FROM studies ORDER BY id")).mappings()
+            ]
+
+    def merged_from_column():
+        columns = sa.inspect(session.bind).get_columns("studies")
+        return {c["name"]: c["nullable"] for c in columns}.get("merged_from", "absent")
+
+    before = rows()
+    assert any(r["merged_from"] == pair["old"] for r in before)
+    try:
+        service_migrations.downgrade("a3c5e7f9b1d4")
+        assert merged_from_column() == "absent"
+        without = [{k: v for k, v in r.items() if k != "merged_from"} for r in before]
+        assert rows() == without
+
+        service_migrations.upgrade("heads")
+
+        assert merged_from_column() is True
+        assert rows() == [{**r, "merged_from": None} for r in without]
+    finally:
+        service_migrations.upgrade("heads")
