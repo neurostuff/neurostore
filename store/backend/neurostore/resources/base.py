@@ -10,7 +10,6 @@ import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
 from connexion import request
 from marshmallow import ValidationError
-from psycopg2 import errors
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import raiseload, selectinload
@@ -42,11 +41,9 @@ from neurostore.resources.mutation_core import (
     MutationExecutor,
 )
 from neurostore.resources.utils import (
+    apply_search_predicate,
     get_current_user,
     is_user_admin,
-    pubmed_to_tsquery,
-    tsquery_has_positive_term,
-    validate_search_query,
 )
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
@@ -565,36 +562,9 @@ class ListView(BaseView):
                     sae.or_(m.public == True, m.user == current_user)  # noqa E712
                 )
 
-        # Search
-        s = args["search"]
-        rank_col = None
-
-        # For multi-column search, default to using search fields
-        # temporary fix for pmid search
-        if s is not None and s.isdigit():
-            q = q.filter_by(pmid=s)
-        elif s is not None and self._fulltext_fields:
-            try:
-                validate_search_query(s)
-            except errors.SyntaxError as e:
-                abort_validation(e.args[0])
-            tsquery_string = pubmed_to_tsquery(s)
-            if not tsquery_has_positive_term(tsquery_string):
-                # Postgres cannot narrow a GIN index on a negation, so this
-                # would be a sequential scan returning nearly the whole corpus.
-                abort_validation(
-                    "A search must include at least one term to match; a query "
-                    "of only negations matches nearly every record."
-                )
-            tsquery = func.to_tsquery("english", tsquery_string)
-            rank_col = func.ts_rank(m._ts_vector, tsquery).label("rank")
-            q = q.filter(m._ts_vector.op("@@")(tsquery))
-
-        # Alternatively (or in addition), search on individual fields.
-        for field in self._search_fields:
-            s = args.get(field, None)
-            if s is not None:
-                q = q.filter(getattr(m, field).ilike(f"%{s}%"))
+        q, rank_col = apply_search_predicate(
+            q, m, args, self._fulltext_fields, self._search_fields
+        )
 
         q = self.view_search(q, args)
 

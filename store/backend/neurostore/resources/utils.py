@@ -7,9 +7,11 @@ import re
 import sqlalchemy as sa
 from connexion.context import context
 from psycopg2 import errors
+from sqlalchemy import func
 
 from neurostore import models, schemas
 from neurostore.database import db
+from neurostore.exceptions.utils.error_helpers import abort_validation
 from neurostore.resources.singular import singularize
 
 
@@ -380,3 +382,40 @@ def pubmed_to_tsquery(query: str) -> str:
     result = process_group(query)
 
     return result
+
+
+def apply_search_predicate(q, model, args, fulltext_fields, search_fields):
+    """Narrow ``q`` by the ``search`` argument and the per-field filters.
+
+    Returns ``(q, rank_col)``; ``rank_col`` is the ts_rank column when a
+    full-text search was applied, else None.
+    """
+    s = args["search"]
+    rank_col = None
+
+    # temporary fix for pmid search
+    if s is not None and s.isdigit():
+        q = q.filter(model.pmid == s)
+    elif s is not None and fulltext_fields:
+        try:
+            validate_search_query(s)
+        except errors.SyntaxError as e:
+            abort_validation(e.args[0])
+        tsquery_string = pubmed_to_tsquery(s)
+        if not tsquery_has_positive_term(tsquery_string):
+            # Postgres cannot narrow a GIN index on a negation, so this
+            # would be a sequential scan returning nearly the whole corpus.
+            abort_validation(
+                "A search must include at least one term to match; a query "
+                "of only negations matches nearly every record."
+            )
+        tsquery = func.to_tsquery("english", tsquery_string)
+        rank_col = func.ts_rank(model._ts_vector, tsquery).label("rank")
+        q = q.filter(model._ts_vector.op("@@")(tsquery))
+
+    for field in search_fields:
+        value = args.get(field, None)
+        if value is not None:
+            q = q.filter(getattr(model, field).ilike(f"%{value}%"))
+
+    return q, rank_col
