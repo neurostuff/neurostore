@@ -431,5 +431,6 @@ class BaseStudyIndex:
 
     def forget(self, base_study_ids):
         """Drop what the run knew of ids held by ``base_study_ids``, after they were merged."""
-        for key in [k for k, holder in self.held.items() if holder.base_study_id in base_study_ids]:
+        stale = [k for k, h in self.held.items() if h.base_study_id in base_study_ids]
+        for key in stale:
             del self.held[key]

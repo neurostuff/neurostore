@@ -12,7 +12,6 @@ import logging
 
 import pytest
 import sqlalchemy as sa
-from sqlalchemy.exc import IntegrityError
 
 from click.testing import CliRunner
 
@@ -1065,7 +1064,10 @@ def test_the_strongest_id_of_a_base_study_decides_not_its_weakest():
 
 def test_equally_old_base_studies_tie_by_the_code_point_order_of_their_ids():
     identifiers = article_identifiers({"alternative_pmids": ["1", "2"]})
-    held = {("pmid", "1"): Holder("abc", _at(1), "alternative"), ("pmid", "2"): Holder("Bcd", _at(1), "alternative")}
+    held = {
+        ("pmid", "1"): Holder("abc", _at(1), "alternative"),
+        ("pmid", "2"): Holder("Bcd", _at(1), "alternative"),
+    }
 
     assert resolve(identifiers, held) == "Bcd"
     held[("pmid", "2")] = Holder("Bcd", None, "alternative")

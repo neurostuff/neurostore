@@ -668,7 +668,10 @@ def _active_duplicates(primary, identifiers):
         db.session.scalars(
             sa.select(
                 sa.case(
-                    (candidates.first_base_study_id == primary.id, candidates.second_base_study_id),
+                    (
+                        candidates.first_base_study_id == primary.id,
+                        candidates.second_base_study_id,
+                    ),
                     else_=candidates.first_base_study_id,
                 )
             ).where(
