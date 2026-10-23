@@ -4,6 +4,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, raiseload, selectinload
 from webargs import fields
 
+from neurostore.base_studies import (
+    ARTICLE_ID_LISTS,
+    article_identifiers,
+    attach_identifiers,
+    held_by,
+    lock_identifiers,
+)
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_conflict
 from neurostore.models import (
@@ -38,10 +45,15 @@ from neurostore.resources.data_views.common import (
 )
 from neurostore.resources.utils import view_maker
 from neurostore.review.app.service import review_source_count
-from neurostore.schemas.data import BaseDataSchema, StringOrNested, StudySchema
+from neurostore.schemas.data import (
+    ArticleIdentifiersSchema,
+    BaseDataSchema,
+    StringOrNested,
+    StudySchema,
+)
 
 
-class BaseStudyBulkPostResponseSchema(BaseDataSchema):
+class BaseStudyBulkPostResponseSchema(BaseDataSchema, ArticleIdentifiersSchema):
     name = marshmallow_fields.String(allow_none=True)
     description = marshmallow_fields.String(allow_none=True)
     publication = marshmallow_fields.String(allow_none=True)
@@ -104,7 +116,11 @@ class BaseStudiesView(ObjectView, ListView):
         return {"base-studies": set(ids)}
 
     def eager_load(self, q, args=None):
-        args = args or {}
+        return self._eager_load_versions(q, args or {}).options(
+            selectinload(BaseStudy.identifier_rows)
+        )
+
+    def _eager_load_versions(self, q, args):
         if args.get("feature_filter"):
             q = q.options(
                 joinedload(BaseStudy.pipeline_study_results)
@@ -197,11 +213,11 @@ class BaseStudiesView(ObjectView, ListView):
         return super().join_tables(q, args)
 
     def post(self, body):
-        if isinstance(body, dict):
-            return super().post(body)
-
-        schema = self.__class__._schema(many=True)
-        data = load_schema_or_abort(schema, body)
+        """One base study or a list of them, each resolved by its identifiers
+        (neurostore.base_studies) to the base study it names or to a new one."""
+        many = not isinstance(body, dict)
+        schema = self.__class__._schema(many=True, exclude=() if many else ("id",))
+        data = load_schema_or_abort(schema, body if many else [body])
         from neurostore.resources.data_views.studies_view import StudiesView
 
         bulk_post_service = BaseStudyBulkPostService(
@@ -231,9 +247,37 @@ class BaseStudiesView(ObjectView, ListView):
         else:
             response_records = base_studies
 
-        return BaseStudyBulkPostResponseSchema(context={"info": True}, many=True).dump(
-            response_records
-        )
+        if many:
+            return BaseStudyBulkPostResponseSchema(context={"info": True}, many=True).dump(
+                response_records
+            )
+        return self.__class__._schema().dump(response_records[0])
+
+    def db_validation(self, record, data):
+        """A PUT adds the preprint and alternative ids it lists, and refuses an id
+        another base study holds: unlike a POST, it names this base study."""
+        posted = article_identifiers(data)
+        lock_identifiers(db.session, posted)
+        held = held_by(db.session, posted)
+        contested = {
+            identifier: holder.base_study_id
+            for identifier in posted
+            if (holder := held.get(identifier.key)) is not None
+            and holder.base_study_id != record.id
+        }
+        if contested:
+            abort_conflict(
+                "Another base study holds these identifiers.",
+                identifiers={
+                    f"{i.scheme}:{i.value}": base_study_id
+                    for i, base_study_id in contested.items()
+                },
+            )
+        listed = [i for i in posted if i.kind != "vor"]
+        for field in ARTICLE_ID_LISTS:
+            data.pop(field, None)
+        if listed:
+            attach_identifiers(db.session, record, listed, held, source="put")
 
     def delete(self, id):
         try:

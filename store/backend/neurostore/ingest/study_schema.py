@@ -60,8 +60,12 @@ from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
 from neurostore.base_studies import (
-    VERSION_OF_RECORD_IDS,
-    find_base_study,
+    article_identifiers,
+    attach_identifiers,
+    held_by,
+    lock_identifiers,
+    resolve,
+    settle_publication_status,
     superseding_base_study,
 )
 from neurostore.coordinate_spaces import normalize_space
@@ -434,59 +438,46 @@ def _check_verdicts(revision, revised):
 
 def _resolve_base_study(body, parse, parsed_paper, create):
     header = {} if parse is None else parse["header"]
-    identifiers = header.get("identifiers") or {}
+    header_identifiers = header.get("identifiers") or {}
+    identifiers = article_identifiers(header_identifiers)
+    # Serializes uploads of one paper until commit, so that two first uploads do not each
+    # create a base study.
+    lock_identifiers(db.session, identifiers)
+    held = held_by(db.session, identifiers)
+
+    base_study = None
     base_study_id = body.get("base_study_id") or header.get("neurostore_base_study_id")
     if base_study_id:
         base_study = superseding_base_study(db.session, base_study_id)
         if base_study is None:
             abort_not_found("BaseStudy", base_study_id)
-        # An inactive base study with no successor (a pruned import) is passed over, as
-        # find_base_study passes it over, for the paper's identifiers.
-        if base_study.is_active:
-            return base_study
+        # An inactive base study with no successor (a pruned import) is passed over for
+        # the paper's identifiers.
+        if not base_study.is_active:
+            base_study = None
+    if base_study is None:
+        found_id = resolve(identifiers, held)
+        if found_id is not None:
+            base_study = db.session.get(BaseStudy, found_id)
 
-    _lock_identifiers(identifiers)
-    base_study = find_base_study(db.session, header)
-    if base_study is not None:
-        return base_study
+    if base_study is None:
+        if not create:
+            abort_validation(
+                "A record uploaded alone must name its base study.",
+                [make_field_error("base_study_id", None, code="MISSING")],
+            )
+        if not identifiers:
+            abort_validation(
+                "The parse names no identifier to create its base study from.",
+                [make_field_error("coordinate_parse/header/identifiers", header_identifiers)],
+            )
+        base_study = BaseStudy(level="group", **_bibliography(parsed_paper))
+        db.session.add(base_study)
 
-    if not create:
-        abort_validation(
-            "A record uploaded alone must name its base study.",
-            [make_field_error("base_study_id", None, code="MISSING")],
-        )
-    created_from = {field: identifiers.get(field) for field in VERSION_OF_RECORD_IDS}
-    if not any(created_from.values()):
-        abort_validation(
-            "The parse names no version-of-record identifier to create its base study from.",
-            [make_field_error("coordinate_parse/header/identifiers", identifiers)],
-        )
-    base_study = BaseStudy(
-        **created_from,
-        level="group",
-        **_bibliography(parsed_paper),
-    )
-    db.session.add(base_study)
+    attach_identifiers(db.session, base_study, identifiers, held, source="ingest")
+    settle_publication_status(base_study, header_identifiers.get("publication_status"))
     db.session.flush()
     return base_study
-
-
-def _lock_identifiers(identifiers):
-    """Locks the ids a base study is created from; preprint ids only find.
-
-    Serializes lookups of one paper until commit. BaseStudy has no unique doi/pmid/pmcid, so
-    two first uploads of a paper would each create one. Locks are taken in one order, so
-    uploads sharing identifiers cannot deadlock.
-    """
-    for key in sorted(
-        f"{field}:{identifiers[field]}"
-        for field in VERSION_OF_RECORD_IDS
-        if identifiers.get(field)
-    ):
-        db.session.execute(
-            sa.text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
-            {"key": f"study_schema.base_study:{key}"},
-        )
 
 
 def _bibliography(parsed_paper):

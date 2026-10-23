@@ -58,8 +58,6 @@ from neurostore.scripts.merge_base_studies import (
     merge_base_studies,
 )
 from neurostore.services.base_study_metadata_enrichment import (
-    _apply_base_study_enrichment,
-    _GatheredEnrichment,
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.neurostore_studyset_releases import (
@@ -895,8 +893,8 @@ def test_the_cli_exits_1_when_a_pair_is_refused(session, pair, tmp_path, db, mon
     assert f"merged {pair['old']} -> {pair['keeper']}:" in result.output
 
 
-# The worker path: the metadata-enrichment worker merges base studies that come to share
-# an identifier. Its provider lookups for pmid 12667850 (2flud7dzexni) are recorded,
+# The worker path: the metadata-enrichment worker looks up the identifiers a base study lacks.
+# Its provider lookups for pmid 12667850 (2flud7dzexni) are recorded,
 # without keys; keys and contact emails are scrubbed from requests and responses.
 
 _SECRET_IN_BODY = re.compile(
@@ -934,34 +932,6 @@ def vcr_config():
 LOOKED_UP_DOI = "10.1016/S1053-8119(03)00003-X"
 
 
-def _pipeline_duplicates(session, with_records, older_doi=None):
-    """Two base studies of pmid 12667850 made by pipeline uploads, each with its parse;
-    the newer one is queued for enrichment."""
-    first = BaseStudy(
-        name="Parametric analysis",
-        pmid="12667850",
-        doi=older_doi,
-        level="group",
-        created_at=_at(2023, 6, 23),
-    )
-    second = BaseStudy(name="Parametric analysis.", level="group", created_at=_at(2025, 1, 12))
-    session.add_all([first, second])
-    session.commit()
-    for base_study, analyses in ((first, [GAIN]), (second, [GAIN, LOSS])):
-        parse = fx.parse(analyses, pmid=None)
-        parse["header"]["neurostore_base_study_id"] = base_study.id
-        body = {"coordinate_parse": parse}
-        if with_records:
-            body["record"] = fx.record(
-                [fx.record_analysis(f"a{i}", a["key"], a["name"]) for i, a in enumerate(analyses)]
-            )
-        ingest_upload(body)
-    second.pmid = "12667850"
-    session.add(BaseStudyMetadataOutbox(base_study_id=second.id, reason="api-write"))
-    session.commit()
-    return first.id, second.id
-
-
 def _run_worker(app, logger=None):
     return process_base_study_metadata_outbox_batch(
         batch_size=10, settings=app.config, logger=logger or app.logger
@@ -969,182 +939,47 @@ def _run_worker(app, logger=None):
 
 
 @pytest.mark.vcr
-def test_the_worker_merges_two_pipeline_duplicates(session, app):
-    first_id, second_id = _pipeline_duplicates(session, with_records=False)
-
-    assert _run_worker(app) == 1
-    session.expire_all()
-
-    second = session.get(BaseStudy, second_id)
-    assert (second.is_active, second.superseded_by) == (False, first_id)
-    assert session.get(BaseStudy, first_id).doi == LOOKED_UP_DOI
-    assert Study.query.filter_by(base_study_id=first_id, source=STUDY_SOURCE).count() == 1
-    assert Study.query.filter_by(base_study_id=first_id, source=HISTORY_SOURCE).count() == 1
-    assert BaseStudyMetadataOutbox.query.count() == 0
-
-
-@pytest.mark.vcr
-def test_a_refused_worker_merge_keeps_the_enrichment_and_is_done(session, app, caplog):
-    first_id, second_id = _pipeline_duplicates(session, with_records=True)
-
-    with caplog.at_level(logging.WARNING):
-        assert _run_worker(app, logging.getLogger("worker-test")) == 1
-    session.expire_all()
-
-    first, second = session.get(BaseStudy, first_id), session.get(BaseStudy, second_id)
-    assert first.is_active and second.is_active
-    assert second.doi == LOOKED_UP_DOI
-    assert any("both hold claim entities" in r.getMessage() for r in caplog.records)
-    # Done, not re-claimed on the next pass.
-    assert BaseStudyMetadataOutbox.query.count() == 0
-    assert _run_worker(app) == 0
-
-
-@pytest.mark.vcr
-def test_an_enrichment_completing_an_active_pair_merges(session, app):
-    """The older base study already has the doi and pmid the enrichment finds for the
-    newer: the newer is merged without first taking that doi."""
-    first_id, second_id = _pipeline_duplicates(
-        session, with_records=False, older_doi=LOOKED_UP_DOI
-    )
-
-    assert _run_worker(app) == 1
-    session.expire_all()
-
-    second = session.get(BaseStudy, second_id)
-    assert (second.is_active, second.superseded_by, second.doi) == (False, first_id, None)
-    assert BaseStudyMetadataOutbox.query.count() == 0
-
-
-@pytest.mark.vcr
-def test_a_refused_merge_completing_an_active_pair_withholds_the_doi(session, app, caplog):
-    first_id, second_id = _pipeline_duplicates(
-        session, with_records=True, older_doi=LOOKED_UP_DOI
-    )
-
-    with caplog.at_level(logging.WARNING):
-        assert _run_worker(app, logging.getLogger("worker-test")) == 1
-    session.expire_all()
-
-    first, second = session.get(BaseStudy, first_id), session.get(BaseStudy, second_id)
-    assert first.is_active and second.is_active
-    # Both active, so the newer cannot hold the same doi and pmid; it keeps what it had.
-    assert (second.doi, second.pmid) == (None, "12667850")
-    assert any("both hold claim entities" in r.getMessage() for r in caplog.records)
-    assert BaseStudyMetadataOutbox.query.count() == 0
-    assert _run_worker(app) == 0
-
-
-# The worker's write phase, given what its lookups gathered: the probes of the enrichment
-# that would complete another active base study's doi and pmid.
-
-PAIR_DOI, PAIR_PMID = "10.1016/S1053-8119(03)00003-X", "12667850"
-
-
-def _parsed(session, base_study, with_records):
-    parse = fx.parse([GAIN], pmid=None)
-    parse["header"]["neurostore_base_study_id"] = base_study.id
-    body = {"coordinate_parse": parse}
-    if with_records:
-        body["record"] = fx.record([fx.record_analysis("a0", GAIN["key"], GAIN["name"])])
-    ingest_upload(body)
-
-
-def _enrich(session, base_study, **gathered):
-    _apply_base_study_enrichment(
-        _GatheredEnrichment(base_study.id, gathered, []), logger=logging.getLogger("worker-test")
-    )
+def test_the_worker_takes_the_doi_it_looks_up_for_a_pmid(session, app):
+    base_study = BaseStudy(name="Parametric analysis", pmid="12667850", level="group")
+    session.add(base_study)
     session.commit()
+    session.add(BaseStudyMetadataOutbox(base_study_id=base_study.id, reason="api-write"))
+    session.commit()
+
+    assert _run_worker(app) == 1
     session.expire_all()
 
+    assert session.get(BaseStudy, base_study.id).doi == LOOKED_UP_DOI
+    assert BaseStudyMetadataOutbox.query.count() == 0
 
-@pytest.mark.parametrize("with_records", [False, True], ids=["merged", "refused"])
-@pytest.mark.parametrize(
-    "stored, kept",
-    [
-        # What the newer base study stores, and the doi and pmid it holds when refused:
-        # the gained id completing the pair is withheld, a stored one is kept.
-        ({"doi": PAIR_DOI}, (PAIR_DOI, None)),
-        ({"pmid": PAIR_PMID}, (None, PAIR_PMID)),
-        ({"pmcid": "PMC1234567"}, (None, PAIR_PMID)),
-    ],
-    ids=["doi-only", "pmid-only", "pmcid-only"],
-)
-def test_an_enrichment_completing_an_active_pair(session, caplog, stored, kept, with_records):
-    """The enrichment finds the doi and pmid another active base study holds. The
-    newer one still shares an id with it, so it is merged, or refused and logged; it
-    never takes the full pair while both are active."""
+
+@pytest.mark.vcr
+def test_the_worker_leaves_a_looked_up_doi_with_the_base_study_that_holds_it(
+    session, app, caplog
+):
+    """The lookup for the newer base study's pmid finds the doi the older base study of
+    the paper holds: the newer does not take it, and the pair is left for a merge."""
     older = BaseStudy(
-        name="Parametric analysis", doi=PAIR_DOI, pmid=PAIR_PMID, level="group",
-        created_at=_at(2023, 6, 23),
+        name="Parametric analysis", doi=LOOKED_UP_DOI, level="group", created_at=_at(2023, 6, 23)
     )
     newer = BaseStudy(
-        name="Parametric analysis.", level="group", created_at=_at(2025, 1, 12), **stored
+        name="Parametric analysis.", pmid="12667850", level="group", created_at=_at(2025, 1, 12)
     )
     session.add_all([older, newer])
     session.commit()
-    for base_study in (older, newer):
-        _parsed(session, base_study, with_records)
-    session.commit()
     older_id, newer_id = older.id, newer.id
+    session.add(BaseStudyMetadataOutbox(base_study_id=newer_id, reason="api-write"))
+    session.commit()
 
     with caplog.at_level(logging.WARNING):
-        _enrich(session, newer, doi=PAIR_DOI, pmid=PAIR_PMID)
-
-    older, newer = session.get(BaseStudy, older_id), session.get(BaseStudy, newer_id)
-    if with_records:
-        assert older.is_active and newer.is_active
-        assert (newer.doi, newer.pmid) == kept
-        assert any("base-study merge refused" in r.getMessage() for r in caplog.records)
-    else:
-        assert (newer.is_active, newer.superseded_by) == (False, older_id)
-        assert (older.doi, older.pmid) == (PAIR_DOI, PAIR_PMID)
-
-
-def test_a_base_study_storing_no_identifier_is_not_enriched(session):
-    """With no doi, pmid or pmcid there is nothing to look up: the write phase leaves
-    it as it is, and nothing is merged."""
-    older = BaseStudy(name="older", doi=PAIR_DOI, pmid=PAIR_PMID, level="group")
-    newer = BaseStudy(name="Parametric analysis.", level="group")
-    session.add_all([older, newer])
-    session.commit()
-    newer_id = newer.id
-
-    _enrich(session, newer, doi=PAIR_DOI, pmid=PAIR_PMID)
+        assert _run_worker(app) == 1
+    session.expire_all()
 
     newer = session.get(BaseStudy, newer_id)
-    assert (newer.is_active, newer.doi, newer.pmid) == (True, None, None)
-
-
-def test_a_pair_held_only_by_an_inactive_row_is_not_withheld(session, pair):
-    """A superseded base study keeps its keeper's identifiers; it does not hold them."""
-    inactive = BaseStudy(
-        name="superseded", doi=PAIR_DOI, pmid=PAIR_PMID, level="group", is_active=False
-    )
-    newer = BaseStudy(name="newer", pmid=PAIR_PMID, level="group")
-    session.add_all([inactive, newer])
-    session.commit()
-    newer_id = newer.id
-
-    _enrich(session, newer, doi=PAIR_DOI)
-
-    assert session.get(BaseStudy, newer_id).doi == PAIR_DOI
-
-
-def test_a_doi_without_a_pmid_is_not_withheld(session):
-    """With no pmid there is no doi and pmid pair to complete: the doi is the
-    enrichment's, and finds the base study holding it."""
-    older = BaseStudy(name="older", doi=PAIR_DOI, level="group", created_at=_at(2023, 6, 23))
-    newer = BaseStudy(name="newer", pmcid="PMC1234567", level="group", created_at=_at(2025, 1, 12))
-    session.add_all([older, newer])
-    session.commit()
-    older_id, newer_id = older.id, newer.id
-
-    _enrich(session, newer, doi=PAIR_DOI)
-
-    newer = session.get(BaseStudy, newer_id)
-    assert newer.doi == PAIR_DOI
-    assert (newer.is_active, newer.superseded_by) == (False, older_id)
+    assert (newer.is_active, newer.doi, newer.pmid) == (True, None, "12667850")
+    assert session.get(BaseStudy, older_id).doi == LOOKED_UP_DOI
+    assert BaseStudyMetadataOutbox.query.count() == 0
+    assert any("identifiers span active base studies" in r.getMessage() for r in caplog.records)
 
 
 def test_the_merged_from_migration_goes_down_and_up_over_existing_rows(session, pair):

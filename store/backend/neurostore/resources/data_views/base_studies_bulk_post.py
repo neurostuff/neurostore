@@ -1,7 +1,15 @@
 from __future__ import annotations
 
-import sqlalchemy as sa
-
+from neurostore.base_studies import (
+    ARTICLE_ID_FIELDS,
+    ARTICLE_ID_LISTS,
+    article_identifiers,
+    attach_identifiers,
+    held_by,
+    lock_identifiers,
+    resolve,
+    settle_publication_status,
+)
 from neurostore.database import db
 from neurostore.models import BaseStudy, Study
 from neurostore.resources.mutation_core import create_user
@@ -16,6 +24,7 @@ def _base_study_response_load_options(user_model):
         selectinload(BaseStudy.user)
         .load_only(user_model.external_id, user_model.name)
         .options(raiseload("*", sql_only=True)),
+        selectinload(BaseStudy.identifier_rows),
         selectinload(BaseStudy.versions)
         .load_only(
             Study.id,
@@ -38,85 +47,11 @@ def _base_study_response_load_options(user_model):
     )
 
 
-def _normalize_identifier(value) -> str:
-    if value is None:
-        return ""
-    return str(value)
-
-
-def _lookup_key(doi: str, pmid: str) -> str:
-    return f"{doi}{pmid}"
-
-
-def collect_lookup_identifiers(payload):
-    dois = set()
-    pmids = set()
-
-    for study_data in payload:
-        doi = _normalize_identifier(study_data.get("doi"))
-        pmid = _normalize_identifier(study_data.get("pmid"))
-        if doi:
-            dois.add(doi)
-        if pmid:
-            pmids.add(pmid)
-
-    return dois, pmids
-
-
-def build_lookup(records):
-    lookup = {"combined": {}, "doi": {}, "pmid": {}}
-
-    for record in records:
-        doi = _normalize_identifier(record.doi)
-        pmid = _normalize_identifier(record.pmid)
-
-        if doi:
-            lookup["doi"][doi] = record
-        if pmid:
-            lookup["pmid"][pmid] = record
-        if doi or pmid:
-            lookup["combined"][_lookup_key(doi, pmid)] = record
-
-    return lookup
-
-
-def match_lookup_record(lookup, study_data):
-    doi = _normalize_identifier(study_data.get("doi"))
-    pmid = _normalize_identifier(study_data.get("pmid"))
-    key = _lookup_key(doi, pmid)
-
-    if not key or key.isspace():
-        return None
-    if doi and pmid:
-        return lookup["combined"].get(key)
-    if doi:
-        return lookup["doi"].get(doi)
-    return lookup["pmid"].get(pmid)
-
-
-def register_lookup_record(lookup, record):
-    doi = _normalize_identifier(record.doi)
-    pmid = _normalize_identifier(record.pmid)
-
-    if doi:
-        lookup["doi"][doi] = record
-    if pmid:
-        lookup["pmid"][pmid] = record
-    if doi or pmid:
-        lookup["combined"][_lookup_key(doi, pmid)] = record
-
-
-def prefetch_lookup_records(dois, pmids, user_model):
-    filters = []
-    if dois:
-        filters.append(BaseStudy.doi.in_(sorted(dois)))
-    if pmids:
-        filters.append(BaseStudy.pmid.in_(sorted(pmids)))
-    if not filters:
+def load_base_study_records(base_study_ids, user_model):
+    if not base_study_ids:
         return []
-
     return (
-        BaseStudy.query.filter(sa.or_(*filters))
+        BaseStudy.query.filter(BaseStudy.id.in_(list(base_study_ids)))
         .options(*_base_study_response_load_options(user_model))
         .all()
     )
@@ -126,11 +61,7 @@ def load_response_records(base_study_ids, user_model):
     if not base_study_ids:
         return []
 
-    records = (
-        BaseStudy.query.filter(BaseStudy.id.in_(list(base_study_ids)))
-        .options(*_base_study_response_load_options(user_model))
-        .all()
-    )
+    records = load_base_study_records(base_study_ids, user_model)
     records_by_id = {record.id: record for record in records}
     return [records_by_id[base_study_id] for base_study_id in base_study_ids]
 
@@ -168,28 +99,53 @@ class BaseStudyBulkPostService:
         return version
 
     def create_or_reuse(self, data, studies_view_cls):
+        """Each posted study's base study: the one its identifiers name, with the
+        identifiers it lacked added, or a new one when none of them is held. Returns the
+        base studies in posted order, the records to add, and the records that changed."""
         base_studies = []
         to_commit = []
         changed_base_study_records = []
         current_user = None
 
-        dois, pmids = collect_lookup_identifiers(data)
-        lookup = build_lookup(prefetch_lookup_records(dois, pmids, self.user_model))
+        posted = [article_identifiers(study_data) for study_data in data]
+        every_identifier = [identifier for identifiers in posted for identifier in identifiers]
+        lock_identifiers(db.session, every_identifier)
+        held = held_by(db.session, every_identifier)
+        records = {
+            record.id: record
+            for record in load_base_study_records(
+                sorted({holder.base_study_id for holder in held.values()}), self.user_model
+            )
+        }
 
-        for study_data in data:
-            record = match_lookup_record(lookup, study_data)
-            if record is None:
+        for study_data, identifiers in zip(data, posted):
+            base_study_id = resolve(identifiers, held)
+            if base_study_id is None:
                 if current_user is None:
                     current_user = self.ensure_user()
                 with db.session.no_autoflush:
                     record = self.resource_cls.update_or_create(
-                        study_data,
+                        {k: v for k, v in study_data.items() if k not in ARTICLE_ID_FIELDS},
                         user=current_user,
                         flush=False,
                         settings=self.settings,
                     )
+                # Added now: a merge candidate recorded for a later study may name it.
+                db.session.add(record)
                 to_commit.append(record)
-                register_lookup_record(lookup, record)
+                changed_base_study_records.append(record)
+                created = True
+            else:
+                record = records[base_study_id]
+                created = False
+
+            with db.session.no_autoflush:
+                attached = attach_identifiers(
+                    db.session, record, identifiers, held, source="post"
+                )
+            settle_publication_status(record, study_data.get("publication_status"))
+            records[record.id] = record
+            if attached.wrote and not created:
                 changed_base_study_records.append(record)
 
             base_studies.append(record)
@@ -200,7 +156,14 @@ class BaseStudyBulkPostService:
                 current_user = self.ensure_user()
             to_commit.append(
                 self.create_initial_version(
-                    record, study_data, current_user, studies_view_cls
+                    record,
+                    {
+                        k: v
+                        for k, v in study_data.items()
+                        if k not in ARTICLE_ID_LISTS and k != "publication_status"
+                    },
+                    current_user,
+                    studies_view_cls,
                 )
             )
             changed_base_study_records.append(record)

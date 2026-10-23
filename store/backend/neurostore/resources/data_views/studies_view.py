@@ -6,6 +6,13 @@ from sqlalchemy.orm import raiseload, selectinload
 from study_schema.models.paper_parse import CoordinateRole
 from webargs import fields, validate
 
+from neurostore.base_studies import (
+    article_identifiers,
+    attach_identifiers,
+    held_by,
+    lock_identifiers,
+    resolve,
+)
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_unprocessable
@@ -57,39 +64,37 @@ class StudyMutationPolicy(DefaultMutationPolicy):
             self.context.record = record
             return
 
-        query = BaseStudy.query
-        has_doi = has_pmid = has_name = False
+        identifiers = article_identifiers(
+            {"doi": record.doi, "pmid": record.pmid, "pmcid": record.pmcid}
+        )
         base_study = None
-
-        if record.doi:
-            query = query.filter_by(doi=record.doi)
-            has_doi = True
-        if record.pmid:
-            query = query.filter_by(pmid=record.pmid)
-            has_pmid = True
-        if record.name and not record.doi and not record.pmid:
-            name_search = func.regexp_replace(
-                record.name, r"[" + string.punctuation + "]", "", "g"
-            )
-            query = query.filter(BaseStudy.name.ilike(f"%{name_search}%"))
-            has_name = True
-
         with db.session.no_autoflush:
-            if query.count() >= 1 and (has_doi or has_pmid or has_name):
-                base_study = query.first()
-            elif has_doi or has_pmid:
-                base_study = BaseStudy(
-                    name=record.name,
-                    doi=record.doi if record.doi else None,
-                    pmid=record.pmid,
-                    description=record.description,
-                    publication=record.publication,
-                    year=record.year,
-                    authors=record.authors,
-                    metadata_=record.metadata_,
-                    level=record.level if record.level else "group",
+            if identifiers:
+                lock_identifiers(db.session, identifiers)
+                held = held_by(db.session, identifiers)
+                base_study_id = resolve(identifiers, held)
+                if base_study_id is not None:
+                    base_study = db.session.get(BaseStudy, base_study_id)
+                else:
+                    base_study = BaseStudy(
+                        name=record.name,
+                        description=record.description,
+                        publication=record.publication,
+                        year=record.year,
+                        authors=record.authors,
+                        metadata_=record.metadata_,
+                        level=record.level if record.level else "group",
+                    )
+                    db.session.add(base_study)
+                attach_identifiers(db.session, base_study, identifiers, held, source="post")
+            elif record.name:
+                name_search = func.regexp_replace(
+                    record.name, r"[" + string.punctuation + "]", "", "g"
                 )
-            else:
+                base_study = BaseStudy.query.filter(
+                    BaseStudy.name.ilike(f"%{name_search}%")
+                ).first()
+            if base_study is None:
                 self.context.record = record
                 return
 

@@ -1071,13 +1071,11 @@ def preprint_parse(**ids):
     return parse
 
 
-def test_a_preprint_only_parse_matching_no_base_study_is_refused(session):
-    parse = preprint_parse(preprint_pmids=["40000001"], preprint_dois=[PREPRINT_DOI])
+def test_a_parse_naming_no_identifier_at_all_is_refused(session):
+    parse = preprint_parse()
     with pytest.raises(NeuroStoreException) as error:
         ingest_upload({"coordinate_parse": parse})
-    assert "names no version-of-record identifier to create its base study from" in str(
-        error.value.detail
-    )
+    assert "names no identifier to create its base study from" in str(error.value.detail)
     assert session.scalar(sa.select(sa.func.count()).select_from(BaseStudy)) == 0
 
 
@@ -1091,7 +1089,7 @@ def test_a_parse_with_only_preprint_dois_finds_the_base_study_of_that_doi(sessio
     assert summary["base_study_id"] == first_seen.id
 
 
-def test_the_base_study_lookup_locks_version_of_record_ids_only(session):
+def test_the_base_study_lookup_locks_every_identifier_of_the_paper(session):
     ingest_upload(
         {"coordinate_parse": preprint_parse(pmid="12345678", preprint_pmids=["40000001"])}
     )
@@ -1101,7 +1099,8 @@ def test_the_base_study_lookup_locks_version_of_record_ids_only(session):
             "WHERE locktype = 'advisory' AND pid = pg_backend_pid()"
         )
     ).scalar()
-    assert locks == 1
+    # One per identifier, whatever its kind, held until the upload's transaction ends.
+    assert locks == 2
 
 
 def _contrast(parsed, local_id="a0", **levels):

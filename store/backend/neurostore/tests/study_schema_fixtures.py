@@ -12,7 +12,7 @@ from study_schema.jsonschema import load
 from study_schema.models.paper_parse import ParsedAnalysis
 
 from neurostore import study_schema_tools
-from neurostore.base_studies import VERSION_OF_RECORD_IDS
+from neurostore.base_studies import SCHEMES
 
 SCHEMA_VERSION = load("coordinate-parse")["version"]
 
@@ -79,7 +79,7 @@ ALL_RIGHTS_RESERVED = {"license_id": "all-rights-reserved", "determination": "as
 
 def identifiers(**ids):
     """Header identifiers with the publication_status ``ids`` give."""
-    published = any(ids.get(field) for field in VERSION_OF_RECORD_IDS)
+    published = any(ids.get(field) for field in SCHEMES)
     preprint = any(value for field, value in ids.items() if field.startswith("preprint_"))
     status = "preprint" if preprint and not published else "published"
     return {**ids, "publication_status": status}

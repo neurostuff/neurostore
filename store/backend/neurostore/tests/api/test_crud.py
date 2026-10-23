@@ -53,6 +53,8 @@ async def test_create(auth_client, user_data, endpoint, model, schema, session):
         if model is BaseStudy:
             payload["doi"] = payload["doi"] + "new"
             payload["pmid"] = payload["pmid"] + "new"
+            # An id the posted base study shares with a stored one names that one.
+            payload["pmcid"] = payload["pmcid"] + "new"
 
         resp = await auth_client.post(f"/api/{endpoint}/", data=payload)
         if resp.status_code == 422:
