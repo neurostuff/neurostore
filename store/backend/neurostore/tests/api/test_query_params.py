@@ -339,3 +339,165 @@ async def test_correlation_id_is_readable_cross_origin(auth_client, session):
     )
 
     assert "X-Request-ID" in result.headers["Access-Control-Expose-Headers"]
+
+
+@pytest.fixture
+def search_corpus(session):
+    """Four base studies mentioning "quokkaflux" three, two, one and zero times.
+
+The migrated test schema indexes name and description only (the weighted
+full-text vector on the model has no migration), so relevance is pinned by
+term frequency, which the weighted vector orders the same way.
+"""
+    rows = {
+        "title": BaseStudy(
+            name="Quokkaflux responses in cortex",
+            description="Quokkaflux is measured. Quokkaflux is large.",
+            pmid="90000001",
+            doi="10.1000/quokka.title",
+            authors="Smith J, Doe A",
+            publication="Journal of Marsupial Imaging",
+            year=2010,
+            level="group",
+        ),
+        "abstract": BaseStudy(
+            name="Plain heading",
+            description="This abstract mentions quokkaflux and quokkaflux.",
+            pmid="90000002",
+            doi="10.1000/quokka.abstract",
+            authors="Jones B",
+            publication="Neuro Letters",
+            year=2015,
+            level="group",
+        ),
+        "single": BaseStudy(
+            name="Another heading",
+            description="Mentions quokkaflux once.",
+            pmid="90000003",
+            doi="10.1000/other.single",
+            authors="Smith K",
+            publication="Neuro Letters",
+            year=2020,
+            level="group",
+        ),
+        "miss": BaseStudy(
+            name="Nothing relevant",
+            description="Cites pmid 90000002 in passing.",
+            pmid="90000004",
+            doi="10.1000/other.miss",
+            authors="Nobody N",
+            publication="Other Journal",
+            year=2021,
+            level="group",
+        ),
+    }
+    session.add_all(rows.values())
+    session.commit()
+    return rows
+
+
+async def _search(auth_client, **params):
+    resp = await auth_client.get(f"/api/base-studies/?{urlencode(params)}")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    return [r["id"] for r in body["results"]], body["metadata"]["total_count"]
+
+
+async def test_search_ranks_by_term_frequency(
+    auth_client, search_corpus
+):
+    ids, total = await _search(auth_client, search="quokkaflux")
+    expected = [search_corpus[k].id for k in ("title", "abstract", "single")]
+    assert ids == expected
+    assert total == 3
+
+
+async def test_search_ascending_reverses_relevance(auth_client, search_corpus):
+    ids, _ = await _search(auth_client, search="quokkaflux", desc="false")
+    assert ids == [search_corpus[k].id for k in ("single", "abstract", "title")]
+
+
+async def test_explicit_sort_overrides_relevance(auth_client, search_corpus):
+    ids, _ = await _search(auth_client, search="quokkaflux", sort="name", desc="false")
+    # lower(name): "another heading" < "plain heading" < "quokkaflux responses..."
+    assert ids == [search_corpus[k].id for k in ("single", "abstract", "title")]
+
+
+async def test_search_excludes_negated_term(auth_client, search_corpus):
+    ids, total = await _search(auth_client, search="quokkaflux NOT plain")
+    assert sorted(ids) == sorted(
+        [search_corpus["title"].id, search_corpus["single"].id]
+    )
+    assert total == 2
+
+
+async def test_all_digit_search_is_exact_pmid_not_text(auth_client, search_corpus):
+    # "miss" cites 90000002 in its abstract, so a text match would return it too.
+    ids, total = await _search(auth_client, search="90000002")
+    assert ids == [search_corpus["abstract"].id]
+    assert total == 1
+    # exact: a prefix of a pmid matches nothing through `search`
+    assert await _search(auth_client, search="9000000") == ([], 0)
+
+
+@pytest.mark.parametrize(
+    "param, value, expected",
+    [
+        ("name", "QUOKKAFLUX", ["title"]),
+        ("description", "QUOKKAFLUX and", ["abstract"]),
+        ("authors", "smith", ["single", "title"]),
+        ("publication", "neuro letters", ["single", "abstract"]),
+        ("doi", "quokka", ["abstract", "title"]),
+        ("pmid", "9000000", ["miss", "single", "abstract", "title"]),
+        ("pmid", "90000003", ["single"]),
+    ],
+)
+async def test_field_filters_are_case_insensitive_substring(
+    auth_client, search_corpus, param, value, expected
+):
+    ids, total = await _search(auth_client, **{param: value})
+    # created_at ties inside one transaction, so only membership is stable
+    assert sorted(ids) == sorted(search_corpus[k].id for k in expected)
+    assert total == len(expected)
+
+
+async def test_year_range_filters(auth_client, search_corpus):
+    ids, total = await _search(auth_client, year_min=2015, year_max=2020)
+    assert sorted(ids) == sorted(search_corpus[k].id for k in ("single", "abstract"))
+    assert total == 2
+
+
+async def test_search_combined_with_field_filters(auth_client, search_corpus):
+    ids, total = await _search(
+        auth_client,
+        search="quokkaflux",
+        authors="smith",
+        year_min=2015,
+    )
+    assert ids == [search_corpus["single"].id]
+    assert total == 1
+
+    ids, total = await _search(auth_client, search="quokkaflux", publication="neuro")
+    assert ids == [search_corpus[k].id for k in ("abstract", "single")]
+    assert total == 2
+
+
+async def test_search_paging_keeps_relevance_order_and_total(
+    auth_client, search_corpus
+):
+    seen = []
+    for page in (1, 2, 3, 4):
+        ids, total = await _search(
+            auth_client, search="quokkaflux", page_size=1, page=page
+        )
+        assert total == 3
+        seen.extend(ids)
+    assert seen == [search_corpus[k].id for k in ("title", "abstract", "single")]
+
+
+async def test_search_without_pagination_returns_every_match(
+    auth_client, search_corpus
+):
+    ids, total = await _search(auth_client, search="quokkaflux", paginate="false")
+    assert ids == [search_corpus[k].id for k in ("title", "abstract", "single")]
+    assert total == 3
