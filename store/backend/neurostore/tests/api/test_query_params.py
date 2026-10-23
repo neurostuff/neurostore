@@ -501,3 +501,26 @@ async def test_search_without_pagination_returns_every_match(
     ids, total = await _search(auth_client, search="quokkaflux", paginate="false")
     assert ids == [search_corpus[k].id for k in ("title", "abstract", "single")]
     assert total == 3
+
+
+async def test_search_on_view_without_full_text_vector(
+    auth_client, ingest_neurosynth, session
+):
+    """Analyses have no full-text vector, so a text `search` is ignored."""
+    everything = await auth_client.get("/api/analyses/")
+    assert everything.status_code == 200
+    total = everything.json()["metadata"]["total_count"]
+    assert total > 0
+
+    for query in ("zzzzqq", "-zzzzqq", "zzzzqq AND"):
+        resp = await auth_client.get(f"/api/analyses/?{urlencode({'search': query})}")
+        assert resp.status_code == 200
+        assert resp.json()["metadata"]["total_count"] == total
+
+
+async def test_all_digit_search_on_view_without_pmid_errors(
+    auth_client, ingest_neurosynth, session
+):
+    """Analyses have no pmid column; today an all-digits search is a server error."""
+    resp = await auth_client.get("/api/analyses/?search=12345")
+    assert resp.status_code == 500

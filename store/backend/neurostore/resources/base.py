@@ -562,8 +562,18 @@ class ListView(BaseView):
                     sae.or_(m.public == True, m.user == current_user)  # noqa E712
                 )
 
+        # Columns are resolved only for the arguments given: some views list
+        # a field or full-text field their model does not have.
+        field_filters = {
+            getattr(m, f): args[f] for f in self._search_fields if args.get(f) is not None
+        }
+        use_fulltext = args["search"] is not None and self._fulltext_fields
         q, rank_col = apply_search_predicate(
-            q, m, args, self._fulltext_fields, self._search_fields
+            q,
+            args["search"],
+            field_filters,
+            ts_vector=m._ts_vector if use_fulltext else None,
+            pmid=getattr(m, "pmid", None),
         )
 
         q = self.view_search(q, args)

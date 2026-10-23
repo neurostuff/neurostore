@@ -384,24 +384,31 @@ def pubmed_to_tsquery(query: str) -> str:
     return result
 
 
-def apply_search_predicate(q, model, args, fulltext_fields, search_fields):
-    """Narrow ``q`` by the ``search`` argument and the per-field filters.
+def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid):
+    """Narrow ``q`` by a ``search`` string and per-column ILIKE filters.
+
+    ``ts_vector`` is the full-text column to rank and match against, or None
+    when the model has none (a non-numeric ``search`` is then ignored).
+    ``pmid`` is the column an all-digits ``search`` matches exactly, or None
+    when the model has none. ``field_filters`` maps columns to the substring
+    each must contain; None values are skipped.
 
     Returns ``(q, rank_col)``; ``rank_col`` is the ts_rank column when a
     full-text search was applied, else None.
     """
-    s = args["search"]
     rank_col = None
 
     # temporary fix for pmid search
-    if s is not None and s.isdigit():
-        q = q.filter(model.pmid == s)
-    elif s is not None and fulltext_fields:
+    if search is not None and search.isdigit():
+        if pmid is None:
+            raise sa.exc.InvalidRequestError("model has no pmid column to search")
+        q = q.filter(pmid == search)
+    elif search is not None and ts_vector is not None:
         try:
-            validate_search_query(s)
+            validate_search_query(search)
         except errors.SyntaxError as e:
             abort_validation(e.args[0])
-        tsquery_string = pubmed_to_tsquery(s)
+        tsquery_string = pubmed_to_tsquery(search)
         if not tsquery_has_positive_term(tsquery_string):
             # Postgres cannot narrow a GIN index on a negation, so this
             # would be a sequential scan returning nearly the whole corpus.
@@ -410,12 +417,11 @@ def apply_search_predicate(q, model, args, fulltext_fields, search_fields):
                 "of only negations matches nearly every record."
             )
         tsquery = func.to_tsquery("english", tsquery_string)
-        rank_col = func.ts_rank(model._ts_vector, tsquery).label("rank")
-        q = q.filter(model._ts_vector.op("@@")(tsquery))
+        rank_col = func.ts_rank(ts_vector, tsquery).label("rank")
+        q = q.filter(ts_vector.op("@@")(tsquery))
 
-    for field in search_fields:
-        value = args.get(field, None)
+    for column, value in field_filters.items():
         if value is not None:
-            q = q.filter(getattr(model, field).ilike(f"%{value}%"))
+            q = q.filter(column.ilike(f"%{value}%"))
 
     return q, rank_col
