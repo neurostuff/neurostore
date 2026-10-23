@@ -7,9 +7,11 @@ import re
 import sqlalchemy as sa
 from connexion.context import context
 from psycopg2 import errors
+from sqlalchemy import func
 
 from neurostore import models, schemas
 from neurostore.database import db
+from neurostore.exceptions.utils.error_helpers import abort_validation
 from neurostore.resources.singular import singularize
 
 
@@ -380,3 +382,46 @@ def pubmed_to_tsquery(query: str) -> str:
     result = process_group(query)
 
     return result
+
+
+def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid):
+    """Narrow ``q`` by a ``search`` string and per-column ILIKE filters.
+
+    ``ts_vector`` is the full-text column to rank and match against, or None
+    when the model has none (a non-numeric ``search`` is then ignored).
+    ``pmid`` is the column an all-digits ``search`` matches exactly, or None
+    when the model has none. ``field_filters`` maps columns to the substring
+    each must contain; None values are skipped.
+
+    Returns ``(q, rank_col)``; ``rank_col`` is the ts_rank column when a
+    full-text search was applied, else None.
+    """
+    rank_col = None
+
+    # temporary fix for pmid search
+    if search is not None and search.isdigit():
+        if pmid is None:
+            raise sa.exc.InvalidRequestError("model has no pmid column to search")
+        q = q.filter(pmid == search)
+    elif search is not None and ts_vector is not None:
+        try:
+            validate_search_query(search)
+        except errors.SyntaxError as e:
+            abort_validation(e.args[0])
+        tsquery_string = pubmed_to_tsquery(search)
+        if not tsquery_has_positive_term(tsquery_string):
+            # Postgres cannot narrow a GIN index on a negation, so this
+            # would be a sequential scan returning nearly the whole corpus.
+            abort_validation(
+                "A search must include at least one term to match; a query "
+                "of only negations matches nearly every record."
+            )
+        tsquery = func.to_tsquery("english", tsquery_string)
+        rank_col = func.ts_rank(ts_vector, tsquery).label("rank")
+        q = q.filter(ts_vector.op("@@")(tsquery))
+
+    for column, value in field_filters.items():
+        if value is not None:
+            q = q.filter(column.ilike(f"%{value}%"))
+
+    return q, rank_col
