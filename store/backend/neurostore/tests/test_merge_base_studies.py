@@ -33,6 +33,7 @@ from neurostore.models import (
     BaseStudy,
     BaseStudyFlagOutbox,
     BaseStudyMetadataOutbox,
+    CorrespondingAuthorEmail,
     FieldClaim,
     Fulltext,
     Pipeline,
@@ -297,6 +298,7 @@ _SNAPSHOT_MODELS = (
     BaseStudyMetadataOutbox,
     StudysetStudy,
     AnnotationAnalysis,
+    CorrespondingAuthorEmail,
 )
 
 
@@ -604,6 +606,39 @@ def test_of_two_identical_copies_the_better_ranked_is_kept(session, pair):
     assert session.get(ReviewSource, keeper_source_id).fulltext_id == pair["fulltext"]
     assert session.get(BaseStudy, pair["keeper"]).fulltext_id == pair["fulltext"]
     assert ("fulltexts", pdf_id, "deleted", None, pair["fulltext"]) in outcome.changes
+
+
+def test_corresponding_author_emails_move_and_the_same_address_is_kept_once(session, pair):
+    """Rows are matched by their keyed hash; the record names rows and marks, never an
+    address."""
+    shared, own = "first.author@example.org", "second.author@example.org"
+    kept = CorrespondingAuthorEmail(base_study_id=pair["keeper"], email=shared, contacted=True)
+    same = CorrespondingAuthorEmail(
+        base_study_id=pair["old"], email=shared.upper(), responded=True
+    )
+    moved = CorrespondingAuthorEmail(base_study_id=pair["old"], email=own)
+    session.add_all([kept, same, moved])
+    session.commit()
+    kept_id, same_id, moved_id = kept.id, same.id, moved.id
+
+    outcome = _merge(pair)
+    session.expire_all()
+
+    held = CorrespondingAuthorEmail.query.filter_by(base_study_id=pair["keeper"]).all()
+    assert sorted(r.id for r in held) == sorted([kept_id, moved_id])
+    merged = session.get(CorrespondingAuthorEmail, kept_id)
+    assert (merged.contacted, merged.responded, merged.shared) == (True, True, False)
+    assert session.get(CorrespondingAuthorEmail, same_id) is None
+    recorded = [c[1:] for c in outcome.changes if c.table == "corresponding_author_emails"]
+    assert sorted(recorded, key=repr) == sorted(
+        [
+            (moved_id, "base_study_id", pair["old"], pair["keeper"]),
+            (same_id, "deleted", None, kept_id),
+            (kept_id, "responded", False, True),
+        ],
+        key=repr,
+    )
+    assert not any("@" in repr(c) for c in outcome.changes)
 
 
 def test_an_identical_copy_and_assignment_are_deduplicated(session, pair):
@@ -1130,7 +1165,7 @@ def test_the_merged_from_migration_goes_down_and_up_over_existing_rows(session, 
     before = rows()
     assert any(r["merged_from"] == pair["old"] for r in before)
     try:
-        service_migrations.downgrade("a3c5e7f9b1d4")
+        service_migrations.downgrade("c7e9a1b3d5f8")
         assert merged_from_column() == "absent"
         without = [{k: v for k, v in r.items() if k != "merged_from"} for r in before]
         assert rows() == without

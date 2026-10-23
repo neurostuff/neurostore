@@ -963,7 +963,8 @@ def merge_base_study(keeper, old):
 
     Its versions move to the keeper, marked ``merged_from``, with its current parse version
     made history when the keeper has one. Its pipeline results, embeddings, entities,
-    full texts and review assignments move too, but for those the keeper already holds
+    full texts, review assignments and corresponding-author emails move too, but for those
+    the keeper already holds
     (see _kept_pipeline_rows and _deduplicate). Base studies it superseded are superseded
     by the keeper, study_schema document headers naming it name the keeper, each base
     study points at its best remaining full text, and the keeper gains only the fields
@@ -1068,6 +1069,18 @@ def merge_base_study(keeper, old):
 
             # An entity's hash covers its base study.
             rehash_base_study_entities([keeper.id])
+
+    # Recorded by row id and mark only: an address is never read out of the table.
+    for row_id, kept_id, marked in corresponding_authors.move_emails(old.id, keeper.id):
+        if kept_id is None:
+            changes.append(
+                Change("corresponding_author_emails", row_id, "base_study_id", old.id, keeper.id)
+            )
+            continue
+        changes.append(Change("corresponding_author_emails", row_id, "deleted", None, kept_id))
+        changes.extend(
+            Change("corresponding_author_emails", kept_id, mark, False, True) for mark in marked
+        )
 
     for model, column in _HEADER_DOCUMENTS:
         document = getattr(model, column)
