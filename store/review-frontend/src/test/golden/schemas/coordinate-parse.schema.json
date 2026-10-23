@@ -1,5 +1,30 @@
 {
   "$defs": {
+    "Affiliation": {
+      "additionalProperties": false,
+      "description": "One affiliation an author gives on the paper: its text as printed, and the institutions it names, identified in the Research Organization Registry. One text can name several (a department of a university and a hospital), or none that the registry holds.",
+      "properties": {
+        "text": {
+          "description": "The affiliation as the paper prints it.",
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "institutions": {
+          "items": {
+            "$ref": "#/$defs/Institution"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Affiliation",
+      "type": "object"
+    },
     "AnalysisOutcome": {
       "description": "Whether the tested effect produced any finding at the threshold the source applied. Closed: the two are the only answers, and a source that does not say takes `not_reported` rather than a third value.",
       "enum": [
@@ -266,6 +291,66 @@
       "title": "AuditVerdict",
       "type": "string"
     },
+    "Author": {
+      "additionalProperties": false,
+      "description": "One author of the paper. The ids say who they are across papers; the affiliations say where they were for this one, since an author moves between institutions over a career.",
+      "properties": {
+        "name": {
+          "description": "The name as `authors_provider` gives it.",
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "orcid": {
+          "description": "The author's ORCID iD, bare, without `https://orcid.org/`.",
+          "pattern": "^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "openalex_id": {
+          "description": "OpenAlex's id for the author, bare (`A5054079188`). OpenAlex assigns it by its own disambiguation, so it can join two people or split one; an ORCID iD is the stronger id.",
+          "pattern": "^A\\d+$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "affiliations": {
+          "description": "Where the author was when they wrote this paper, as it prints each.",
+          "items": {
+            "$ref": "#/$defs/Affiliation"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "corresponding": {
+          "description": "The paper names them to correspond with. Absent when no source said who the corresponding authors are.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "emails": {
+          "description": "The email addresses the paper prints for them.",
+          "items": {
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Author",
+      "type": "object"
+    },
     "Bibliography": {
       "additionalProperties": false,
       "description": "The paper's bibliographic facts, as the metadata lookup returned them. Defined once: the parsed paper carries it, and the storage Study holds the same object as `Study.bibliography`, so nothing is copied field by field and nothing is extracted.",
@@ -301,19 +386,31 @@
           "type": "string"
         },
         "authors": {
-          "description": "Author names in published order.",
+          "description": "The paper's authors in published order, each with the ids that name them across papers, their affiliations on this paper, and whether the paper names them to correspond with.",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/Author"
           },
           "type": [
             "array",
             "null"
           ]
         },
-        "corresponding_authors": {
-          "description": "The authors the paper names to correspond with, in published order. Several when it names several. Absent when no source said who they are.",
+        "authors_provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetadataSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The source whose author list `authors` is: its names, order, ids and affiliations. It may differ from `provider`."
+        },
+        "correspondence_emails": {
+          "description": "Addresses the paper prints for correspondence that belong to no author in `authors`, such as a note's email whose name could not be read. An address paired with an author is that author's `emails`, never here.",
           "items": {
-            "$ref": "#/$defs/CorrespondingAuthor"
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "type": "string"
           },
           "type": [
             "array",
@@ -850,121 +947,6 @@
       "title": "CorrectionMethod",
       "type": "string"
     },
-    "CorrespondingAuthor": {
-      "additionalProperties": false,
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "name": {
-                "not": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    }
-                  ]
-                }
-              }
-            },
-            "required": [
-              "name"
-            ]
-          },
-          "then": {
-            "properties": {
-              "email": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  }
-                ]
-              }
-            },
-            "required": [
-              "email"
-            ]
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "email": {
-                "not": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    }
-                  ]
-                }
-              }
-            },
-            "required": [
-              "email"
-            ]
-          },
-          "then": {
-            "properties": {
-              "name": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  }
-                ]
-              }
-            },
-            "required": [
-              "name"
-            ]
-          }
-        }
-      ],
-      "anyOf": [
-        {
-          "properties": {
-            "name": {}
-          },
-          "required": [
-            "name"
-          ]
-        },
-        {
-          "properties": {
-            "email": {}
-          },
-          "required": [
-            "email"
-          ]
-        }
-      ],
-      "description": "One author the paper names to correspond with. A name with no email is kept, and so is an email the paper prints without saying whose it is; one of the two is always there.",
-      "properties": {
-        "name": {
-          "description": "The author's name, as `authors` spells it when it lists them.",
-          "pattern": "\\S",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "email": {
-          "description": "The email address the paper prints for them.",
-          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "stated_by": {
-          "$ref": "#/$defs/MetadataSource",
-          "description": "The source that named them: a held copy (`jats`, `elsevier`, `pdf`, or the `publisher_page` ACE read), `pubmed`, whose affiliations carry the email, or `openalex`, which names them without one."
-        }
-      },
-      "required": [
-        "stated_by"
-      ],
-      "title": "CorrespondingAuthor",
-      "type": "object"
-    },
     "DecompositionMethod": {
       "description": "The algorithm that produced the components or latent variables, which decides what their values and signs mean. Independent of `second_block`, since one block structure is reachable by several algorithms: a brain-behaviour covariance can be decomposed by PLS or by CCA. Open vocabulary: write the source's own wording in the field when nothing here fits.",
       "enum": [
@@ -1173,6 +1155,37 @@
         "fingerprint"
       ],
       "title": "InputRef",
+      "type": "object"
+    },
+    "Institution": {
+      "additionalProperties": false,
+      "description": "An organization in the Research Organization Registry (https://ror.org).",
+      "properties": {
+        "ror": {
+          "description": "The ROR id, bare, without `https://ror.org/`.",
+          "pattern": "^0[a-z0-9]{6}[0-9]{2}$",
+          "type": "string"
+        },
+        "name": {
+          "description": "The registry's name for it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "country": {
+          "description": "ISO 3166-1 alpha-2 code of the country it is in.",
+          "pattern": "^[A-Z]{2}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ror"
+      ],
+      "title": "Institution",
       "type": "object"
     },
     "License": {
@@ -3003,5 +3016,5 @@
   ],
   "title": "neuroimaging-paper-parse",
   "type": "object",
-  "version": "0.9.0"
+  "version": "0.10.0"
 }
