@@ -3,7 +3,7 @@ universities each paper gives them, and their correspondence addresses."""
 
 import pytest
 import sqlalchemy as sa
-import sqlalchemy.orm
+from sqlalchemy.orm import selectinload
 
 from neurostore import authors, corresponding_authors
 from neurostore.database import db
@@ -138,7 +138,7 @@ def test_uploading_a_paper_again_keeps_its_authors_and_their_marks(session):
 def test_an_author_the_paper_no_longer_lists_is_dropped_when_on_no_other_paper(session):
     summary = _upload("1001", _person("J. Smith"), _person("Ada Lovelace", ORCID))
     _upload("1001", _person("Ada Lovelace", ORCID))
-    (row,) = _listed(summary["base_study_id"])
+    assert len(_listed(summary["base_study_id"])) == 1
     assert db.session.scalars(sa.select(Author.name)).all() == ["Ada Lovelace"]
 
 
@@ -203,17 +203,17 @@ def test_a_base_study_s_and_an_author_s_universities_load_when_asked_for(session
     _upload("1002", _person("Ada Lovelace", ORCID, None, _at("Stanford", STANFORD)))
     base_study = db.session.scalar(
         sa.select(BaseStudy).where(BaseStudy.id == first["base_study_id"])
-        .options(sa.orm.selectinload(BaseStudy.universities))
+        .options(selectinload(BaseStudy.universities))
     )
     assert [u.ror for u in base_study.universities] == ["00hj54h04"]
     person = db.session.scalar(
-        sa.select(Author).options(sa.orm.selectinload(Author.universities)))
+        sa.select(Author).options(selectinload(Author.universities)))
     assert sorted(u.ror for u in person.universities) == ["00f54p054", "00hj54h04"]
 
 
 def test_an_address_in_an_affiliation_s_text_is_not_stored_with_it(session):
     summary = _upload("1001", _person("Ada Lovelace", ORCID, None,
                                       _at("UT Austin. Electronic address: ada@example.org.", UT)))
-    (row,) = _listed(summary["base_study_id"])
+    assert len(_listed(summary["base_study_id"])) == 1
     texts = db.session.scalars(sa.select(BaseStudyAuthorAffiliation.text)).all()
     assert texts and all("@" not in text for text in texts)
