@@ -15,6 +15,10 @@ class Role(BaseMixin, db.Model):
     name = db.Column(db.Text, unique=True)
     description = db.Column(db.Text)
 
+    def __str__(self):
+        """The label the admin's forms and lists show for a role."""
+        return self.name or self.id
+
 
 class User(BaseMixin, db.Model):
     __tablename__ = "users"
