@@ -274,6 +274,16 @@
             "null"
           ]
         },
+        "corresponding_authors": {
+          "description": "The authors the paper names to correspond with, in published order. Several when it names several. Absent when no source said who they are.",
+          "items": {
+            "$ref": "#/$defs/CorrespondingAuthor"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "journal": {
           "type": [
             "string",
@@ -804,6 +814,121 @@
       "title": "CorrectionMethod",
       "type": "string"
     },
+    "CorrespondingAuthor": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "then": {
+            "properties": {
+              "email": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "email"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "email": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "email"
+            ]
+          },
+          "then": {
+            "properties": {
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        }
+      ],
+      "anyOf": [
+        {
+          "properties": {
+            "name": {}
+          },
+          "required": [
+            "name"
+          ]
+        },
+        {
+          "properties": {
+            "email": {}
+          },
+          "required": [
+            "email"
+          ]
+        }
+      ],
+      "description": "One author the paper names to correspond with. A name with no email is kept, and so is an email the paper prints without saying whose it is; one of the two is always there.",
+      "properties": {
+        "name": {
+          "description": "The author's name, as `authors` spells it when it lists them.",
+          "pattern": "\\S",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "email": {
+          "description": "The email address the paper prints for them.",
+          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stated_by": {
+          "$ref": "#/$defs/MetadataSource",
+          "description": "The source that named them: a held copy (`jats`, `elsevier`, `pdf`, or the `publisher_page` ACE read), `pubmed`, whose affiliations carry the email, or `openalex`, which names them without one."
+        }
+      },
+      "required": [
+        "stated_by"
+      ],
+      "title": "CorrespondingAuthor",
+      "type": "object"
+    },
     "DecompositionMethod": {
       "description": "The algorithm that produced the components or latent variables, which decides what their values and signs mean. Independent of `second_block`, since one block structure is reachable by several algorithms: a brain-behaviour covariance can be decomposed by PLS or by CCA. Open vocabulary: write the source's own wording in the field when nothing here fits.",
       "enum": [
@@ -1203,6 +1328,7 @@
         "jats",
         "elsevier",
         "pmc_cloud",
+        "pdf",
         "publisher_page",
         "pubmed",
         "crossref",

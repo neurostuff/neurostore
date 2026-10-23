@@ -101,6 +101,7 @@ from neurostore.models import (
     StudyEntity,
     Table,
 )
+from neurostore import corresponding_authors
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.stored_parses import stored_parse, stored_parse_result
 from neurostore.study_schema_tools import (
@@ -216,6 +217,7 @@ def ingest_upload(body, user=None):
     if record is not None:
         _check_stable_ids(base_study, record)
     _set_retraction(base_study, parsed_paper)
+    corresponding_authors.add_emails(base_study.id, corresponding_authors.emails_in(parsed_paper))
 
     summary = {
         "kind": kind,

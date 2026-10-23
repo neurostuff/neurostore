@@ -20,6 +20,7 @@ from neurostore.analysis_levels import (
     canonicalize_analysis_level,
     is_non_group_analysis_level,
 )
+from neurostore import corresponding_authors
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type
 from neurostore.models import (
@@ -1282,6 +1283,7 @@ def ingest_neurosynth(max_rows=None):
                             new_attr = getattr(ab, col)
                             setattr(source_base_study, col, source_attr or new_attr)
                         source_base_study.versions.extend(ab.versions)
+                        corresponding_authors.move_emails(ab.id, source_base_study.id)
                         # delete the extraneous record
                         db.session.execute(
                             sa.delete(BaseStudyFlagOutbox).where(
@@ -1597,6 +1599,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                 new_attr = getattr(ab, col)
                 setattr(source_base_study, col, source_attr or new_attr)
             source_base_study.versions.extend(ab.versions)
+            corresponding_authors.move_emails(ab.id, source_base_study.id)
             db.session.execute(
                 sa.delete(BaseStudyFlagOutbox).where(
                     BaseStudyFlagOutbox.base_study_id == ab.id
