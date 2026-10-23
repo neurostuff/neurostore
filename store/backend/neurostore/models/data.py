@@ -16,6 +16,8 @@ from study_schema.keys import normalize_name
 
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
+from neurostore import encryption
+from neurostore.encryption import EncryptedText
 from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
 from neurostore.models.migration_types import TSVector, VectorType
 from neurostore.utils import build_jsonpath, parse_json_filter
@@ -280,6 +282,10 @@ class BaseStudy(BaseMixin, db.Model):
         foreign_keys=[superseded_by],
         backref=backref("supersedes", passive_deletes=True),
     )
+    # Never loaded by accident: reading them is a query that names them.
+    corresponding_author_emails = relationship(
+        "CorrespondingAuthorEmail", lazy="raise", passive_deletes=True
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
@@ -519,6 +525,41 @@ class BaseStudyMetadataOutbox(db.Model):
         onupdate=func.now(),
         index=True,
     )
+
+
+class CorrespondingAuthorEmail(BaseMixin, db.Model):
+    """An email a paper prints for one of its corresponding authors, and whether we have
+    written to them, heard back, and been sent their data.
+
+    Never served: no schema or endpoint names this table, and the address is stored
+    encrypted (`neurostore.encryption`), found by its keyed hash `email_index`.
+    """
+
+    __tablename__ = "corresponding_author_emails"
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    email = db.Column(EncryptedText, nullable=False)
+    email_index = db.Column(db.Text, nullable=False)
+    contacted = db.Column(db.Boolean, nullable=False, default=False, server_default=sa.false())
+    responded = db.Column(db.Boolean, nullable=False, default=False, server_default=sa.false())
+    shared = db.Column(db.Boolean, nullable=False, default=False, server_default=sa.false())
+
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "base_study_id",
+            "email_index",
+            name="uq_corresponding_author_emails_base_study_id_email_index",
+        ),
+    )
+
+    @validates("email")
+    def _index(self, key, value):
+        self.email_index = encryption.email_index(value)
+        return value.strip()
 
 
 class Study(BaseMixin, db.Model):

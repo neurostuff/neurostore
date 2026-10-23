@@ -44,8 +44,9 @@ dependencies = [
     "tenacity~=9.2",
     "sentry-sdk~=2.72",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
-    # entity hashes read, pinned to study_schema main.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@7c0425a35c6ae1c3f7754cd97a4d8e2f35ec5530",
+    # entity hashes read. Pinned to neurostuff/study_schema#52 (corresponding authors);
+    # repin to main once it merges.
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@b09c3de50371983d7e833fb8152d72217b957a1a",
 ]
 
 [tool.setuptools.packages.find]

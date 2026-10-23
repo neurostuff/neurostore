@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import OperationalError
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from neurostore import corresponding_authors
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
 from neurostore.models import (
@@ -742,6 +743,8 @@ def _merge_duplicate_into_primary(primary, duplicate):
         .where(PipelineEmbedding.base_study_id == duplicate.id)
         .values(base_study_id=primary.id)
     )
+
+    corresponding_authors.move_emails(duplicate.id, primary.id)
 
     db.session.execute(
         sa.delete(BaseStudyFlagOutbox).where(
