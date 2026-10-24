@@ -16,9 +16,12 @@ import json
 import logging
 import os
 import re
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 import sqlalchemy as sa
+import vcr
+from vcr.filters import remove_query_parameters
 from click.testing import CliRunner
 
 from neurostore import cli, service_migrations
@@ -60,6 +63,7 @@ from neurostore.scripts.merge_base_studies import (
 from neurostore.services.base_study_metadata_enrichment import (
     _apply_base_study_enrichment,
     _GatheredEnrichment,
+    lookup_ids_pubmed,
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.neurostore_studyset_releases import (
@@ -1144,6 +1148,78 @@ def test_the_worker_takes_the_doi_it_looks_up_for_a_pmid(session, app):
 
     assert session.get(BaseStudy, base_study.id).doi == LOOKED_UP_DOI
     assert BaseStudyMetadataOutbox.query.count() == 0
+
+
+@pytest.mark.vcr
+def test_a_paper_with_a_doi_and_a_pmid_gets_its_pmcid(app):
+    """pmid 25775530 and its doi are both known, so the lookup must not send them together."""
+    found = lookup_ids_pubmed(
+        {"pmid": "25775530", "doi": "10.1073/pnas.1417392112"},
+        settings=app.config,
+        logger=app.logger,
+        email="placeholder@example.com",
+    )
+
+    assert found == {"pmid": "25775530", "doi": "10.1073/pnas.1417392112", "pmcid": "PMC4378394"}
+
+
+CASSETTES = os.path.join(os.path.dirname(__file__), "cassettes")
+SENT_PARAMETERS = ["api_key", "email", "tool", "mailto"]
+
+
+def _lookup_sending(cassette, identifiers, app, **config):
+    """Replay a cassette and return what the lookup found and the query strings it sent,
+    read before the secrets are filtered off, as the recorder sees them. The recorder runs
+    its hook on the stored requests when the cassette loads and again on each request, so
+    only a request that carries the tool name, which every lookup sends, is a sent one."""
+    sent = {}
+
+    def keep_then_filter(request):
+        query = parse_qs(urlparse(request.uri).query, keep_blank_values=True)
+        if "tool" in query:
+            sent.setdefault(tuple(query["ids"]), query)
+        return remove_query_parameters(request, SENT_PARAMETERS)
+
+    recorder = vcr.VCR(
+        cassette_library_dir=CASSETTES,
+        record_mode="once",
+        before_record_request=keep_then_filter,
+        decode_compressed_response=True,
+        before_record_response=_scrub,
+    )
+    with recorder.use_cassette(cassette + ".yaml"):
+        found = lookup_ids_pubmed(identifiers, settings=app.config, logger=app.logger, **config)
+    return found, list(sent.values())
+
+
+def test_the_lookup_sends_one_id_per_request_and_secrets_only_when_configured(app):
+    found, sent = _lookup_sending(
+        "test_a_paper_with_a_doi_and_a_pmid_gets_its_pmcid",
+        {"pmid": "25775530", "doi": "10.1073/pnas.1417392112"},
+        app,
+    )
+
+    assert found["pmcid"] == "PMC4378394"
+    assert [q["ids"] for q in sent] == [["25775530"]]
+    assert sent[0]["tool"] == ["neurostore"]
+    assert "email" not in sent[0] and "api_key" not in sent[0]
+
+
+def test_an_id_the_converter_does_not_know_falls_through_to_the_next(app):
+    """pmid 12667850 is not in PMC; the doi asked next is. The pair is made up to
+    exercise the fall-through, and each request carries one id."""
+    found, sent = _lookup_sending(
+        "test_an_unknown_id_falls_through_to_the_next",
+        {"pmid": "12667850", "doi": "10.1073/pnas.1417392112"},
+        app,
+        email="placeholder@example.com",
+        api_key="placeholder-key",
+    )
+
+    assert found == {"pmid": "25775530", "doi": "10.1073/pnas.1417392112", "pmcid": "PMC4378394"}
+    assert [q["ids"] for q in sent] == [["12667850"], ["10.1073/pnas.1417392112"]]
+    assert all(q["email"] == ["placeholder@example.com"] for q in sent)
+    assert all(q["api_key"] == ["placeholder-key"] for q in sent)
 
 
 def test_the_merged_from_migration_goes_down_and_up_over_existing_rows(session, pair):
