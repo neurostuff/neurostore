@@ -2,7 +2,7 @@ from sqlalchemy.orm import defer, raiseload, selectinload
 from webargs import fields
 
 from neurostore.exceptions.utils.error_helpers import abort_validation
-from neurostore.models import Image
+from neurostore.models import Analysis, Image
 from neurostore.schemas import BooleanOrString
 
 LIST_CLONE_ARGS = {
@@ -26,6 +26,13 @@ IMAGE_DETAIL_ARGS = {
     "image_metadata": fields.Boolean(load_default=False),
     "image_value_summary": fields.Boolean(load_default=False),
 }
+
+
+def filter_by_analysis_name(q, model, name):
+    """Keep the rows of ``model`` (image or point) whose analysis name contains ``name``."""
+    if name:
+        q = q.filter(model.analysis.has(Analysis.name.ilike(f"%{name}%")))
+    return q
 
 
 def image_detail_options(args):

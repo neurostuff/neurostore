@@ -13,7 +13,10 @@ from neurostore.base_studies import (
 )
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import abort_unprocessable
+from neurostore.exceptions.utils.error_helpers import (
+    abort_unprocessable,
+    abort_validation,
+)
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
@@ -41,7 +44,7 @@ from neurostore.resources.data_views.common import (
     image_detail_options,
 )
 from neurostore.resources.mutation_core import DefaultMutationPolicy
-from neurostore.resources.utils import view_maker
+from neurostore.resources.utils import sortable_columns, view_maker
 
 
 class StudyMutationPolicy(DefaultMutationPolicy):
@@ -281,6 +284,10 @@ class StudiesView(ObjectView, ListView):
             "doi" if isinstance(unique_col, bool) and unique_col else unique_col
         )
         if unique_col:
+            if unique_col not in sortable_columns(self._model):
+                abort_validation(
+                    f"Cannot list unique studies by {unique_col!r}: not a field of a study."
+                )
             subquery = q.distinct(getattr(self._model, unique_col)).subquery()
             q = q.join(
                 subquery,
