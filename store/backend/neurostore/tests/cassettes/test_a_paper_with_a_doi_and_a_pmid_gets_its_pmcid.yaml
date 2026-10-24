@@ -35,7 +35,7 @@ interactions:
       allow:
       - GET, HEAD, OPTIONS
       content-length:
-      - '419'
+      - '387'
       content-type:
       - application/json
       cross-origin-opener-policy:

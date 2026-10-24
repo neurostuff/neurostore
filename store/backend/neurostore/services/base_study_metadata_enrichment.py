@@ -361,23 +361,24 @@ def lookup_ids_semantic_scholar(identifiers, *, settings, logger, api_key=None):
 def lookup_ids_pubmed(
     identifiers, *, settings, logger, email=None, api_key=None, tool="neurostore"
 ):
-    # The converter rejects a request that mixes id types, and answers every id of a paper
-    # with the whole set, so one known id is enough.
-    value = next(
-        (
-            known
-            for known in (
-                _normalize_pmid(identifiers.get("pmid")),
-                _normalize_doi(identifiers.get("doi")),
-                _normalize_pmcid(identifiers.get("pmcid")),
-            )
-            if known
-        ),
-        None,
-    )
-    if not value:
-        return {}
+    # The converter rejects a request that mixes id types, so each known id is asked on
+    # its own, until one is found in PMC.
+    for value in (
+        _normalize_pmid(identifiers.get("pmid")),
+        _normalize_doi(identifiers.get("doi")),
+        _normalize_pmcid(identifiers.get("pmcid")),
+    ):
+        if not value:
+            continue
+        found = _convert_id(
+            value, settings=settings, logger=logger, email=email, api_key=api_key, tool=tool
+        )
+        if found:
+            return found
+    return {}
 
+
+def _convert_id(value, *, settings, logger, email, api_key, tool):
     params = {
         "ids": value,
         "format": "json",
