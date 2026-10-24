@@ -1,7 +1,5 @@
-import string
-
 import sqlalchemy.sql.expression as sae
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import raiseload, selectinload
 from study_schema.models.paper_parse import CoordinateRole
 from webargs import fields, validate
@@ -67,36 +65,28 @@ class StudyMutationPolicy(DefaultMutationPolicy):
         identifiers = article_identifiers(
             {"doi": record.doi, "pmid": record.pmid, "pmcid": record.pmcid}
         )
-        base_study = None
+        if not identifiers:
+            self.context.record = record
+            return
+
         with db.session.no_autoflush:
-            if identifiers:
-                lock_identifiers(db.session, identifiers)
-                held = held_by(db.session, identifiers)
-                base_study_id = resolve(identifiers, held)
-                if base_study_id is not None:
-                    base_study = db.session.get(BaseStudy, base_study_id)
-                else:
-                    base_study = BaseStudy(
-                        name=record.name,
-                        description=record.description,
-                        publication=record.publication,
-                        year=record.year,
-                        authors=record.authors,
-                        metadata_=record.metadata_,
-                        level=record.level if record.level else "group",
-                    )
-                    db.session.add(base_study)
-                attach_identifiers(db.session, base_study, identifiers, held, source="post")
-            elif record.name:
-                name_search = func.regexp_replace(
-                    record.name, r"[" + string.punctuation + "]", "", "g"
+            lock_identifiers(db.session, identifiers)
+            held = held_by(db.session, identifiers)
+            base_study_id = resolve(identifiers, held)
+            if base_study_id is not None:
+                base_study = db.session.get(BaseStudy, base_study_id)
+            else:
+                base_study = BaseStudy(
+                    name=record.name,
+                    description=record.description,
+                    publication=record.publication,
+                    year=record.year,
+                    authors=record.authors,
+                    metadata_=record.metadata_,
+                    level=record.level if record.level else "group",
                 )
-                base_study = BaseStudy.query.filter(
-                    BaseStudy.name.ilike(f"%{name_search}%")
-                ).first()
-            if base_study is None:
-                self.context.record = record
-                return
+                db.session.add(base_study)
+            attach_identifiers(db.session, base_study, identifiers, held, source="post")
 
         record.base_study = base_study
         self.context.record = record

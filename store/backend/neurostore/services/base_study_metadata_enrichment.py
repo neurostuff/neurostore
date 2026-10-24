@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import re
 import threading
 import time
@@ -45,6 +46,8 @@ from neurostore.base_studies import (
 )
 from neurostore.resources.common import merge_unique_ids, normalize_ids
 from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
+
+logger = logging.getLogger(__name__)
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
 METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_oa")
@@ -1317,7 +1320,10 @@ def merge_duplicates(primary, evidence):
             refused_ids.update({keeper.id, old.id} - {primary.id})
             return None
 
-    while True:
+    # Each pass merges or refuses at least one base study, so the passes are bounded by the
+    # base studies holding the evidence; a pass that cannot make progress must not loop.
+    passes = len(_active_duplicates(primary, evidence)) + 1
+    for _ in range(passes + 1):
         duplicates = [d for d in _active_duplicates(primary, evidence) if d.id not in refused_ids]
         if not duplicates:
             break
@@ -1331,6 +1337,12 @@ def merge_duplicates(primary, evidence):
                 cache_ids = merged
                 if other.id == primary.id:
                     primary = keeper
+    else:
+        logger.warning(
+            "base-study merges of %s stopped after %s passes with duplicates left",
+            primary.id,
+            passes,
+        )
 
     return primary, cache_ids, refused
 

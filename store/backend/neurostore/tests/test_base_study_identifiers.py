@@ -1106,6 +1106,47 @@ def test_the_plan_keeps_the_base_study_in_more_studysets_not_the_older(
     ]
 
 
+def test_a_merge_pass_that_cannot_make_progress_stops_and_says_so(session, caplog, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as service
+
+    primary = _base_study(session, "primary", created=1, pmid="1")
+    _base_study(session, "duplicate", created=2, doi=DOI)
+    # A merge that changes nothing leaves the duplicate holding the id, pass after pass.
+    monkeypatch.setattr(
+        service,
+        "merge_base_study",
+        lambda keeper, old: service.BaseStudyMerge(
+            cache_ids={"base-studies": set(), "studies": set()}, changes=[]
+        ),
+    )
+
+    with caplog.at_level(logging.WARNING, logger=service.__name__):
+        survivor, _, refused = service.merge_duplicates(
+            session.get(BaseStudy, primary.id), {"doi": DOI}
+        )
+
+    assert survivor.id == primary.id and refused == []
+    assert "stopped after" in " ".join(r.getMessage() for r in caplog.records)
+
+
+def test_ids_added_to_a_base_study_are_read_again_by_the_next_dump(session):
+    from neurostore.base_studies import attach_identifiers
+
+    base_study = _base_study(session, "paper", doi=DOI)
+    session.refresh(base_study, ["identifiers"])
+    assert base_study.preprint_pmids == []
+
+    attach_identifiers(
+        session,
+        base_study,
+        article_identifiers({"preprint_pmids": ["40000001"]}),
+        {},
+        source="test",
+    )
+
+    assert base_study.preprint_pmids == ["40000001"]
+
+
 # --- merge candidates -----------------------------------------------------------------
 
 
