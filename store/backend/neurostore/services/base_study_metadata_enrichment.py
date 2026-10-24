@@ -250,7 +250,7 @@ def _provider_rps_for_request(settings, url, kwargs):
         return None, None
 
     if "ncbi.nlm.nih.gov" in url and (
-        "/pmc/utils/idconv/" in url or "/entrez/eutils/" in url
+        "/tools/idconv/" in url or "/entrez/eutils/" in url
     ):
         has_api_key = bool(params.get("api_key"))
         config_key = (
@@ -361,20 +361,25 @@ def lookup_ids_semantic_scholar(identifiers, *, settings, logger, api_key=None):
 def lookup_ids_pubmed(
     identifiers, *, settings, logger, email=None, api_key=None, tool="neurostore"
 ):
-    id_values = []
-    for value in (
-        _normalize_pmid(identifiers.get("pmid")),
-        _normalize_doi(identifiers.get("doi")),
-        _normalize_pmcid(identifiers.get("pmcid")),
-    ):
-        if value:
-            id_values.append(value)
-
-    if not id_values:
+    # The converter rejects a request that mixes id types, and answers every id of a paper
+    # with the whole set, so one known id is enough.
+    value = next(
+        (
+            known
+            for known in (
+                _normalize_pmid(identifiers.get("pmid")),
+                _normalize_doi(identifiers.get("doi")),
+                _normalize_pmcid(identifiers.get("pmcid")),
+            )
+            if known
+        ),
+        None,
+    )
+    if not value:
         return {}
 
     params = {
-        "ids": ",".join(sorted(set(id_values))),
+        "ids": value,
         "format": "json",
         "versions": "no",
         "tool": tool or "neurostore",
@@ -388,7 +393,7 @@ def lookup_ids_pubmed(
         response = _request_with_retry(
             settings,
             "GET",
-            "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+            "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/",
             params=params,
             timeout=_request_timeout(settings),
         )

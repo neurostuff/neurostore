@@ -60,6 +60,7 @@ from neurostore.scripts.merge_base_studies import (
 from neurostore.services.base_study_metadata_enrichment import (
     _apply_base_study_enrichment,
     _GatheredEnrichment,
+    lookup_ids_pubmed,
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.neurostore_studyset_releases import (
@@ -1144,6 +1145,19 @@ def test_the_worker_takes_the_doi_it_looks_up_for_a_pmid(session, app):
 
     assert session.get(BaseStudy, base_study.id).doi == LOOKED_UP_DOI
     assert BaseStudyMetadataOutbox.query.count() == 0
+
+
+@pytest.mark.vcr
+def test_a_paper_with_a_doi_and_a_pmid_gets_its_pmcid(app):
+    """pmid 25775530 and its doi are both known, so the lookup must not send them together."""
+    found = lookup_ids_pubmed(
+        {"pmid": "25775530", "doi": "10.1073/pnas.1417392112"},
+        settings=app.config,
+        logger=app.logger,
+        email="placeholder@example.com",
+    )
+
+    assert found == {"pmid": "25775530", "doi": "10.1073/pnas.1417392112", "pmcid": "PMC4378394"}
 
 
 def test_the_merged_from_migration_goes_down_and_up_over_existing_rows(session, pair):
