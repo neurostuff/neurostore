@@ -6,12 +6,15 @@ import re
 
 import sqlalchemy as sa
 from connexion.context import context
+from pgvector.sqlalchemy import Vector
 from psycopg2 import errors
 from sqlalchemy import func
 
 from neurostore import models, schemas
+from neurostore.encryption import EncryptedText
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_validation
+from neurostore.models.migration_types import TSVector
 from neurostore.resources.singular import singularize
 
 
@@ -382,6 +385,22 @@ def pubmed_to_tsquery(query: str) -> str:
     result = process_group(query)
 
     return result
+
+
+# Columns with no meaningful order, and the legacy full-text columns, which are
+# large enough that sorting on them would be a scan of the whole text.
+_UNSORTABLE_TYPES = (sa.JSON, TSVector, Vector, EncryptedText)
+_UNSORTABLE_NAMES = {"ace_fulltext", "pubget_fulltext"}
+
+
+def sortable_columns(model):
+    """Names of the columns of ``model`` a client may sort (or take distinct values) by."""
+    return {
+        attr.key
+        for attr in model.__mapper__.column_attrs
+        if not isinstance(attr.columns[0].type, _UNSORTABLE_TYPES)
+        and attr.key not in _UNSORTABLE_NAMES
+    }
 
 
 def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid_match):

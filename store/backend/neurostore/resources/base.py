@@ -44,6 +44,7 @@ from neurostore.resources.utils import (
     apply_search_predicate,
     get_current_user,
     is_user_admin,
+    sortable_columns,
 )
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
@@ -603,7 +604,7 @@ class ListView(BaseView):
         else:
             # Use user-specified sort column.
             # lower() is text-only; integers, booleans, and timestamps sort as-is.
-            if sort_col not in m.__mapper__.column_attrs:
+            if sort_col not in sortable_columns(m):
                 abort_validation(f"Cannot sort by {sort_col!r}: not a field of this resource")
             attr = getattr(m, sort_col)
             if isinstance(getattr(attr, "type", None), sa.String):

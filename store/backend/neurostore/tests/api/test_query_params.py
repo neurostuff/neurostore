@@ -682,3 +682,21 @@ def test_search_is_advertised_only_where_the_view_can_search(path, advertised, v
         view().pmid_match(view._model, "1") is not None
     )
     assert ("search" in advertised) == can_search
+
+
+@pytest.mark.parametrize(
+    "path,field",
+    [
+        ("base-studies", "ace_fulltext"),
+        ("base-studies", "pubget_fulltext"),
+        ("base-studies", "_ts_vector"),
+        ("base-studies", "metadata_"),
+        ("studies", "metadata_"),
+    ],
+)
+async def test_sort_by_a_large_or_internal_field_is_refused(
+    path, field, auth_client, ingest_neurosynth, session
+):
+    resp = await auth_client.get(f"/api/{path}/?sort={field}")
+    assert resp.status_code == 400
+    assert field in resp.json()["detail"]
