@@ -390,8 +390,9 @@ def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid_match):
     ``ts_vector`` is the full-text column to rank and match against, or None
     when the model has none (a non-numeric ``search`` is then ignored).
     ``pmid_match`` is the clause an all-digits ``search`` must satisfy, or None
-    when the model has no pmid (such a search is then ignored). ``field_filters`` maps columns to the substring
-    each must contain; None values are skipped.
+    when the model has no pmid (such a search is then ignored).
+    ``field_filters`` maps columns to the substring each must contain; None
+    values are skipped.
 
     Returns ``(q, rank_col)``; ``rank_col`` is the ts_rank column when a
     full-text search was applied, else None.
