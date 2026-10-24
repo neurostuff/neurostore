@@ -552,3 +552,133 @@ async def test_base_studies_unknown_filter_does_not_error(
     """Base studies have no source columns; the parameters are not filters."""
     resp = await auth_client.get(f"/api/base-studies/?{param}")
     assert resp.status_code == 200
+
+
+@pytest.mark.parametrize("resource", ["images", "points"])
+async def test_filter_by_analysis_name(resource, auth_client, session):
+    """The name is the analysis's own: the image or point is found through its analysis."""
+    from neurostore.models import Image, Point, User
+
+    user = User.query.filter_by(external_id=auth_client.username).first()
+
+    def row(analysis_name):
+        if resource == "images":
+            return Analysis(
+                name=analysis_name,
+                user=user,
+                images=[Image(filename=analysis_name, url="u", user=user)],
+            )
+        return Analysis(
+            name=analysis_name,
+            user=user,
+            points=[Point(x=0, y=0, z=0, user=user)],
+        )
+
+    study = Study(
+        name="s", user=user, analyses=[row("fear conditioning"), row("reward task")]
+    )
+    session.add(study)
+    session.commit()
+    by_name = {a.name: a.id for a in study.analyses}
+
+    resp = await auth_client.get(f"/api/{resource}/?analysis_name=FEAR")
+    assert resp.status_code == 200
+    assert [r["analysis"] for r in resp.json()["results"]] == [
+        by_name["fear conditioning"]
+    ]
+
+
+async def test_sort_by_an_unknown_field_is_refused(
+    auth_client, ingest_neurosynth, session
+):
+    resp = await auth_client.get("/api/studies/?sort=nope")
+    assert resp.status_code == 400
+    assert "nope" in resp.json()["detail"]
+
+
+async def test_unique_by_an_unknown_field_is_refused(
+    auth_client, ingest_neurosynth, session
+):
+    resp = await auth_client.get("/api/studies/?unique=nope")
+    assert resp.status_code == 400
+    assert "nope" in resp.json()["detail"]
+
+
+async def test_user_id_is_not_a_parameter_of_a_resource_without_owners(
+    auth_client, session
+):
+    """Users have no user_id column, so the parameter is dropped like any unknown one."""
+    resp = await auth_client.get("/api/users/?user_id=nobody")
+    assert resp.status_code == 200
+    assert resp.json()["metadata"]["total_count"] >= 1
+
+
+def _list_endpoints():
+    """Each list path in the spec: the query parameters it advertises and its view."""
+    from importlib import import_module
+    from pathlib import Path
+
+    import yaml
+
+    import neurostore
+    from neurostore.resources import pipeline, users  # noqa: F401
+    from neurostore.resources.base import ListView
+    from neurostore.resources.data_views import DATA_VIEW_MODULES
+
+    for module in DATA_VIEW_MODULES.values():
+        import_module(module)
+
+    spec = yaml.safe_load(
+        (
+            Path(neurostore.__file__).parent / "openapi" / "neurostore-openapi.yml"
+        ).read_text()
+    )
+    components = spec["components"]["parameters"]
+    views = {}
+    pending = list(ListView.__subclasses__())
+    while pending:
+        view = pending.pop()
+        pending.extend(view.__subclasses__())
+        model = getattr(view, "_model", None)
+        if model is not None:
+            views[model.__tablename__.replace("_", "-")] = view
+
+    endpoints = []
+    for path, item in spec["paths"].items():
+        name = path.strip("/")
+        if "get" not in item or "/" in name or "{" in name or name == "review":
+            continue
+        advertised = {
+            components[p["$ref"].rsplit("/", 1)[1]]["name"] if "$ref" in p else p["name"]
+            for p in item["get"].get("parameters", [])
+            if "in" not in p or p["in"] == "query"
+        }
+        endpoints.append((name, advertised, views.get(name)))
+    return sorted(endpoints, key=lambda endpoint: endpoint[0])
+
+
+@pytest.mark.parametrize("path,advertised,view", _list_endpoints())
+async def test_no_list_query_parameter_is_a_server_error(
+    path, advertised, view, auth_client, ingest_neurosynth, session
+):
+    """A query parameter is the caller's input: it is served or refused, never a 500."""
+    declared = set(view()._user_args) if view else set()
+    # semantic_search embeds the query through an external service
+    params = (advertised | declared | {"search"}) - {"semantic_search"}
+    errors = []
+    for param in sorted(params):
+        for value in ("a", "123"):
+            resp = await auth_client.get(f"/api/{path}/?{urlencode({param: value})}")
+            if resp.status_code >= 500:
+                errors.append(f"{param}={value}: {resp.status_code}")
+    assert not errors
+
+
+@pytest.mark.parametrize("path,advertised,view", _list_endpoints())
+def test_search_is_advertised_only_where_the_view_can_search(path, advertised, view):
+    if view is None:
+        pytest.skip("not a list view of a model")
+    can_search = bool(view._multi_search) or (
+        view().pmid_match(view._model, "1") is not None
+    )
+    assert ("search" in advertised) == can_search
