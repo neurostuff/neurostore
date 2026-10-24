@@ -101,8 +101,6 @@ class BaseStudiesView(ObjectView, ListView):
     _search_fields = (
         "name",
         "description",
-        "source_id",
-        "source",
         "authors",
         "publication",
         "doi",

@@ -518,9 +518,37 @@ async def test_search_on_view_without_full_text_vector(
         assert resp.json()["metadata"]["total_count"] == total
 
 
-async def test_all_digit_search_on_view_without_pmid_errors(
+async def test_all_digit_search_on_view_without_pmid_is_ignored(
     auth_client, ingest_neurosynth, session
 ):
-    """Analyses have no pmid column; today an all-digits search is a server error."""
+    """Analyses have no pmid column, so an all-digits `search` has nothing to match."""
+    everything = await auth_client.get("/api/analyses/")
     resp = await auth_client.get("/api/analyses/?search=12345")
-    assert resp.status_code == 500
+    assert resp.status_code == 200
+    assert (
+        resp.json()["metadata"]["total_count"]
+        == everything.json()["metadata"]["total_count"]
+    )
+
+
+async def test_annotations_search_param_does_not_error(
+    auth_client, ingest_neurosynth, session
+):
+    """Annotations have no full-text vector, so `search` is ignored, like on analyses."""
+    everything = await auth_client.get("/api/annotations/")
+    assert everything.status_code == 200
+    resp = await auth_client.get("/api/annotations/?search=abc")
+    assert resp.status_code == 200
+    assert (
+        resp.json()["metadata"]["total_count"]
+        == everything.json()["metadata"]["total_count"]
+    )
+
+
+@pytest.mark.parametrize("param", ["source=x", "source_id=1"])
+async def test_base_studies_unknown_filter_does_not_error(
+    param, auth_client, ingest_neurosynth, session
+):
+    """Base studies have no source columns; the parameters are not filters."""
+    resp = await auth_client.get(f"/api/base-studies/?{param}")
+    assert resp.status_code == 200
