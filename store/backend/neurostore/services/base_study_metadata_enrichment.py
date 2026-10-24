@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import re
 import threading
 import time
@@ -35,8 +36,18 @@ from neurostore.models import (
 )
 from neurostore.models.data import HISTORY_SOURCE, PARSE_PIPELINE, STUDY_SOURCE
 from neurostore.models.fulltext import fulltext_preference, refresh_fulltext_pointer
+from neurostore.base_studies import (
+    age_key,
+    article_identifiers,
+    attach_identifiers,
+    close_merge_candidates,
+    held_by,
+    settle_publication_status,
+)
 from neurostore.resources.common import merge_unique_ids, normalize_ids
 from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
+
+logger = logging.getLogger(__name__)
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
 METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_oa")
@@ -648,36 +659,58 @@ def fetch_metadata_pubmed(
     return metadata
 
 
-def _find_active_duplicates(primary, identifiers):
-    filters = []
-    if identifiers.get("pmid"):
-        filters.append(BaseStudy.pmid == identifiers["pmid"])
-    if identifiers.get("doi"):
-        filters.append(BaseStudy.doi == identifiers["doi"])
-    if identifiers.get("pmcid"):
-        filters.append(BaseStudy.pmcid == identifiers["pmcid"])
-    if not filters:
+def _active_duplicates(primary, evidence):
+    """The active base studies, other than ``primary``, that hold an id of ``evidence``
+    (an identifiers dict). A base study another transaction has locked is left out."""
+    held = held_by(db.session, article_identifiers(evidence))
+    others = {holder.base_study_id for holder in held.values()} - {primary.id}
+    if not others:
         return []
-
     query = (
         sa.select(BaseStudy)
-        .where(
-            BaseStudy.is_active.is_(True),
-            BaseStudy.id != primary.id,
-            sa.or_(*filters),
-        )
-        .order_by(BaseStudy.created_at.asc(), BaseStudy.id.asc())
+        .where(BaseStudy.id.in_(others), BaseStudy.is_active.is_(True))
         .with_for_update(of=BaseStudy, skip_locked=True)
     )
-    return list(db.session.scalars(query).all())
+    return list(db.session.scalars(query))
 
 
-def _oldest_base_study(base_studies):
-    def _sort_key(study):
-        created = study.created_at or dt.datetime.max.replace(tzinfo=dt.timezone.utc)
-        return (created, study.id)
-
-    return sorted(base_studies, key=_sort_key)[0]
+def keeper_order(base_studies):
+    """``base_studies`` best keeper first: the one with the better full-text copy (the
+    order of ``fulltext_preference``: copy version, then source), then the one in more
+    studysets, then the oldest. Studysets are counted in this database; the meta-analyses
+    that use a base study are in compose's, which this cannot read."""
+    ids = [base_study.id for base_study in base_studies]
+    version_rank, source_rank = fulltext_preference()[:2]
+    texts = {
+        row.base_study_id: (row.version, row.source)
+        for row in db.session.execute(
+            sa.select(
+                Fulltext.base_study_id,
+                version_rank.label("version"),
+                source_rank.label("source"),
+            )
+            .where(Fulltext.base_study_id.in_(ids))
+            .order_by(Fulltext.base_study_id, *fulltext_preference())
+            .distinct(Fulltext.base_study_id)
+        )
+    }
+    studysets = dict(
+        db.session.execute(
+            sa.select(Study.base_study_id, sa.func.count(sa.distinct(StudysetStudy.studyset_id)))
+            .join(StudysetStudy, StudysetStudy.study_id == Study.id)
+            .where(Study.base_study_id.in_(ids))
+            .group_by(Study.base_study_id)
+        ).all()
+    )
+    no_text = (float("inf"), float("inf"))
+    return sorted(
+        base_studies,
+        key=lambda b: (
+            texts.get(b.id, no_text),
+            -studysets.get(b.id, 0),
+            *age_key(b.created_at, b.id),
+        ),
+    )
 
 
 def _copy_missing_attrs(target, source, fields=CONTENT_FIELDS):
@@ -999,6 +1032,8 @@ def merge_base_study(keeper, old):
     old.is_active = False
     old.superseded_by = keeper.id
     _apply_missing_ids(keeper, old_identifiers)
+    settle_publication_status(keeper, old.publication_status)
+    close_merge_candidates(db.session, keeper.id, old.id)
 
     after = _base_field_values(keeper)
     changes.extend(
@@ -1149,15 +1184,21 @@ def _merge_ids_in_place(target_identifiers, source_identifiers):
     return changed
 
 
+def _gained_ids(primary, identifiers):
+    """The ids of ``identifiers`` (a dict) that ``primary`` has no value for."""
+    return {
+        field: identifiers[field]
+        for field in ID_FIELDS
+        if _has_value(identifiers.get(field)) and not _has_value(getattr(primary, field, None))
+    }
+
+
 def _apply_missing_ids(primary, identifiers):
-    changed = False
-    for field in ID_FIELDS:
-        source_value = identifiers.get(field)
-        target_value = getattr(primary, field, None)
-        if _has_value(source_value) and not _has_value(target_value):
-            setattr(primary, field, source_value)
-            changed = True
-    return changed
+    """Give ``primary`` the ids it lacks, but not one another base study holds: that id
+    stays where it is and the pair is logged and recorded as a merge candidate."""
+    gained = article_identifiers(_gained_ids(primary, identifiers))
+    held = held_by(db.session, gained)
+    return attach_identifiers(db.session, primary, gained, held, source="enrichment").wrote
 
 
 def _apply_missing_metadata(primary, metadata_candidates):
@@ -1262,9 +1303,11 @@ def _propagate_base_study_metadata_to_versions_post_commit(
             time.sleep(retry_sleep_seconds)
 
 
-def _merge_duplicates(primary):
-    """Merge every active base study sharing an identifier into the oldest of them.
-    Returns the survivor, the ids to bump, and why each refused merge was refused."""
+def merge_duplicates(primary, evidence):
+    """Merge every active base study holding an id of ``evidence`` (ids found for ``primary``
+    by a source, which show the same paper) with ``primary`` into the best of them, by
+    ``keeper_order``. Returns the survivor, the ids to bump, and why each refused merge was
+    refused; the ids of a refused pair stay with their holders."""
     cache_ids = {"base-studies": {primary.id}, "studies": set()}
     refused = []
     refused_ids = set()
@@ -1277,27 +1320,29 @@ def _merge_duplicates(primary):
             refused_ids.update({keeper.id, old.id} - {primary.id})
             return None
 
-    while True:
-        identifiers = _extract_identifiers(primary)
-        duplicates = [
-            d for d in _find_active_duplicates(primary, identifiers) if d.id not in refused_ids
-        ]
+    # Each pass merges or refuses at least one base study, so the passes are bounded by the
+    # base studies holding the evidence; a pass that cannot make progress must not loop.
+    passes = len(_active_duplicates(primary, evidence)) + 1
+    for _ in range(passes + 1):
+        duplicates = [d for d in _active_duplicates(primary, evidence) if d.id not in refused_ids]
         if not duplicates:
             break
 
-        canonical = _oldest_base_study([primary] + duplicates)
-        if canonical.id != primary.id:
-            merged = merge(canonical, primary)
-            if merged is not None:
-                cache_ids = merged
-                primary = canonical
-
-        for duplicate in duplicates:
-            if duplicate.id in (primary.id, canonical.id) or duplicate.id in refused_ids:
+        keeper, *others = keeper_order([primary] + duplicates)
+        for other in others:
+            if other.id in refused_ids:
                 continue
-            merged = merge(primary, duplicate)
+            merged = merge(keeper, other)
             if merged is not None:
                 cache_ids = merged
+                if other.id == primary.id:
+                    primary = keeper
+    else:
+        logger.warning(
+            "base-study merges of %s stopped after %s passes with duplicates left",
+            primary.id,
+            passes,
+        )
 
     return primary, cache_ids, refused
 
@@ -1400,37 +1445,6 @@ def _gather_base_study_enrichment(base_study_id, *, settings, logger):
     return _GatheredEnrichment(base_study_id, external_identifiers, metadata_candidates)
 
 
-def _withhold_active_pair(base_study, identifiers):
-    """``identifiers`` without the one the enrichment would add that completes the doi
-    and pmid of another active base study, which the active-only unique index forbids.
-
-    The withheld id is the gained one: a stored doi or pmid is kept, so the base study
-    still shares it with the other and is merged next, and the merge carries the
-    identifiers onto whichever of the two is kept. A base study that stores neither
-    keeps the gained pmid and loses the doi, so the pmid is what it shares."""
-    stored = {field: _has_value(getattr(base_study, field)) for field in ("doi", "pmid")}
-    pair = {
-        field: getattr(base_study, field) if stored[field] else identifiers.get(field)
-        for field in ("doi", "pmid")
-    }
-    if not all(_has_value(value) for value in pair.values()):
-        return identifiers
-    with db.session.no_autoflush:
-        taken = db.session.scalar(
-            sa.select(
-                sa.exists().where(
-                    BaseStudy.id != base_study.id,
-                    BaseStudy.is_active.is_(True),
-                    BaseStudy.doi == pair["doi"],
-                    BaseStudy.pmid == pair["pmid"],
-                )
-            )
-        )
-    if not taken:
-        return identifiers
-    return {**identifiers, ("pmid" if stored["doi"] else "doi"): None}
-
-
 def _apply_base_study_enrichment(gathered, *, logger):
     """Write phase: short, DB-only. Re-locks and applies gathered results."""
     base_study = db.session.scalar(
@@ -1449,8 +1463,11 @@ def _apply_base_study_enrichment(gathered, *, logger):
     cache_ids = {"base-studies": {base_study.id}, "studies": set()}
     identifiers = _extract_identifiers(base_study)
     _merge_ids_in_place(identifiers, gathered.external_identifiers)
-    _apply_missing_ids(base_study, _withhold_active_pair(base_study, identifiers))
-    base_study, merged_cache_ids, refused = _merge_duplicates(base_study)
+    # Only an id a provider found shows another base study to be the same paper; a pair
+    # that shares an id because someone wrote it waits for a reviewed merge plan.
+    base_study, merged_cache_ids, refused = merge_duplicates(
+        base_study, _gained_ids(base_study, identifiers)
+    )
     cache_ids = merge_unique_ids(cache_ids, merged_cache_ids)
     # A refused merge leaves both base studies active and keeps the enrichment; the
     # outbox row is then done, as for any enriched paper, until the paper is enqueued
@@ -1458,6 +1475,7 @@ def _apply_base_study_enrichment(gathered, *, logger):
     for reason in refused:
         logger.warning("base-study merge refused: %s", reason)
 
+    _apply_missing_ids(base_study, identifiers)
     _apply_missing_metadata(base_study, gathered.metadata_candidates)
     cache_ids.setdefault("base-studies", set()).add(base_study.id)
     return cache_ids

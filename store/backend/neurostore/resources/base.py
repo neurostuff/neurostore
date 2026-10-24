@@ -245,6 +245,11 @@ class BaseView:
             AnnotationAnalysis.analysis_id.in_(origin_analysis_ids),
         )
 
+    def pmid_match(self, model, search):
+        """The clause a pmid ``search`` must satisfy, or None for a model with no pmid."""
+        pmid = getattr(model, "pmid", None)
+        return None if pmid is None else pmid == search
+
     def update_base_studies(self, base_studies):
         if not base_studies:
             return
@@ -573,7 +578,7 @@ class ListView(BaseView):
             args["search"],
             field_filters,
             ts_vector=m._ts_vector if use_fulltext else None,
-            pmid=getattr(m, "pmid", None),
+            pmid_match=self.pmid_match(m, args["search"]),
         )
 
         q = self.view_search(q, args)

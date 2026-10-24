@@ -33,27 +33,27 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Fri, 23 Oct 2026 02:50:22 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       Via:
-      - 1.1 9fe7d47ea2a815113a41181f1d63f69e.cloudfront.net (CloudFront)
+      - 1.1 73e04d645babcbb9ee8f20cc865b009c.cloudfront.net (CloudFront)
       X-Amz-Cf-Id:
-      - 0hHXMmku5ew233S3qFdCVEfKcKqtZUbUzaCExdBZDd02I8JWPZTdRg==
+      - FiP1-KLDthhjGCIP8b7eGw1JaVkEaLHBr0BB_7Ete3f6zJbVzqykVw==
       X-Amz-Cf-Pop:
       - DFW57-P1
       X-Cache:
       - Miss from cloudfront
       x-amz-apigw-id:
-      - FrS5UHvzvHcEACQ=
+      - FrN_EGJEvHcEKcw=
       x-amzn-Remapped-Connection:
       - keep-alive
       x-amzn-Remapped-Content-Length:
       - '223'
       x-amzn-Remapped-Date:
-      - Fri, 23 Oct 2026 02:50:22 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       x-amzn-Remapped-Server:
       - gunicorn
       x-amzn-RequestId:
-      - b18b47d6-90e5-4318-bdc2-c2124d0f5204
+      - 744924f9-f8e5-4536-80c0-b9a98a7049ed
     status:
       code: 200
       message: OK
@@ -194,7 +194,7 @@ interactions:
         user in one call: POST https://api.openalex.org/api-keys with {\"email\":
         \"<your user''s email>\"}; we email them a link, and the key works once they
         click it. Docs for agents: https://help.openalex.org/llms.txt", "count": 1,
-        "db_response_time_ms": 20, "page": 1, "per_page": 1, "groups_count": null,
+        "db_response_time_ms": 9, "page": 1, "per_page": 1, "groups_count": null,
         "x_query": {"oql": "get works where DOI is \"https://doi.org/10.1016/S1053-8119(03)00003-X\"",
         "x_new_oql": "get works where DOI is \"https://doi.org/10.1016/S1053-8119(03)00003-X\"",
         "oqo": {"get_rows": "works", "filter_rows": [{"column_id": "doi", "value":
@@ -503,8 +503,8 @@ interactions:
         [], "type": "repository"}, "license": null, "license_id": null, "version":
         "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
         "NeuroImage", "raw_type": "info:eu-repo/semantics/article"}], "best_oa_location":
-        null, "sustainable_development_goals": [{"display_name": "Good health and
-        well-being", "id": "https://metadata.un.org/sdg/3", "score": 0.6240000128746033}],
+        null, "sustainable_development_goals": [{"id": "https://metadata.un.org/sdg/3",
+        "display_name": "Good health and well-being", "score": 0.6240000128746033}],
         "sustainable_development_goals_aurora": [], "study_designs": [], "awards":
         [], "funders": [], "has_content": {"grobid_xml": false, "pdf": false}, "content_urls":
         null, "referenced_works_count": 60, "referenced_works": ["https://openalex.org/W52487473",
@@ -547,13 +547,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a4ed6f13cfaf7c53-DFW
+      - a4ed3dfaaff64670-DFW
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 23 Oct 2026 02:50:22 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       Server:
       - cloudflare
       Transfer-Encoding:
@@ -573,11 +573,11 @@ interactions:
       X-RateLimit-Prepaid-Remaining-USD:
       - '0'
       X-RateLimit-Remaining:
-      - '909'
+      - '929'
       X-RateLimit-Remaining-USD:
-      - '0.0909'
+      - '0.0929'
       X-RateLimit-Reset:
-      - '76178'
+      - '78189'
       access-control-allow-headers:
       - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
         X-Impersonate-User
@@ -590,13 +590,13 @@ interactions:
         X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
         Content-Disposition, X-OpenAlex-UI-Token
       content-length:
-      - '29731'
+      - '29730'
       nel:
       - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
       report-to:
-      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=hg1DtkBueN2h4J6iNPV5nPCekn6iHmjlPAHd7%2FrqZ%2BM%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1792723822"}],"max_age":3600}'
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=ycWITv1h540cFw3tSwg%2F96WB6eVFt9n3egKODvh6o%2B4%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1792721811"}],"max_age":3600}'
       reporting-endpoints:
-      - heroku-nel="https://nel.heroku.com/reports?s=hg1DtkBueN2h4J6iNPV5nPCekn6iHmjlPAHd7%2FrqZ%2BM%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1792723822"
+      - heroku-nel="https://nel.heroku.com/reports?s=ycWITv1h540cFw3tSwg%2F96WB6eVFt9n3egKODvh6o%2B4%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1792721811"
     status:
       code: 200
       message: OK
@@ -664,27 +664,27 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Fri, 23 Oct 2026 02:50:23 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       Via:
-      - 1.1 535c2b5354e6ba6798fd64420ee97a2c.cloudfront.net (CloudFront)
+      - 1.1 cbe94ab27088fc4bb73abf8e3179b3d2.cloudfront.net (CloudFront)
       X-Amz-Cf-Id:
-      - azdrYgASdS1iYTDYHH2UDYauJvUfVohPN3oqn38NxUElgRSWzd9i2g==
+      - gdhIhW59PDM6i-tspQBO6X6jAkCMriRk1Mzw8wSIYhhp6mH-_WmM7w==
       X-Amz-Cf-Pop:
       - DFW57-P1
       X-Cache:
       - Miss from cloudfront
       x-amz-apigw-id:
-      - FrS5bFK9vHcEq4w=
+      - FrN_MGSCvHcED8A=
       x-amzn-Remapped-Connection:
       - keep-alive
       x-amzn-Remapped-Content-Length:
       - '2671'
       x-amzn-Remapped-Date:
-      - Fri, 23 Oct 2026 02:50:23 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       x-amzn-Remapped-Server:
       - gunicorn
       x-amzn-RequestId:
-      - 037d5e88-afab-4f1c-8830-cc4952cb76c7
+      - 5ad1caa5-960d-4c16-b8af-2fe92fd11b44
     status:
       code: 200
       message: OK
@@ -799,18 +799,18 @@ interactions:
       Content-Type:
       - text/xml; charset=UTF-8
       Date:
-      - Fri, 23 Oct 2026 02:50:22 GMT
+      - Fri, 23 Oct 2026 02:16:51 GMT
       Ncbi-Phid:
-      - 1D3238309BD9AC750000682B99D27911.1.1.m_6
+      - 1D33C9B11FD1F98500003A2E92C8A6D5.1.1.m_4
       Ncbi-Sid:
-      - CE614E452B18514D_CFF4SID
+      - AA7DD03550BF57B5_1E6CSID
       Referrer-Policy:
       - origin-when-cross-origin
       Server:
       - Finatra
       Set-Cookie:
-      - ncbi_sid=CE614E452B18514D_CFF4SID; domain=.nih.gov; path=/; expires=Sat, 23
-        Oct 2027 02:50:23 GMT
+      - ncbi_sid=AA7DD03550BF57B5_1E6CSID; domain=.nih.gov; path=/; expires=Sat, 23
+        Oct 2027 02:16:52 GMT
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:

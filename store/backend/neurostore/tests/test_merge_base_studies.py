@@ -895,8 +895,8 @@ def test_the_cli_exits_1_when_a_pair_is_refused(session, pair, tmp_path, db, mon
     assert f"merged {pair['old']} -> {pair['keeper']}:" in result.output
 
 
-# The worker path: the metadata-enrichment worker merges base studies that come to share
-# an identifier. Its provider lookups for pmid 12667850 (2flud7dzexni) are recorded,
+# The worker path: the metadata-enrichment worker looks up the identifiers a base study lacks.
+# Its provider lookups for pmid 12667850 (2flud7dzexni) are recorded,
 # without keys; keys and contact emails are scrubbed from requests and responses.
 
 _SECRET_IN_BODY = re.compile(
@@ -969,35 +969,19 @@ def _run_worker(app, logger=None):
 
 
 @pytest.mark.vcr
-def test_the_worker_merges_two_pipeline_duplicates(session, app):
+def test_the_worker_does_not_merge_on_a_shared_stored_id_alone(session, app):
+    """Two base studies that store one pmid were written so, not found to be one paper by a
+    source: the doi the lookup finds is held by neither, so they wait for a reviewed plan."""
     first_id, second_id = _pipeline_duplicates(session, with_records=False)
 
     assert _run_worker(app) == 1
     session.expire_all()
 
-    second = session.get(BaseStudy, second_id)
-    assert (second.is_active, second.superseded_by) == (False, first_id)
-    assert session.get(BaseStudy, first_id).doi == LOOKED_UP_DOI
-    assert Study.query.filter_by(base_study_id=first_id, source=STUDY_SOURCE).count() == 1
-    assert Study.query.filter_by(base_study_id=first_id, source=HISTORY_SOURCE).count() == 1
-    assert BaseStudyMetadataOutbox.query.count() == 0
-
-
-@pytest.mark.vcr
-def test_a_refused_worker_merge_keeps_the_enrichment_and_is_done(session, app, caplog):
-    first_id, second_id = _pipeline_duplicates(session, with_records=True)
-
-    with caplog.at_level(logging.WARNING):
-        assert _run_worker(app, logging.getLogger("worker-test")) == 1
-    session.expire_all()
-
     first, second = session.get(BaseStudy, first_id), session.get(BaseStudy, second_id)
     assert first.is_active and second.is_active
-    assert second.doi == LOOKED_UP_DOI
-    assert any("both hold claim entities" in r.getMessage() for r in caplog.records)
-    # Done, not re-claimed on the next pass.
+    assert (second.doi, first.doi) == (LOOKED_UP_DOI, None)
+    assert Study.query.filter_by(base_study_id=first_id, source=STUDY_SOURCE).count() == 1
     assert BaseStudyMetadataOutbox.query.count() == 0
-    assert _run_worker(app) == 0
 
 
 @pytest.mark.vcr
@@ -1062,11 +1046,11 @@ def _enrich(session, base_study, **gathered):
 @pytest.mark.parametrize(
     "stored, kept",
     [
-        # What the newer base study stores, and the doi and pmid it holds when refused:
-        # the gained id completing the pair is withheld, a stored one is kept.
+        # What the newer base study stores, and the doi and pmid it holds when refused: an
+        # id the older holds stays with it, so a stored one is kept and a gained one is not.
         ({"doi": PAIR_DOI}, (PAIR_DOI, None)),
         ({"pmid": PAIR_PMID}, (None, PAIR_PMID)),
-        ({"pmcid": "PMC1234567"}, (None, PAIR_PMID)),
+        ({"pmcid": "PMC1234567"}, (None, None)),
     ],
     ids=["doi-only", "pmid-only", "pmcid-only"],
 )
@@ -1143,8 +1127,23 @@ def test_a_doi_without_a_pmid_is_not_withheld(session):
     _enrich(session, newer, doi=PAIR_DOI)
 
     newer = session.get(BaseStudy, newer_id)
-    assert newer.doi == PAIR_DOI
+    assert session.get(BaseStudy, older_id).doi == PAIR_DOI
     assert (newer.is_active, newer.superseded_by) == (False, older_id)
+
+
+@pytest.mark.vcr
+def test_the_worker_takes_the_doi_it_looks_up_for_a_pmid(session, app):
+    base_study = BaseStudy(name="Parametric analysis", pmid="12667850", level="group")
+    session.add(base_study)
+    session.commit()
+    session.add(BaseStudyMetadataOutbox(base_study_id=base_study.id, reason="api-write"))
+    session.commit()
+
+    assert _run_worker(app) == 1
+    session.expire_all()
+
+    assert session.get(BaseStudy, base_study.id).doi == LOOKED_UP_DOI
+    assert BaseStudyMetadataOutbox.query.count() == 0
 
 
 def test_the_merged_from_migration_goes_down_and_up_over_existing_rows(session, pair):
