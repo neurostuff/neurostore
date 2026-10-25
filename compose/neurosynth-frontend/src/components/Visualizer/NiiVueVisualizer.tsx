@@ -1,8 +1,54 @@
-import { Download, HelpOutline, OpenInNew, Image } from '@mui/icons-material';
-import { Box, Button, Checkbox, Icon, Link, Tooltip, Typography } from '@mui/material';
+import { Download, HelpOutline, Image, OpenInNew } from '@mui/icons-material';
+import { Box, Button, Checkbox, Icon, Link, Stack, Tooltip, Typography } from '@mui/material';
 import { Niivue, SHOW_RENDER } from '@niivue/niivue';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
+import CrosshairControlsDialog from './CrosshairControlsDialog';
 import ThresholdSlider from './ThresholdSlider';
+
+type BrainCoordinates = {
+    x: number;
+    y: number;
+    z: number;
+    value: number | null;
+};
+
+// NiiVue places the crosshair at the center of GenericMNI. That center is about (0, -17.5, 5) mm for every map.
+const defaultBrainCoordinates: BrainCoordinates = {
+    x: 0,
+    y: -17,
+    z: 5,
+    value: null,
+};
+
+const CoordinateReadout = ({ axis, millimeters }: { axis: string; millimeters: number }) => (
+    <Typography
+        component="span"
+        variant="body2"
+        sx={{ color: 'common.white', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em' }}
+    >
+        <Box component="span" sx={{ color: 'grey.500', mr: 0.75, fontSize: '0.7rem', letterSpacing: '0.08em' }}>
+            {axis}
+        </Box>
+        {Math.round(millimeters)}
+    </Typography>
+);
+
+// Sagittal (X): left/right. Coronal (Y): down/up.
+const crosshairStepByKey: Record<string, [number, number, number]> = {
+    ArrowLeft: [-1, 0, 0],
+    ArrowRight: [1, 0, 0],
+    ArrowDown: [0, -1, 0],
+    ArrowUp: [0, 1, 0],
+};
+
+// Axial (Z): shift+down/up.
+const axialStepByKey: Record<string, [number, number, number]> = {
+    ArrowDown: [0, 0, -1],
+    ArrowUp: [0, 0, 1],
+};
+
+const INTERACTIVE_TARGET_SELECTOR =
+    'input, textarea, select, [contenteditable="true"], [role="slider"], [role="listbox"], [role="menu"], [role="combobox"], [role="dialog"], [role="tab"], [role="tablist"], .handsontable, .ht-root-wrapper';
 
 const NiiVueVisualizer = ({
     file,
@@ -20,7 +66,8 @@ const NiiVueVisualizer = ({
     const [showNegatives, setShowNegatives] = useState(false);
     const [disableNegatives, setDisableNegatives] = useState(false);
     const [showCrosshairs, setShowCrosshairs] = useState(true);
-    const [brainCoordinateString, setBrainCoordinateString] = useState('');
+    const [brainCoordinates, setBrainCoordinates] = useState<BrainCoordinates>(defaultBrainCoordinates);
+    const [isCrosshairControlsOpen, setIsCrosshairControlsOpen] = useState(false);
 
     const [threshold, setThreshold] = useState<{
         min: number;
@@ -44,12 +91,17 @@ const NiiVueVisualizer = ({
         };
 
         const fileValues = typedLocation?.values?.[1];
-        if (!fileValues) return;
-        const [x, y, z] = fileValues?.mm || [];
-        const value = fileValues?.value;
+        const millimeters = fileValues?.mm;
+        if (!millimeters || millimeters.length < 3) return;
+        const [x, y, z] = millimeters;
+        const value = fileValues.value;
 
-        const str = `X: ${Math.round(x)} | Y: ${Math.round(y)} | Z: ${Math.round(z)} = ${value.toFixed(3)}`;
-        setBrainCoordinateString(str);
+        setBrainCoordinates({
+            x: Number.isFinite(x) ? x : 0,
+            y: Number.isFinite(y) ? y : 0,
+            z: Number.isFinite(z) ? z : 0,
+            value: Number.isFinite(value) ? value : null,
+        });
     };
 
     const updateSoftThresholdInNiivue = (softThresholdEnabled: boolean) => {
@@ -189,6 +241,7 @@ const NiiVueVisualizer = ({
 
             niivue.setInterpolation(true);
             niivue.updateGLVolume();
+            niivue.createOnLocationChange();
         };
 
         updateNiivue();
@@ -202,6 +255,25 @@ const NiiVueVisualizer = ({
             }
         };
     }, [file, filename]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.altKey || event.ctrlKey || event.metaKey) return;
+            const target = event.target;
+            if (target instanceof HTMLElement && target.closest(INTERACTIVE_TARGET_SELECTOR)) return;
+
+            const step = event.shiftKey ? axialStepByKey[event.code] : crosshairStepByKey[event.code];
+            const niivue = niivueRef.current;
+            if (!step || !niivue?.volumes[0]) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            niivue.moveCrosshairInVox(step[0], step[1], step[2]);
+        };
+
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, []);
 
     const handleDownloadImage = () => {
         if (!niivueRef.current) return;
@@ -295,25 +367,60 @@ const NiiVueVisualizer = ({
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{ height: '32px' }}>
-                {brainCoordinateString && (
-                    <Box
+            <Box
+                data-testid="brain-coordinates"
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 2,
+                    boxSizing: 'border-box',
+                    width: '100%',
+                    px: 1.5,
+                    py: 0.75,
+                    backgroundColor: '#333',
+                    borderTopLeftRadius: '4px',
+                    borderTopRightRadius: '4px',
+                }}
+            >
+                <Stack direction="row" spacing={2} alignItems="baseline">
+                    <CoordinateReadout axis="X" millimeters={brainCoordinates.x} />
+                    <CoordinateReadout axis="Y" millimeters={brainCoordinates.y} />
+                    <CoordinateReadout axis="Z" millimeters={brainCoordinates.z} />
+                    <Typography
+                        component="span"
+                        variant="body2"
                         sx={{
-                            width: '260px',
-                            backgroundColor: 'black',
-                            textAlign: 'center',
-                            borderTopLeftRadius: '4px',
-                            borderTopRightRadius: '4px',
+                            color: brainCoordinates.value == null ? 'grey.500' : 'common.white',
+                            fontVariantNumeric: 'tabular-nums',
                         }}
                     >
-                        <Typography padding="4px 8px" display="inline-block" color="white">
-                            {brainCoordinateString}
-                        </Typography>
-                    </Box>
-                )}
+                        {brainCoordinates.value == null ? '—' : brainCoordinates.value.toFixed(3)}
+                    </Typography>
+                </Stack>
+                <Link
+                    component="button"
+                    type="button"
+                    underline="always"
+                    onClick={() => setIsCrosshairControlsOpen(true)}
+                    sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        color: 'common.white',
+                        typography: 'body2',
+                    }}
+                >
+                    <HelpOutline sx={{ fontSize: '1.1rem' }} />
+                    Controls
+                </Link>
             </Box>
+            <CrosshairControlsDialog
+                isOpen={isCrosshairControlsOpen}
+                onCloseDialog={() => setIsCrosshairControlsOpen(false)}
+            />
             <Box sx={{ height: '300px' }}>
-                <canvas ref={canvasRef} />
+                <canvas ref={canvasRef} tabIndex={0} />
             </Box>
             <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
