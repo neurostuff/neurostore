@@ -1,14 +1,22 @@
-import string
-
 import sqlalchemy.sql.expression as sae
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import raiseload, selectinload
 from study_schema.models.paper_parse import CoordinateRole
 from webargs import fields, validate
 
+from neurostore.base_studies import (
+    article_identifiers,
+    attach_identifiers,
+    held_by,
+    lock_identifiers,
+    resolve,
+)
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import abort_unprocessable
+from neurostore.exceptions.utils.error_helpers import (
+    abort_unprocessable,
+    abort_validation,
+)
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
@@ -36,7 +44,7 @@ from neurostore.resources.data_views.common import (
     image_detail_options,
 )
 from neurostore.resources.mutation_core import DefaultMutationPolicy
-from neurostore.resources.utils import view_maker
+from neurostore.resources.utils import sortable_columns, view_maker
 
 
 class StudyMutationPolicy(DefaultMutationPolicy):
@@ -57,31 +65,22 @@ class StudyMutationPolicy(DefaultMutationPolicy):
             self.context.record = record
             return
 
-        query = BaseStudy.query
-        has_doi = has_pmid = has_name = False
-        base_study = None
-
-        if record.doi:
-            query = query.filter_by(doi=record.doi)
-            has_doi = True
-        if record.pmid:
-            query = query.filter_by(pmid=record.pmid)
-            has_pmid = True
-        if record.name and not record.doi and not record.pmid:
-            name_search = func.regexp_replace(
-                record.name, r"[" + string.punctuation + "]", "", "g"
-            )
-            query = query.filter(BaseStudy.name.ilike(f"%{name_search}%"))
-            has_name = True
+        identifiers = article_identifiers(
+            {"doi": record.doi, "pmid": record.pmid, "pmcid": record.pmcid}
+        )
+        if not identifiers:
+            self.context.record = record
+            return
 
         with db.session.no_autoflush:
-            if query.count() >= 1 and (has_doi or has_pmid or has_name):
-                base_study = query.first()
-            elif has_doi or has_pmid:
+            lock_identifiers(db.session, identifiers)
+            held = held_by(db.session, identifiers)
+            base_study_id = resolve(identifiers, held)
+            if base_study_id is not None:
+                base_study = db.session.get(BaseStudy, base_study_id)
+            else:
                 base_study = BaseStudy(
                     name=record.name,
-                    doi=record.doi if record.doi else None,
-                    pmid=record.pmid,
                     description=record.description,
                     publication=record.publication,
                     year=record.year,
@@ -89,9 +88,8 @@ class StudyMutationPolicy(DefaultMutationPolicy):
                     metadata_=record.metadata_,
                     level=record.level if record.level else "group",
                 )
-            else:
-                self.context.record = record
-                return
+                db.session.add(base_study)
+            attach_identifiers(db.session, base_study, identifiers, held, source="post")
 
         record.base_study = base_study
         self.context.record = record
@@ -286,6 +284,10 @@ class StudiesView(ObjectView, ListView):
             "doi" if isinstance(unique_col, bool) and unique_col else unique_col
         )
         if unique_col:
+            if unique_col not in sortable_columns(self._model):
+                abort_validation(
+                    f"Cannot list unique studies by {unique_col!r}: not a field of a study."
+                )
             subquery = q.distinct(getattr(self._model, unique_col)).subquery()
             q = q.join(
                 subquery,

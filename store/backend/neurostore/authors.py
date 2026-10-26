@@ -149,18 +149,22 @@ def correspondence(parsed_paper) -> List[tuple]:
 
 
 def move_authors(from_id: str, to_id: str) -> List[tuple]:
-    """Give `to_id` the author list of `from_id` when it has none; either way, tie each
-    correspondence address `to_id` holds to `to_id`'s own author rows.
+    """Carry the author list of `from_id` to `to_id`.
 
-    Returns (table, row id, what) for each row changed: an author row moved, or an address
-    retied to the keeper's author at the same place (or to none, when the keeper lists
-    someone else there).
+    With no list of its own, `to_id` takes the rows. Otherwise its list is the paper's and
+    stays: where `from_id` lists the same person at the same place, `to_id`'s row gains
+    the affiliations (so the universities) and corresponding mark it lacks, and each
+    correspondence address `to_id` holds is tied to its own author rows.
+
+    Returns (table, row id, field, before, after) for each row changed.
     """
     from neurostore.models import CorrespondingAuthorEmail
 
     def rows(base_study_id):
         return db.session.scalars(
-            sa.select(BaseStudyAuthor).where(BaseStudyAuthor.base_study_id == base_study_id)
+            sa.select(BaseStudyAuthor)
+            .where(BaseStudyAuthor.base_study_id == base_study_id)
+            .options(selectinload(BaseStudyAuthor.affiliations))
         ).all()
 
     kept, old = rows(to_id), rows(from_id)
@@ -168,13 +172,14 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
     if not kept:
         for row in old:
             row.base_study_id = to_id
-            done.append(("base_study_authors", row.id, "moved"))
+            done.append(("base_study_authors", row.id, "base_study_id", from_id, to_id))
         db.session.flush()
         return done
     by_place = {row.position: row for row in kept}
     for row in old:
         same = by_place.get(row.position)
-        target = same.id if same is not None and same.author_id == row.author_id else None
+        same = same if same is not None and same.author_id == row.author_id else None
+        target = same.id if same is not None else None
         retied = db.session.scalars(
             sa.update(CorrespondingAuthorEmail)
             .where(CorrespondingAuthorEmail.base_study_id == to_id,
@@ -182,6 +187,17 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
             .values(base_study_author_id=target)
             .returning(CorrespondingAuthorEmail.id)
         ).all()
-        done += [("corresponding_author_emails", email_id, target) for email_id in retied]
+        done += [("corresponding_author_emails", email_id, "base_study_author_id", None, target)
+                 for email_id in retied]
+        if same is None:
+            continue
+        if not same.affiliations:
+            for affiliation in row.affiliations:
+                affiliation.base_study_author_id = same.id
+                done.append(("base_study_author_affiliations", affiliation.id,
+                             "base_study_author_id", row.id, same.id))
+        if same.corresponding is None and row.corresponding is not None:
+            same.corresponding = row.corresponding
+            done.append(("base_study_authors", same.id, "corresponding", None, row.corresponding))
     db.session.flush()
     return done

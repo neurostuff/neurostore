@@ -13,7 +13,11 @@ from marshmallow import (
     validates_schema,
 )
 from sqlalchemy import func
-from study_schema.models.paper_parse import AnalysisOutcome
+from study_schema.models.paper_parse import (
+    AnalysisOutcome,
+    PreprintServer,
+    PublicationStatus,
+)
 
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
@@ -642,7 +646,29 @@ class StudySetStudyInfoSchema(Schema):
     description = fields.String(dump_only=True)
 
 
-class BaseStudySchema(BaseDataSchema):
+class PreprintDoiSchema(Schema):
+    doi = fields.String(required=True)
+    server = fields.String(
+        required=True, validate=validate.OneOf([s.value for s in PreprintServer])
+    )
+
+
+class ArticleIdentifiersSchema(Schema):
+    """A base study's ids beyond the version of record's doi, pmid and pmcid, and whether
+    that version is known (study_schema's ArticleIdentifiers)."""
+
+    publication_status = fields.String(
+        allow_none=True, validate=validate.OneOf([s.value for s in PublicationStatus])
+    )
+    preprint_dois = fields.List(fields.Nested(PreprintDoiSchema))
+    preprint_pmids = fields.List(fields.String())
+    preprint_pmcids = fields.List(fields.String())
+    alternative_dois = fields.List(fields.String())
+    alternative_pmids = fields.List(fields.String())
+    alternative_pmcids = fields.List(fields.String())
+
+
+class BaseStudySchema(BaseDataSchema, ArticleIdentifiersSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     name = fields.String(allow_none=True)

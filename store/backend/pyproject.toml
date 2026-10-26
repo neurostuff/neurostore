@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=84.0.0"]
+requires = ["setuptools>=84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -16,7 +16,7 @@ dependencies = [
     "connexion[swagger-ui,uvicorn]==3.3.0",
     "cachelib~=0.17",
     "gunicorn~=26.2",
-    "httpx2~=2.13",
+    "httpx2~=2.16",
     "uvicorn-worker~=0.4",
     "ipython~=9.17",
     "itsdangerous~=2.2",
@@ -29,7 +29,7 @@ dependencies = [
     "python-jose~=3.5",
     "redis",
     "shortuuid~=1.0",
-    "starlette>=1.8.0,<2",
+    "starlette>=1.9.0,<2",
     "sqlalchemy[asyncio]~=2.1.4",
     "sqladmin~=0.32",
     "sqltap",
@@ -40,9 +40,9 @@ dependencies = [
     "orjson~=3.13",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.22.1",
-    "openai~=3.31",
+    "openai~=3.37",
     "tenacity~=9.2",
-    "sentry-sdk~=2.72",
+    "sentry-sdk~=2.73",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read. Pinned to neurostuff/study_schema feat/structured-authors (authors
     # with ids and affiliations); repin to main once it merges.

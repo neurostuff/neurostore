@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from neurostore import authors, corresponding_authors
 from neurostore.database import db
 from neurostore.ingest.study_schema import ingest_upload
+from neurostore.services.base_study_metadata_enrichment import merge_base_study
 from neurostore.models import (
     Author,
     BaseStudy,
@@ -177,6 +178,33 @@ def test_a_merge_ties_moved_addresses_to_the_keeper_s_own_author(session):
     (email,) = db.session.scalars(sa.select(CorrespondingAuthorEmail)).all()
     assert (email.base_study_id, email.base_study_author_id) == (keeper, kept.id)
     assert [r.name for r in _listed(old)] == ["Ada Lovelace"]  # the superseded copy keeps its own
+
+
+def test_a_merge_gives_the_keeper_the_universities_of_the_same_author_on_the_old_paper(session):
+    keeper = _upload("1001", _person("Ada Lovelace", ORCID))["base_study_id"]
+    old = _upload("1002", _person("Ada Lovelace", ORCID, None, _at("UT Austin", UT),
+                                  corresponding=True))["base_study_id"]
+    (kept,) = _listed(keeper)
+
+    merge_base_study(db.session.get(BaseStudy, keeper), db.session.get(BaseStudy, old))
+
+    (row,) = _listed(keeper)
+    assert (row.id, row.corresponding) == (kept.id, True)
+    assert _universities_of(row.author_id) == [UT["ror"]]
+    assert len(_listed(keeper)) == 1  # the same person is not listed twice
+
+
+def test_a_merge_keeps_the_keeper_s_own_affiliations_and_list(session):
+    keeper = _upload("1001", _person("Ada Lovelace", ORCID, None, _at("Stanford", STANFORD)),
+                     _person("Charles Babbage"))["base_study_id"]
+    old = _upload("1002", _person("Ada Lovelace", ORCID, None, _at("UT Austin", UT)),
+                  _person("Grace Hopper"))["base_study_id"]
+
+    merge_base_study(db.session.get(BaseStudy, keeper), db.session.get(BaseStudy, old))
+
+    assert [r.name for r in _listed(keeper)] == ["Ada Lovelace", "Charles Babbage"]
+    ada = _listed(keeper)[0]
+    assert _universities_of(ada.author_id) == [STANFORD["ror"]]
 
 
 def test_the_relationships_are_never_loaded_by_accident(session):

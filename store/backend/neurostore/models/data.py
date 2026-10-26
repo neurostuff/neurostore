@@ -5,7 +5,7 @@ import uuid
 import shortuuid
 import sqlalchemy as sa
 from sqlalchemy import ForeignKeyConstraint, exists, func, text
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, aggregate_order_by
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -201,6 +201,19 @@ class AnnotationAnalysis(db.Model):
         return cls.annotation_id + "_" + cls.analysis_id
 
 
+def _identifiers_of(kind, scheme):
+    """The base study's ``kind`` ids of ``scheme``, as the API lists them, from
+    ``identifiers`` (which the views load with the base studies they list)."""
+
+    def read(self):
+        rows = [r for r in self.identifiers if (r["kind"], r["scheme"]) == (kind, scheme)]
+        if (kind, scheme) == ("preprint", "doi"):
+            return [{"doi": r["value"], "server": r["server"]} for r in rows]
+        return [r["value"] for r in rows]
+
+    return property(read)
+
+
 class BaseStudy(BaseMixin, db.Model):
     __tablename__ = "base_studies"
     name = db.Column(db.String)
@@ -240,6 +253,9 @@ class BaseStudy(BaseMixin, db.Model):
         db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
     )
     superseded_by = db.Column(db.Text, db.ForeignKey("base_studies.id"), nullable=True)
+    #: study_schema's ``ArticleIdentifiers.publication_status``: preprint until a
+    #: version of record is known. Null where no producer stated it.
+    publication_status = db.Column(db.Text, nullable=True)
     # From the parsed paper's bibliography.corrections; null until a parsed paper with
     # corrections looked up is ingested. A retracted paper is kept, and releases leave
     # it out unless asked. Not indexed: the release filters on IS NOT TRUE, nearly every
@@ -295,21 +311,30 @@ class BaseStudy(BaseMixin, db.Model):
         passive_deletes=True,
         lazy="raise",
     )
+    identifier_rows = relationship(
+        "BaseStudyIdentifier",
+        passive_deletes=True,
+        order_by="BaseStudyIdentifier.value",
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        sa.Index(
-            "uq_base_studies_doi_pmid_active",
-            "doi",
-            "pmid",
-            unique=True,
-            postgresql_where=sa.text("is_active = true"),
+        db.CheckConstraint(
+            "publication_status IN ('preprint', 'published')",
+            name="ck_base_studies_publication_status",
         ),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
         sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
+
+    preprint_dois = _identifiers_of("preprint", "doi")
+    preprint_pmids = _identifiers_of("preprint", "pmid")
+    preprint_pmcids = _identifiers_of("preprint", "pmcid")
+    alternative_dois = _identifiers_of("alternative", "doi")
+    alternative_pmids = _identifiers_of("alternative", "pmid")
+    alternative_pmcids = _identifiers_of("alternative", "pmcid")
 
     @hybrid_property
     def images_exist(self):
@@ -487,6 +512,116 @@ class BaseStudy(BaseMixin, db.Model):
             features[result.pipeline_name] = result.result_data
 
         return features
+
+
+class BaseStudyIdentifier(db.Model):
+    """One article identifier an active base study holds, in one of study_schema's three
+    buckets: its version of record's ids, a preprint's, or any other version's.
+
+    ``(scheme, value)`` is the key, so no two base studies hold one id. The version of
+    record's rows follow base_studies.doi, pmid and pmcid through the trigger created by
+    the migration; a base study that stops being active gives its rows to the one that
+    supersedes it, or drops them.
+    """
+
+    __tablename__ = "base_study_identifiers"
+    scheme = db.Column(db.Text, primary_key=True)
+    #: Normalized: DOIs case-folded, PMIDs digits, PMCIDs ``PMC`` and digits.
+    value = db.Column(db.Text, primary_key=True)
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    kind = db.Column(db.Text, nullable=False)
+    #: The preprint server a preprint DOI was registered by.
+    server = db.Column(db.Text, nullable=True)
+
+    __table_args__ = (
+        db.CheckConstraint("scheme IN ('doi', 'pmid', 'pmcid')", name="ck_identifier_scheme"),
+        db.CheckConstraint(
+            "kind IN ('vor', 'preprint', 'alternative')", name="ck_identifier_kind"
+        ),
+        db.CheckConstraint(
+            "server IS NULL OR (kind = 'preprint' AND scheme = 'doi')",
+            name="ck_identifier_server",
+        ),
+        sa.Index(
+            "uq_base_study_identifiers_vor",
+            "base_study_id",
+            "scheme",
+            unique=True,
+            postgresql_where=sa.text("kind = 'vor'"),
+        ),
+    )
+
+
+# Every id of the base study as JSON, loaded with it: listing a page of base studies with
+# their ids costs one correlated lookup per row, where a relationship costs a query and an
+# object per id. Deferred, so only the views that serve the ids load it.
+BaseStudy.identifiers = sa.orm.column_property(
+    sa.select(
+        sa.func.coalesce(
+            sa.func.jsonb_agg(
+                aggregate_order_by(
+                    sa.func.jsonb_build_object(
+                        "kind",
+                        BaseStudyIdentifier.kind,
+                        "scheme",
+                        BaseStudyIdentifier.scheme,
+                        "value",
+                        BaseStudyIdentifier.value,
+                        "server",
+                        BaseStudyIdentifier.server,
+                    ),
+                    BaseStudyIdentifier.value,
+                )
+            ),
+            sa.text("'[]'::jsonb"),
+        )
+    )
+    .where(BaseStudyIdentifier.base_study_id == BaseStudy.id)
+    .correlate_except(BaseStudyIdentifier)
+    .scalar_subquery(),
+    deferred=True,
+)
+
+
+class BaseStudyMergeCandidate(BaseMixin, db.Model):
+    """Two active base studies a write found to name one paper. ``manage
+    plan-base-study-merges`` writes the open ones as a plan for ``manage
+    merge-base-studies``, and a merge of the pair closes the row.
+
+    ``matched`` lists the identifiers that tied them, as ``{scheme, value, kind}``;
+    ``source`` is the write that found them (``post``, ``put``, ``ingest``, ``enrichment``,
+    ``trigger`` or ``migration``). The pair is stored with the smaller id first, once.
+    """
+
+    __tablename__ = "base_study_merge_candidates"
+    first_base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), nullable=False
+    )
+    second_base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    matched = db.Column(JSONB, nullable=False)
+    source = db.Column(db.Text, nullable=False)
+
+    __table_args__ = (
+        db.CheckConstraint(
+            'first_base_study_id COLLATE "C" < second_base_study_id COLLATE "C"',
+            name="ck_merge_candidate_order",
+        ),
+        sa.UniqueConstraint(
+            "first_base_study_id",
+            "second_base_study_id",
+            name="uq_base_study_merge_candidates_pair",
+        ),
+    )
 
 
 class BaseStudyFlagOutbox(db.Model):

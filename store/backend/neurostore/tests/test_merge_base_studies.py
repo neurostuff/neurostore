@@ -16,9 +16,12 @@ import json
 import logging
 import os
 import re
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 import sqlalchemy as sa
+import vcr
+from vcr.filters import remove_query_parameters
 from click.testing import CliRunner
 
 from neurostore import cli, service_migrations
@@ -60,6 +63,7 @@ from neurostore.scripts.merge_base_studies import (
 from neurostore.services.base_study_metadata_enrichment import (
     _apply_base_study_enrichment,
     _GatheredEnrichment,
+    lookup_ids_pubmed,
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.neurostore_studyset_releases import (
@@ -895,8 +899,8 @@ def test_the_cli_exits_1_when_a_pair_is_refused(session, pair, tmp_path, db, mon
     assert f"merged {pair['old']} -> {pair['keeper']}:" in result.output
 
 
-# The worker path: the metadata-enrichment worker merges base studies that come to share
-# an identifier. Its provider lookups for pmid 12667850 (2flud7dzexni) are recorded,
+# The worker path: the metadata-enrichment worker looks up the identifiers a base study lacks.
+# Its provider lookups for pmid 12667850 (2flud7dzexni) are recorded,
 # without keys; keys and contact emails are scrubbed from requests and responses.
 
 _SECRET_IN_BODY = re.compile(
@@ -969,35 +973,19 @@ def _run_worker(app, logger=None):
 
 
 @pytest.mark.vcr
-def test_the_worker_merges_two_pipeline_duplicates(session, app):
+def test_the_worker_does_not_merge_on_a_shared_stored_id_alone(session, app):
+    """Two base studies that store one pmid were written so, not found to be one paper by a
+    source: the doi the lookup finds is held by neither, so they wait for a reviewed plan."""
     first_id, second_id = _pipeline_duplicates(session, with_records=False)
 
     assert _run_worker(app) == 1
     session.expire_all()
 
-    second = session.get(BaseStudy, second_id)
-    assert (second.is_active, second.superseded_by) == (False, first_id)
-    assert session.get(BaseStudy, first_id).doi == LOOKED_UP_DOI
-    assert Study.query.filter_by(base_study_id=first_id, source=STUDY_SOURCE).count() == 1
-    assert Study.query.filter_by(base_study_id=first_id, source=HISTORY_SOURCE).count() == 1
-    assert BaseStudyMetadataOutbox.query.count() == 0
-
-
-@pytest.mark.vcr
-def test_a_refused_worker_merge_keeps_the_enrichment_and_is_done(session, app, caplog):
-    first_id, second_id = _pipeline_duplicates(session, with_records=True)
-
-    with caplog.at_level(logging.WARNING):
-        assert _run_worker(app, logging.getLogger("worker-test")) == 1
-    session.expire_all()
-
     first, second = session.get(BaseStudy, first_id), session.get(BaseStudy, second_id)
     assert first.is_active and second.is_active
-    assert second.doi == LOOKED_UP_DOI
-    assert any("both hold claim entities" in r.getMessage() for r in caplog.records)
-    # Done, not re-claimed on the next pass.
+    assert (second.doi, first.doi) == (LOOKED_UP_DOI, None)
+    assert Study.query.filter_by(base_study_id=first_id, source=STUDY_SOURCE).count() == 1
     assert BaseStudyMetadataOutbox.query.count() == 0
-    assert _run_worker(app) == 0
 
 
 @pytest.mark.vcr
@@ -1062,11 +1050,11 @@ def _enrich(session, base_study, **gathered):
 @pytest.mark.parametrize(
     "stored, kept",
     [
-        # What the newer base study stores, and the doi and pmid it holds when refused:
-        # the gained id completing the pair is withheld, a stored one is kept.
+        # What the newer base study stores, and the doi and pmid it holds when refused: an
+        # id the older holds stays with it, so a stored one is kept and a gained one is not.
         ({"doi": PAIR_DOI}, (PAIR_DOI, None)),
         ({"pmid": PAIR_PMID}, (None, PAIR_PMID)),
-        ({"pmcid": "PMC1234567"}, (None, PAIR_PMID)),
+        ({"pmcid": "PMC1234567"}, (None, None)),
     ],
     ids=["doi-only", "pmid-only", "pmcid-only"],
 )
@@ -1143,8 +1131,95 @@ def test_a_doi_without_a_pmid_is_not_withheld(session):
     _enrich(session, newer, doi=PAIR_DOI)
 
     newer = session.get(BaseStudy, newer_id)
-    assert newer.doi == PAIR_DOI
+    assert session.get(BaseStudy, older_id).doi == PAIR_DOI
     assert (newer.is_active, newer.superseded_by) == (False, older_id)
+
+
+@pytest.mark.vcr
+def test_the_worker_takes_the_doi_it_looks_up_for_a_pmid(session, app):
+    base_study = BaseStudy(name="Parametric analysis", pmid="12667850", level="group")
+    session.add(base_study)
+    session.commit()
+    session.add(BaseStudyMetadataOutbox(base_study_id=base_study.id, reason="api-write"))
+    session.commit()
+
+    assert _run_worker(app) == 1
+    session.expire_all()
+
+    assert session.get(BaseStudy, base_study.id).doi == LOOKED_UP_DOI
+    assert BaseStudyMetadataOutbox.query.count() == 0
+
+
+@pytest.mark.vcr
+def test_a_paper_with_a_doi_and_a_pmid_gets_its_pmcid(app):
+    """pmid 25775530 and its doi are both known, so the lookup must not send them together."""
+    found = lookup_ids_pubmed(
+        {"pmid": "25775530", "doi": "10.1073/pnas.1417392112"},
+        settings=app.config,
+        logger=app.logger,
+        email="placeholder@example.com",
+    )
+
+    assert found == {"pmid": "25775530", "doi": "10.1073/pnas.1417392112", "pmcid": "PMC4378394"}
+
+
+CASSETTES = os.path.join(os.path.dirname(__file__), "cassettes")
+SENT_PARAMETERS = ["api_key", "email", "tool", "mailto"]
+
+
+def _lookup_sending(cassette, identifiers, app, **config):
+    """Replay a cassette and return what the lookup found and the query strings it sent,
+    read before the secrets are filtered off, as the recorder sees them. The recorder runs
+    its hook on the stored requests when the cassette loads and again on each request, so
+    only a request that carries the tool name, which every lookup sends, is a sent one."""
+    sent = {}
+
+    def keep_then_filter(request):
+        query = parse_qs(urlparse(request.uri).query, keep_blank_values=True)
+        if "tool" in query:
+            sent.setdefault(tuple(query["ids"]), query)
+        return remove_query_parameters(request, SENT_PARAMETERS)
+
+    recorder = vcr.VCR(
+        cassette_library_dir=CASSETTES,
+        record_mode="once",
+        before_record_request=keep_then_filter,
+        decode_compressed_response=True,
+        before_record_response=_scrub,
+    )
+    with recorder.use_cassette(cassette + ".yaml"):
+        found = lookup_ids_pubmed(identifiers, settings=app.config, logger=app.logger, **config)
+    return found, list(sent.values())
+
+
+def test_the_lookup_sends_one_id_per_request_and_secrets_only_when_configured(app):
+    found, sent = _lookup_sending(
+        "test_a_paper_with_a_doi_and_a_pmid_gets_its_pmcid",
+        {"pmid": "25775530", "doi": "10.1073/pnas.1417392112"},
+        app,
+    )
+
+    assert found["pmcid"] == "PMC4378394"
+    assert [q["ids"] for q in sent] == [["25775530"]]
+    assert sent[0]["tool"] == ["neurostore"]
+    assert "email" not in sent[0] and "api_key" not in sent[0]
+
+
+def test_an_id_the_converter_does_not_know_falls_through_to_the_next(app):
+    """pmid 12667850 is not in PMC; the doi asked next is. The pair is made up to
+    exercise the fall-through, and each request carries one id."""
+    found, sent = _lookup_sending(
+        "test_an_unknown_id_falls_through_to_the_next",
+        {"pmid": "12667850", "doi": "10.1073/pnas.1417392112"},
+        app,
+        email="placeholder@example.com",
+        api_key="placeholder-key",
+    )
+
+    assert found == {"pmid": "25775530", "doi": "10.1073/pnas.1417392112", "pmcid": "PMC4378394"}
+    assert [q["ids"] for q in sent] == [["12667850"], ["10.1073/pnas.1417392112"]]
+    assert all(q["email"] == ["placeholder@example.com"] for q in sent)
+    assert all(q["api_key"] == ["placeholder-key"] for q in sent)
 
 
 def test_the_merged_from_migration_goes_down_and_up_over_existing_rows(session, pair):

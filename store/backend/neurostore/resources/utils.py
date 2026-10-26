@@ -6,12 +6,15 @@ import re
 
 import sqlalchemy as sa
 from connexion.context import context
+from pgvector.sqlalchemy import Vector
 from psycopg2 import errors
 from sqlalchemy import func
 
 from neurostore import models, schemas
+from neurostore.encryption import EncryptedText
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_validation
+from neurostore.models.migration_types import TSVector
 from neurostore.resources.singular import singularize
 
 
@@ -384,14 +387,31 @@ def pubmed_to_tsquery(query: str) -> str:
     return result
 
 
-def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid):
+# Columns with no meaningful order, and the legacy full-text columns, which are
+# large enough that sorting on them would be a scan of the whole text.
+_UNSORTABLE_TYPES = (sa.JSON, TSVector, Vector, EncryptedText)
+_UNSORTABLE_NAMES = {"ace_fulltext", "pubget_fulltext"}
+
+
+def sortable_columns(model):
+    """Names of the columns of ``model`` a client may sort (or take distinct values) by."""
+    return {
+        attr.key
+        for attr in model.__mapper__.column_attrs
+        if not isinstance(attr.columns[0].type, _UNSORTABLE_TYPES)
+        and attr.key not in _UNSORTABLE_NAMES
+    }
+
+
+def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid_match):
     """Narrow ``q`` by a ``search`` string and per-column ILIKE filters.
 
     ``ts_vector`` is the full-text column to rank and match against, or None
     when the model has none (a non-numeric ``search`` is then ignored).
-    ``pmid`` is the column an all-digits ``search`` matches exactly, or None
-    when the model has none. ``field_filters`` maps columns to the substring
-    each must contain; None values are skipped.
+    ``pmid_match`` is the clause an all-digits ``search`` must satisfy, or None
+    when the model has no pmid (such a search is then ignored).
+    ``field_filters`` maps columns to the substring each must contain; None
+    values are skipped.
 
     Returns ``(q, rank_col)``; ``rank_col`` is the ts_rank column when a
     full-text search was applied, else None.
@@ -400,9 +420,8 @@ def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid):
 
     # temporary fix for pmid search
     if search is not None and search.isdigit():
-        if pmid is None:
-            raise sa.exc.InvalidRequestError("model has no pmid column to search")
-        q = q.filter(pmid == search)
+        if pmid_match is not None:
+            q = q.filter(pmid_match)
     elif search is not None and ts_vector is not None:
         try:
             validate_search_query(search)

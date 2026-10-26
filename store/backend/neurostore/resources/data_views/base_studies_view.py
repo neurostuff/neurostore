@@ -1,15 +1,25 @@
 from connexion import request
+import sqlalchemy as sa
 from marshmallow import fields as marshmallow_fields
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import joinedload, raiseload, selectinload
+from sqlalchemy.orm import joinedload, raiseload, selectinload, undefer
 from webargs import fields
 
+from neurostore.base_studies import (
+    ARTICLE_ID_LISTS,
+    article_identifiers,
+    attach_identifiers,
+    held_by,
+    lock_identifiers,
+    normalize,
+)
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_conflict
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
     Condition,
+    BaseStudyIdentifier,
     Image,
     PipelineConfig,
     PipelineStudyResult,
@@ -38,10 +48,15 @@ from neurostore.resources.data_views.common import (
 )
 from neurostore.resources.utils import view_maker
 from neurostore.review.app.service import review_source_count
-from neurostore.schemas.data import BaseDataSchema, StringOrNested, StudySchema
+from neurostore.schemas.data import (
+    ArticleIdentifiersSchema,
+    BaseDataSchema,
+    StringOrNested,
+    StudySchema,
+)
 
 
-class BaseStudyBulkPostResponseSchema(BaseDataSchema):
+class BaseStudyBulkPostResponseSchema(BaseDataSchema, ArticleIdentifiersSchema):
     name = marshmallow_fields.String(allow_none=True)
     description = marshmallow_fields.String(allow_none=True)
     publication = marshmallow_fields.String(allow_none=True)
@@ -86,8 +101,6 @@ class BaseStudiesView(ObjectView, ListView):
     _search_fields = (
         "name",
         "description",
-        "source_id",
-        "source",
         "authors",
         "publication",
         "doi",
@@ -104,7 +117,11 @@ class BaseStudiesView(ObjectView, ListView):
         return {"base-studies": set(ids)}
 
     def eager_load(self, q, args=None):
-        args = args or {}
+        return self._eager_load_versions(q, args or {}).options(
+            undefer(BaseStudy.identifiers)
+        )
+
+    def _eager_load_versions(self, q, args):
         if args.get("feature_filter"):
             q = q.options(
                 joinedload(BaseStudy.pipeline_study_results)
@@ -185,6 +202,15 @@ class BaseStudiesView(ObjectView, ListView):
             .options(raiseload("*", sql_only=True)),
         )
 
+    def pmid_match(self, model, search):
+        """Every pmid a base study holds counts, a preprint's and an alternative's too."""
+        return model.id.in_(
+            sa.select(BaseStudyIdentifier.base_study_id).where(
+                BaseStudyIdentifier.scheme == "pmid",
+                BaseStudyIdentifier.value == normalize("pmid", search),
+            )
+        )
+
     def view_search(self, q, args):
         return self.search_service.apply(q, args)
 
@@ -197,11 +223,11 @@ class BaseStudiesView(ObjectView, ListView):
         return super().join_tables(q, args)
 
     def post(self, body):
-        if isinstance(body, dict):
-            return super().post(body)
-
-        schema = self.__class__._schema(many=True)
-        data = load_schema_or_abort(schema, body)
+        """One base study or a list of them, each resolved by its identifiers
+        (neurostore.base_studies) to the base study it names or to a new one."""
+        many = not isinstance(body, dict)
+        schema = self.__class__._schema(many=True, exclude=() if many else ("id",))
+        data = load_schema_or_abort(schema, body if many else [body])
         from neurostore.resources.data_views.studies_view import StudiesView
 
         bulk_post_service = BaseStudyBulkPostService(
@@ -217,6 +243,8 @@ class BaseStudiesView(ObjectView, ListView):
             db.session.add_all(to_commit)
             db.session.flush()
 
+        # Read before the commit expires the records: each id read after it is a query.
+        response_ids = [base_study.id for base_study in base_studies]
         changed_base_study_ids = sorted(
             {record.id for record in changed_base_study_records if record.id}
         )
@@ -225,14 +253,41 @@ class BaseStudiesView(ObjectView, ListView):
             clear_cache(unique_ids)
             self.update_base_studies(unique_ids.get("base-studies"))
             db.session.commit()
-            response_records = load_base_study_response_records(
-                [base_study.id for base_study in base_studies], User
-            )
+            response_records = load_base_study_response_records(response_ids, User)
         else:
             response_records = base_studies
 
-        return BaseStudyBulkPostResponseSchema(context={"info": True}, many=True).dump(
-            response_records
+        if many:
+            return BaseStudyBulkPostResponseSchema(context={"info": True}, many=True).dump(
+                response_records
+            )
+        return self.__class__._schema().dump(response_records[0])
+
+    def db_validation(self, record, data):
+        """A PUT is taken as it is. The ids it lists are added, and an id another base study
+        holds stays with that base study: it is logged and recorded as a merge candidate,
+        as for a POST. An id the record already stores is not asked of anyone."""
+        posted = [
+            identifier
+            for identifier in article_identifiers(data)
+            if not (
+                identifier.kind == "vor"
+                and normalize(identifier.scheme, getattr(record, identifier.scheme))
+                == identifier.value
+            )
+        ]
+        lock_identifiers(db.session, posted)
+        held = held_by(db.session, posted)
+        for field in ARTICLE_ID_LISTS:
+            data.pop(field, None)
+        # A version of record's id nobody holds is the column's to set; the rest is added
+        # here, or left with its holder.
+        attach_identifiers(
+            db.session,
+            record,
+            [i for i in posted if i.kind != "vor" or i.key in held],
+            held,
+            source="put",
         )
 
     def delete(self, id):

@@ -1,10 +1,12 @@
 from sqlalchemy import select
 from sqlalchemy.orm import raiseload, selectinload
+from webargs import fields
 
 from neurostore.database import db
 from neurostore.models import Analysis, BaseStudy, Point, PointValue, Study, User
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import ListView, ObjectView
+from neurostore.resources.data_views.common import filter_by_analysis_name
 from neurostore.resources.utils import view_maker
 
 
@@ -17,7 +19,11 @@ class PointsView(ObjectView, ListView):
         "entities": "EntitiesResource",
     }
     _parent = {"analysis": "AnalysesView"}
-    _search_fields = ("space", "analysis_name")
+    _view_fields = {"analysis_name": fields.String(load_default=None)}
+    _search_fields = ("space",)
+
+    def view_search(self, q, args):
+        return filter_by_analysis_name(q, Point, args.get("analysis_name"))
 
     def get_affected_ids(self, ids):
         query = (

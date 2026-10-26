@@ -39,6 +39,7 @@ POINTER_INDEX_REVISION = "d4b7e1f9a3c2"
 STABLE_ID_REVISION = "f2b4d6e8a0c3"
 TEXT_COPY_REVISION = "a3c5e7f9b1d4"
 CORRESPONDING_EMAILS_REVISION = "c7e9a1b3d5f8"
+IDENTIFIERS_REVISION = "a8e1c4d7b2f6"
 MERGED_FROM_REVISION = "d4e6f8a0b2c4"
 AUTHORS_REVISION = "e7a9c1d3f5b8"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
@@ -644,7 +645,8 @@ def test_the_pointer_index_migration_follows_the_review_migration():
 def test_the_authors_migration_is_the_only_head():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
     assert script.get_heads() == [AUTHORS_REVISION]
-    assert script.get_revision(AUTHORS_REVISION).down_revision == MERGED_FROM_REVISION
+    assert script.get_revision(AUTHORS_REVISION).down_revision == IDENTIFIERS_REVISION
+    assert script.get_revision(IDENTIFIERS_REVISION).down_revision == MERGED_FROM_REVISION
     assert script.get_revision(MERGED_FROM_REVISION).down_revision == (
         CORRESPONDING_EMAILS_REVISION
     )

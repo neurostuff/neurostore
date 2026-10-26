@@ -491,6 +491,7 @@ def test_a_pmcid_alone_finds_its_base_study(session, make_user, tmp_path):
 
 
 PREPRINT_DOI = {"doi": "10.1101/2025.01.01.000001", "server": "biorxiv"}
+OTHER_PREPRINT_DOI = {"doi": "10.1101/2025.02.02.000002", "server": "medrxiv"}
 
 
 def import_with_identifiers(session, tmp_path, **ids):
@@ -513,57 +514,74 @@ def test_a_version_of_record_id_beats_a_preprint_id_on_an_older_base_study(
 
 
 @pytest.mark.parametrize(
-    "column, value, ids",
+    "column, values, ids",
     [
-        ("doi", PREPRINT_DOI["doi"], {"preprint_dois": [PREPRINT_DOI]}),
-        ("pmid", "40000001", {"preprint_pmids": ["40000001"]}),
-        ("pmcid", "PMC40000001", {"preprint_pmcids": ["PMC40000001"]}),
+        ("pmid", ["1001", "1002"], {"preprint_pmids": ["1001", "1002"]}),
+        ("pmcid", ["PMC1001", "PMC1002"], {"preprint_pmcids": ["PMC1001", "PMC1002"]}),
+        (
+            "doi",
+            [PREPRINT_DOI["doi"], OTHER_PREPRINT_DOI["doi"]],
+            {"preprint_dois": [PREPRINT_DOI, OTHER_PREPRINT_DOI]},
+        ),
     ],
 )
-def test_a_preprint_finds_the_base_study_first_seen_as_that_preprint(
-    session, make_user, tmp_path, column, value, ids
+def test_the_oldest_base_study_holding_an_id_of_one_strength_is_matched(
+    session, make_user, tmp_path, column, values, ids
 ):
     make_user(REVIEWER, "admin-reviewer")
-    first_seen = add_base_study(session, **{column: value})
-
-    report = import_with_identifiers(session, tmp_path, **ids)
-
-    assert report["loaded"][0]["base_study_id"] == first_seen.id
-
-
-OTHER_PREPRINT_DOI = {"doi": "10.1101/2025.02.02.000002", "server": "medrxiv"}
-
-
-@pytest.mark.parametrize(
-    "column, value, ids",
-    [
-        ("pmid", "1001", {"pmid": "1001"}),
-        ("pmid", "40000001", {"preprint_pmids": ["40000001"]}),
-        ("doi", PREPRINT_DOI["doi"], {"preprint_dois": [PREPRINT_DOI]}),
-    ],
-)
-def test_the_oldest_base_study_within_a_step_is_matched(
-    session, make_user, tmp_path, column, value, ids
-):
-    make_user(REVIEWER, "admin-reviewer")
-    oldest = add_base_study(session, **{column: value})
-    add_base_study(session, **{column: value})
+    oldest = add_base_study(session, **{column: values[1]})
+    add_base_study(session, **{column: values[0]})
 
     report = import_with_identifiers(session, tmp_path, **ids)
 
     assert report["loaded"][0]["base_study_id"] == oldest.id
 
 
-def test_the_first_preprint_doi_with_a_base_study_is_matched(session, make_user, tmp_path):
+def test_the_oldest_base_study_holding_a_preprint_doi_is_matched_whatever_the_order_listed(
+    session, make_user, tmp_path
+):
     make_user(REVIEWER, "admin-reviewer")
-    add_base_study(session, doi=OTHER_PREPRINT_DOI["doi"])
-    by_first = add_base_study(session, doi=PREPRINT_DOI["doi"])
+    oldest = add_base_study(session, doi=OTHER_PREPRINT_DOI["doi"])
+    add_base_study(session, doi=PREPRINT_DOI["doi"])
 
     report = import_with_identifiers(
         session, tmp_path, preprint_dois=[PREPRINT_DOI, OTHER_PREPRINT_DOI]
     )
 
-    assert report["loaded"][0]["base_study_id"] == by_first.id
+    assert report["loaded"][0]["base_study_id"] == oldest.id
+
+
+def test_a_preprints_doi_pmid_and_pmcid_are_equally_strong_so_the_oldest_base_study_wins(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    oldest = add_base_study(session, pmid="40000001")
+    add_base_study(session, pmcid="PMC40000001")
+    add_base_study(session, doi=PREPRINT_DOI["doi"])
+
+    report = import_with_identifiers(
+        session,
+        tmp_path,
+        preprint_pmids=["40000001"],
+        preprint_pmcids=["PMC40000001"],
+        preprint_dois=[PREPRINT_DOI],
+    )
+
+    assert report["loaded"][0]["base_study_id"] == oldest.id
+
+
+def test_a_preprint_id_beats_an_alternative_id_on_an_older_base_study(
+    session, make_user, tmp_path
+):
+    make_user(REVIEWER, "admin-reviewer")
+    add_base_study(session, pmid="1002")
+    by_preprint = add_base_study(session, pmid="40000001")
+
+    report = import_with_identifiers(
+        session, tmp_path, preprint_pmids=["40000001"], alternative_pmids=["1002"]
+    )
+
+    assert report["loaded"][0]["base_study_id"] == by_preprint.id
 
 
 def test_a_later_preprint_doi_is_tried_when_the_first_has_no_base_study(
@@ -596,39 +614,6 @@ def test_a_later_preprint_pmid_or_pmcid_is_tried_when_the_first_has_no_base_stud
     report = import_with_identifiers(session, tmp_path, **ids)
 
     assert report["loaded"][0]["base_study_id"] == by_second.id
-
-
-def test_a_preprint_doi_beats_a_preprint_pmid_and_pmcid_on_an_older_base_study(
-    session, make_user, tmp_path
-):
-    make_user(REVIEWER, "admin-reviewer")
-    add_base_study(session, pmid="40000001")
-    add_base_study(session, pmcid="PMC40000001")
-    by_doi = add_base_study(session, doi=PREPRINT_DOI["doi"])
-
-    report = import_with_identifiers(
-        session,
-        tmp_path,
-        preprint_pmids=["40000001"],
-        preprint_pmcids=["PMC40000001"],
-        preprint_dois=[PREPRINT_DOI],
-    )
-
-    assert report["loaded"][0]["base_study_id"] == by_doi.id
-
-
-def test_a_preprint_pmid_beats_a_preprint_pmcid_on_an_older_base_study(
-    session, make_user, tmp_path
-):
-    make_user(REVIEWER, "admin-reviewer")
-    add_base_study(session, pmcid="PMC40000001")
-    by_pmid = add_base_study(session, pmid="40000001")
-
-    report = import_with_identifiers(
-        session, tmp_path, preprint_pmids=["40000001"], preprint_pmcids=["PMC40000001"]
-    )
-
-    assert report["loaded"][0]["base_study_id"] == by_pmid.id
 
 
 def test_a_paper_matching_no_base_study_names_every_identifier_searched_in_order(
