@@ -40,7 +40,7 @@ dependencies = [
     "orjson~=3.13",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.22.1",
-    "openai~=3.31",
+    "openai~=3.37",
     "tenacity~=9.2",
     "sentry-sdk~=2.72",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
