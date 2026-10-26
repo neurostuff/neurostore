@@ -302,6 +302,15 @@ class BaseStudy(BaseMixin, db.Model):
     corresponding_author_emails = relationship(
         "CorrespondingAuthorEmail", lazy="raise", passive_deletes=True
     )
+    # Its authors in published order; `universities`, which their affiliations name, is
+    # defined after the affiliation model.
+    authors_listed = relationship(
+        "BaseStudyAuthor",
+        order_by="BaseStudyAuthor.position",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
     identifier_rows = relationship(
         "BaseStudyIdentifier",
         passive_deletes=True,
@@ -662,6 +671,106 @@ class BaseStudyMetadataOutbox(db.Model):
     )
 
 
+class Author(BaseMixin, db.Model):
+    """A person who wrote papers. One row per ORCID iD, else per OpenAlex author id; an
+    author with neither is a row of their own for each paper. Where they worked is not
+    theirs but each paper's (`BaseStudyAuthorAffiliation`), since authors move."""
+
+    __tablename__ = "authors"
+    name = db.Column(db.Text, nullable=False)
+    orcid = db.Column(db.Text, nullable=True, unique=True)
+    openalex_id = db.Column(db.Text, nullable=True, unique=True)
+
+    papers = relationship("BaseStudyAuthor", back_populates="author", lazy="raise")
+
+
+class University(BaseMixin, db.Model):
+    """An organization in the Research Organization Registry: a university, and also a
+    hospital or an institute when a paper names one."""
+
+    __tablename__ = "universities"
+    ror = db.Column(db.Text, nullable=False, unique=True)
+    name = db.Column(db.Text, nullable=True)
+    country = db.Column(db.Text, nullable=True)
+
+
+class BaseStudyAuthor(BaseMixin, db.Model):
+    """An author as one paper lists them: their place, the name it gives, and whether
+    they are a corresponding author of this paper."""
+
+    __tablename__ = "base_study_authors"
+    base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    author_id = db.Column(
+        db.Text, db.ForeignKey("authors.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    position = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.Text, nullable=False)
+    corresponding = db.Column(db.Boolean, nullable=True)
+
+    author = relationship("Author", back_populates="papers", lazy="raise")
+    affiliations = relationship(
+        "BaseStudyAuthorAffiliation",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="BaseStudyAuthorAffiliation.position",
+        lazy="raise",
+    )
+
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "base_study_id", "position", name="uq_base_study_authors_base_study_id_position"
+        ),
+    )
+
+
+class BaseStudyAuthorAffiliation(BaseMixin, db.Model):
+    """One affiliation an author gives on one paper: its text as printed, and the
+    university it names when the registry holds it. A text naming two organizations is
+    two rows of the same text."""
+
+    __tablename__ = "base_study_author_affiliations"
+    base_study_author_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_study_authors.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    position = db.Column(db.Integer, nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    university_id = db.Column(
+        db.Text, db.ForeignKey("universities.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    university = relationship("University", lazy="raise")
+
+
+_AFFILIATED = sa.join(
+    BaseStudyAuthor.__table__,
+    BaseStudyAuthorAffiliation.__table__,
+    BaseStudyAuthor.id == BaseStudyAuthorAffiliation.base_study_author_id,
+)
+# The universities a paper's authors give on it, and those an author gave on any paper:
+# an author is tied to a university only through a paper, since authors move.
+BaseStudy.universities = relationship(
+    University,
+    secondary=_AFFILIATED,
+    primaryjoin=BaseStudy.id == BaseStudyAuthor.base_study_id,
+    secondaryjoin=University.id == BaseStudyAuthorAffiliation.university_id,
+    viewonly=True,
+    lazy="raise",
+)
+Author.universities = relationship(
+    University,
+    secondary=_AFFILIATED,
+    primaryjoin=Author.id == BaseStudyAuthor.author_id,
+    secondaryjoin=University.id == BaseStudyAuthorAffiliation.university_id,
+    viewonly=True,
+    lazy="raise",
+)
+
+
 class CorrespondingAuthorEmail(BaseMixin, db.Model):
     """An email a paper prints for one of its corresponding authors, and whether we have
     written to them, heard back, and been sent their data.
@@ -675,6 +784,13 @@ class CorrespondingAuthorEmail(BaseMixin, db.Model):
         db.Text,
         db.ForeignKey("base_studies.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
+    )
+    # The author on this paper the address is theirs; None for one paired with no author.
+    base_study_author_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_study_authors.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
     email = db.Column(EncryptedText, nullable=False)

@@ -14,7 +14,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import aliased
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from neurostore import corresponding_authors
+from neurostore import authors, corresponding_authors
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
 from neurostore.models import (
@@ -1122,6 +1122,11 @@ def merge_base_study(keeper, old):
         changes.extend(
             Change("corresponding_author_emails", kept_id, mark, False, True) for mark in marked
         )
+
+    string_before = keeper.authors
+    changes.extend(Change(*row) for row in authors.move_authors(old.id, keeper.id))
+    if keeper.authors != string_before:
+        changes.append(Change("base_studies", keeper.id, "authors", string_before, keeper.authors))
 
     for model, column in _HEADER_DOCUMENTS:
         document = getattr(model, column)

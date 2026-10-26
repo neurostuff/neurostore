@@ -1,10 +1,13 @@
 from neurostore.models.auth import Role, User
 from neurostore.models.data import (
     Analysis,
+    Author,
     AnalysisConditions,
     Annotation,
     AnnotationAnalysis,
     BaseStudy,
+    BaseStudyAuthor,
+    BaseStudyAuthorAffiliation,
     BaseStudyIdentifier,
     BaseStudyMergeCandidate,
     BaseStudyFlagOutbox,
@@ -31,6 +34,7 @@ from neurostore.models.data import (
     Studyset,
     StudysetStudy,
     Table,
+    University,
 )
 from neurostore.models.fulltext import Fulltext
 from neurostore.models.review import (
@@ -50,6 +54,10 @@ __all__ = [
     "BaseStudyFlagOutbox",
     "BaseStudyMetadataOutbox",
     "CorrespondingAuthorEmail",
+    "Author",
+    "University",
+    "BaseStudyAuthor",
+    "BaseStudyAuthorAffiliation",
     "Study",
     "Analysis",
     "Table",

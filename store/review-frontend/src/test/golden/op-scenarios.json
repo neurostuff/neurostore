@@ -126,7 +126,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -164,7 +164,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -1377,7 +1377,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -1415,7 +1415,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -6059,7 +6059,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -6097,7 +6097,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -7922,7 +7922,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -7960,7 +7960,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -11016,7 +11016,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -12551,7 +12551,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -13629,7 +13629,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -15576,7 +15576,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -17160,7 +17160,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -18718,7 +18718,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -19444,7 +19444,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -20531,7 +20531,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -21651,7 +21651,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -22643,7 +22643,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0",
+                "schema_version": "0.10.0",
                 "inputs": [
                   {
                     "artifact_kind": "parsed_paper",
@@ -30973,7 +30973,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -31011,7 +31011,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -32912,7 +32912,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -32950,7 +32950,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -35648,7 +35648,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -35686,7 +35686,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -37145,7 +37145,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -37183,7 +37183,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {
@@ -40612,7 +40612,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "parsed_paper",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "source": "pmc",
               "text_copy": {
@@ -40650,7 +40650,7 @@
                   "publication_status": "published"
                 },
                 "artifact_kind": "coordinate_parse",
-                "schema_version": "0.9.0"
+                "schema_version": "0.10.0"
               },
               "analyses": [
                 {

@@ -1,7 +1,8 @@
 """The emails papers print for their corresponding authors, kept per base study.
 
 An address is added once per base study and never removed by an upload: its
-`contacted`, `responded` and `shared` marks are ours, not the paper's. A merge
+`contacted`, `responded` and `shared` marks are ours, not the paper's. Each is tied to
+the author on the paper it belongs to (`base_study_author_id`), when the paper says. A merge
 moves a duplicate's addresses to the base study it is merged into, keeping any
 mark either one had.
 """
@@ -19,33 +20,33 @@ from neurostore.models import CorrespondingAuthorEmail
 MARKS = ("contacted", "responded", "shared")
 
 
-def emails_in(parsed_paper) -> list:
-    """The emails a parsed paper's bibliography gives its corresponding authors."""
-    bibliography = (parsed_paper or {}).get("bibliography") or {}
-    return [
-        author["email"]
-        for author in bibliography.get("corresponding_authors") or []
-        if author.get("email")
-    ]
+def add_emails(base_study_id: str, emails: Iterable[tuple], authors=None) -> int:
+    """Store each address the base study does not hold yet; how many were new.
 
-
-def add_emails(base_study_id: str, emails: Iterable[str]) -> int:
-    """Store each address the base study does not hold yet; how many were new."""
-    held = set(
-        db.session.scalars(
-            sa.select(CorrespondingAuthorEmail.email_index).where(
+    `emails` are (address, position of its author or None), as
+    `neurostore.authors.correspondence` gives them, and `authors` the base study's author
+    rows by position. Every address, new or held, is tied to its author's row.
+    """
+    held = {
+        row.email_index: row
+        for row in db.session.scalars(
+            sa.select(CorrespondingAuthorEmail).where(
                 CorrespondingAuthorEmail.base_study_id == base_study_id
             )
         )
-    )
+    }
     added = 0
-    for email in emails:
+    for email, position in emails:
         index = encryption.email_index(email)
-        if index in held:
-            continue
-        held.add(index)
-        db.session.add(CorrespondingAuthorEmail(base_study_id=base_study_id, email=email))
-        added += 1
+        author = (authors or {}).get(position)
+        row = held.get(index)
+        if row is None:
+            row = CorrespondingAuthorEmail(base_study_id=base_study_id, email=email)
+            db.session.add(row)
+            held[index] = row
+            added += 1
+        if author is not None:
+            row.base_study_author_id = author.id
     return added
 
 

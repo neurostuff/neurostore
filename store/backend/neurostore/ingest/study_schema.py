@@ -109,7 +109,7 @@ from neurostore.models import (
     StudyEntity,
     Table,
 )
-from neurostore import corresponding_authors
+from neurostore import authors, corresponding_authors
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.stored_parses import stored_parse, stored_parse_result
 from neurostore.study_schema_tools import (
@@ -225,7 +225,8 @@ def ingest_upload(body, user=None):
     if record is not None:
         _check_stable_ids(base_study, record)
     _set_retraction(base_study, parsed_paper)
-    corresponding_authors.add_emails(base_study.id, corresponding_authors.emails_in(parsed_paper))
+    listed = authors.store_authors(base_study.id, parsed_paper)
+    corresponding_authors.add_emails(base_study.id, authors.correspondence(parsed_paper), listed)
 
     summary = {
         "kind": kind,
@@ -485,7 +486,7 @@ def _bibliography(parsed_paper):
     if parsed_paper is None:
         return {}
     bib = parsed_paper["bibliography"]
-    authors = [a.get("name") if isinstance(a, dict) else a for a in bib.get("authors") or []]
+    names = [a.get("name") if isinstance(a, dict) else a for a in bib.get("authors") or []]
     # NOTE (licensing, 2026-10-16): the abstract is stored and shown whatever its
     # licence. Open question: should an abstract whose licence does not permit
     # redistribution be hidden? study_schema will carry the paper's licence and a
@@ -497,7 +498,7 @@ def _bibliography(parsed_paper):
         "description": bib.get("abstract"),
         "publication": bib.get("journal"),
         "year": bib.get("publication_year"),
-        "authors": ", ".join(a for a in authors if a) or None,
+        "authors": ", ".join(a for a in names if a) or None,
     }
     return {k: v for k, v in fields.items() if v is not None}
 
