@@ -1,3 +1,7 @@
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 import httpx
 import pytest
 from openai import APIConnectionError, APIStatusError, APITimeoutError
@@ -85,3 +89,85 @@ async def test_semantic_search_without_an_embedding_key_is_a_503(
     resp = await auth_client.get(SEARCH)
     assert resp.status_code == 503
     assert "not configured" in resp.json()["detail"]
+
+
+SECRET = "sk-the-gateway-echoes-this"
+OK_USAGE = {"prompt_tokens": 1, "total_tokens": 1}
+
+
+def _embedding_answer(embedding):
+    return json.dumps(
+        {
+            "object": "list",
+            "model": "m",
+            "usage": OK_USAGE,
+            "data": [{"object": "embedding", "index": 0, "embedding": embedding}],
+        }
+    )
+
+
+UNUSABLE_ANSWERS = {
+    "html": (200, "text/html", "<html><body>Maintenance</body></html>"),
+    "empty object": (200, "application/json", "{}"),
+    "null data": (200, "application/json", '{"data": null}'),
+    "empty data": (200, "application/json", '{"data": []}'),
+    "null entry": (200, "application/json", '{"data": [null]}'),
+    "no embedding": (200, "application/json", '{"data": [{"index": 0}]}'),
+    "null embedding": (200, "application/json", _embedding_answer(None)),
+    "bad base64": (200, "application/json", _embedding_answer("not*base64!")),
+    "non-numeric": (200, "application/json", _embedding_answer(["a", "b"])),
+    "echoed key": (400, "application/json", json.dumps({"error": SECRET})),
+}
+
+
+@pytest.fixture
+def gateway(monkeypatch):
+    """A real local HTTP server standing in for the embedding gateway."""
+    answer = {}
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("content-length", 0)))
+            code, content_type, body = answer["response"]
+            payload = body.encode()
+            self.send_response(code)
+            self.send_header("content-type", content_type)
+            self.send_header("content-length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENAI_API_GATEWAY", f"http://127.0.0.1:{server.server_port}/v1")
+    monkeypatch.delenv("OPENAI_EMBEDDING_MODEL", raising=False)
+    yield answer
+    server.shutdown()
+    server.server_close()
+
+
+@pytest.mark.parametrize("kind", UNUSABLE_ANSWERS)
+def test_an_unusable_answer_is_an_embedding_service_error(gateway, kind):
+    gateway["response"] = UNUSABLE_ANSWERS[kind]
+    with pytest.raises(EmbeddingServiceError) as raised:
+        get_embedding("neural developmental disorders")
+    assert SECRET not in str(raised.value)
+    assert raised.value.__cause__ is None
+
+
+def test_a_usable_answer_is_returned_as_floats(gateway):
+    gateway["response"] = (200, "application/json", _embedding_answer([0.5, 1, -2.25]))
+    assert get_embedding("anything") == [0.5, 1.0, -2.25]
+
+
+@pytest.mark.parametrize("kind", ["html", "empty object", "echoed key"])
+async def test_semantic_search_with_an_unusable_answer_is_a_502(
+    auth_client, gateway, kind
+):
+    gateway["response"] = UNUSABLE_ANSWERS[kind]
+    resp = await auth_client.get(SEARCH)
+    assert resp.status_code == 502
+    assert SECRET not in resp.text

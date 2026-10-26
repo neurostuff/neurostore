@@ -105,6 +105,8 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
     if dimensions is not None and not isinstance(dimensions, int):
         raise ValueError("dimensions must be an int when provided")
 
+    # The reason is the exception's class and status code only: an upstream body or
+    # response object could echo the key, and would reach the client in the 502.
     try:
         resp = _call_openai_create(
             model=model_name,
@@ -113,30 +115,8 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
             api_key=api_key,
             api_gateway=api_gateway,
         )
-    except openai.OpenAIError as exc:
-        raise EmbeddingServiceError(f"Failed to get embedding: {exc}") from exc
-
-    # Handle both legacy dict responses and modern OpenAI response objects.
-    if isinstance(resp, dict):
-        data = resp.get("data")
-    elif hasattr(resp, "data"):
-        data = resp.data
-    else:
-        raise EmbeddingServiceError(f"Unexpected response type from OpenAI: {type(resp)}")
-
-    if not isinstance(data, list) or not data:
-        raise EmbeddingServiceError(f"Invalid response shape from OpenAI: {resp}")
-
-    first = data[0]
-    # extract embedding whether first is a dict or an object with .embedding
-    if isinstance(first, dict):
-        embedding = first.get("embedding")
-    elif hasattr(first, "embedding"):
-        embedding = first.embedding
-    else:
-        raise EmbeddingServiceError(f"Invalid embedding in OpenAI response: {resp}")
-
-    if not hasattr(embedding, "__iter__"):
-        raise EmbeddingServiceError("Embedding returned by OpenAI is not iterable")
-
-    return [float(x) for x in embedding]
+        return [float(x) for x in resp.data[0].embedding]
+    except Exception as exc:
+        status = getattr(exc, "status_code", None)
+        reason = type(exc).__name__ if status is None else f"status {status}"
+        raise EmbeddingServiceError(f"Failed to get embedding: {reason}") from None
