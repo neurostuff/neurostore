@@ -1123,7 +1123,10 @@ def merge_base_study(keeper, old):
             Change("corresponding_author_emails", kept_id, mark, False, True) for mark in marked
         )
 
+    string_before = keeper.authors
     changes.extend(Change(*row) for row in authors.move_authors(old.id, keeper.id))
+    if keeper.authors != string_before:
+        changes.append(Change("base_studies", keeper.id, "authors", string_before, keeper.authors))
 
     for model, column in _HEADER_DOCUMENTS:
         document = getattr(model, column)

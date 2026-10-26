@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, raiseload, selectinload, undefer
 from webargs import fields
 
+from neurostore import authors
 from neurostore.base_studies import (
     ARTICLE_ID_LISTS,
     article_identifiers,
@@ -276,6 +277,9 @@ class BaseStudiesView(ObjectView, ListView):
                 == identifier.value
             )
         ]
+        if authors.has_listed(record.id):
+            # The string follows the listed authors; a PUT does not set it apart from them.
+            data.pop("authors", None)
         lock_identifiers(db.session, posted)
         held = held_by(db.session, posted)
         for field in ARTICLE_ID_LISTS:

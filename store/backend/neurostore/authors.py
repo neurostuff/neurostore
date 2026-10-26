@@ -10,6 +10,7 @@ text, tied to a university only when the parsed paper names its ROR id.
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Dict, List, Optional
 
@@ -19,10 +20,13 @@ from sqlalchemy.orm import selectinload
 from neurostore.database import db
 from neurostore.models import (
     Author,
+    BaseStudy,
     BaseStudyAuthor,
     BaseStudyAuthorAffiliation,
     University,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def store_authors(base_study_id: str, parsed_paper) -> Optional[Dict[int, BaseStudyAuthor]]:
@@ -71,7 +75,26 @@ def store_authors(base_study_id: str, parsed_paper) -> Optional[Dict[int, BaseSt
         stored[position] = row
     db.session.flush()
     _drop_unlisted({row.author_id for row in held} - {a.id for a in authors})
+    derive_authors_string(base_study_id)
     return stored
+
+
+def has_listed(base_study_id: str) -> bool:
+    return db.session.scalar(
+        sa.select(sa.exists().where(BaseStudyAuthor.base_study_id == base_study_id))
+    )
+
+
+def derive_authors_string(base_study_id: str) -> None:
+    """Set `base_studies.authors`, the string the API and its search serve, from the
+    base study's listed authors in published order. A base study with none keeps its string."""
+    names = db.session.scalars(
+        sa.select(BaseStudyAuthor.name)
+        .where(BaseStudyAuthor.base_study_id == base_study_id)
+        .order_by(BaseStudyAuthor.position)
+    ).all()
+    if names:
+        db.session.get(BaseStudy, base_study_id).authors = ", ".join(names)
 
 
 _EMAIL = re.compile(r"[\w.+'-]+@[\w-]+(?:\.[\w-]+)+")
@@ -88,8 +111,14 @@ def _author(position: int, entry, alone) -> Author:
     found = None
     if orcid:
         found = db.session.scalar(sa.select(Author).where(Author.orcid == orcid))
-    if found is None and openalex_id:
-        found = db.session.scalar(sa.select(Author).where(Author.openalex_id == openalex_id))
+    if openalex_id:
+        by_openalex = db.session.scalar(
+            sa.select(Author).where(Author.openalex_id == openalex_id)
+        )
+        if found is None:
+            found = by_openalex
+        elif by_openalex is not None and by_openalex.id != found.id:
+            _merge_one_person(found, by_openalex)
     if found is None and not (orcid or openalex_id):
         found = alone.get((position, entry["name"]))
     if found is None:
@@ -103,6 +132,24 @@ def _author(position: int, entry, alone) -> Author:
     if openalex_id and not found.openalex_id and not _held(Author.openalex_id, openalex_id):
         found.openalex_id = openalex_id
     return found
+
+
+def _merge_one_person(kept: Author, other: Author) -> None:
+    """One paper gives `kept` (found by ORCID iD) and `other` (found by OpenAlex id) as the
+    same person: `other`'s papers become `kept`'s and `other` is deleted. Two rows that each
+    hold an id the other lacks may be two people with a wrong id, so they stay apart."""
+    if kept.openalex_id is not None or other.orcid is not None:
+        logger.warning("authors %s and %s share one paper entry but hold different ids; "
+                       "not merged", kept.id, other.id)
+        return
+    db.session.execute(
+        sa.update(BaseStudyAuthor)
+        .where(BaseStudyAuthor.author_id == other.id)
+        .values(author_id=kept.id)
+    )
+    db.session.execute(sa.delete(Author).where(Author.id == other.id))
+    db.session.flush()
+    db.session.expire(kept)
 
 
 def _held(column, value) -> bool:
@@ -174,6 +221,7 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
             row.base_study_id = to_id
             done.append(("base_study_authors", row.id, "base_study_id", from_id, to_id))
         db.session.flush()
+        derive_authors_string(to_id)
         return done
     by_place = {row.position: row for row in kept}
     for row in old:

@@ -63,6 +63,15 @@ def _universities_of(author_id):
     ).unique())
 
 
+def _universities_on(row_id):
+    return sorted(db.session.scalars(
+        sa.select(University.ror)
+        .join(BaseStudyAuthorAffiliation,
+              BaseStudyAuthorAffiliation.university_id == University.id)
+        .where(BaseStudyAuthorAffiliation.base_study_author_id == row_id)
+    ))
+
+
 def test_a_paper_s_authors_their_affiliations_and_universities_are_stored(session):
     summary = _upload(
         "1001",
@@ -190,7 +199,7 @@ def test_a_merge_gives_the_keeper_the_universities_of_the_same_author_on_the_old
 
     (row,) = _listed(keeper)
     assert (row.id, row.corresponding) == (kept.id, True)
-    assert _universities_of(row.author_id) == [UT["ror"]]
+    assert _universities_on(row.id) == [UT["ror"]]
     assert len(_listed(keeper)) == 1  # the same person is not listed twice
 
 
@@ -204,7 +213,100 @@ def test_a_merge_keeps_the_keeper_s_own_affiliations_and_list(session):
 
     assert [r.name for r in _listed(keeper)] == ["Ada Lovelace", "Charles Babbage"]
     ada = _listed(keeper)[0]
-    assert _universities_of(ada.author_id) == [STANFORD["ror"]]
+    assert _universities_on(ada.id) == [STANFORD["ror"]]
+
+
+def test_the_authors_string_follows_the_listed_authors(session):
+    summary = _upload("1001", _person("Ada Lovelace", ORCID), _person("Charles Babbage"))
+    base_study = db.session.get(BaseStudy, summary["base_study_id"])
+    assert base_study.authors == "Ada Lovelace, Charles Babbage"
+
+    _upload("1001", _person("Charles Babbage"), _person("Ada King", ORCID))
+    assert base_study.authors == "Charles Babbage, Ada King"
+
+
+def test_a_base_study_without_listed_authors_keeps_its_authors_string(session):
+    base_study = BaseStudy(name="paper", level="group", authors="Lovelace A, Babbage C", pmid="1001")
+    db.session.add(base_study)
+    db.session.flush()
+    paper = fx.parsed_paper(pmid="1001")
+    ingest_upload({"coordinate_parse": fx.parse([ANALYSIS], pmid="1001"), "parsed_paper": paper})
+    other = BaseStudy(name="other", level="group", authors="Hopper G")
+    db.session.add(other)
+    db.session.flush()
+
+    merge_base_study(base_study, other)
+
+    assert (base_study.authors, other.authors) == ("Lovelace A, Babbage C", "Hopper G")
+
+
+def test_a_merge_derives_the_keeper_s_authors_string_from_the_authors_it_gains(session):
+    keeper = BaseStudy(name="keeper", level="group", authors="A. Lovelace")
+    db.session.add(keeper)
+    db.session.flush()
+    old = _upload("1001", _person("Ada Lovelace", ORCID), _person("Charles Babbage")
+                  )["base_study_id"]
+
+    merge_base_study(keeper, db.session.get(BaseStudy, old))
+
+    assert keeper.authors == "Ada Lovelace, Charles Babbage"
+
+
+def test_a_merge_leaves_the_authors_string_of_a_keeper_that_lists_authors(session):
+    keeper = _upload("1001", _person("Ada Lovelace", ORCID))["base_study_id"]
+    old = _upload("1002", _person("Grace Hopper"))["base_study_id"]
+
+    merge_base_study(db.session.get(BaseStudy, keeper), db.session.get(BaseStudy, old))
+
+    assert db.session.get(BaseStudy, keeper).authors == "Ada Lovelace"
+
+
+@pytest.mark.anyio
+async def test_a_put_does_not_set_the_authors_string_apart_from_the_listed_authors(
+    session, auth_client
+):
+    own = {"name": "paper", "authors": "Old A"}
+    plain = (await auth_client.post("/api/base-studies/", data={**own, "pmid": "1002"})).json()["id"]
+    listed = (await auth_client.post("/api/base-studies/", data={**own, "pmid": "1001"})).json()["id"]
+    assert _upload("1001", _person("Ada Lovelace", ORCID))["base_study_id"] == listed
+    db.session.commit()
+
+    kept = await auth_client.put(f"/api/base-studies/{listed}", data={"authors": "Someone Else"})
+    changed = await auth_client.put(f"/api/base-studies/{plain}", data={"authors": "New B"})
+
+    assert (kept.status_code, changed.status_code) == (200, 200)
+    db.session.expire_all()
+    assert db.session.get(BaseStudy, listed).authors == "Ada Lovelace"
+    assert db.session.get(BaseStudy, plain).authors == "New B"
+
+
+def test_a_paper_giving_both_ids_joins_the_rows_each_id_made_into_one_author(session):
+    papers = [_upload("1001", _person("Ada Lovelace", ORCID)),
+              _upload("1002", _person("A. Lovelace", None, "A5000000001")),
+              _upload("1003", _person("Ada Lovelace", ORCID, "A5000000001"))]
+
+    (person,) = db.session.scalars(sa.select(Author)).all()
+
+    assert (person.orcid, person.openalex_id) == (ORCID, "A5000000001")
+    linked = db.session.scalars(
+        sa.select(BaseStudyAuthor.base_study_id).where(BaseStudyAuthor.author_id == person.id)
+    ).all()
+    assert sorted(linked) == sorted(p["base_study_id"] for p in papers)
+    assert [db.session.get(BaseStudy, p["base_study_id"]).authors for p in papers] == [
+        "Ada Lovelace", "A. Lovelace", "Ada Lovelace"]
+
+
+def test_rows_holding_different_other_ids_are_not_joined_by_a_paper_naming_both(session, caplog):
+    other_orcid = "0000-0001-5109-3700"
+    _upload("1001", _person("Ada Lovelace", ORCID, "A5000000002"))
+    _upload("1002", _person("Ada Lovelace", other_orcid, "A5000000001"))
+
+    with caplog.at_level("WARNING", logger="neurostore.authors"):
+        _upload("1003", _person("Ada Lovelace", ORCID, "A5000000001"))
+
+    assert sorted((a.orcid, a.openalex_id) for a in db.session.scalars(sa.select(Author))) == [
+        (other_orcid, "A5000000001"), (ORCID, "A5000000002")]
+    assert "not merged" in caplog.text
 
 
 def test_the_relationships_are_never_loaded_by_accident(session):
