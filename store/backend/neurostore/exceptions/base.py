@@ -12,6 +12,8 @@ HTTP_STATUS_TITLES = {
     413: "Payload Too Large",
     422: "Unprocessable Entity",
     500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
 }
 
 
@@ -159,3 +161,15 @@ class InternalServerError(NeuroStoreException):
         self, detail: str = "Internal Server Error", instance: Optional[str] = None
     ):
         super().__init__(500, detail, instance=instance)
+
+
+class BadGatewayError(NeuroStoreException):
+    def __init__(self, detail: str = "Bad Gateway", instance: Optional[str] = None):
+        super().__init__(502, detail, instance=instance)
+
+
+class ServiceUnavailableError(NeuroStoreException):
+    def __init__(
+        self, detail: str = "Service Unavailable", instance: Optional[str] = None
+    ):
+        super().__init__(503, detail, instance=instance)
