@@ -26,10 +26,10 @@ def configured(monkeypatch):
     monkeypatch.delenv("OPENAI_EMBEDDING_MODEL", raising=False)
 
 
-def _status_error(code):
+def _status_error(code, body=None):
     request = httpx.Request("POST", "https://api.openai.com/v1/embeddings")
     response = httpx.Response(code, request=request)
-    return APIStatusError("boom", response=response, body=None)
+    return APIStatusError("boom", response=response, body=body)
 
 
 @pytest.mark.parametrize("code", [429, 500, 502, 503, 504])
@@ -40,6 +40,22 @@ def test_rate_limits_and_server_errors_are_transient(code):
 @pytest.mark.parametrize("code", [400, 401, 403, 404, 422])
 def test_client_errors_are_not_transient(code):
     assert not _is_transient(_status_error(code))
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"type": "insufficient_quota", "code": "credit_balance_exhausted"},
+        {"type": "insufficient_quota", "code": "insufficient_quota"},
+    ],
+)
+def test_a_429_for_an_account_out_of_credit_is_not_transient(body):
+    assert not _is_transient(_status_error(429, body))
+
+
+def test_a_429_rate_limit_is_transient():
+    body = {"type": "requests", "code": "rate_limit_exceeded"}
+    assert _is_transient(_status_error(429, body))
 
 
 def test_connection_errors_and_timeouts_are_transient():
@@ -62,6 +78,13 @@ def test_an_embedding_service_outage_is_retried_then_reported(configured, vcr):
 
 @pytest.mark.vcr("test_a_rejected_embedding_request_is_not_retried.yaml")
 def test_a_rejected_embedding_request_is_not_retried(configured, vcr):
+    with pytest.raises(EmbeddingServiceError):
+        get_embedding("neural developmental disorders")
+    assert vcr.play_count == 1
+
+
+@pytest.mark.vcr("test_an_account_out_of_credit_is_not_retried.yaml")
+def test_an_account_out_of_credit_is_not_retried(configured, vcr):
     with pytest.raises(EmbeddingServiceError):
         get_embedding("neural developmental disorders")
     assert vcr.play_count == 1

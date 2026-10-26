@@ -21,12 +21,15 @@ class EmbeddingServiceError(RuntimeError):
 def _is_transient(exc: BaseException) -> bool:
     """Connection errors and timeouts, 429 and 5xx: the failures a retry can fix.
 
-    Anything else (a 4xx, or a bug in our own code) fails the same way every time.
+    Anything else (a 4xx, a 429 for an account out of credit, or a bug in our own
+    code) fails the same way every time.
     """
     if isinstance(exc, openai.APIConnectionError):
         return True
     if isinstance(exc, openai.APIStatusError):
-        return exc.status_code == 429 or exc.status_code >= 500
+        if exc.status_code == 429:
+            return "insufficient_quota" not in (exc.type, exc.code)
+        return exc.status_code >= 500
     return False
 
 
