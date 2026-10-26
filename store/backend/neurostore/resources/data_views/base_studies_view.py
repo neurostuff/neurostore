@@ -283,7 +283,8 @@ class BaseStudiesView(ObjectView, ListView):
         ]
         if authors.has_listed(record.id):
             # The string follows the listed authors; a PUT does not set it apart from them.
-            if data.pop("authors", None) is not None:
+            if "authors" in data:
+                data.pop("authors")
                 logger.warning(
                     "PUT of base study %s ignores `authors`: it is derived from its listed "
                     "authors", record.id)

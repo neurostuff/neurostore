@@ -8,7 +8,11 @@ from sqlalchemy.orm import selectinload
 from neurostore import authors, corresponding_authors
 from neurostore.database import db
 from neurostore.ingest.study_schema import ingest_upload
-from neurostore.services.base_study_metadata_enrichment import merge_base_study
+from neurostore.services.base_study_metadata_enrichment import (
+    fetch_metadata_pubmed,
+    fetch_metadata_semantic_scholar,
+    merge_base_study,
+)
 from neurostore.models import (
     Author,
     BaseStudy,
@@ -279,9 +283,13 @@ async def test_a_put_does_not_set_the_authors_string_apart_from_the_listed_autho
         kept = await auth_client.put(
             f"/api/base-studies/{listed}", data={"authors": "Someone Else"})
     assert f"PUT of base study {listed} ignores `authors`" in caplog.text
+    caplog.clear()
+    with caplog.at_level("WARNING"):
+        nulled = await auth_client.put(f"/api/base-studies/{listed}", data={"authors": None})
+    assert f"PUT of base study {listed} ignores `authors`" in caplog.text
     changed = await auth_client.put(f"/api/base-studies/{plain}", data={"authors": "New B"})
 
-    assert (kept.status_code, changed.status_code) == (200, 200)
+    assert (kept.status_code, nulled.status_code, changed.status_code) == (200, 200, 200)
     db.session.expire_all()
     assert db.session.get(BaseStudy, listed).authors == "Ada Lovelace"
     assert db.session.get(BaseStudy, plain).authors == "New B"
@@ -429,3 +437,98 @@ def test_an_address_in_an_affiliation_s_text_is_not_stored_with_it(session):
     assert len(_listed(summary["base_study_id"])) == 1
     texts = db.session.scalars(sa.select(BaseStudyAuthorAffiliation.text)).all()
     assert texts and all("@" not in text for text in texts)
+
+
+def _merged(keeper, old, caplog):
+    with caplog.at_level("WARNING", logger="neurostore.authors"):
+        return merge_base_study(
+            db.session.get(BaseStudy, keeper), db.session.get(BaseStudy, old))
+
+
+def test_a_merge_does_not_join_two_orcid_people_named_alike_at_one_place(session, caplog):
+    other = "0000-0001-5109-3700"
+    keeper = _upload("1001", _person("J. Smith", ORCID))["base_study_id"]
+    old = _upload("1002", _person("J. Smith", other, None, _at("UT Austin", UT))
+                  )["base_study_id"]
+    (left,) = _listed(old)
+
+    outcome = _merged(keeper, old, caplog)
+
+    (row,) = _listed(keeper)
+    assert _universities_on(row.id) == []
+    assert _universities_on(left.id) == [UT["ror"]]
+    assert ("base_study_authors", left.id, "kept", None,
+            "the keeper lists a different person at this place") in outcome.changes
+
+
+def test_a_merge_leaves_the_affiliations_of_an_author_whose_keeper_row_has_its_own(
+    session, caplog
+):
+    keeper = _upload("1001", _person("Ada Lovelace", ORCID, None, _at("Stanford", STANFORD))
+                     )["base_study_id"]
+    old = _upload("1002", _person("Ada Lovelace", ORCID, None, _at("UT Austin", UT))
+                  )["base_study_id"]
+    (left,) = _listed(old)
+
+    outcome = _merged(keeper, old, caplog)
+
+    assert _universities_on(left.id) == [UT["ror"]]
+    assert ("base_study_authors", left.id, "kept", None,
+            "the keeper's author has affiliations of their own") in outcome.changes
+    assert left.id in caplog.text
+
+
+def test_a_merge_leaves_an_author_the_keeper_does_not_list_at_that_place(session, caplog):
+    keeper = _upload("1001", _person("Ada Lovelace", ORCID))["base_study_id"]
+    old = _upload("1002", _person("Ada Lovelace", ORCID), _person("Grace Hopper")
+                  )["base_study_id"]
+    _, left = _listed(old)
+
+    outcome = _merged(keeper, old, caplog)
+
+    assert [r.name for r in _listed(keeper)] == ["Ada Lovelace"]
+    assert ("base_study_authors", left.id, "kept", None,
+            "the keeper lists no one at this place") in outcome.changes
+    assert left.id in caplog.text
+
+
+def test_a_merge_says_when_the_keeper_s_author_has_ids_the_old_row_lacks(session, caplog):
+    keeper = _upload("1001", _person("Ada Lovelace", ORCID))["base_study_id"]
+    old = _upload("1002", _person("Ada Lovelace", None, None, _at("UT Austin", UT))
+                  )["base_study_id"]
+    (left,) = _listed(old)
+
+    outcome = _merged(keeper, old, caplog)
+
+    assert _universities_on(left.id) == [UT["ror"]]
+    assert ("base_study_authors", left.id, "kept", None,
+            "the keeper's author has ids this row lacks") in outcome.changes
+
+
+def test_a_merge_leaves_a_corresponding_mark_that_conflicts_with_the_keeper_s(session, caplog):
+    keeper = _upload("1001", _person("Ada Lovelace", corresponding=False))["base_study_id"]
+    old = _upload("1002", _person("Ada Lovelace", corresponding=True))["base_study_id"]
+    (left,) = _listed(old)
+
+    outcome = _merged(keeper, old, caplog)
+
+    (row,) = _listed(keeper)
+    assert row.corresponding is False
+    assert ("base_study_authors", left.id, "kept", None,
+            "the keeper's author has a corresponding mark of their own") in outcome.changes
+    assert left.id in caplog.text
+
+
+@pytest.mark.vcr
+def test_the_pubmed_metadata_writer_joins_authors_as_the_column_is_written(app):
+    found = fetch_metadata_pubmed({"pmid": "25775530"}, settings=app.config, logger=app.logger)
+
+    assert found["authors"].startswith("Paytan Adina; Lecher Alanna L; Dimova Natasha; ")
+
+
+@pytest.mark.vcr
+def test_the_semantic_scholar_metadata_writer_joins_authors_as_the_column_is_written(app):
+    found = fetch_metadata_semantic_scholar(
+        {"pmid": "25775530"}, settings=app.config, logger=app.logger)
+
+    assert found["authors"].startswith("A. Paytan; A. Lecher; N. Dimova; ")

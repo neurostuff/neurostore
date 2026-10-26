@@ -91,7 +91,7 @@ def has_listed(base_study_id: str) -> bool:
 def authors_string(names) -> Optional[str]:
     """The `authors` column's text for these names in published order, the way the
     column is written ("; " because a name may hold ", "); None when there are none."""
-    return "; ".join(name for name in names if name) or None
+    return "; ".join(names) or None
 
 
 def derive_authors_string(base_study_id: str) -> None:
@@ -255,8 +255,12 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
         done += [("corresponding_author_emails", email_id, "base_study_author_id", row.id, target)
                  for email_id in retied]
         if same is None:
-            leave(row, "the keeper lists a different person at this place" if place is not None
-                  else "the keeper lists no one at this place")
+            if place is None:
+                leave(row, "the keeper lists no one at this place")
+            elif row.name == place.name and _has_ids(place) and not _has_ids(row):
+                leave(row, "the keeper's author has ids this row lacks")
+            else:
+                leave(row, "the keeper lists a different person at this place")
             continue
         if not same.affiliations:
             for affiliation in row.affiliations:
@@ -265,9 +269,13 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
                              "base_study_author_id", row.id, same.id))
         elif row.affiliations:
             leave(row, "the keeper's author has affiliations of their own")
-        if same.corresponding is None and row.corresponding is not None:
-            same.corresponding = row.corresponding
-            done.append(("base_study_authors", same.id, "corresponding", None, row.corresponding))
+        if row.corresponding is not None:
+            if same.corresponding is None:
+                same.corresponding = row.corresponding
+                done.append(
+                    ("base_study_authors", same.id, "corresponding", None, row.corresponding))
+            elif same.corresponding != row.corresponding:
+                leave(row, "the keeper's author has a corresponding mark of their own")
     db.session.flush()
     return done
 
@@ -277,5 +285,8 @@ def _one_person(a: BaseStudyAuthor, b: BaseStudyAuthor) -> bool:
     `store_authors` applies at one place), since each paper copy gets its own row for them."""
     if a.author_id == b.author_id:
         return True
-    return all(x.author.orcid is None and x.author.openalex_id is None for x in (a, b)) \
-        and a.name == b.name
+    return not (_has_ids(a) or _has_ids(b)) and a.name == b.name
+
+
+def _has_ids(row: BaseStudyAuthor) -> bool:
+    return row.author.orcid is not None or row.author.openalex_id is not None
