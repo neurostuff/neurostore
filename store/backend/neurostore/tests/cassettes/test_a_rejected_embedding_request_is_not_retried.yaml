@@ -1,0 +1,22 @@
+# Composed by hand, not recorded: provoking this failure needs a real call to
+# api.openai.com, which this project does not make. The key is a placeholder.
+interactions:
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"Incorrect API key provided.","type":"invalid_request_error","param":null,"code":"invalid_api_key"}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 401
+      message: Unauthorized
+version: 1

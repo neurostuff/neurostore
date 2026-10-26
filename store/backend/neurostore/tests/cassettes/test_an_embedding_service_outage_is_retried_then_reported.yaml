@@ -1,0 +1,167 @@
+# Composed by hand, not recorded: provoking this failure needs a real call to
+# api.openai.com, which this project does not make. The key is a placeholder.
+# Nine answers: three tenacity attempts, each making three SDK requests.
+interactions:
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+- request:
+    body: '{"input":"neural developmental disorders","model":"text-embedding-3-small","encoding_format":"base64"}'
+    headers:
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/embeddings
+  response:
+    body:
+      string: '{"error":{"message":"The server is overloaded or not ready yet.","type":"server_error","param":null,"code":null}}'
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 503
+      message: Service Unavailable
+version: 1
