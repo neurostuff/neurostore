@@ -226,7 +226,8 @@ def test_the_authors_string_follows_the_listed_authors(session):
 
 
 def test_a_base_study_without_listed_authors_keeps_its_authors_string(session):
-    base_study = BaseStudy(name="paper", level="group", authors="Lovelace A, Babbage C", pmid="1001")
+    base_study = BaseStudy(
+        name="paper", level="group", authors="Lovelace A, Babbage C", pmid="1001")
     db.session.add(base_study)
     db.session.flush()
     paper = fx.parsed_paper(pmid="1001")
@@ -266,8 +267,9 @@ async def test_a_put_does_not_set_the_authors_string_apart_from_the_listed_autho
     session, auth_client
 ):
     own = {"name": "paper", "authors": "Old A"}
-    plain = (await auth_client.post("/api/base-studies/", data={**own, "pmid": "1002"})).json()["id"]
-    listed = (await auth_client.post("/api/base-studies/", data={**own, "pmid": "1001"})).json()["id"]
+    posted = [await auth_client.post("/api/base-studies/", data={**own, "pmid": pmid})
+              for pmid in ("1002", "1001")]
+    plain, listed = (response.json()["id"] for response in posted)
     assert _upload("1001", _person("Ada Lovelace", ORCID))["base_study_id"] == listed
     db.session.commit()
 
