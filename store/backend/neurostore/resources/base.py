@@ -511,6 +511,10 @@ class ListView(BaseView):
             del self._user_args["user_id"]
         if self._fulltext_fields:
             self._user_args.update({f: fields.Str() for f in self._fulltext_fields})
+            # Only for a model that stores the text's vector; elsewhere the
+            # parameter is an unknown one, dropped like any other.
+            if hasattr(self._model, "_fulltext_vector"):
+                self._user_args["search_full_text"] = fields.Boolean(load_default=False)
 
         if self._search_fields:
             self._user_args.update({f: fields.Str() for f in self._search_fields})
@@ -583,7 +587,7 @@ class ListView(BaseView):
             args["search"],
             field_filters,
             ts_vector=m._ts_vector if use_fulltext else None,
-            fulltext_vector=getattr(m, "_fulltext_vector", None),
+            fulltext_vector=m._fulltext_vector if args.get("search_full_text") else None,
             pmid_match=self.pmid_match(m, args["search"]),
         )
 

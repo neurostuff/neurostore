@@ -9,6 +9,7 @@ import sqlalchemy as sa
 
 from neurostore.models import BaseStudy
 from neurostore.resources.utils import apply_search_predicate
+from neurostore.tests.api.test_query_params import _list_endpoints
 
 pytestmark = pytest.mark.anyio
 
@@ -92,16 +93,62 @@ def test_full_text_only_records_are_found(session, ranked_corpus):
     }
 
 
-async def test_search_endpoint_orders_title_abstract_then_full_text(
+async def test_search_matches_title_and_abstract_only_by_default(
     auth_client, ranked_corpus
 ):
     c = ranked_corpus
     resp = await auth_client.get(f"/api/base-studies/?search={TERM}")
     assert resp.status_code == 200, resp.text
+    assert [r["id"] for r in resp.json()["results"]] == [
+        c["title"].id,
+        c["abstract"].id,
+    ]
+    assert resp.json()["metadata"]["total_count"] == 2
+
+
+async def test_opting_in_matches_the_full_text_and_lists_those_last(
+    auth_client, ranked_corpus
+):
+    c = ranked_corpus
+    resp = await auth_client.get(f"/api/base-studies/?search={TERM}&search_full_text=true")
+    assert resp.status_code == 200, resp.text
     ids = [r["id"] for r in resp.json()["results"]]
     assert ids[:2] == [c["title"].id, c["abstract"].id]
     assert set(ids[2:]) == {c["pubget_full_text"].id, c["ace_full_text"].id}
-    assert c["ace_behind_pubget"].id not in ids
+    assert resp.json()["metadata"]["total_count"] == 4
+
+
+def test_the_default_predicate_never_matches_a_full_text_only_record(
+    session, ranked_corpus
+):
+    c = ranked_corpus
+    q, _ = apply_search_predicate(
+        session.query(BaseStudy),
+        TERM,
+        {},
+        ts_vector=BaseStudy._ts_vector,
+        pmid_match=None,
+    )
+    assert {b.id for b in q} == {c["title"].id, c["abstract"].id}
+
+
+def test_the_parameter_is_declared_exactly_where_the_view_has_a_full_text_vector():
+    for path, advertised, view in _list_endpoints():
+        if view is None:
+            continue
+        has_vector = hasattr(view._model, "_fulltext_vector")
+        assert ("search_full_text" in advertised) == has_vector, path
+        if view._multi_search:
+            assert ("search_full_text" in view()._user_args) == has_vector, path
+
+
+async def test_the_parameter_is_ignored_where_there_is_no_full_text_vector(
+    auth_client, ingest_neurosynth, session
+):
+    plain = await auth_client.get("/api/studies/?search=a")
+    flagged = await auth_client.get("/api/studies/?search=a&search_full_text=true")
+    assert flagged.status_code == 200
+    assert flagged.json() == plain.json()
 
 
 def test_editing_a_record_updates_what_it_matches(session, ranked_corpus):

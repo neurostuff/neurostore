@@ -411,8 +411,8 @@ def apply_search_predicate(
 
     ``ts_vector`` is the full-text column to rank and match against, or None
     when the model has none (a non-numeric ``search`` is then ignored).
-    ``fulltext_vector``, when the model has one, is a larger column that only
-    matches: a record found there alone ranks after every ``ts_vector`` match.
+    ``fulltext_vector``, when given, is a larger column that also matches: a
+    record found there alone ranks after every ``ts_vector`` match.
     ``pmid_match`` is the clause an all-digits ``search`` must satisfy, or None
     when the model has no pmid (such a search is then ignored).
     ``field_filters`` maps columns to the substring each must contain; None
