@@ -29,7 +29,7 @@ dependencies = [
     "python-jose~=3.5",
     "redis",
     "shortuuid~=1.0",
-    "starlette>=1.8.0,<2",
+    "starlette>=1.9.0,<2",
     "sqlalchemy[asyncio]~=2.1.4",
     "sqladmin~=0.32",
     "sqltap",
