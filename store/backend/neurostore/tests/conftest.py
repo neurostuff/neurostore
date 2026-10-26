@@ -151,7 +151,7 @@ def mock_auth(monkeysession):
 
 
 @pytest.fixture(scope="function")
-def mock_get_embedding(monkeysession):
+def mock_get_embedding(monkeypatch):
     """Mock get_embedding to return a deterministic vector respecting provided dimensions.
 
     If `dimensions` is an int, returns a list of floats of that length.
@@ -168,10 +168,10 @@ def mock_get_embedding(monkeysession):
         return [random.random() for _ in range(length)]
 
     # Patch the canonical implementation
-    monkeysession.setattr(embeddings, "get_embedding", _mock_get_embedding)
+    monkeypatch.setattr(embeddings, "get_embedding", _mock_get_embedding)
     # Also patch modules that may have imported the function directly.
     # Use raising=False so this won't error if the attribute/path doesn't exist.
-    monkeysession.setattr(
+    monkeypatch.setattr(
         "neurostore.resources.data.get_embedding", _mock_get_embedding, raising=False
     )
     yield _mock_get_embedding

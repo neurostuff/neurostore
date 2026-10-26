@@ -11,6 +11,7 @@ from sqlalchemy.orm import aliased
 
 from neurostore import embeddings
 from neurostore.database import db
+from neurostore.exceptions.base import BadGatewayError, ServiceUnavailableError
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
 from neurostore.models import (
@@ -57,7 +58,18 @@ class BaseStudySearchService:
         pipeline_config_id, dimensions = self._resolve_embedding_config(
             args.get("pipeline_config_id")
         )
-        user_vector = embeddings.get_embedding(semantic_search, dimensions=dimensions)
+        try:
+            user_vector = embeddings.get_embedding(
+                semantic_search, dimensions=dimensions
+            )
+        except embeddings.EmbeddingNotConfigured as exc:
+            raise ServiceUnavailableError(
+                "Semantic search is not configured on this server."
+            ) from exc
+        except embeddings.EmbeddingServiceError as exc:
+            raise BadGatewayError(
+                "The embedding service needed for semantic search is unavailable."
+            ) from exc
         return self._apply_ann_query(
             query,
             user_vector,
