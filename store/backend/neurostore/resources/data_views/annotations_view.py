@@ -342,7 +342,6 @@ class AnnotationsView(ObjectView, ListView):
     _m2o = {"studyset": "StudysetsView"}
     _nested = {"annotation_analyses": "AnnotationAnalysesView"}
     _linked = {"studyset": "StudysetsView"}
-    _multi_search = ("name", "description")
     _search_fields = ("name", "description")
 
     def get_affected_ids(self, ids):

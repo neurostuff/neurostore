@@ -44,6 +44,7 @@ from neurostore.resources.utils import (
     apply_search_predicate,
     get_current_user,
     is_user_admin,
+    sortable_columns,
 )
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
@@ -504,6 +505,10 @@ class ListView(BaseView):
             **LIST_USER_ARGS,
             **self._view_fields,
         }
+        # Not declared for a model without the column: the parameter is then an
+        # unknown one, dropped like any other.
+        if not hasattr(self._model, "user_id"):
+            del self._user_args["user_id"]
         if self._fulltext_fields:
             self._user_args.update({f: fields.Str() for f in self._fulltext_fields})
 
@@ -599,6 +604,8 @@ class ListView(BaseView):
         else:
             # Use user-specified sort column.
             # lower() is text-only; integers, booleans, and timestamps sort as-is.
+            if sort_col not in sortable_columns(m):
+                abort_validation(f"Cannot sort by {sort_col!r}: not a field of this resource")
             attr = getattr(m, sort_col)
             if isinstance(getattr(attr, "type", None), sa.String):
                 attr = func.lower(attr)
