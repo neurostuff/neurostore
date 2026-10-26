@@ -53,7 +53,7 @@ def test_programming_errors_are_not_transient(bug):
 def test_an_embedding_service_outage_is_retried_then_reported(configured, vcr):
     with pytest.raises(EmbeddingServiceError):
         get_embedding("neural developmental disorders")
-    assert vcr.play_count == 9
+    assert vcr.play_count == 3
 
 
 @pytest.mark.vcr("test_a_rejected_embedding_request_is_not_retried.yaml")

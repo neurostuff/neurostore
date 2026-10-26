@@ -44,7 +44,8 @@ def _call_openai_create(
     api_key: Optional[str] = None,
     api_gateway: Optional[str] = None,
 ) -> Any:
-    client_kwargs = {}
+    # tenacity above is the only retry layer; the client would otherwise retry inside it.
+    client_kwargs = {"max_retries": 0}
     if api_key:
         client_kwargs["api_key"] = api_key
     if api_gateway:
