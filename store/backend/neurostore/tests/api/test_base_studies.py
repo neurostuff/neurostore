@@ -2863,13 +2863,13 @@ def test_metadata_requests_throttle_pubmed_by_key_presence(app, monkeypatch):
     metadata_service._request_with_retry(
         app.config,
         "GET",
-        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+        "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/",
         params={"api_key": "pubmed-key"},
     )
     metadata_service._request_with_retry(
         app.config,
         "GET",
-        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+        "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/",
         params={"api_key": "pubmed-key"},
     )
     metadata_service._reset_provider_rate_limits()
