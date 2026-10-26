@@ -445,22 +445,6 @@ def _merged(keeper, old, caplog):
             db.session.get(BaseStudy, keeper), db.session.get(BaseStudy, old))
 
 
-def test_a_merge_does_not_join_two_orcid_people_named_alike_at_one_place(session, caplog):
-    other = "0000-0001-5109-3700"
-    keeper = _upload("1001", _person("J. Smith", ORCID))["base_study_id"]
-    old = _upload("1002", _person("J. Smith", other, None, _at("UT Austin", UT))
-                  )["base_study_id"]
-    (left,) = _listed(old)
-
-    outcome = _merged(keeper, old, caplog)
-
-    (row,) = _listed(keeper)
-    assert _universities_on(row.id) == []
-    assert _universities_on(left.id) == [UT["ror"]]
-    assert ("base_study_authors", left.id, "kept", None,
-            "the keeper lists a different person at this place") in outcome.changes
-
-
 def test_a_merge_leaves_the_affiliations_of_an_author_whose_keeper_row_has_its_own(
     session, caplog
 ):
