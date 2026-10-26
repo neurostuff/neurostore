@@ -583,6 +583,7 @@ class ListView(BaseView):
             args["search"],
             field_filters,
             ts_vector=m._ts_vector if use_fulltext else None,
+            fulltext_vector=getattr(m, "_fulltext_vector", None),
             pmid_match=self.pmid_match(m, args["search"]),
         )
 

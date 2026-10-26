@@ -345,9 +345,8 @@ async def test_correlation_id_is_readable_cross_origin(auth_client, session):
 def search_corpus(session):
     """Four base studies mentioning "quokkaflux" three, two, one and zero times.
 
-The migrated test schema indexes name and description only (the weighted
-full-text vector on the model has no migration), so relevance is pinned by
-term frequency, which the weighted vector orders the same way.
+Term frequency and field weight order these the same way; the field
+ranking itself is pinned in test_base_study_search_vector.py.
 """
     rows = {
         "title": BaseStudy(

@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import aliased, backref, relationship, validates
+from sqlalchemy.orm import aliased, backref, deferred, relationship, validates
 from study_schema.keys import normalize_name
 
 from neurostore.coordinate_spaces import normalize_space
@@ -262,26 +262,13 @@ class BaseStudy(BaseMixin, db.Model):
     # row, so a scan is what the planner uses.
     is_retracted = db.Column(db.Boolean, nullable=True)
     retraction_notice = db.Column(JSONB, nullable=True)
-    _ts_vector = db.Column(
-        "__ts_vector__",
-        TSVector(),
-        db.Computed(
-            """
-            setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
-            setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-            setweight(to_tsvector('english',
-                coalesce(
-                    CASE
-                        WHEN pubget_fulltext IS NOT NULL THEN pubget_fulltext
-                        ELSE ace_fulltext
-                    END,
-                    ''
-                )
-            ), 'C')
-            """,
-            persisted=True,
-        ),
-    )
+    # Both vectors are kept by triggers (see the migration that adds them): a
+    # generated column cannot be added or changed without rewriting the table
+    # under an exclusive lock. The ranking vector is the title (A) and abstract
+    # (B); the full-text vector is pubget's text, else ACE's, and only matches.
+    # Neither has planner statistics: see the migration.
+    _ts_vector = db.Column("__ts_vector__", TSVector())
+    _fulltext_vector = deferred(db.Column("__fulltext_vector__", TSVector()))
 
     user = relationship("User", backref=backref("base_studies", passive_deletes=True))
     # retrieve versions of same study
@@ -327,6 +314,11 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
         sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
+        sa.Index(
+            "ix_base_study___fulltext_vector__",
+            _fulltext_vector,
+            postgresql_using="gin",
+        ),
     )
 
     preprint_dois = _identifiers_of("preprint", "doi")

@@ -9,6 +9,7 @@ from connexion.context import context
 from pgvector.sqlalchemy import Vector
 from psycopg2 import errors
 from sqlalchemy import func
+from sqlalchemy.orm import aliased
 
 from neurostore import models, schemas
 from neurostore.encryption import EncryptedText
@@ -403,11 +404,15 @@ def sortable_columns(model):
     }
 
 
-def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid_match):
+def apply_search_predicate(
+    q, search, field_filters, *, ts_vector, pmid_match, fulltext_vector=None
+):
     """Narrow ``q`` by a ``search`` string and per-column ILIKE filters.
 
     ``ts_vector`` is the full-text column to rank and match against, or None
     when the model has none (a non-numeric ``search`` is then ignored).
+    ``fulltext_vector``, when the model has one, is a larger column that only
+    matches: a record found there alone ranks after every ``ts_vector`` match.
     ``pmid_match`` is the clause an all-digits ``search`` must satisfy, or None
     when the model has no pmid (such a search is then ignored).
     ``field_filters`` maps columns to the substring each must contain; None
@@ -436,8 +441,20 @@ def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid_match):
                 "of only negations matches nearly every record."
             )
         tsquery = func.to_tsquery("english", tsquery_string)
-        rank_col = func.ts_rank(ts_vector, tsquery).label("rank")
-        q = q.filter(ts_vector.op("@@")(tsquery))
+        rank = func.ts_rank(ts_vector, tsquery)
+        match = ts_vector.op("@@")(tsquery)
+        if fulltext_vector is not None:
+            match = sa.or_(match, fulltext_vector.op("@@")(tsquery))
+            # Ranking every full-text-only record would read its ranking vector
+            # to learn that it scores zero; the index already says which
+            # records match there, so rank only those.
+            entity = aliased(ts_vector.class_)
+            ranked_ids = sa.select(entity.id).where(
+                getattr(entity, ts_vector.key).op("@@")(tsquery)
+            )
+            rank = sa.case((ts_vector.class_.id.in_(ranked_ids), rank), else_=0)
+        rank_col = rank.label("rank")
+        q = q.filter(match)
 
     for column, value in field_filters.items():
         if value is not None:
