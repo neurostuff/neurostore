@@ -1,4 +1,5 @@
-FROM postgres:17.6
+# pg_search 0.26.3 links against symbols that 17.6 lacks.
+FROM postgres:17.11
 RUN apt-get update && \
     apt-get install -y dos2unix \
     python3-pip python-dev-is-python3 build-essential \
