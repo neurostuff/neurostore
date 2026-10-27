@@ -3,13 +3,13 @@ Resource-specific utilities for View construction and function
 """
 
 import re
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from connexion.context import context
 from pgvector.sqlalchemy import Vector
 from psycopg2 import errors
 from sqlalchemy import func
-from sqlalchemy.orm import aliased
 
 from neurostore import models, schemas
 from neurostore.encryption import EncryptedText
@@ -404,60 +404,188 @@ def sortable_columns(model):
     }
 
 
-def apply_search_predicate(
-    q, search, field_filters, *, ts_vector, pmid_match, fulltext_vector=None
-):
+class TextMatch(NamedTuple):
+    """A text search's WHERE clause, its relevance, and the key that breaks ties."""
+
+    clause: sa.ColumnElement
+    rank: sa.ColumnElement
+    tiebreak: sa.ColumnElement
+
+
+def tsvector_search(ts_vector):
+    """Text search on a tsvector column, ranked by ``ts_rank``."""
+
+    def search(tsquery_string):
+        tsquery = func.to_tsquery("english", tsquery_string)
+        return TextMatch(
+            ts_vector.op("@@")(tsquery),
+            func.ts_rank(ts_vector, tsquery),
+            ts_vector.class_.id,
+        )
+
+    return search
+
+
+class _Boost(sa.types.UserDefinedType):
+    """ParadeDB's ``pdb.boost(n)``: multiplies a clause's share of the BM25 score."""
+
+    cache_ok = True
+
+    def __init__(self, factor):
+        self.factor = factor
+
+    def get_col_spec(self, **kw):
+        return f"pdb.boost({self.factor})"
+
+
+# A tsquery string's tokens: operators, parentheses, and words, where a word
+# runs up to whitespace, an operator or a parenthesis.
+_TSQUERY_TOKEN = re.compile(r"<->|&!|[&|!()]|(?:(?!<->)[^\s&|!()])+")
+
+
+def bm25_search(key, fields):
+    """Text search on a ParadeDB BM25 index, ranked by its score.
+
+    ``fields`` pairs each indexed expression with its boost. Every word or
+    phrase of the query must occur in one of the fields (as a phrase of its
+    tokens, so ``5-HT`` is ``5`` followed by ``ht``); the score adds up each
+    field's match times its boost. Ties are broken by the hash of the key
+    that the index holds, so the index returns the page itself.
+    """
+
+    def match(words):
+        text = " ".join(words)
+        # The index splits on every non-alphanumeric character, so such a word
+        # has no tokens; to_tsquery drops it from the query the same way.
+        if not any(char.isalnum() for char in text):
+            return None
+        return sa.or_(
+            *(
+                expression.op("###", is_comparison=True)(
+                    sa.cast(sa.literal(text), _Boost(boost))
+                )
+                for expression, boost in fields
+            )
+        )
+
+    def search(tsquery_string):
+        clause = _parse_tsquery(_TSQUERY_TOKEN.findall(tsquery_string), match)
+        return TextMatch(
+            sa.false() if clause is None else clause,
+            func.pdb.score(key),
+            func.hashtextextended(key, 0),
+        )
+
+    return search
+
+
+_TSQUERY_OPERATORS = {"&", "&!", "|", "!", "(", ")", "<->"}
+
+
+def _parse_tsquery(tokens, match):
+    """Build a clause from a tsquery string's tokens, with tsquery's precedence
+    (``!`` binds tightest, then ``<->``, ``&``, ``|``). ``match`` makes the clause
+    for one word or phrase; None stands for an operand with no words, which is
+    left out, as to_tsquery leaves out a word with no lexemes."""
+    pos = 0
+
+    def peek(offset=0):
+        return tokens[pos + offset] if pos + offset < len(tokens) else None
+
+    def take():
+        nonlocal pos
+        pos += 1
+        return tokens[pos - 1]
+
+    def is_word(token):
+        return token is not None and token not in _TSQUERY_OPERATORS
+
+    def combine(operator, operands):
+        operands = [o for o in operands if o is not None]
+        if not operands:
+            return None
+        return operands[0] if len(operands) == 1 else operator(*operands)
+
+    def negate(operand):
+        return None if operand is None else sa.not_(operand)
+
+    def any_of():
+        operands = [all_of()]
+        while peek() == "|":
+            take()
+            operands.append(all_of())
+        return combine(sa.or_, operands)
+
+    def all_of():
+        operands = [negation()]
+        # A <-> that does not join two words joins nothing, so it reads as AND.
+        while peek() in ("&", "&!", "<->"):
+            negated = take() == "&!"
+            operand = negation()
+            operands.append(negate(operand) if negated else operand)
+        return combine(sa.and_, operands)
+
+    def negation():
+        if peek() == "!":
+            take()
+            return negate(negation())
+        return phrase()
+
+    def phrase():
+        if peek() == "(":
+            take()
+            group = any_of()
+            take()  # ")"
+            return group
+        if not is_word(peek()):
+            return None
+        words = [take()]
+        while peek() == "<->" and is_word(peek(1)):
+            take()
+            words.append(take())
+        return match(words)
+
+    return any_of()
+
+
+def apply_search_predicate(q, search, field_filters, *, text_search, pmid_match):
     """Narrow ``q`` by a ``search`` string and per-column ILIKE filters.
 
-    ``ts_vector`` is the full-text column to rank and match against, or None
-    when the model has none (a non-numeric ``search`` is then ignored).
-    ``fulltext_vector``, when given, is a larger column that also matches: a
-    record found there alone ranks after every ``ts_vector`` match.
+    ``text_search`` maps the search, as a tsquery string, to a ``TextMatch``
+    (see ``tsvector_search`` and ``bm25_search``), or is None when the model
+    has no text search (a non-numeric ``search`` is then ignored).
     ``pmid_match`` is the clause an all-digits ``search`` must satisfy, or None
     when the model has no pmid (such a search is then ignored).
     ``field_filters`` maps columns to the substring each must contain; None
     values are skipped.
 
-    Returns ``(q, rank_col)``; ``rank_col`` is the ts_rank column when a
-    full-text search was applied, else None.
+    Returns ``(q, text_match)``; ``text_match`` is the ``TextMatch`` when a
+    text search was applied, else None.
     """
-    rank_col = None
+    text_match = None
 
     # temporary fix for pmid search
     if search is not None and search.isdigit():
         if pmid_match is not None:
             q = q.filter(pmid_match)
-    elif search is not None and ts_vector is not None:
+    elif search is not None and text_search is not None:
         try:
             validate_search_query(search)
         except errors.SyntaxError as e:
             abort_validation(e.args[0])
         tsquery_string = pubmed_to_tsquery(search)
         if not tsquery_has_positive_term(tsquery_string):
-            # Postgres cannot narrow a GIN index on a negation, so this
-            # would be a sequential scan returning nearly the whole corpus.
+            # No index narrows on a negation, so this would read and return
+            # nearly the whole corpus.
             abort_validation(
                 "A search must include at least one term to match; a query "
                 "of only negations matches nearly every record."
             )
-        tsquery = func.to_tsquery("english", tsquery_string)
-        rank = func.ts_rank(ts_vector, tsquery)
-        match = ts_vector.op("@@")(tsquery)
-        if fulltext_vector is not None:
-            match = sa.or_(match, fulltext_vector.op("@@")(tsquery))
-            # Ranking every full-text-only record would read its ranking vector
-            # to learn that it scores zero; the index already says which
-            # records match there, so rank only those.
-            entity = aliased(ts_vector.class_)
-            ranked_ids = sa.select(entity.id).where(
-                getattr(entity, ts_vector.key).op("@@")(tsquery)
-            )
-            rank = sa.case((ts_vector.class_.id.in_(ranked_ids), rank), else_=0)
-        rank_col = rank.label("rank")
-        q = q.filter(match)
+        text_match = text_search(tsquery_string)
+        q = q.filter(text_match.clause)
 
     for column, value in field_filters.items():
         if value is not None:
             q = q.filter(column.ilike(f"%{value}%"))
 
-    return q, rank_col
+    return q, text_match

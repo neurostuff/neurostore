@@ -346,7 +346,7 @@ def search_corpus(session):
     """Four base studies mentioning "quokkaflux" three, two, one and zero times.
 
 Term frequency and field weight order these the same way; the field
-ranking itself is pinned in test_base_study_search_vector.py.
+ranking itself is pinned in test_base_study_search.py.
 """
     rows = {
         "title": BaseStudy(

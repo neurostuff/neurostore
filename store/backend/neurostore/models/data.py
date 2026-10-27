@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import aliased, backref, deferred, relationship, validates
+from sqlalchemy.orm import aliased, backref, relationship, validates
 from study_schema.keys import normalize_name
 
 from neurostore.coordinate_spaces import normalize_space
@@ -214,6 +214,29 @@ def _identifiers_of(kind, scheme):
     return property(read)
 
 
+#: The fields of ``ix_base_study_search``, as written in its migration. Text is
+#: split on every non-alphanumeric character and stemmed (English Snowball); the
+#: filter strings are kept whole. ``id_order``, a 64-bit hash of the id, breaks
+#: ties between equal scores: the index sorts on a number far faster than on a
+#: string.
+SEARCH_INDEX_FIELDS = (
+    "id",
+    "name::pdb.simple('stemmer=english')",
+    "description::pdb.simple('stemmer=english')",
+    "pubget_fulltext::pdb.simple('stemmer=english')",
+    "ace_fulltext::pdb.simple('stemmer=english')",
+    "is_active",
+    "public",
+    "user_id::pdb.literal",
+    "level::pdb.literal",
+    "has_coordinates",
+    "has_images",
+    "is_oa",
+    "year",
+    "hashtextextended(id, 0)::pdb.alias('id_order')",
+)
+
+
 class BaseStudy(BaseMixin, db.Model):
     __tablename__ = "base_studies"
     name = db.Column(db.String)
@@ -262,14 +285,6 @@ class BaseStudy(BaseMixin, db.Model):
     # row, so a scan is what the planner uses.
     is_retracted = db.Column(db.Boolean, nullable=True)
     retraction_notice = db.Column(JSONB, nullable=True)
-    # Both vectors are kept by triggers (see the migration that adds them): a
-    # generated column cannot be added or changed without rewriting the table
-    # under an exclusive lock. The ranking vector is the title (A) and abstract
-    # (B); the full-text vector is pubget's text, else ACE's, and only matches.
-    # Neither has planner statistics: see the migration.
-    _ts_vector = db.Column("__ts_vector__", TSVector())
-    _fulltext_vector = deferred(db.Column("__fulltext_vector__", TSVector()))
-
     user = relationship("User", backref=backref("base_studies", passive_deletes=True))
     # retrieve versions of same study
     versions = relationship(
@@ -313,11 +328,13 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
-        sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
+        # Text search (ParadeDB's BM25 index). The scalar fields are the list's
+        # filters, so they are applied inside the index scan.
         sa.Index(
-            "ix_base_study___fulltext_vector__",
-            _fulltext_vector,
-            postgresql_using="gin",
+            "ix_base_study_search",
+            *(sa.text(f"({field})") for field in SEARCH_INDEX_FIELDS),
+            postgresql_using="paradedb",
+            postgresql_with={"target_segment_count": 1, "mutable_segment_rows": 0},
         ),
     )
 

@@ -19,5 +19,6 @@ Decisions behind neurostore's /review app and its base studies that are hard to 
 | [0013](0013-revision-of-original-read-from-current-parse.md) | The ingester accepts a revision of the original parse that names the current parse as read | accepted, built |
 | [0014](0014-spec-generates-every-api-type.md) | Every API type is generated from the spec; batch bounds live only in the served contract | accepted, built |
 | [0015](0015-base-study-identifiers.md) | Every article id of a base study is one row, unique across active base studies, resolved by one query | accepted, built |
+| [0016](0016-base-study-search-bm25.md) | Base-study text search runs on a BM25 index inside Postgres (ParadeDB's pg_search) | accepted, built |
 
 Each file has Status, Context, Decision and Consequences, and names what was rejected.

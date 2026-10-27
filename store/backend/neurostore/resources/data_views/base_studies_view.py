@@ -47,7 +47,7 @@ from neurostore.resources.data_views.common import (
     LIST_NESTED_ARGS,
     apply_map_type_filter,
 )
-from neurostore.resources.utils import view_maker
+from neurostore.resources.utils import bm25_search, view_maker
 from neurostore.review.app.service import review_source_count
 from neurostore.schemas.data import (
     ArticleIdentifiersSchema,
@@ -68,6 +68,12 @@ class BaseStudyBulkPostResponseSchema(BaseDataSchema, ArticleIdentifiersSchema):
     year = marshmallow_fields.Integer(allow_none=True)
     level = marshmallow_fields.String(allow_none=True)
     versions = StringOrNested(StudySchema, many=True)
+
+
+# Fields of ix_base_study_search that text search matches, with their boosts:
+# a title match counts most, then the abstract, then the paper's text.
+TITLE_AND_ABSTRACT = ((BaseStudy.name, 3), (BaseStudy.description, 2))
+FULL_TEXT = ((BaseStudy.pubget_fulltext, 1), (BaseStudy.ace_fulltext, 1))
 
 
 @view_maker
@@ -96,6 +102,7 @@ class BaseStudiesView(ObjectView, ListView):
         "z": fields.Float(required=False, allow_none=True),
         "radius": fields.Float(required=False, allow_none=True),
         "neurovault_id": fields.String(load_default=None),
+        "search_full_text": fields.Boolean(load_default=False),
         **LIST_NESTED_ARGS,
     }
     _multi_search = ("name", "description")
@@ -214,6 +221,14 @@ class BaseStudiesView(ObjectView, ListView):
 
     def view_search(self, q, args):
         return self.search_service.apply(q, args)
+
+    def text_search(self, args):
+        # Starting parallel workers costs more than the index scan they share.
+        db.session.execute(sa.text("SET LOCAL max_parallel_workers_per_gather = 0"))
+        fields = TITLE_AND_ABSTRACT
+        if args["search_full_text"]:
+            fields += FULL_TEXT
+        return bm25_search(BaseStudy.id, fields)
 
     def should_hydrate_records(self, args):
         return True

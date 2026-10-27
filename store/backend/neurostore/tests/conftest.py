@@ -211,6 +211,9 @@ def _reset_migrated_schema(db, migrations_dir):
     from neurostore import service_migrations
 
     service_migrations.upgrade("heads")
+    # pg_search caches its catalog ids per connection, and the schema reset
+    # dropped and recreated the extension, so pooled connections are stale.
+    db.engine.dispose()
 
 
 @pytest.fixture(scope="session")
