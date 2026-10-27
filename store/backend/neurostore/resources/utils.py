@@ -457,10 +457,6 @@ def _bm25_clause(tsquery_string, fields):
 
     def match(words):
         text = " ".join(words)
-        # The index splits on every non-alphanumeric character, so such a word
-        # has no tokens; to_tsquery drops it from the query the same way.
-        if not any(char.isalnum() for char in text):
-            return None
         clause = sa.or_(
             *(
                 column.op("###", is_comparison=True)(
@@ -469,7 +465,8 @@ def _bm25_clause(tsquery_string, fields):
                 for column, boost in fields
             )
         )
-        # Postgres's own stop list decides, and the planner evaluates this
+        # Left out like a stop word or a word with no letters or digits:
+        # Postgres's own dictionary decides, and the planner evaluates this
         # constant before ParadeDB reads the query.
         stop = func.to_tsvector("english", text) == ""
         return _Operand(clause, stop)

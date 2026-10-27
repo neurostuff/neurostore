@@ -19,6 +19,7 @@ from neurostore.tests.api.test_query_params import _list_endpoints
 pytestmark = pytest.mark.anyio
 
 TERM = "zyxomma"
+PHRASE = '"zyxomma quellbrook"'
 
 
 def _with_text(session, base_study, text, source="pubget"):
@@ -30,7 +31,6 @@ def _with_text(session, base_study, text, source="pubget"):
     session.add(fulltext)
     session.flush()
     return fulltext
-PHRASE = '"zyxomma quellbrook"'
 
 
 async def _search(client, **params):
@@ -121,6 +121,62 @@ async def test_a_full_text_only_match_ranks_below_every_title_or_abstract_match(
     ids, total = await _search(auth_client, search=TERM, search_full_text="true")
     assert ids == [weak.id, strong.id]
     assert total == 2
+
+
+@pytest.mark.parametrize(
+    "text, first",
+    [
+        # Once in a long text: less than the abstract's second mention.
+        (
+            "Methods. Zyxomma was measured once. "
+            + "We measured a plain quantity with care. " * 12,
+            "twice_in_abstract",
+        ),
+        # Twice in a short text: more than it.
+        (
+            "Methods. Zyxomma was measured. " * 2
+            + "We measured a plain quantity with care. " * 2,
+            "abstract_and_text",
+        ),
+    ],
+    ids=["weak_text_match", "strong_text_match"],
+)
+async def test_the_full_text_adds_to_a_title_or_abstract_match(
+    auth_client, session, text, first
+):
+    """Among title or abstract matches, a match in the text counts too, by
+    less than one in the abstract (boosts 2 and 1)."""
+    def filler(i):
+        return f"Methods. We measured a plain quantity number {i} with care. " * 2
+
+    for i in range(1, 21):
+        _with_text(
+            session,
+            BaseStudy(
+                name=f"Plain heading number {i}",
+                description=f"An abstract that reports a plain finding number {i} in detail.",
+                level="group",
+            ),
+            filler(i),
+        )
+    rows = {
+        "twice_in_abstract": BaseStudy(
+            name="Plain heading number 21",
+            description="Zyxomma and zyxomma were found in a plain finding 21.",
+            level="group",
+        ),
+        "abstract_and_text": BaseStudy(
+            name="Plain heading number 22",
+            description="An abstract that reports zyxomma in a plain finding 22.",
+            level="group",
+        ),
+    }
+    _with_text(session, rows["twice_in_abstract"], filler(21))
+    _with_text(session, rows["abstract_and_text"], text)
+    session.commit()
+    ids, _ = await _search(auth_client, search=TERM, search_full_text="true")
+    second = next(k for k in rows if k != first)
+    assert ids == [rows[first].id, rows[second].id]
 
 
 async def test_a_phrase_needs_its_words_in_order(auth_client, session):
