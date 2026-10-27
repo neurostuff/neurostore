@@ -15,7 +15,6 @@ from marshmallow import (
 from sqlalchemy import func
 from study_schema.models.paper_parse import (
     AnalysisOutcome,
-    PreprintServer,
     PublicationStatus,
 )
 
@@ -648,9 +647,8 @@ class StudySetStudyInfoSchema(Schema):
 
 class PreprintDoiSchema(Schema):
     doi = fields.String(required=True)
-    server = fields.String(
-        required=True, validate=validate.OneOf([s.value for s in PreprintServer])
-    )
+    # study_schema's PreprintServer, or the DOI prefix of a server it does not list.
+    server = fields.String(required=True, validate=validate.Length(min=1))
 
 
 class ArticleIdentifiersSchema(Schema):

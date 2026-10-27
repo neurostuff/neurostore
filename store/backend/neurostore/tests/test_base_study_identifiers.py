@@ -646,6 +646,18 @@ def test_a_preprint_only_parse_creates_a_preprint_base_study(session):
     }
 
 
+def test_a_parse_naming_an_unlisted_server_keeps_it_as_written(session):
+    # 10.31237 is Thesis Commons, which study_schema's PreprintServer does not list; the
+    # ingester names such a server by its DOI prefix.
+    thesis = {"doi": "10.31237/osf.io/8nvb9", "server": "10.31237"}
+    summary = ingest_upload({"coordinate_parse": _parse(preprint_dois=[thesis])})
+
+    held = session.scalars(sa.select(BaseStudyIdentifier).where(
+        BaseStudyIdentifier.base_study_id == summary["base_study_id"])).all()
+    assert [(i.kind, i.value, i.server) for i in held] == [
+        ("preprint", "10.31237/osf.io/8nvb9", "10.31237")]
+
+
 def test_a_later_parse_with_the_version_of_record_publishes_the_preprint_base_study(session):
     first = ingest_upload({"coordinate_parse": _parse(preprint_dois=[PREPRINT_DOI])})
 

@@ -783,6 +783,9 @@
               "anyOf": [
                 {
                   "$ref": "#/$defs/PreprintServer"
+                },
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -830,9 +833,13 @@
               "$ref": "#/$defs/PreprintServer"
             },
             {
+              "type": "string"
+            },
+            {
               "type": "null"
             }
-          ]
+          ],
+          "description": "A server PreprintServer does not list is named by its DOI prefix."
         }
       },
       "required": [
@@ -841,13 +848,7 @@
       ],
       "then": {
         "properties": {
-          "preprint_server": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/PreprintServer"
-              }
-            ]
-          }
+          "preprint_server": {}
         },
         "required": [
           "preprint_server"
@@ -1044,6 +1045,9 @@
               "anyOf": [
                 {
                   "$ref": "#/$defs/PreprintServer"
+                },
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -1094,9 +1098,13 @@
               "$ref": "#/$defs/PreprintServer"
             },
             {
+              "type": "string"
+            },
+            {
               "type": "null"
             }
-          ]
+          ],
+          "description": "A server PreprintServer does not list is named by its DOI prefix."
         }
       },
       "required": [
@@ -1106,13 +1114,7 @@
       ],
       "then": {
         "properties": {
-          "preprint_server": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/PreprintServer"
-              }
-            ]
-          }
+          "preprint_server": {}
         },
         "required": [
           "preprint_server"
@@ -2085,8 +2087,15 @@
           "type": "string"
         },
         "server": {
-          "$ref": "#/$defs/PreprintServer",
-          "description": "Named by the producer from the DOI, so that no consumer needs a table of preprint servers' DOI patterns."
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreprintServer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Named by the producer from the DOI, so that no consumer needs a table of preprint servers' DOI patterns. A server PreprintServer does not list is named by its DOI prefix."
         }
       },
       "required": [
@@ -2130,7 +2139,9 @@
         "authorea",
         "techrxiv",
         "chemrxiv",
-        "jmir_preprints"
+        "jmir_preprints",
+        "peerj_preprints",
+        "qeios"
       ],
       "title": "PreprintServer",
       "type": "string"
@@ -2289,6 +2300,9 @@
               "anyOf": [
                 {
                   "$ref": "#/$defs/PreprintServer"
+                },
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -2339,9 +2353,13 @@
               "$ref": "#/$defs/PreprintServer"
             },
             {
+              "type": "string"
+            },
+            {
               "type": "null"
             }
-          ]
+          ],
+          "description": "A server PreprintServer does not list is named by its DOI prefix."
         }
       },
       "required": [
@@ -2351,13 +2369,7 @@
       ],
       "then": {
         "properties": {
-          "preprint_server": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/PreprintServer"
-              }
-            ]
-          }
+          "preprint_server": {}
         },
         "required": [
           "preprint_server"
