@@ -156,8 +156,8 @@ def upgrade():
         "EXECUTE FUNCTION fulltexts_drop_moved_copy()"
     )
     # A base study pointing to another one's full text (an ORM move used to
-    # leave one behind) points to its own best one instead: the copy is only
-    # ever written onto a base study's own full text.
+    # leave one behind) points to its own best one instead, so the key below
+    # holds for every row.
     op.execute(
         f"""
         UPDATE base_studies b SET fulltext_id = (
@@ -205,14 +205,52 @@ def upgrade():
                 f"USING paradedb ({columns}) "
                 "WITH (target_segment_count = 1, mutable_segment_rows = 0)"
             )
+        op.execute(
+            "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS uq_fulltexts_id_base_study_id "
+            "ON fulltexts (id, base_study_id)"
+        )
     op.execute(LOCK_TIMEOUT)
+    op.execute(
+        """
+        DO $$ BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'uq_fulltexts_id_base_study_id'
+            ) THEN
+                ALTER TABLE fulltexts ADD CONSTRAINT uq_fulltexts_id_base_study_id
+                UNIQUE USING INDEX uq_fulltexts_id_base_study_id;
+            END IF;
+        END $$
+        """
+    )
+    # A base study points only to one of its own full texts: the copy and the
+    # search rest on it. Deferred, so a full text can move to another base
+    # study and both be re-pointed in the same transaction. NOT VALID here
+    # and validated below, which checks the rows without blocking writes.
+    op.execute(
+        "ALTER TABLE base_studies DROP CONSTRAINT IF EXISTS fk_base_studies_fulltext_id"
+    )
+    op.execute(
+        "ALTER TABLE base_studies ADD CONSTRAINT fk_base_studies_fulltext_id "
+        "FOREIGN KEY (fulltext_id, id) REFERENCES fulltexts (id, base_study_id) "
+        "ON DELETE SET NULL (fulltext_id) DEFERRABLE INITIALLY DEFERRED NOT VALID"
+    )
     op.execute("ALTER TABLE base_studies DROP COLUMN IF EXISTS __ts_vector__")
+    with op.get_context().autocommit_block():
+        op.execute(
+            "ALTER TABLE base_studies VALIDATE CONSTRAINT fk_base_studies_fulltext_id"
+        )
 
 
 def downgrade():
     for index, (table, _) in INDEXES.items():
         op.execute(f"DROP INDEX {index}")
         op.execute(f"ALTER TABLE {table} RESET (vacuum_index_cleanup)")
+    op.execute("ALTER TABLE base_studies DROP CONSTRAINT fk_base_studies_fulltext_id")
+    op.execute(
+        "ALTER TABLE base_studies ADD CONSTRAINT fk_base_studies_fulltext_id "
+        "FOREIGN KEY (fulltext_id) REFERENCES fulltexts (id) ON DELETE SET NULL"
+    )
+    op.execute("ALTER TABLE fulltexts DROP CONSTRAINT uq_fulltexts_id_base_study_id")
     op.execute("DROP TRIGGER base_studies_copy_to_fulltext ON base_studies")
     op.execute("DROP FUNCTION base_studies_copy_to_fulltext()")
     op.execute("DROP TRIGGER fulltexts_drop_moved_copy ON fulltexts")

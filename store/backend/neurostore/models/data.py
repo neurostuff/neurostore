@@ -259,18 +259,15 @@ class BaseStudy(BaseMixin, db.Model):
     #: Legacy; fulltexts holds the reviewed text (docs/adr/0005-fulltexts-table.md).
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
-    fulltext_id = db.Column(
-        db.Text,
-        db.ForeignKey(
-            "fulltexts.id",
-            name="fk_base_studies_fulltext_id",
-            ondelete="SET NULL",
-            use_alter=True,
-        ),
-        nullable=True,
-        index=True,
+    # One of its own full texts: see fk_base_studies_fulltext_id below.
+    fulltext_id = db.Column(db.Text, nullable=True, index=True)
+    fulltext = relationship(
+        "Fulltext",
+        primaryjoin="BaseStudy.fulltext_id == Fulltext.id",
+        foreign_keys=[fulltext_id],
+        lazy="raise",
+        viewonly=True,
     )
-    fulltext = relationship("Fulltext", foreign_keys=[fulltext_id], lazy="raise", viewonly=True)
     is_active = db.Column(
         db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
     )
@@ -327,6 +324,18 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
+        # The preferred full text is one of the base study's own. Deferred, so a
+        # full text can move to another base study and both be re-pointed in
+        # one transaction; a delete clears only fulltext_id.
+        sa.ForeignKeyConstraint(
+            ["fulltext_id", "id"],
+            ["fulltexts.id", "fulltexts.base_study_id"],
+            name="fk_base_studies_fulltext_id",
+            ondelete="SET NULL (fulltext_id)",
+            deferrable=True,
+            initially="DEFERRED",
+            use_alter=True,
+        ),
         # Text search (ParadeDB's BM25 index). The scalar fields are the list's
         # filters, so they are applied inside the index scan.
         sa.Index(

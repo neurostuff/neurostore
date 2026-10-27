@@ -223,12 +223,24 @@ def test_fulltexts_schema_and_base_study_pointer(session):
     indexed = [i["column_names"] for i in inspector.get_indexes("fulltexts")]
     assert ["base_study_id", "created_at"] in indexed
     assert ["base_study_id", "tier", "created_at"] not in indexed
+    # The pointer names one of the base study's own full texts.
     (fk,) = [
         fk for fk in inspector.get_foreign_keys("base_studies")
-        if fk["constrained_columns"] == ["fulltext_id"]
+        if "fulltext_id" in fk["constrained_columns"]
     ]
+    assert fk["name"] == "fk_base_studies_fulltext_id"
+    assert fk["constrained_columns"] == ["fulltext_id", "id"]
     assert fk["referred_table"] == "fulltexts"
-    assert fk["options"]["ondelete"] == "SET NULL"
+    assert fk["referred_columns"] == ["id", "base_study_id"]
+    assert fk["options"]["deferrable"] is True
+    assert fk["options"]["initially"] == "DEFERRED"
+    (definition,) = session.execute(
+        sa.text(
+            "SELECT pg_get_constraintdef(oid) FROM pg_constraint "
+            "WHERE conname = 'fk_base_studies_fulltext_id'"
+        )
+    ).scalars()
+    assert "ON DELETE SET NULL (fulltext_id)" in definition
     nullable = {c["name"]: c["nullable"] for c in inspector.get_columns("base_studies")}
     assert nullable["fulltext_id"] is True
 

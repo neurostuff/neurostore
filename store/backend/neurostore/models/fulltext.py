@@ -76,6 +76,8 @@ class Fulltext(BaseMixin, db.Model):
 
     __table_args__ = (
         sa.UniqueConstraint("base_study_id", "sha256", name="uq_fulltexts_base_study_sha256"),
+        # What base_studies.fk_base_studies_fulltext_id refers to.
+        sa.UniqueConstraint("id", "base_study_id", name="uq_fulltexts_id_base_study_id"),
         sa.Index("ix_fulltexts_base_study_created", "base_study_id", "created_at"),
         sa.CheckConstraint(
             source.in_(FULLTEXT_SOURCE_PREFERENCE), name="ck_fulltexts_source"

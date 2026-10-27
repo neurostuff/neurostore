@@ -819,29 +819,32 @@ async def test_a_moved_full_text_does_not_show_its_new_private_paper(
 
 
 def test_a_full_text_moved_by_any_writer_drops_its_old_copy(session, moved_text):
-    """Here plain Core, with no pointer refreshed."""
+    """Here plain Core: the copy goes at once, and the commit is refused while
+    the old paper still points to the row."""
     a, b, moved = moved_text
     session.execute(
         sa.update(Fulltext).where(Fulltext.id == moved.id).values(base_study_id=b.id)
     )
-    session.commit()
-    assert _copies(session)[moved.id] == (None, None, None, None, None)
+    session.flush()
+    assert session.execute(
+        sa.select(Fulltext.name).where(Fulltext.id == moved.id)
+    ).scalar_one() is None
+    with pytest.raises(sa.exc.IntegrityError):
+        session.commit()
+    session.rollback()
 
 
-async def test_a_pointer_to_another_paper_s_full_text_copies_nothing_onto_it(
-    auth_client, session, moved_text
+def test_a_paper_cannot_be_left_pointing_at_another_paper_s_full_text(
+    session, moved_text
 ):
-    """No writer leaves one behind any more, but the copy rests on ownership
-    alone: the other paper keeps its copy and is listed once."""
     a, b, moved = moved_text
     theirs = session.query(Fulltext).filter_by(base_study_id=b.id, source="pubget").one()
     session.execute(
         sa.update(BaseStudy).where(BaseStudy.id == a.id).values(fulltext_id=theirs.id)
     )
-    session.commit()
-    assert _copies(session)[theirs.id][0] == "Plain second paper"
-    ids, _ = await _search(auth_client, search=TERM, search_full_text="true")
-    assert ids.count(b.id) == 1
+    with pytest.raises(sa.exc.IntegrityError, match="fk_base_studies_fulltext_id"):
+        session.commit()
+    session.rollback()
 
 
 async def test_each_copied_column_edited_alone_is_copied(auth_client, session):
@@ -1057,6 +1060,11 @@ def test_the_migration_goes_down_and_up_over_existing_rows(session):
             "WHERE table_name = 'fulltexts' AND column_name = 'is_active'"
         ) == 0
         assert scalar("SELECT count(*) FROM pg_trigger WHERE tgname LIKE '%copy%'") == 0
+        # A pointer at another paper's text, which the old key allowed.
+        with session.bind.begin() as conn:
+            conn.execute(sa.text(
+                "UPDATE base_studies SET fulltext_id = 'paper00001-ace' WHERE id = 'paper00000'"
+            ))
     finally:
         service_migrations.upgrade("heads")
         db.engine.dispose()
@@ -1067,3 +1075,10 @@ def test_the_migration_goes_down_and_up_over_existing_rows(session):
     assert scalar(
         "SELECT count(*) FROM fulltexts WHERE source = 'ace' AND is_active IS NOT NULL"
     ) == 0
+    # Re-pointed to its own best text before the key was validated.
+    assert scalar(
+        "SELECT fulltext_id FROM base_studies WHERE id = 'paper00000'"
+    ) == "paper00000-pubget"
+    assert scalar(
+        "SELECT convalidated FROM pg_constraint WHERE conname = 'fk_base_studies_fulltext_id'"
+    ) is True
