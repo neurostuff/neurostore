@@ -770,9 +770,9 @@ async def test_page_zero_is_an_empty_page(auth_client, mixed_corpus, full_text):
 
 
 def _move_via_the_orm(session, fulltext, base_study):
-    """Move ``fulltext`` with its attributes expired, as after a commit."""
-    session.expire_all()
-    fulltext = session.get(Fulltext, fulltext.id)
+    """Move ``fulltext`` with its attributes expired, as after a commit, so the
+    old owner is not in the attribute's history."""
+    session.expire(fulltext)
     fulltext.base_study_id = base_study.id
     session.commit()
 
@@ -816,6 +816,16 @@ async def test_a_moved_full_text_does_not_show_its_new_private_paper(
     session.commit()
     ids, _ = await _search(auth_client, search=TERM, search_full_text="true")
     assert ids == [a.id]
+
+
+def test_a_full_text_moved_by_any_writer_drops_its_old_copy(session, moved_text):
+    """Here plain Core, with no pointer refreshed."""
+    a, b, moved = moved_text
+    session.execute(
+        sa.update(Fulltext).where(Fulltext.id == moved.id).values(base_study_id=b.id)
+    )
+    session.commit()
+    assert _copies(session)[moved.id] == (None, None, None, None, None)
 
 
 async def test_a_pointer_to_another_paper_s_full_text_copies_nothing_onto_it(
@@ -1011,8 +1021,11 @@ def test_the_migration_goes_down_and_up_over_existing_rows(session):
     """More than a batch of papers, each with a preferred and another full
     text: the downgrade restores the tsvector search, and the upgrade copies
     onto every preferred row and no other."""
-    papers = [{"id": f"paper{i:05d}", "name": f"Zyxomma paper {i}", "level": "group"}
-              for i in range(1005)]
+    papers = [
+        {"id": f"paper{i:05d}", "name": f"Zyxomma paper {i}",
+         "description": "An abstract on quokkas.", "level": "group"}
+        for i in range(1005)
+    ]
     texts = [
         {"id": f"{p['id']}-{source}", "base_study_id": p["id"], "source": source,
          "sha256": f"{i:060d}{n:04d}", "text": f"Methods. Quellbrook {source}."}
@@ -1034,7 +1047,7 @@ def test_the_migration_goes_down_and_up_over_existing_rows(session):
         service_migrations.downgrade("e7a9c1d3f5b8")
         assert scalar(
             "SELECT count(*) FROM base_studies "
-            "WHERE __ts_vector__ @@ to_tsquery('english', 'zyxomma & paper')"
+            "WHERE __ts_vector__ @@ to_tsquery('english', 'zyxomma & quokka')"
         ) == 1005
         assert scalar(
             "SELECT indexdef FROM pg_indexes WHERE indexname = 'ix_base_study___ts_vector__'"
