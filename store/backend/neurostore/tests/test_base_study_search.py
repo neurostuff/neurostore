@@ -847,6 +847,26 @@ def test_a_paper_cannot_be_left_pointing_at_another_paper_s_full_text(
     session.rollback()
 
 
+def test_an_edit_between_a_move_and_its_repointing_leaves_the_new_owner_s_copy(
+    session, moved_text
+):
+    """The key is checked only at commit, so within the transaction A still
+    points to the row B now owns, and A's edit must not be copied onto it."""
+    a, b, moved = moved_text
+    session.execute(
+        sa.update(Fulltext).where(Fulltext.id == moved.id).values(base_study_id=b.id)
+    )
+    session.execute(
+        sa.update(BaseStudy).where(BaseStudy.id == b.id).values(fulltext_id=moved.id)
+    )
+    session.execute(
+        sa.update(BaseStudy).where(BaseStudy.id == a.id).values(name="Renamed first")
+    )
+    refresh_fulltext_pointer(session.connection(), a.id)
+    session.commit()
+    assert _copies(session)[moved.id][0] == "Plain second paper"
+
+
 async def test_each_copied_column_edited_alone_is_copied(auth_client, session):
     """Each edit is a Core update of one column, which only the trigger sees."""
     paper = BaseStudy(name="Plain heading", level="group", year=2001)
