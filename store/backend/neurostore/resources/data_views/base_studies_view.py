@@ -1,3 +1,5 @@
+import logging
+
 from connexion import request
 import sqlalchemy as sa
 from marshmallow import fields as marshmallow_fields
@@ -55,6 +57,8 @@ from neurostore.schemas.data import (
     StringOrNested,
     StudySchema,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class BaseStudyBulkPostResponseSchema(BaseDataSchema, ArticleIdentifiersSchema):
@@ -279,7 +283,11 @@ class BaseStudiesView(ObjectView, ListView):
         ]
         if authors.has_listed(record.id):
             # The string follows the listed authors; a PUT does not set it apart from them.
-            data.pop("authors", None)
+            if "authors" in data:
+                data.pop("authors")
+                logger.warning(
+                    "PUT of base study %s ignores `authors`: it is derived from its listed "
+                    "authors", record.id)
         lock_identifiers(db.session, posted)
         held = held_by(db.session, posted)
         for field in ARTICLE_ID_LISTS:

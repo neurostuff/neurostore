@@ -486,7 +486,6 @@ def _bibliography(parsed_paper):
     if parsed_paper is None:
         return {}
     bib = parsed_paper["bibliography"]
-    names = [a.get("name") if isinstance(a, dict) else a for a in bib.get("authors") or []]
     # NOTE (licensing, 2026-10-16): the abstract is stored and shown whatever its
     # licence. Open question: should an abstract whose licence does not permit
     # redistribution be hidden? study_schema will carry the paper's licence and a
@@ -498,7 +497,7 @@ def _bibliography(parsed_paper):
         "description": bib.get("abstract"),
         "publication": bib.get("journal"),
         "year": bib.get("publication_year"),
-        "authors": ", ".join(a for a in names if a) or None,
+        "authors": authors.authors_string(a["name"] for a in bib.get("authors") or []),
     }
     return {k: v for k, v in fields.items() if v is not None}
 

@@ -1,7 +1,7 @@
 """add authors, universities and each paper's authors and affiliations
 
 Revision ID: e7a9c1d3f5b8
-Revises: d4e6f8a0b2c4
+Revises: a8e1c4d7b2f6
 Create Date: 2026-10-23
 
 """

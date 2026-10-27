@@ -15,6 +15,7 @@ from sqlalchemy.orm import aliased
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from neurostore import authors, corresponding_authors
+from neurostore.authors import authors_string
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
 from neurostore.models import (
@@ -556,7 +557,7 @@ def fetch_metadata_semantic_scholar(identifiers, *, settings, logger, api_key=No
                 if isinstance(journal, dict)
                 else record.get("venue")
             ),
-            "authors": ", ".join(author_names) if author_names else None,
+            "authors": authors_string(author_names),
             "year": _normalize_year(record.get("year")),
             "is_oa": (
                 bool(record.get("isOpenAccess"))
@@ -655,7 +656,7 @@ def fetch_metadata_pubmed(
         "name": title,
         "description": abstract,
         "publication": publication,
-        "authors": ", ".join(authors) if authors else None,
+        "authors": authors_string(authors),
         "year": year,
         "doi": identifiers_from_article.get("doi"),
         "pmid": identifiers_from_article.get("pmid"),
