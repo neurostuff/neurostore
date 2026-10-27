@@ -724,8 +724,10 @@ def test_the_indexes_cover_the_searched_and_filtered_fields(session):
 
 
 def test_the_indexes_and_their_tables_are_kept_fast_to_search(session):
-    """Vacuum always cleans the indexes, and each index has one segment and no
-    mutable segment, whose buffered rows slow every search."""
+    """Vacuum runs after a few rows change and always cleans the indexes, and
+    each index has one segment, no mutable segment, whose buffered rows slow
+    every search, and merge layers from 16 kB, so single-row writes' segments
+    are merged before many accumulate."""
 
     def options(name):
         return session.execute(
@@ -737,10 +739,18 @@ def test_the_indexes_and_their_tables_are_kept_fast_to_search(session):
         ("base_studies", "ix_base_study_search"),
         ("fulltexts", "ix_fulltext_search"),
     ):
-        assert "vacuum_index_cleanup=on" in options(table)
-        assert {"target_segment_count=1", "mutable_segment_rows=0"} <= set(
-            options(index)
-        )
+        assert {
+            "vacuum_index_cleanup=on",
+            "autovacuum_vacuum_scale_factor=0",
+            "autovacuum_vacuum_threshold=50",
+            "autovacuum_vacuum_insert_scale_factor=0",
+            "autovacuum_vacuum_insert_threshold=50",
+        } <= set(options(table))
+        assert {
+            "target_segment_count=1",
+            "mutable_segment_rows=0",
+            "background_layer_sizes=16kB, 64kB, 256kB, 1MB, 4MB, 16MB, 64MB, 256MB, 1GB",
+        } <= set(options(index))
 
 
 async def test_a_full_text_search_lists_every_match_unpaginated(auth_client, session):
@@ -1080,6 +1090,10 @@ def test_the_migration_goes_down_and_up_over_existing_rows(session):
             "WHERE table_name = 'fulltexts' AND column_name = 'is_active'"
         ) == 0
         assert scalar("SELECT count(*) FROM pg_trigger WHERE tgname LIKE '%copy%'") == 0
+        assert scalar(
+            "SELECT count(*) FROM pg_class WHERE relname IN ('base_studies', 'fulltexts') "
+            "AND reloptions IS NOT NULL"
+        ) == 0
         # A pointer at another paper's text, which the old key allowed.
         with session.bind.begin() as conn:
             conn.execute(sa.text(

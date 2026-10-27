@@ -87,6 +87,20 @@ BATCH = 1000
 # The statements that lock base_studies exclusively give up rather than queue
 # every reader behind a long transaction; the upgrade can then run again.
 LOCK_TIMEOUT = "SET LOCAL lock_timeout = '30s'"
+# Every update leaves its row's old version, and heap pages no longer marked
+# all-visible, for each search to check until a vacuum; vacuum after 50 rows
+# rather than after a fifth of the table.
+TABLE_OPTIONS = {
+    "vacuum_index_cleanup": "on",
+    "autovacuum_vacuum_scale_factor": "0",
+    "autovacuum_vacuum_threshold": "50",
+    "autovacuum_vacuum_insert_scale_factor": "0",
+    "autovacuum_vacuum_insert_threshold": "50",
+}
+# Merge layers from 16 kB, four times apart: a single-row write adds a segment
+# of 4-20 kB, which the default first layer (100 kB) leaves unmerged until
+# dozens have accumulated, each a fixed cost per search.
+BACKGROUND_LAYER_SIZES = "16kB, 64kB, 256kB, 1MB, 4MB, 16MB, 64MB, 256MB, 1GB"
 
 
 def _set_copy(source):
@@ -192,7 +206,8 @@ def upgrade():
             # An updated row stays in a BM25 index, slowing every search, until
             # a vacuum cleans the indexes; by default vacuum skips that when
             # few pages changed.
-            op.execute(f"ALTER TABLE {table} SET (vacuum_index_cleanup = on)")
+            options = ", ".join(f"{name} = {value}" for name, value in TABLE_OPTIONS.items())
+            op.execute(f"ALTER TABLE {table} SET ({options})")
             # An interrupted build leaves an invalid index of the same name.
             op.execute(f"DROP INDEX CONCURRENTLY IF EXISTS {index}")
             columns = ", ".join(f"({field})" for field in fields)
@@ -203,7 +218,8 @@ def upgrade():
             op.execute(
                 f"CREATE INDEX CONCURRENTLY {index} ON {table} "
                 f"USING paradedb ({columns}) "
-                "WITH (target_segment_count = 1, mutable_segment_rows = 0)"
+                "WITH (target_segment_count = 1, mutable_segment_rows = 0, "
+                f"background_layer_sizes = '{BACKGROUND_LAYER_SIZES}')"
             )
         op.execute(
             "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS uq_fulltexts_id_base_study_id "
@@ -244,7 +260,7 @@ def upgrade():
 def downgrade():
     for index, (table, _) in INDEXES.items():
         op.execute(f"DROP INDEX {index}")
-        op.execute(f"ALTER TABLE {table} RESET (vacuum_index_cleanup)")
+        op.execute(f"ALTER TABLE {table} RESET ({', '.join(TABLE_OPTIONS)})")
     op.execute("ALTER TABLE base_studies DROP CONSTRAINT fk_base_studies_fulltext_id")
     op.execute(
         "ALTER TABLE base_studies ADD CONSTRAINT fk_base_studies_fulltext_id "

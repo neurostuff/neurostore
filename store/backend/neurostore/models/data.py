@@ -342,7 +342,11 @@ class BaseStudy(BaseMixin, db.Model):
             "ix_base_study_search",
             *(sa.text(f"({field})") for field in SEARCH_INDEX_FIELDS),
             postgresql_using="paradedb",
-            postgresql_with={"target_segment_count": 1, "mutable_segment_rows": 0},
+            postgresql_with={
+                "target_segment_count": 1,
+                "mutable_segment_rows": 0,
+                "background_layer_sizes": "'16kB, 64kB, 256kB, 1MB, 4MB, 16MB, 64MB, 256MB, 1GB'",
+            },
         ),
     )
 
