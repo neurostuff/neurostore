@@ -231,6 +231,7 @@ SEARCH_INDEX_FIELDS = (
     "has_images",
     "is_oa",
     "year",
+    "fulltext_id::pdb.literal",
     "hashtextextended(id, 0)::pdb.alias('id_order')",
 )
 

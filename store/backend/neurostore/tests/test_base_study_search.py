@@ -81,11 +81,13 @@ def _ids(corpus, *keys):
 
 
 @pytest.mark.parametrize("query", [TERM, PHRASE])
-async def test_title_outranks_abstract_outranks_full_text(
+async def test_full_text_ranks_a_text_match_below_title_and_abstract_matches(
     auth_client, ranked_corpus, query
 ):
+    """Here, where the text mentions it most often of all."""
     ids, total = await _search(auth_client, search=query, search_full_text="true")
-    assert ids == _ids(ranked_corpus, "title", "abstract", "full_text")
+    assert set(ids[:2]) == set(_ids(ranked_corpus, "title", "abstract"))
+    assert ids[2:] == _ids(ranked_corpus, "full_text")
     assert total == 3
 
 
@@ -98,54 +100,40 @@ async def test_search_matches_title_and_abstract_only_by_default(
     assert total == 2
 
 
-async def test_a_full_text_only_match_ranks_below_every_title_or_abstract_match(
+async def test_an_abstract_that_repeats_a_word_outranks_a_title_that_has_it_once(
     auth_client, session
 ):
-    """However strongly the text matches and however weakly the abstract does."""
-    weak = BaseStudy(
-        name="Plain heading",
-        description="A long abstract about many unrelated topics in some detail, "
-        "which mentions zyxomma once near its end, among other plain words.",
+    """Ranking is BM25: the abstract's boost of 2 against the title's 3 leaves
+    room for term frequency."""
+    for i in range(20):
+        session.add(
+            BaseStudy(
+                name=f"Plain heading number {i}",
+                description=f"An abstract that reports a plain finding number {i} here.",
+                level="group",
+            )
+        )
+    in_title = BaseStudy(
+        name="Zyxomma heading number 20",
+        description="An abstract that reports a plain finding number 20 here.",
         level="group",
     )
-    session.add(weak)
-    strong = BaseStudy(name="Another heading", level="group")
-    _with_text(session, strong, "Zyxomma. " * 10)
-    for i in range(10):
-        _with_text(
-            session,
-            BaseStudy(name=f"Filler {i}", level="group"),
-            f"Methods. Nothing relevant number {i}.",
-        )
+    repeated = BaseStudy(
+        name="Plain heading number 21",
+        description="Zyxomma, zyxomma, zyxomma and zyxomma in finding 21 here.",
+        level="group",
+    )
+    session.add_all([in_title, repeated])
     session.commit()
-    ids, total = await _search(auth_client, search=TERM, search_full_text="true")
-    assert ids == [weak.id, strong.id]
-    assert total == 2
+    ids, _ = await _search(auth_client, search=TERM)
+    assert ids == [repeated.id, in_title.id]
 
 
-@pytest.mark.parametrize(
-    "text, first",
-    [
-        # Once in a long text: less than the abstract's second mention.
-        (
-            "Methods. Zyxomma was measured once. "
-            + "We measured a plain quantity with care. " * 12,
-            "twice_in_abstract",
-        ),
-        # Twice in a short text: more than it.
-        (
-            "Methods. Zyxomma was measured. " * 2
-            + "We measured a plain quantity with care. " * 2,
-            "abstract_and_text",
-        ),
-    ],
-    ids=["weak_text_match", "strong_text_match"],
-)
-async def test_the_full_text_adds_to_a_title_or_abstract_match(
-    auth_client, session, text, first
-):
-    """Among title or abstract matches, a match in the text counts too, by
-    less than one in the abstract (boosts 2 and 1)."""
+async def test_a_text_match_counts_less_than_an_abstract_match(auth_client, session):
+    """The same mention ranks higher in an abstract than in the text: text-only
+    matches usually rank lower, though a strong text match can still outrank
+    a weak abstract one."""
+
     def filler(i):
         return f"Methods. We measured a plain quantity number {i} with care. " * 2
 
@@ -154,29 +142,137 @@ async def test_the_full_text_adds_to_a_title_or_abstract_match(
             session,
             BaseStudy(
                 name=f"Plain heading number {i}",
-                description=f"An abstract that reports a plain finding number {i} in detail.",
+                description=f"An abstract that reports a plain finding number {i} here.",
                 level="group",
             ),
             filler(i),
         )
-    rows = {
-        "twice_in_abstract": BaseStudy(
-            name="Plain heading number 21",
-            description="Zyxomma and zyxomma were found in a plain finding 21.",
-            level="group",
-        ),
-        "abstract_and_text": BaseStudy(
-            name="Plain heading number 22",
-            description="An abstract that reports zyxomma in a plain finding 22.",
-            level="group",
-        ),
-    }
-    _with_text(session, rows["twice_in_abstract"], filler(21))
-    _with_text(session, rows["abstract_and_text"], text)
+    in_abstract = BaseStudy(
+        name="Plain heading number 21",
+        description="An abstract that reports a zyxomma finding number 21 here.",
+        level="group",
+    )
+    _with_text(session, in_abstract, filler(21))
+    in_text = BaseStudy(
+        name="Plain heading number 22",
+        description="An abstract that reports a plain finding number 22 here.",
+        level="group",
+    )
+    _with_text(
+        session, in_text, "Methods. We measured a zyxomma quantity number 22 with care. " * 2
+    )
     session.commit()
     ids, _ = await _search(auth_client, search=TERM, search_full_text="true")
-    second = next(k for k in rows if k != first)
-    assert ids == [rows[first].id, rows[second].id]
+    assert ids == [in_abstract.id, in_text.id]
+
+
+async def test_words_may_match_in_different_fields(auth_client, session):
+    """With full text, each word must match the title, the abstract or the
+    text; together they need not."""
+    split = BaseStudy(name="Zyxomma in cortex", level="group")
+    _with_text(session, split, "Methods. Quellbrook was measured.")
+    session.commit()
+    assert await _search(auth_client, search="zyxomma quellbrook") == ([], 0)
+    assert await _search(
+        auth_client, search="zyxomma quellbrook", search_full_text="true"
+    ) == ([split.id], 1)
+
+
+@pytest.fixture
+def mixed_corpus(session):
+    """7 papers without a full text and 6 with one, all matching."""
+    without = [BaseStudy(name=f"Zyxomma study {i}", level="group") for i in range(7)]
+    session.add_all(without)
+    with_text = []
+    for i in range(6):
+        row = BaseStudy(name=f"Plain heading {i}", level="group")
+        _with_text(session, row, "Methods. " + "Zyxomma was measured. " * (i + 1))
+        with_text.append(row)
+    session.commit()
+    return without, with_text
+
+
+@pytest.mark.parametrize("desc", ["true", "false"])
+async def test_papers_with_and_without_a_full_text_page_together(
+    auth_client, mixed_corpus, desc
+):
+    without, with_text = mixed_corpus
+    everything, total = await _search(
+        auth_client, search=TERM, search_full_text="true", page_size=100, desc=desc
+    )
+    assert total == 13
+    assert set(everything) == {r.id for r in without + with_text}
+    pages = []
+    for page in (1, 2, 3, 4, 5):
+        ids, total = await _search(
+            auth_client,
+            search=TERM,
+            search_full_text="true",
+            page=page,
+            page_size=3,
+            desc=desc,
+        )
+        assert total == 13
+        pages.append(ids)
+    assert [len(p) for p in pages] == [3, 3, 3, 3, 1]
+    assert sum(pages, []) == everything
+
+
+async def test_a_full_text_page_is_one_index_scan_per_index(
+    auth_client, session, mixed_corpus
+):
+    """Each index returns its best matches straight from a Top K scan, and
+    counts them, with every filter applied inside it."""
+    statements = []
+
+    def record(conn, cursor, statement, parameters, context, executemany):
+        statements.append(cursor.mogrify(statement, parameters).decode())
+
+    sa.event.listen(db.engine, "before_cursor_execute", record)
+    try:
+        await _search(
+            auth_client, search=TERM, search_full_text="true", page=2, page_size=5
+        )
+    finally:
+        sa.event.remove(db.engine, "before_cursor_execute", record)
+    pages = [s for s in statements if "###" in s and "LIMIT" in s]
+    counts = [s for s in statements if "###" in s and s.startswith("SELECT count(*)")]
+    assert len(pages) == 1 and len(counts) == 2
+    plan = "\n".join(session.execute(sa.text("EXPLAIN " + pages[0])).scalars())
+    assert plan.count("TopKScanExecState") == 2
+    for statement in pages + counts:
+        plan = "\n".join(session.execute(sa.text("EXPLAIN " + statement)).scalars())
+        assert "heap_filter" not in plan
+
+
+async def test_the_full_text_search_keeps_the_list_filters(auth_client, session):
+    owner = User.query.filter_by(external_id=auth_client.username).one()
+    other = User(name="other", external_id="other-user-id")
+    session.add(other)
+    rows = {
+        "public": BaseStudy(name="One", level="group", year=2020, authors="Smith J"),
+        "inactive": BaseStudy(name="Two", level="group", is_active=False),
+        "own_private": BaseStudy(name="Three", level="group", public=False, user=owner),
+        "others_private": BaseStudy(name="Four", level="group", public=False, user=other),
+        "meta": BaseStudy(name="Five", level="meta"),
+        "old": BaseStudy(name="Six", level="group", year=1990, authors="Jones B"),
+    }
+    for row in rows.values():
+        _with_text(session, row, "Methods. Zyxomma was measured.")
+    session.commit()
+
+    async def found(**params):
+        ids, total = await _search(
+            auth_client, search=TERM, search_full_text="true", **params
+        )
+        assert total == len(ids)
+        return {k for k, r in rows.items() if r.id in ids}
+
+    assert await found() == {"public", "own_private", "old"}
+    assert await found(year_min=2000) == {"public"}
+    assert await found(level="meta") == {"meta"}
+    # A filter the copy does not hold: applied through the base studies.
+    assert await found(authors="smith") == {"public"}
 
 
 async def test_a_phrase_needs_its_words_in_order(auth_client, session):
@@ -205,6 +301,16 @@ async def test_full_text_is_the_preferred_copy_only(auth_client, session):
     assert total == 1
 
 
+async def test_an_explicit_sort_searches_the_preferred_copy_only(auth_client, session):
+    other_copy_has_it = BaseStudy(name="Two", level="group")
+    _with_text(session, other_copy_has_it, "Nothing relevant.")
+    _with_text(session, other_copy_has_it, "Zyxomma here.", source="ace")
+    session.commit()
+    assert await _search(
+        auth_client, search=TERM, search_full_text="true", sort="name"
+    ) == ([], 0)
+
+
 async def test_a_moved_pointer_is_searched_at_once(auth_client, session):
     base_study = BaseStudy(name="One", level="group")
     preferred = _with_text(session, base_study, "Nothing relevant.")
@@ -230,16 +336,106 @@ async def test_a_moved_pointer_is_searched_at_once(auth_client, session):
     assert ids == [base_study.id]
 
 
-async def test_a_query_matches_the_full_text_as_a_whole(auth_client, session):
-    """With full text, the whole query must match the title and abstract, or
-    the whole query the full text: a word in each matches neither."""
-    split = BaseStudy(name="Zyxomma in cortex", level="group")
-    _with_text(session, split, "Methods. Quellbrook was measured.")
+def _copies(session):
+    """Each full text's copy of its base study's columns, by full text id."""
+    session.expire_all()
+    return {
+        f.id: (f.name, f.description, f.is_active, f.public, f.level)
+        for f in session.query(Fulltext)
+    }
+
+
+async def test_the_copy_follows_every_writer(auth_client, session):
+    """The preferred full text holds the copy, every other row holds NULLs,
+    whichever path writes the base study or its full texts."""
+    nothing = (None, None, None, None, None)
+    paper = BaseStudy(name="Zyxomma study", description="An abstract.", level="group")
+    pubget = _with_text(session, paper, "Methods. Nothing relevant.")
     session.commit()
-    ids, _ = await _search(
-        auth_client, search="zyxomma quellbrook", search_full_text="true"
+    assert _copies(session) == {pubget.id: ("Zyxomma study", "An abstract.", True, True, "group")}
+
+    # An ORM edit of a copied column.
+    paper.name = "Renamed study"
+    paper.public = False
+    session.commit()
+    assert _copies(session)[pubget.id][:4] == ("Renamed study", "An abstract.", True, False)
+
+    # A Core edit, which no ORM listener sees.
+    session.execute(
+        sa.update(BaseStudy).where(BaseStudy.id == paper.id).values(description="Changed.")
     )
-    assert ids == []
+    session.commit()
+    assert _copies(session)[pubget.id][1] == "Changed."
+
+    # A new, less preferred copy: the pointer stays.
+    ace = _with_text(session, paper, "Methods. Zyxomma here.", source="ace")
+    session.commit()
+    assert _copies(session)[ace.id] == nothing
+
+    # A new, preferred copy (insert): the copy moves to it.
+    elsevier = Fulltext(base_study_id=paper.id, source="elsevier", text="Zyxomma.")
+    session.add(elsevier)
+    session.commit()
+    copies = _copies(session)
+    assert copies[elsevier.id][0] == "Renamed study"
+    assert copies[pubget.id] == copies[ace.id] == nothing
+
+    # Deleting the preferred copy: the pointer, then the copy, move on.
+    session.delete(session.get(Fulltext, elsevier.id))
+    session.commit()
+    copies = _copies(session)
+    assert copies[pubget.id][0] == "Renamed study"
+    assert copies[ace.id] == nothing
+
+    # fulltext_id set by any writer, here plain Core.
+    session.execute(
+        sa.update(BaseStudy).where(BaseStudy.id == paper.id).values(fulltext_id=ace.id)
+    )
+    session.commit()
+    copies = _copies(session)
+    assert copies[ace.id][0] == "Renamed study"
+    assert copies[pubget.id] == nothing
+
+    # refresh_fulltext_pointer puts it back on the preferred copy.
+    refresh_fulltext_pointer(session.connection(), paper.id)
+    session.commit()
+    copies = _copies(session)
+    assert copies[pubget.id][0] == "Renamed study"
+    assert copies[ace.id] == nothing
+
+
+@pytest.mark.parametrize("order", ["old_first", "new_first"])
+async def test_a_full_text_moved_to_another_paper_carries_its_new_copy(session, order):
+    """Whichever base study's pointer is refreshed first."""
+    first = BaseStudy(name="First", level="group")
+    moved = _with_text(session, first, "Methods. Moving text.")
+    second = BaseStudy(name="Second", level="group")
+    session.add(second)
+    session.commit()
+    session.execute(
+        sa.update(Fulltext).where(Fulltext.id == moved.id).values(base_study_id=second.id)
+    )
+    for base_study in (first, second) if order == "old_first" else (second, first):
+        refresh_fulltext_pointer(session.connection(), base_study.id)
+    session.commit()
+    assert _copies(session)[moved.id][0] == "Second"
+
+
+async def test_an_edit_to_a_copied_title_is_searched_at_once(auth_client, session):
+    """A text-only match whose title is edited to match ranks as a title
+    match, and is listed once."""
+    paper = BaseStudy(name="Plain heading", level="group")
+    _with_text(session, paper, "Methods. Zyxomma was measured.")
+    other = BaseStudy(name="Zyxomma in the title", level="group")
+    _with_text(session, other, "Methods. Nothing relevant.")
+    session.commit()
+    ids, total = await _search(auth_client, search=TERM, search_full_text="true")
+    assert (ids, total) == ([other.id, paper.id], 2)
+    paper.name = "Zyxomma zyxomma"
+    session.commit()
+    cache.clear()
+    ids, total = await _search(auth_client, search=TERM, search_full_text="true")
+    assert (ids, total) == ([paper.id, other.id], 2)
 
 
 # Titles and abstracts without the compounds the two tokenisers split
@@ -483,10 +679,11 @@ def test_the_indexes_cover_the_searched_and_filtered_fields(session):
     assert "USING paradedb" in base_studies
     for field in ("name", "description", "is_active", "public", "user_id", "level", "year"):
         assert field in base_studies
-    assert "fulltext" not in base_studies
+    assert "pubget_fulltext" not in base_studies and "ace_fulltext" not in base_studies
     fulltexts = definition("ix_fulltext_search")
     assert "ON public.fulltexts USING paradedb" in fulltexts
-    assert "(text)::pdb.simple('stemmer=english')" in fulltexts
+    for field in ("text", "name", "description", "is_active", "public", "user_id", "level"):
+        assert f"({field})" in fulltexts or f"{field}::" in fulltexts or f" {field}," in fulltexts
     columns = session.execute(
         sa.text(
             "SELECT column_name FROM information_schema.columns "

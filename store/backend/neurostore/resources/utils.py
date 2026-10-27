@@ -95,6 +95,19 @@ def _user_role_names(user):
     return role_names
 
 
+def visibility_filters(entity):
+    """What the current user may see of ``entity``'s rows: public ones and
+    their own, or everything for an admin. ``entity`` has ``public`` and
+    ``user_id`` columns."""
+    current_user = get_current_user()
+    if is_user_admin(current_user):
+        return []
+    owner = current_user.external_id if current_user else None
+    # Column on the left: ParadeDB applies a filter written this way inside
+    # its index scan, and `m.user == current_user` renders the other way round.
+    return [sa.or_(entity.public.is_(True), entity.user_id == owner)]
+
+
 def view_maker(cls):
     """Create a View class with model and schema attributes"""
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
@@ -406,11 +419,17 @@ def sortable_columns(model):
 
 class TextMatch(NamedTuple):
     """How a text search narrows the query, the relevance keys it orders by
-    (most significant first), and the key that breaks ties."""
+    (most significant first), and the key that breaks ties.
+
+    ``paged``, when set, orders and pages the narrowed query itself, as
+    ``paged(q, direction, page, per_page) -> (records, total)``; ``page`` None
+    asks for every record.
+    """
 
     narrow: Callable
     ranks: tuple
     tiebreak: sa.ColumnElement
+    paged: Callable | None = None
 
 
 def tsvector_search(ts_vector):
@@ -445,7 +464,7 @@ class _Boost(sa.types.UserDefinedType):
 _TSQUERY_TOKEN = re.compile(r"<->|&!|[&|!()]|(?:(?!<->)[^\s&|!()])+")
 
 
-def _bm25_clause(tsquery_string, fields):
+def bm25_clause(tsquery_string, fields):
     """The clause matching a tsquery string on BM25-indexed ``fields``, pairs of
     an indexed column and its boost, or None when the query has no words.
 
@@ -485,63 +504,11 @@ def bm25_search(key, fields):
     """
 
     def search(tsquery_string):
-        clause = _bm25_clause(tsquery_string, fields)
+        clause = bm25_clause(tsquery_string, fields)
         clause = sa.false() if clause is None else clause
         return TextMatch(
             lambda q: q.filter(clause),
             (func.pdb.score(key),),
-            func.hashtextextended(key, 0),
-        )
-
-    return search
-
-
-def bm25_search_with_linked(key, fields, linked_key, linked_fields, link):
-    """Text search on two ParadeDB BM25 indexes: ``key``'s, and that of the
-    rows ``link`` joins to it.
-
-    A record matches when the whole query matches its ``fields`` or the whole
-    query matches its linked row's ``linked_fields``. Records matching on their
-    own fields come first; within each group the order is the sum of the two
-    indexes' scores. Each index scores only its own rows, so every match is
-    scored and Postgres sorts them.
-    """
-
-    def search(tsquery_string):
-        own = _bm25_clause(tsquery_string, fields)
-        if own is None:
-            return bm25_search(key, fields)(tsquery_string)
-        linked = _bm25_clause(tsquery_string, linked_fields)
-        own_scores = (
-            sa.select(key.label("id"), func.pdb.score(key).label("score"))
-            .where(own)
-            .subquery()
-        )
-        linked_scores = (
-            sa.select(key.label("id"), func.pdb.score(linked_key).label("score"))
-            .select_from(linked_key.table)
-            .join(key.table, link)
-            .where(linked)
-            .subquery()
-        )
-        totals = (
-            sa.select(
-                func.coalesce(own_scores.c.id, linked_scores.c.id).label("id"),
-                own_scores.c.id.isnot(None).label("own_match"),
-                (
-                    func.coalesce(own_scores.c.score, 0)
-                    + func.coalesce(linked_scores.c.score, 0)
-                ).label("score"),
-            )
-            .select_from(own_scores)
-            .join(
-                linked_scores, linked_scores.c.id == own_scores.c.id, full=True
-            )
-            .subquery()
-        )
-        return TextMatch(
-            lambda q: q.join(totals, totals.c.id == key),
-            (totals.c.own_match, totals.c.score),
             func.hashtextextended(key, 0),
         )
 
