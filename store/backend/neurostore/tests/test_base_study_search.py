@@ -15,7 +15,7 @@ from neurostore.extensions import cache
 from neurostore.models import Analysis, BaseStudy, Fulltext, Point, Study, User
 from neurostore.models.fulltext import refresh_fulltext_pointer
 from neurostore.services.base_study_metadata_enrichment import merge_base_study
-from neurostore.resources.utils import pubmed_to_tsquery
+from neurostore.resources.text_search import pubmed_to_tsquery
 from neurostore.tests.api.test_query_params import _list_endpoints
 
 pytestmark = pytest.mark.anyio

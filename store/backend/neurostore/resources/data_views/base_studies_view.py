@@ -51,13 +51,8 @@ from neurostore.resources.data_views.common import (
     LIST_NESTED_ARGS,
     apply_map_type_filter,
 )
-from neurostore.resources.utils import (
-    TextMatch,
-    bm25_clause,
-    bm25_search,
-    view_maker,
-    visibility_filters,
-)
+from neurostore.resources.text_search import TextMatch, bm25_clause, bm25_search
+from neurostore.resources.utils import view_maker, visibility_filters
 from neurostore.review.app.service import review_source_count
 from neurostore.schemas.data import (
     ArticleIdentifiersSchema,

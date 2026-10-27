@@ -39,12 +39,11 @@ from neurostore.resources.mutation_core import (
     MutationContext,
     MutationExecutor,
 )
+from neurostore.resources.text_search import apply_search_predicate, tsvector_search
 from neurostore.resources.utils import (
-    apply_search_predicate,
     get_current_user,
     is_user_admin,
     sortable_columns,
-    tsvector_search,
     visibility_filters,
 )
 from neurostore.services.base_study_metadata_enrichment import (
