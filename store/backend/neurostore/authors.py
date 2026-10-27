@@ -44,7 +44,10 @@ def store_authors(base_study_id: str, parsed_paper) -> Optional[Dict[int, BaseSt
     ).all()
     alone = {(row.position, row.name): row.author for row in held
              if row.author.orcid is None and row.author.openalex_id is None}
-    authors = [_author(position, entry, alone) for position, entry in enumerate(listed)]
+    joined: Dict[str, Author] = {}
+    authors = [_author(position, entry, alone, joined) for position, entry in enumerate(listed)]
+    # An author resolved before a later entry joined their row to another is that other row.
+    authors = [joined.get(author.id, author) for author in authors]
     for row in held:
         db.session.delete(row)
     db.session.flush()
@@ -85,16 +88,22 @@ def has_listed(base_study_id: str) -> bool:
     )
 
 
+def authors_string(names) -> Optional[str]:
+    """The `authors` column's text for these names in published order, the way the
+    column is written ("; " because a name may hold ", "); None when there are none."""
+    return "; ".join(names) or None
+
+
 def derive_authors_string(base_study_id: str) -> None:
     """Set `base_studies.authors`, the string the API and its search serve, from the
-    base study's listed authors in published order. A base study with none keeps its string."""
+    base study's listed authors. A base study with none keeps its string."""
     names = db.session.scalars(
         sa.select(BaseStudyAuthor.name)
         .where(BaseStudyAuthor.base_study_id == base_study_id)
         .order_by(BaseStudyAuthor.position)
     ).all()
     if names:
-        db.session.get(BaseStudy, base_study_id).authors = ", ".join(names)
+        db.session.get(BaseStudy, base_study_id).authors = authors_string(names)
 
 
 _EMAIL = re.compile(r"[\w.+'-]+@[\w-]+(?:\.[\w-]+)+")
@@ -106,7 +115,7 @@ def _without_addresses(text: str) -> str:
     return re.sub(r"\s+", " ", _EMAIL.sub("", text)).strip() or text
 
 
-def _author(position: int, entry, alone) -> Author:
+def _author(position: int, entry, alone, joined) -> Author:
     orcid, openalex_id = entry.get("orcid"), entry.get("openalex_id")
     found = None
     if orcid:
@@ -118,7 +127,7 @@ def _author(position: int, entry, alone) -> Author:
         if found is None:
             found = by_openalex
         elif by_openalex is not None and by_openalex.id != found.id:
-            _merge_one_person(found, by_openalex)
+            _merge_one_person(found, by_openalex, joined)
     if found is None and not (orcid or openalex_id):
         found = alone.get((position, entry["name"]))
     if found is None:
@@ -134,7 +143,7 @@ def _author(position: int, entry, alone) -> Author:
     return found
 
 
-def _merge_one_person(kept: Author, other: Author) -> None:
+def _merge_one_person(kept: Author, other: Author, joined) -> None:
     """One paper gives `kept` (found by ORCID iD) and `other` (found by OpenAlex id) as the
     same person: `other`'s papers become `kept`'s and `other` is deleted. Two rows that each
     hold an id the other lacks may be two people with a wrong id, so they stay apart."""
@@ -149,7 +158,7 @@ def _merge_one_person(kept: Author, other: Author) -> None:
     )
     db.session.execute(sa.delete(Author).where(Author.id == other.id))
     db.session.flush()
-    db.session.expire(kept)
+    joined[other.id] = kept
 
 
 def _held(column, value) -> bool:
@@ -201,9 +210,11 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
     With no list of its own, `to_id` takes the rows. Otherwise its list is the paper's and
     stays: where `from_id` lists the same person at the same place, `to_id`'s row gains
     the affiliations (so the universities) and corresponding mark it lacks, and each
-    correspondence address `to_id` holds is tied to its own author rows.
+    correspondence address `to_id` holds is tied to its own author rows. A row of
+    `from_id` that gives nothing to `to_id` stays where it is, logged and returned with
+    its reason.
 
-    Returns (table, row id, field, before, after) for each row changed.
+    Returns (table, row id, field, before, after) for each row changed or kept.
     """
     from neurostore.models import CorrespondingAuthorEmail
 
@@ -211,7 +222,8 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
         return db.session.scalars(
             sa.select(BaseStudyAuthor)
             .where(BaseStudyAuthor.base_study_id == base_study_id)
-            .options(selectinload(BaseStudyAuthor.affiliations))
+            .options(selectinload(BaseStudyAuthor.affiliations),
+                     selectinload(BaseStudyAuthor.author))
         ).all()
 
     kept, old = rows(to_id), rows(from_id)
@@ -223,10 +235,15 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
         db.session.flush()
         derive_authors_string(to_id)
         return done
+
+    def leave(row, reason):
+        logger.warning("merge leaves author row %s on base study %s: %s", row.id, from_id, reason)
+        done.append(("base_study_authors", row.id, "kept", None, reason))
+
     by_place = {row.position: row for row in kept}
     for row in old:
-        same = by_place.get(row.position)
-        same = same if same is not None and same.author_id == row.author_id else None
+        place = by_place.get(row.position)
+        same = place if place is not None and _one_person(place, row) else None
         target = same.id if same is not None else None
         retied = db.session.scalars(
             sa.update(CorrespondingAuthorEmail)
@@ -235,17 +252,41 @@ def move_authors(from_id: str, to_id: str) -> List[tuple]:
             .values(base_study_author_id=target)
             .returning(CorrespondingAuthorEmail.id)
         ).all()
-        done += [("corresponding_author_emails", email_id, "base_study_author_id", None, target)
+        done += [("corresponding_author_emails", email_id, "base_study_author_id", row.id, target)
                  for email_id in retied]
         if same is None:
+            if place is None:
+                leave(row, "the keeper lists no one at this place")
+            elif row.name == place.name and _has_ids(place) and not _has_ids(row):
+                leave(row, "the keeper's author has ids this row lacks")
+            else:
+                leave(row, "the keeper lists a different person at this place")
             continue
         if not same.affiliations:
             for affiliation in row.affiliations:
                 affiliation.base_study_author_id = same.id
                 done.append(("base_study_author_affiliations", affiliation.id,
                              "base_study_author_id", row.id, same.id))
-        if same.corresponding is None and row.corresponding is not None:
-            same.corresponding = row.corresponding
-            done.append(("base_study_authors", same.id, "corresponding", None, row.corresponding))
+        elif row.affiliations:
+            leave(row, "the keeper's author has affiliations of their own")
+        if row.corresponding is not None:
+            if same.corresponding is None:
+                same.corresponding = row.corresponding
+                done.append(
+                    ("base_study_authors", same.id, "corresponding", None, row.corresponding))
+            elif same.corresponding != row.corresponding:
+                leave(row, "the keeper's author has a corresponding mark of their own")
     db.session.flush()
     return done
+
+
+def _one_person(a: BaseStudyAuthor, b: BaseStudyAuthor) -> bool:
+    """The same author by id; two without any id are one when named alike (the rule
+    `store_authors` applies at one place), since each paper copy gets its own row for them."""
+    if a.author_id == b.author_id:
+        return True
+    return not (_has_ids(a) or _has_ids(b)) and a.name == b.name
+
+
+def _has_ids(row: BaseStudyAuthor) -> bool:
+    return row.author.orcid is not None or row.author.openalex_id is not None
