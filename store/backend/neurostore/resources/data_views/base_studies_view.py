@@ -253,12 +253,12 @@ class BaseStudiesView(ObjectView, ListView):
         no full text matches on its title and abstract in ix_base_study_search.
         A page merges the two indexes' best ``offset + limit`` matches by
         score, so each index answers with one Top K scan and one count."""
+        tiebreak = func.hashtextextended(BaseStudy.id, 0)
         title_or_abstract = bm25_clause(tsquery_string, TITLE_AND_ABSTRACT)
         if title_or_abstract is None:
-            return bm25_search(BaseStudy.id, TITLE_AND_ABSTRACT)(tsquery_string)
+            return TextMatch(lambda q: q.filter(sa.false()), (), tiebreak)
         any_field = bm25_clause(tsquery_string, TITLE_ABSTRACT_AND_TEXT)
         no_text = BaseStudy.fulltext_id.is_(None)
-        tiebreak = func.hashtextextended(BaseStudy.id, 0)
 
         if args["sort"] is not None:
             matches = sa.union(
@@ -274,6 +274,9 @@ class BaseStudiesView(ObjectView, ListView):
             )
 
         def paged(q, direction, page, per_page):
+            if page is not None and (page < 1 or per_page < 1):
+                # As every other list answers it.
+                return [], 0
             without_text = q.filter(title_or_abstract, no_text)
             # The column filters hold only on the preferred full text, the one
             # row with a copy.

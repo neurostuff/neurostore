@@ -9,10 +9,12 @@ from urllib.parse import urlencode
 import pytest
 import sqlalchemy as sa
 
+from neurostore import service_migrations
 from neurostore.database import db
 from neurostore.extensions import cache
-from neurostore.models import BaseStudy, Fulltext, User
+from neurostore.models import Analysis, BaseStudy, Fulltext, Point, Study, User
 from neurostore.models.fulltext import refresh_fulltext_pointer
+from neurostore.services.base_study_metadata_enrichment import merge_base_study
 from neurostore.resources.utils import pubmed_to_tsquery
 from neurostore.tests.api.test_query_params import _list_endpoints
 
@@ -336,11 +338,31 @@ async def test_a_moved_pointer_is_searched_at_once(auth_client, session):
     assert ids == [base_study.id]
 
 
+COPIED = (
+    "name",
+    "description",
+    "is_active",
+    "public",
+    "user_id",
+    "level",
+    "has_coordinates",
+    "has_images",
+    "is_oa",
+    "year",
+)
+
+
 def _copies(session):
-    """Each full text's copy of its base study's columns, by full text id."""
+    """Each full text's copy of its base study's name, description, is_active,
+    public and level, by full text id."""
+    return {k: v[:2] + (v[2], v[3], v[5]) for k, v in _full_copies(session).items()}
+
+
+def _full_copies(session):
+    """Each full text's copy of every copied column, by full text id."""
     session.expire_all()
     return {
-        f.id: (f.name, f.description, f.is_active, f.public, f.level)
+        f.id: tuple(getattr(f, column) for column in COPIED)
         for f in session.query(Fulltext)
     }
 
@@ -547,14 +569,22 @@ def tied_corpus(session):
     return [r.id for r in rows]
 
 
+@pytest.mark.parametrize("desc", ["true", "false"])
 @pytest.mark.parametrize("full_text", ["false", "true"])
 async def test_ties_page_in_a_stable_order_and_each_record_appears_once(
-    auth_client, session, tied_corpus, full_text
+    auth_client, session, tied_corpus, full_text, desc
 ):
+    """Ties are broken by the id's hash, descending, whichever way the scores
+    are ordered."""
     pages = []
     for page in (1, 2, 3):
         ids, total = await _search(
-            auth_client, search=TERM, page=page, page_size=10, search_full_text=full_text
+            auth_client,
+            search=TERM,
+            page=page,
+            page_size=10,
+            search_full_text=full_text,
+            desc=desc,
         )
         assert total == 25
         pages.append(ids)
@@ -711,3 +741,316 @@ def test_the_indexes_and_their_tables_are_kept_fast_to_search(session):
         assert {"target_segment_count=1", "mutable_segment_rows=0"} <= set(
             options(index)
         )
+
+
+async def test_a_full_text_search_lists_every_match_unpaginated(auth_client, session):
+    rows = []
+    for i in range(35):
+        row = BaseStudy(name=f"Plain heading {i}", level="group")
+        if i % 5:
+            _with_text(session, row, f"Methods. Zyxomma number {i}.")
+        else:
+            row.name = f"Zyxomma heading {i}"
+            session.add(row)
+        rows.append(row)
+    session.commit()
+    ids, total = await _search(
+        auth_client, search=TERM, search_full_text="true", paginate="false"
+    )
+    assert total == 35
+    assert sorted(ids) == sorted(r.id for r in rows)
+
+
+@pytest.mark.parametrize("full_text", ["false", "true"])
+async def test_page_zero_is_an_empty_page(auth_client, mixed_corpus, full_text):
+    """As on every list."""
+    assert await _search(
+        auth_client, search=TERM, search_full_text=full_text, page_size=5, page=0
+    ) == ([], 0)
+
+
+def _move_via_the_orm(session, fulltext, base_study):
+    """Move ``fulltext`` with its attributes expired, as after a commit."""
+    session.expire_all()
+    fulltext = session.get(Fulltext, fulltext.id)
+    fulltext.base_study_id = base_study.id
+    session.commit()
+
+
+@pytest.fixture
+def moved_text(session):
+    """A's only full text moves to B, which has a preferred one of its own."""
+    a = BaseStudy(name="Zyxomma first paper", level="group")
+    moved = _with_text(session, a, "Methods. Zyxomma here.", source="ace")
+    b = BaseStudy(name="Plain second paper", level="group")
+    _with_text(session, b, "Methods. Zyxomma there.", source="pubget")
+    session.commit()
+    return a, b, moved
+
+
+async def test_a_moved_full_text_leaves_each_paper_listed_once(
+    auth_client, session, moved_text
+):
+    a, b, moved = moved_text
+    _move_via_the_orm(session, moved, b)
+    session.refresh(a)
+    assert a.fulltext_id is None
+    assert _copies(session)[moved.id] == (None, None, None, None, None)
+    ids, total = await _search(auth_client, search=TERM, search_full_text="true")
+    assert sorted(ids) == sorted([a.id, b.id])
+    assert total == 2
+
+
+async def test_a_moved_full_text_does_not_show_its_new_private_paper(
+    auth_client, session, moved_text
+):
+    a, b, moved = moved_text
+    other = User(name="other", external_id="other-user-id")
+    session.add(other)
+    session.flush()
+    b.public, b.user_id = False, other.external_id
+    session.commit()
+    _move_via_the_orm(session, moved, b)
+    a = session.get(BaseStudy, a.id)
+    a.name = "Zyxomma first paper, renamed"
+    session.commit()
+    ids, _ = await _search(auth_client, search=TERM, search_full_text="true")
+    assert ids == [a.id]
+
+
+async def test_a_pointer_to_another_paper_s_full_text_copies_nothing_onto_it(
+    auth_client, session, moved_text
+):
+    """No writer leaves one behind any more, but the copy rests on ownership
+    alone: the other paper keeps its copy and is listed once."""
+    a, b, moved = moved_text
+    theirs = session.query(Fulltext).filter_by(base_study_id=b.id, source="pubget").one()
+    session.execute(
+        sa.update(BaseStudy).where(BaseStudy.id == a.id).values(fulltext_id=theirs.id)
+    )
+    session.commit()
+    assert _copies(session)[theirs.id][0] == "Plain second paper"
+    ids, _ = await _search(auth_client, search=TERM, search_full_text="true")
+    assert ids.count(b.id) == 1
+
+
+async def test_each_copied_column_edited_alone_is_copied(auth_client, session):
+    """Each edit is a Core update of one column, which only the trigger sees."""
+    paper = BaseStudy(name="Plain heading", level="group", year=2001)
+    text = _with_text(session, paper, "Methods. Zyxomma here.")
+    session.commit()
+    edits = {
+        "is_active": False,
+        "public": False,
+        "user_id": "someone-id",
+        "level": "meta",
+        "has_coordinates": True,
+        "has_images": True,
+        "is_oa": True,
+        "year": 2020,
+        "description": "Edited abstract.",
+    }
+    session.add(User(name="someone", external_id="someone-id"))
+    session.commit()
+    for column, value in edits.items():
+        session.execute(
+            sa.update(BaseStudy).where(BaseStudy.id == paper.id).values({column: value})
+        )
+        session.commit()
+        copy = dict(zip(COPIED, _full_copies(session)[text.id]))
+        assert copy[column] == value, column
+
+
+@pytest.fixture
+def filtered_pair(session):
+    """Two papers that match in their text alone, one of which each case below
+    gives the one value its filter keeps."""
+    inside = BaseStudy(name="Plain inside", level="group")
+    outside = BaseStudy(name="Plain outside", level="group")
+    _with_text(session, inside, "Methods. Zyxomma inside.")
+    _with_text(session, outside, "Methods. Zyxomma outside.")
+    session.commit()
+    return inside, outside
+
+
+def _core_edit(session, base_study, **values):
+    session.execute(sa.update(BaseStudy).where(BaseStudy.id == base_study.id).values(values))
+    session.commit()
+
+
+async def _setup_user_id(session, inside, outside, me):
+    other = User(name="other", external_id="other-user-id")
+    session.add(other)
+    session.commit()
+    _core_edit(session, inside, user_id=me)
+    _core_edit(session, outside, user_id=other.external_id)
+    return {"user_id": me}
+
+
+async def _setup_spatial_at_zero(session, inside, outside, me):
+    study = Study(name="Located", base_study_id=inside.id)
+    session.add(study)
+    session.flush()
+    analysis = Analysis(name="Located analysis", study_id=study.id)
+    session.add(analysis)
+    session.flush()
+    session.add(Point(x=0, y=0, z=0, analysis_id=analysis.id))
+    session.commit()
+    return {"x": 0, "y": 0, "z": 0, "radius": 0}
+
+
+async def _setup_neurovault(session, inside, outside, me):
+    session.add(
+        Study(
+            name="From NeuroVault",
+            base_study_id=inside.id,
+            source="neurovault",
+            source_id="nv-7",
+        )
+    )
+    session.commit()
+    return {"neurovault_id": "nv-7"}
+
+
+async def _setup_map_type(session, inside, outside, me):
+    _core_edit(session, inside, has_images=True, has_z_maps=True)
+    return {"map_type": "z"}
+
+
+async def _setup_data_type(session, inside, outside, me):
+    _core_edit(session, inside, has_coordinates=True)
+    return {"data_type": "coordinate"}
+
+
+async def _setup_is_oa(session, inside, outside, me):
+    _core_edit(session, inside, is_oa=True)
+    _core_edit(session, outside, is_oa=False)
+    return {"is_oa": "true"}
+
+
+async def _setup_level(session, inside, outside, me):
+    _core_edit(session, inside, level="meta")
+    return {"level": "meta"}
+
+
+async def _setup_year(session, inside, outside, me):
+    _core_edit(session, inside, year=2020)
+    _core_edit(session, outside, year=1990)
+    return {"year_min": 2000}
+
+
+async def _setup_inactive(session, inside, outside, me):
+    _core_edit(session, outside, is_active=False)
+    return {}
+
+
+async def _setup_private(session, inside, outside, me):
+    other = User(name="other", external_id="other-user-id")
+    session.add(other)
+    session.commit()
+    _core_edit(session, outside, public=False, user_id=other.external_id)
+    return {}
+
+
+async def _setup_own_private(session, inside, outside, me):
+    _core_edit(session, inside, public=False, user_id=me)
+    _core_edit(session, outside, public=False)
+    return {}
+
+
+@pytest.mark.parametrize(
+    "setup",
+    [
+        _setup_user_id,
+        _setup_spatial_at_zero,
+        _setup_neurovault,
+        _setup_map_type,
+        _setup_data_type,
+        _setup_is_oa,
+        _setup_level,
+        _setup_year,
+        _setup_inactive,
+        _setup_private,
+        _setup_own_private,
+    ],
+    ids=lambda f: f.__name__.removeprefix("_setup_"),
+)
+async def test_every_list_filter_applies_to_the_full_text_side(
+    auth_client, session, filtered_pair, setup
+):
+    inside, outside = filtered_pair
+    params = await setup(session, inside, outside, auth_client.username)
+    ids, total = await _search(auth_client, search=TERM, search_full_text="true", **params)
+    assert (ids, total) == ([inside.id], 1)
+
+
+async def test_semantic_search_applies_to_the_full_text_side(
+    auth_client, session, filtered_pair, mock_get_embedding
+):
+    """With no embeddings stored, semantic search matches nothing, so neither
+    side lists a paper."""
+    params = {"semantic_search": "zyxomma", "distance_threshold": 1}
+    assert await _search(auth_client, search=TERM, search_full_text="true", **params) == ([], 0)
+    assert await _search(auth_client, search="plain", **params) == ([], 0)
+
+
+async def test_a_superseded_paper_drops_out_of_full_text_search(auth_client, session):
+    keeper = BaseStudy(name="Plain keeper", level="group")
+    old = BaseStudy(name="Plain duplicate", level="group")
+    _with_text(session, keeper, "Methods. Zyxomma kept.")
+    _with_text(session, old, "Methods. Zyxomma duplicated.")
+    session.commit()
+    merge_base_study(keeper, old)
+    session.commit()
+    cache.clear()
+    ids, total = await _search(auth_client, search=TERM, search_full_text="true")
+    assert (ids, total) == ([keeper.id], 1)
+
+
+def test_the_migration_goes_down_and_up_over_existing_rows(session):
+    """More than a batch of papers, each with a preferred and another full
+    text: the downgrade restores the tsvector search, and the upgrade copies
+    onto every preferred row and no other."""
+    papers = [{"id": f"paper{i:05d}", "name": f"Zyxomma paper {i}", "level": "group"}
+              for i in range(1005)]
+    texts = [
+        {"id": f"{p['id']}-{source}", "base_study_id": p["id"], "source": source,
+         "sha256": f"{i:060d}{n:04d}", "text": f"Methods. Quellbrook {source}."}
+        for i, p in enumerate(papers) for n, source in enumerate(("pubget", "ace"))
+    ]
+    with session.bind.begin() as conn:
+        conn.execute(BaseStudy.__table__.insert(), papers)
+        conn.execute(Fulltext.__table__.insert(), texts)
+        conn.execute(sa.text(
+            "UPDATE base_studies SET fulltext_id = id || '-pubget' WHERE id LIKE 'paper%'"
+        ))
+    session.remove()
+
+    def scalar(sql):
+        with session.bind.connect() as conn:
+            return conn.execute(sa.text(sql)).scalar()
+
+    try:
+        service_migrations.downgrade("e7a9c1d3f5b8")
+        assert scalar(
+            "SELECT count(*) FROM base_studies "
+            "WHERE __ts_vector__ @@ to_tsquery('english', 'zyxomma & paper')"
+        ) == 1005
+        assert scalar(
+            "SELECT indexdef FROM pg_indexes WHERE indexname = 'ix_base_study___ts_vector__'"
+        ).endswith("USING gin (__ts_vector__)")
+        assert scalar(
+            "SELECT count(*) FROM information_schema.columns "
+            "WHERE table_name = 'fulltexts' AND column_name = 'is_active'"
+        ) == 0
+        assert scalar("SELECT count(*) FROM pg_trigger WHERE tgname LIKE '%copy%'") == 0
+    finally:
+        service_migrations.upgrade("heads")
+        db.engine.dispose()
+    assert scalar(
+        "SELECT count(*) FROM fulltexts WHERE source = 'pubget' AND name LIKE 'Zyxomma paper %'"
+        " AND is_active AND level = 'group'"
+    ) == 1005
+    assert scalar(
+        "SELECT count(*) FROM fulltexts WHERE source = 'ace' AND is_active IS NOT NULL"
+    ) == 0

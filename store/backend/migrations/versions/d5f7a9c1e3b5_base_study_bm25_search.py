@@ -74,35 +74,53 @@ UNWEIGHTED = (
 )
 
 
+# fulltext_preference at this revision: copy version, then source, then the
+# newest, then the smallest id.
+PREFERENCE = (
+    "CASE f.text_copy->>'version' WHEN 'vor' THEN 0 WHEN 'am' THEN 2 "
+    "WHEN 'submitted' THEN 3 ELSE 1 END, "
+    "CASE f.source WHEN 'ace' THEN 1 WHEN 'pdf' THEN 2 ELSE 0 END, "
+    "f.created_at DESC, f.id"
+)
+CLEARED = ", ".join(f"{column} = NULL" for column in COPIED)
+BATCH = 1000
+# The statements that lock base_studies exclusively give up rather than queue
+# every reader behind a long transaction; the upgrade can then run again.
+LOCK_TIMEOUT = "SET LOCAL lock_timeout = '30s'"
+
+
 def _set_copy(source):
     return ", ".join(f"{column} = {source}.{column}" for column in COPIED)
 
 
 def upgrade():
-    # The downgrade leaves the extension installed.
+    # The downgrade leaves the extension installed. Each step can run again
+    # after an interrupted upgrade.
     op.execute("CREATE EXTENSION IF NOT EXISTS pg_search")
     op.execute(
         "ALTER TABLE fulltexts "
-        + ", ".join(f"ADD COLUMN {column} {kind}" for column, kind in COPIED.items())
+        + ", ".join(
+            f"ADD COLUMN IF NOT EXISTS {column} {kind}" for column, kind in COPIED.items()
+        )
     )
-    cleared = ", ".join(f"{column} = NULL" for column in COPIED)
-    # Every writer of base_studies goes through these, whatever it is: the
-    # copy moves with fulltext_id and follows every edit of a copied column.
-    # A full text another base study now points to keeps its copy (a row
-    # moved between base studies is re-pointed in either order).
+    # Every writer of base_studies goes through this trigger, whatever it is:
+    # the copy moves with fulltext_id and follows every edit of a copied
+    # column, onto the base study's own full text only. While a full text
+    # moves between base studies inside one transaction, both may point to it
+    # for a moment; the one that still points keeps its copy.
     op.execute(
         f"""
-        CREATE FUNCTION base_studies_copy_to_fulltext() RETURNS trigger AS $$
+        CREATE OR REPLACE FUNCTION base_studies_copy_to_fulltext() RETURNS trigger AS $$
         BEGIN
-            IF TG_OP = 'UPDATE' AND OLD.fulltext_id IS DISTINCT FROM NEW.fulltext_id
-            THEN
-                UPDATE fulltexts SET {cleared}
+            IF OLD.fulltext_id IS DISTINCT FROM NEW.fulltext_id THEN
+                UPDATE fulltexts SET {CLEARED}
                 WHERE id = OLD.fulltext_id AND NOT EXISTS (
                     SELECT 1 FROM base_studies WHERE fulltext_id = OLD.fulltext_id
                 );
             END IF;
             IF NEW.fulltext_id IS NOT NULL THEN
-                UPDATE fulltexts SET {_set_copy("NEW")} WHERE id = NEW.fulltext_id;
+                UPDATE fulltexts SET {_set_copy("NEW")}
+                WHERE id = NEW.fulltext_id AND base_study_id = NEW.id;
             END IF;
             RETURN NULL;
         END
@@ -110,32 +128,62 @@ def upgrade():
         """
     )
     watched = ("fulltext_id", *COPIED)
+    op.execute("DROP TRIGGER IF EXISTS base_studies_copy_to_fulltext ON base_studies")
     op.execute(
-        "CREATE TRIGGER base_studies_copy_to_fulltext_insert "
-        "AFTER INSERT ON base_studies FOR EACH ROW "
-        "WHEN (NEW.fulltext_id IS NOT NULL) "
-        "EXECUTE FUNCTION base_studies_copy_to_fulltext()"
-    )
-    op.execute(
-        "CREATE TRIGGER base_studies_copy_to_fulltext_update "
+        "CREATE TRIGGER base_studies_copy_to_fulltext "
         f"AFTER UPDATE OF {', '.join(watched)} ON base_studies FOR EACH ROW "
         f"WHEN (({', '.join(f'OLD.{c}' for c in watched)}) "
         f"IS DISTINCT FROM ({', '.join(f'NEW.{c}' for c in watched)})) "
         "EXECUTE FUNCTION base_studies_copy_to_fulltext()"
     )
+    # A full text moved to another base study drops the old one's copy; the
+    # new one copies its own when it points to it.
+    op.execute(
+        f"""
+        CREATE OR REPLACE FUNCTION fulltexts_drop_moved_copy() RETURNS trigger AS $$
+        BEGIN
+            {" ".join(f"NEW.{column} := NULL;" for column in COPIED)}
+            RETURN NEW;
+        END
+        $$ LANGUAGE plpgsql
+        """
+    )
+    op.execute("DROP TRIGGER IF EXISTS fulltexts_drop_moved_copy ON fulltexts")
+    op.execute(
+        "CREATE TRIGGER fulltexts_drop_moved_copy "
+        "BEFORE UPDATE OF base_study_id ON fulltexts FOR EACH ROW "
+        "WHEN (OLD.base_study_id IS DISTINCT FROM NEW.base_study_id) "
+        "EXECUTE FUNCTION fulltexts_drop_moved_copy()"
+    )
+    # A base study pointing to another one's full text (an ORM move used to
+    # leave one behind) points to its own best one instead: the copy is only
+    # ever written onto a base study's own full text.
+    op.execute(
+        f"""
+        UPDATE base_studies b SET fulltext_id = (
+            SELECT f.id FROM fulltexts f WHERE f.base_study_id = b.id
+            ORDER BY {PREFERENCE} LIMIT 1
+        )
+        WHERE b.fulltext_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM fulltexts f WHERE f.id = b.fulltext_id AND f.base_study_id = b.id
+        )
+        """
+    )
     with op.get_context().autocommit_block():
-        # After the triggers, so a base study edited meanwhile is copied either
-        # way; in batches that each commit, so an edit waits on at most one.
+        # After the trigger, and locking the base studies first as an edit
+        # does, so an edit made meanwhile is never overwritten by an older
+        # copy. In batches that each commit, so an edit waits on at most one.
         conn = op.get_bind()
         last = ""
         while batch := conn.execute(
-            sa.text("SELECT id FROM fulltexts WHERE id > :last ORDER BY id LIMIT 1000"),
-            {"last": last},
+            sa.text("SELECT id FROM fulltexts WHERE id > :last ORDER BY id LIMIT :size"),
+            {"last": last, "size": BATCH},
         ).scalars().all():
             conn.execute(
                 sa.text(
-                    f"UPDATE fulltexts f SET {_set_copy('b')} FROM base_studies b "
-                    "WHERE b.fulltext_id = f.id AND f.id = ANY(:batch)"
+                    f"UPDATE fulltexts f SET {_set_copy('b')} FROM ("
+                    "SELECT * FROM base_studies WHERE fulltext_id = ANY(:batch) FOR UPDATE"
+                    ") b WHERE b.fulltext_id = f.id AND b.id = f.base_study_id"
                 ),
                 {"batch": batch},
             )
@@ -157,16 +205,18 @@ def upgrade():
                 f"USING paradedb ({columns}) "
                 "WITH (target_segment_count = 1, mutable_segment_rows = 0)"
             )
-    op.execute("ALTER TABLE base_studies DROP COLUMN __ts_vector__")
+    op.execute(LOCK_TIMEOUT)
+    op.execute("ALTER TABLE base_studies DROP COLUMN IF EXISTS __ts_vector__")
 
 
 def downgrade():
     for index, (table, _) in INDEXES.items():
         op.execute(f"DROP INDEX {index}")
         op.execute(f"ALTER TABLE {table} RESET (vacuum_index_cleanup)")
-    op.execute("DROP TRIGGER base_studies_copy_to_fulltext_insert ON base_studies")
-    op.execute("DROP TRIGGER base_studies_copy_to_fulltext_update ON base_studies")
+    op.execute("DROP TRIGGER base_studies_copy_to_fulltext ON base_studies")
     op.execute("DROP FUNCTION base_studies_copy_to_fulltext()")
+    op.execute("DROP TRIGGER fulltexts_drop_moved_copy ON fulltexts")
+    op.execute("DROP FUNCTION fulltexts_drop_moved_copy()")
     op.execute(
         "ALTER TABLE fulltexts "
         + ", ".join(f"DROP COLUMN {column}" for column in COPIED)

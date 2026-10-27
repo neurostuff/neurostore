@@ -58,19 +58,16 @@ class BaseStudySearchService:
         ]
 
     def has_other_filters(self, args):
-        """Whether the request filters on anything but ``column_filters``."""
+        """Whether the request filters on anything but ``column_filters``: each
+        test is the one its filter below applies."""
         return any(
-            args.get(name)
-            for name in (
-                "semantic_search",
-                "x",
-                "y",
-                "z",
-                "radius",
-                "neurovault_id",
-                "map_type",
-                "feature_filter",
-                "pipeline_config",
+            (
+                bool(args.get("semantic_search")),
+                # Applied when all four are given, refused when only some are.
+                any(args.get(name) is not None for name in ("x", "y", "z", "radius")),
+                bool(args.get("neurovault_id")),
+                bool(args.get("map_type")),
+                bool(self._collect_pipeline_filters(args)[0]),
             )
         )
 
