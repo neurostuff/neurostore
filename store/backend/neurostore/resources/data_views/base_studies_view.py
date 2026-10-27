@@ -32,6 +32,7 @@ from neurostore.models import (
     User,
 )
 from neurostore.models.data import BaseStudy
+from neurostore.models.fulltext import Fulltext
 from neurostore.resources.base import (
     ListView,
     ObjectView,
@@ -49,7 +50,7 @@ from neurostore.resources.data_views.common import (
     LIST_NESTED_ARGS,
     apply_map_type_filter,
 )
-from neurostore.resources.utils import bm25_search, view_maker
+from neurostore.resources.utils import bm25_search, bm25_search_with_linked, view_maker
 from neurostore.review.app.service import review_source_count
 from neurostore.schemas.data import (
     ArticleIdentifiersSchema,
@@ -74,10 +75,11 @@ class BaseStudyBulkPostResponseSchema(BaseDataSchema, ArticleIdentifiersSchema):
     versions = StringOrNested(StudySchema, many=True)
 
 
-# Fields of ix_base_study_search that text search matches, with their boosts:
-# a title match counts most, then the abstract, then the paper's text.
+# The fields text search matches, with their boosts: a title match counts
+# most, then the abstract (both in ix_base_study_search), then the text of the
+# paper's preferred full text (ix_fulltext_search).
 TITLE_AND_ABSTRACT = ((BaseStudy.name, 3), (BaseStudy.description, 2))
-FULL_TEXT = ((BaseStudy.pubget_fulltext, 1), (BaseStudy.ace_fulltext, 1))
+FULL_TEXT = ((Fulltext.text, 1),)
 
 
 @view_maker
@@ -229,10 +231,15 @@ class BaseStudiesView(ObjectView, ListView):
     def text_search(self, args):
         # Starting parallel workers costs more than the index scan they share.
         db.session.execute(sa.text("SET LOCAL max_parallel_workers_per_gather = 0"))
-        fields = TITLE_AND_ABSTRACT
         if args["search_full_text"]:
-            fields += FULL_TEXT
-        return bm25_search(BaseStudy.id, fields)
+            return bm25_search_with_linked(
+                BaseStudy.id,
+                TITLE_AND_ABSTRACT,
+                Fulltext.id,
+                FULL_TEXT,
+                BaseStudy.fulltext_id == Fulltext.id,
+            )
+        return bm25_search(BaseStudy.id, TITLE_AND_ABSTRACT)
 
     def should_hydrate_records(self, args):
         return True

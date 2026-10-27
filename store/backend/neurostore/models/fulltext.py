@@ -43,6 +43,15 @@ class Fulltext(BaseMixin, db.Model):
         sa.CheckConstraint(
             source.in_(FULLTEXT_SOURCE_PREFERENCE), name="ck_fulltexts_source"
         ),
+        # Full-text search (ParadeDB's BM25 index), with ix_base_study_search's
+        # tokenizer and the same layout.
+        sa.Index(
+            "ix_fulltext_search",
+            sa.text("(id)"),
+            sa.text("(text::pdb.simple('stemmer=english'))"),
+            postgresql_using="paradedb",
+            postgresql_with={"target_segment_count": 1, "mutable_segment_rows": 0},
+        ),
     )
 
     base_study = relationship("BaseStudy", foreign_keys=[base_study_id])

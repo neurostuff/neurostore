@@ -3,7 +3,7 @@ Resource-specific utilities for View construction and function
 """
 
 import re
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
 import sqlalchemy as sa
 from connexion.context import context
@@ -405,10 +405,11 @@ def sortable_columns(model):
 
 
 class TextMatch(NamedTuple):
-    """A text search's WHERE clause, its relevance, and the key that breaks ties."""
+    """How a text search narrows the query, the relevance keys it orders by
+    (most significant first), and the key that breaks ties."""
 
-    clause: sa.ColumnElement
-    rank: sa.ColumnElement
+    narrow: Callable
+    ranks: tuple
     tiebreak: sa.ColumnElement
 
 
@@ -417,9 +418,10 @@ def tsvector_search(ts_vector):
 
     def search(tsquery_string):
         tsquery = func.to_tsquery("english", tsquery_string)
+        clause = ts_vector.op("@@")(tsquery)
         return TextMatch(
-            ts_vector.op("@@")(tsquery),
-            func.ts_rank(ts_vector, tsquery),
+            lambda q: q.filter(clause),
+            (func.ts_rank(ts_vector, tsquery),),
             ts_vector.class_.id,
         )
 
@@ -443,14 +445,14 @@ class _Boost(sa.types.UserDefinedType):
 _TSQUERY_TOKEN = re.compile(r"<->|&!|[&|!()]|(?:(?!<->)[^\s&|!()])+")
 
 
-def bm25_search(key, fields):
-    """Text search on a ParadeDB BM25 index, ranked by its score.
+def _bm25_clause(tsquery_string, fields):
+    """The clause matching a tsquery string on BM25-indexed ``fields``, pairs of
+    an indexed column and its boost, or None when the query has no words.
 
-    ``fields`` pairs each indexed expression with its boost. Every word or
-    phrase of the query must occur in one of the fields (as a phrase of its
-    tokens, so ``5-HT`` is ``5`` followed by ``ht``); the score adds up each
-    field's match times its boost. Ties are broken by the hash of the key
-    that the index holds, so the index returns the page itself.
+    Every word or phrase must occur in one of the fields, as a phrase of its
+    tokens (so ``5-HT`` is ``5`` followed by ``ht``); the score adds up each
+    field's match times its boost. A word or phrase made only of English stop
+    words is left out, as to_tsquery leaves it out.
     """
 
     def match(words):
@@ -459,20 +461,90 @@ def bm25_search(key, fields):
         # has no tokens; to_tsquery drops it from the query the same way.
         if not any(char.isalnum() for char in text):
             return None
-        return sa.or_(
+        clause = sa.or_(
             *(
-                expression.op("###", is_comparison=True)(
+                column.op("###", is_comparison=True)(
                     sa.cast(sa.literal(text), _Boost(boost))
                 )
-                for expression, boost in fields
+                for column, boost in fields
             )
         )
+        # Postgres's own stop list decides, and the planner evaluates this
+        # constant before ParadeDB reads the query.
+        stop = func.to_tsvector("english", text) == ""
+        return _Operand(clause, stop)
+
+    query = _parse_tsquery(_TSQUERY_TOKEN.findall(tsquery_string), match)
+    if query is None:
+        return None
+    return sa.case((query.stop, sa.false()), else_=query.clause)
+
+
+def bm25_search(key, fields):
+    """Text search on a ParadeDB BM25 index, ranked by its score.
+
+    Ties are broken by the hash of ``key`` that the index holds, so the index
+    returns the page itself.
+    """
 
     def search(tsquery_string):
-        clause = _parse_tsquery(_TSQUERY_TOKEN.findall(tsquery_string), match)
+        clause = _bm25_clause(tsquery_string, fields)
+        clause = sa.false() if clause is None else clause
         return TextMatch(
-            sa.false() if clause is None else clause,
-            func.pdb.score(key),
+            lambda q: q.filter(clause),
+            (func.pdb.score(key),),
+            func.hashtextextended(key, 0),
+        )
+
+    return search
+
+
+def bm25_search_with_linked(key, fields, linked_key, linked_fields, link):
+    """Text search on two ParadeDB BM25 indexes: ``key``'s, and that of the
+    rows ``link`` joins to it.
+
+    A record matches when the whole query matches its ``fields`` or the whole
+    query matches its linked row's ``linked_fields``. Records matching on their
+    own fields come first; within each group the order is the sum of the two
+    indexes' scores. Each index scores only its own rows, so every match is
+    scored and Postgres sorts them.
+    """
+
+    def search(tsquery_string):
+        own = _bm25_clause(tsquery_string, fields)
+        if own is None:
+            return bm25_search(key, fields)(tsquery_string)
+        linked = _bm25_clause(tsquery_string, linked_fields)
+        own_scores = (
+            sa.select(key.label("id"), func.pdb.score(key).label("score"))
+            .where(own)
+            .subquery()
+        )
+        linked_scores = (
+            sa.select(key.label("id"), func.pdb.score(linked_key).label("score"))
+            .select_from(linked_key.table)
+            .join(key.table, link)
+            .where(linked)
+            .subquery()
+        )
+        totals = (
+            sa.select(
+                func.coalesce(own_scores.c.id, linked_scores.c.id).label("id"),
+                own_scores.c.id.isnot(None).label("own_match"),
+                (
+                    func.coalesce(own_scores.c.score, 0)
+                    + func.coalesce(linked_scores.c.score, 0)
+                ).label("score"),
+            )
+            .select_from(own_scores)
+            .join(
+                linked_scores, linked_scores.c.id == own_scores.c.id, full=True
+            )
+            .subquery()
+        )
+        return TextMatch(
+            lambda q: q.join(totals, totals.c.id == key),
+            (totals.c.own_match, totals.c.score),
             func.hashtextextended(key, 0),
         )
 
@@ -482,11 +554,20 @@ def bm25_search(key, fields):
 _TSQUERY_OPERATORS = {"&", "&!", "|", "!", "(", ")", "<->"}
 
 
+class _Operand(NamedTuple):
+    """A clause, and the constant condition under which it is left out."""
+
+    clause: sa.ColumnElement
+    stop: sa.ColumnElement
+
+
 def _parse_tsquery(tokens, match):
     """Build a clause from a tsquery string's tokens, with tsquery's precedence
     (``!`` binds tightest, then ``<->``, ``&``, ``|``). ``match`` makes the clause
-    for one word or phrase; None stands for an operand with no words, which is
-    left out, as to_tsquery leaves out a word with no lexemes."""
+    for one word or phrase as an ``_Operand``; None stands for an operand with
+    no words. Both are left out, as to_tsquery leaves out a word with no
+    lexemes: an operand whose ``stop`` holds counts as true under AND and as
+    false under OR."""
     pos = 0
 
     def peek(offset=0):
@@ -500,21 +581,28 @@ def _parse_tsquery(tokens, match):
     def is_word(token):
         return token is not None and token not in _TSQUERY_OPERATORS
 
-    def combine(operator, operands):
+    def combine(operator, left_out, operands):
         operands = [o for o in operands if o is not None]
         if not operands:
             return None
-        return operands[0] if len(operands) == 1 else operator(*operands)
+        if len(operands) == 1:
+            return operands[0]
+        return _Operand(
+            operator(*(sa.case((o.stop, left_out), else_=o.clause) for o in operands)),
+            sa.and_(*(o.stop for o in operands)),
+        )
 
     def negate(operand):
-        return None if operand is None else sa.not_(operand)
+        if operand is None:
+            return None
+        return _Operand(sa.not_(operand.clause), operand.stop)
 
     def any_of():
         operands = [all_of()]
         while peek() == "|":
             take()
             operands.append(all_of())
-        return combine(sa.or_, operands)
+        return combine(sa.or_, sa.false(), operands)
 
     def all_of():
         operands = [negation()]
@@ -523,7 +611,7 @@ def _parse_tsquery(tokens, match):
             negated = take() == "&!"
             operand = negation()
             operands.append(negate(operand) if negated else operand)
-        return combine(sa.and_, operands)
+        return combine(sa.and_, sa.true(), operands)
 
     def negation():
         if peek() == "!":
@@ -582,7 +670,7 @@ def apply_search_predicate(q, search, field_filters, *, text_search, pmid_match)
                 "of only negations matches nearly every record."
             )
         text_match = text_search(tsquery_string)
-        q = q.filter(text_match.clause)
+        q = text_match.narrow(q)
 
     for column, value in field_filters.items():
         if value is not None:

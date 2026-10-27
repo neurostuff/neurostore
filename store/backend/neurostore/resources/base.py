@@ -604,9 +604,8 @@ class ListView(BaseView):
         sort_col = args["sort"]
         if sort_col is None:
             if text_match is not None:
-                rank = text_match.rank
-                rank_sort = rank.desc() if desc == "desc" else rank.asc()
-                q = q.order_by(rank_sort, text_match.tiebreak.desc())
+                ranks = (getattr(rank, desc)() for rank in text_match.ranks)
+                q = q.order_by(*ranks, text_match.tiebreak.desc())
             else:
                 # Default to created_at when no search
                 q = q.order_by(m.created_at.desc(), m.id.desc())

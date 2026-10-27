@@ -223,8 +223,6 @@ SEARCH_INDEX_FIELDS = (
     "id",
     "name::pdb.simple('stemmer=english')",
     "description::pdb.simple('stemmer=english')",
-    "pubget_fulltext::pdb.simple('stemmer=english')",
-    "ace_fulltext::pdb.simple('stemmer=english')",
     "is_active",
     "public",
     "user_id::pdb.literal",
