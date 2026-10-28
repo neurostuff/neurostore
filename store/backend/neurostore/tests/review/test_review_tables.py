@@ -1,6 +1,7 @@
 """Review tables and full-text storage: constraints, and staying out of the API."""
 
 import hashlib
+import importlib.util
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -47,6 +48,8 @@ SEARCH_INDEX_REVISION = "d5f7a9c1e3b5"
 MERGED_FROM_REVISION = "d4e6f8a0b2c4"
 AUTHORS_REVISION = "e7a9c1d3f5b8"
 LINKS_REVISION = "630a3e276f54"
+LICENCE_SPELLING_REVISION = "0ecb2ae2459c"
+MIGRATIONS = Path(__file__).resolve().parents[3] / "migrations" / "versions"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
 OPENAPI = (
@@ -653,9 +656,10 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_links_migration_is_the_only_head():
+def test_the_licence_spelling_migration_is_the_only_head():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [LINKS_REVISION]
+    assert script.get_heads() == [LICENCE_SPELLING_REVISION]
+    assert script.get_revision(LICENCE_SPELLING_REVISION).down_revision == LINKS_REVISION
     assert script.get_revision(LINKS_REVISION).down_revision == SEARCH_INDEX_REVISION
     assert script.get_revision(SEARCH_INDEX_REVISION).down_revision == AUTHORS_REVISION
     assert script.get_revision(AUTHORS_REVISION).down_revision == IDENTIFIERS_REVISION
@@ -847,6 +851,119 @@ def test_the_links_migration_goes_down_and_up_over_a_text_of_any_source(session,
             "wiley"
         ]
         assert conn.execute(sa.text("SELECT count(*) FROM link_domains")).scalar() == 12
+
+
+def licence(license_id, stated_as):
+    return {
+        "license_id": license_id,
+        "determination": "stated",
+        "stated_by": "openalex",
+        "stated_as": stated_as,
+    }
+
+
+def test_the_licence_spelling_migration_maps_each_old_licence_id_to_study_schemas():
+    path = next(MIGRATIONS.glob(f"{LICENCE_SPELLING_REVISION}_*.py"))
+    spec = importlib.util.spec_from_file_location("respell_licence_ids", path)
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+
+    # Before study_schema d2759e3 each value was its member name with "-" for "_".
+    assert migration.RESPELLED == {
+        member.value.replace("_", "-"): member.value
+        for member in LicenseId
+        if "_" in member.value
+    }
+
+
+def test_the_licence_spelling_migration_respells_only_license_ids_and_reruns_as_a_no_op(
+    session, paper
+):
+    fulltext = Fulltext(
+        base_study_id=paper[0].id,
+        source="pmc",
+        text="A licensed text.",
+        text_copy={"route": "pmc", "version": "vor", "license": licence("cc-by-sa", "cc-by")},
+    )
+    session.add(fulltext)
+    session.commit()
+    hyphenated = make_source(
+        paper,
+        fulltext,
+        parsed_paper={
+            "header": {"artifact_kind": "parsed_paper", "schema_version": "0.10.0"},
+            "bibliography": {"title": "A paper", "license": licence("cc-by-nc", "cc-by-nc")},
+            "text_copy": {
+                "route": "pmc",
+                "version": "am",
+                "license": licence("all-rights-reserved", "TDM"),
+            },
+            "reported_copies": [
+                {"version": "vor", "license": licence("cc-by-nc-nd", "cc-by-nc-nd")},
+                {"version": "preprint", "license": licence("public-domain", "public-domain")},
+                {"version": "vor", "license": licence("cc0", "cc0")},
+            ],
+        },
+    )
+    snake_case = {
+        "header": {"artifact_kind": "parsed_paper", "schema_version": "0.11.0"},
+        "bibliography": {"title": "A paper", "license": licence("cc_by", "cc-by")},
+        "text_copy": {"route": "pmc", "version": "vor", "license": licence("cc_by", "cc-by")},
+    }
+    current = make_source(paper, fulltext, parsed_paper=snake_case, record_sha256="b" * 64)
+    session.add_all([hyphenated, current])
+    session.commit()
+    ids = {"hyphenated": hyphenated.id, "current": current.id, "copy": fulltext.id}
+    session.remove()
+
+    def stored():
+        """Each document, and the transaction that last wrote its row."""
+        with session.bind.connect() as conn:
+            rows = conn.execute(
+                sa.text(
+                    "SELECT id, parsed_paper AS document, xmin::text AS xmin "
+                    "FROM review_sources UNION ALL "
+                    "SELECT id, text_copy, xmin::text FROM fulltexts"
+                )
+            ).all()
+        by_id = {row.id: (row.document, row.xmin) for row in rows}
+        return {name: by_id[row_id] for name, row_id in ids.items()}
+
+    before = stored()
+    try:
+        service_migrations.downgrade(LINKS_REVISION)
+    finally:
+        service_migrations.upgrade("heads")
+    respelled = stored()
+
+    assert {name: document for name, (document, _) in respelled.items()} == {
+        "hyphenated": {
+            "header": {"artifact_kind": "parsed_paper", "schema_version": "0.10.0"},
+            "bibliography": {"title": "A paper", "license": licence("cc_by_nc", "cc-by-nc")},
+            "text_copy": {
+                "route": "pmc",
+                "version": "am",
+                "license": licence("all_rights_reserved", "TDM"),
+            },
+            "reported_copies": [
+                {"version": "vor", "license": licence("cc_by_nc_nd", "cc-by-nc-nd")},
+                {"version": "preprint", "license": licence("public_domain", "public-domain")},
+                {"version": "vor", "license": licence("cc0", "cc0")},
+            ],
+        },
+        "current": snake_case,
+        "copy": {"route": "pmc", "version": "vor", "license": licence("cc_by_sa", "cc-by")},
+    }
+    # The rows holding an old spelling were rewritten, and only they.
+    assert respelled["hyphenated"][1] != before["hyphenated"][1]
+    assert respelled["copy"][1] != before["copy"][1]
+    assert respelled["current"][1] == before["current"][1]
+
+    try:
+        service_migrations.downgrade(LINKS_REVISION)
+    finally:
+        service_migrations.upgrade("heads")
+    assert stored() == respelled
 
 
 def test_the_migration_seeds_the_role_and_downgrade_removes_everything(session, paper):
