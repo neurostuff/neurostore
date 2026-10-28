@@ -21,6 +21,7 @@ from neurostore.database import db
 from neurostore.models import (
     BaseStudy,
     BaseStudyFlagOutbox,
+    BaseStudyLink,
     BaseStudyMetadataOutbox,
     Fulltext,
     Pipeline,
@@ -809,7 +810,8 @@ _CLASH_RULES = (
 
 # Rows whose base_study_id names the paper; each moves to the keeper. Pipeline results
 # and embeddings the keeper already has one of stay on the old base study (see
-# _kept_pipeline_rows), and identical full texts and assignments are deduplicated first.
+# _kept_pipeline_rows), and identical full texts, assignments and links are deduplicated
+# first.
 _MOVED = (
     Study,
     PipelineStudyResult,
@@ -818,6 +820,7 @@ _MOVED = (
     StudyEntity,
     Fulltext,
     ReviewAssignment,
+    BaseStudyLink,
 )
 
 # study_schema documents kept whole, whose header may name the paper's base study.
@@ -949,8 +952,9 @@ def _demote_current_parse(keeper, old):
 def _deduplicate(keeper, old):
     """Delete the copies the keeper holds twice once the old's rows move: of two full
     texts of the same text, the one fulltext_preference ranks lower, after moving its
-    review sources onto the other; and the old's assignment of a reviewer the keeper
-    already has."""
+    review sources onto the other; the old's assignment of a reviewer the keeper
+    already has; and the old's link to a url the keeper already has, after giving the
+    keeper's its has_nifti when the keeper's was not checked."""
     changes = []
     kept_text = aliased(Fulltext)
     pairs = db.session.execute(
@@ -995,6 +999,26 @@ def _deduplicate(keeper, old):
     changes.extend(
         Change("review_assignments", row_id, "deleted", None, None) for row_id in sorted(deleted)
     )
+    kept_link = aliased(BaseStudyLink)
+    pairs = db.session.execute(
+        sa.select(BaseStudyLink.id, BaseStudyLink.has_nifti, kept_link.id)
+        .join(kept_link, kept_link.url == BaseStudyLink.url)
+        .where(BaseStudyLink.base_study_id == old.id, kept_link.base_study_id == keeper.id)
+        .order_by(BaseStudyLink.id)
+    ).all()
+    for old_id, has_nifti, kept_id in pairs:
+        if has_nifti is not None:
+            checked = db.session.scalar(
+                sa.update(BaseStudyLink)
+                .where(BaseStudyLink.id == kept_id, BaseStudyLink.has_nifti.is_(None))
+                .values(has_nifti=has_nifti)
+                .returning(BaseStudyLink.id)
+                .execution_options(synchronize_session=False)
+            )
+            if checked is not None:
+                changes.append(Change("base_study_links", kept_id, "has_nifti", None, has_nifti))
+        db.session.execute(sa.delete(BaseStudyLink).where(BaseStudyLink.id == old_id))
+        changes.append(Change("base_study_links", old_id, "deleted", None, kept_id))
     return changes
 
 
@@ -1003,8 +1027,8 @@ def merge_base_study(keeper, old):
 
     Its versions move to the keeper, marked ``merged_from``, with its current parse version
     made history when the keeper has one. Its pipeline results, embeddings, entities,
-    full texts, review assignments and corresponding-author emails move too, but for those
-    the keeper already holds
+    full texts, review assignments, links and corresponding-author emails move too, but
+    for those the keeper already holds
     (see _kept_pipeline_rows and _deduplicate). Base studies it superseded are superseded
     by the keeper, study_schema document headers naming it name the keeper, each base
     study points at its best remaining full text, and the keeper gains only the fields

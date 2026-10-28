@@ -35,6 +35,7 @@ from neurostore.models import (
     AnnotationAnalysis,
     BaseStudy,
     BaseStudyFlagOutbox,
+    BaseStudyLink,
     BaseStudyMetadataOutbox,
     CorrespondingAuthorEmail,
     FieldClaim,
@@ -670,6 +671,44 @@ def test_an_identical_copy_and_assignment_are_deduplicated(session, pair):
         ("fulltexts", pair["fulltext"], "deleted"),
         ("review_sources", pair["review_source"], "fulltext_id"),
         ("review_assignments", old_assignment, "deleted"),
+    } <= {(c.table, c.row_id, c.field) for c in outcome.changes}
+
+
+def test_links_move_to_the_keeper_once_per_url(session, pair):
+    shared, own = "https://osf.io/abcde", "https://github.com/lab/code"
+    session.add_all(
+        [
+            BaseStudyLink.of(pair["keeper"], shared, "user"),
+            BaseStudyLink.of(pair["old"], shared, "pipeline", has_nifti=True),
+            BaseStudyLink.of(pair["old"], own, "pipeline"),
+        ]
+    )
+    session.commit()
+    kept_id, old_shared_id, own_id = (
+        BaseStudyLink.query.filter_by(base_study_id=base_study_id, url=url).one().id
+        for base_study_id, url in (
+            (pair["keeper"], shared),
+            (pair["old"], shared),
+            (pair["old"], own),
+        )
+    )
+
+    outcome = _merge(pair)
+    session.expire_all()
+
+    assert BaseStudyLink.query.filter_by(base_study_id=pair["old"]).count() == 0
+    assert {
+        link.id: (link.url, link.source, link.has_nifti)
+        for link in BaseStudyLink.query.filter_by(base_study_id=pair["keeper"])
+    } == {
+        # The keeper's link stays, and takes the has_nifti only the old's had.
+        kept_id: (shared, "user", True),
+        own_id: (own, "pipeline", None),
+    }
+    assert {
+        ("base_study_links", kept_id, "has_nifti"),
+        ("base_study_links", old_shared_id, "deleted"),
+        ("base_study_links", own_id, "base_study_id"),
     } <= {(c.table, c.row_id, c.field) for c in outcome.changes}
 
 
