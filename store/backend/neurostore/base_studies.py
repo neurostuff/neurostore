@@ -322,13 +322,26 @@ def report_shared_identifiers(session, base_study_id, contested, *, source):
             ]
 
 
+def supersession_chain(session, base_study_id):
+    """The base study ``base_study_id`` names, then each one ``superseded_by`` leads to,
+    ending with the one no base study supersedes; empty when the id is unknown."""
+    chain = []
+    base_study = session.get(BaseStudy, base_study_id)
+    while base_study is not None:
+        chain.append(base_study)
+        base_study = (
+            None
+            if base_study.superseded_by is None
+            else session.get(BaseStudy, base_study.superseded_by)
+        )
+    return chain
+
+
 def superseding_base_study(session, base_study_id):
     """The base study ``base_study_id`` names, followed through ``superseded_by`` to the
     one that supersedes it; None when the id is unknown."""
-    base_study = session.get(BaseStudy, base_study_id)
-    while base_study is not None and base_study.superseded_by is not None:
-        base_study = session.get(BaseStudy, base_study.superseded_by)
-    return base_study
+    chain = supersession_chain(session, base_study_id)
+    return chain[-1] if chain else None
 
 
 def find_base_study(session, header):

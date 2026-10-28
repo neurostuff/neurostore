@@ -34,6 +34,13 @@ entities. A positional key stays set aside until a record names it by content; a
 parse held is resolved when a later parse holds it: each stored record naming it has its
 claims re-ingested onto the new entity (the parse upload's ``set_aside_resolved``).
 
+Every upload leaves its base study owned by no one and public (the summary's
+``took_ownership_from`` names a previous owner), and one naming a base study merged since
+lands on the one that superseded it (``merged_from``). A parsed paper sets the paper's
+licence and replaces its pipeline links when it lists them; ``text``, whose sha256 must be
+the parsed paper's ``text_sha256``, is kept as one of the paper's full texts with its
+copy's licence (docs/adr/0017-paper-links-and-licences.md).
+
 Every result an upload writes carries the caller's ``run_id``. Replaying a run (same
 run_id, same documents) returns the same results and adds none; the same run_id with a
 different document for the paper is refused (RUN_ID_REUSED).
@@ -48,9 +55,11 @@ since. The sign of a contrast lives on its condition weights: the inverse half o
 split gets its original half's conditions, negated.
 """
 
+import hashlib
 import re
 from collections import Counter
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import distinct_on
@@ -66,7 +75,7 @@ from neurostore.base_studies import (
     lock_identifiers,
     resolve,
     settle_publication_status,
-    superseding_base_study,
+    supersession_chain,
 )
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
@@ -94,6 +103,7 @@ from neurostore.models import (
     Analysis,
     AnalysisConditions,
     BaseStudy,
+    BaseStudyLink,
     Condition,
     ExtractionEntityLink,
     FieldClaim,
@@ -110,6 +120,7 @@ from neurostore.models import (
     Table,
 )
 from neurostore import authors, corresponding_authors
+from neurostore.models.fulltext import find_or_add_fulltext
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.stored_parses import stored_parse, stored_parse_result
 from neurostore.study_schema_tools import (
@@ -196,6 +207,11 @@ def ingest_upload(body, user=None):
             _validate(name, document)
     if parse is not None:
         _check_keys(parse)
+    if parsed_paper is not None:
+        _check_links(parsed_paper)
+    text = body.get("text")
+    if text is not None:
+        _check_text(text, parsed_paper)
 
     if parse is not None and parse.get("revision_of"):
         kind = "revision"
@@ -216,7 +232,9 @@ def ingest_upload(body, user=None):
             [make_field_error("parse_id", body.get("parse_id"), code="MISMATCH")],
         )
 
-    base_study = _resolve_base_study(body, parse, parsed_paper, create=parse is not None)
+    base_study, merged_from = _resolve_base_study(
+        body, parse, parsed_paper, create=parse is not None
+    )
     # Serialize uploads for one paper: version changes read, then move, its analyses.
     db.session.execute(
         sa.select(BaseStudy.id).where(BaseStudy.id == base_study.id).with_for_update()
@@ -224,15 +242,25 @@ def ingest_upload(body, user=None):
     _check_entity_hashes(base_study)
     if record is not None:
         _check_stable_ids(base_study, record)
-    _set_retraction(base_study, parsed_paper)
-    listed = authors.store_authors(base_study.id, parsed_paper)
-    corresponding_authors.add_emails(base_study.id, authors.correspondence(parsed_paper), listed)
 
     summary = {
         "kind": kind,
         "base_study_id": base_study.id,
         "parse_id": parse_id,
     }
+    if merged_from:
+        summary["merged_from"] = merged_from
+    previous_owner = _take_ownership(base_study)
+    if previous_owner is not None:
+        summary["took_ownership_from"] = previous_owner
+    _set_retraction(base_study, parsed_paper)
+    listed = authors.store_authors(base_study.id, parsed_paper)
+    corresponding_authors.add_emails(base_study.id, authors.correspondence(parsed_paper), listed)
+    if parsed_paper is not None:
+        base_study.license = parsed_paper["bibliography"]["license"]["license_id"]
+        _store_links(base_study, parsed_paper)
+    if text is not None:
+        _store_text(base_study, parsed_paper, text)
     study = _current_study(base_study)
     current_parse_id = study.source_id if study is not None else None
 
@@ -290,6 +318,57 @@ def ingest_upload(body, user=None):
     summary["provenance"] = {name: _provenance(result) for name, result in provenance.items()}
     recompute_media_flags([base_study.id])
     return summary
+
+
+def _take_ownership(base_study):
+    """Leave ``base_study`` owned by no one and public, as every base study the pipeline
+    uploads is; return the user who owned it, or None. Its users' studies keep theirs."""
+    previous_owner = base_study.user_id
+    base_study.user_id = None
+    base_study.public = True
+    return previous_owner
+
+
+def _store_text(base_study, parsed_paper, text):
+    """Keep ``text`` as one of the paper's full texts, with the source, copy and copy
+    licence of this upload's parsed paper."""
+    fulltext = find_or_add_fulltext(db.session, base_study.id, parsed_paper, text)
+    fulltext.source = parsed_paper["source"]
+    fulltext.text_copy = parsed_paper["text_copy"]
+    fulltext.license = parsed_paper["text_copy"]["license"]["license_id"]
+    db.session.flush()
+
+
+def _store_links(base_study, parsed_paper):
+    """Replace the paper's pipeline links with the parsed paper's, when it lists them.
+
+    A link a user gave stays theirs; the pipeline only says whether it holds NIfTI."""
+    links = parsed_paper.get("links")
+    if links is None:
+        return
+    db.session.execute(
+        sa.delete(BaseStudyLink).where(
+            BaseStudyLink.base_study_id == base_study.id, BaseStudyLink.source == "pipeline"
+        )
+    )
+    user_links = {
+        link.url: link
+        for link in db.session.scalars(
+            sa.select(BaseStudyLink).where(BaseStudyLink.base_study_id == base_study.id)
+        )
+    }
+    seen = set()
+    for link in links:
+        url, has_nifti = link["url"], link.get("has_nifti")
+        if url in seen:
+            continue
+        seen.add(url)
+        if url in user_links:
+            if has_nifti is not None:
+                user_links[url].has_nifti = has_nifti
+            continue
+        db.session.add(BaseStudyLink.of(base_study.id, url, "pipeline", has_nifti))
+    db.session.flush()
 
 
 def _check_entity_hashes(base_study):
@@ -358,6 +437,42 @@ def _validate(name, document):
                     code="SCHEMA_VERSION",
                 )
             ],
+        )
+
+
+def _check_text(text, parsed_paper):
+    """A text comes with the parsed paper whose text_sha256 it hashes to."""
+    if parsed_paper is None:
+        abort_unprocessable(
+            "A text needs the parsed paper it is the text of.",
+            [make_field_error("text", None, code="TEXT_MISMATCH")],
+        )
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if digest != parsed_paper["text_sha256"]:
+        abort_unprocessable(
+            "The text is not the one the parsed paper read.",
+            [
+                make_field_error(
+                    "text",
+                    {"sha256": digest, "text_sha256": parsed_paper["text_sha256"]},
+                    code="TEXT_MISMATCH",
+                )
+            ],
+        )
+
+
+def _check_links(parsed_paper):
+    """Every link names an http(s) host."""
+    errors = []
+    for index, link in enumerate(parsed_paper.get("links") or []):
+        parts = urlsplit(link["url"])
+        if parts.scheme not in ("http", "https") or not parts.hostname:
+            errors.append(
+                make_field_error(f"parsed-paper/links/{index}/url", link["url"], code="SCHEMA")
+            )
+    if errors:
+        abort_unprocessable(
+            "A link is an http(s) URL with a host.", errors[:_MAX_REPORTED_ERRORS]
         )
 
 
@@ -446,16 +561,18 @@ def _resolve_base_study(body, parse, parsed_paper, create):
     lock_identifiers(db.session, identifiers)
     held = held_by(db.session, identifiers)
 
-    base_study = None
+    base_study, merged_from = None, []
     base_study_id = body.get("base_study_id") or header.get("neurostore_base_study_id")
     if base_study_id:
-        base_study = superseding_base_study(db.session, base_study_id)
-        if base_study is None:
+        chain = supersession_chain(db.session, base_study_id)
+        if not chain:
             abort_not_found("BaseStudy", base_study_id)
+        base_study = chain[-1]
+        merged_from = [followed.id for followed in chain[:-1]]
         # An inactive base study with no successor (a pruned import) is passed over for
         # the paper's identifiers.
         if not base_study.is_active:
-            base_study = None
+            base_study, merged_from = None, []
     if base_study is None:
         found_id = resolve(identifiers, held)
         if found_id is not None:
@@ -478,7 +595,7 @@ def _resolve_base_study(body, parse, parsed_paper, create):
     attach_identifiers(db.session, base_study, identifiers, held, source="ingest")
     settle_publication_status(base_study, header_identifiers.get("publication_status"))
     db.session.flush()
-    return base_study
+    return base_study, merged_from
 
 
 def _bibliography(parsed_paper):
@@ -486,12 +603,12 @@ def _bibliography(parsed_paper):
     if parsed_paper is None:
         return {}
     bib = parsed_paper["bibliography"]
-    # NOTE (licensing, 2026-10-16): the abstract is stored and shown whatever its
-    # licence. Open question: should an abstract whose licence does not permit
-    # redistribution be hidden? study_schema will carry the paper's licence and a
-    # redistribution rule (study_schema.licensing.permits_redistribution); decide
-    # here once it does. Tracked in the pipeline work plan; do not open an issue
-    # for this.
+    # NOTE (licensing, 2026-10-27): the paper's licence is stored
+    # (base_studies.license, and each full text's in fulltexts.license; see
+    # ingest_upload), but the abstract is stored and shown whatever it is. Open
+    # question: should an abstract or a text whose licence does not permit
+    # redistribution be hidden? That decides when licences are served. Tracked in
+    # the pipeline work plan; do not open an issue for this.
     fields = {
         "name": bib.get("title"),
         "description": bib.get("abstract"),

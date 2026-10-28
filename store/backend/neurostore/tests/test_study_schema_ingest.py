@@ -1,6 +1,7 @@
 """The study_schema ingester: a parse, a parse with a record, a record, a revision."""
 
 import copy
+import hashlib
 import re
 from datetime import datetime, timezone
 
@@ -32,14 +33,18 @@ from neurostore.models import (
     Analysis,
     AnalysisConditions,
     BaseStudy,
+    BaseStudyLink,
     Condition,
     ExtractionEntityLink,
     FieldClaim,
+    Fulltext,
+    LinkDomain,
     PipelineAnalysisResult,
     PipelineConfig,
     PipelineStudyResult,
     Study,
     StudyEntity,
+    User,
 )
 from neurostore.models.data import is_result_analysis, study_entity_hash
 from neurostore.review.core.ops import ReviewState, apply_batch
@@ -2519,3 +2524,308 @@ def test_a_group_carrying_the_studys_stable_id_refuses_the_record(session):
         "STABLE_ID_REPEATED",
         f"groups[0] carries the stable_id {STABLE_ID} that the study carries",
     )]
+
+
+# The text, licences, owner and links an upload carries
+
+
+TEXT = "A paper's text."
+
+
+def _paper_of(text=TEXT, source="pmc", paper=None):
+    """A parsed paper of ``text``, read from ``source``."""
+    paper = paper or fx.parsed_paper()
+    paper["text_sha256"] = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    paper["source"] = source
+    return paper
+
+
+def _refusal(body):
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(body)
+    assert error.value.status_code == 422
+    return {(e.code, e.field) for e in error.value.errors}
+
+
+def test_an_upload_stores_its_text_with_the_copys_source_and_licence(session):
+    paper = _paper_of()
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper})
+    assert Fulltext.query.count() == 0
+
+    ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper, "text": TEXT})
+
+    fulltext = Fulltext.query.filter_by(base_study_id=summary["base_study_id"]).one()
+    assert (fulltext.text, fulltext.source, fulltext.text_copy, fulltext.license) == (
+        TEXT,
+        "pmc",
+        paper["text_copy"],
+        "cc-by",
+    )
+    session.expire_all()
+    assert session.get(BaseStudy, summary["base_study_id"]).fulltext_id == fulltext.id
+
+
+def test_each_upload_overwrites_the_papers_and_its_texts_licences(session):
+    first = _paper_of()
+    summary = ingest_upload(
+        {"coordinate_parse": fx.parse([LOSS]), "parsed_paper": first, "text": TEXT}
+    )
+    base = session.get(BaseStudy, summary["base_study_id"])
+    assert base.license == "all-rights-reserved"
+
+    again = _paper_of()
+    again["bibliography"]["license"] = fx.CC_BY
+    again["text_copy"] = fx.text_copy(license=fx.ALL_RIGHTS_RESERVED)
+    ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": again, "text": TEXT})
+    session.expire_all()
+
+    assert base.license == "cc-by"
+    fulltext = Fulltext.query.one()
+    assert (fulltext.license, fulltext.text_copy) == ("all-rights-reserved", again["text_copy"])
+
+
+@pytest.mark.parametrize("with_paper", [False, True], ids=["no-parsed-paper", "other-text"])
+def test_a_text_that_is_not_the_parsed_papers_is_refused(session, with_paper):
+    body = {"coordinate_parse": fx.parse([LOSS]), "text": "Another text."}
+    if with_paper:
+        body["parsed_paper"] = _paper_of()
+
+    assert _refusal(body) == {("TEXT_MISMATCH", "text")}
+    assert (BaseStudy.query.count(), Fulltext.query.count()) == (0, 0)
+
+
+def test_a_text_of_any_source_is_stored_and_ranks_after_pdf(session):
+    pdf = "The text read from the PDF."
+    summary = ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": _paper_of(pdf, "pdf"),
+            "text": pdf,
+        }
+    )
+    # Newer, with the same copy version: only its source can rank it after the pdf.
+    ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": _paper_of(TEXT, "wiley"),
+            "text": TEXT,
+        }
+    )
+    session.expire_all()
+
+    texts = {f.source: f for f in Fulltext.query.filter_by(base_study_id=summary["base_study_id"])}
+    assert set(texts) == {"pdf", "wiley"}
+    assert session.get(BaseStudy, summary["base_study_id"]).fulltext_id == texts["pdf"].id
+
+
+def test_a_text_uploaded_again_from_another_source_is_ranked_by_it(session):
+    pdf = "The text read from the PDF."
+
+    def upload(text, source):
+        return ingest_upload(
+            {
+                "coordinate_parse": fx.parse([LOSS]),
+                "parsed_paper": _paper_of(text, source),
+                "text": text,
+            }
+        )
+
+    summary = upload(TEXT, "pmc")
+    upload(pdf, "pdf")
+    session.expire_all()
+    base = session.get(BaseStudy, summary["base_study_id"])
+    assert session.get(Fulltext, base.fulltext_id).source == "pmc"
+
+    upload(TEXT, "wiley")
+    session.expire_all()
+
+    assert {f.source for f in Fulltext.query} == {"wiley", "pdf"}
+    assert session.get(Fulltext, base.fulltext_id).source == "pdf"
+
+
+def test_an_upload_takes_the_base_study_from_its_owner_and_makes_it_public(session):
+    owner = User(name="Owner", external_id="auth0|owner")
+    base = BaseStudy(name="Owned", level="group", user=owner, public=False)
+    mine = Study(name="Mine", level="group", base_study=base, user=owner, public=False)
+    session.add_all([owner, base, mine])
+    session.commit()
+    session.add(Fulltext(base_study_id=base.id, source="pmc", text="The owner's text."))
+    session.commit()
+    # The preferred full text holds the search's copy of the owner and visibility.
+    preferred = Fulltext.query.one()
+    assert (preferred.user_id, preferred.public) == ("auth0|owner", False)
+    parse = fx.parse([LOSS])
+    parse["header"]["neurostore_base_study_id"] = base.id
+
+    summary = ingest_upload({"coordinate_parse": parse})
+    session.flush()
+    session.expire_all()
+
+    assert summary["took_ownership_from"] == "auth0|owner"
+    assert (base.user_id, base.public) == (None, True)
+    assert (mine.user_id, mine.public) == ("auth0|owner", False)
+    assert (preferred.user_id, preferred.public) == (None, True)
+    assert "took_ownership_from" not in ingest_upload({"coordinate_parse": parse})
+
+
+@pytest.mark.parametrize("named_in", ["header", "body"])
+def test_an_upload_naming_a_merged_base_study_reports_each_one_it_followed(session, named_in):
+    keeper = BaseStudy(name="Keeper", level="group")
+    middle = BaseStudy(name="Middle", level="group", is_active=False)
+    named = BaseStudy(name="Named", level="group", is_active=False)
+    session.add_all([keeper, middle, named])
+    session.commit()
+    middle.superseded_by, named.superseded_by = keeper.id, middle.id
+    session.commit()
+
+    def upload(base_study_id):
+        parse = fx.parse([LOSS])
+        if named_in == "header":
+            parse["header"]["neurostore_base_study_id"] = base_study_id
+            return ingest_upload({"coordinate_parse": parse})
+        return ingest_upload({"coordinate_parse": parse, "base_study_id": base_study_id})
+
+    summary = upload(named.id)
+
+    assert summary["base_study_id"] == keeper.id
+    assert summary["merged_from"] == [named.id, middle.id]
+    assert "merged_from" not in upload(keeper.id)
+
+
+OSF = "https://files.osf.io/v1/resources/abcde"
+OPENNEURO_DOI = "https://doi.org/10.18112/openneuro.ds000001.v1.0.0"
+NEUROVAULT = "https://neurovault.org/collections/123"
+ZENODO_DOI = "https://doi.org/10.5281/zenodo.123"
+NOT_ZENODO_DOI = "https://doi.org/10.52810/abc"
+GITHUB = "https://github.com/lab/code"
+UNSORTED = "https://data.example.co.uk/study"
+
+
+def _upload_links(*links):
+    paper = fx.parsed_paper()
+    if links != (None,):
+        paper["links"] = list(links)
+    return ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper})
+
+
+def _stored_links(base_study_id):
+    return {
+        link.url: (link.host, link.registrable_domain, link.has_nifti, link.source)
+        for link in BaseStudyLink.query.filter_by(base_study_id=base_study_id)
+    }
+
+
+def test_an_upload_stores_the_papers_links_with_their_host_and_domain(session):
+    summary = _upload_links(
+        {"url": OSF, "has_nifti": True},
+        {"url": OPENNEURO_DOI, "has_nifti": None},
+        {"url": UNSORTED},
+    )
+
+    assert _stored_links(summary["base_study_id"]) == {
+        OSF: ("files.osf.io", "osf.io", True, "pipeline"),
+        OPENNEURO_DOI: ("doi.org", "doi.org", None, "pipeline"),
+        # By the public suffix list: co.uk is a suffix, so the domain keeps three labels.
+        UNSORTED: ("data.example.co.uk", "example.co.uk", None, "pipeline"),
+    }
+
+
+def test_a_listing_replaces_the_pipeline_links_and_no_listing_keeps_them(session):
+    summary = _upload_links({"url": OSF}, {"url": NEUROVAULT})
+    base_study_id = summary["base_study_id"]
+    session.add(BaseStudyLink.of(base_study_id, GITHUB, "user"))
+    session.commit()
+
+    _upload_links({"url": OSF, "has_nifti": False}, {"url": GITHUB, "has_nifti": True})
+    kept = {
+        OSF: ("files.osf.io", "osf.io", False, "pipeline"),
+        # A link a user gave stays theirs; the pipeline says whether it holds NIfTI.
+        GITHUB: ("github.com", "github.com", True, "user"),
+    }
+    assert _stored_links(base_study_id) == kept
+
+    _upload_links(None)
+    assert _stored_links(base_study_id) == kept
+
+    _upload_links()
+    assert _stored_links(base_study_id) == {GITHUB: kept[GITHUB]}
+
+
+def test_a_link_that_is_not_an_http_url_is_refused(session):
+    paper = fx.parsed_paper()
+    paper["links"] = [{"url": OSF}, {"url": "mailto:author@example.org"}]
+
+    assert _refusal({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper}) == {
+        ("SCHEMA", "parsed-paper/links/1/url")
+    }
+
+
+def test_a_links_repository_comes_from_the_seeded_link_domains(session):
+    assert {(d.pattern, d.repository, d.kind) for d in LinkDomain.query} == {
+        ("osf.io", "OSF", "data_repository"),
+        ("10.17605/osf.io", "OSF", "data_repository"),
+        ("openneuro.org", "OpenNeuro", "data_repository"),
+        ("10.18112/openneuro", "OpenNeuro", "data_repository"),
+        ("neurovault.org", "NeuroVault", "data_repository"),
+        ("github.com", "GitHub", "code"),
+        ("gitlab.com", "GitLab", "code"),
+        ("zenodo.org", "Zenodo", "data_repository"),
+        ("10.5281", "Zenodo", "data_repository"),
+        ("figshare.com", "figshare", "data_repository"),
+        ("10.6084", "figshare", "data_repository"),
+        ("doi.org", "DOI", "doi_prefix"),
+    }
+    urls = (OSF, OPENNEURO_DOI, NEUROVAULT, ZENODO_DOI, NOT_ZENODO_DOI, GITHUB, UNSORTED)
+    _upload_links(*({"url": url} for url in urls))
+
+    found = {}
+    for url, repository, kind in session.execute(
+        sa.select(BaseStudyLink.url, LinkDomain.repository, LinkDomain.kind).join(
+            LinkDomain, LinkDomain.matches()
+        )
+    ):
+        found.setdefault(url, set()).add((repository, kind))
+
+    doi = ("DOI", "doi_prefix")
+    assert found == {
+        OSF: {("OSF", "data_repository")},
+        OPENNEURO_DOI: {doi, ("OpenNeuro", "data_repository")},
+        NEUROVAULT: {("NeuroVault", "data_repository")},
+        ZENODO_DOI: {doi, ("Zenodo", "data_repository")},
+        # 10.5281 is Zenodo's prefix, not 10.52810's.
+        NOT_ZENODO_DOI: {doi},
+        GITHUB: {("GitHub", "code")},
+    }
+
+
+@pytest.mark.anyio
+async def test_the_endpoint_takes_a_text_and_reports_merges_and_ownership(
+    admin_client, session
+):
+    owner = User(name="Owner", external_id="auth0|owner")
+    keeper = BaseStudy(name="Keeper", level="group", user=owner, public=False)
+    named = BaseStudy(name="Named", level="group", is_active=False)
+    session.add_all([owner, keeper, named])
+    session.commit()
+    named.superseded_by = keeper.id
+    session.commit()
+    parse = fx.parse([LOSS])
+    parse["header"]["neurostore_base_study_id"] = named.id
+    url = "/api/study-schema-uploads/"
+
+    response = await admin_client.post(
+        url, data={"coordinate_parse": parse, "parsed_paper": _paper_of(), "text": TEXT}
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert (body["base_study_id"], body["merged_from"], body["took_ownership_from"]) == (
+        keeper.id,
+        [named.id],
+        "auth0|owner",
+    )
+    assert Fulltext.query.one().text == TEXT
+
+    response = await admin_client.post(url, data={"coordinate_parse": parse, "text": TEXT})
+    assert response.status_code == 422, response.text
+    assert "TEXT_MISMATCH" in response.text
