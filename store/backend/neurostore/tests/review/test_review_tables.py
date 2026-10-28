@@ -15,12 +15,15 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from starlette.applications import Starlette
+from study_schema.models.paper_parse import LicenseId
 
 from neurostore import schemas, service_migrations
 from neurostore.admin import init_admin
 from neurostore.models import (
     BaseStudy,
+    BaseStudyLink,
     Fulltext,
+    LinkDomain,
     PipelineConfig,
     Review,
     ReviewAssignment,
@@ -43,6 +46,7 @@ IDENTIFIERS_REVISION = "a8e1c4d7b2f6"
 SEARCH_INDEX_REVISION = "d5f7a9c1e3b5"
 MERGED_FROM_REVISION = "d4e6f8a0b2c4"
 AUTHORS_REVISION = "e7a9c1d3f5b8"
+LINKS_REVISION = "630a3e276f54"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
 OPENAPI = (
@@ -132,11 +136,6 @@ def test_the_full_text_sources_are_ranked_by_preference():
     }
 
 
-def test_an_unknown_source_is_refused():
-    with pytest.raises(ValueError, match="nonsense"):
-        Fulltext(source="nonsense")
-
-
 def core_insert_text(session, base_study, source, n=0):
     session.execute(
         sa.insert(Fulltext.__table__).values(
@@ -149,9 +148,13 @@ def core_insert_text(session, base_study, source, n=0):
     )
 
 
-def test_a_core_insert_with_an_unknown_source_is_refused_by_the_database(session, paper):
-    with pytest.raises(IntegrityError, match="ck_fulltexts_source"):
-        core_insert_text(session, paper[0], "nonsense")
+def test_a_core_insert_of_any_source_is_accepted_but_an_empty_one_is_refused(session, paper):
+    core_insert_text(session, paper[0], "wiley")
+    session.commit()
+    assert session.scalar(sa.select(Fulltext.source)) == "wiley"
+
+    with pytest.raises(IntegrityError, match="ck_fulltexts_source_not_empty"):
+        core_insert_text(session, paper[0], "", n=1)
     session.rollback()
 
 
@@ -162,18 +165,6 @@ def test_a_core_insert_of_each_ranked_source_is_accepted(session, paper):
 
     stored = session.scalars(sa.select(Fulltext.source).order_by(Fulltext.id)).all()
     assert sorted(stored) == sorted(fulltext_model.FULLTEXT_SOURCE_PREFERENCE)
-
-
-def test_the_source_check_constraint_lists_exactly_the_ranked_sources(session):
-    definition = session.scalar(
-        sa.text(
-            "SELECT pg_get_constraintdef(oid) FROM pg_constraint"
-            " WHERE conname = 'ck_fulltexts_source'"
-        )
-    )
-
-    listed = set(re.findall(r"'([^']+)'::", definition))
-    assert listed == set(fulltext_model.FULLTEXT_SOURCE_PREFERENCE)
 
 
 def test_a_full_text_has_no_tier_column():
@@ -323,6 +314,13 @@ def test_the_version_of_record_beats_a_preprint_added_in_either_order(
         for n, version in enumerate(versions)
     }
     assert pointer(session, base_study) == added["vor"].id
+
+
+def test_a_source_of_no_preference_ranks_after_pdf(session, paper):
+    base_study = paper[0]
+    pdf = add_text(session, base_study, "pdf", "pdf", T0)
+    add_text(session, base_study, "wiley", "wiley", T0 + timedelta(days=1))
+    assert pointer(session, base_study) == pdf.id
 
 
 def test_the_copy_version_comes_before_the_source_preference(session, paper):
@@ -655,9 +653,10 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_search_index_migration_is_the_only_head():
+def test_the_links_migration_is_the_only_head():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [SEARCH_INDEX_REVISION]
+    assert script.get_heads() == [LINKS_REVISION]
+    assert script.get_revision(LINKS_REVISION).down_revision == SEARCH_INDEX_REVISION
     assert script.get_revision(SEARCH_INDEX_REVISION).down_revision == AUTHORS_REVISION
     assert script.get_revision(AUTHORS_REVISION).down_revision == IDENTIFIERS_REVISION
     assert script.get_revision(IDENTIFIERS_REVISION).down_revision == MERGED_FROM_REVISION
@@ -796,6 +795,58 @@ def test_the_migrated_review_tables_match_the_models(db):
         assert compare_metadata(context, db.metadata) == []
 
 
+def test_the_migrated_link_tables_and_licence_columns_match_the_models(db):
+    def in_scope(obj, name, type_, reflected, compare_to):
+        if type_ == "table":
+            return name in {"base_study_links", "link_domains", "base_studies", "fulltexts"}
+        if obj.table.name in {"base_study_links", "link_domains"}:
+            return True
+        return obj.table.name in {"base_studies", "fulltexts"} and name == "license"
+
+    with db.engine.connect() as conn:
+        context = MigrationContext.configure(
+            conn,
+            opts={
+                "compare_type": True,
+                "compare_server_default": True,
+                "include_object": in_scope,
+            },
+        )
+        assert compare_metadata(context, db.metadata) == []
+
+
+@pytest.mark.parametrize("table", ["base_studies", "fulltexts"])
+def test_a_licence_is_one_of_study_schemas_spelled_as_the_documents_spell_it(session, table):
+    definition = session.scalar(
+        sa.text(
+            "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = :name"
+        ),
+        {"name": f"ck_{table}_license"},
+    )
+    assert set(re.findall(r"'([^']+)'::", definition)) == {member.value for member in LicenseId}
+
+
+def test_the_links_migration_goes_down_and_up_over_a_text_of_any_source(session, paper):
+    add_text(session, paper[0], "wiley", "A wiley text.")
+    session.remove()
+
+    def columns(table):
+        return {c["name"] for c in sa.inspect(session.bind).get_columns(table)}
+
+    try:
+        service_migrations.downgrade(SEARCH_INDEX_REVISION)
+        tables = set(sa.inspect(session.bind).get_table_names())
+        assert not {"base_study_links", "link_domains"} & tables
+        assert "license" not in columns("base_studies") | columns("fulltexts")
+    finally:
+        service_migrations.upgrade("heads")
+    with session.bind.connect() as conn:
+        assert conn.execute(sa.text("SELECT source FROM fulltexts")).scalars().all() == [
+            "wiley"
+        ]
+        assert conn.execute(sa.text("SELECT count(*) FROM link_domains")).scalar() == 12
+
+
 def test_the_migration_seeds_the_role_and_downgrade_removes_everything(session, paper):
     base_study, user = paper
     base_study.ace_fulltext = "ace text"
@@ -895,6 +946,21 @@ def test_no_api_schema_serializes_the_review_tables():
     for name in dir(schemas):
         meta = getattr(getattr(schemas, name), "Meta", None)
         assert getattr(meta, "model", None) not in REVIEW_TABLES, name
+
+
+def test_no_api_schema_serializes_links_link_domains_or_licences():
+    for name in dir(schemas):
+        meta = getattr(getattr(schemas, name), "Meta", None)
+        assert getattr(meta, "model", None) not in (BaseStudyLink, LinkDomain), name
+    assert "license" not in schemas.BaseStudySchema().fields
+
+
+@pytest.mark.skipif(not OPENAPI.is_file(), reason="openapi submodule not checked out")
+def test_the_spec_names_no_link_table_or_licence_column():
+    text = OPENAPI.read_text(encoding="utf-8")
+    for name in ("base_study_links", "base-study-links", "link_domains", "link-domains"):
+        assert name not in text
+    assert not re.search(r"^\s+license:", text, re.MULTILINE)
 
 
 def test_base_study_schema_does_not_serialize_its_fulltext():

@@ -5,13 +5,14 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, validates
 
 from neurostore.database import db
-from neurostore.models.data import BaseMixin, BaseStudy
+from neurostore.models.data import BaseMixin, BaseStudy, license_type
 
 #: The versions a full text's copy may be, most preferred first; None stands for a copy of no
 #: stated version.
 COPY_VERSIONS = ("vor", None, "am", "submitted")
 
-#: The ingestion sources a full text may come from, each with its preference; lower wins.
+#: The preference of each ingestion source a full text is known to come from; lower wins.
+#: Any other source is taken, and ranks after all of these (UNKNOWN_SOURCE_RANK).
 FULLTEXT_SOURCE_PREFERENCE = {
     "pubget": 0,
     "pmc": 0,
@@ -21,6 +22,7 @@ FULLTEXT_SOURCE_PREFERENCE = {
     "ace": 1,
     "pdf": 2,
 }
+UNKNOWN_SOURCE_RANK = max(FULLTEXT_SOURCE_PREFERENCE.values()) + 1
 
 
 #: The fields of ``ix_fulltext_search``, written as alembic reflects the migrated
@@ -57,6 +59,9 @@ class Fulltext(BaseMixin, db.Model):
     sha256 = db.Column(db.String(64), nullable=False)
     text = db.Column(db.Text, nullable=False)
     text_copy = db.Column(JSONB)
+    #: The licence of the copy the text was read from (study_schema's
+    #: ``text_copy.license.license_id``); NULL until a pipeline upload sets it.
+    license = db.Column(license_type("fulltexts"))
 
     # A copy of the base study's own searched and filtered columns, held only
     # by its preferred full text (the row base_studies.fulltext_id names) and
@@ -79,9 +84,7 @@ class Fulltext(BaseMixin, db.Model):
         # What base_studies.fk_base_studies_fulltext_id refers to.
         sa.UniqueConstraint("id", "base_study_id", name="uq_fulltexts_id_base_study_id"),
         sa.Index("ix_fulltexts_base_study_created", "base_study_id", "created_at"),
-        sa.CheckConstraint(
-            source.in_(FULLTEXT_SOURCE_PREFERENCE), name="ck_fulltexts_source"
-        ),
+        sa.CheckConstraint("source <> ''", name="ck_fulltexts_source_not_empty"),
         # Full-text search (ParadeDB's BM25 index), with ix_base_study_search's
         # tokenizer and the same layout.
         sa.Index(
@@ -98,12 +101,6 @@ class Fulltext(BaseMixin, db.Model):
 
     base_study = relationship("BaseStudy", foreign_keys=[base_study_id])
 
-    @validates("source")
-    def _check_source(self, key, source):
-        if source not in FULLTEXT_SOURCE_PREFERENCE:
-            raise ValueError(f"Unknown full text source: {source!r}")
-        return source
-
     @validates("text")
     def _set_hash(self, key, text):
         self.sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -119,7 +116,9 @@ def fulltext_preference(fulltext=Fulltext):
             value=fulltext.text_copy["version"].astext,
             else_=COPY_VERSIONS.index(None),
         ),
-        sa.case(FULLTEXT_SOURCE_PREFERENCE, value=fulltext.source),
+        sa.case(
+            FULLTEXT_SOURCE_PREFERENCE, value=fulltext.source, else_=UNKNOWN_SOURCE_RANK
+        ),
         fulltext.created_at.desc(),
         fulltext.id,
     )
@@ -139,3 +138,25 @@ def refresh_fulltext_pointer(connection, base_study_id):
         .where(BaseStudy.__table__.c.id == base_study_id)
         .values(fulltext_id=best)
     )
+
+
+def find_or_add_fulltext(session, base_study_id, parsed_paper, text):
+    """The base study's full text of ``text``; when it has none, one added with the
+    source, copy and copy licence ``parsed_paper`` states."""
+    fulltext = session.scalar(
+        sa.select(Fulltext).where(
+            Fulltext.base_study_id == base_study_id,
+            Fulltext.sha256 == hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        )
+    )
+    if fulltext is None:
+        fulltext = Fulltext(
+            base_study_id=base_study_id,
+            source=parsed_paper["source"],
+            text=text,
+            text_copy=parsed_paper["text_copy"],
+            license=parsed_paper["text_copy"]["license"]["license_id"],
+        )
+        session.add(fulltext)
+        session.flush()
+    return fulltext

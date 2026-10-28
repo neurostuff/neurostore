@@ -113,12 +113,6 @@ def text_hash_mismatch(study_id):
     return paper, coordinate_parse, record
 
 
-def unknown_text_source(study_id):
-    paper, coordinate_parse, record = clean(study_id)
-    paper["source"] = "nowhere"
-    return paper, coordinate_parse, record
-
-
 def no_base_study(study_id):
     paper, coordinate_parse, record = clean(study_id)
     paper["header"]["identifiers"] = fx.identifiers(pmid="9999")
@@ -183,7 +177,6 @@ FAILURES = [
         id="positional-key",
     ),
     pytest.param(no_base_study, "no base study for pmid=9999", id="no-base-study"),
-    pytest.param(unknown_text_source, "unknown text source 'nowhere'", id="unknown-source"),
 ]
 
 
@@ -223,7 +216,8 @@ def test_a_clean_paper_loads_with_its_text_and_documents(session, make_user, tmp
     }
 
 
-@pytest.mark.parametrize("source", ["pubget", "ace", "pdf", "springer"])
+# wiley ranks after every source of FULLTEXT_SOURCE_PREFERENCE, but is taken.
+@pytest.mark.parametrize("source", ["pubget", "ace", "pdf", "springer", "wiley"])
 def test_the_fulltext_keeps_the_source_of_its_parsed_paper(
     session, make_user, tmp_path, source
 ):
@@ -251,7 +245,7 @@ def test_the_fulltext_keeps_the_text_copy_of_its_parsed_paper(session, make_user
     imports.import_layout(session, tmp_path, user_id=REVIEWER)
 
     fulltext = session.scalar(sa.select(Fulltext))
-    assert fulltext.text_copy == paper["text_copy"]
+    assert (fulltext.text_copy, fulltext.license) == (paper["text_copy"], "all-rights-reserved")
 
 
 def test_a_second_import_of_the_same_files_skips_with_the_same_source(
@@ -754,7 +748,7 @@ def test_the_cli_exits_1_when_a_paper_fails_and_still_prints_the_report(
     make_user(REVIEWER, "admin-reviewer")
     add_base_study(session, pmid="1001")
     write_layout(tmp_path, "1001", *clean("1001"))
-    write_layout(tmp_path, "1002", *unknown_text_source("1002"))
+    write_layout(tmp_path, "1002", *no_base_study("1002"))
 
     result = run_cli(str(tmp_path), "--user-id", REVIEWER)
 

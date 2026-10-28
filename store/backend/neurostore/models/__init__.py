@@ -37,6 +37,7 @@ from neurostore.models.data import (
     University,
 )
 from neurostore.models.fulltext import Fulltext
+from neurostore.models.links import BaseStudyLink, LinkDomain
 from neurostore.models.review import (
     Review,
     ReviewAssignment,
@@ -83,6 +84,8 @@ __all__ = [
     "FieldClaimRun",
     "FieldClaimEvidence",
     "Fulltext",
+    "BaseStudyLink",
+    "LinkDomain",
     "ReviewSource",
     "Review",
     "ReviewOp",
