@@ -1464,6 +1464,28 @@
       "title": "OmittedAnalysis",
       "type": "object"
     },
+    "PaperLink": {
+      "additionalProperties": false,
+      "description": "One link the paper gives.",
+      "properties": {
+        "url": {
+          "description": "The link, normalized: the scheme and host in lower case, no `www.`, no fragment and no trailing slash; a DOI as `https://doi.org/` and the DOI in lower case.",
+          "type": "string"
+        },
+        "has_nifti": {
+          "description": "Whether the repository the link names holds NIfTI files (`.nii`, `.nii.gz`), as checked there. Absent when it was not checked.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "PaperLink",
+      "type": "object"
+    },
     "ParsedAnalysis": {
       "additionalProperties": false,
       "description": "The points a paper reports together for one tested effect, or for one non-result purpose such as the regions of interest an analysis used.\nIn an original parse, the grouping is the ingestion workflow's proposal, made from a table and its caption. pondie confirms or overrides it with the whole paper in view. The role is required and is set in the ingestion workflow by the `roles` classifier stage, after the analyses are identified. It is also the ingestion workflow's proposal: pondie's accept confirms it, and a relabel overrides it with a reviewed correction that wins.",
@@ -1759,6 +1781,16 @@
           "description": "Supplementary material the paper links to, and whether it was fetched. A result the text cites to a supplement that was not fetched is reported elsewhere, not missing.",
           "items": {
             "$ref": "#/$defs/Supplement"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "links": {
+          "description": "Every http(s) link the paper gives, once each: in its text or markup, its supplementary material or its reference list, where a DOI counts as its `https://doi.org/` link. Where each one appeared is the producer's record, not this one's.",
+          "items": {
+            "$ref": "#/$defs/PaperLink"
           },
           "type": [
             "array",
@@ -2465,6 +2497,7 @@
         "table",
         "supplement",
         "references",
+        "data_availability",
         "other"
       ],
       "title": "SectionKind",
