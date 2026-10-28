@@ -7,14 +7,15 @@ export interface TextCopy {
 const VERSIONS: Record<string, string> = { vor: 'VoR', am: 'accepted manuscript', submitted: 'submitted manuscript' };
 
 const LICENSES: Record<string, string> = {
-    'all-rights-reserved': 'all rights reserved',
-    'public-domain': 'public domain',
+    all_rights_reserved: 'all rights reserved',
+    public_domain: 'public domain',
     other: 'other licence',
 };
 
+/** A licence as people write it: `cc_by_nc` is CC-BY-NC. */
 function licenseName(licenseId: string | undefined): string {
     if (!licenseId) return 'licence unknown';
-    return LICENSES[licenseId] ?? licenseId.toUpperCase();
+    return LICENSES[licenseId] ?? licenseId.replaceAll('_', '-').toUpperCase();
 }
 
 /** The copy's version and licence, as "VoR · CC-BY" or "submitted manuscript · all rights reserved". */

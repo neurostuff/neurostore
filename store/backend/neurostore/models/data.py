@@ -35,15 +35,14 @@ STATUS_ENUM = PGEnum(
 
 
 def license_type(table):
-    """study_schema's licence categories (``LicenseId``), stored as the documents spell
-    them (``cc-by``), as text with a CHECK named for ``table``."""
+    """study_schema's licence categories (``LicenseId``, whose values are its member
+    names, such as ``cc_by``), as text with a CHECK named for ``table``."""
     return sa.Enum(
         LicenseId,
         name=f"ck_{table}_license",
         native_enum=False,
         create_constraint=True,
         length=32,
-        values_callable=lambda enum: [member.value for member in enum],
     )
 
 

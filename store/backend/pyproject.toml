@@ -47,7 +47,7 @@ dependencies = [
     "tldextract~=5.4",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read, pinned to neurostuff/study_schema#55 until it merges.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@6435bec5fd80b0d8263e3c43fb9ce56e5cbc7017",
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@d2759e3f32471fccc148c1bdd0ac29a5f85cf17b",
 ]
 
 [tool.setuptools.packages.find]

@@ -2559,7 +2559,7 @@ def test_an_upload_stores_its_text_with_the_copys_source_and_licence(session):
         TEXT,
         "pmc",
         paper["text_copy"],
-        "cc-by",
+        "cc_by",
     )
     session.expire_all()
     assert session.get(BaseStudy, summary["base_study_id"]).fulltext_id == fulltext.id
@@ -2571,7 +2571,7 @@ def test_each_upload_overwrites_the_papers_and_its_texts_licences(session):
         {"coordinate_parse": fx.parse([LOSS]), "parsed_paper": first, "text": TEXT}
     )
     base = session.get(BaseStudy, summary["base_study_id"])
-    assert base.license == "all-rights-reserved"
+    assert base.license == "all_rights_reserved"
 
     again = _paper_of()
     again["bibliography"]["license"] = fx.CC_BY
@@ -2579,9 +2579,9 @@ def test_each_upload_overwrites_the_papers_and_its_texts_licences(session):
     ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": again, "text": TEXT})
     session.expire_all()
 
-    assert base.license == "cc-by"
+    assert base.license == "cc_by"
     fulltext = Fulltext.query.one()
-    assert (fulltext.license, fulltext.text_copy) == ("all-rights-reserved", again["text_copy"])
+    assert (fulltext.license, fulltext.text_copy) == ("all_rights_reserved", again["text_copy"])
 
 
 @pytest.mark.parametrize("with_paper", [False, True], ids=["no-parsed-paper", "other-text"])
@@ -2717,9 +2717,9 @@ def _stored_links(base_study_id):
 
 def test_an_upload_stores_the_papers_links_with_their_host_and_domain(session):
     summary = _upload_links(
-        {"url": OSF, "has_nifti": True},
-        {"url": OPENNEURO_DOI, "has_nifti": None},
-        {"url": UNSORTED},
+        fx.link(OSF, has_nifti=True),
+        fx.link(OPENNEURO_DOI, has_nifti=None),
+        fx.link(UNSORTED),
     )
 
     assert _stored_links(summary["base_study_id"]) == {
@@ -2731,12 +2731,12 @@ def test_an_upload_stores_the_papers_links_with_their_host_and_domain(session):
 
 
 def test_a_listing_replaces_the_pipeline_links_and_no_listing_keeps_them(session):
-    summary = _upload_links({"url": OSF}, {"url": NEUROVAULT})
+    summary = _upload_links(fx.link(OSF), fx.link(NEUROVAULT))
     base_study_id = summary["base_study_id"]
     session.add(BaseStudyLink.of(base_study_id, GITHUB, "user"))
     session.commit()
 
-    _upload_links({"url": OSF, "has_nifti": False}, {"url": GITHUB, "has_nifti": True})
+    _upload_links(fx.link(OSF, has_nifti=False), fx.link(GITHUB, has_nifti=True))
     kept = {
         OSF: ("files.osf.io", "osf.io", False, "pipeline"),
         # A link a user gave stays theirs; the pipeline says whether it holds NIfTI.
@@ -2753,7 +2753,7 @@ def test_a_listing_replaces_the_pipeline_links_and_no_listing_keeps_them(session
 
 def test_a_link_that_is_not_an_http_url_is_refused(session):
     paper = fx.parsed_paper()
-    paper["links"] = [{"url": OSF}, {"url": "mailto:author@example.org"}]
+    paper["links"] = [fx.link(OSF), fx.link("mailto:author@example.org")]
 
     assert _refusal({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper}) == {
         ("SCHEMA", "parsed-paper/links/1/url")
@@ -2776,7 +2776,7 @@ def test_a_links_repository_comes_from_the_seeded_link_domains(session):
         ("doi.org", "DOI", "doi_prefix"),
     }
     urls = (OSF, OPENNEURO_DOI, NEUROVAULT, ZENODO_DOI, NOT_ZENODO_DOI, GITHUB, UNSORTED)
-    _upload_links(*({"url": url} for url in urls))
+    _upload_links(*(fx.link(url) for url in urls))
 
     found = {}
     for url, repository, kind in session.execute(

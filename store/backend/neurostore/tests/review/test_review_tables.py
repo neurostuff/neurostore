@@ -816,14 +816,16 @@ def test_the_migrated_link_tables_and_licence_columns_match_the_models(db):
 
 
 @pytest.mark.parametrize("table", ["base_studies", "fulltexts"])
-def test_a_licence_is_one_of_study_schemas_spelled_as_the_documents_spell_it(session, table):
+def test_a_licence_is_one_of_study_schemas_in_the_one_spelling_documents_use(session, table):
     definition = session.scalar(
         sa.text(
             "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = :name"
         ),
         {"name": f"ck_{table}_license"},
     )
-    assert set(re.findall(r"'([^']+)'::", definition)) == {member.value for member in LicenseId}
+    checked = set(re.findall(r"'([^']+)'::", definition))
+    # The column stores member names; a document's license_id is a member's value.
+    assert checked == {member.value for member in LicenseId} == {m.name for m in LicenseId}
 
 
 def test_the_links_migration_goes_down_and_up_over_a_text_of_any_source(session, paper):

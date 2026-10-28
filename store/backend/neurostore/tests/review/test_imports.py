@@ -245,7 +245,7 @@ def test_the_fulltext_keeps_the_text_copy_of_its_parsed_paper(session, make_user
     imports.import_layout(session, tmp_path, user_id=REVIEWER)
 
     fulltext = session.scalar(sa.select(Fulltext))
-    assert (fulltext.text_copy, fulltext.license) == (paper["text_copy"], "all-rights-reserved")
+    assert (fulltext.text_copy, fulltext.license) == (paper["text_copy"], "all_rights_reserved")
 
 
 def test_a_second_import_of_the_same_files_skips_with_the_same_source(

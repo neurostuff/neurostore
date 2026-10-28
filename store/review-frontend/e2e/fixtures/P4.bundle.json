@@ -31,7 +31,7 @@
             "version": "vor",
             "access": "public",
             "license": {
-                "license_id": "cc-by",
+                "license_id": "cc_by",
                 "determination": "stated",
                 "stated_by": "jats",
                 "stated_as": "https://creativecommons.org/licenses/by/4.0/"
@@ -42,7 +42,7 @@
         "bibliography": {
             "title": "A paper",
             "license": {
-                "license_id": "all-rights-reserved",
+                "license_id": "all_rights_reserved",
                 "determination": "assumed"
             }
         },
