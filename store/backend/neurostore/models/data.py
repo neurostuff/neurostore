@@ -214,6 +214,28 @@ def _identifiers_of(kind, scheme):
     return property(read)
 
 
+#: The fields of ``ix_base_study_search``, as written in its migration. Text is
+#: split on every non-alphanumeric character and stemmed (English Snowball); the
+#: filter strings are kept whole. ``id_order``, a 64-bit hash of the id, breaks
+#: ties between equal scores: the index sorts on a number far faster than on a
+#: string.
+SEARCH_INDEX_FIELDS = (
+    "id",
+    "name::pdb.simple('stemmer=english')",
+    "description::pdb.simple('stemmer=english')",
+    "is_active",
+    "public",
+    "user_id::pdb.literal",
+    "level::pdb.literal",
+    "has_coordinates",
+    "has_images",
+    "is_oa",
+    "year",
+    "fulltext_id::pdb.literal",
+    "hashtextextended(id, 0)::pdb.alias('id_order')",
+)
+
+
 class BaseStudy(BaseMixin, db.Model):
     __tablename__ = "base_studies"
     name = db.Column(db.String)
@@ -237,18 +259,15 @@ class BaseStudy(BaseMixin, db.Model):
     #: Legacy; fulltexts holds the reviewed text (docs/adr/0005-fulltexts-table.md).
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
-    fulltext_id = db.Column(
-        db.Text,
-        db.ForeignKey(
-            "fulltexts.id",
-            name="fk_base_studies_fulltext_id",
-            ondelete="SET NULL",
-            use_alter=True,
-        ),
-        nullable=True,
-        index=True,
+    # One of its own full texts: see fk_base_studies_fulltext_id below.
+    fulltext_id = db.Column(db.Text, nullable=True, index=True)
+    fulltext = relationship(
+        "Fulltext",
+        primaryjoin="BaseStudy.fulltext_id == Fulltext.id",
+        foreign_keys=[fulltext_id],
+        lazy="raise",
+        viewonly=True,
     )
-    fulltext = relationship("Fulltext", foreign_keys=[fulltext_id], lazy="raise", viewonly=True)
     is_active = db.Column(
         db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
     )
@@ -262,27 +281,6 @@ class BaseStudy(BaseMixin, db.Model):
     # row, so a scan is what the planner uses.
     is_retracted = db.Column(db.Boolean, nullable=True)
     retraction_notice = db.Column(JSONB, nullable=True)
-    _ts_vector = db.Column(
-        "__ts_vector__",
-        TSVector(),
-        db.Computed(
-            """
-            setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
-            setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-            setweight(to_tsvector('english',
-                coalesce(
-                    CASE
-                        WHEN pubget_fulltext IS NOT NULL THEN pubget_fulltext
-                        ELSE ace_fulltext
-                    END,
-                    ''
-                )
-            ), 'C')
-            """,
-            persisted=True,
-        ),
-    )
-
     user = relationship("User", backref=backref("base_studies", passive_deletes=True))
     # retrieve versions of same study
     versions = relationship(
@@ -326,7 +324,30 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
-        sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
+        # The preferred full text is one of the base study's own. Deferred, so a
+        # full text can move to another base study and both be re-pointed in
+        # one transaction; a delete clears only fulltext_id.
+        sa.ForeignKeyConstraint(
+            ["fulltext_id", "id"],
+            ["fulltexts.id", "fulltexts.base_study_id"],
+            name="fk_base_studies_fulltext_id",
+            ondelete="SET NULL (fulltext_id)",
+            deferrable=True,
+            initially="DEFERRED",
+            use_alter=True,
+        ),
+        # Text search (ParadeDB's BM25 index). The scalar fields are the list's
+        # filters, so they are applied inside the index scan.
+        sa.Index(
+            "ix_base_study_search",
+            *(sa.text(f"({field})") for field in SEARCH_INDEX_FIELDS),
+            postgresql_using="paradedb",
+            postgresql_with={
+                "target_segment_count": 1,
+                "mutable_segment_rows": 0,
+                "background_layer_sizes": "'16kB, 64kB, 256kB, 1MB, 4MB, 16MB, 64MB, 256MB, 1GB'",
+            },
+        ),
     )
 
     preprint_dois = _identifiers_of("preprint", "doi")

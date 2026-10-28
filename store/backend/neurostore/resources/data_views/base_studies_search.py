@@ -39,16 +39,37 @@ class BaseStudySearchService:
         self.apply_map_type_filter = apply_map_type_filter
 
     def apply(self, query, args):
-        query = query.filter(BaseStudy.is_active.is_(True))
+        query = query.filter(*self.column_filters(BaseStudy, args))
         query = self._apply_semantic_search(query, args)
         query = self._apply_spatial_filter(query, args)
         query = self._apply_neurovault_filter(query, args)
-        query = self._apply_data_type_filter(query, args.get("data_type"))
         query = self.apply_map_type_filter(query, BaseStudy, args.get("map_type"))
-        query = self._apply_open_access_filter(query, args.get("is_oa"))
-        query = self._apply_year_range_filter(query, args)
-        query = self._apply_level_filter(query, args.get("level"))
         return self._apply_pipeline_filters(query, args)
+
+    def column_filters(self, entity, args):
+        """The filters on a base study's own columns, written against ``entity``:
+        BaseStudy, or the copy of those columns on its preferred full text."""
+        return [
+            entity.is_active.is_(True),
+            *self._data_type_filters(entity, args.get("data_type")),
+            *self._open_access_filters(entity, args.get("is_oa")),
+            *self._year_range_filters(entity, args),
+            *self._level_filters(entity, args.get("level")),
+        ]
+
+    def has_other_filters(self, args):
+        """Whether the request filters on anything but ``column_filters``: each
+        test is the one its filter below applies."""
+        return any(
+            (
+                bool(args.get("semantic_search")),
+                # Applied when all four are given, refused when only some are.
+                any(args.get(name) is not None for name in ("x", "y", "z", "radius")),
+                bool(args.get("neurovault_id")),
+                bool(args.get("map_type")),
+                bool(self._collect_pipeline_filters(args)[0]),
+            )
+        )
 
     def _apply_semantic_search(self, query, args):
         semantic_search = args.get("semantic_search")
@@ -214,40 +235,34 @@ class BaseStudySearchService:
         )
         return query.filter(neurovault_filter)
 
-    def _apply_data_type_filter(self, query, data_type):
+    def _data_type_filters(self, entity, data_type):
         if data_type == "coordinate":
-            return query.filter_by(has_coordinates=True)
+            return [entity.has_coordinates.is_(True)]
         if data_type == "image":
-            return query.filter_by(has_images=True)
+            return [entity.has_images.is_(True)]
         if data_type == "both":
-            return query.filter(
-                sae.or_(
-                    BaseStudy.has_coordinates.is_(True),
-                    BaseStudy.has_images.is_(True),
-                )
-            )
-        return query
+            return [
+                sae.or_(entity.has_coordinates.is_(True), entity.has_images.is_(True))
+            ]
+        return []
 
-    def _apply_open_access_filter(self, query, is_oa):
+    def _open_access_filters(self, entity, is_oa):
         if is_oa is None:
-            return query
+            return []
         if not isinstance(is_oa, bool):
             abort_validation("is_oa must be a boolean.")
-        return query.filter(BaseStudy.is_oa.is_(is_oa))
+        return [entity.is_oa.is_(is_oa)]
 
-    def _apply_year_range_filter(self, query, args):
-        year_min = args.get("year_min")
-        year_max = args.get("year_max")
-        if year_min is not None:
-            query = query.filter(BaseStudy.year >= int(year_min))
-        if year_max is not None:
-            query = query.filter(BaseStudy.year <= int(year_max))
-        return query
+    def _year_range_filters(self, entity, args):
+        filters = []
+        if args.get("year_min") is not None:
+            filters.append(entity.year >= int(args["year_min"]))
+        if args.get("year_max") is not None:
+            filters.append(entity.year <= int(args["year_max"]))
+        return filters
 
-    def _apply_level_filter(self, query, level):
-        if level:
-            return query.filter(BaseStudy.level == level)
-        return query
+    def _level_filters(self, entity, level):
+        return [entity.level == level] if level else []
 
     def _apply_pipeline_filters(self, query, args):
         pipeline_filters, invalid_filters = self._collect_pipeline_filters(args)

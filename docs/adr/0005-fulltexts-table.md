@@ -10,7 +10,7 @@ Evidence offsets index one exact rendering of a paper's text. neurostore kept no
 
 `fulltexts` (`store/backend/neurostore/models/fulltext.py`) holds one row per rendering, unique per `(base_study_id, sha256)`, with `source` and `source_version` from the ingestion workflow. A review source points at the row whose sha256 its record carries, and reaches its base study only through that row, so two paths cannot disagree.
 
-`BaseStudy.fulltext_id` points at the preferred row for everyone else. The preference lives in code (`FULLTEXT_SOURCE_PREFERENCE`): publisher XML, then ace, then pdf, newest first, then the smaller id. Mapper listeners (`models/fulltext_listeners.py`) recompute the pointer only when a row is added, removed or moved to another base study. The relationship is `lazy="raise"` and view-only, so listing or serializing base studies cannot load text.
+`BaseStudy.fulltext_id` points at the preferred row for everyone else. Its key, `(fulltext_id, id) → fulltexts(id, base_study_id)`, makes that row one of the base study's own; it is checked at commit, so a full text can move to another base study and both pointers be refreshed in one transaction, and deleting the row clears only `fulltext_id`. The preference lives in code (`FULLTEXT_SOURCE_PREFERENCE`): publisher XML, then ace, then pdf, newest first, then the smaller id. Mapper listeners (`models/fulltext_listeners.py`) recompute the pointer only when a row is added, removed or moved to another base study. The relationship is `lazy="raise"` and view-only, so listing or serializing base studies cannot load text.
 
 ## Consequences
 

@@ -7,7 +7,6 @@ import re
 from copy import deepcopy
 
 import sqlalchemy as sa
-import sqlalchemy.sql.expression as sae
 from connexion import request
 from marshmallow import ValidationError
 from sqlalchemy import func
@@ -40,11 +39,12 @@ from neurostore.resources.mutation_core import (
     MutationContext,
     MutationExecutor,
 )
+from neurostore.resources.text_search import apply_search_predicate, tsvector_search
 from neurostore.resources.utils import (
-    apply_search_predicate,
     get_current_user,
     is_user_admin,
     sortable_columns,
+    visibility_filters,
 )
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
@@ -518,6 +518,9 @@ class ListView(BaseView):
     def view_search(self, q, args):
         return q
 
+    def text_search(self, args):
+        return tsvector_search(self._model._ts_vector)
+
     def join_tables(self, q, args):
         if self._model is User:
             return q
@@ -564,13 +567,7 @@ class ListView(BaseView):
 
         # query items that are public and/or you own them
         if hasattr(m, "public"):
-            current_user = get_current_user()
-            is_admin = is_user_admin(current_user)
-            # Admins can see all records, others see public or their own
-            if not is_admin:
-                q = q.filter(
-                    sae.or_(m.public == True, m.user == current_user)  # noqa E712
-                )
+            q = q.filter(*visibility_filters(m))
 
         # Columns are resolved only for the arguments given: some views list
         # a field or full-text field their model does not have.
@@ -578,11 +575,11 @@ class ListView(BaseView):
             getattr(m, f): args[f] for f in self._search_fields if args.get(f) is not None
         }
         use_fulltext = args["search"] is not None and self._fulltext_fields
-        q, rank_col = apply_search_predicate(
+        q, text_match = apply_search_predicate(
             q,
             args["search"],
             field_filters,
-            ts_vector=m._ts_vector if use_fulltext else None,
+            text_search=self.text_search(args) if use_fulltext else None,
             pmid_match=self.pmid_match(m, args["search"]),
         )
 
@@ -592,12 +589,15 @@ class ListView(BaseView):
         desc = args["desc"]
         desc = {False: "asc", True: "desc"}[desc]
 
-        # If no sort specified, use ts_rank for search queries, otherwise created_at
+        # If no sort specified, use relevance for search queries, otherwise created_at
         sort_col = args["sort"]
+        paged = None
         if sort_col is None:
-            if rank_col is not None:
-                rank_sort = rank_col.desc() if desc == "desc" else rank_col.asc()
-                q = q.order_by(rank_sort, m.id.desc())
+            if text_match is not None and text_match.paged is not None:
+                paged = text_match.paged
+            elif text_match is not None:
+                ranks = (getattr(rank, desc)() for rank in text_match.ranks)
+                q = q.order_by(*ranks, text_match.tiebreak.desc())
             else:
                 # Default to created_at when no search
                 q = q.order_by(m.created_at.desc(), m.id.desc())
@@ -611,7 +611,12 @@ class ListView(BaseView):
                 attr = func.lower(attr)
             q = q.order_by(getattr(attr, desc)(), m.id.desc())
 
-        if args["paginate"]:
+        if paged is not None:
+            if args["paginate"]:
+                records, total = paged(q, desc, args["page"], args["page_size"])
+            else:
+                records, total = paged(q, desc, None, None)
+        elif args["paginate"]:
             pagination_query = q.paginate(
                 page=args["page"],
                 per_page=args["page_size"],

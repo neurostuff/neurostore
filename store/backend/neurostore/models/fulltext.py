@@ -23,6 +23,27 @@ FULLTEXT_SOURCE_PREFERENCE = {
 }
 
 
+#: The fields of ``ix_fulltext_search``, written as alembic reflects the migrated
+#: index, so the two compare equal: the text, the copied title, abstract and
+#: filter columns, and ``id_order``, the hash of the base study's id that breaks
+#: ties as in ix_base_study_search.
+FULLTEXT_SEARCH_INDEX_FIELDS = (
+    "id",
+    sa.text("(text::pdb.simple('stemmer=english'))"),
+    sa.text("(name::pdb.simple('stemmer=english'))"),
+    sa.text("(description::pdb.simple('stemmer=english'))"),
+    "is_active",
+    "public",
+    sa.text("(user_id::pdb.literal)"),
+    sa.text("(level::pdb.literal)"),
+    "has_coordinates",
+    "has_images",
+    "is_oa",
+    "year",
+    sa.text("(hashtextextended(base_study_id, 0::bigint)::pdb.alias('alias=id_order'))"),
+)
+
+
 class Fulltext(BaseMixin, db.Model):
     """One processed full text of a paper, as an ingestion workflow produced it."""
 
@@ -37,11 +58,41 @@ class Fulltext(BaseMixin, db.Model):
     text = db.Column(db.Text, nullable=False)
     text_copy = db.Column(JSONB)
 
+    # A copy of the base study's own searched and filtered columns, held only
+    # by its preferred full text (the row base_studies.fulltext_id names) and
+    # NULL on every other row, so that a full-text search runs inside one
+    # index. Triggers keep it (see the migration that adds it); nothing else
+    # writes it.
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean)
+    public = db.Column(db.Boolean)
+    user_id = db.Column(db.Text)
+    level = db.Column(db.Text)
+    has_coordinates = db.Column(db.Boolean)
+    has_images = db.Column(db.Boolean)
+    is_oa = db.Column(db.Boolean)
+    year = db.Column(db.Integer)
+
     __table_args__ = (
         sa.UniqueConstraint("base_study_id", "sha256", name="uq_fulltexts_base_study_sha256"),
+        # What base_studies.fk_base_studies_fulltext_id refers to.
+        sa.UniqueConstraint("id", "base_study_id", name="uq_fulltexts_id_base_study_id"),
         sa.Index("ix_fulltexts_base_study_created", "base_study_id", "created_at"),
         sa.CheckConstraint(
             source.in_(FULLTEXT_SOURCE_PREFERENCE), name="ck_fulltexts_source"
+        ),
+        # Full-text search (ParadeDB's BM25 index), with ix_base_study_search's
+        # tokenizer and the same layout.
+        sa.Index(
+            "ix_fulltext_search",
+            *FULLTEXT_SEARCH_INDEX_FIELDS,
+            postgresql_using="paradedb",
+            postgresql_with={
+                "target_segment_count": "1",
+                "mutable_segment_rows": "0",
+                "background_layer_sizes": "'16kB, 64kB, 256kB, 1MB, 4MB, 16MB, 64MB, 256MB, 1GB'",
+            },
         ),
     )
 

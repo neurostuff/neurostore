@@ -7,13 +7,10 @@ import re
 import sqlalchemy as sa
 from connexion.context import context
 from pgvector.sqlalchemy import Vector
-from psycopg2 import errors
-from sqlalchemy import func
 
 from neurostore import models, schemas
 from neurostore.encryption import EncryptedText
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import abort_validation
 from neurostore.models.migration_types import TSVector
 from neurostore.resources.singular import singularize
 
@@ -94,6 +91,19 @@ def _user_role_names(user):
     return role_names
 
 
+def visibility_filters(entity):
+    """What the current user may see of ``entity``'s rows: public ones and
+    their own, or everything for an admin. ``entity`` has ``public`` and
+    ``user_id`` columns."""
+    current_user = get_current_user()
+    if is_user_admin(current_user):
+        return []
+    owner = current_user.external_id if current_user else None
+    # Column on the left: ParadeDB applies a filter written this way inside
+    # its index scan, and `m.user == current_user` renders the other way round.
+    return [sa.or_(entity.public.is_(True), entity.user_id == owner)]
+
+
 def view_maker(cls):
     """Create a View class with model and schema attributes"""
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
@@ -114,279 +124,6 @@ def view_maker(cls):
     return ClassView
 
 
-def validate_search_query(query: str) -> bool:
-    """
-    Validate a search query string.
-
-    Args:
-        query (str): The query string to validate.
-
-    Returns:
-        bool: True if the query is valid, False otherwise.
-    """
-    query = query.upper()
-
-    # Check for valid parentheses
-    if not validate_parentheses(query):
-        raise errors.SyntaxError("Unmatched parentheses")
-
-    # Check for valid query end
-    if not validate_query_end(query):
-        raise errors.SyntaxError("Query cannot end with an operator")
-
-    if not validate_multiple_operators(query):
-        raise errors.SyntaxError("Consecutive operators are not allowed")
-
-    return True
-
-
-def validate_parentheses(query: str) -> bool:
-    """
-    Validate the parentheses in a query string.
-
-    Args:
-        query (str): The query string to validate.
-
-    Returns:
-        bool: True if parentheses are valid, False otherwise.
-    """
-    stack = []
-    for char in query:
-        if char == "(":
-            stack.append(char)
-        elif char == ")":
-            if not stack:
-                return False  # Unmatched closing parenthesis
-            stack.pop()
-    return not stack  # Ensure all opening parentheses are closed
-
-
-def validate_query_end(query: str) -> bool:
-    """Query should not end with an operator"""
-    operators = ("AND", "OR", "NOT", "&", "|", "&!")
-
-    if query.strip().split(" ")[-1] in operators:
-        return False
-    return True
-
-
-def validate_multiple_operators(query: str) -> bool:
-    """Validate that there are no consecutive operators in a query."""
-    operators = ("AND", "OR", "NOT", "&", "|", "&!")
-    query = query.strip().split(" ")
-    for i in range(len(query) - 1):
-        if query[i] in operators and query[i + 1] in operators:
-            return False
-    return True
-
-
-def count_chars(target, query: str) -> int:
-    """Count the number of chars in a query string.
-    Excluding those in quoted phrases."""
-    count = 0
-    in_quotes = False
-    for char in query:
-        if char == '"':
-            in_quotes = not in_quotes
-        if char == target and not in_quotes:
-            count += 1
-    return count
-
-
-def process_group(group_query: str) -> str:
-    """Process a group of tokens (with or without parentheses)
-
-    Args:
-        group_query (str): The query string to process.
-
-    Returns:
-        str: The processed query string with proper operators.
-    """
-
-    def parse_parentheses(text):
-        """Parse text into a list of groups and terms"""
-        groups = []
-        current = []
-        depth = 0
-        buffer = ""
-
-        for char in text:
-            if char == "(":
-                negated_group = False
-                if depth == 0 and buffer:
-                    pending = buffer.strip()
-                    # A "-" immediately preceding a group negates the whole group
-                    if pending.endswith("-"):
-                        negated_group = True
-                        pending = pending.rstrip("-").strip()
-                    if pending:
-                        current.append(pending)
-                    buffer = ""
-                depth += 1
-                buffer += "-(" if negated_group else char
-            elif char == ")":
-                depth -= 1
-                buffer += char
-                if depth == 0:
-                    current.append(buffer)
-                    buffer = ""
-            else:
-                buffer += char
-
-        if buffer:
-            current.append(buffer.strip())
-
-        for item in current:
-            if item.startswith("(") and item.endswith(")"):
-                # Recursively process nested groups
-                inner = process_group(item[1:-1])
-                if inner:
-                    groups.append(f"({inner})")
-            elif item.startswith("-(") and item.endswith(")"):
-                # Negated group: -(a OR b)
-                inner = process_group(item[2:-1])
-                if inner:
-                    groups.append(f"!({inner})")
-            else:
-                # Process non-group terms
-                parts = re.findall(r'-?"[^"]*"|-?\'[^\']*\'|\S+', item)
-                for part in parts:
-                    part = part.strip()
-                    if part:
-                        # A leading "-" negates the term (PubMed-style NOT)
-                        negate = False
-                        if part.startswith("-"):
-                            unsigned = part.lstrip("-").strip()
-                            if not unsigned:
-                                # A bare "-" carries no term to negate
-                                continue
-                            negate = True
-                            part = unsigned
-                        if part == "AND":
-                            groups.append("&")
-                        elif part == "OR":
-                            groups.append("|")
-                        elif part == "NOT":
-                            groups.append("&!")
-                        elif part.startswith('"') or part.startswith("'"):
-                            words = re.findall(r"\w+", part)
-                            if words:
-                                phrase = "<->".join(words)
-                                if negate:
-                                    phrase = (
-                                        f"!({phrase})" if len(words) > 1 else f"!{phrase}"
-                                    )
-                                groups.append(phrase)
-                        else:
-                            cleaned = re.sub(r"[\[\],;:!?@#]", "", part)
-                            if cleaned:
-                                groups.append(f"!{cleaned}" if negate else cleaned)
-
-        infix_operators = {"&", "|", "&!"}
-        result = []
-        for i, term in enumerate(groups):
-            if i > 0:
-                prev = result[-1] if result else ""
-                curr = term
-
-                # Only add operator if neither current nor previous term is an operator
-                if prev not in infix_operators and curr not in infix_operators:
-                    result.append("&")
-                elif prev in infix_operators and curr in infix_operators:
-                    # Skip consecutive operators
-                    continue
-
-            result.append(term)
-
-        # A group cannot open with an infix operator (e.g. a leading "NOT");
-        # rewrite "&!" as the prefix negation "!" and drop a dangling "&"/"|".
-        if result and result[0] in infix_operators:
-            if result[0] == "&!":
-                if len(result) > 1:
-                    result = [f"!{result[1]}"] + result[2:]
-                else:
-                    result = []
-            else:
-                result = result[1:]
-
-        return " ".join(result)
-
-    return parse_parentheses(group_query)
-
-
-def tsquery_has_positive_term(tsquery: str) -> bool:
-    """Whether a tsquery has a term an index can narrow on.
-
-    Postgres cannot use a GIN index to satisfy a negation, so a query made only
-    of negations degrades to a sequential scan that matches nearly every row.
-    """
-    i = 0
-    length = len(tsquery)
-
-    def skip_group(start: int) -> int:
-        depth = 0
-        pos = start
-        while pos < length:
-            if tsquery[pos] == "(":
-                depth += 1
-            elif tsquery[pos] == ")":
-                depth -= 1
-                if depth == 0:
-                    return pos + 1
-            pos += 1
-        return pos
-
-    def skip_negated(start: int) -> int:
-        pos = start
-        while pos < length and tsquery[pos].isspace():
-            pos += 1
-        if pos < length and tsquery[pos] == "(":
-            return skip_group(pos)
-        while pos < length and not tsquery[pos].isspace():
-            pos += 1
-        return pos
-
-    while i < length:
-        char = tsquery[i]
-        if char.isspace():
-            i += 1
-        elif char == "!":
-            i = skip_negated(i + 1)
-        elif char == "&" and tsquery[i : i + 2] == "&!":  # noqa: E203
-            i = skip_negated(i + 2)
-        elif char in "&|":
-            i += 1
-        elif char == "(":
-            end = skip_group(i)
-            if tsquery_has_positive_term(tsquery[i + 1 : end - 1]):  # noqa: E203
-                return True
-            i = end
-        else:
-            return True
-    return False
-
-
-def pubmed_to_tsquery(query: str) -> str:
-    """
-    Convert a PubMed-like search query to PostgreSQL tsquery format,
-    grouping both single-quoted and double-quoted text with the <-> operator
-    for proximity search.
-
-    Additionally, automatically adds & between non-explicitly connected terms
-    and handles NOT terms.
-
-    Args:
-        query (str): The search query.
-
-    Returns:
-        str: The PostgreSQL tsquery equivalent.
-    """
-    query = query.upper()  # Ensure uniformity
-    result = process_group(query)
-
-    return result
-
-
 # Columns with no meaningful order, and the legacy full-text columns, which are
 # large enough that sorting on them would be a scan of the whole text.
 _UNSORTABLE_TYPES = (sa.JSON, TSVector, Vector, EncryptedText)
@@ -401,46 +138,3 @@ def sortable_columns(model):
         if not isinstance(attr.columns[0].type, _UNSORTABLE_TYPES)
         and attr.key not in _UNSORTABLE_NAMES
     }
-
-
-def apply_search_predicate(q, search, field_filters, *, ts_vector, pmid_match):
-    """Narrow ``q`` by a ``search`` string and per-column ILIKE filters.
-
-    ``ts_vector`` is the full-text column to rank and match against, or None
-    when the model has none (a non-numeric ``search`` is then ignored).
-    ``pmid_match`` is the clause an all-digits ``search`` must satisfy, or None
-    when the model has no pmid (such a search is then ignored).
-    ``field_filters`` maps columns to the substring each must contain; None
-    values are skipped.
-
-    Returns ``(q, rank_col)``; ``rank_col`` is the ts_rank column when a
-    full-text search was applied, else None.
-    """
-    rank_col = None
-
-    # temporary fix for pmid search
-    if search is not None and search.isdigit():
-        if pmid_match is not None:
-            q = q.filter(pmid_match)
-    elif search is not None and ts_vector is not None:
-        try:
-            validate_search_query(search)
-        except errors.SyntaxError as e:
-            abort_validation(e.args[0])
-        tsquery_string = pubmed_to_tsquery(search)
-        if not tsquery_has_positive_term(tsquery_string):
-            # Postgres cannot narrow a GIN index on a negation, so this
-            # would be a sequential scan returning nearly the whole corpus.
-            abort_validation(
-                "A search must include at least one term to match; a query "
-                "of only negations matches nearly every record."
-            )
-        tsquery = func.to_tsquery("english", tsquery_string)
-        rank_col = func.ts_rank(ts_vector, tsquery).label("rank")
-        q = q.filter(ts_vector.op("@@")(tsquery))
-
-    for column, value in field_filters.items():
-        if value is not None:
-            q = q.filter(column.ilike(f"%{value}%"))
-
-    return q, rank_col

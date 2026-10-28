@@ -40,6 +40,7 @@ STABLE_ID_REVISION = "f2b4d6e8a0c3"
 TEXT_COPY_REVISION = "a3c5e7f9b1d4"
 CORRESPONDING_EMAILS_REVISION = "c7e9a1b3d5f8"
 IDENTIFIERS_REVISION = "a8e1c4d7b2f6"
+SEARCH_INDEX_REVISION = "d5f7a9c1e3b5"
 MERGED_FROM_REVISION = "d4e6f8a0b2c4"
 AUTHORS_REVISION = "e7a9c1d3f5b8"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
@@ -222,12 +223,24 @@ def test_fulltexts_schema_and_base_study_pointer(session):
     indexed = [i["column_names"] for i in inspector.get_indexes("fulltexts")]
     assert ["base_study_id", "created_at"] in indexed
     assert ["base_study_id", "tier", "created_at"] not in indexed
+    # The pointer names one of the base study's own full texts.
     (fk,) = [
         fk for fk in inspector.get_foreign_keys("base_studies")
-        if fk["constrained_columns"] == ["fulltext_id"]
+        if "fulltext_id" in fk["constrained_columns"]
     ]
+    assert fk["name"] == "fk_base_studies_fulltext_id"
+    assert fk["constrained_columns"] == ["fulltext_id", "id"]
     assert fk["referred_table"] == "fulltexts"
-    assert fk["options"]["ondelete"] == "SET NULL"
+    assert fk["referred_columns"] == ["id", "base_study_id"]
+    assert fk["options"]["deferrable"] is True
+    assert fk["options"]["initially"] == "DEFERRED"
+    (definition,) = session.execute(
+        sa.text(
+            "SELECT pg_get_constraintdef(oid) FROM pg_constraint "
+            "WHERE conname = 'fk_base_studies_fulltext_id'"
+        )
+    ).scalars()
+    assert "ON DELETE SET NULL (fulltext_id)" in definition
     nullable = {c["name"]: c["nullable"] for c in inspector.get_columns("base_studies")}
     assert nullable["fulltext_id"] is True
 
@@ -642,9 +655,10 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_authors_migration_is_the_only_head():
+def test_the_search_index_migration_is_the_only_head():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [AUTHORS_REVISION]
+    assert script.get_heads() == [SEARCH_INDEX_REVISION]
+    assert script.get_revision(SEARCH_INDEX_REVISION).down_revision == AUTHORS_REVISION
     assert script.get_revision(AUTHORS_REVISION).down_revision == IDENTIFIERS_REVISION
     assert script.get_revision(IDENTIFIERS_REVISION).down_revision == MERGED_FROM_REVISION
     assert script.get_revision(MERGED_FROM_REVISION).down_revision == (

@@ -2,6 +2,7 @@ import logging
 
 from connexion import request
 import sqlalchemy as sa
+from sqlalchemy import func
 from marshmallow import fields as marshmallow_fields
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, raiseload, selectinload, undefer
@@ -32,6 +33,7 @@ from neurostore.models import (
     User,
 )
 from neurostore.models.data import BaseStudy
+from neurostore.models.fulltext import Fulltext
 from neurostore.resources.base import (
     ListView,
     ObjectView,
@@ -49,7 +51,8 @@ from neurostore.resources.data_views.common import (
     LIST_NESTED_ARGS,
     apply_map_type_filter,
 )
-from neurostore.resources.utils import view_maker
+from neurostore.resources.text_search import TextMatch, bm25_clause, bm25_search
+from neurostore.resources.utils import view_maker, visibility_filters
 from neurostore.review.app.service import review_source_count
 from neurostore.schemas.data import (
     ArticleIdentifiersSchema,
@@ -72,6 +75,18 @@ class BaseStudyBulkPostResponseSchema(BaseDataSchema, ArticleIdentifiersSchema):
     year = marshmallow_fields.Integer(allow_none=True)
     level = marshmallow_fields.String(allow_none=True)
     versions = StringOrNested(StudySchema, many=True)
+
+
+# The fields text search matches, with their boosts: a title match counts
+# most, then the abstract (ix_base_study_search). With full text, the text of
+# the paper's preferred full text as well, at a quarter of an abstract's weight
+# (ix_fulltext_search, which also holds copies of the title and abstract).
+TITLE_AND_ABSTRACT = ((BaseStudy.name, 3), (BaseStudy.description, 2))
+TITLE_ABSTRACT_AND_TEXT = (
+    (Fulltext.name, 3),
+    (Fulltext.description, 2),
+    (Fulltext.text, 0.5),
+)
 
 
 @view_maker
@@ -100,6 +115,7 @@ class BaseStudiesView(ObjectView, ListView):
         "z": fields.Float(required=False, allow_none=True),
         "radius": fields.Float(required=False, allow_none=True),
         "neurovault_id": fields.String(load_default=None),
+        "search_full_text": fields.Boolean(load_default=False),
         **LIST_NESTED_ARGS,
     }
     _multi_search = ("name", "description")
@@ -218,6 +234,102 @@ class BaseStudiesView(ObjectView, ListView):
 
     def view_search(self, q, args):
         return self.search_service.apply(q, args)
+
+    def text_search(self, args):
+        # Starting parallel workers costs more than the index scan they share.
+        db.session.execute(sa.text("SET LOCAL max_parallel_workers_per_gather = 0"))
+        if args["search_full_text"]:
+            return lambda tsquery_string: self._full_text_match(tsquery_string, args)
+        return bm25_search(BaseStudy.id, TITLE_AND_ABSTRACT)
+
+    def _full_text_match(self, tsquery_string, args):
+        """Every word must match the title, the abstract or the text of the
+        paper's preferred full text, all in ix_fulltext_search; a paper with
+        no full text matches on its title and abstract in ix_base_study_search.
+        A page merges the two indexes' best ``offset + limit`` matches by
+        score, so each index answers with one Top K scan and one count."""
+        tiebreak = func.hashtextextended(BaseStudy.id, 0)
+        title_or_abstract = bm25_clause(tsquery_string, TITLE_AND_ABSTRACT)
+        if title_or_abstract is None:
+            return TextMatch(lambda q: q.filter(sa.false()), (), tiebreak)
+        any_field = bm25_clause(tsquery_string, TITLE_ABSTRACT_AND_TEXT)
+        no_text = BaseStudy.fulltext_id.is_(None)
+
+        if args["sort"] is not None:
+            matches = sa.union(
+                sa.select(BaseStudy.id).where(title_or_abstract, no_text),
+                # Only the preferred full text holds the copy, and is_active is
+                # never NULL on a base study.
+                sa.select(Fulltext.base_study_id).where(
+                    any_field, Fulltext.is_active.isnot(None)
+                ),
+            )
+            return TextMatch(
+                lambda q: q.filter(BaseStudy.id.in_(matches)), (), tiebreak
+            )
+
+        def paged(q, direction, page, per_page):
+            if page is not None and (page < 1 or per_page < 1):
+                # As every other list answers it.
+                return [], 0
+            without_text = q.filter(title_or_abstract, no_text)
+            # The column filters hold only on the preferred full text, the one
+            # row with a copy.
+            with_text = [
+                any_field,
+                *visibility_filters(Fulltext),
+                *self.search_service.column_filters(Fulltext, args),
+            ]
+            if self._filters_beyond_the_copy(args):
+                with_text.append(
+                    Fulltext.base_study_id.in_(
+                        q.with_entities(BaseStudy.id).order_by(None).statement
+                    )
+                )
+            total = without_text.order_by(None).count() + db.session.scalar(
+                sa.select(func.count()).select_from(Fulltext).where(*with_text)
+            )
+            limit = None if page is None else page * per_page
+
+            score = func.pdb.score
+            both = sa.union_all(
+                sa.select(
+                    Fulltext.base_study_id.label("id"),
+                    score(Fulltext.id).label("score"),
+                    func.hashtextextended(Fulltext.base_study_id, 0).label("tiebreak"),
+                )
+                .where(*with_text)
+                .order_by(
+                    getattr(score(Fulltext.id), direction)(),
+                    func.hashtextextended(Fulltext.base_study_id, 0).desc(),
+                )
+                .limit(limit),
+                without_text.with_entities(
+                    BaseStudy.id.label("id"),
+                    score(BaseStudy.id).label("score"),
+                    tiebreak.label("tiebreak"),
+                )
+                .order_by(None)
+                .order_by(getattr(score(BaseStudy.id), direction)(), tiebreak.desc())
+                .limit(limit)
+                .statement,
+            ).subquery()
+            merged = sa.select(both.c.id).order_by(
+                getattr(both.c.score, direction)(), both.c.tiebreak.desc()
+            )
+            if page is not None:
+                merged = merged.offset((page - 1) * per_page).limit(per_page)
+            return db.session.execute(merged).all(), total
+
+        return TextMatch(lambda q: q, (), tiebreak, paged)
+
+    def _filters_beyond_the_copy(self, args):
+        """Whether the request filters on more than the full text's copy holds."""
+        return (
+            bool(args.get("user_id"))
+            or any(args.get(f) is not None for f in self._search_fields)
+            or self.search_service.has_other_filters(args)
+        )
 
     def should_hydrate_records(self, args):
         return True
