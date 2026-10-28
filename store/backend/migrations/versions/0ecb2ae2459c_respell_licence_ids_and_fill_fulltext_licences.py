@@ -1,4 +1,5 @@
-"""respell the licence ids stored in study_schema documents in snake_case
+"""respell the licence ids stored in study_schema documents in snake_case, and fill
+fulltexts.license from each text's copy
 
 study_schema d2759e3 made LicenseId's values its member names (``cc_by``,
 ``all_rights_reserved``, ...) where they were hyphenated (``cc-by``,
@@ -11,8 +12,12 @@ No other stored document holds a licence: pipeline_study_results keep coordinate
 and extraction records, and the review tables' other columns extraction records,
 coordinate revisions and ops on records, none of which has one in study_schema.
 
+Then each full text with no licence takes the one its (respelled) text_copy states, as
+every full text stored since 630a3e276f54 does when it is written. A text_copy with no
+licence leaves the column NULL.
+
 The downgrade does nothing: a document stored since in the snake_case spelling cannot be
-told apart from one this rewrote.
+told apart from one this rewrote, nor a licence an upload set from one this filled.
 
 Revision ID: 0ecb2ae2459c
 Revises: 630a3e276f54
@@ -96,6 +101,11 @@ def upgrade():
             if changed:
                 bind.execute(update, changed)
             after = rows[-1].id
+
+    op.execute(
+        "UPDATE fulltexts SET license = text_copy #>> '{license,license_id}' "
+        "WHERE license IS NULL AND text_copy #>> '{license,license_id}' IS NOT NULL"
+    )
 
 
 def downgrade():

@@ -60,7 +60,7 @@ class Fulltext(BaseMixin, db.Model):
     text = db.Column(db.Text, nullable=False)
     text_copy = db.Column(JSONB)
     #: The licence of the copy the text was read from (study_schema's
-    #: ``text_copy.license.license_id``); NULL until a pipeline upload sets it.
+    #: ``text_copy.license.license_id``); NULL when the copy states none.
     license = db.Column(license_type("fulltexts"))
 
     # A copy of the base study's own searched and filtered columns, held only

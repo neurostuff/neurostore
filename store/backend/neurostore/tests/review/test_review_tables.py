@@ -966,6 +966,72 @@ def test_the_licence_spelling_migration_respells_only_license_ids_and_reruns_as_
     assert stored() == respelled
 
 
+def test_the_licence_spelling_migration_gives_each_full_text_its_copys_licence(
+    session, paper
+):
+    def fulltext(text, text_copy, license=None):
+        return Fulltext(
+            base_study_id=paper[0].id,
+            source="pmc",
+            text=text,
+            text_copy=text_copy,
+            license=license,
+        )
+
+    texts = {
+        "hyphenated": fulltext(
+            "One.", {"route": "pmc", "version": "vor", "license": licence("cc-by-nc", "cc-by")}
+        ),
+        "snake_case": fulltext(
+            "Two.", {"route": "pmc", "version": "vor", "license": licence("cc0", "cc0")}
+        ),
+        "no licence": fulltext("Three.", {"route": "pmc", "version": "vor"}),
+        "no copy": fulltext("Four.", None),
+        "set": fulltext(
+            "Five.",
+            {"route": "pmc", "version": "vor", "license": licence("cc_by", "cc-by")},
+            license="cc_by",
+        ),
+    }
+    session.add_all(texts.values())
+    session.commit()
+    ids = {name: text.id for name, text in texts.items()}
+    session.remove()
+
+    def stored():
+        """Each full text's licence, and the transaction that last wrote its row."""
+        with session.bind.connect() as conn:
+            rows = conn.execute(
+                sa.text("SELECT id, license, xmin::text AS xmin FROM fulltexts")
+            ).all()
+        by_id = {row.id: (row.license, row.xmin) for row in rows}
+        return {name: by_id[text_id] for name, text_id in ids.items()}
+
+    before = stored()
+    try:
+        service_migrations.downgrade(LINKS_REVISION)
+    finally:
+        service_migrations.upgrade("heads")
+    filled = stored()
+
+    assert {name: license for name, (license, _) in filled.items()} == {
+        "hyphenated": "cc_by_nc",
+        "snake_case": "cc0",
+        "no licence": None,
+        "no copy": None,
+        "set": "cc_by",
+    }
+    # Only the rows given a licence were written.
+    for name in ("no licence", "no copy", "set"):
+        assert filled[name][1] == before[name][1]
+
+    try:
+        service_migrations.downgrade(LINKS_REVISION)
+    finally:
+        service_migrations.upgrade("heads")
+    assert stored() == filled
+
+
 def test_the_migration_seeds_the_role_and_downgrade_removes_everything(session, paper):
     base_study, user = paper
     base_study.ace_fulltext = "ace text"
