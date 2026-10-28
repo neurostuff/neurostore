@@ -2760,6 +2760,48 @@ def test_a_link_that_is_not_an_http_url_is_refused(session):
     }
 
 
+def test_a_links_occurrences_are_accepted_and_not_stored(session):
+    summary = _upload_links(
+        fx.link(
+            OSF,
+            {"found_by": "text", "start_char": 3, "end_char": 41},
+            fx.IN_MARKUP,
+            {"found_by": "reference", "reference_id": "ref-7"},
+            has_nifti=True,
+        )
+    )
+    stored = {OSF: ("files.osf.io", "osf.io", True, "pipeline")}
+    assert _stored_links(summary["base_study_id"]) == stored
+
+    # The same link given somewhere else is the same row.
+    _upload_links(
+        fx.link(OSF, {"found_by": "supplement", "start_char": 90, "end_char": 128}, has_nifti=True)
+    )
+    assert _stored_links(summary["base_study_id"]) == stored
+    assert {column.name for column in BaseStudyLink.__table__.columns} == {
+        "id", "created_at", "updated_at",
+        "base_study_id", "url", "host", "registrable_domain", "has_nifti", "source",
+    }
+
+
+@pytest.mark.parametrize(
+    "occurrences, field",
+    [(None, "parsed-paper/links/0"), ([], "parsed-paper/links/0/occurrences")],
+    ids=["absent", "empty"],
+)
+def test_a_link_that_says_nowhere_the_paper_gives_it_is_refused(session, occurrences, field):
+    link = {"url": OSF}
+    if occurrences is not None:
+        link["occurrences"] = occurrences
+    paper = fx.parsed_paper()
+    paper["links"] = [link]
+
+    assert _refusal({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper}) == {
+        ("SCHEMA", field)
+    }
+    assert BaseStudyLink.query.count() == 0
+
+
 def test_a_links_repository_comes_from_the_seeded_link_domains(session):
     assert {(d.pattern, d.repository, d.kind) for d in LinkDomain.query} == {
         ("osf.io", "OSF", "data_repository"),
