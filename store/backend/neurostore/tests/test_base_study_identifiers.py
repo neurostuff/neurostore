@@ -493,10 +493,19 @@ async def test_a_second_candidate_of_one_pair_adds_the_ids_to_the_record_of_the_
     assert {m["scheme"] for m in matched} == {"pmid", "pmcid"}
 
 
-async def test_a_post_with_a_bad_server_is_a_validation_error(auth_client):
+async def test_a_post_keeps_a_server_study_schema_does_not_list(auth_client):
+    # An unlisted server is named by its DOI prefix (neurostore-spec#117).
+    preprint = {"doi": "10.5555/preprint.1", "server": "10.5555"}
+
+    created = await _post(auth_client, {"name": "x", "preprint_dois": [preprint]})
+
+    assert created["preprint_dois"] == [preprint]
+
+
+async def test_a_post_with_an_empty_server_is_a_validation_error(auth_client):
     response = await auth_client.post(
         "/api/base-studies/",
-        data={"name": "x", "preprint_dois": [{"doi": "10.1101/x", "server": "not-a-server"}]},
+        data={"name": "x", "preprint_dois": [{"doi": "10.1101/x", "server": ""}]},
     )
     assert response.status_code in (400, 422)
 
