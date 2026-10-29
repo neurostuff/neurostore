@@ -266,12 +266,16 @@ def db(app):
     # _db.drop_all()
 
 
+# Tables whose rows a migration seeds and no test writes, kept between tests.
+SEEDED_TABLES = {"alembic_version", "link_domains"}
+
+
 def _truncate_public_tables(db):
     inspector = sa.inspect(db.engine)
     table_names = sorted(
         table_name
         for table_name in inspector.get_table_names(schema="public")
-        if table_name != "alembic_version"
+        if table_name not in SEEDED_TABLES
     )
     if not table_names:
         return

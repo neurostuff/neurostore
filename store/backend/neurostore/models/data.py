@@ -13,6 +13,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
 from study_schema.keys import normalize_name
+from study_schema.models.paper_parse import LicenseId
 
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
@@ -31,6 +32,19 @@ STATUS_ENUM = PGEnum(
     name="status_enum",
     create_type=True,
 )
+
+
+def license_type(table):
+    """study_schema's licence categories (``LicenseId``, whose values are its member
+    names, such as ``cc_by``), as text with a CHECK named for ``table``."""
+    return sa.Enum(
+        LicenseId,
+        name=f"ck_{table}_license",
+        native_enum=False,
+        create_constraint=True,
+        length=32,
+    )
+
 
 IMAGE_VALUE_TYPE_CHECK_SQL = "value_type IS NULL OR value_type IN ({})".format(
     ", ".join(f"'{code}'" for code in MAP_TYPE_CODES)
@@ -281,6 +295,9 @@ class BaseStudy(BaseMixin, db.Model):
     # row, so a scan is what the planner uses.
     is_retracted = db.Column(db.Boolean, nullable=True)
     retraction_notice = db.Column(JSONB, nullable=True)
+    #: The paper's licence, which governs its abstract (study_schema's
+    #: ``bibliography.license.license_id``); NULL until a pipeline upload sets it.
+    license = db.Column(license_type("base_studies"), nullable=True)
     user = relationship("User", backref=backref("base_studies", passive_deletes=True))
     # retrieve versions of same study
     versions = relationship(

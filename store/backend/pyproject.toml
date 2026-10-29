@@ -43,9 +43,11 @@ dependencies = [
     "openai~=3.37",
     "tenacity~=9.2",
     "sentry-sdk~=2.73",
+    # A link's registrable domain, from the public suffix list snapshot it ships.
+    "tldextract~=5.4",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
-    # entity hashes read, pinned to study_schema main.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@bc414b3d9fe71a843fcfe8acaa80369cfb6ec060",
+    # entity hashes read, pinned to neurostuff/study_schema#55 until it merges.
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@488e1ee4eaf6221aba563a50f7d06c226cece75c",
 ]
 
 [tool.setuptools.packages.find]

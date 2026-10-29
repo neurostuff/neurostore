@@ -10,7 +10,6 @@ from sqlalchemy.exc import DBAPIError
 from neurostore.base_studies import find_base_study, searched_identifiers
 from neurostore.models import (
     ExtractionEntityLink,
-    Fulltext,
     Pipeline,
     PipelineConfig,
     PipelineStudyResult,
@@ -18,7 +17,7 @@ from neurostore.models import (
     StudyEntity,
 )
 from neurostore.models.data import PARSE_PIPELINE, generate_stable_id
-from neurostore.models.fulltext import FULLTEXT_SOURCE_PREFERENCE
+from neurostore.models.fulltext import find_or_add_fulltext
 from neurostore.review.core import coordinates, defs
 from neurostore.review.core.entities import (
     judgeable_keys,
@@ -216,7 +215,8 @@ def _build_source(
     base_study = find_base_study(session, header)
     if base_study is None:
         raise PaperRefused([_no_base_study(header)])
-    fulltext = _fulltext(session, base_study, paper)
+    # The text keeps the copy the first paper of that text gave it.
+    fulltext = find_or_add_fulltext(session, base_study.id, paper.parsed_paper, paper.text)
     bare = without_stable_ids(paper.record)
     digest = sha256_of(bare if wrapper is None else {"record": bare, **wrapper})
     existing = session.scalar(
@@ -335,28 +335,6 @@ def _positional_problems(record):
                 "as study_schema's coordinate parse keys analyses"
             )
     return problems
-
-
-def _fulltext(session, base_study, paper):
-    source = paper.parsed_paper["source"]
-    if source not in FULLTEXT_SOURCE_PREFERENCE:
-        raise PaperRefused([f"unknown text source {source!r}"])
-    digest = paper.parsed_paper["text_sha256"]
-    fulltext = session.scalar(
-        sa.select(Fulltext).where(
-            Fulltext.base_study_id == base_study.id, Fulltext.sha256 == digest
-        )
-    )
-    if fulltext is None:
-        fulltext = Fulltext(
-            base_study_id=base_study.id,
-            source=source,
-            text=paper.text,
-            text_copy=paper.parsed_paper["text_copy"],
-        )
-        session.add(fulltext)
-        session.flush()
-    return fulltext
 
 
 def _schema_versions(paper):

@@ -69,12 +69,22 @@ def text_analysis(spans, name, points=(), role="result", space="MNI"):
 
 
 CC_BY = {
-    "license_id": "cc-by",
+    "license_id": "cc_by",
     "determination": "stated",
     "stated_by": "jats",
     "stated_as": "https://creativecommons.org/licenses/by/4.0/",
 }
-ALL_RIGHTS_RESERVED = {"license_id": "all-rights-reserved", "determination": "assumed"}
+ALL_RIGHTS_RESERVED = {"license_id": "all_rights_reserved", "determination": "assumed"}
+
+
+#: A link's markup, anchored on the text's first twelve characters.
+IN_MARKUP = {"found_by": "markup", "start_char": 0, "end_char": 12}
+
+
+def link(url, *occurrences, **fields):
+    """A parsed paper's link to ``url``, given where the paper gives it (its markup unless
+    ``occurrences`` say otherwise)."""
+    return {"url": url, **fields, "occurrences": list(occurrences or [IN_MARKUP])}
 
 
 def identifiers(**ids):

@@ -14,7 +14,7 @@
   "parsed_paper": {
     "header": {
       "artifact_kind": "parsed_paper",
-      "schema_version": "0.10.0",
+      "schema_version": "0.11.0",
       "article_id": "x",
       "identifiers": {
         "pmid": "12345678",
@@ -31,7 +31,7 @@
       "version": "vor",
       "access": "public",
       "license": {
-        "license_id": "cc-by",
+        "license_id": "cc_by",
         "determination": "stated",
         "stated_by": "jats",
         "stated_as": "https://creativecommons.org/licenses/by/4.0/"
@@ -42,7 +42,7 @@
     "bibliography": {
       "title": "A paper",
       "license": {
-        "license_id": "all-rights-reserved",
+        "license_id": "all_rights_reserved",
         "determination": "assumed"
       }
     },
@@ -51,7 +51,7 @@
   "coordinate_parse": {
     "header": {
       "artifact_kind": "coordinate_parse",
-      "schema_version": "0.10.0",
+      "schema_version": "0.11.0",
       "article_id": "art-12345678",
       "identifiers": {
         "pmid": "12345678",
@@ -538,7 +538,7 @@
   "coordinate_revision": {
     "header": {
       "artifact_kind": "coordinate_parse",
-      "schema_version": "0.10.0",
+      "schema_version": "0.11.0",
       "article_id": "art-12345678",
       "identifiers": {
         "pmid": "12345678",

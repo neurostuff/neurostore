@@ -26,5 +26,5 @@ def _after_update_fulltext(_mapper, connection, target):
         ).scalars()
         for base_study_id in {*history.deleted, *pointing, target.base_study_id}:
             refresh_fulltext_pointer(connection, base_study_id)
-    elif attrs.text_copy.history.has_changes():
+    elif attrs.text_copy.history.has_changes() or attrs.source.history.has_changes():
         refresh_fulltext_pointer(connection, target.base_study_id)

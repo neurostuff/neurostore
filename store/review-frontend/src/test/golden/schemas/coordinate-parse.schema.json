@@ -1196,7 +1196,7 @@
       "else": {
         "properties": {
           "license_id": {
-            "const": "all-rights-reserved"
+            "const": "all_rights_reserved"
           },
           "stated_by": {
             "not": {
@@ -1231,7 +1231,7 @@
       "properties": {
         "license_id": {
           "$ref": "#/$defs/LicenseId",
-          "description": "Which licence, as OpenAlex's licence slugs name them (`cc-by`, `cc-by-nc`, ...). Not an SPDX License Identifier: sources rarely state the licence's version, and SPDX identifiers require one."
+          "description": "Which licence, in the same snake_case every application and API uses (`cc_by`, `cc_by_nc`, ...); what the source said, such as OpenAlex's `cc-by`, is in `stated_as`. Not an SPDX License Identifier: sources rarely state the licence's version, and SPDX identifiers require one."
         },
         "determination": {
           "$ref": "#/$defs/LicenseDetermination"
@@ -1297,18 +1297,66 @@
     "LicenseId": {
       "description": "The terms a licence grants. A value annotated `redistributable` lets the text it covers be passed on verbatim with attribution: every Creative Commons licence, including ND, because converting a format to text is a change CC 4.0 2(a)(4) allows, and NC, because neurostore's use is non-commercial. That reading of ND and NC is this project's policy, not legal advice, and no lawyer has confirmed it.",
       "enum": [
-        "cc-by",
-        "cc-by-sa",
-        "cc-by-nc",
-        "cc-by-nc-sa",
-        "cc-by-nd",
-        "cc-by-nc-nd",
+        "cc_by",
+        "cc_by_sa",
+        "cc_by_nc",
+        "cc_by_nc_sa",
+        "cc_by_nd",
+        "cc_by_nc_nd",
         "cc0",
-        "public-domain",
-        "all-rights-reserved",
+        "public_domain",
+        "all_rights_reserved",
         "other"
       ],
       "title": "LicenseId",
+      "type": "string"
+    },
+    "LinkOccurrence": {
+      "additionalProperties": false,
+      "description": "One place a paper gives a link: a span of the text, or an entry of its reference list the text does not print. The section a span is in is the `ParsedPaper.sections` span holding `start_char`, so a link from the data-availability statement is one with a span in a `data_availability` section.",
+      "properties": {
+        "found_by": {
+          "$ref": "#/$defs/LinkSource"
+        },
+        "start_char": {
+          "description": "Where the span that prints the link, or the text its markup anchors, starts. Absent only for a reference-list entry the text does not print.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "end_char": {
+          "description": "Where that span ends, exclusive.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "reference_id": {
+          "description": "The `Reference.id` the link was read from, when `found_by` is `reference`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "found_by"
+      ],
+      "title": "LinkOccurrence",
+      "type": "object"
+    },
+    "LinkSource": {
+      "description": "How a paper's link was found.",
+      "enum": [
+        "markup",
+        "text",
+        "supplement",
+        "reference"
+      ],
+      "title": "LinkSource",
       "type": "string"
     },
     "MapQuantity": {
@@ -1462,6 +1510,37 @@
         "reason"
       ],
       "title": "OmittedAnalysis",
+      "type": "object"
+    },
+    "PaperLink": {
+      "additionalProperties": false,
+      "description": "One link the paper gives.",
+      "properties": {
+        "url": {
+          "description": "The link, normalized: the scheme and host in lower case, no `www.`, no fragment and no trailing slash; a DOI as `https://doi.org/` and the DOI in lower case.",
+          "type": "string"
+        },
+        "has_nifti": {
+          "description": "Whether the repository the link names holds NIfTI files (`.nii`, `.nii.gz`), as checked there. Absent when it was not checked.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "occurrences": {
+          "description": "Every place the paper gives the link, in text order.",
+          "items": {
+            "$ref": "#/$defs/LinkOccurrence"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "url",
+        "occurrences"
+      ],
+      "title": "PaperLink",
       "type": "object"
     },
     "ParsedAnalysis": {
@@ -1759,6 +1838,16 @@
           "description": "Supplementary material the paper links to, and whether it was fetched. A result the text cites to a supplement that was not fetched is reported elsewhere, not missing.",
           "items": {
             "$ref": "#/$defs/Supplement"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "links": {
+          "description": "Every http(s) link the paper gives, once each: in its text or markup, its supplementary material or its reference list, where a DOI counts as its `https://doi.org/` link, with every place it appears.",
+          "items": {
+            "$ref": "#/$defs/PaperLink"
           },
           "type": [
             "array",
@@ -2465,6 +2554,7 @@
         "table",
         "supplement",
         "references",
+        "data_availability",
         "other"
       ],
       "title": "SectionKind",
@@ -3028,5 +3118,5 @@
   ],
   "title": "neuroimaging-paper-parse",
   "type": "object",
-  "version": "0.10.0"
+  "version": "0.11.0"
 }
