@@ -626,6 +626,22 @@ async def test_post_pipeline_study_results_with_study_ids(
     assert returned_ids2 == {study1_id, study2_id}
 
 
+async def test_read_single_pipeline_study_result(auth_client, result1):
+    """GET /api/pipeline-study-results/{pipeline_study_result_id} returns the result."""
+    response = await auth_client.get(f"/api/pipeline-study-results/{result1.id}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["id"] == result1.id
+    assert data["base_study_id"] == result1.base_study_id
+
+
+async def test_read_nonexistent_pipeline_study_result(auth_client):
+    """A missing pipeline study result returns 404 instead of a 500."""
+    response = await auth_client.get("/api/pipeline-study-results/doesnotexist")
+    assert response.status_code == 404
+
+
 async def test_get_pipeline_embeddings_list(auth_client, ingest_demographic_features):
     """Test GET /api/pipeline-embeddings/ returns embeddings created by ingestion."""
     response = await auth_client.get("/api/pipeline-embeddings/")
