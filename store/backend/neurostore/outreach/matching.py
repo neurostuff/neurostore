@@ -51,6 +51,20 @@ OUTCOMES = (MATCH, REVERSED_SIGN, LR_FLIP, NO_MATCH, CANNOT_ASSESS)
 # still the likeliest home for the map; the outcome is what prompts the author.
 ASSIGNABLE = (MATCH, REVERSED_SIGN, LR_FLIP)
 
+# What a map holds, as the upload form labels it. Effect maps (FSL cope, SPM
+# con, nilearn effect_size) are scored a little differently: their largest
+# values follow the variance as much as the signal, so the strongest value near
+# a reported peak is a local peak only about half as often as in the t map the
+# peak came from. A coordinate off a peak still counts for half its percentile
+# there, and the bar for a fit is higher. On NIDM-Results packs, whose peaks are
+# the software's own, that matches 75% of effect maps to their contrast instead
+# of 59%, with false matches at 1.8% instead of 1.1%. Variance and standard
+# error maps should not be scored at all: they match nothing.
+STATISTIC = "statistic"
+EFFECT = "effect"
+MAP_KINDS = (STATISTIC, EFFECT)
+OFF_PEAK_CREDIT = {STATISTIC: 0.0, EFFECT: 0.5}
+
 # Which side of a map's sign an assigned analysis sits on. Papers table A > B and
 # B > A as separate analyses, but often from a single A > B map: B > A is then
 # that map's negative side, read as a reversed-sign fit.
@@ -157,9 +171,17 @@ class Thresholds:
     # Bilateral activations fit both ways round, so a mirrored reading must beat
     # the straight one by more before the map is called left/right flipped.
     flip_margin: float = 0.2
+    # The reading an effect map needs, its off-peak coordinates counting half.
+    effect_match: float = 0.7
 
     def passes(self, reading):
         return reading is not None and reading >= self.match
+
+    def for_kind(self, kind):
+        """These thresholds as they apply to one kind of map."""
+        if kind == EFFECT:
+            return dataclasses.replace(self, match=self.effect_match)
+        return self
 
 
 DEFAULT_THRESHOLDS = Thresholds()
@@ -237,11 +259,14 @@ class MapScores:
     # the map's values at the first FINGERPRINT_SIZE grey-matter locations
     # (None outside it), for related_maps
     fingerprint: tuple | None = None
+    # STATISTIC or EFFECT, as it was scored
+    kind: str = STATISTIC
 
     def to_dict(self):
         return {
             "map_id": self.map_id,
             "status": self.status,
+            "kind": self.kind,
             "reason": self.reason,
             "seconds": self.seconds,
             "voxel_size_mm": self.voxel_size_mm,
@@ -261,6 +286,7 @@ class MapScores:
             seconds=payload.get("seconds", 0.0),
             voxel_size_mm=tuple(voxel_size) if voxel_size is not None else None,
             thresholded=payload.get("thresholded"),
+            kind=payload.get("kind", STATISTIC),
             fingerprint=(
                 tuple(payload["fingerprint"]) if payload.get("fingerprint") else None
             ),
@@ -736,7 +762,7 @@ def _round(value):
     return None if value is None else round(float(value), 4)
 
 
-def _score_volume(map_id, data, affine, prepared, thresholds):
+def _score_volume(map_id, data, affine, prepared, thresholds, kind=STATISTIC):
     volume = _Volume(data, affine, RADIUS_MM)
 
     gathered = _gather_spheres(volume, _baseline_mm())
@@ -790,20 +816,22 @@ def _score_volume(map_id, data, affine, prepared, thresholds):
         with np.errstate(invalid="ignore", divide="ignore"):
             return (sums + 0.5 * prior) / (counts + prior), counts
 
-    def evidence(spheres, peak_high, peak_low):
-        """Per-coordinate evidence for the signed, negated and unsigned readings.
+    credit = OFF_PEAK_CREDIT[kind]
 
-        A coordinate on a slope, with no peak of the map within reach, is no
-        evidence either way and counts as chance.
-        """
+    def gated(peak, rank):
+        # a coordinate on a slope, with no peak of the map within reach, is no
+        # evidence either way in a statistic map and half evidence in an effect map
+        return np.where(peak, rank, 0.5 + credit * (rank - 0.5))
+
+    def evidence(spheres, peak_high, peak_low):
+        """Per-coordinate evidence for the signed, negated and unsigned readings."""
         high_wins = np.abs(spheres.vmax) >= np.abs(spheres.vmin)
         return {
-            "signed": np.where(peak_high, _midrank(base_max, spheres.vmax), 0.5),
-            "negated": np.where(peak_low, _midrank(base_neg, -spheres.vmin), 0.5),
-            "unsigned": np.where(
+            "signed": gated(peak_high, _midrank(base_max, spheres.vmax)),
+            "negated": gated(peak_low, _midrank(base_neg, -spheres.vmin)),
+            "unsigned": gated(
                 np.where(high_wins, peak_high, peak_low),
                 _midrank(base_abs, _unsigned(spheres.vmax, spheres.vmin)),
-                0.5,
             ),
         }
 
@@ -857,7 +885,7 @@ def _score_volume(map_id, data, affine, prepared, thresholds):
             key: (None if np.isnan(series[index]) else float(series[index]))
             for key, series in readings.items()
         }
-        outcome, score = _decide(values, thresholds)
+        outcome, score = _decide(values, thresholds.for_kind(kind))
         pairs[analysis_id] = PairScore(
             outcome=outcome,
             score=_round(score),
@@ -877,6 +905,7 @@ def score_map(
     analyses,
     *,
     map_id="0",
+    kind=STATISTIC,
     thresholds=DEFAULT_THRESHOLDS,
     deadline=None,
 ):
@@ -887,10 +916,16 @@ def score_map(
     already prepared. Call it as each upload lands, store the result, and run
     :func:`assign` once every map is in.
 
+    ``kind`` is STATISTIC for a t, z or F map and EFFECT for an effect map
+    (cope, con, effect size); see OFF_PEAK_CREDIT. Where a contrast came with
+    both, its t or z map is the one to match against coordinates.
+
     Never raises for a bad map: a file that cannot be scored comes back with
     every pair ``cannot_assess`` and the reason. ``deadline`` is a
     ``time.perf_counter()`` value; past it the map comes back ``timed_out``.
     """
+    if kind not in MAP_KINDS:
+        raise ValueError(f"kind must be one of {MAP_KINDS}, not {kind!r}")
     started = time.perf_counter()
     map_id = str(map_id)
     prepared = prepare_analyses(analyses)
@@ -903,6 +938,7 @@ def score_map(
             reason=reason,
             seconds=round(time.perf_counter() - started, 4),
             voxel_size_mm=voxel_size,
+            kind=kind,
             **reading,
         )
 
@@ -916,7 +952,7 @@ def score_map(
         return finish(TIMED_OUT, {}, "timed out after the map was read")
     try:
         pairs, thresholded, fingerprint = _score_volume(
-            map_id, data, affine, prepared, thresholds
+            map_id, data, affine, prepared, thresholds, kind
         )
     except _Unusable as exc:
         reason = str(exc)
@@ -1066,7 +1102,7 @@ def _map_items(maps):
     return [(str(index), value) for index, value in enumerate(maps)]
 
 
-def _score_when_ready(map_id, source, prepared_future, deadline, thresholds):
+def _score_when_ready(map_id, source, kind, prepared_future, deadline, thresholds):
     started = time.perf_counter()
     if _expired(deadline):
         return MapScores(map_id, TIMED_OUT, {}, "timed out before the map was read")
@@ -1090,12 +1126,14 @@ def _score_when_ready(map_id, source, prepared_future, deadline, thresholds):
             _unassessable_pairs(map_id, prepared, problem),
             problem,
             round(time.perf_counter() - started, 4),
+            kind=kind,
         )
     data, affine, _ = loaded
     scores = score_map(
         _InMemory(data, affine),
         prepared,
         map_id=map_id,
+        kind=kind,
         thresholds=thresholds,
         deadline=deadline,
     )
@@ -1119,11 +1157,14 @@ def match_maps(
     timeout=DEFAULT_TIMEOUT_SECONDS,
     thresholds=DEFAULT_THRESHOLDS,
     workers=DEFAULT_WORKERS,
+    kinds=None,
 ):
     """Score every (map, analysis) pair and suggest an assignment.
 
     ``maps`` is a mapping of your own ids to paths or nibabel images, or a list
-    of them (ids are then the positions, "0", "1", ...). Returns within
+    of them (ids are then the positions, "0", "1", ...). ``kinds`` maps ids to
+    EFFECT for effect maps; every other map is scored as a statistic map.
+    Returns within
     ``timeout`` seconds whatever happens: if the grid is not finished by then the
     result is ``complete=False`` with no assignment, and any work still running
     stops at its next check without anyone waiting on it.
@@ -1131,6 +1172,10 @@ def match_maps(
     started = time.perf_counter()
     deadline = None if timeout is None else started + timeout
     items = _map_items(maps)
+    kinds = {str(key): kind for key, kind in (kinds or {}).items()}
+    for kind in kinds.values():
+        if kind not in MAP_KINDS:
+            raise ValueError(f"kind must be one of {MAP_KINDS}, not {kind!r}")
 
     pool = concurrent.futures.ThreadPoolExecutor(
         max_workers=max(1, min(workers, len(items) + 1)),
@@ -1140,7 +1185,13 @@ def match_maps(
         prepared_future = pool.submit(prepare_analyses, analyses)
         futures = [
             pool.submit(
-                _score_when_ready, map_id, source, prepared_future, deadline, thresholds
+                _score_when_ready,
+                map_id,
+                source,
+                kinds.get(map_id, STATISTIC),
+                prepared_future,
+                deadline,
+                thresholds,
             )
             for map_id, source in items
         ]

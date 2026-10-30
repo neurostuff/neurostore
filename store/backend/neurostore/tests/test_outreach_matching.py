@@ -18,6 +18,7 @@ from neurostore.outreach import matching
 from neurostore.outreach.matching import (
     CANNOT_ASSESS,
     DUPLICATE,
+    EFFECT,
     INVERSE,
     LR_FLIP,
     MATCH,
@@ -26,6 +27,7 @@ from neurostore.outreach.matching import (
     POSITIVE,
     REVERSED_SIGN,
     SCORED,
+    STATISTIC,
     TIMED_OUT,
     AnalysisCoordinates,
     MapScores,
@@ -457,6 +459,34 @@ def test_an_effect_map_correlates_with_its_own_statistic_map(map_a, map_b, analy
     assert fingerprint_correlation(scores["effect"], scores["t"]) > 0.8
     assert abs(fingerprint_correlation(scores["effect"], scores["other"])) < 0.5
     assert fingerprint_correlation(scores["effect"], scores["rev"]) < -0.8
+
+
+def test_effect_maps_give_off_peak_coordinates_half_credit(map_a):
+    # coordinates 7 mm from each blob's centre: the strongest value within 6 mm
+    # lies on the sphere's rim, on the blob's slope, not on its peak
+    shifted = [(x + 7, y, z) for x, y, z in PEAKS_A]
+    analyses = [analysis("on", PEAKS_A), analysis("off", shifted)]
+
+    as_statistic = score_map(map_a, analyses).pairs
+    as_effect = score_map(map_a, analyses, kind=EFFECT).pairs
+
+    # on the peaks the two kinds read alike
+    assert as_effect["on"].readings["signed"] == as_statistic["on"].readings["signed"]
+    assert as_effect["on"].outcome == MATCH
+    # off them, the slope counts for something in an effect map
+    assert as_statistic["off"].readings["signed"] < as_effect["off"].readings["signed"]
+
+
+def test_map_kinds_are_recorded_and_checked(map_a, analyses):
+    result = match_maps(
+        {"t": map_a, "cope": map_a}, analyses, timeout=None, kinds={"cope": EFFECT}
+    )
+
+    kinds = {scores.map_id: scores.kind for scores in result.maps}
+    assert kinds == {"t": STATISTIC, "cope": EFFECT}
+    assert MapScores.from_dict(result.maps[1].to_dict()).kind == EFFECT
+    with pytest.raises(ValueError):
+        score_map(map_a, analyses, kind="variance")
 
 
 def test_the_same_map_twice_is_a_duplicate(map_a, map_b, analyses):

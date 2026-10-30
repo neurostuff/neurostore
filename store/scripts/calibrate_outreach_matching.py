@@ -557,7 +557,12 @@ def score(args):
         rows, map_rows, all_scores = [], [], []
         for image in paper["images"]:
             path = image_path(args.work, image)
-            scores = matching.score_map(path, prepared, map_id=image["key"])
+            scores = matching.score_map(
+                path,
+                prepared,
+                map_id=image["key"],
+                kind=matching.EFFECT if image["kind"] == EFFECT else matching.STATISTIC,
+            )
             all_scores.append(scores)
             scored = [p for p in scores.pairs.values() if p.outcome != matching.CANNOT_ASSESS]
             map_rows.append(
@@ -687,7 +692,8 @@ def redecide(matching, pairs, thresholds, mixed=True):
         if not mixed:
             readings["unsigned"] = readings["signed"]
             readings["mirrored_unsigned"] = readings["mirrored"]
-        outcome, value = matching._decide(readings, thresholds)
+        kind = matching.EFFECT if row.map_kind == EFFECT else matching.STATISTIC
+        outcome, value = matching._decide(readings, thresholds.for_kind(kind))
         outcomes.append(outcome)
         scores.append(value)
     out = pairs.copy()
@@ -1052,7 +1058,10 @@ def report(args):
 
     sweep = []
     for match_threshold in (0.6, 0.625, 0.65, 0.675, 0.7, 0.75):
-        sweep.append(sweep_row(matching, pairs, matching.Thresholds(match=match_threshold)))
+        # effect maps keep the gap to statistic maps the defaults have
+        gap = matching.DEFAULT_THRESHOLDS.effect_match - matching.DEFAULT_THRESHOLDS.match
+        thresholds = matching.Thresholds(match=match_threshold, effect_match=match_threshold + gap)
+        sweep.append(sweep_row(matching, pairs, thresholds))
     sweep.append(sweep_row(matching, pairs, matching.DEFAULT_THRESHOLDS, mixed=False))
     for margin in (0.05, 0.15):
         thresholds = dataclasses.replace(matching.DEFAULT_THRESHOLDS, margin=margin)
