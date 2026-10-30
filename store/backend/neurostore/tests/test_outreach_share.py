@@ -314,6 +314,9 @@ async def test_nginx_lets_one_map_through_and_serves_the_page_from_its_build():
         ("sub-group_contrast-faces_stat-effect_statmap.nii.gz", "effect"),
         ("sub-group_contrast-faces_stat-t_statmap.nii.gz", "t"),
         ("resting_state_component.nii.gz", None),
+        ("AllFoodsValuation_Beta.nii.gz", "effect"),
+        ("AllFoodsValuation_T.nii.gz", "t"),
+        ("beta_0003.nii", "effect"),
     ],
 )
 def test_a_map_s_kind_is_read_from_its_name(name, expected):
@@ -349,6 +352,14 @@ def test_effect_maps_pair_with_the_statistic_map_beside_them_that_they_track():
     assert pairs["cope2.feat/stats/cope1.nii.gz"]["partner_id"] == "cope2.feat/stats/zstat1.nii.gz"
     assert pairs["cope1.feat/stats/cope1.nii.gz"]["by"] == "name+correlation"
     assert pairs["cope1.feat/stats/varcope1.nii.gz"]["by"] == "name"  # variance: names only
+
+
+def test_a_name_s_beta_and_t_suffixes_make_a_set():
+    maps = [{"id": n, "filename": n, "path": None, "map_type": t} for n, t in (
+        ("AllFoodsValuation_Beta.nii.gz", "effect"), ("AllFoodsValuation_T.nii.gz", "t"),
+        ("HealthyVsUnhealthyReactivity_T.nii.gz", "t"))]
+    pairs = map_sets.pair(maps, lambda a, b: 0.95)
+    assert pairs["AllFoodsValuation_Beta.nii.gz"]["partner_id"] == "AllFoodsValuation_T.nii.gz"
 
 
 def test_an_effect_map_named_like_a_statistic_map_it_does_not_track_stays_unpaired():

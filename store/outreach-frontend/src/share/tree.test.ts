@@ -25,12 +25,16 @@ test('an FSL group folder gives its z, effect and variance maps, not the rest', 
 });
 
 test('SPM, nilearn and FitLins names are told apart', () => {
-    expect(['spmT_0001.nii', 'con_0001.nii', 'faces_effect_size.nii.gz', 'x_stat-variance_statmap.nii.gz'].map(guessKind)).toEqual([
-        't',
-        'effect',
-        'effect',
-        'variance',
-    ]);
+    expect(
+        [
+            'spmT_0001.nii',
+            'con_0001.nii',
+            'faces_effect_size.nii.gz',
+            'x_stat-variance_statmap.nii.gz',
+            'AllFoodsValuation_Beta.nii.gz',
+            'AllFoodsValuation_T.nii.gz',
+        ].map(guessKind)
+    ).toEqual(['t', 'effect', 'effect', 'variance', 'effect', 't']);
 });
 
 test('no more maps are pre-selected than the paper takes', () => {

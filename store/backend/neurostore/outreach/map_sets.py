@@ -36,7 +36,7 @@ NAME_RULES = (
     ("variance", re.compile(
         r"varcope|effect_variance|stat-variance|variance|(^|[_\-])var[_\-]?\d")),
     ("effect", re.compile(r"(^|[_\-/])cope\d|(^|[_\-])con_\d|effect_size|stat-effect|"
-                          r"(^|[_\-])effect([_\-.]|$)|(^|[_\-])beta[_\-]?\d")),
+                          r"(^|[_\-])effect([_\-.]|$)|(^|[_\-])beta([_\-]?\d|[_\-.]|$)")),
     ("z", re.compile(r"zstat|z_score|zscore|stat-z([_\-.]|$)|spmz|(^|[_\-])z([_\-.]|$)")),
     ("t", re.compile(r"tstat|spmt|stat-t([_\-.]|$)|t_stat|(^|[_\-])t([_\-.]|$)")),
     ("f", re.compile(r"fstat|spmf|stat-f([_\-.]|$)")),
@@ -44,7 +44,9 @@ NAME_RULES = (
 # What a name says beyond its kind: removed to compare a set's names.
 _KIND_TOKENS = re.compile(
     r"varcope|cope|zstat|tstat|fstat|spmt|spmf|spmz|con|effect_size|effect_variance|"
-    r"z_score|zscore|t_score|stat-(t|z|f|effect|variance)|variance|effect|beta|statmap"
+    r"z_score|zscore|t_score|stat-(t|z|f|effect|variance)|variance|effect|beta|statmap|"
+    # a lone t, z or F, as in faces_T beside faces_Beta
+    r"(?<![a-z0-9])[tzf](?![a-z0-9])"
 )
 _EXTENSION = re.compile(r"\.nii(\.gz)?$")
 

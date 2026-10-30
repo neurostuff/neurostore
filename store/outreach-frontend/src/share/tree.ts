@@ -21,9 +21,9 @@ export interface Candidate {
 
 const RULES: [GuessedKind, RegExp][] = [
     ['variance', /varcope|effect_variance|stat-variance|variance|(^|[_-])var[_-]?\d/],
-    ['effect', /(^|[_-])cope\d|(^|[_-])con_\d|effect_size|stat-effect|(^|[_-])effect([_.-]|$)/],
-    ['z', /zstat|z_score|zscore|stat-z([_.-]|$)|spmz/],
-    ['t', /tstat|spmt|stat-t([_.-]|$)|t_stat/],
+    ['effect', /(^|[_-])cope\d|(^|[_-])con_\d|effect_size|stat-effect|(^|[_-])effect([_.-]|$)|(^|[_-])beta([_-]?\d|[_.-]|$)/],
+    ['z', /zstat|z_score|zscore|stat-z([_.-]|$)|spmz|(^|[_-])z([_.-]|$)/],
+    ['t', /tstat|spmt|stat-t([_.-]|$)|t_stat|(^|[_-])t([_.-]|$)/],
     ['f', /fstat|spmf|stat-f([_.-]|$)/],
 ];
 /** Files in a results folder that are never a group map we ask for. */
