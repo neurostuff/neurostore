@@ -325,6 +325,54 @@ built with `to_mni(coordinates, space)` and store them as MNI. Otherwise
   shared maps. Re-run the calibration once outreach uploads exist, which will also
   bring the effect maps this sample lacks.
 
+## TODO: more test data
+
+The calibration's weakest points are effect maps (22 papers) and ground truth
+(none: every positive is "same paper"). Sources to widen it, roughly by expected
+value:
+
+- [ ] **NeuroStore's NeuroVault links.** Once NeuroStore updates its links to
+  NeuroVault, there will be more DOI ↔ collection records. Re-run `fetch`, `select`
+  and `score` then: the sample here is every such record that exists today.
+- [ ] **FSL outputs in OpenNeuro derivatives.** Group-level FEAT/FLAME directories
+  (`cope`, `varcope`, `tstat`, `zstat`) are more realistic effect / variance /
+  statistic sets than NeuroVault's renamed uploads.
+  - Where a dataset's `dataset_description.json` cites its paper, take the
+    coordinates from neurostore.
+  - Otherwise, use the cluster tables FSL wrote alongside (`cluster_zstat*.txt`)
+    as the reported peaks.
+- [ ] **NIDM-Results packs on NeuroVault.** The February 2024 dump lists 645 packs
+  in 67 collections. Each pack holds its own peak table with the t, z, contrast
+  (effect) and contrast standard error maps of the same analysis. That makes them
+  the only true positive pairs available, for statistic and effect maps alike,
+  with no DOI needed. NiMARE's `download_nidm_pain` (21 pain studies, collection
+  1425) is a ready-made subset.
+- [ ] **Neuroscout's uploads** (owner 5761: 138,551 `stat-effect` and 138,319
+  `stat-variance` maps, from FitLins). They are excluded from the calibration
+  because no paper tabled them.
+  - Their BIDS names make them the best test for automatic effect / statistic /
+    variance grouping.
+  - Peaks taken from their own t maps (for example with nilearn's
+    `get_clusters_table`) would give controlled positives for effect-map scoring.
+- [ ] **NARPS** (70 teams, the same 9 hypotheses, maps on NeuroVault). One
+  contrast through FSL, SPM, AFNI and others, for robustness to the pipeline, and
+  each team's own reported results as coordinates.
+- [ ] **HCP group-average task maps** (S1200 `zstat` and `cope` per contrast), with
+  peaks from published HCP tables or from the maps themselves. These are clean
+  1 mm / 2 mm effect and statistic pairs, and a check of the 1 mm path on real data.
+- [ ] **Re-extract coordinates for the collections that have maps but no usable
+  table.** Of the 55 NeuroVault collections with effect maps, 33 had no analysis
+  with 3+ coordinates. Running pubget / ACE / autonima on their papers, supplements
+  included, would recover some of them.
+- [ ] **BrainMap / Sleuth coordinates** for the DOI-linked papers. These are
+  hand-curated tables, so they separate extraction errors from matching errors.
+- [ ] **AFNI and multi-volume outputs** (`3dttest++` keeps the mean and the t in
+  one file). The matcher rejects files with several volumes today, so the form
+  needs a decision on these, and test files to go with it.
+- [ ] **The pilot itself.** Store each assignment an author confirms or corrects
+  as a labelled pair, then re-run the calibration on real uploads, effect maps
+  included.
+
 ## Re-running
 
 ```bash
