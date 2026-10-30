@@ -12,6 +12,7 @@ import { sentHere as wasSent } from '../drafts';
 import { DraftActions } from './DraftActions';
 import { InvitationDialog } from './InvitationDialog';
 import { PersonPanel } from './PersonPanel';
+import { Issues, Uploads } from './Submission';
 
 const FROZEN = ['approved', 'published'];
 
@@ -59,6 +60,14 @@ export function DraftPage() {
     const edit = useMutation({ mutationFn: (change: Parameters<typeof api.editDraft>[1]) => api.editDraft(draftId, change), onSuccess: refresh });
     const check = useMutation({ mutationFn: () => api.checkDraft(draftId), onSuccess: refresh });
     const invite = useMutation({ mutationFn: () => api.invitation(draftId), onSuccess: setInvitation });
+    const resolve = useMutation({
+        mutationFn: ({ issueId, resolution }: { issueId: string; resolution: string }) =>
+            api.resolveIssue(draftId, issueId, resolution || undefined),
+        onSuccess: refresh,
+    });
+    const download = useMutation({
+        mutationFn: ({ id, filename }: { id: string; filename: string }) => api.download(draftId, id, filename),
+    });
     const sent = useMutation({
         mutationFn: (body: Parameters<typeof api.markSent>[1]) => api.markSent(draftId, body),
         onSuccess: (next) => {
@@ -74,7 +83,7 @@ export function DraftPage() {
     const sentHere = wasSent(data);
     const emailedElsewhere = !sentHere && (data.person?.author_messages ?? 0) > 0;
     const closed = ['declined', 'excluded'].includes(data.status);
-    const error = [edit.error, check.error, invite.error].find(Boolean);
+    const error = [edit.error, check.error, invite.error, resolve.error, download.error].find(Boolean);
 
     return (
         <Stack spacing={3}>
@@ -122,6 +131,21 @@ export function DraftPage() {
             <Grid container spacing={3}>
                 <Grid item xs={12} md={8}>
                     <Stack spacing={3}>
+                        {(data.uploads.length > 0 || data.issues.length > 0) && (
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Stack spacing={3}>
+                                    <Issues
+                                        draft={data}
+                                        busy={resolve.isPending}
+                                        onResolve={(issue, resolution) => resolve.mutate({ issueId: issue.id, resolution })}
+                                    />
+                                    <Uploads
+                                        draft={data}
+                                        onDownload={(upload) => download.mutate({ id: upload.id, filename: upload.filename })}
+                                    />
+                                </Stack>
+                            </Paper>
+                        )}
                         <Paper variant="outlined" sx={{ p: 2 }}>
                             <AnalysesEditor
                                 key={JSON.stringify(data.analyses)}

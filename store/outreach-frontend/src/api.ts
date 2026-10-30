@@ -89,6 +89,21 @@ export function outreachApi(base: string, authorize: Authorize) {
         reopen: (id: string) => post<DraftDetail>(`/drafts/${id}/reopen`),
         preview: (id: string) => post<{ url: string; expires_at: string }>(`/drafts/${id}/preview`),
         revokeLinks: (id: string) => post<DraftDetail>(`/drafts/${id}/links/revoke`),
+        deleteFiles: (id: string) => post<DraftDetail>(`/drafts/${id}/files/delete`),
+        resolveIssue: (id: string, issueId: string, resolution?: string) =>
+            post<DraftDetail>(`/drafts/${id}/issues/${issueId}/resolve`, { resolution }),
+        /** Save an uploaded map to the admin's computer; the API needs the admin's sign-in. */
+        download: async (id: string, uploadId: string, filename: string) => {
+            const authorization = await authorize();
+            const response = await fetch(`${root}/drafts/${id}/uploads/${uploadId}/file`, {
+                headers: authorization ? { Authorization: authorization } : {},
+            });
+            if (!response.ok) throw new ApiError(response.status, (await response.json())?.detail ?? response.statusText);
+            const url = URL.createObjectURL(await response.blob());
+            const link = Object.assign(document.createElement('a'), { href: url, download: filename });
+            link.click();
+            URL.revokeObjectURL(url);
+        },
         person: (id: string) => request<PersonDetail>(`/people/${id}`),
         suppress: (id: string, what: 'opt_out' | 'bounced', note?: string) =>
             post<PersonDetail>(`/people/${id}/suppression`, { what, note }),

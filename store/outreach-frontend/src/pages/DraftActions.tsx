@@ -68,7 +68,7 @@ function Ask({
  * reply, exclude or reopen the paper, undo "mark as sent", revoke links. */
 export function DraftActions({ draft, onChange }: { draft: DraftDetail; onChange: (next: DraftDetail) => void }) {
     const api = useApi();
-    const [open, setOpen] = useState<'reply' | 'exclude' | 'unsend' | 'revoke' | null>(null);
+    const [open, setOpen] = useState<'reply' | 'exclude' | 'unsend' | 'revoke' | 'delete' | null>(null);
     const [replyKind, setReplyKind] = useState<ReplyKind>('will_upload');
     const [reason, setReason] = useState<ExclusionReason>('behavioral_only');
     const [note, setNote] = useState('');
@@ -122,6 +122,11 @@ export function DraftActions({ draft, onChange }: { draft: DraftDetail; onChange
                 {draft.link_expires_at && (
                     <Button size="small" color="error" onClick={() => setOpen('revoke')}>
                         Revoke links
+                    </Button>
+                )}
+                {(draft.files ?? 0) > 0 && !frozen && (
+                    <Button size="small" color="error" onClick={() => setOpen('delete')}>
+                        Delete files
                     </Button>
                 )}
                 <Button
@@ -222,6 +227,18 @@ export function DraftActions({ draft, onChange }: { draft: DraftDetail; onChange
                 <DialogContentText>
                     Only if the email never went out. The author counts as not emailed again, and the draft goes back to
                     where it was. The link stays live; revoke it too if needed.
+                </DialogContentText>
+            </Ask>
+
+            <Ask
+                {...dialog('delete')}
+                title="Delete this draft's uploaded files"
+                confirm="Delete files"
+                onConfirm={() => run(() => api.deleteFiles(draft.id))}
+            >
+                <DialogContentText>
+                    The {draft.files} file{draft.files === 1 ? '' : 's'} the author uploaded are deleted from storage.
+                    The draft, its history and the list of what was uploaded stay. This cannot be undone.
                 </DialogContentText>
             </Ask>
 

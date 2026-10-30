@@ -27,6 +27,10 @@ export interface PaperRow {
     held: string[];
     lastReply: Reply | null;
     software: Software | null;
+    /** Files the author uploaded and still kept. */
+    files: number;
+    /** Problems the author reported that are not resolved. */
+    openIssues: number;
 }
 
 export const PHASES = [
@@ -64,6 +68,8 @@ export interface Filters {
     search: string;
     /** Packages, OTHER or UNKNOWN; empty means any software. */
     software: string[];
+    /** Only papers whose author reported something not resolved yet. */
+    issues: boolean;
     /** Candidates published in or after this year. */
     sinceYear: number;
     sort: Sort;
@@ -77,6 +83,7 @@ export const defaultFilters = (year = new Date().getFullYear()): Filters => ({
     emailed: null,
     search: '',
     software: [],
+    issues: false,
     sinceYear: year,
     sort: 'newest_paper',
 });
@@ -87,6 +94,7 @@ export const PRESETS: { label: string; filters: Partial<Filters> }[] = [
     { label: 'To approve', filters: { phases: ['drafting'] } },
     { label: 'Ready to email', filters: { phases: ['drafting'], ready: true } },
     { label: 'Waiting on authors', filters: { phases: ['emailed', 'uploading'], sort: 'oldest_activity' } },
+    { label: 'Open issues', filters: { issues: true, sort: 'oldest_activity' } },
     { label: 'Stale', filters: { phases: ['emailed', 'uploading'], idleDays: 14, sort: 'oldest_activity' } },
     { label: 'Preferred software', filters: { software: [...PREFERRED_SOFTWARE], sort: 'preferred_software' } },
     { label: 'Done', filters: { phases: ['completed'] } },
@@ -111,6 +119,8 @@ export const fromCandidate = (candidate: Candidate): PaperRow => ({
     held: [],
     lastReply: null,
     software: candidate.software ?? null,
+    files: 0,
+    openIssues: 0,
 });
 
 export const fromDraft = (draft: DraftSummary, held: string[] = []): PaperRow => ({
@@ -132,6 +142,8 @@ export const fromDraft = (draft: DraftSummary, held: string[] = []): PaperRow =>
     held,
     lastReply: draft.last_reply,
     software: draft.software ?? null,
+    files: draft.files ?? 0,
+    openIssues: draft.open_issues ?? 0,
 });
 
 /** Newest papers first, then the order their drafts were built. */
@@ -164,6 +176,7 @@ export function matches(row: PaperRow, filters: Filters, now = Date.now()): bool
     if (filters.emailed !== null && (row.person ? row.person.author_messages > 0 : false) !== filters.emailed)
         return false;
     if (filters.software.length > 0 && !softwareMatches(row.software, filters.software)) return false;
+    if (filters.issues && row.openIssues === 0) return false;
     const words = filters.search.toLowerCase().split(/\s+/).filter(Boolean);
     if (words.length > 0) {
         const text = `${row.name ?? ''} ${row.journal ?? ''}`.toLowerCase();
@@ -212,6 +225,7 @@ const NEXT: Record<Stage, string> = {
 
 /** What happens next for the paper, why it is held, or what its author last replied. */
 export function nextStep(row: PaperRow): string {
+    if (row.openIssues > 0) return `${row.openIssues} reported problem${row.openIssues === 1 ? '' : 's'} to answer`;
     if (row.stage === 'checked' && row.held.length > 0) return `Held: ${row.held.join(', ')}`;
     if (row.lastReply && (row.stage === 'contacted' || row.stage === 'opened'))
         return `Replied: ${REPLY_LABELS[row.lastReply.kind] ?? row.lastReply.kind}`;
@@ -228,6 +242,7 @@ const PARAMS = {
     emailed: 'emailed',
     search: 'q',
     software: 'software',
+    issues: 'issues',
     sinceYear: 'year',
     sort: 'sort',
 } as const;
@@ -248,6 +263,7 @@ export function readFilters(params: URLSearchParams, year = new Date().getFullYe
         emailed: flag(params.get(PARAMS.emailed)),
         search: params.get(PARAMS.search) ?? '',
         software: params.getAll(PARAMS.software),
+        issues: params.get(PARAMS.issues) === '1',
         sinceYear: Number.isInteger(since) && since > 1900 ? since : defaults.sinceYear,
         sort: sort === 'oldest_activity' || sort === 'preferred_software' ? sort : defaults.sort,
     };
@@ -262,6 +278,7 @@ export function writeFilters(filters: Filters, year = new Date().getFullYear()):
     if (filters.emailed !== null) params.set(PARAMS.emailed, filters.emailed ? '1' : '0');
     if (filters.search) params.set(PARAMS.search, filters.search);
     filters.software.forEach((value) => params.append(PARAMS.software, value));
+    if (filters.issues) params.set(PARAMS.issues, '1');
     if (filters.sinceYear !== year) params.set(PARAMS.sinceYear, String(filters.sinceYear));
     if (filters.sort !== 'newest_paper') params.set(PARAMS.sort, filters.sort);
     return params;

@@ -119,6 +119,7 @@ test('filters round-trip through the URL and ignore what they do not know', () =
         emailed: true,
         search: 'reward',
         software: ['FSL', 'unknown'],
+        issues: true,
         sort: 'preferred_software',
     });
     expect(readFilters(writeFilters(f, 2026), 2026)).toEqual(f);
@@ -153,4 +154,10 @@ test('preferred software sorts first, then newest paper', () => {
         ]
     );
     expect(sortRows(rows, 'preferred_software').map((row) => row.id)[0]).toBe('afni');
+});
+
+test('open issues filter and come first in the next step', () => {
+    const rows = paperRows([], [draft('quiet'), draft('asked', { open_issues: 2, status: 'uploading' })]);
+    expect(ids(rows, filters({ issues: true }))).toEqual(['asked']);
+    expect(nextStep(rows.find((row) => row.id === 'asked')!)).toBe('2 reported problems to answer');
 });

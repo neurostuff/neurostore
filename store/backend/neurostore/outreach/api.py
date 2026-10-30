@@ -6,6 +6,7 @@ the threadpool, in the request's session; a route that writes commits its own wo
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 
 import sqlalchemy as sa
@@ -13,12 +14,19 @@ from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Route
 
 from neurostore.database import db
-from neurostore.models import BaseStudy, OutreachDraft, OutreachEvent, OutreachPerson
+from neurostore.models import (
+    BaseStudy,
+    OutreachDraft,
+    OutreachEvent,
+    OutreachPerson,
+    OutreachUpload,
+)
 from neurostore.models.outreach import DRAFT_STATUSES
+from neurostore.outreach import files as outreach_files
 from neurostore.outreach import people as outreach_people
 from neurostore.outreach.auth import outreach_admin
 from neurostore.outreach.candidates import candidates_query
@@ -38,6 +46,7 @@ from neurostore.outreach.drafts import (
     undo_sent,
 )
 from neurostore.outreach.email import compose_email
+from neurostore.outreach.share import upload_view
 from neurostore.outreach.software import software_by_base_study
 
 DEFAULT_LIMIT = 100
@@ -112,7 +121,9 @@ def _people_counts(found):
     )
 
 
-def _draft_summary(draft, base_study, person=None, counts=({}, {}), software=None):
+def _draft_summary(
+    draft, base_study, person=None, counts=({}, {}), software=None, files=0, open_issues=0
+):
     return {
         "id": draft.id,
         "base_study_id": draft.base_study_id,
@@ -132,6 +143,9 @@ def _draft_summary(draft, base_study, person=None, counts=({}, {}), software=Non
         ),
         "last_reply": None,
         "software": software,
+        # Files the author uploaded and still kept, and problems they reported not yet resolved.
+        "files": files,
+        "open_issues": open_issues,
     }
 
 
@@ -184,6 +198,31 @@ def _last_replies(draft_ids):
     return {draft_id: reply for draft_id, reply in latest.items() if reply}
 
 
+def _admin_upload(upload, analysis_keys):
+    return {
+        **upload_view(upload, analysis_keys),
+        "sha256": upload.sha256,
+        "created_at": _iso(upload.created_at),
+        "deleted_at": _iso(upload.deleted_at),
+        "deleted_by": upload.deleted_by,
+    }
+
+
+def _issue(issue):
+    return {
+        "id": issue.id,
+        "kind": issue.kind,
+        "analysis_key": issue.analysis_key,
+        "reason": issue.reason,
+        "note": issue.note,
+        "state": issue.state,
+        "resolution": issue.resolution,
+        "resolved_by": issue.resolved_by,
+        "resolved_at": _iso(issue.resolved_at),
+        "created_at": _iso(issue.created_at),
+    }
+
+
 def _detail(draft):
     base_study = db.session.get(BaseStudy, draft.base_study_id)
     person = db.session.get(OutreachPerson, draft.person_id) if draft.person_id else None
@@ -194,11 +233,21 @@ def _detail(draft):
         .order_by(OutreachEvent.created_at, OutreachEvent.id)
     ).all()
     links = live_links(draft.id)
+    uploads = outreach_files.uploads_of(draft.id)
+    issues = outreach_files.issues_of(draft.id)
+    keys = [analysis["key"] for analysis in draft.analyses]
     return {
         **_draft_summary(
             draft, base_study, person, counts,
             software_by_base_study([draft.base_study_id]).get(draft.base_study_id),
+            files=sum(upload.deleted_at is None for upload in uploads),
+            open_issues=sum(issue.state == "open" for issue in issues),
         ),
+        "uploads": [_admin_upload(upload, keys) for upload in uploads],
+        "issues": [_issue(issue) for issue in issues],
+        "submitter_name": draft.submitter_name,
+        "submitter_orcid": draft.submitter_orcid,
+        "submitter_orcid_verified": draft.submitter_orcid_verified,
         "last_reply": _last_reply(events),
         "source_study_id": draft.source_study_id,
         "source_sha256": draft.source_sha256,
@@ -267,10 +316,14 @@ async def drafts(request: Request):
         counts = _people_counts(found)
         replies = _last_replies([d.id for d, _ in rows])
         software = software_by_base_study(sorted({d.base_study_id for d, _ in rows}))
+        draft_ids = [d.id for d, _ in rows]
+        files = outreach_files.file_counts(draft_ids)
+        issues = outreach_files.open_issue_counts(draft_ids)
         return [
             {
                 **_draft_summary(
-                    d, b, found.get(d.person_id), counts, software.get(d.base_study_id)
+                    d, b, found.get(d.person_id), counts, software.get(d.base_study_id),
+                    files=files.get(d.id, 0), open_issues=issues.get(d.id, 0),
                 ),
                 "last_reply": replies.get(d.id),
             }
@@ -358,6 +411,36 @@ def _action(change, *body_fields):
         return JSONResponse(await run_in_threadpool(_run))
 
     return route
+
+
+async def resolve_issue(request: Request):
+    actor = await outreach_admin(request)
+    draft_id, issue_id = request.path_params["draft_id"], request.path_params["issue_id"]
+    resolution = (await _body(request)).get("resolution")
+
+    def _run():
+        found = _found(OutreachDraft, draft_id)
+        _write(lambda: outreach_files.resolve_issue(found, issue_id, actor, resolution))
+        return _detail(found)
+
+    return JSONResponse(await run_in_threadpool(_run))
+
+
+async def upload_file(request: Request):
+    """An uploaded map, to look at before approving: admins only."""
+    await outreach_admin(request)
+    draft_id, upload_id = request.path_params["draft_id"], request.path_params["upload_id"]
+
+    def _run():
+        upload = db.session.get(OutreachUpload, upload_id)
+        if upload is None or upload.draft_id != draft_id or not upload.path:
+            raise HTTPException(404, "no such file on this draft")
+        if not os.path.exists(upload.path):
+            raise HTTPException(404, "the file is gone from storage")
+        return upload.path, upload.filename
+
+    path, filename = await run_in_threadpool(_run)
+    return FileResponse(path, filename=filename, media_type="application/octet-stream")
 
 
 async def invitation(request: Request):
@@ -491,6 +574,11 @@ def outreach_app():
                   methods=["POST"]),
             Route("/drafts/{draft_id}/reopen", _action(reopen_draft), methods=["POST"]),
             Route("/drafts/{draft_id}/links/revoke", _action(revoke_links), methods=["POST"]),
+            Route("/drafts/{draft_id}/files/delete", _action(outreach_files.delete_files),
+                  methods=["POST"]),
+            Route("/drafts/{draft_id}/issues/{issue_id}/resolve", resolve_issue,
+                  methods=["POST"]),
+            Route("/drafts/{draft_id}/uploads/{upload_id}/file", upload_file),
             Route("/people/{person_id}", person),
             Route("/people/{person_id}/suppression", suppression, methods=["POST"]),
         ],

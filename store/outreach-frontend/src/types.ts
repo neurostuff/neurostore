@@ -102,6 +102,10 @@ export interface DraftSummary {
     person: PersonSummary | null;
     last_reply: Reply | null;
     software?: Software | null;
+    /** Files the author uploaded and still kept. */
+    files?: number;
+    /** Problems the author reported that are not resolved yet. */
+    open_issues?: number;
 }
 
 export interface DraftEvent {
@@ -116,7 +120,50 @@ export type Collection = Partial<
     Record<'name' | 'DOI' | 'authors' | 'journal_name' | 'paper_url' | 'full_dataset_url' | 'description', string>
 >;
 
+export interface AdminUpload {
+    id: string;
+    filename: string;
+    path: string | null;
+    kind: 'statistic' | 'effect' | 'variance' | 'other';
+    map_type: string | null;
+    map_type_by: string | null;
+    partner_id: string | null;
+    partner_r: number | null;
+    partner_by: string | null;
+    reversed: boolean;
+    size_bytes: number;
+    sha256: string;
+    check_status: 'ok' | 'problem' | null;
+    problem: string | null;
+    thresholded: boolean | null;
+    analysis_keys: string[];
+    assigned_by: string | null;
+    label: string | null;
+    fits: Record<string, { outcome: string; score: number | null; reason: string | null } | null>;
+    created_at: string;
+    deleted_at: string | null;
+    deleted_by: string | null;
+}
+
+export interface Issue {
+    id: string;
+    kind: 'extraction_error' | 'help' | 'mismatch';
+    analysis_key: string | null;
+    reason: string | null;
+    note: string | null;
+    state: 'open' | 'resolved';
+    resolution: string | null;
+    resolved_by: string | null;
+    resolved_at: string | null;
+    created_at: string;
+}
+
 export interface DraftDetail extends Omit<DraftSummary, 'analyses'> {
+    uploads: AdminUpload[];
+    issues: Issue[];
+    submitter_name: string | null;
+    submitter_orcid: string | null;
+    submitter_orcid_verified: boolean;
     source_study_id: string | null;
     source_sha256: string;
     analyses: DraftAnalysis[];

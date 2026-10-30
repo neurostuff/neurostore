@@ -444,3 +444,54 @@ async def test_the_author_can_pair_or_unpair_a_map_themselves(author, session, s
     after = {u["filename"]: u for u in unpaired.json()["uploads"]}["renamed.nii.gz"]
     assert (after["partner_id"], after["partner_by"]) == (None, "author")
     assert bad.status_code == 409  # a map goes with a statistic map, not an effect map
+
+
+# what the admin panel sees of it
+
+
+async def test_admins_see_the_uploads_and_issues_and_can_clean_up(author, app, session,
+                                                                  share_settings):
+    from neurostore.tests.request_utils import AsyncClient
+    from neurostore.tests.test_outreach import ADMIN_TOKEN
+
+    draft, token = _sent_draft()
+    tmp = share_settings
+    await author.post("/api/share/session", json={"token": token})
+    content = _nifti(tmp, "a.nii.gz", synthetic_map(PEAKS_A))
+    await _upload(author, "faces.nii.gz", content)
+    await _upload(author, "other.nii.gz", _nifti(tmp, "b.nii.gz", synthetic_map(PEAKS_C)))
+    await author.post("/api/share/issues", json={"kind": "help", "note": "Which template?"})
+
+    admin = AsyncClient(token=ADMIN_TOKEN, asgi_app=app.asgi_app)
+    h, base = admin._get_headers(), f"/api/outreach/drafts/{draft.id}"
+    try:
+        detail = (await admin.client.get(base, headers=h)).json()
+        listed = (await admin.client.get("/api/outreach/drafts/", headers=h)).json()["results"]
+        faces = next(u for u in detail["uploads"] if u["filename"] == "faces.nii.gz")
+        downloaded = await admin.client.get(f"{base}/uploads/{faces['id']}/file", headers=h)
+        resolved = await admin.client.post(
+            f"{base}/issues/{detail['issues'][0]['id']}/resolve", headers=h,
+            json={"resolution": "Replied: MNI152 2 mm"})
+        deleted = await admin.client.post(f"{base}/files/delete", headers=h, json={})
+        again = await admin.client.post(f"{base}/files/delete", headers=h, json={})
+        gone = await admin.client.get(f"{base}/uploads/{faces['id']}/file", headers=h)
+        anonymous = await author.get(f"{base}/uploads/{faces['id']}/file")
+    finally:
+        await admin.aclose()
+
+    assert (detail["files"], detail["open_issues"]) == (2, 1)
+    assert (listed[0]["files"], listed[0]["open_issues"]) == (2, 1)
+    assert faces["analysis_keys"] == [_key(draft, "Faces > Houses")]
+    assert faces["fits"][_key(draft, "Faces > Houses")]["outcome"] == "match"
+    assert detail["issues"][0]["note"] == "Which template?"
+    assert detail["submitter_name"] is None  # not submitted yet
+    assert downloaded.content == content
+    assert resolved.json()["issues"][0]["state"] == "resolved"
+    assert resolved.json()["open_issues"] == 0
+    assert deleted.json()["status"] == "files_deleted"
+    assert deleted.json()["files"] == 0
+    assert all(u["deleted_at"] for u in deleted.json()["uploads"])  # rows and history stay
+    assert not list((tmp / "uploads").rglob("*.nii.gz"))
+    assert again.status_code == 409
+    assert gone.status_code == 404
+    assert anonymous.status_code == 401

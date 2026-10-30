@@ -148,7 +148,7 @@ def _pair(upload, key):
     return {key: pair.get(key) for key in ("outcome", "score", "reason")}
 
 
-def _upload_view(upload, analysis_keys):
+def upload_view(upload, analysis_keys):
     details = upload.check_details or {}
     return {
         "id": upload.id,
@@ -206,7 +206,7 @@ def view(link, draft):
         "collection": draft.collection,
         # The paper's analysis software, so the page can tailor where to find the maps.
         "software": software_by_base_study([draft.base_study_id]).get(draft.base_study_id),
-        "uploads": [_upload_view(upload, analysis_keys) for upload in _uploads(draft.id)],
+        "uploads": [upload_view(upload, analysis_keys) for upload in _uploads(draft.id)],
         "issues": [
             {"kind": i.kind, "analysis_key": i.analysis_key, "reason": i.reason, "note": i.note}
             for i in issues

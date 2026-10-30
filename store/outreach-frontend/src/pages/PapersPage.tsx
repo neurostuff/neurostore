@@ -242,6 +242,10 @@ export function PapersPage() {
                     control={<Switch checked={filters.ready} onChange={(event) => setFilters({ ready: event.target.checked })} />}
                     label="Ready to email only"
                 />
+                <FormControlLabel
+                    control={<Switch checked={filters.issues} onChange={(event) => setFilters({ issues: event.target.checked })} />}
+                    label="Open issues only"
+                />
             </Stack>
             <Stack direction="row" spacing={2} alignItems="center">
                 <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
@@ -311,6 +315,7 @@ export function PapersPage() {
                         <TableCell>Stage</TableCell>
                         <TableCell align="right">Analyses</TableCell>
                         <TableCell>Software</TableCell>
+                        <TableCell align="right">Files</TableCell>
                         <TableCell>Author</TableCell>
                         <TableCell>Next</TableCell>
                         <TableCell>Last activity</TableCell>
@@ -343,6 +348,12 @@ export function PapersPage() {
                             <TableCell>
                                 <SoftwareChips software={row.software} />
                             </TableCell>
+                            <TableCell align="right">
+                                {row.draftId ? row.files : ''}
+                                {row.openIssues > 0 && (
+                                    <Chip size="small" color="warning" label={`${row.openIssues} issue${row.openIssues === 1 ? '' : 's'}`} sx={{ ml: 0.5 }} />
+                                )}
+                            </TableCell>
                             <TableCell>
                                 <PersonFlags person={row.person} drafted={row.draftId !== null} />
                             </TableCell>
@@ -356,7 +367,7 @@ export function PapersPage() {
                     ))}
                     {(drafts.isSuccess || candidates.isSuccess) && rows.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={8}>Nothing matches these filters.</TableCell>
+                            <TableCell colSpan={9}>Nothing matches these filters.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>
