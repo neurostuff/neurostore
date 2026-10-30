@@ -61,6 +61,30 @@ SOURCE_PREFERENCE = ("nuextract-v21", "llm", "pubget", "neurostore", "neurosynth
 
 MAX_DOWNLOAD_BYTES = 80 * 1024 * 1024
 
+# What a map holds, going by its file name before NeuroVault's map type: SPM's
+# beta_0001 and con_0001 are often uploaded as "T map". A statistic token wins,
+# since FSL's cope2_zstat1 is a z map.
+STATISTIC = "statistic"
+EFFECT = "effect"
+AMBIGUOUS = "ambiguous"
+STATISTIC_NAME = re.compile(
+    r"zstat|tstat|spm[tzf]|stat-[tzf](?![a-z])|z[_-]?score|(^|[^a-z])[tz][_-]?(map|stat)|"
+    r"_[tzf]\.nii",
+    re.IGNORECASE,
+)
+EFFECT_NAME = re.compile(
+    r"effect[_-]?size|stat-effect|effects?map|cope\d|(^|[^a-z])con_?\d{2,4}|"
+    r"(^|[^a-z])betas?([_-]?\d|\.nii)|(^|[_-])pe\d",
+    re.IGNORECASE,
+)
+# Tokens that say what kind of map a file is, not which contrast; what is left
+# names the contrast, so cope3 and zstat3 (or con_0003 and spmT_0003) agree.
+KIND_TOKENS = {
+    "cope", "varcope", "zstat", "tstat", "fstat", "spmt", "spmz", "spmf", "con", "beta",
+    "betas", "effect", "effects", "effectsmap", "size", "stat", "statmap", "z", "t", "f",
+    "score", "map", "pe", "nii", "gz", "img", "unthresh", "unthresholded",
+}
+
 # Words that say nothing about which contrast a name describes.
 NAME_STOPWORDS = {
     "a", "an", "and", "the", "of", "in", "on", "for", "with", "vs", "versus", "v",
@@ -70,6 +94,29 @@ NAME_STOPWORDS = {
     "unthresholded", "thresholded", "z", "t", "f", "fwe", "fdr", "unc", "p",
     "all", "participants", "subjects", "mean", "table", "results",
 }
+
+
+def map_kind(image):
+    """STATISTIC, EFFECT or AMBIGUOUS for a NeuroVault image record."""
+    filename = image.get("filename") or ""
+    if STATISTIC_NAME.search(filename):
+        return STATISTIC
+    if image.get("value_type") == "univariate-beta map" or EFFECT_NAME.search(filename):
+        return EFFECT
+    if image.get("value_type") in ("T map", "Z map", "F map"):
+        return STATISTIC
+    return AMBIGUOUS
+
+
+def contrast_key(text):
+    """The words and numbers of a file or map name that name its contrast."""
+    stem = re.sub(r"\.(nii|img|hdr)(\.gz)?$", "", (text or "").lower())
+    tokens = re.split(r"[^a-z0-9]+|(?<=[a-z])(?=\d)|(?<=\d)(?=[a-z])", stem)
+    return tuple(
+        str(int(token)) if token.isdigit() else token
+        for token in tokens
+        if token and token not in KIND_TOKENS
+    )
 
 
 def load_matching():
@@ -256,6 +303,7 @@ def select(args):
                             "name": nv_analysis.get("name") or image.get("analysis_name"),
                             "filename": image.get("filename"),
                             "value_type": image.get("value_type"),
+                            "kind": map_kind(image),
                             "collection": nv_version.get("source_id"),
                             **meta,
                         }
@@ -299,7 +347,10 @@ def select(args):
     rng.shuffle(papers)
     papers = papers[: args.max_papers]
     for paper in papers:
-        paper["images"] = paper["images"][: args.max_maps]
+        # effect maps get their own quota, or the statistic maps would crowd them out
+        effect = [image for image in paper["images"] if image["kind"] == EFFECT]
+        other = [image for image in paper["images"] if image["kind"] != EFFECT]
+        paper["images"] = other[: args.max_maps] + effect[: args.max_effect_maps]
     (args.work / "papers.json").write_text(json.dumps(papers, indent=1))
     log(
         f"selected {len(papers)} papers, {sum(len(p['images']) for p in papers)} maps, "
@@ -376,14 +427,14 @@ def download(args):
 # --------------------------------------------------------------------- score
 
 PAIR_FIELDS = [
-    "paper", "map_key", "map_value_type", "map_thresholded", "analysis_paper",
+    "paper", "map_key", "map_value_type", "map_kind", "map_thresholded", "analysis_paper",
     "analysis_id", "own", "name_similarity", "direction", "n_negative_values", "outcome",
     "score",
     "n_points", "n_outside", "signed", "negated", "unsigned", "mirrored",
     "mirrored_negated", "mirrored_unsigned", "peak_signed", "peak_negated", "reason",
 ]
 MAP_FIELDS = [
-    "paper", "map_key", "value_type", "nv_thresholded", "read_thresholded", "status",
+    "paper", "map_key", "value_type", "kind", "nv_thresholded", "read_thresholded", "status",
     "reason", "seconds", "voxel_size", "n_analyses_scored", "n_points_scored", "bytes",
 ]
 RELATED_FIELDS = ["paper", "map_a", "map_b", "kind", "correlation"]
@@ -477,6 +528,7 @@ def score(args):
     pairs_out = open(args.work / "pairs.csv", "w", newline="")
     maps_out = open(args.work / "maps.csv", "w", newline="")
     related_out = open(args.work / "related.csv", "w", newline="")
+    fingerprints_out = open(args.work / "fingerprints.jsonl", "w")
     pair_writer = csv.DictWriter(pairs_out, PAIR_FIELDS)
     map_writer = csv.DictWriter(maps_out, MAP_FIELDS)
     related_writer = csv.DictWriter(related_out, RELATED_FIELDS)
@@ -513,6 +565,7 @@ def score(args):
                     "paper": paper["base_study"],
                     "map_key": image["key"],
                     "value_type": image["value_type"],
+                    "kind": image["kind"],
                     "nv_thresholded": image.get("is_thresholded"),
                     "read_thresholded": scores.thresholded,
                     "status": scores.status,
@@ -537,6 +590,7 @@ def score(args):
                         "paper": paper["base_study"],
                         "map_key": image["key"],
                         "map_value_type": image["value_type"],
+                        "map_kind": image["kind"],
                         "map_thresholded": image.get("is_thresholded"),
                         "analysis_paper": owner,
                         "analysis_id": analysis["id"],
@@ -577,20 +631,28 @@ def score(args):
             }
             for found in matching.related_maps(all_scores)
         ]
-        return rows, map_rows, related
+        fingerprints = [
+            {"paper": paper["base_study"], "map_key": scores.map_id, "values": scores.fingerprint}
+            for scores in all_scores
+            if scores.fingerprint
+        ]
+        return rows, map_rows, related, fingerprints
 
     done = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.score_workers) as pool:
-        for rows, map_rows, related in pool.map(score_paper, papers):
+        for rows, map_rows, related, fingerprints in pool.map(score_paper, papers):
             pair_writer.writerows(rows)
             map_writer.writerows(map_rows)
             related_writer.writerows(related)
+            for fingerprint in fingerprints:
+                fingerprints_out.write(json.dumps(fingerprint) + "\n")
             done += 1
             if done % 20 == 0:
                 log(f"scored {done}/{len(papers)} papers")
     pairs_out.close()
     maps_out.close()
     related_out.close()
+    fingerprints_out.close()
     log(f"scored {len(papers)} papers in {time.perf_counter() - started:.0f} s")
 
 
@@ -753,6 +815,102 @@ def analysis_level(matching, pairs):
 
 def rate(numerator, denominator):
     return f"{numerator / denominator:.1%}" if denominator else "n/a"
+
+
+def kind_summary(matching, pairs):
+    """Per-analysis and assignment rates, counting only one kind of map at a time."""
+    kinds_by_paper = pairs.groupby("paper")["map_kind"].agg(set)
+    both = set(kinds_by_paper[kinds_by_paper.apply(lambda k: {EFFECT, STATISTIC} <= k)].index)
+    rows = []
+    scopes = [("all papers", pairs), ("papers with both", pairs[pairs["paper"].isin(both)])]
+    for scope, scoped in scopes:
+        for kind in (STATISTIC, EFFECT, AMBIGUOUS):
+            sub = scoped[scoped["map_kind"] == kind]
+            if sub.empty:
+                continue
+            own_best, foreign_best = analysis_level(matching, sub)
+            counts = assignment_counts(matching, sub)
+            rows.append(
+                {
+                    "kind": kind,
+                    "papers": scope,
+                    "maps": sub.drop_duplicates(["paper", "map_key"]).shape[0],
+                    "n papers": sub["paper"].nunique(),
+                    "own analyses": len(own_best),
+                    "own coll. match": (own_best["outcome"] == matching.MATCH).mean(),
+                    "unrel. coll. match": (foreign_best["outcome"] == matching.MATCH).mean(),
+                    "unrel. n": len(foreign_best),
+                    "assigned own": counts["own_assigned"] / max(counts["own_total"], 1),
+                    "assigned unrel.": (
+                        counts["foreign_assigned"] / max(counts["foreign_total"], 1)
+                    ),
+                }
+            )
+    return rows
+
+
+def effect_statistic_pairs(matching, papers, fingerprints, keep):
+    """Each effect map's statistic map, found by name and by correlation."""
+    rows = []
+    for paper in papers:
+        pid = paper["base_study"]
+        images = [image for image in paper["images"] if (pid, image["key"]) in keep]
+        effects = [image for image in images if image["kind"] == EFFECT]
+        statistics = [image for image in images if image["kind"] == STATISTIC]
+        if not effects or not statistics:
+            continue
+        for effect in effects:
+            by_file = [
+                s for s in statistics
+                if contrast_key(effect["filename"])
+                and contrast_key(s["filename"]) == contrast_key(effect["filename"])
+            ]
+            by_name = [
+                s for s in statistics
+                if contrast_key(effect["name"])
+                and contrast_key(s["name"]) == contrast_key(effect["name"])
+            ]
+            named = by_file if len(by_file) == 1 else by_name if len(by_name) == 1 else []
+            correlations = {
+                s["key"]: matching.fingerprint_correlation(
+                    fingerprints.get((pid, effect["key"])), fingerprints.get((pid, s["key"]))
+                )
+                for s in statistics
+                if fingerprints.get((pid, effect["key"])) and fingerprints.get((pid, s["key"]))
+            }
+            correlations = {key: r for key, r in correlations.items() if r is not None}
+            ranked = sorted(correlations.items(), key=lambda item: -abs(item[1]))
+            best, best_r = ranked[0] if ranked else (None, np.nan)
+            second = abs(ranked[1][1]) if len(ranked) > 1 else 0.0
+            name_pair = named[0]["key"] if named else None
+            name_r = correlations.get(name_pair, np.nan) if name_pair else np.nan
+            # a pair to compare scores on: a name match the maps agree with, or
+            # a correlation clear of every other candidate
+            if name_pair and name_r >= 0.8:
+                partner = name_pair
+            elif ranked and abs(best_r) >= 0.8 and abs(best_r) - second >= 0.1:
+                partner = best
+            else:
+                partner = None
+            rows.append(
+                {
+                    "paper": pid,
+                    "effect": effect["key"],
+                    "by_file": len(by_file),
+                    "by_name": len(by_name),
+                    "name_pair": name_pair,
+                    "name_r": name_r,
+                    "best": best,
+                    "best_r": best_r,
+                    "margin": abs(best_r) - second if ranked else np.nan,
+                    "partner": partner,
+                    "other_r": [r for key, r in correlations.items() if key != partner]
+                    if partner
+                    else [],
+                    "partner_r": correlations.get(partner, np.nan) if partner else np.nan,
+                }
+            )
+    return rows
 
 
 def sweep_row(matching, pairs, thresholds, mixed=True):
@@ -938,6 +1096,91 @@ def report(args):
             counts = sub["outcome"].value_counts(normalize=True).round(3).to_dict()
             out(f"  {value_type}: n={len(sub)} {counts}")
     out("")
+    out("by map kind (statistic: t/z/F; effect: beta, cope, con, effect size):")
+    kinds = pd.DataFrame(kind_summary(matching, pairs))
+    out(kinds.to_string(index=False, float_format=lambda v: f"{v:.3f}"))
+    out("")
+    fingerprints = {}
+    for line in open(args.work / "fingerprints.jsonl"):
+        row = json.loads(line)
+        fingerprints[(row["paper"], row["map_key"])] = matching.MapScores(
+            map_id=row["map_key"],
+            status=matching.SCORED,
+            pairs={},
+            fingerprint=tuple(row["values"]),
+        )
+    keep = set(zip(maps["paper"], maps["map_key"]))
+    effect_pairs = pd.DataFrame(effect_statistic_pairs(matching, papers, fingerprints, keep))
+    if len(effect_pairs):
+        name_paired = effect_pairs[effect_pairs["name_pair"].notna()]
+        out(
+            f"effect maps in collections that also hold statistic maps: {len(effect_pairs)} "
+            f"in {effect_pairs['paper'].nunique()} papers"
+        )
+        out(
+            f"  paired by file name: {int((effect_pairs['by_file'] == 1).sum())}; by map name: "
+            f"{int(((effect_pairs['by_file'] != 1) & (effect_pairs['by_name'] == 1)).sum())}; "
+            f"no unique name match: {int(effect_pairs['name_pair'].isna().sum())}"
+        )
+        wrong = int((name_paired["name_r"] < 0.5).sum())
+        out(
+            f"  name pairs: median r {name_paired['name_r'].median():.3f}; r < 0.5 (different "
+            f"maps despite the names): {wrong} of {len(name_paired)}"
+        )
+        out(
+            f"  best-correlated statistic map is the name pair: "
+            f"{(name_paired['best'] == name_paired['name_pair']).mean():.1%}"
+        )
+        decided = (effect_pairs["best_r"].abs() >= 0.8) & (effect_pairs["margin"] >= 0.1)
+        agree = decided[name_paired.index] & (name_paired["best"] == name_paired["name_pair"])
+        out(
+            f"  correlation alone (|r| >= 0.8, 0.1 clear of the next): decides "
+            f"{decided.mean():.1%} of effect maps; agrees with the name pair "
+            f"{int(agree.sum())} of {int(decided[name_paired.index].sum())}"
+        )
+        paired = effect_pairs[effect_pairs["partner"].notna()]
+        other = np.array([r for rs in paired["other_r"] for r in rs])
+        out(
+            f"  confident pairs: {len(paired)}; r with own statistic map >= 0.8: "
+            f"{(paired['partner_r'] >= 0.8).mean():.1%}; other contrasts' statistic maps >= 0.8: "
+            f"{(other >= 0.8).mean():.1%}, <= -0.8: {(other <= -0.8).mean():.1%} (n={len(other)})"
+        )
+        own = pairs[pairs["own"] & (pairs["outcome"] != matching.CANNOT_ASSESS)]
+        by_key = own.set_index(["paper", "map_key", "analysis_id"])
+        both_rows = []
+        for row in paired.itertuples(index=False):
+            for analysis_id in own[own["paper"] == row.paper]["analysis_id"].unique():
+                try:
+                    effect = by_key.loc[(row.paper, row.effect, analysis_id)]
+                    statistic = by_key.loc[(row.paper, row.partner, analysis_id)]
+                except KeyError:
+                    continue
+                both_rows.append(
+                    {
+                        "effect": effect["outcome"],
+                        "statistic": statistic["outcome"],
+                        "difference": max(effect["signed"], effect["unsigned"])
+                        - max(statistic["signed"], statistic["unsigned"]),
+                        "effect_peak": effect["peak_signed"],
+                        "statistic_peak": statistic["peak_signed"],
+                    }
+                )
+        compared = pd.DataFrame(both_rows)
+        if len(compared):
+            out(f"  same analysis, effect map against its statistic map (n={len(compared)}):")
+            out(
+                pd.crosstab(compared["statistic"], compared["effect"], margins=True)
+                .to_string()
+                .replace("\n", "\n    ")
+            )
+            hit = compared[compared["statistic"] == matching.MATCH]
+            out(
+                f"  where the statistic map matches (n={len(hit)}): the effect map matches "
+                f"{(hit['effect'] == matching.MATCH).mean():.1%}; its reading differs by "
+                f"{hit['difference'].median():+.3f} at the median; local peak share "
+                f"{hit['effect_peak'].mean():.2f} against {hit['statistic_peak'].mean():.2f}"
+            )
+    out("")
     out("reverse contrasts (A > B and B > A tabled as two analyses):")
     in_scope = [paper for paper in papers if paper["base_study"] in set(pairs["paper"])]
     reverse_pairs = reverse_analysis_pairs(in_scope)
@@ -959,12 +1202,24 @@ def report(args):
     out("")
     out("related uploads within a collection (fingerprint correlation >= 0.95):")
     collections = pairs["paper"].nunique()
+    kind_of = dict(zip(zip(all_maps["paper"], all_maps["map_key"]), all_maps["kind"]))
+    same_kind = np.array(
+        [
+            kind_of.get((paper, first)) == kind_of.get((paper, second))
+            for paper, first, second in zip(related["paper"], related["map_a"], related["map_b"])
+        ],
+        dtype=bool,
+    )
+    # an effect map and its own t map often correlate past 0.95; that is a set,
+    # not a duplicate, so only maps of one kind count here
     for kind in (matching.INVERSE, matching.DUPLICATE):
-        sub = related[related["kind"] == kind]
+        sub = related[(related["kind"] == kind) & same_kind]
         out(
-            f"  {kind}: {len(sub)} pairs in {sub['paper'].nunique()} of {collections} "
-            f"collections"
+            f"  {kind}, same kind of map: {len(sub)} pairs in {sub['paper'].nunique()} of "
+            f"{collections} collections"
         )
+    across = related[~same_kind]
+    out(f"  effect and statistic maps correlating that strongly: {len(across)} pairs")
     text = "\n".join(lines)
     (args.work / "report.txt").write_text(text)
     table.to_csv(args.work / "sweep.csv", index=False)
@@ -984,7 +1239,10 @@ def main(argv=None):
         help="a NeuroVault dump directory (e.g. nv-data/february_2024) for map flags",
     )
     parser.add_argument("--max-papers", type=int, default=150)
-    parser.add_argument("--max-maps", type=int, default=12, help="maps per paper")
+    parser.add_argument(
+        "--max-maps", type=int, default=12, help="statistic and ambiguous maps per paper"
+    )
+    parser.add_argument("--max-effect-maps", type=int, default=12, help="effect maps per paper")
     parser.add_argument("--max-total-gb", type=float, default=4.0)
     parser.add_argument("--negatives", type=int, default=3, help="unrelated papers per paper")
     parser.add_argument("--name-threshold", type=float, default=0.5)

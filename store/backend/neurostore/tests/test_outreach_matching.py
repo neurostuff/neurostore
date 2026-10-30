@@ -30,6 +30,7 @@ from neurostore.outreach.matching import (
     AnalysisCoordinates,
     MapScores,
     assign,
+    fingerprint_correlation,
     match_maps,
     prepare_analyses,
     related_maps,
@@ -105,7 +106,8 @@ def contrast_and_reverse(seed):
 
 @pytest.fixture(scope="module")
 def map_a():
-    return synthetic_map(PEAKS_A, seed=2)
+    # every fixture gets its own noise, or their maps would correlate
+    return synthetic_map(PEAKS_A, seed=20)
 
 
 @pytest.fixture(scope="module")
@@ -439,6 +441,22 @@ def test_an_uploaded_inverse_takes_the_reverse_contrast(analyses):
     assert related.map_ids == ("a_gt_b", "b_gt_a")
     assert related.kind == INVERSE
     assert related.correlation < -0.99
+
+
+def test_an_effect_map_correlates_with_its_own_statistic_map(map_a, map_b, analyses):
+    # t = effect / standard error, and the error varies across the brain: the
+    # effect map has the t map's pattern on a spatially varying scale
+    error = gaussian_filter(np.random.default_rng(19).random(SHAPE_2MM), 3) + 0.5
+    effect = nib.Nifti1Image(np.asarray(map_a.dataobj) * error.astype(np.float32), MNI_2MM)
+    reverse = nib.Nifti1Image(-np.asarray(map_a.dataobj), MNI_2MM)
+    scores = {
+        name: score_map(image, analyses, map_id=name)
+        for name, image in [("effect", effect), ("t", map_a), ("other", map_b), ("rev", reverse)]
+    }
+
+    assert fingerprint_correlation(scores["effect"], scores["t"]) > 0.8
+    assert abs(fingerprint_correlation(scores["effect"], scores["other"])) < 0.5
+    assert fingerprint_correlation(scores["effect"], scores["rev"]) < -0.8
 
 
 def test_the_same_map_twice_is_a_duplicate(map_a, map_b, analyses):
