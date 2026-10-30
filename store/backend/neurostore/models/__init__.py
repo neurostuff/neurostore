@@ -38,6 +38,15 @@ from neurostore.models.data import (
 )
 from neurostore.models.fulltext import Fulltext
 from neurostore.models.links import BaseStudyLink, LinkDomain
+from neurostore.models.outreach import (
+    OutreachDraft,
+    OutreachEvent,
+    OutreachIssue,
+    OutreachLink,
+    OutreachMessage,
+    OutreachPerson,
+    OutreachUpload,
+)
 from neurostore.models.review import (
     Review,
     ReviewAssignment,
@@ -86,6 +95,13 @@ __all__ = [
     "Fulltext",
     "BaseStudyLink",
     "LinkDomain",
+    "OutreachPerson",
+    "OutreachDraft",
+    "OutreachLink",
+    "OutreachMessage",
+    "OutreachUpload",
+    "OutreachEvent",
+    "OutreachIssue",
     "ReviewSource",
     "Review",
     "ReviewOp",

@@ -108,6 +108,10 @@ class Config(object):
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
     # A Fernet key (`Fernet.generate_key()`); corresponding author emails are kept under it.
     CONTACT_EMAIL_KEY = os.environ.get("CONTACT_EMAIL_KEY")
+    # The Auth0 subs allowed into outreach's admin API, comma-separated.
+    OUTREACH_ADMINS = os.environ.get("OUTREACH_ADMINS", "")
+    # A shared password for outreach's admin API, honoured only in development and tests.
+    OUTREACH_DEV_PASSWORD = os.environ.get("OUTREACH_DEV_PASSWORD")
     BEARERINFO_FUNC = os.environ.get(
         "BEARERINFO_FUNC", "neurostore.resources.auth.decode_token"
     )
