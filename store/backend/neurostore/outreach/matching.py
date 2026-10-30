@@ -1010,6 +1010,33 @@ def assign(map_scores, analysis_ids=None, *, both_sides=True):
     )
 
 
+def fingerprint_correlation(first, second):
+    """How alike two scored maps are, from their fingerprints, or None.
+
+    Pearson correlation over the grey-matter locations where both maps hold a
+    non-zero value. A contrast's effect map and its t or z map correlate at
+    0.8 or more almost always (median 0.95 on NeuroVault); a different
+    contrast's statistic map from the same collection rarely does, and one near
+    -1 is the reverse contrast. Use it to check the effect / statistic sets an
+    author groups.
+    """
+    if not (first.fingerprint and second.fingerprint):
+        return None
+    x = np.array(first.fingerprint, dtype=float)
+    y = np.array(second.fingerprint, dtype=float)
+    if len(x) != len(y):
+        return None
+    both = np.isfinite(x) & np.isfinite(y) & (x != 0) & (y != 0)
+    # fewer shared locations than this and two sparse thresholded maps can
+    # correlate by accident
+    if both.sum() < FINGERPRINT_SIZE // 5:
+        return None
+    x, y = x[both], y[both]
+    if x.std() == 0 or y.std() == 0:
+        return None
+    return round(float(np.corrcoef(x, y)[0, 1]), 4)
+
+
 def related_maps(map_scores, threshold=RELATED_CORRELATION):
     """Uploads that are one map twice, or one map and its negation.
 
@@ -1017,30 +1044,16 @@ def related_maps(map_scores, threshold=RELATED_CORRELATION):
     what an author sends who uploads both A > B and B > A; one of them is
     enough, since the assignment reads B > A off A > B's negative side.
     """
-    usable = [
-        (scores.map_id, np.array(scores.fingerprint, dtype=float))
-        for scores in map_scores
-        if scores.status == SCORED and scores.fingerprint
-    ]
+    scored = [scores for scores in map_scores if scores.status == SCORED]
     found = []
-    for (first_id, first), (second_id, second) in itertools.combinations(usable, 2):
-        if len(first) != len(second):
-            continue
-        both = np.isfinite(first) & np.isfinite(second) & (first != 0) & (second != 0)
-        # fewer shared locations than this and two sparse thresholded maps can
-        # correlate by accident
-        if both.sum() < FINGERPRINT_SIZE // 5:
-            continue
-        x, y = first[both], second[both]
-        if x.std() == 0 or y.std() == 0:
-            continue
-        correlation = float(np.corrcoef(x, y)[0, 1])
-        if abs(correlation) >= threshold:
+    for first, second in itertools.combinations(scored, 2):
+        correlation = fingerprint_correlation(first, second)
+        if correlation is not None and abs(correlation) >= threshold:
             found.append(
                 RelatedMaps(
-                    map_ids=(first_id, second_id),
+                    map_ids=(first.map_id, second.map_id),
                     kind=DUPLICATE if correlation > 0 else INVERSE,
-                    correlation=round(correlation, 4),
+                    correlation=correlation,
                 )
             )
     return tuple(found)
