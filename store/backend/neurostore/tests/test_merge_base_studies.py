@@ -26,6 +26,7 @@ from click.testing import CliRunner
 
 from neurostore import cli, service_migrations
 from neurostore.base_studies import find_base_study
+from neurostore.exceptions.base import NeuroStoreException
 from neurostore.cache_versioning import get_cache_version
 from neurostore.ingest.extracted_features import ensure_partition_for_config_local
 from neurostore.ingest.study_schema import ingest_upload
@@ -546,6 +547,28 @@ def test_an_inactive_base_study_with_no_successor_is_passed_over(session, pair):
     uploaded = ingest_upload({"coordinate_parse": parse})
     session.commit()
     assert uploaded["base_study_id"] == pair["keeper"]
+    assert Study.query.filter_by(base_study_id=pruned.id).count() == 0
+
+
+def test_an_upload_naming_a_pruned_base_study_no_active_one_holds_is_refused(session):
+    """A pruned import whose paper no active base study holds: the upload is refused, not
+    made a new base study beside the pruned one. On staging, 2026-10-30, four uploads naming
+    pruned meta-analyses (77fbW9PncZfZ, 3Enc9HvboztG, 3VCdzxXo9AYZ, 6LSkrL4BmgGU) each
+    created a duplicate with the same doi and pmid."""
+    pruned = BaseStudy(name="pruned", level="meta", is_active=False)
+    session.add(pruned)
+    session.commit()
+    before = BaseStudy.query.count()
+    parse = fx.parse([LOSS], pmid="25263466")
+    parse["header"]["neurostore_base_study_id"] = pruned.id
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": parse})
+    session.rollback()
+
+    assert error.value.status_code == 400
+    assert {(e.code, e.field) for e in error.value.errors} == {("INACTIVE", "base_study_id")}
+    assert BaseStudy.query.count() == before
     assert Study.query.filter_by(base_study_id=pruned.id).count() == 0
 
 
