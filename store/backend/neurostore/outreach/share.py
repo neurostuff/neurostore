@@ -41,7 +41,8 @@ from neurostore.models import (
     OutreachPerson,
     OutreachUpload,
 )
-from neurostore.outreach import matching
+from neurostore.outreach import map_sets, matching
+from neurostore.outreach.software import software_by_base_study
 from neurostore.outreach.drafts import (
     LINK_DAYS,
     DraftError,
@@ -55,9 +56,9 @@ MAX_FILE_BYTES = 200 * 1024 * 1024
 #: client_max_body_size of location /api/share/ in store/nginx/nginx.conf.
 MAX_BODY_BYTES = MAX_FILE_BYTES
 EXTENSIONS = (".nii.gz", ".nii")
-#: At most this many files per analysis the draft lists.
-FILES_PER_ANALYSIS = 2
-MAP_TYPES = ("t", "z", "f", "beta", "contrast", "other")
+#: At most this many files per analysis the draft lists: its t/z, effect and variance map.
+FILES_PER_ANALYSIS = 3
+MAP_TYPES = map_sets.MAP_TYPES
 #: Statuses whose draft the author can still upload to and change.
 OPEN = ("draft", "checked", "contacted", "opened", "uploading", "declined")
 CLOSED_REASONS = {
@@ -152,6 +153,13 @@ def _upload_view(upload, analysis_keys):
     return {
         "id": upload.id,
         "filename": upload.filename,
+        "path": details.get("path"),
+        "kind": map_sets.KIND.get(upload.map_type, map_sets.OTHER),
+        "map_type_by": details.get("map_type_by"),
+        "partner_id": details.get("partner_id"),
+        "partner_r": details.get("partner_r"),
+        "partner_by": details.get("partner_by"),
+        "reversed": bool(details.get("reversed")),
         "size_bytes": upload.size_bytes,
         "check_status": upload.check_status,
         "problem": details.get("problem"),
@@ -196,6 +204,8 @@ def view(link, draft):
             for analysis in draft.analyses
         ],
         "collection": draft.collection,
+        # The paper's analysis software, so the page can tailor where to find the maps.
+        "software": software_by_base_study([draft.base_study_id]).get(draft.base_study_id),
         "uploads": [_upload_view(upload, analysis_keys) for upload in _uploads(draft.id)],
         "issues": [
             {"kind": i.kind, "analysis_key": i.analysis_key, "reason": i.reason, "note": i.note}
@@ -228,6 +238,12 @@ def _extension(filename):
 def _clean_filename(filename):
     name = os.path.basename(filename or "").strip()
     return re.sub(r"[^\w.\-+ ()]", "_", name)[:200]
+
+
+def _clean_path(path):
+    """Where the file sat in the folder the author chose, without any way out of it."""
+    parts = [p for p in (path or "").replace("\\", "/").split("/") if p not in ("", ".", "..")]
+    return "/".join(re.sub(r"[^\w.\-+ ()]", "_", p) for p in parts)[:500] or None
 
 
 def check_file(path):
@@ -285,25 +301,61 @@ def score(draft, upload, image):
 
 
 def suggest(draft):
-    """Suggest an analysis for every file the author has not assigned themselves."""
+    """Pair each effect and variance map with its statistic map, suggest an analysis for
+    every statistic map (and unpaired map) the author has not assigned themselves, and
+    give each paired map its statistic map's analyses."""
     uploads = [u for u in _uploads(draft.id) if (u.check_details or {}).get("scores")]
-    stored = [matching.MapScores.from_dict(u.check_details["scores"]) for u in uploads]
-    keys = [analysis["key"] for analysis in draft.analyses]
-    assignment = matching.assign(stored, keys)
-    taken = {key for u in uploads if (u.check_details or {}).get("assigned_by") == "author"
-             for key in _keys(u)}
+    stored = {u.id: matching.MapScores.from_dict(u.check_details["scores"]) for u in uploads}
+    by_id = {u.id: u for u in uploads}
+    automatic = map_sets.pair(
+        [
+            {"id": u.id, "filename": u.filename, "path": (u.check_details or {}).get("path"),
+             "map_type": u.map_type}
+            for u in uploads
+        ],
+        lambda a, b: matching.fingerprint_correlation(stored[a], stored[b]),
+    )
+    partners = {}
     for upload in uploads:
+        details = upload.check_details or {}
+        if details.get("partner_by") == "author":
+            if details.get("partner_id") in by_id:
+                partners[upload.id] = {"partner_id": details["partner_id"], "r": None,
+                                       "by": "author", "reversed": False}
+        elif upload.id in automatic:
+            partners[upload.id] = automatic[upload.id]
+
+    leaders = [u for u in uploads if u.id not in partners]
+    keys = [analysis["key"] for analysis in draft.analyses]
+    assignment = matching.assign([stored[u.id] for u in leaders], keys)
+    taken = {key for u in leaders if (u.check_details or {}).get("assigned_by") == "author"
+             for key in _keys(u)}
+    for upload in leaders:
         details = dict(upload.check_details or {})
-        if details.get("assigned_by") == "author":
-            continue
-        suggested = [
-            pair.analysis_id for pair in assignment.analyses_for(upload.id)
-            if pair.analysis_id not in taken
-        ]
-        details["analysis_keys"] = suggested
-        details["assigned_by"] = "suggestion" if suggested else None
+        if details.get("partner_by") != "author":
+            for field in ("partner_id", "partner_r", "partner_by", "reversed"):
+                details.pop(field, None)
+        if details.get("assigned_by") != "author":
+            suggested = [
+                pair.analysis_id for pair in assignment.analyses_for(upload.id)
+                if pair.analysis_id not in taken
+            ]
+            details["analysis_keys"] = suggested
+            details["assigned_by"] = "suggestion" if suggested else None
         upload.check_details = details
-        upload.analysis_key = suggested[0] if suggested else None
+        upload.analysis_key = (_keys(upload) or [None])[0]
+    for upload in uploads:
+        if upload.id not in partners:
+            continue
+        found = partners[upload.id]
+        details = dict(upload.check_details or {})
+        details.update(partner_id=found["partner_id"], partner_r=found["r"],
+                       partner_by=found["by"], reversed=found["reversed"])
+        if details.get("assigned_by") != "author":
+            details["analysis_keys"] = _keys(by_id[found["partner_id"]])
+            details["assigned_by"] = "set" if details["analysis_keys"] else None
+        upload.check_details = details
+        upload.analysis_key = (_keys(upload) or [None])[0]
     return assignment
 
 
@@ -378,6 +430,7 @@ async def upload(request: Request):
     """One file, as the raw request body, named by ``?filename=``. Saved before it is
     checked, so an author who leaves never loses what already arrived."""
     filename = _clean_filename(request.query_params.get("filename", ""))
+    path = _clean_path(request.query_params.get("path"))
     extension = _extension(filename)
     if extension is None:
         raise HTTPException(422, "Upload .nii or .nii.gz files.")
@@ -420,13 +473,14 @@ async def upload(request: Request):
         )
         db.session.add(row)
         db.session.flush()
-        path = folder / f"{row.id}{extension}"
-        partial.rename(path)
-        row.path = str(path)
-        image, problem = check_file(path)
-        details = {"problem": problem}
+        stored = folder / f"{row.id}{extension}"
+        partial.rename(stored)
+        row.path = str(stored)
+        image, problem = check_file(stored)
+        details = {"problem": problem, "path": path}
         if image is not None:
             details["scores"] = score(draft, row, image)
+        row.map_type, details["map_type_by"] = map_sets.detect_type(image, filename, path)
         row.check_status = "ok" if problem is None else "problem"
         row.check_details = details
         _act(link, draft, "file_uploaded", {"upload_id": row.id, "filename": filename})
@@ -448,8 +502,9 @@ def _upload_of(draft, upload_id):
 
 
 def _assign(link, draft, body, request):
-    """The author says which analyses a file is for, or labels a file the paper has none
-    for, or says what kind of map it is."""
+    """The author says which analyses a file is for, labels a file the paper has none
+    for, says what kind of map it is, or which statistic map an effect or variance map
+    goes with (null to unpair it)."""
     _writable(link, draft)
     row = _upload_of(draft, request.path_params["upload_id"])
     details = dict(row.check_details or {})
@@ -464,13 +519,25 @@ def _assign(link, draft, body, request):
     if "label" in body:
         row.label = (body["label"] or "").strip()[:300] or None
     if "map_type" in body:
-        if body["map_type"] not in (*MAP_TYPES, None):
+        if body["map_type"] not in MAP_TYPES:
             raise DraftError(f"map_type must be one of {', '.join(MAP_TYPES)}")
         row.map_type = body["map_type"]
+        details["map_type_by"] = "author"
+    if "partner_id" in body:
+        partner = body["partner_id"]
+        if partner is not None:
+            other = _upload_of(draft, partner)
+            if map_sets.KIND.get(other.map_type) != map_sets.STATISTIC or other.id == row.id:
+                raise DraftError("a map can only go with a t, z or F map")
+        details["partner_id"], details["partner_by"] = partner, "author"
+        details["partner_r"], details["reversed"] = None, False
+        if details.get("assigned_by") == "set":
+            details["assigned_by"] = None
     row.check_details = details
+    suggest(draft)
     _act(link, draft, "file_assigned", {
         "upload_id": row.id, "analysis_keys": _keys(row), "label": row.label,
-        "map_type": row.map_type,
+        "map_type": row.map_type, "partner_id": (row.check_details or {}).get("partner_id"),
     })
 
 

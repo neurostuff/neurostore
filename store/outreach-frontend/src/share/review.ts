@@ -42,6 +42,23 @@ export function prompts(view: ShareView): Prompt[] {
                 tone: 'info',
                 text: 'This map looks thresholded. If you have the unthresholded one, please upload that instead.',
             });
+        if (upload.kind === 'effect' || upload.kind === 'variance') {
+            const partner = view.uploads.find((other) => other.id === upload.partner_id);
+            if (!partner)
+                found.push({
+                    uploadId: upload.id,
+                    tone: 'info',
+                    text: `Which t or z map does this ${upload.kind} map go with? Pick it, so it goes with the same analysis.`,
+                });
+            else if (upload.reversed)
+                found.push({
+                    uploadId: upload.id,
+                    tone: 'warning',
+                    text: `This effect map runs opposite to ${partner.filename}. Is one of them the reverse contrast?`,
+                });
+            // Its analysis comes with its statistic map; effect maps are no test of it.
+            if (partner) continue;
+        }
         for (const key of upload.analysis_keys) {
             const outcome = upload.fits[key]?.outcome;
             const analysis = `“${name.get(key)}”`;
@@ -67,7 +84,7 @@ export function prompts(view: ShareView): Prompt[] {
                     text: `Left and right look swapped compared with ${analysis}.`,
                 });
         }
-        if (upload.analysis_keys.length === 0 && !upload.label)
+        if (upload.analysis_keys.length === 0 && !upload.label && upload.kind !== 'variance')
             found.push({
                 uploadId: upload.id,
                 tone: 'info',
@@ -100,3 +117,19 @@ export function refusal(file: File, view: ShareView, queued: number): string | n
         return `This paper takes at most ${view.limits.max_files} files.`;
     return null;
 }
+
+/** The uploads in reading order: each statistic map, then the maps that go with it. */
+export function ordered(view: ShareView): ShareUpload[] {
+    const ids = new Set(view.uploads.map((upload) => upload.id));
+    const leaders = view.uploads.filter((upload) => !upload.partner_id || !ids.has(upload.partner_id));
+    return leaders.flatMap((leader) => [leader, ...view.uploads.filter((upload) => upload.partner_id === leader.id)]);
+}
+
+export const TYPE_LABELS: Record<string, string> = {
+    t: 't map',
+    z: 'z map',
+    f: 'F map',
+    effect: 'effect map',
+    variance: 'variance map',
+    other: 'other',
+};

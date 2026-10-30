@@ -27,8 +27,9 @@ checked. It lists the analyses we found, including:
 
 {analyses}
 
-If you still have the unthresholded maps, you can drop them all onto this page, check \
-that each one landed on the right analysis, and submit. No account is needed:
+If you still have the unthresholded t or z maps, and the effect maps that go with them \
+(FSL cope or SPM con files, for example), you can point this page at your results folder, \
+check that each map landed on the right analysis, and submit. No account is needed:
 
 {url}
 

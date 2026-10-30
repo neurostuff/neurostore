@@ -18,9 +18,12 @@ import {
 import { useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { paperLinks } from '../links';
 import type { ShareApi } from './api';
-import { formatBytes, FITS, prompts, refusal, usableFiles } from './review';
+import { defaultSoftware, INSTRUCTIONS } from './instructions';
+import { formatBytes, FITS, ordered, prompts, refusal, TYPE_LABELS, usableFiles } from './review';
 import { HelpDialog, IssueDialog, ReplyDialog } from './ShareDialogs';
-import { ISSUE_REASONS, type IssueReason, type ShareUpload, type ShareView } from './types';
+import { pickMaps, withPaths, type Candidate } from './tree';
+import { TreePicker } from './TreePicker';
+import { ISSUE_REASONS, MAP_TYPES, type IssueReason, type MapType, type ShareUpload, type ShareView } from './types';
 
 const NOT_STARTED = ['draft', 'checked', 'contacted'];
 const COLLECTION_FIELDS: [string, string][] = [
@@ -47,29 +50,46 @@ function Section({ step, title, children }: { step?: number; title: string; chil
     );
 }
 
+/** The end of a file's path: enough to tell cope1.feat/stats/zstat1 from cope2's. */
+const shortPath = (upload: ShareUpload) => (upload.path ?? upload.filename).split('/').slice(-3).join('/');
+
+const PAIRED_BY: Record<string, string> = {
+    name: 'by its name',
+    'name+correlation': 'by its name and values',
+    correlation: 'by its values',
+    author: 'by you',
+};
+
 function FileRow({
     upload,
     view,
     disabled,
-    onAssign,
-    onLabel,
+    onChange,
     onRemove,
 }: {
     upload: ShareUpload;
     view: ShareView;
     disabled: boolean;
-    onAssign: (keys: string[]) => void;
-    onLabel: (label: string) => void;
+    onChange: (change: Parameters<ShareApi['assign']>[1]) => void;
     onRemove: () => void;
 }) {
     const [label, setLabel] = useState(upload.label ?? '');
     const notes = prompts(view).filter((prompt) => prompt.uploadId === upload.id);
+    const partner = view.uploads.find((other) => other.id === upload.partner_id);
+    const member = upload.kind === 'effect' || upload.kind === 'variance';
+    const statistics = view.uploads.filter((other) => other.kind === 'statistic' && other.check_status === 'ok');
+    const names = (keys: string[]) => keys.map((key) => view.analyses.find((a) => a.key === key)?.name).join(', ');
     return (
-        <Paper variant="outlined" sx={{ p: 1.5 }}>
+        <Paper
+            variant="outlined"
+            // Stack resets its children's margins, so the indent of a set's maps is inline.
+            style={partner ? { marginLeft: 24 } : undefined}
+            sx={{ p: 1.5, ...(partner ? { borderLeft: 3, borderLeftColor: 'primary.light' } : {}) }}
+        >
             <Stack spacing={1}>
                 <Stack direction="row" spacing={1} alignItems="center">
                     <Typography variant="subtitle2" sx={{ flexGrow: 1, wordBreak: 'break-all' }}>
-                        {upload.filename}{' '}
+                        {upload.path ?? upload.filename}{' '}
                         <Typography component="span" variant="caption" color="text.secondary">
                             {formatBytes(upload.size_bytes)}
                         </Typography>
@@ -79,6 +99,62 @@ function FileRow({
                     </IconButton>
                 </Stack>
                 {upload.check_status === 'ok' && (
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                        <TextField
+                            select
+                            size="small"
+                            label="Kind of map"
+                            disabled={disabled}
+                            value={upload.map_type ?? 'other'}
+                            onChange={(event) => onChange({ map_type: event.target.value as MapType })}
+                            sx={{ minWidth: 150 }}
+                            helperText={upload.map_type_by === 'header' ? 'read from the file' : undefined}
+                        >
+                            {MAP_TYPES.map((type) => (
+                                <MenuItem key={type} value={type}>
+                                    {TYPE_LABELS[type]}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                        {member && (
+                            <TextField
+                                select
+                                size="small"
+                                label="Goes with"
+                                disabled={disabled}
+                                value={upload.partner_id ?? ''}
+                                onChange={(event) => onChange({ partner_id: event.target.value || null })}
+                                SelectProps={{
+                                    displayEmpty: true,
+                                    renderValue: (value) => {
+                                        const chosen = statistics.find((other) => other.id === value);
+                                        return chosen ? shortPath(chosen) : 'no t/z map';
+                                    },
+                                }}
+                                InputLabelProps={{ shrink: true }}
+                                sx={{ flexGrow: 1 }}
+                                helperText={
+                                    partner && upload.partner_by ? `paired ${PAIRED_BY[upload.partner_by]}` : undefined
+                                }
+                            >
+                                <MenuItem value="">no t/z map</MenuItem>
+                                {statistics.map((other) => (
+                                    <MenuItem key={other.id} value={other.id}>
+                                        {other.path ?? other.filename}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        )}
+                    </Stack>
+                )}
+                {upload.check_status === 'ok' && partner && upload.assigned_by !== 'author' && (
+                    <Typography variant="body2" color="text.secondary">
+                        {upload.analysis_keys.length > 0
+                            ? `Goes with ${names(upload.analysis_keys)}, as its t/z map does.`
+                            : 'Takes the analysis of its t/z map once that has one.'}
+                    </Typography>
+                )}
+                {upload.check_status === 'ok' && !(partner && upload.assigned_by !== 'author') && (
                     <TextField
                         select
                         size="small"
@@ -87,16 +163,12 @@ function FileRow({
                         SelectProps={{
                             multiple: true,
                             renderValue: (keys) =>
-                                (keys as string[]).length === 0
-                                    ? 'None of these analyses'
-                                    : (keys as string[])
-                                          .map((key) => view.analyses.find((a) => a.key === key)?.name)
-                                          .join(', '),
+                                (keys as string[]).length === 0 ? 'None of these analyses' : names(keys as string[]),
                             displayEmpty: true,
                         }}
                         InputLabelProps={{ shrink: true }}
                         value={upload.analysis_keys}
-                        onChange={(event) => onAssign(event.target.value as unknown as string[])}
+                        onChange={(event) => onChange({ analysis_keys: event.target.value as unknown as string[] })}
                     >
                         {view.analyses.map((analysis) => {
                             const fit = upload.fits[analysis.key];
@@ -104,7 +176,7 @@ function FileRow({
                                 <MenuItem key={analysis.key} value={analysis.key}>
                                     <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
                                         <span style={{ flexGrow: 1 }}>{analysis.name}</span>
-                                        {fit && (
+                                        {fit && upload.kind === 'statistic' && (
                                             <Chip size="small" color={FITS[fit.outcome].tone} variant="outlined" label={FITS[fit.outcome].label} />
                                         )}
                                     </Stack>
@@ -113,17 +185,16 @@ function FileRow({
                         })}
                     </TextField>
                 )}
-                {upload.check_status === 'ok' && upload.analysis_keys.length > 0 && (
+                {upload.check_status === 'ok' && upload.kind === 'statistic' && upload.analysis_keys.length > 0 && (
                     <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
                         {upload.analysis_keys.map((key) => {
                             const fit = upload.fits[key];
-                            const name = view.analyses.find((a) => a.key === key)?.name;
                             return (
                                 <Chip
                                     key={key}
                                     size="small"
                                     color={fit ? FITS[fit.outcome].tone : 'default'}
-                                    label={`${name}: ${fit ? FITS[fit.outcome].label : 'not checked'}${
+                                    label={`${names([key])}: ${fit ? FITS[fit.outcome].label : 'not checked'}${
                                         upload.assigned_by === 'suggestion' ? ' (suggested)' : ''
                                     }`}
                                 />
@@ -131,14 +202,14 @@ function FileRow({
                         })}
                     </Stack>
                 )}
-                {upload.check_status === 'ok' && upload.analysis_keys.length === 0 && (
+                {upload.check_status === 'ok' && upload.analysis_keys.length === 0 && !partner && (
                     <TextField
                         size="small"
                         label="What is this map? (for maps the paper does not table)"
                         value={label}
                         disabled={disabled}
                         onChange={(event) => setLabel(event.target.value)}
-                        onBlur={() => label !== (upload.label ?? '') && onLabel(label)}
+                        onBlur={() => label !== (upload.label ?? '') && onChange({ label })}
                     />
                 )}
                 {notes.map((note) => (
@@ -160,7 +231,11 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
     const [name, setName] = useState(view.submitter_name ?? '');
     const [orcid, setOrcid] = useState(view.submitter_orcid ?? '');
     const [busy, setBusy] = useState(false);
+    const [software, setSoftware] = useState(() => defaultSoftware(view.software?.packages));
+    const [picking, setPicking] = useState<Candidate[] | null>(null);
     const input = useRef<HTMLInputElement>(null);
+    const folder = useRef<HTMLInputElement>(null);
+    const instructions = INSTRUCTIONS.find((item) => item.software === software) ?? INSTRUCTIONS[INSTRUCTIONS.length - 1];
 
     const started = !NOT_STARTED.includes(view.status);
     const editable = view.open && !view.preview;
@@ -178,23 +253,24 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
         }
     }
 
-    async function send(files: File[]) {
-        const accepted: File[] = [];
+    async function send(files: { file: File; path?: string }[]) {
+        const accepted: { file: File; path?: string }[] = [];
         const refused: Queued[] = [];
-        for (const file of files) {
-            const reason = refusal(file, view, accepted.length);
-            if (reason) refused.push({ name: file.name, error: reason });
-            else accepted.push(file);
+        for (const item of files) {
+            const reason = refusal(item.file, view, accepted.length);
+            if (reason) refused.push({ name: item.path ?? item.file.name, error: reason });
+            else accepted.push(item);
         }
-        setQueue([...refused, ...accepted.map((file) => ({ name: file.name, error: null }))]);
-        for (const file of accepted) {
+        setQueue([...refused, ...accepted.map((item) => ({ name: item.path ?? item.file.name, error: null }))]);
+        for (const { file, path } of accepted) {
+            const name = path ?? file.name;
             try {
-                setView(await api.upload(file));
-                setQueue((current) => current.filter((item) => item.name !== file.name || item.error));
+                setView(await api.upload(file, path));
+                setQueue((current) => current.filter((item) => item.name !== name || item.error));
             } catch (failure) {
                 const message = failure instanceof Error ? failure.message : String(failure);
                 setQueue((current) =>
-                    current.map((item) => (item.name === file.name && !item.error ? { ...item, error: message } : item))
+                    current.map((item) => (item.name === name && !item.error ? { ...item, error: message } : item))
                 );
             }
         }
@@ -202,7 +278,7 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
 
     const onDrop = (event: DragEvent) => {
         event.preventDefault();
-        if (editable) void send(Array.from(event.dataTransfer.files));
+        if (editable) void send(Array.from(event.dataTransfer.files).map((file) => ({ file })));
     };
     const uploading = queue.some((item) => !item.error);
     const unassigned = view.analyses.filter((a) => !view.uploads.some((u) => u.analysis_keys.includes(a.key)));
@@ -249,8 +325,9 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                             NeuroVault
                         </Link>
                         , so others can reuse them. Our software read the paper and found the {view.analyses.length}{' '}
-                        {view.analyses.length === 1 ? 'analysis' : 'analyses'} below. Drop in your maps, check that each
-                        landed on the right analysis, and submit. It takes a few minutes and needs no account.
+                        {view.analyses.length === 1 ? 'analysis' : 'analyses'} below. Point us at your results folder (or
+                        drop in the maps), check that each landed on the right analysis, and submit. It takes a few
+                        minutes and needs no account.
                     </Typography>
                     <Button variant="contained" disabled={busy} onClick={() => void run(api.opened)}>
                         Get started
@@ -260,7 +337,43 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
 
             {(started || view.preview) && !submitted && (
                 <>
-                    <Section step={1} title="Drop your maps">
+                    <Section step={1} title="Add your maps">
+                        <Stack spacing={1} sx={{ mb: 2 }}>
+                            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                <Typography variant="body2">
+                                    We'd like each analysis's unthresholded t or z map and, if you have it, its effect map.
+                                    Made with
+                                </Typography>
+                                <TextField
+                                    select
+                                    size="small"
+                                    value={software}
+                                    onChange={(event) => setSoftware(event.target.value)}
+                                    inputProps={{ 'aria-label': 'analysis software' }}
+                                >
+                                    {INSTRUCTIONS.map((item) => (
+                                        <MenuItem key={item.software} value={item.software}>
+                                            {item.software === 'Other' ? 'other software' : item.software}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </Stack>
+                            {instructions.before && (
+                                <Typography variant="body2" color="text.secondary">
+                                    First: {instructions.before}
+                                </Typography>
+                            )}
+                            <Typography variant="body2" color="text.secondary">
+                                Choose {instructions.folder} We'll pick out:
+                            </Typography>
+                            <Box component="ul" sx={{ m: 0, pl: 3 }}>
+                                {instructions.files.map((line) => (
+                                    <Typography component="li" variant="body2" color="text.secondary" key={line}>
+                                        {line}
+                                    </Typography>
+                                ))}
+                            </Box>
+                        </Stack>
                         <Box
                             onDragOver={(event) => event.preventDefault()}
                             onDrop={onDrop}
@@ -273,12 +386,33 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                                 bgcolor: 'action.hover',
                             }}
                         >
-                            <Typography gutterBottom>
-                                Drag all your .nii or .nii.gz files here at once, or
+                            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 1 }}>
+                                <Button
+                                    variant="contained"
+                                    disabled={!editable || uploading}
+                                    onClick={() => folder.current?.click()}
+                                >
+                                    Choose a results folder
+                                </Button>
+                                <Button variant="outlined" disabled={!editable || uploading} onClick={() => input.current?.click()}>
+                                    Choose files
+                                </Button>
+                            </Stack>
+                            <Typography variant="body2" color="text.secondary">
+                                or drag .nii / .nii.gz files here
                             </Typography>
-                            <Button variant="outlined" disabled={!editable || uploading} onClick={() => input.current?.click()}>
-                                Choose files
-                            </Button>
+                            <input
+                                ref={folder}
+                                hidden
+                                type="file"
+                                multiple
+                                {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
+                                onChange={(event) => {
+                                    const remaining = view.limits.max_files - view.uploads.length;
+                                    setPicking(pickMaps(withPaths(event.target.files ?? []), remaining));
+                                    event.target.value = '';
+                                }}
+                            />
                             <input
                                 ref={input}
                                 hidden
@@ -286,13 +420,13 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                                 multiple
                                 accept=".nii,.nii.gz,.gz"
                                 onChange={(event) => {
-                                    void send(Array.from(event.target.files ?? []));
+                                    void send(Array.from(event.target.files ?? []).map((file) => ({ file })));
                                     event.target.value = '';
                                 }}
                             />
                             <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                                Up to {view.limits.max_files} files, 200 MB each. Unthresholded group maps (t, z or effect
-                                size) are most useful.
+                                Up to {view.limits.max_files} files, 200 MB each: a t or z map, effect map and variance map
+                                for each analysis.
                             </Typography>
                         </Box>
                         {queue.map((item) => (
@@ -304,8 +438,9 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
 
                     <Section step={2} title="Check which map goes with which analysis">
                         <Typography variant="body2" color="text.secondary" paragraph>
-                            We compared each map with the coordinates the paper reports and suggested a match. Change any
-                            that are wrong. If an analysis below is wrong or missing, tell us; you don't need to fix it.
+                            We compared each t/z map with the coordinates the paper reports and suggested a match; effect
+                            and variance maps go with their t/z map. Change any that are wrong. If an analysis below is
+                            wrong or missing, tell us; you don't need to fix it.
                         </Typography>
                         <Grid container spacing={2}>
                             <Grid item xs={12} md={7}>
@@ -313,14 +448,13 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                                     {view.uploads.length === 0 && (
                                         <Typography variant="body2">No files yet.</Typography>
                                     )}
-                                    {view.uploads.map((upload) => (
+                                    {ordered(view).map((upload) => (
                                         <FileRow
                                             key={`${upload.id}-${upload.label ?? ''}`}
                                             upload={upload}
                                             view={view}
                                             disabled={!editable || busy}
-                                            onAssign={(keys) => void run(() => api.assign(upload.id, { analysis_keys: keys }))}
-                                            onLabel={(label) => void run(() => api.assign(upload.id, { label }))}
+                                            onChange={(change) => void run(() => api.assign(upload.id, change))}
                                             onRemove={() => void run(() => api.remove(upload.id))}
                                         />
                                     ))}
@@ -457,6 +591,17 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                 </Stack>
             )}
 
+            {picking && (
+                <TreePicker
+                    candidates={picking}
+                    limit={view.limits.max_files - view.uploads.length}
+                    onClose={() => setPicking(null)}
+                    onUpload={(chosen) => {
+                        setPicking(null);
+                        void send(chosen.map(({ file, path }) => ({ file, path })));
+                    }}
+                />
+            )}
             <IssueDialog
                 open={typeof dialog === 'object' && dialog !== null}
                 analysis={

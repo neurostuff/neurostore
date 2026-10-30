@@ -1,4 +1,4 @@
-import type { AuthorReply, IssueReason, ShareView } from './types';
+import type { AuthorReply, IssueReason, MapType, ShareView } from './types';
 
 export class ShareError extends Error {
     constructor(
@@ -29,13 +29,16 @@ export function shareApi(base: string) {
         session: (token: string) => post('/session', { token }),
         draft: () => request('/draft'),
         opened: () => post('/opened'),
-        upload: (file: File) =>
-            request(`/uploads?filename=${encodeURIComponent(file.name)}`, {
+        upload: (file: File, path?: string) =>
+            request(`/uploads?${new URLSearchParams({ filename: file.name, ...(path ? { path } : {}) })}`, {
                 method: 'POST',
                 body: file,
                 headers: { 'Content-Type': 'application/octet-stream' },
             }),
-        assign: (uploadId: string, change: { analysis_keys?: string[]; label?: string; map_type?: string | null }) =>
+        assign: (
+            uploadId: string,
+            change: { analysis_keys?: string[]; label?: string; map_type?: MapType; partner_id?: string | null }
+        ) =>
             request(`/uploads/${uploadId}`, { method: 'PATCH', body: JSON.stringify(change) }),
         remove: (uploadId: string) => post(`/uploads/${uploadId}/remove`),
         issue: (issue: { kind: 'extraction_error' | 'help'; analysis_key?: string; reason?: IssueReason; note?: string }) =>

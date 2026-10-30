@@ -8,17 +8,32 @@ export interface Fit {
     reason: string | null;
 }
 
+export type MapKind = 'statistic' | 'effect' | 'variance' | 'other';
+export const MAP_TYPES = ['t', 'z', 'f', 'effect', 'variance', 'other'] as const;
+export type MapType = (typeof MAP_TYPES)[number];
+
 export interface ShareUpload {
     id: string;
     filename: string;
+    /** Where it sat in the folder the author chose. */
+    path: string | null;
+    kind: MapKind;
+    /** How its type was told: the file's header, its name, or the author. */
+    map_type_by: 'header' | 'name' | 'author' | null;
+    /** The statistic map an effect or variance map goes with. */
+    partner_id: string | null;
+    partner_r: number | null;
+    partner_by: 'name' | 'name+correlation' | 'correlation' | 'author' | null;
+    /** Paired, but its values run opposite to its statistic map's. */
+    reversed: boolean;
     size_bytes: number;
     check_status: 'ok' | 'problem' | null;
     problem: string | null;
     thresholded: boolean | null;
     analysis_keys: string[];
-    assigned_by: 'author' | 'suggestion' | null;
+    assigned_by: 'author' | 'suggestion' | 'set' | null;
     label: string | null;
-    map_type: string | null;
+    map_type: MapType | null;
     /** The matcher's reading of this file against each analysis. */
     fits: Record<string, Fit | null>;
 }
@@ -46,6 +61,7 @@ export interface ShareView {
     };
     analyses: ShareAnalysis[];
     collection: Record<string, string>;
+    software: { packages: string[]; source: string | null; texts: string[] } | null;
     uploads: ShareUpload[];
     issues: { kind: string; analysis_key: string | null; reason: string | null; note: string | null }[];
     submitter_name: string | null;
