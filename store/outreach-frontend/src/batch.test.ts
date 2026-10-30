@@ -18,6 +18,8 @@ const draft = (id: string, who: PersonSummary | null, over: Partial<DraftSummary
     name: `Paper ${id}`,
     year: 2026,
     doi: null,
+    pmid: null,
+    pmcid: null,
     journal: null,
     status: 'checked',
     created_at: '2026-10-30T00:00:00Z',

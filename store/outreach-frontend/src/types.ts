@@ -19,6 +19,7 @@ export interface Candidate {
     year: number | null;
     doi: string | null;
     pmid: string | null;
+    pmcid: string | null;
     journal: string | null;
     result_analyses: number;
 }
@@ -53,6 +54,8 @@ export interface DraftSummary {
     name: string | null;
     year: number | null;
     doi: string | null;
+    pmid: string | null;
+    pmcid: string | null;
     journal: string | null;
     status: DraftStatus;
     created_at: string;
@@ -75,7 +78,6 @@ export type Collection = Partial<
 >;
 
 export interface DraftDetail extends Omit<DraftSummary, 'analyses'> {
-    pmid: string | null;
     source_study_id: string | null;
     source_sha256: string;
     analyses: DraftAnalysis[];

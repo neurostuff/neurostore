@@ -103,6 +103,8 @@ def _draft_summary(draft, base_study, person=None, messages=0):
         "name": base_study.name,
         "year": base_study.year,
         "doi": base_study.doi,
+        "pmid": base_study.pmid,
+        "pmcid": base_study.pmcid,
         "journal": base_study.publication,
         "status": draft.status,
         "created_at": _iso(draft.created_at),
@@ -135,7 +137,6 @@ def _detail(draft):
     links = live_links(draft.id)
     return {
         **_draft_summary(draft, base_study, person, counts.get(draft.person_id, 0)),
-        "pmid": base_study.pmid,
         "source_study_id": draft.source_study_id,
         "source_sha256": draft.source_sha256,
         "analyses": draft.analyses,
@@ -164,6 +165,7 @@ async def candidates(request: Request):
                 "year": base_study.year,
                 "doi": base_study.doi,
                 "pmid": base_study.pmid,
+                "pmcid": base_study.pmcid,
                 "journal": base_study.publication,
                 "result_analyses": count,
             }

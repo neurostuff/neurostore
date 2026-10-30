@@ -14,6 +14,8 @@ export interface PaperRow {
     journal: string | null;
     year: number | null;
     doi: string | null;
+    pmid: string | null;
+    pmcid: string | null;
     stage: Stage;
     analyses: number;
     person: PersonSummary | null;
@@ -86,6 +88,8 @@ export const fromCandidate = (candidate: Candidate): PaperRow => ({
     journal: candidate.journal,
     year: candidate.year,
     doi: candidate.doi,
+    pmid: candidate.pmid,
+    pmcid: candidate.pmcid,
     stage: 'not_started',
     analyses: candidate.result_analyses,
     person: null,
@@ -103,6 +107,8 @@ export const fromDraft = (draft: DraftSummary, held: string[] = []): PaperRow =>
     journal: draft.journal,
     year: draft.year,
     doi: draft.doi,
+    pmid: draft.pmid,
+    pmcid: draft.pmcid,
     stage: draft.status,
     analyses: draft.analyses,
     person: draft.person,

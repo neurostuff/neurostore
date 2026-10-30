@@ -18,7 +18,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { PersonFlags, StatusChip } from '../components';
+import { PaperLinks, PersonFlags, StatusChip } from '../components';
 import { useApi } from '../context';
 import {
     defaultFilters,
@@ -256,6 +256,7 @@ export function PapersPage() {
                                 <Typography variant="caption" color="text.secondary" display="block">
                                     {[row.journal, row.year].filter(Boolean).join(', ')}
                                 </Typography>
+                                <PaperLinks doi={row.doi} pmid={row.pmid} pmcid={row.pmcid} />
                             </TableCell>
                             <TableCell>
                                 <StatusChip status={row.stage} />

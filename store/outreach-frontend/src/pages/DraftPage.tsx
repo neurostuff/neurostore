@@ -2,7 +2,7 @@ import { Alert, Button, Divider, Grid, Link, Paper, Stack, Typography } from '@m
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
-import { PersonFlags, StatusChip } from '../components';
+import { PaperLinks, PersonFlags, StatusChip } from '../components';
 import { useApi } from '../context';
 import { ago, when } from '../format';
 import type { DraftDetail, Invitation } from '../types';
@@ -76,11 +76,7 @@ export function DraftPage() {
                         {[data.journal, data.year].filter(Boolean).join(', ')} · last activity {ago(data.last_activity_at)}
                         {data.link_expires_at && ` · link live until ${new Date(data.link_expires_at).toLocaleDateString()}`}
                     </Typography>
-                    {data.doi && (
-                        <Link href={`https://doi.org/${data.doi}`} target="_blank" rel="noreferrer">
-                            paper
-                        </Link>
-                    )}
+                    <PaperLinks doi={data.doi} pmid={data.pmid} pmcid={data.pmcid} />
                 </Stack>
                 <Stack direction="row" spacing={1}>
                     {data.status === 'draft' && (

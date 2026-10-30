@@ -309,6 +309,10 @@ async def test_an_admin_lists_candidates_and_builds_and_lists_drafts(app, sessio
 
     assert [r["base_study_id"] for r in listed.json()["results"]] == [base_study_id]
     assert listed.json()["results"][0]["result_analyses"] == 1
+    # Both lists carry the paper's ids, so the panel can link to PubMed and PMC.
+    assert listed.json()["results"][0]["pmid"] == "1001"
+    assert drafts.json()["results"][0]["pmid"] == "1001"
+    assert {"pmid", "pmcid"} <= set(drafts.json()["results"][0])
     assert built.status_code == 201
     assert again.status_code == 409
     assert [r["id"] for r in drafts.json()["results"]] == [built.json()["id"]]
