@@ -13,9 +13,6 @@ export const PROGRESS_STATUSES = [
 export const OUTCOME_STATUSES = ['declined', 'rejected', 'failed', 'files_deleted'] as const;
 export type DraftStatus = (typeof PROGRESS_STATUSES)[number] | (typeof OUTCOME_STATUSES)[number];
 
-/** Opened or uploading but not submitted: the drafts most likely to be forgotten. */
-export const IN_PROGRESS: DraftStatus[] = ['opened', 'uploading'];
-
 export interface Candidate {
     base_study_id: string;
     name: string | null;

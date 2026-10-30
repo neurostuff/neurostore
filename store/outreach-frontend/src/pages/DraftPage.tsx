@@ -1,13 +1,13 @@
 import { Alert, Button, Divider, Grid, Link, Paper, Stack, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
+import { PersonFlags, StatusChip } from '../components';
 import { useApi } from '../context';
 import { ago, when } from '../format';
 import type { DraftDetail, Invitation } from '../types';
 import { AnalysesEditor } from './AnalysesEditor';
 import { CollectionEditor } from './CollectionEditor';
-import { PersonFlags, StatusChip } from './DraftsPage';
 import { InvitationDialog } from './InvitationDialog';
 import { PersonPanel } from './PersonPanel';
 
@@ -63,12 +63,15 @@ export function DraftPage() {
     return (
         <Stack spacing={3}>
             <Stack spacing={1}>
+                <Link component={RouterLink} to="/" variant="body2">
+                    ← All papers
+                </Link>
                 <Typography variant="h5" component="h1">
                     {data.name}
                 </Typography>
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                     <StatusChip status={data.status} />
-                    <PersonFlags draft={{ ...data, analyses: data.analyses.length }} />
+                    <PersonFlags person={data.person} />
                     <Typography variant="body2" color="text.secondary">
                         {[data.journal, data.year].filter(Boolean).join(', ')} · last activity {ago(data.last_activity_at)}
                         {data.link_expires_at && ` · link live until ${new Date(data.link_expires_at).toLocaleDateString()}`}

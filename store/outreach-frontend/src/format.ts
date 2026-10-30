@@ -17,6 +17,7 @@ export function when(iso: string | null): string {
 }
 
 export const STATUS_LABELS: Record<string, string> = {
+    not_started: 'Not started',
     draft: 'Draft',
     checked: 'Approved draft',
     contacted: 'Emailed',
