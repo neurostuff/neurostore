@@ -33,6 +33,7 @@ import concurrent.futures
 import dataclasses
 import functools
 import importlib.util
+import itertools
 import os
 import time
 from collections.abc import Mapping
@@ -49,6 +50,20 @@ OUTCOMES = (MATCH, REVERSED_SIGN, LR_FLIP, NO_MATCH, CANNOT_ASSESS)
 # The outcomes a suggested assignment may pair up. A reversed or mirrored fit is
 # still the likeliest home for the map; the outcome is what prompts the author.
 ASSIGNABLE = (MATCH, REVERSED_SIGN, LR_FLIP)
+
+# Which side of a map's sign an assigned analysis sits on. Papers table A > B and
+# B > A as separate analyses, but often from a single A > B map: B > A is then
+# that map's negative side, read as a reversed-sign fit.
+POSITIVE = "positive"
+NEGATIVE = "negative"
+
+# Two uploads correlating at least this strongly, at the grey-matter locations,
+# are one map twice ("duplicate") or one map and its negation ("inverse").
+RELATED_CORRELATION = 0.95
+DUPLICATE = "duplicate"
+INVERSE = "inverse"
+# Values kept per map to find those pairs without reading the files again.
+FINGERPRINT_SIZE = 500
 
 # Map-level status. TIMED_OUT carries no pairs at all: it is "no result", not a
 # verdict on the map.
@@ -219,6 +234,9 @@ class MapScores:
     voxel_size_mm: tuple | None = None
     # whether the map read as thresholded (mostly 0 or NaN inside the brain)
     thresholded: bool | None = None
+    # the map's values at the first FINGERPRINT_SIZE grey-matter locations
+    # (None outside it), for related_maps
+    fingerprint: tuple | None = None
 
     def to_dict(self):
         return {
@@ -228,6 +246,7 @@ class MapScores:
             "seconds": self.seconds,
             "voxel_size_mm": self.voxel_size_mm,
             "thresholded": self.thresholded,
+            "fingerprint": list(self.fingerprint) if self.fingerprint else None,
             "pairs": {aid: pair.to_dict() for aid, pair in self.pairs.items()},
         }
 
@@ -242,6 +261,9 @@ class MapScores:
             seconds=payload.get("seconds", 0.0),
             voxel_size_mm=tuple(voxel_size) if voxel_size is not None else None,
             thresholded=payload.get("thresholded"),
+            fingerprint=(
+                tuple(payload["fingerprint"]) if payload.get("fingerprint") else None
+            ),
             pairs={
                 aid: PairScore(**pair) for aid, pair in payload.get("pairs", {}).items()
             },
@@ -249,20 +271,53 @@ class MapScores:
 
 
 @dataclasses.dataclass(frozen=True)
-class Assignment:
-    """The suggested map for each analysis. Leftover maps are not errors."""
+class AssignedPair:
+    map_id: str
+    analysis_id: str
+    # POSITIVE when the analysis's coordinates sit on the map's positive values,
+    # NEGATIVE when they sit on its negated ones (outcome reversed_sign)
+    side: str
+    outcome: str
+    score: float | None
 
-    # map id -> analysis id
-    pairs: dict
+
+@dataclasses.dataclass(frozen=True)
+class Assignment:
+    """The suggested map for each analysis. Leftover maps are not errors.
+
+    A map can carry two analyses, one on each side of its sign: the A > B and
+    B > A tables a paper reports from one A > B map.
+    """
+
+    # AssignedPair, ordered by map
+    pairs: tuple
     unmatched_maps: tuple
     unmatched_analyses: tuple
 
+    def map_for(self, analysis_id):
+        for pair in self.pairs:
+            if pair.analysis_id == analysis_id:
+                return pair
+        return None
+
+    def analyses_for(self, map_id):
+        return tuple(pair for pair in self.pairs if pair.map_id == map_id)
+
     def to_dict(self):
         return {
-            "pairs": dict(self.pairs),
+            "pairs": [dataclasses.asdict(pair) for pair in self.pairs],
             "unmatched_maps": list(self.unmatched_maps),
             "unmatched_analyses": list(self.unmatched_analyses),
         }
+
+
+@dataclasses.dataclass(frozen=True)
+class RelatedMaps:
+    """Two uploads that are one map twice, or one map and its negation."""
+
+    map_ids: tuple
+    kind: str
+    correlation: float
 
 
 @dataclasses.dataclass(frozen=True)
@@ -351,6 +406,23 @@ def _baseline_mm(size=BASELINE_SIZE, seed=BASELINE_SEED):
     return mm
 
 
+def to_mni(coordinates, space):
+    """(n, 3) coordinates in MNI mm, from MNI or Talairach (NiMARE's tal2mni).
+
+    For converting once, when a draft is built, so the upload path never pays
+    NiMARE's import. Pass the result on with space "MNI".
+    """
+    folded, _ = _fold_space(space)
+    coords = np.asarray(coordinates if coordinates is not None else [], dtype=float)
+    if coords.size == 0:
+        return np.empty((0, 3))
+    if coords.ndim != 2 or coords.shape[1] != 3:
+        raise ValueError("coordinates are not x, y, z triples")
+    if folded == "TAL":
+        coords = np.asarray(_tal2mni()(coords), dtype=float).reshape(-1, 3)
+    return coords
+
+
 def _fold_space(space):
     """("MNI" | "TAL" | None, assumed) for a space label, or ValueError."""
     if space is None or not str(space).strip():
@@ -399,15 +471,8 @@ def prepare_analyses(analyses):
         coords = np.empty((0, 3))
         try:
             space, space_assumed = _fold_space(_field(analysis, "space", "MNI"))
-            raw = _field(analysis, "coordinates")
-            coords = np.asarray(raw if raw is not None else [], dtype=float)
-            if coords.size == 0:
-                coords = np.empty((0, 3))
-            if coords.ndim != 2 or coords.shape[1] != 3:
-                raise ValueError("coordinates are not x, y, z triples")
+            coords = to_mni(_field(analysis, "coordinates"), space)
             coords = coords[np.all(np.isfinite(coords), axis=1)]
-            if space == "TAL" and len(coords):
-                coords = np.asarray(_tal2mni()(coords), dtype=float).reshape(-1, 3)
         except (TypeError, ValueError) as exc:
             problem = str(exc)
             coords = np.empty((0, 3))
@@ -451,6 +516,7 @@ class _Volume:
         grid = np.stack(np.meshgrid(*steps, indexing="ij"), axis=-1).reshape(-1, 3)
         inside = ((grid @ linear.T) ** 2).sum(axis=1) <= radius_mm**2 + 1e-6
         self.sphere = grid[inside]
+        self.centre = int(np.flatnonzero((self.sphere == 0).all(axis=1))[0])
         self.sphere_reach = np.abs(self.sphere).max(axis=0)
         self.sphere_delta = self.sphere @ self.strides
         self.neighbour_delta = _NEIGHBOURS @ self.strides
@@ -799,7 +865,11 @@ def _score_volume(map_id, data, affine, prepared, thresholds):
             peak_fraction={key: _round(series[index]) for key, series in peaks.items()},
             **common,
         )
-    return pairs, bool(thresholded)
+    fingerprint = tuple(
+        None if np.isnan(value) else float(f"{value:.4g}")
+        for value in sampled[:FINGERPRINT_SIZE, volume.centre]
+    )
+    return pairs, bool(thresholded), fingerprint
 
 
 def score_map(
@@ -825,7 +895,7 @@ def score_map(
     map_id = str(map_id)
     prepared = prepare_analyses(analyses)
 
-    def finish(status, pairs, reason=None, voxel_size=None, thresholded=None):
+    def finish(status, pairs, reason=None, voxel_size=None, **reading):
         return MapScores(
             map_id=map_id,
             status=status,
@@ -833,7 +903,7 @@ def score_map(
             reason=reason,
             seconds=round(time.perf_counter() - started, 4),
             voxel_size_mm=voxel_size,
-            thresholded=thresholded,
+            **reading,
         )
 
     if _expired(deadline):
@@ -845,7 +915,9 @@ def score_map(
     if _expired(deadline):
         return finish(TIMED_OUT, {}, "timed out after the map was read")
     try:
-        pairs, thresholded = _score_volume(map_id, data, affine, prepared, thresholds)
+        pairs, thresholded, fingerprint = _score_volume(
+            map_id, data, affine, prepared, thresholds
+        )
     except _Unusable as exc:
         reason = str(exc)
         return finish(
@@ -858,24 +930,33 @@ def score_map(
         )
     if _expired(deadline):
         return finish(TIMED_OUT, {}, "timed out while scoring", voxel_size)
-    return finish(SCORED, pairs, voxel_size=voxel_size, thresholded=thresholded)
+    return finish(
+        SCORED, pairs, None, voxel_size, thresholded=thresholded, fingerprint=fingerprint
+    )
 
 
-def _weight(pair):
-    """How strongly a pair claims its map, for the assignment."""
+def _weight(pair, side, both_sides):
+    """How strongly a pair claims one side of its map, for the assignment."""
     if pair is None or pair.outcome not in ASSIGNABLE or pair.score is None:
         return 0.0
+    if both_sides and (side == NEGATIVE) != (pair.outcome == REVERSED_SIGN):
+        return 0.0
     strength = max(pair.score - 0.5, 1e-6)
-    # a straight fit beats an equally strong reversed or mirrored one, so the
-    # A > B map goes to the A > B analysis and B > A to B > A
+    # A straight fit beats an equally strong reversed or mirrored one: when the
+    # author uploaded both A > B and its inverse, each analysis gets the map
+    # whose positive side it is, rather than the other's negative side.
     return strength if pair.outcome == MATCH else 0.5 * strength
 
 
-def assign(map_scores, analysis_ids=None):
-    """Suggest one map per analysis, leaving maps unmatched when nothing fits.
+def assign(map_scores, analysis_ids=None, *, both_sides=True):
+    """Suggest a map for each analysis, leaving maps unmatched when nothing fits.
 
-    Maximizes the total fit over one-to-one pairings of maps and analyses, using
-    only pairs whose outcome is a match, a reversed sign or a left/right flip.
+    Maximizes the total fit over pairings of maps and analyses, using only pairs
+    whose outcome is a match, a reversed sign or a left/right flip. With
+    ``both_sides`` each map offers two slots: its positive side, for a match or
+    a flip, and its negative side, for a reversed-sign fit, so one A > B map can
+    carry both the A > B and the B > A analysis. Without it a map carries at
+    most one analysis.
     """
     from scipy.optimize import linear_sum_assignment
 
@@ -887,27 +968,82 @@ def assign(map_scores, analysis_ids=None):
                 seen.setdefault(analysis_id, None)
         analysis_ids = list(seen)
     analysis_ids = [str(analysis_id) for analysis_id in analysis_ids]
-    all_map_ids = [scores.map_id for scores in map_scores]
+    sides = (POSITIVE, NEGATIVE) if both_sides else (POSITIVE,)
+    slots = [(scores, side) for scores in maps for side in sides]
 
-    pairs = {}
-    if maps and analysis_ids:
+    chosen = []
+    if slots and analysis_ids:
         weights = np.array(
             [
-                [_weight(scores.pairs.get(analysis_id)) for analysis_id in analysis_ids]
-                for scores in maps
+                [
+                    _weight(scores.pairs.get(analysis_id), side, both_sides)
+                    for analysis_id in analysis_ids
+                ]
+                for scores, side in slots
             ]
         )
         rows, cols = linear_sum_assignment(weights, maximize=True)
         for row, col in zip(rows, cols):
             if weights[row, col] > 0:
-                pairs[maps[row].map_id] = analysis_ids[col]
+                scores, _ = slots[row]
+                pair = scores.pairs[analysis_ids[col]]
+                chosen.append(
+                    AssignedPair(
+                        map_id=scores.map_id,
+                        analysis_id=pair.analysis_id,
+                        side=NEGATIVE if pair.outcome == REVERSED_SIGN else POSITIVE,
+                        outcome=pair.outcome,
+                        score=pair.score,
+                    )
+                )
 
-    taken = set(pairs.values())
+    order = {scores.map_id: index for index, scores in enumerate(map_scores)}
+    chosen.sort(key=lambda pair: (order[pair.map_id], pair.side != POSITIVE))
+    used_maps = {pair.map_id for pair in chosen}
+    used_analyses = {pair.analysis_id for pair in chosen}
     return Assignment(
-        pairs=pairs,
-        unmatched_maps=tuple(m for m in all_map_ids if m not in pairs),
-        unmatched_analyses=tuple(a for a in analysis_ids if a not in taken),
+        pairs=tuple(chosen),
+        unmatched_maps=tuple(
+            scores.map_id for scores in map_scores if scores.map_id not in used_maps
+        ),
+        unmatched_analyses=tuple(a for a in analysis_ids if a not in used_analyses),
     )
+
+
+def related_maps(map_scores, threshold=RELATED_CORRELATION):
+    """Uploads that are one map twice, or one map and its negation.
+
+    Compares the stored fingerprints, so it needs no file. An inverse pair is
+    what an author sends who uploads both A > B and B > A; one of them is
+    enough, since the assignment reads B > A off A > B's negative side.
+    """
+    usable = [
+        (scores.map_id, np.array(scores.fingerprint, dtype=float))
+        for scores in map_scores
+        if scores.status == SCORED and scores.fingerprint
+    ]
+    found = []
+    for (first_id, first), (second_id, second) in itertools.combinations(usable, 2):
+        if len(first) != len(second):
+            continue
+        both = np.isfinite(first) & np.isfinite(second) & (first != 0) & (second != 0)
+        # fewer shared locations than this and two sparse thresholded maps can
+        # correlate by accident
+        if both.sum() < FINGERPRINT_SIZE // 5:
+            continue
+        x, y = first[both], second[both]
+        if x.std() == 0 or y.std() == 0:
+            continue
+        correlation = float(np.corrcoef(x, y)[0, 1])
+        if abs(correlation) >= threshold:
+            found.append(
+                RelatedMaps(
+                    map_ids=(first_id, second_id),
+                    kind=DUPLICATE if correlation > 0 else INVERSE,
+                    correlation=round(correlation, 4),
+                )
+            )
+    return tuple(found)
 
 
 def _map_items(maps):

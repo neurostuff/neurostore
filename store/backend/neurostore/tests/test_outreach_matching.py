@@ -17,9 +17,13 @@ from scipy.ndimage import gaussian_filter
 from neurostore.outreach import matching
 from neurostore.outreach.matching import (
     CANNOT_ASSESS,
+    DUPLICATE,
+    INVERSE,
     LR_FLIP,
     MATCH,
+    NEGATIVE,
     NO_MATCH,
+    POSITIVE,
     REVERSED_SIGN,
     SCORED,
     TIMED_OUT,
@@ -28,7 +32,9 @@ from neurostore.outreach.matching import (
     assign,
     match_maps,
     prepare_analyses,
+    related_maps,
     score_map,
+    to_mni,
 )
 
 MNI_2MM = np.array([[2.0, 0, 0, -90], [0, 2, 0, -126], [0, 0, 2, -72], [0, 0, 0, 1]])
@@ -83,6 +89,18 @@ def synthetic_map(
 
 def analysis(analysis_id, peaks, space="MNI"):
     return {"id": analysis_id, "coordinates": peaks, "space": space}
+
+
+def suggested(result):
+    """analysis id -> map id, as the suggestion reads to a reviewer."""
+    return {pair.analysis_id: pair.map_id for pair in result.assignment.pairs}
+
+
+def contrast_and_reverse(seed):
+    """An A > B map: A's peaks on its positive side, B's on its negative side."""
+    return synthetic_map(
+        PEAKS_A + PEAKS_B, seed=seed, signs=[1] * len(PEAKS_A) + [-1] * len(PEAKS_B)
+    )
 
 
 @pytest.fixture(scope="module")
@@ -296,6 +314,9 @@ def test_talairach_coordinates_are_converted_before_scoring():
     ).pairs
 
     assert pairs["T"].outcome == MATCH
+    # converting once, when the draft is built, gives the same coordinates
+    np.testing.assert_allclose(to_mni(tal, "TAL"), PEAKS_A, atol=1e-6)
+    np.testing.assert_allclose(to_mni(PEAKS_A, "MNI"), PEAKS_A)
     # read as MNI, the same numbers land off the blobs' peaks
     assert pairs["T"].peak_fraction["signed"] > pairs["M"].peak_fraction["signed"]
 
@@ -333,14 +354,14 @@ def test_maps_read_from_disk(tmp_path, map_a, map_b, analyses):
     )
 
     assert result.complete
-    assert result.assignment.pairs == {"0": "A", "1": "B"}
+    assert suggested(result) == {"A": "0", "B": "1"}
 
 
 def test_swapped_uploads_are_reassigned_by_content(map_a, map_b, analyses):
     # the author named the files after the wrong analyses
     result = match_maps({"for_A": map_b, "for_B": map_a}, analyses, timeout=None)
 
-    assert result.assignment.pairs == {"for_A": "B", "for_B": "A"}
+    assert suggested(result) == {"A": "for_B", "B": "for_A"}
     assert result.pair("for_A", "A").outcome == NO_MATCH
     assert result.pair("for_A", "B").outcome == MATCH
 
@@ -355,7 +376,7 @@ def test_extra_maps_stay_unmatched_without_error(map_a, map_b, map_c, analyses):
     )
 
     assert result.complete
-    assert result.assignment.pairs == {"a": "A", "b": "B"}
+    assert suggested(result) == {"A": "a", "B": "b"}
     assert set(result.assignment.unmatched_maps) == {"c", "noise"}
     assert result.assignment.unmatched_analyses == ()
     assert {scores.status for scores in result.maps} == {SCORED}
@@ -365,7 +386,7 @@ def test_extra_maps_stay_unmatched_without_error(map_a, map_b, map_c, analyses):
 def test_a_missing_map_leaves_its_analysis_unmatched(map_a, analyses):
     result = match_maps({"a": map_a}, analyses, timeout=None)
 
-    assert result.assignment.pairs == {"a": "A"}
+    assert suggested(result) == {"A": "a"}
     assert result.assignment.unmatched_analyses == ("B",)
 
 
@@ -377,7 +398,8 @@ def test_straight_fit_wins_over_a_reversed_one(analyses):
 
     result = match_maps({"rev": reversed_, "fwd": straight}, analyses, timeout=None)
 
-    assert result.assignment.pairs == {"fwd": "A"}
+    assert suggested(result) == {"A": "fwd"}
+    assert result.assignment.map_for("A").side == POSITIVE
     assert result.pair("rev", "A").outcome == REVERSED_SIGN
 
 
@@ -386,7 +408,48 @@ def test_reversed_map_is_still_suggested_when_it_is_the_only_fit(analyses):
 
     result = match_maps({"rev": reversed_}, analyses, timeout=None)
 
-    assert result.assignment.pairs == {"rev": "A"}
+    assert suggested(result) == {"A": "rev"}
+    assert result.assignment.map_for("A").side == NEGATIVE
+
+
+def test_one_map_carries_a_contrast_and_its_reverse(analyses):
+    # papers table A > B and B > A apart, from the one A > B map
+    result = match_maps({"a_gt_b": contrast_and_reverse(seed=17)}, analyses, timeout=None)
+
+    assert suggested(result) == {"A": "a_gt_b", "B": "a_gt_b"}
+    sides = {pair.analysis_id: pair.side for pair in result.assignment.pairs}
+    assert sides == {"A": POSITIVE, "B": NEGATIVE}
+    assert result.pair("a_gt_b", "B").outcome == REVERSED_SIGN
+
+    one_sided = assign(result.maps, analyses.ids, both_sides=False)
+    assert len(one_sided.pairs) == 1
+
+
+def test_an_uploaded_inverse_takes_the_reverse_contrast(analyses):
+    # the author uploaded B > A as well: each analysis gets its own map's
+    # positive side, and the pair is recognised as one map and its negation
+    a_gt_b = contrast_and_reverse(seed=18)
+    b_gt_a = nib.Nifti1Image(-np.asarray(a_gt_b.dataobj), MNI_2MM)
+
+    result = match_maps({"a_gt_b": a_gt_b, "b_gt_a": b_gt_a}, analyses, timeout=None)
+
+    assert suggested(result) == {"A": "a_gt_b", "B": "b_gt_a"}
+    assert {pair.side for pair in result.assignment.pairs} == {POSITIVE}
+    (related,) = related_maps(result.maps)
+    assert related.map_ids == ("a_gt_b", "b_gt_a")
+    assert related.kind == INVERSE
+    assert related.correlation < -0.99
+
+
+def test_the_same_map_twice_is_a_duplicate(map_a, map_b, analyses):
+    # a z map and the t map it came from: the same pattern on another scale
+    rescaled = nib.Nifti1Image(np.asarray(map_a.dataobj) * 1.7, MNI_2MM)
+
+    result = match_maps({"z": map_a, "t": rescaled, "b": map_b}, analyses, timeout=None)
+
+    (related,) = related_maps(result.maps)
+    assert related.map_ids == ("z", "t")
+    assert related.kind == DUPLICATE
 
 
 def test_timeout_returns_no_result_instead_of_blocking(map_a, analyses):

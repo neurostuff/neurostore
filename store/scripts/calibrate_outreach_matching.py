@@ -31,6 +31,7 @@ import concurrent.futures
 import csv
 import dataclasses
 import importlib.util
+import itertools
 import json
 import random
 import re
@@ -382,9 +383,10 @@ PAIR_FIELDS = [
     "mirrored_negated", "mirrored_unsigned", "peak_signed", "peak_negated", "reason",
 ]
 MAP_FIELDS = [
-    "paper", "map_key", "value_type", "status", "reason", "seconds", "voxel_size",
-    "n_analyses_scored", "n_points_scored", "bytes",
+    "paper", "map_key", "value_type", "nv_thresholded", "read_thresholded", "status",
+    "reason", "seconds", "voxel_size", "n_analyses_scored", "n_points_scored", "bytes",
 ]
+RELATED_FIELDS = ["paper", "map_a", "map_b", "kind", "correlation"]
 
 
 def name_tokens(text):
@@ -474,10 +476,13 @@ def score(args):
 
     pairs_out = open(args.work / "pairs.csv", "w", newline="")
     maps_out = open(args.work / "maps.csv", "w", newline="")
+    related_out = open(args.work / "related.csv", "w", newline="")
     pair_writer = csv.DictWriter(pairs_out, PAIR_FIELDS)
     map_writer = csv.DictWriter(maps_out, MAP_FIELDS)
+    related_writer = csv.DictWriter(related_out, RELATED_FIELDS)
     pair_writer.writeheader()
     map_writer.writeheader()
+    related_writer.writeheader()
 
     negatives_of = {}
     for paper in papers:
@@ -497,16 +502,19 @@ def score(args):
                 )
                 info[key] = (owner, analysis)
         prepared = matching.prepare_analyses(analyses)
-        rows, map_rows = [], []
+        rows, map_rows, all_scores = [], [], []
         for image in paper["images"]:
             path = image_path(args.work, image)
             scores = matching.score_map(path, prepared, map_id=image["key"])
+            all_scores.append(scores)
             scored = [p for p in scores.pairs.values() if p.outcome != matching.CANNOT_ASSESS]
             map_rows.append(
                 {
                     "paper": paper["base_study"],
                     "map_key": image["key"],
                     "value_type": image["value_type"],
+                    "nv_thresholded": image.get("is_thresholded"),
+                    "read_thresholded": scores.thresholded,
                     "status": scores.status,
                     "reason": scores.reason,
                     "seconds": scores.seconds,
@@ -559,18 +567,30 @@ def score(args):
                         "reason": pair.reason,
                     }
                 )
-        return rows, map_rows
+        related = [
+            {
+                "paper": paper["base_study"],
+                "map_a": found.map_ids[0],
+                "map_b": found.map_ids[1],
+                "kind": found.kind,
+                "correlation": found.correlation,
+            }
+            for found in matching.related_maps(all_scores)
+        ]
+        return rows, map_rows, related
 
     done = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.score_workers) as pool:
-        for rows, map_rows in pool.map(score_paper, papers):
+        for rows, map_rows, related in pool.map(score_paper, papers):
             pair_writer.writerows(rows)
             map_writer.writerows(map_rows)
+            related_writer.writerows(related)
             done += 1
             if done % 20 == 0:
                 log(f"scored {done}/{len(papers)} papers")
     pairs_out.close()
     maps_out.close()
+    related_out.close()
     log(f"scored {len(papers)} papers in {time.perf_counter() - started:.0f} s")
 
 
@@ -614,11 +634,11 @@ def redecide(matching, pairs, thresholds, mixed=True):
     return out
 
 
-def assignment_counts(matching, pairs):
+def assignment_counts(matching, pairs, both_sides=True):
     """Analyses given a map by the suggested assignment, own and unrelated."""
     own_assigned = own_total = 0
     foreign_assigned = foreign_total = 0
-    papers_with_false = 0
+    own_pairs = set()
     for paper, group in pairs.groupby("paper"):
         for analysis_paper, sub in group.groupby("analysis_paper"):
             scores = []
@@ -639,7 +659,7 @@ def assignment_counts(matching, pairs):
                     )
                 )
             analysis_ids = [str(a) for a in sub["analysis_id"].unique()]
-            assignment = matching.assign(scores, analysis_ids)
+            assignment = matching.assign(scores, analysis_ids, both_sides=both_sides)
             assessable = sub.groupby("analysis_id")["outcome"].apply(
                 lambda o: (o != matching.CANNOT_ASSESS).any()
             )
@@ -647,17 +667,71 @@ def assignment_counts(matching, pairs):
             if analysis_paper == paper:
                 own_assigned += len(assignment.pairs)
                 own_total += n_assessable
+                own_pairs.update((paper, pair.analysis_id) for pair in assignment.pairs)
             else:
                 foreign_assigned += len(assignment.pairs)
                 foreign_total += n_assessable
-                papers_with_false += bool(assignment.pairs)
     return {
         "own_assigned": own_assigned,
         "own_total": own_total,
         "foreign_assigned": foreign_assigned,
         "foreign_total": foreign_total,
-        "foreign_collections_with_a_false_suggestion": papers_with_false,
+        "own_pairs": own_pairs,
     }
+
+
+def reverse_analysis_pairs(papers):
+    """Analysis pairs a paper tables as A > B and B > A, going by their names."""
+    found = []
+    for paper in papers:
+        for first, second in itertools.combinations(paper["analyses"], 2):
+            mine, theirs = contrast_sides(first["name"]), contrast_sides(second["name"])
+            if mine is None or theirs is None:
+                continue
+            words, other_words = mine[0] | mine[1], theirs[0] | theirs[1]
+            # the same words on both sides, or "high > low loss" would pair
+            # with "low > high gain"
+            if len(words & other_words) < 0.75 * len(words | other_words):
+                continue
+            same = len(mine[0] & theirs[0]) + len(mine[1] & theirs[1])
+            opposite = len(mine[0] & theirs[1]) + len(mine[1] & theirs[0])
+            if opposite > same and mine[0] & theirs[1] and mine[1] & theirs[0]:
+                found.append((paper["base_study"], str(first["id"]), str(second["id"])))
+    return found
+
+
+def reverse_coverage(matching, pairs, reverse_pairs, related):
+    """How each paper's collection covers its A > B / B > A analysis pairs."""
+    own = pairs[pairs["own"]]
+    outcome = {
+        (row.paper, row.map_key, str(row.analysis_id)): row.outcome
+        for row in own.itertuples(index=False)
+    }
+    maps_of = own.groupby("paper")["map_key"].unique().to_dict()
+    inverse = {
+        (row.paper, frozenset((row.map_a, row.map_b)))
+        for row in related.itertuples(index=False)
+        if row.kind == matching.INVERSE
+    }
+    found = Counter()
+    for paper, first, second in reverse_pairs:
+        maps = maps_of.get(paper, [])
+        fits = {m: (outcome.get((paper, m, first)), outcome.get((paper, m, second))) for m in maps}
+        firsts = [m for m, (a, _) in fits.items() if a == matching.MATCH]
+        seconds = [m for m, (_, b) in fits.items() if b == matching.MATCH]
+        two = [(a, b) for a in firsts for b in seconds if a != b]
+        if two:
+            copies = any((paper, frozenset(pair)) in inverse for pair in two)
+            found["two maps, one per side" + (", inverse copies" if copies else "")] += 1
+        elif any({a, b} == {matching.MATCH, matching.REVERSED_SIGN} for a, b in fits.values()):
+            found["one map, both sides"] += 1
+        elif any(
+            value in matching.ASSIGNABLE for both in fits.values() for value in both
+        ):
+            found["one side only"] += 1
+        else:
+            found["neither"] += 1
+    return found
 
 
 def analysis_level(matching, pairs):
@@ -689,6 +763,7 @@ def sweep_row(matching, pairs, thresholds, mixed=True):
     own = assessed[assessed["own"]]
     straight = assessed[assessed["named"] & (assessed["direction"] != "reversed")]
     reversed_ = assessed[assessed["named"] & (assessed["direction"] == "reversed")]
+    one_sided = assignment_counts(matching, decided, both_sides=False)
     counts = assignment_counts(matching, decided)
     flags = [matching.REVERSED_SIGN, matching.LR_FLIP]
     return {
@@ -706,8 +781,12 @@ def sweep_row(matching, pairs, thresholds, mixed=True):
         "named rev.: reversed": (reversed_["outcome"] == matching.REVERSED_SIGN).mean(),
         "own pair lr_flip": (own["outcome"] == matching.LR_FLIP).mean(),
         "cross pair lr_flip": (cross["outcome"] == matching.LR_FLIP).mean(),
-        "assigned own": counts["own_assigned"] / max(counts["own_total"], 1),
-        "assigned unrel.": counts["foreign_assigned"] / max(counts["foreign_total"], 1),
+        "assigned own, 1 side": one_sided["own_assigned"] / max(one_sided["own_total"], 1),
+        "assigned own, 2 sides": counts["own_assigned"] / max(counts["own_total"], 1),
+        "assigned unrel., 1 side": (
+            one_sided["foreign_assigned"] / max(one_sided["foreign_total"], 1)
+        ),
+        "assigned unrel., 2 sides": counts["foreign_assigned"] / max(counts["foreign_total"], 1),
     }
 
 
@@ -715,8 +794,25 @@ def report(args):
     import pandas as pd
 
     matching = load_matching()
-    pairs, maps = read_rows(args.work)
+    pairs, all_maps = read_rows(args.work)
+    related = pd.read_csv(args.work / "related.csv")
+    papers = json.loads((args.work / "papers.json").read_text())
     pairs["own"] = pairs["own"].astype(bool)
+    maps = all_maps
+    if args.maps == "unthresholded":
+        # outreach asks authors for unthresholded maps only
+        maps = all_maps[
+            (all_maps["nv_thresholded"].astype(str) != "True")
+            & (all_maps["read_thresholded"].astype(str) == "False")
+        ]
+        keep = set(zip(maps["paper"], maps["map_key"]))
+        pairs = pairs[[key in keep for key in zip(pairs["paper"], pairs["map_key"])]]
+        related = related[
+            [
+                (paper, a) in keep and (paper, b) in keep
+                for paper, a, b in zip(related["paper"], related["map_a"], related["map_b"])
+            ]
+        ]
     # a presumed true pair: the names agree, and each is the other's best name match
     own = pairs[pairs["own"]].copy()
     own["name_similarity"] = own["name_similarity"].astype(float)
@@ -737,6 +833,7 @@ def report(args):
     lines = []
     out = lines.append
     n_papers = pairs["paper"].nunique()
+    out(f"maps included: {args.maps} ({len(maps)} of {len(all_maps)})")
     out(f"papers scored: {n_papers}")
     out(f"maps: {len(maps)}; analyses (own): {own.groupby(['paper', 'analysis_id']).ngroups}")
     out(f"pairs: {len(pairs)} ({int(pairs['own'].sum())} own, {int((~pairs['own']).sum())} cross)")
@@ -744,9 +841,15 @@ def report(args):
     directions = pairs[pairs["named"]]["direction"].value_counts().to_dict()
     out(f"  their stated directions: {directions}")
     out("")
-    out("map status / reasons:")
-    unusable = maps[maps["n_analyses_scored"] == 0]
-    out(f"  scored with at least one analysis: {int((maps['n_analyses_scored'] > 0).sum())}")
+    out("map status / reasons, all maps:")
+    unusable = all_maps[all_maps["n_analyses_scored"] == 0]
+    scored = int((all_maps["n_analyses_scored"] > 0).sum())
+    out(f"  scored with at least one analysis: {scored} of {len(all_maps)}")
+    thresholded = all_maps["read_thresholded"].astype(str) == "True"
+    out(
+        f"  read as thresholded: {int(thresholded.sum())}; flagged thresholded by "
+        f"NeuroVault: {int((all_maps['nv_thresholded'].astype(str) == 'True').sum())}"
+    )
     reasons = unusable["reason"].fillna("").str.replace(r"\d+", "N", regex=True)
     for reason, count in reasons.value_counts().head(12).items():
         out(f"  {count:5d}  {reason[:110]}")
@@ -834,6 +937,34 @@ def report(args):
         for value_type, sub in named.groupby("map_value_type"):
             counts = sub["outcome"].value_counts(normalize=True).round(3).to_dict()
             out(f"  {value_type}: n={len(sub)} {counts}")
+    out("")
+    out("reverse contrasts (A > B and B > A tabled as two analyses):")
+    in_scope = [paper for paper in papers if paper["base_study"] in set(pairs["paper"])]
+    reverse_pairs = reverse_analysis_pairs(in_scope)
+    out(
+        f"  analysis pairs by name: {len(reverse_pairs)} in "
+        f"{len({paper for paper, _, _ in reverse_pairs})} of {len(in_scope)} papers"
+    )
+    coverage = reverse_coverage(matching, pairs, reverse_pairs, related)
+    for label, count in coverage.most_common():
+        out(f"  {label}: {count}")
+    for both_sides in (False, True):
+        assigned = assignment_counts(matching, pairs, both_sides=both_sides)["own_pairs"]
+        both = sum(
+            (paper, first) in assigned and (paper, second) in assigned
+            for paper, first, second in reverse_pairs
+        )
+        sides = "two sides" if both_sides else "one side"
+        out(f"  both analyses get a map, {sides} per map: {rate(both, len(reverse_pairs))}")
+    out("")
+    out("related uploads within a collection (fingerprint correlation >= 0.95):")
+    collections = pairs["paper"].nunique()
+    for kind in (matching.INVERSE, matching.DUPLICATE):
+        sub = related[related["kind"] == kind]
+        out(
+            f"  {kind}: {len(sub)} pairs in {sub['paper'].nunique()} of {collections} "
+            f"collections"
+        )
     text = "\n".join(lines)
     (args.work / "report.txt").write_text(text)
     table.to_csv(args.work / "sweep.csv", index=False)
@@ -857,6 +988,12 @@ def main(argv=None):
     parser.add_argument("--max-total-gb", type=float, default=4.0)
     parser.add_argument("--negatives", type=int, default=3, help="unrelated papers per paper")
     parser.add_argument("--name-threshold", type=float, default=0.5)
+    parser.add_argument(
+        "--maps",
+        choices=["unthresholded", "all"],
+        default="unthresholded",
+        help="which maps the report counts; outreach asks for unthresholded ones",
+    )
     parser.add_argument("--download-workers", type=int, default=6)
     parser.add_argument("--score-workers", type=int, default=4)
     parser.add_argument("--seed", type=int, default=0)
