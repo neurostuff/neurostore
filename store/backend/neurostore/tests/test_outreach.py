@@ -19,6 +19,7 @@ from neurostore.models import (
     OutreachPerson,
 )
 from neurostore.outreach.candidates import candidates_query
+from neurostore.outreach.software import packages, software_by_base_study
 from neurostore.outreach.drafts import (
     DraftError,
     build_draft,
@@ -46,22 +47,24 @@ ADMIN_TOKEN = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
 USER_TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 
 
-def _author(name, *institutions, emails=("pi@example.org",), corresponding=True):
+def _author(name, *institutions, emails=("pi@example.org",), corresponding=True, orcid=None):
     affiliations = [{"text": i["name"], "institutions": [i]} for i in institutions]
-    return {"name": name, "orcid": None, "openalex_id": None,
+    return {"name": name, "orcid": orcid, "openalex_id": None,
             "affiliations": affiliations or None, "corresponding": corresponding,
             "emails": list(emails) or None}
 
 
-def _upload(pmid="1001", analyses=(GAIN, SEED), authors=None, links=(OSF,), year=2026):
+def _upload(pmid="1001", analyses=(GAIN, SEED), authors=None, links=(OSF,), year=2026,
+            record=None):
     paper = fx.parsed_paper(pmid=pmid)
     paper["bibliography"]["publication_year"] = year
     paper["bibliography"]["authors"] = authors if authors is not None else [_author("Ada", UT)]
     if links:
         paper["links"] = [fx.link(url) for url in links]
-    summary = ingest_upload(
-        {"coordinate_parse": fx.parse(list(analyses), pmid=pmid), "parsed_paper": paper})
-    return summary["base_study_id"]
+    body = {"coordinate_parse": fx.parse(list(analyses), pmid=pmid), "parsed_paper": paper}
+    if record is not None:
+        body["record"] = record
+    return ingest_upload(body)["base_study_id"]
 
 
 def _candidates(since_year=2026, country="US"):
@@ -397,7 +400,8 @@ async def test_an_admin_checks_a_draft_then_sends_its_invitation(app, session, o
     assert old.json()["url"] != invitation.json()["url"]
     links = db.session.scalars(
         sa.select(OutreachLink).where(OutreachLink.draft_id == first.id)).all()
-    assert sum(link.revoked_at is None for link in links) == 1  # only the newest is live
+    # A new link leaves the one already sent working.
+    assert sum(link.revoked_at is None for link in links) == 2
     assert sent.json()["status"] == "contacted"
     assert twice.status_code == 409  # one email per person in the pilot
     assert "already been emailed" in twice.json()["detail"]
@@ -442,3 +446,213 @@ def test_the_outreach_panel_is_served_from_its_build_with_a_fallback_to_its_inde
     assert "try_files $uri $uri/ /outreach/index.html" in app
     assert "alias /store/outreach-frontend/dist/assets/" in location(conf, "/outreach/assets/")
     assert "base: '/outreach/'" in (STORE_DIR / "outreach-frontend/vite.config.ts").read_text()
+
+
+# fixing mistakes and logging replies
+
+# ORCID's own documentation iD (a fictional researcher), so no real person is named.
+ORCID = "0000-0002-1825-0097"
+
+
+async def _post(client, path, json=None):
+    return await client.client.post(path, headers=client._get_headers(), json=json or {})
+
+
+async def _invite(client, draft_id):
+    base = f"/api/outreach/drafts/{draft_id}"
+    await _post(client, f"{base}/check")
+    await _post(client, f"{base}/invitation")
+    return await _post(client, f"{base}/sent")
+
+
+@pytest.mark.anyio
+async def test_one_author_under_two_addresses_is_emailed_once(app, session, outreach_settings):
+    first = build_draft(_upload("1001", authors=[_author("Ada", UT, orcid=ORCID)]))
+    second = build_draft(_upload("1002", authors=[
+        _author("Ada", UT, emails=("ada@other.example.org",), orcid=ORCID)]))
+    db.session.commit()
+    assert first.person_id != second.person_id  # two addresses, so two people
+    client = await _admin(app)
+    try:
+        sent = await _invite(client, first.id)
+        twice = await _invite(client, second.id)
+        listed = await client.client.get("/api/outreach/drafts/", headers=client._get_headers())
+    finally:
+        await client.aclose()
+
+    assert sent.status_code == 200
+    assert twice.status_code == 409  # the same author, by ORCID
+    by_id = {row["id"]: row for row in listed.json()["results"]}
+    assert by_id[second.id]["person"]["messages"] == 0
+    assert by_id[second.id]["person"]["author_messages"] == 1
+
+
+@pytest.mark.anyio
+async def test_undoing_a_send_frees_the_person_and_replays_the_status(
+    app, session, outreach_settings
+):
+    draft = build_draft(_upload())
+    db.session.commit()
+    client = await _admin(app)
+    base = f"/api/outreach/drafts/{draft.id}"
+    try:
+        await _invite(client, draft.id)
+        undone = await _post(client, f"{base}/unsend")
+        again = await _post(client, f"{base}/sent")
+    finally:
+        await client.aclose()
+
+    assert undone.json()["status"] == "checked"
+    assert undone.json()["person"]["messages"] == 0
+    assert [e["kind"] for e in undone.json()["events"]][-2:] == ["sent", "send_undone"]
+    assert undone.json()["events"][-2]["data"]["undone_at"]  # kept in the history, marked
+    assert again.json()["status"] == "contacted"
+
+
+@pytest.mark.anyio
+async def test_an_excluded_paper_leaves_outreach_until_reopened(app, session, outreach_settings):
+    draft = build_draft(_upload())
+    check_draft(draft, "admin-user-id")
+    db.session.commit()
+    client = await _admin(app)
+    base = f"/api/outreach/drafts/{draft.id}"
+    try:
+        bad = await _post(client, f"{base}/exclude", {"reason": "because"})
+        excluded = await _post(client, f"{base}/exclude",
+                               {"reason": "behavioral_only", "note": "no imaging results"})
+        await _post(client, f"{base}/invitation")
+        blocked = await _post(client, f"{base}/sent")
+        reopened = await _post(client, f"{base}/reopen")
+    finally:
+        await client.aclose()
+
+    assert bad.status_code == 409
+    assert excluded.json()["status"] == "excluded"
+    assert excluded.json()["events"][-1]["data"] == {
+        "reason": "behavioral_only", "note": "no imaging results"}
+    assert _candidates() == []  # still drafted, so not a candidate again
+    assert blocked.status_code == 409
+    assert reopened.json()["status"] == "checked"
+
+
+@pytest.mark.anyio
+async def test_replies_are_logged_and_a_decline_closes_the_draft(app, session, outreach_settings):
+    draft = build_draft(_upload())
+    db.session.commit()
+    client = await _admin(app)
+    base = f"/api/outreach/drafts/{draft.id}"
+    try:
+        await _invite(client, draft.id)
+        no_maps = await _post(client, f"{base}/reply", {"kind": "no_maps", "note": "lost them"})
+        declined = await _post(client, f"{base}/reply", {"kind": "declined"})
+        listed = await client.client.get("/api/outreach/drafts/", headers=client._get_headers())
+        reopened = await _post(client, f"{base}/reopen")
+    finally:
+        await client.aclose()
+
+    assert no_maps.json()["status"] == "contacted"
+    assert no_maps.json()["last_reply"]["kind"] == "no_maps"
+    assert no_maps.json()["last_reply"]["note"] == "lost them"
+    assert declined.json()["status"] == "declined"
+    assert listed.json()["results"][0]["last_reply"]["kind"] == "declined"
+    assert reopened.json()["status"] == "contacted"
+    assert reopened.json()["last_reply"]["kind"] == "no_maps"  # the decline was taken back
+
+
+@pytest.mark.anyio
+async def test_links_stop_working_only_when_revoked(app, session, outreach_settings):
+    draft = build_draft(_upload())
+    check_draft(draft, "admin-user-id")
+    db.session.commit()
+    client = await _admin(app)
+    base = f"/api/outreach/drafts/{draft.id}"
+    try:
+        await _post(client, f"{base}/invitation")
+        await _post(client, f"{base}/invitation")
+        revoked = await _post(client, f"{base}/links/revoke")
+    finally:
+        await client.aclose()
+
+    assert revoked.json()["link_expires_at"] is None  # no live link left
+    assert revoked.json()["events"][-1]["kind"] == "links_revoked"
+    assert len(revoked.json()["events"][-1]["data"]["link_ids"]) == 2
+
+
+@pytest.mark.anyio
+async def test_a_draft_is_built_for_any_paper_by_its_pmid(app, session, outreach_settings):
+    _upload("1001", links=())  # not a candidate: no data repository link
+    db.session.commit()
+    client = await _admin(app)
+    try:
+        built = await _post(client, "/api/outreach/drafts/", {"pmid": "1001"})
+        unknown = await _post(client, "/api/outreach/drafts/", {"pmid": "999"})
+        ambiguous = await _post(client, "/api/outreach/drafts/", {"pmid": "1001", "doi": "10.1/x"})
+    finally:
+        await client.aclose()
+
+    assert built.status_code == 201
+    assert built.json()["pmid"] == "1001"
+    assert unknown.status_code == 404
+    assert ambiguous.status_code == 422
+
+
+# software
+
+
+@pytest.mark.parametrize(
+    "texts, expected",
+    [
+        (["SPM12 (Wellcome Centre for Human Neuroimaging)"], ["SPM"]),
+        (["FSL 6.0.4 FEAT", "SPM 8"], ["FSL", "SPM"]),
+        (["AFNI 3dttest++"], ["AFNI"]),
+        (["Nilearn 0.10.1"], ["nilearn"]),
+        (["FitLins 0.11"], ["FitLins"]),
+        (["fMRIPrep 20.2.1"], ["fMRIPrep"]),
+        (["custom MATLAB scripts"], []),
+    ],
+)
+def test_software_texts_become_packages(texts, expected):
+    assert packages(texts) == expected
+
+
+def _with_software(model=None, preprocessing=None):
+    record = fx.record([fx.record_analysis("a0", GAIN["key"], GAIN["name"])])
+    if model is not None:
+        estimation = fx.minimal(fx.defs["ModelEstimation"])
+        estimation.update(local_id="me1", software=fx.extracted(model))
+        record["model_estimations"] = [estimation]
+    if preprocessing is not None:
+        pipeline = fx.minimal(fx.defs["Preprocessing"])
+        pipeline.update(local_id="pp1", software=fx.extracted([preprocessing]))
+        record["preprocessings"] = [pipeline]
+    return record
+
+
+def test_a_paper_s_software_is_its_model_estimation_s_else_its_preprocessing_s(session):
+    both = _upload("1001", record=_with_software(model="SPM12", preprocessing="fMRIPrep 20.2"))
+    preprocessing_only = _upload("1002", record=_with_software(preprocessing="FSL 6.0"))
+    neither = _upload("1003")
+    db.session.commit()
+
+    found = software_by_base_study([both, preprocessing_only, neither])
+
+    assert found[both]["packages"] == ["SPM"]
+    assert found[both]["source"] == "ModelEstimation"
+    assert set(found[both]["texts"]) == {"SPM12", "fMRIPrep 20.2"}
+    assert found[preprocessing_only] == {
+        "packages": ["FSL"], "source": "Preprocessing", "texts": ["FSL 6.0"]}
+    assert neither not in found
+
+
+@pytest.mark.anyio
+async def test_candidates_and_drafts_carry_their_software(app, session, outreach_settings):
+    base_study_id = _upload(record=_with_software(model="FSL 6.0 FEAT"))
+    build_draft(base_study_id)
+    db.session.commit()
+    client = await _client(app, ADMIN_TOKEN)
+    h = client._get_headers()
+    try:
+        drafts = await client.client.get("/api/outreach/drafts/", headers=h)
+    finally:
+        await client.aclose()
+    assert drafts.json()["results"][0]["software"]["packages"] == ["FSL"]

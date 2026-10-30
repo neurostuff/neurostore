@@ -8,6 +8,7 @@ const person = (id: string, over: Partial<PersonSummary> = {}): PersonSummary =>
     bounced_at: null,
     suppressed: false,
     messages: 0,
+    author_messages: 0,
     notes: null,
     ...over,
 });
@@ -27,6 +28,7 @@ const draft = (id: string, who: PersonSummary | null, over: Partial<DraftSummary
     analyses: 1,
     person_id: who?.id ?? null,
     person: who,
+    last_reply: null,
     ...over,
 });
 
@@ -43,7 +45,7 @@ test('unapproved drafts, missing addresses, opt-outs and earlier emails are held
         draft('1', person('a'), { status: 'draft' }),
         draft('2', null),
         draft('3', person('c', { suppressed: true })),
-        draft('4', person('d', { messages: 1 })),
+        draft('4', person('d', { messages: 1, author_messages: 1 })),
     ]);
     expect(result.get('1')).toEqual(['not approved yet']);
     expect(result.get('2')).toEqual(['no address to write to']);
@@ -55,4 +57,16 @@ test('a blocked draft does not use up its person in the batch', () => {
     const ada = person('ada');
     const result = batchBlockers([draft('1', ada, { status: 'draft' }), draft('2', ada)]);
     expect(result.get('2')).toEqual([]);
+});
+
+test('an author with two addresses is one person for the batch', () => {
+    const atWork = person('ada-work', { author_id: 'orcid-ada' });
+    const atHome = person('ada-home', { author_id: 'orcid-ada' });
+    const result = batchBlockers([draft('1', atWork), draft('2', atHome)]);
+    expect(result.get('2')).toEqual(['another paper of theirs is in this batch']);
+});
+
+test('an author emailed at another address is held as already emailed', () => {
+    const result = batchBlockers([draft('1', person('ada-home', { author_id: 'orcid-ada', author_messages: 1 }))]);
+    expect(result.get('1')).toEqual(['already emailed at another address']);
 });

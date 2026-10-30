@@ -2,12 +2,14 @@ import { Alert, Button, Divider, Grid, Link, Paper, Stack, Typography } from '@m
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
-import { PaperLinks, PersonFlags, StatusChip } from '../components';
+import { PaperLinks, PersonFlags, SoftwareChips, StatusChip } from '../components';
 import { useApi } from '../context';
-import { ago, when } from '../format';
+import { ago, REPLY_LABELS, when } from '../format';
 import type { DraftDetail, Invitation } from '../types';
 import { AnalysesEditor } from './AnalysesEditor';
 import { CollectionEditor } from './CollectionEditor';
+import { sentHere as wasSent } from '../drafts';
+import { DraftActions } from './DraftActions';
 import { InvitationDialog } from './InvitationDialog';
 import { PersonPanel } from './PersonPanel';
 
@@ -19,12 +21,25 @@ function Events({ draft }: { draft: DraftDetail }) {
             <Typography variant="h6" component="h2">
                 History
             </Typography>
-            {[...draft.events].reverse().map((event, index) => (
-                <Typography variant="body2" key={`${event.created_at}-${index}`}>
-                    {when(event.created_at)} · {event.kind.replace(/_/g, ' ')} · {event.actor}
-                    {event.actor_id && ` (${event.actor_id})`}
-                </Typography>
-            ))}
+            {[...draft.events].reverse().map((event, index) => {
+                const data = event.data ?? {};
+                const detail = [
+                    typeof data.reply === 'string' ? REPLY_LABELS[data.reply] ?? data.reply : null,
+                    typeof data.reason === 'string' ? data.reason.replace(/_/g, ' ') : null,
+                    typeof data.note === 'string' ? `“${data.note}”` : null,
+                ].filter(Boolean);
+                return (
+                    <Typography
+                        variant="body2"
+                        key={`${event.created_at}-${index}`}
+                        sx={data.undone_at ? { textDecoration: 'line-through', color: 'text.disabled' } : undefined}
+                    >
+                        {when(event.created_at)} · {event.kind.replace(/_/g, ' ')}
+                        {detail.length > 0 && `: ${detail.join(' · ')}`} · {event.actor}
+                        {event.actor_id && ` (${event.actor_id})`}
+                    </Typography>
+                );
+            })}
         </Stack>
     );
 }
@@ -56,8 +71,9 @@ export function DraftPage() {
     if (!draft.data) return null;
     const data = draft.data;
     const frozen = FROZEN.includes(data.status);
-    const sentHere = data.events.some((event) => event.kind === 'sent');
-    const emailedElsewhere = !sentHere && (data.person?.messages ?? 0) > 0;
+    const sentHere = wasSent(data);
+    const emailedElsewhere = !sentHere && (data.person?.author_messages ?? 0) > 0;
+    const closed = ['declined', 'excluded'].includes(data.status);
     const error = [edit.error, check.error, invite.error].find(Boolean);
 
     return (
@@ -77,6 +93,7 @@ export function DraftPage() {
                         {data.link_expires_at && ` · link live until ${new Date(data.link_expires_at).toLocaleDateString()}`}
                     </Typography>
                     <PaperLinks doi={data.doi} pmid={data.pmid} pmcid={data.pmcid} />
+                    <SoftwareChips software={data.software ?? null} />
                 </Stack>
                 <Stack direction="row" spacing={1}>
                     {data.status === 'draft' && (
@@ -84,7 +101,7 @@ export function DraftPage() {
                             Approve draft
                         </Button>
                     )}
-                    {data.status !== 'draft' && !frozen && (
+                    {data.status !== 'draft' && !frozen && !closed && (
                         <Button
                             variant="contained"
                             disabled={invite.isPending || !data.person || data.person.suppressed || emailedElsewhere}
@@ -94,6 +111,7 @@ export function DraftPage() {
                         </Button>
                     )}
                 </Stack>
+                <DraftActions draft={data} onChange={refresh} />
                 {emailedElsewhere && (
                     <Alert severity="info">
                         This author has already been emailed about another paper, so this one is held back for now.

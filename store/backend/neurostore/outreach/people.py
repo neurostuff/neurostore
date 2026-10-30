@@ -53,6 +53,31 @@ def message_counts(person_ids):
     return dict(rows)
 
 
+def author_message_counts(found):
+    """{person id: messages sent to their author under any address} for the people in
+    ``found`` ({person id: person}). A person with no author counts their own address."""
+    if not found:
+        return {}
+    author_ids = {person.author_id for person in found.values() if person.author_id}
+    rows = db.session.execute(
+        sa.select(OutreachPerson.id, OutreachPerson.author_id, sa.func.count(OutreachMessage.id))
+        .outerjoin(OutreachMessage, OutreachMessage.person_id == OutreachPerson.id)
+        .where(
+            sa.or_(OutreachPerson.id.in_(list(found)), OutreachPerson.author_id.in_(author_ids))
+        )
+        .group_by(OutreachPerson.id, OutreachPerson.author_id)
+    ).all()
+    own = {person_id: count for person_id, _, count in rows}
+    by_author = {}
+    for _, author_id, count in rows:
+        if author_id:
+            by_author[author_id] = by_author.get(author_id, 0) + count
+    return {
+        person_id: by_author[person.author_id] if person.author_id else own.get(person_id, 0)
+        for person_id, person in found.items()
+    }
+
+
 def people(person_ids):
     """{person id: person}."""
     if not person_ids:

@@ -30,7 +30,7 @@ PROGRESS_STATUSES = (
     "published",  # its NeuroVault collection exists
 )
 #: Statuses a draft is put in directly, whatever it was.
-OUTCOME_STATUSES = ("declined", "rejected", "failed", "files_deleted")
+OUTCOME_STATUSES = ("declined", "excluded", "rejected", "failed", "files_deleted")
 DRAFT_STATUSES = PROGRESS_STATUSES + OUTCOME_STATUSES
 
 EVENT_ACTORS = ("admin", "author", "system")
@@ -143,6 +143,8 @@ class OutreachLink(BaseMixin, db.Model):
     expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
     revoked_at = db.Column(db.DateTime(timezone=True), nullable=True)
     created_by = db.Column(db.Text, nullable=True)
+    #: An admin's look at the author's page: nothing done through it is recorded or kept.
+    preview = db.Column(db.Boolean, nullable=False, default=False, server_default=sa.false())
 
 
 class OutreachMessage(BaseMixin, db.Model):

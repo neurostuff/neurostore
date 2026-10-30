@@ -10,8 +10,22 @@ export const PROGRESS_STATUSES = [
     'approved',
     'published',
 ] as const;
-export const OUTCOME_STATUSES = ['declined', 'rejected', 'failed', 'files_deleted'] as const;
+export const OUTCOME_STATUSES = ['declined', 'excluded', 'rejected', 'failed', 'files_deleted'] as const;
 export type DraftStatus = (typeof PROGRESS_STATUSES)[number] | (typeof OUTCOME_STATUSES)[number];
+
+/** The analysis software a paper reports (store/backend/neurostore/outreach/software.py). */
+export interface Software {
+    packages: string[];
+    /** Whose software the packages come from: the model estimation's, else preprocessing's. */
+    source: 'ModelEstimation' | 'Preprocessing' | null;
+    /** Every software text the extraction read, for a tooltip. */
+    texts: string[];
+}
+
+/** Packages whose group outputs are the most recognisable (cope/varcope/zstat, con/spmT,
+ * bucket sub-bricks, effect_size, stat-effect). */
+export const PREFERRED_SOFTWARE = ['FSL', 'SPM', 'AFNI', 'nilearn', 'FitLins'] as const;
+export const OTHER_SOFTWARE = ['BrainVoyager', 'CONN', 'fMRIPrep', 'FreeSurfer'] as const;
 
 export interface Candidate {
     base_study_id: string;
@@ -22,6 +36,7 @@ export interface Candidate {
     pmcid: string | null;
     journal: string | null;
     result_analyses: number;
+    software?: Software | null;
 }
 
 export interface Point {
@@ -44,8 +59,30 @@ export interface PersonSummary {
     opted_out_at: string | null;
     bounced_at: string | null;
     suppressed: boolean;
+    /** Messages to this address. */
     messages: number;
+    /** Messages to the same author under any of their addresses. */
+    author_messages: number;
     notes: string | null;
+}
+
+export const REPLY_KINDS = ['will_upload', 'no_maps', 'wrong_person', 'already_shared', 'declined', 'other'] as const;
+export type ReplyKind = (typeof REPLY_KINDS)[number];
+export const EXCLUSION_REASONS = [
+    'behavioral_only',
+    'roi_only',
+    'connectivity_only',
+    'no_group_maps',
+    'not_fmri',
+    'other',
+] as const;
+export type ExclusionReason = (typeof EXCLUSION_REASONS)[number];
+
+export interface Reply {
+    kind: ReplyKind;
+    note: string | null;
+    link: string | null;
+    at: string;
 }
 
 export interface DraftSummary {
@@ -63,6 +100,8 @@ export interface DraftSummary {
     analyses: number;
     person_id: string | null;
     person: PersonSummary | null;
+    last_reply: Reply | null;
+    software?: Software | null;
 }
 
 export interface DraftEvent {

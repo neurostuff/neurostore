@@ -5,12 +5,13 @@
     "type": "module",
     "scripts": {
         "start": "vite",
-        "build": "tsc --noEmit && vite build",
+        "build": "tsc --noEmit && vite build && vite build --config vite.share.config.ts",
         "preview": "vite preview",
         "test": "vitest run",
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "start:share": "vite --config vite.share.config.ts"
     },
     "dependencies": {
         "@auth0/auth0-react": "^2.21.0",

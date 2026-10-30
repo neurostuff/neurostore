@@ -21,6 +21,7 @@ const person = (id: string, over: Partial<PersonSummary> = {}): PersonSummary =>
     bounced_at: null,
     suppressed: false,
     messages: 0,
+    author_messages: 0,
     notes: null,
     ...over,
 });
@@ -40,6 +41,7 @@ const draft = (id: string, over: Partial<DraftSummary> = {}): DraftSummary => ({
     analyses: 2,
     person_id: `p-${id}`,
     person: person(`p-${id}`),
+    last_reply: null,
     ...over,
 });
 
@@ -92,7 +94,7 @@ test('idle, author and search filters', () => {
             draft('stale', { status: 'opened', last_activity_at: daysAgo(20) }),
             draft('fresh', { status: 'opened', last_activity_at: daysAgo(2) }),
             draft('out', { person: person('p-out', { suppressed: true }) }),
-            draft('mailed', { status: 'contacted', person: person('p-mailed', { messages: 1 }) }),
+            draft('mailed', { status: 'contacted', person: person('p-mailed', { messages: 1, author_messages: 1 }) }),
         ]
     );
     expect(ids(rows, filters({ idleDays: 14 }))).toEqual(['stale']); // candidates have no activity
@@ -110,7 +112,45 @@ test('oldest activity sorts drafts by when anything last happened', () => {
 });
 
 test('filters round-trip through the URL and ignore what they do not know', () => {
-    const f = filters({ phases: ['emailed', 'uploading'], idleDays: 14, ready: false, emailed: true, search: 'reward' });
+    const f = filters({
+        phases: ['emailed', 'uploading'],
+        idleDays: 14,
+        ready: false,
+        emailed: true,
+        search: 'reward',
+        software: ['FSL', 'unknown'],
+        sort: 'preferred_software',
+    });
     expect(readFilters(writeFilters(f, 2026), 2026)).toEqual(f);
     expect(readFilters(new URLSearchParams('phase=bogus&idle=x&sort=sideways'), 2026)).toEqual(filters());
+});
+
+const withSoftware = (id: string, packages: string[], texts = packages) =>
+    draft(id, { software: { packages, source: texts.length ? 'ModelEstimation' : null, texts } });
+
+test('the software filter finds packages, unrecognised software, and none reported', () => {
+    const rows = paperRows(
+        [candidate('c1')],
+        [
+            withSoftware('fsl', ['FSL']),
+            withSoftware('brainvoyager', ['BrainVoyager']),
+            withSoftware('custom', [], ['in-house MATLAB scripts']),
+            withSoftware('spm-fmriprep', ['SPM', 'fMRIPrep']),
+        ]
+    );
+    expect(ids(rows, filters({ software: ['FSL', 'SPM'] }))).toEqual(['fsl', 'spm-fmriprep']);
+    expect(ids(rows, filters({ software: ['other'] }))).toEqual(['custom']);
+    expect(ids(rows, filters({ software: ['unknown'] }))).toEqual(['c1']); // no software read
+});
+
+test('preferred software sorts first, then newest paper', () => {
+    const rows = paperRows(
+        [],
+        [
+            withSoftware('bv', ['BrainVoyager']),
+            draft('none', { year: 2026 }),
+            withSoftware('afni', ['AFNI']),
+        ]
+    );
+    expect(sortRows(rows, 'preferred_software').map((row) => row.id)[0]).toBe('afni');
 });

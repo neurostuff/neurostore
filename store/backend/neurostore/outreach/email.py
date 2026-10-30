@@ -32,8 +32,8 @@ that each one landed on the right analysis, and submit. No account is needed:
 
 {url}
 
-If an analysis is wrong or missing, the page lets you say so. If you can't share the \
-maps, or would rather we didn't write again, just reply and let me know.
+If an analysis is wrong or missing, or you can't share the maps, the page lets you \
+say so, and it has a button to stop these emails. You can also just reply to me.
 
 Thank you,
 {signature}

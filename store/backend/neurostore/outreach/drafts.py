@@ -34,6 +34,7 @@ from neurostore.models.data import STUDY_SOURCE, result_analysis_clause
 from neurostore.models.outreach import MESSAGE_KINDS, OUTCOME_STATUSES, PROGRESS_STATUSES
 
 LINK_DAYS = 90
+PREVIEW_DAYS = 1
 NEUROVAULT = "NeuroVault"
 
 #: The status an event puts a draft in; events not named here leave it as it is.
@@ -51,8 +52,22 @@ EVENT_STATUS = {
     "rejected": "rejected",
     "publish_failed": "failed",
     "files_deleted": "files_deleted",
+    "excluded": "excluded",
 }
 _RANK = {status: rank for rank, status in enumerate(PROGRESS_STATUSES)}
+#: Outcomes an admin can take back with ``reopen_draft``.
+REOPENABLE = ("declined", "excluded")
+#: What an author's reply said, as an admin logs it.
+REPLY_KINDS = ("will_upload", "no_maps", "wrong_person", "already_shared", "declined", "other")
+#: Why an admin takes a paper out of outreach.
+EXCLUSION_REASONS = (
+    "behavioral_only",
+    "roi_only",
+    "connectivity_only",
+    "no_group_maps",
+    "not_fmri",
+    "other",
+)
 
 
 class DraftError(ValueError):
@@ -93,6 +108,45 @@ def record_event(draft, kind, actor, actor_id=None, data=None):
     draft.status = next_status(draft.status, kind)
     draft.last_activity_at = datetime.now(timezone.utc)
     return event
+
+
+def _undone(event):
+    return bool((event.data or {}).get("undone_at"))
+
+
+def replay_status(kinds):
+    """The status a draft ends in after events of ``kinds``, in order, from ``draft``."""
+    status = "draft"
+    for kind in kinds:
+        status = next_status(status, kind)
+    return status
+
+
+def events_of(draft_id):
+    return db.session.scalars(
+        sa.select(OutreachEvent)
+        .where(OutreachEvent.draft_id == draft_id)
+        .order_by(OutreachEvent.created_at, OutreachEvent.id)
+    ).all()
+
+
+def undo_event(draft, event, kind, actor_id):
+    """Mark ``event`` undone, record that as a ``kind`` event, and replay the draft's status
+    from the events still standing. Undone events stay in the history."""
+    event.data = {
+        **(event.data or {}),
+        "undone_at": datetime.now(timezone.utc).isoformat(),
+        "undone_by": actor_id,
+    }
+    record_event(draft, kind, "admin", actor_id, {"event_id": event.id})
+    db.session.flush()
+    draft.status = replay_status(e.kind for e in events_of(draft.id) if not _undone(e))
+    return draft
+
+
+def _latest(draft, kinds):
+    standing = [e for e in events_of(draft.id) if e.kind in kinds and not _undone(e)]
+    return standing[-1] if standing else None
 
 
 def _canonical_sha256(document):
@@ -223,39 +277,49 @@ def token_sha256(token):
 
 
 def live_links(draft_id):
-    """The draft's links that are neither revoked nor expired."""
+    """The draft's links that are neither revoked nor expired; previews are not links."""
     return db.session.scalars(
         sa.select(OutreachLink).where(
             OutreachLink.draft_id == draft_id,
             OutreachLink.revoked_at.is_(None),
             OutreachLink.expires_at > sa.func.now(),
+            OutreachLink.preview.is_(False),
         )
     ).all()
 
 
-def create_link(draft, actor_id=None, days=LINK_DAYS):
+def create_link(draft, actor_id=None, days=LINK_DAYS, preview=False):
     """A new link to ``draft``: the row, and the token, which is not kept anywhere.
 
-    The draft's earlier links stop working, so only the newest one sent is live.
+    Earlier links keep working, so the link in an email already sent still opens the
+    draft after a reminder carries a new one. ``revoke_links`` stops them all. A preview
+    link lasts a day, records nothing, and is no link to send.
     """
-    now = datetime.now(timezone.utc)
-    revoked = []
-    for earlier in live_links(draft.id):
-        earlier.revoked_at = now
-        revoked.append(earlier.id)
     token = secrets.token_urlsafe(32)
     link = OutreachLink(
         draft_id=draft.id,
         token_sha256=token_sha256(token),
-        expires_at=now + timedelta(days=days),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=PREVIEW_DAYS if preview else days),
         created_by=actor_id,
+        preview=preview,
     )
     db.session.add(link)
     db.session.flush()
-    record_event(
-        draft, "link_created", "admin", actor_id, {"link_id": link.id, "revoked": revoked}
-    )
+    if not preview:
+        record_event(draft, "link_created", "admin", actor_id, {"link_id": link.id})
     return link, token
+
+
+def revoke_links(draft, actor_id):
+    """Stop every live link to ``draft`` working; how many there were."""
+    now = datetime.now(timezone.utc)
+    revoked = live_links(draft.id)
+    for link in revoked:
+        link.revoked_at = now
+    record_event(
+        draft, "links_revoked", "admin", actor_id, {"link_ids": [link.id for link in revoked]}
+    )
+    return len(revoked)
 
 
 # admin edits
@@ -364,14 +428,16 @@ def check_draft(draft, actor_id):
 def mark_sent(draft, actor_id, kind="invite", batch=None, template_version=None):
     """Record that the draft's email went out, by hand for now.
 
-    Refused for an unchecked draft, one with no person or no live link, a suppressed
-    person, and an invite to anyone already written to: the pilot sends each person one
-    email.
+    Refused for an unchecked, excluded or declined draft, one with no person or no live
+    link, a suppressed person, and an invite to anyone already written to, under any of
+    their addresses: the pilot sends each person one email.
     """
     if kind not in MESSAGE_KINDS:
         raise DraftError(f"kind must be one of {', '.join(MESSAGE_KINDS)}")
     if draft.status == "draft":
         raise DraftError("approve the draft before sending it")
+    if draft.status in REOPENABLE:
+        raise DraftError(f"the draft is {draft.status}")
     if draft.person_id is None:
         raise DraftError("the draft has no one to write to")
     person = db.session.get(OutreachPerson, draft.person_id)
@@ -379,7 +445,7 @@ def mark_sent(draft, actor_id, kind="invite", batch=None, template_version=None)
         raise DraftError("this person opted out or their address bounced")
     if not live_links(draft.id):
         raise DraftError("the draft has no live link to send")
-    if kind == "invite" and messages_to(person.id):
+    if kind == "invite" and messages_to(person):
         raise DraftError("this person has already been emailed")
     message = OutreachMessage(
         draft_id=draft.id,
@@ -396,9 +462,61 @@ def mark_sent(draft, actor_id, kind="invite", batch=None, template_version=None)
     return message
 
 
-def messages_to(person_id):
+def addresses_of(person):
+    """The ids of every person who is ``person``'s author under another address, theirs
+    included: one person can print different addresses on different papers."""
+    if person.author_id is None:
+        return [person.id]
+    return db.session.scalars(
+        sa.select(OutreachPerson.id).where(
+            sa.or_(OutreachPerson.id == person.id, OutreachPerson.author_id == person.author_id)
+        )
+    ).all()
+
+
+def messages_to(person):
+    """Every message sent to ``person``, under any of their addresses."""
     return db.session.scalars(
         sa.select(OutreachMessage)
-        .where(OutreachMessage.person_id == person_id)
+        .where(OutreachMessage.person_id.in_(addresses_of(person)))
         .order_by(OutreachMessage.sent_at, OutreachMessage.id)
     ).all()
+
+
+def undo_sent(draft, actor_id):
+    """Take back the draft's last "mark as sent": its message is deleted, so the person
+    counts as not emailed again, and the draft's status is replayed without it."""
+    sent = _latest(draft, ("sent",))
+    if sent is None:
+        raise DraftError("nothing was marked sent for this draft")
+    message = db.session.get(OutreachMessage, (sent.data or {}).get("message_id"))
+    if message is not None:
+        db.session.delete(message)
+    return undo_event(draft, sent, "send_undone", actor_id)
+
+
+def exclude_draft(draft, actor_id, reason, note=None):
+    """Take the paper out of outreach; it stays a draft, so it is no candidate again."""
+    if reason not in EXCLUSION_REASONS:
+        raise DraftError(f"reason must be one of {', '.join(EXCLUSION_REASONS)}")
+    if draft.status in FROZEN or draft.status == "excluded":
+        raise DraftError(f"a draft that is {draft.status} cannot be excluded")
+    record_event(draft, "excluded", "admin", actor_id, {"reason": reason, "note": note})
+    return draft
+
+
+def reopen_draft(draft, actor_id):
+    """Take back the draft's last exclusion or decline; its status is replayed without it."""
+    if draft.status not in REOPENABLE:
+        raise DraftError(f"a draft that is {draft.status} has nothing to reopen")
+    outcome = _latest(draft, REOPENABLE)
+    return undo_event(draft, outcome, "reopened", actor_id)
+
+
+def log_reply(draft, actor_id, kind, note=None, link=None):
+    """Record what the author replied. A decline also makes the draft declined."""
+    if kind not in REPLY_KINDS:
+        raise DraftError(f"kind must be one of {', '.join(REPLY_KINDS)}")
+    data = {"reply": kind, "note": note, "link": link}
+    record_event(draft, "declined" if kind == "declined" else "reply", "admin", actor_id, data)
+    return draft

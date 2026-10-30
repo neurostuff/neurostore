@@ -1,5 +1,6 @@
 import { batchBlockers } from './batch';
-import type { Candidate, DraftStatus, DraftSummary, PersonSummary } from './types';
+import { REPLY_LABELS } from './format';
+import { PREFERRED_SOFTWARE, type Candidate, type DraftStatus, type DraftSummary, type PersonSummary, type Reply, type Software } from './types';
 
 /** A paper's place in outreach: no draft yet, or its draft's status. */
 export type Stage = 'not_started' | DraftStatus;
@@ -24,6 +25,8 @@ export interface PaperRow {
     lastActivityAt: string | null;
     /** Why it cannot be emailed now; only for approved drafts. */
     held: string[];
+    lastReply: Reply | null;
+    software: Software | null;
 }
 
 export const PHASES = [
@@ -32,14 +35,19 @@ export const PHASES = [
     { key: 'emailed', label: 'Emailed', stages: ['contacted', 'opened'] },
     { key: 'uploading', label: 'Upload in progress', stages: ['uploading'] },
     { key: 'completed', label: 'Upload completed', stages: ['submitted', 'approved', 'published'] },
-    { key: 'closed', label: 'Closed', stages: ['declined', 'rejected', 'failed', 'files_deleted'] },
+    { key: 'closed', label: 'Closed', stages: ['declined', 'excluded', 'rejected', 'failed', 'files_deleted'] },
 ] as const satisfies readonly { key: string; label: string; stages: readonly Stage[] }[];
 export type Phase = (typeof PHASES)[number]['key'];
 
 export const phaseOf = (stage: Stage): Phase =>
     PHASES.find((phase) => (phase.stages as readonly Stage[]).includes(stage))!.key;
 
-export type Sort = 'newest_paper' | 'oldest_activity';
+export type Sort = 'newest_paper' | 'oldest_activity' | 'preferred_software';
+
+/** A software filter's values: a package, OTHER (software reported, none we recognise) or
+ * UNKNOWN (no software reported). */
+export const OTHER = 'other';
+export const UNKNOWN = 'unknown';
 
 export interface Filters {
     /** Empty means every phase. */
@@ -54,6 +62,8 @@ export interface Filters {
     emailed: boolean | null;
     /** Words to find in the title or journal. */
     search: string;
+    /** Packages, OTHER or UNKNOWN; empty means any software. */
+    software: string[];
     /** Candidates published in or after this year. */
     sinceYear: number;
     sort: Sort;
@@ -66,6 +76,7 @@ export const defaultFilters = (year = new Date().getFullYear()): Filters => ({
     suppressed: null,
     emailed: null,
     search: '',
+    software: [],
     sinceYear: year,
     sort: 'newest_paper',
 });
@@ -77,6 +88,7 @@ export const PRESETS: { label: string; filters: Partial<Filters> }[] = [
     { label: 'Ready to email', filters: { phases: ['drafting'], ready: true } },
     { label: 'Waiting on authors', filters: { phases: ['emailed', 'uploading'], sort: 'oldest_activity' } },
     { label: 'Stale', filters: { phases: ['emailed', 'uploading'], idleDays: 14, sort: 'oldest_activity' } },
+    { label: 'Preferred software', filters: { software: [...PREFERRED_SOFTWARE], sort: 'preferred_software' } },
     { label: 'Done', filters: { phases: ['completed'] } },
 ];
 
@@ -97,6 +109,8 @@ export const fromCandidate = (candidate: Candidate): PaperRow => ({
     createdAt: null,
     lastActivityAt: null,
     held: [],
+    lastReply: null,
+    software: candidate.software ?? null,
 });
 
 export const fromDraft = (draft: DraftSummary, held: string[] = []): PaperRow => ({
@@ -116,6 +130,8 @@ export const fromDraft = (draft: DraftSummary, held: string[] = []): PaperRow =>
     createdAt: draft.created_at,
     lastActivityAt: draft.last_activity_at,
     held,
+    lastReply: draft.last_reply,
+    software: draft.software ?? null,
 });
 
 /** Newest papers first, then the order their drafts were built. */
@@ -145,7 +161,9 @@ export function matches(row: PaperRow, filters: Filters, now = Date.now()): bool
         if (now - new Date(row.lastActivityAt).getTime() < filters.idleDays * DAY) return false;
     }
     if (filters.suppressed !== null && (row.person?.suppressed ?? false) !== filters.suppressed) return false;
-    if (filters.emailed !== null && (row.person ? row.person.messages > 0 : false) !== filters.emailed) return false;
+    if (filters.emailed !== null && (row.person ? row.person.author_messages > 0 : false) !== filters.emailed)
+        return false;
+    if (filters.software.length > 0 && !softwareMatches(row.software, filters.software)) return false;
     const words = filters.search.toLowerCase().split(/\s+/).filter(Boolean);
     if (words.length > 0) {
         const text = `${row.name ?? ''} ${row.journal ?? ''}`.toLowerCase();
@@ -154,9 +172,22 @@ export function matches(row: PaperRow, filters: Filters, now = Date.now()): bool
     return true;
 }
 
+/** Whether a paper's software is one of ``wanted``: packages, OTHER or UNKNOWN. */
+export function softwareMatches(software: Software | null, wanted: string[]): boolean {
+    const found = software?.packages ?? [];
+    if (found.some((name) => wanted.includes(name))) return true;
+    if (wanted.includes(UNKNOWN) && !software?.texts.length) return true;
+    return wanted.includes(OTHER) && Boolean(software?.texts.length) && found.length === 0;
+}
+
+const usesPreferred = (row: PaperRow) =>
+    (row.software?.packages ?? []).some((name) => (PREFERRED_SOFTWARE as readonly string[]).includes(name));
+
 export function sortRows(rows: PaperRow[], sort: Sort): PaperRow[] {
     const sorted = [...rows];
-    if (sort === 'oldest_activity')
+    if (sort === 'preferred_software')
+        sorted.sort((a, b) => Number(usesPreferred(b)) - Number(usesPreferred(a)) || byNewestPaper(a, b));
+    else if (sort === 'oldest_activity')
         sorted.sort((a, b) => (a.lastActivityAt ?? '').localeCompare(b.lastActivityAt ?? '') || byNewestPaper(a, b));
     else sorted.sort(byNewestPaper);
     return sorted;
@@ -173,14 +204,19 @@ const NEXT: Record<Stage, string> = {
     approved: 'Publishing',
     published: 'Done',
     declined: 'Declined',
+    excluded: 'Excluded',
     rejected: 'Rejected',
     failed: 'Publishing failed: retry',
     files_deleted: 'Files deleted',
 };
 
-/** What happens next for the paper, or why it is held. */
-export const nextStep = (row: PaperRow): string =>
-    row.stage === 'checked' && row.held.length > 0 ? `Held: ${row.held.join(', ')}` : NEXT[row.stage];
+/** What happens next for the paper, why it is held, or what its author last replied. */
+export function nextStep(row: PaperRow): string {
+    if (row.stage === 'checked' && row.held.length > 0) return `Held: ${row.held.join(', ')}`;
+    if (row.lastReply && (row.stage === 'contacted' || row.stage === 'opened'))
+        return `Replied: ${REPLY_LABELS[row.lastReply.kind] ?? row.lastReply.kind}`;
+    return NEXT[row.stage];
+}
 
 // The filters live in the URL, so a filtered view can be bookmarked or shared.
 
@@ -191,6 +227,7 @@ const PARAMS = {
     suppressed: 'suppressed',
     emailed: 'emailed',
     search: 'q',
+    software: 'software',
     sinceYear: 'year',
     sort: 'sort',
 } as const;
@@ -210,8 +247,9 @@ export function readFilters(params: URLSearchParams, year = new Date().getFullYe
         suppressed: flag(params.get(PARAMS.suppressed)),
         emailed: flag(params.get(PARAMS.emailed)),
         search: params.get(PARAMS.search) ?? '',
+        software: params.getAll(PARAMS.software),
         sinceYear: Number.isInteger(since) && since > 1900 ? since : defaults.sinceYear,
-        sort: sort === 'oldest_activity' ? 'oldest_activity' : defaults.sort,
+        sort: sort === 'oldest_activity' || sort === 'preferred_software' ? sort : defaults.sort,
     };
 }
 
@@ -223,6 +261,7 @@ export function writeFilters(filters: Filters, year = new Date().getFullYear()):
     if (filters.suppressed !== null) params.set(PARAMS.suppressed, filters.suppressed ? '1' : '0');
     if (filters.emailed !== null) params.set(PARAMS.emailed, filters.emailed ? '1' : '0');
     if (filters.search) params.set(PARAMS.search, filters.search);
+    filters.software.forEach((value) => params.append(PARAMS.software, value));
     if (filters.sinceYear !== year) params.set(PARAMS.sinceYear, String(filters.sinceYear));
     if (filters.sort !== 'newest_paper') params.set(PARAMS.sort, filters.sort);
     return params;

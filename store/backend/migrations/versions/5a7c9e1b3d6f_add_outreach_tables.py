@@ -23,7 +23,7 @@ depends_on = None
 
 DRAFT_STATUSES = (
     "draft", "checked", "contacted", "opened", "uploading", "submitted", "approved",
-    "published", "declined", "rejected", "failed", "files_deleted",
+    "published", "declined", "excluded", "rejected", "failed", "files_deleted",
 )
 
 
@@ -121,6 +121,7 @@ def upgrade():
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_by", sa.Text(), nullable=True),
+        sa.Column("preview", sa.Boolean(), server_default=sa.false(), nullable=False),
         _draft_fk(),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("token_sha256"),

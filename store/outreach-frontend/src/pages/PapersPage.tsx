@@ -18,11 +18,14 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { PaperLinks, PersonFlags, StatusChip } from '../components';
+import { PaperLinks, PersonFlags, SoftwareChips, StatusChip } from '../components';
+import { paperRef } from '../api';
 import { useApi } from '../context';
 import {
     defaultFilters,
     matches,
+    OTHER,
+    UNKNOWN,
     nextStep,
     paperRows,
     phaseOf,
@@ -35,6 +38,14 @@ import {
     type Phase,
 } from '../filters';
 import { ago } from '../format';
+import { OTHER_SOFTWARE, PREFERRED_SOFTWARE } from '../types';
+
+const SOFTWARE_CHOICES: { value: string; label: string }[] = [
+    ...PREFERRED_SOFTWARE.map((name) => ({ value: name, label: `${name} (preferred)` })),
+    ...OTHER_SOFTWARE.map((name) => ({ value: name, label: name })),
+    { value: OTHER, label: 'Other software' },
+    { value: UNKNOWN, label: 'Not reported' },
+];
 
 const AUTHOR_CHOICES = [
     { value: 'any', label: 'Any author', filters: { emailed: null, suppressed: null } },
@@ -79,7 +90,7 @@ export function PapersPage() {
             const failed: string[] = [];
             for (const id of ids) {
                 try {
-                    await api.buildDraft(id);
+                    await api.buildDraft({ base_study_id: id });
                 } catch (error) {
                     failed.push(`${id}: ${error instanceof Error ? error.message : String(error)}`);
                 }
@@ -91,6 +102,21 @@ export function PapersPage() {
             setSelected(new Set());
             void queryClient.invalidateQueries({ queryKey: ['candidates'] });
             void queryClient.invalidateQueries({ queryKey: ['drafts'] });
+        },
+    });
+
+    const [adding, setAdding] = useState('');
+    const add = useMutation({
+        mutationFn: (text: string) => {
+            const ref = paperRef(text);
+            if (!ref) throw new Error('Type a PMID, PMCID, DOI or neurostore id.');
+            return api.buildDraft(ref);
+        },
+        onSuccess: (built) => {
+            setAdding('');
+            void queryClient.invalidateQueries({ queryKey: ['candidates'] });
+            void queryClient.invalidateQueries({ queryKey: ['drafts'] });
+            navigate(`/drafts/${built.id}`);
         },
     });
 
@@ -163,6 +189,27 @@ export function PapersPage() {
                 </TextField>
                 <TextField
                     size="small"
+                    select
+                    label="Software"
+                    value={filters.software}
+                    onChange={(event) => setFilters({ software: event.target.value as unknown as string[] })}
+                    SelectProps={{
+                        multiple: true,
+                        displayEmpty: true,
+                        renderValue: (values) =>
+                            (values as string[]).length === 0 ? 'Any software' : (values as string[]).join(', '),
+                    }}
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ minWidth: 190, maxWidth: 280 }}
+                >
+                    {SOFTWARE_CHOICES.map((choice) => (
+                        <MenuItem key={choice.value} value={choice.value}>
+                            {choice.label}
+                        </MenuItem>
+                    ))}
+                </TextField>
+                <TextField
+                    size="small"
                     type="number"
                     label="Idle at least (days)"
                     value={filters.idleDays ?? ''}
@@ -189,6 +236,7 @@ export function PapersPage() {
                 >
                     <MenuItem value="newest_paper">Newest paper</MenuItem>
                     <MenuItem value="oldest_activity">Oldest activity</MenuItem>
+                    <MenuItem value="preferred_software">Preferred software first</MenuItem>
                 </TextField>
                 <FormControlLabel
                     control={<Switch checked={filters.ready} onChange={(event) => setFilters({ ready: event.target.checked })} />}
@@ -208,6 +256,35 @@ export function PapersPage() {
                     Build {chosen.length || ''} draft{chosen.length === 1 ? '' : 's'}
                 </Button>
             </Stack>
+            <Stack
+                component="form"
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    add.mutate(adding);
+                }}
+            >
+                <TextField
+                    size="small"
+                    label="Add a paper: PMID, PMCID, DOI or id"
+                    value={adding}
+                    onChange={(event) => setAdding(event.target.value)}
+                    sx={{ minWidth: 300 }}
+                />
+                <Button type="submit" variant="outlined" disabled={!adding.trim() || add.isPending}>
+                    Build its draft
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                    For personal contacts and test papers outside the criteria.
+                </Typography>
+            </Stack>
+            {add.error && (
+                <Alert severity="warning" onClose={() => add.reset()}>
+                    {String(add.error)}
+                </Alert>
+            )}
             {error && <Alert severity="error">{String(error)}</Alert>}
             {failures.length > 0 && (
                 <Alert severity="warning" onClose={() => setFailures([])}>
@@ -233,6 +310,7 @@ export function PapersPage() {
                         <TableCell>Paper</TableCell>
                         <TableCell>Stage</TableCell>
                         <TableCell align="right">Analyses</TableCell>
+                        <TableCell>Software</TableCell>
                         <TableCell>Author</TableCell>
                         <TableCell>Next</TableCell>
                         <TableCell>Last activity</TableCell>
@@ -263,6 +341,9 @@ export function PapersPage() {
                             </TableCell>
                             <TableCell align="right">{row.analyses}</TableCell>
                             <TableCell>
+                                <SoftwareChips software={row.software} />
+                            </TableCell>
+                            <TableCell>
                                 <PersonFlags person={row.person} drafted={row.draftId !== null} />
                             </TableCell>
                             <TableCell>
@@ -275,7 +356,7 @@ export function PapersPage() {
                     ))}
                     {(drafts.isSuccess || candidates.isSuccess) && rows.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={7}>Nothing matches these filters.</TableCell>
+                            <TableCell colSpan={8}>Nothing matches these filters.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>

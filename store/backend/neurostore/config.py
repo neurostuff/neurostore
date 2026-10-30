@@ -112,8 +112,10 @@ class Config(object):
     OUTREACH_ADMINS = os.environ.get("OUTREACH_ADMINS", "")
     # A shared password for outreach's admin API, honoured only in development and tests.
     OUTREACH_DEV_PASSWORD = os.environ.get("OUTREACH_DEV_PASSWORD")
-    # Where an author's link opens; the token is appended.
-    OUTREACH_SHARE_URL = os.environ.get("OUTREACH_SHARE_URL", "https://neurostore.org/share/")
+    # Where an author's link opens; the token is appended, after a "#" so no server logs it.
+    OUTREACH_SHARE_URL = os.environ.get("OUTREACH_SHARE_URL", "https://neurostore.org/share/#")
+    # Where authors' uploaded maps are kept; FILE_DIR/outreach-uploads when unset.
+    OUTREACH_UPLOAD_DIR = os.environ.get("OUTREACH_UPLOAD_DIR")
     # How outreach emails are signed (\n for new lines).
     OUTREACH_SIGNATURE = os.environ.get("OUTREACH_SIGNATURE")
     BEARERINFO_FUNC = os.environ.get(

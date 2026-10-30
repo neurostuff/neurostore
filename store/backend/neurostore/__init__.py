@@ -31,7 +31,7 @@ from neurostore.observability.request_id import (
     RequestIdMiddleware,
 )
 from neurostore.observability.sentry import configure_sentry
-from neurostore.paths import API_BASE_PATH, OUTREACH_URL_PREFIX
+from neurostore.paths import API_BASE_PATH, OUTREACH_URL_PREFIX, SHARE_URL_PREFIX
 from neurostore.resolver import ReviewResolver
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler
@@ -264,9 +264,11 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     init_admin(app, db, settings)
     # Local so that importing the package does not load the models.
     from neurostore.outreach.api import outreach_app
+    from neurostore.outreach.share import share_app
 
     # Before "/", which would otherwise take every path.
     app.mount(OUTREACH_URL_PREFIX, outreach_app())
+    app.mount(SHARE_URL_PREFIX, share_app())
     app.mount("/", connexion_app)
     app = _SettingsMiddleware(
         _DatabaseSessionMiddleware(

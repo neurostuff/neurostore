@@ -27,7 +27,26 @@ export const STATUS_LABELS: Record<string, string> = {
     approved: 'Approved',
     published: 'Published',
     declined: 'Declined',
+    excluded: 'Excluded',
     rejected: 'Rejected',
     failed: 'Failed',
     files_deleted: 'Files deleted',
+};
+
+export const REPLY_LABELS: Record<string, string> = {
+    will_upload: 'Will upload',
+    no_maps: 'No maps',
+    wrong_person: 'Wrong person',
+    already_shared: 'Already shared',
+    declined: 'Declined',
+    other: 'Other',
+};
+
+export const EXCLUSION_LABELS: Record<string, string> = {
+    behavioral_only: 'Behavioral results only',
+    roi_only: 'ROI results only',
+    connectivity_only: 'Connectivity results only',
+    no_group_maps: 'No group-level maps',
+    not_fmri: 'Not fMRI',
+    other: 'Other',
 };

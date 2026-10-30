@@ -22,16 +22,23 @@ from neurostore.models.outreach import DRAFT_STATUSES
 from neurostore.outreach import people as outreach_people
 from neurostore.outreach.auth import outreach_admin
 from neurostore.outreach.candidates import candidates_query
+from neurostore.base_studies import find_base_study
 from neurostore.outreach.drafts import (
     DraftError,
     build_draft,
     check_draft,
     create_link,
     edit_draft,
+    exclude_draft,
     live_links,
+    log_reply,
     mark_sent,
+    reopen_draft,
+    revoke_links,
+    undo_sent,
 )
 from neurostore.outreach.email import compose_email
+from neurostore.outreach.software import software_by_base_study
 
 DEFAULT_LIMIT = 100
 MAX_LIMIT = 1000
@@ -82,7 +89,7 @@ def _write(change):
     return result
 
 
-def _person(person, messages=0):
+def _person(person, messages=0, author_messages=None):
     if person is None:
         return None
     return {
@@ -92,11 +99,20 @@ def _person(person, messages=0):
         "bounced_at": _iso(person.bounced_at),
         "suppressed": person.suppressed,
         "messages": messages,
+        # Messages to the same author under any of their addresses.
+        "author_messages": messages if author_messages is None else author_messages,
         "notes": person.notes,
     }
 
 
-def _draft_summary(draft, base_study, person=None, messages=0):
+def _people_counts(found):
+    return (
+        outreach_people.message_counts(list(found)),
+        outreach_people.author_message_counts(found),
+    )
+
+
+def _draft_summary(draft, base_study, person=None, counts=({}, {}), software=None):
     return {
         "id": draft.id,
         "base_study_id": draft.base_study_id,
@@ -111,7 +127,11 @@ def _draft_summary(draft, base_study, person=None, messages=0):
         "last_activity_at": _iso(draft.last_activity_at),
         "analyses": len(draft.analyses),
         "person_id": draft.person_id,
-        "person": _person(person, messages),
+        "person": _person(
+            person, counts[0].get(draft.person_id, 0), counts[1].get(draft.person_id, 0)
+        ),
+        "last_reply": None,
+        "software": software,
     }
 
 
@@ -125,10 +145,49 @@ def _event(event):
     }
 
 
+REPLY_EVENTS = ("reply", "declined")
+
+
+def _reply(event):
+    data = event.data or {}
+    return {
+        "kind": data.get("reply"),
+        "note": data.get("note"),
+        "link": data.get("link"),
+        "at": _iso(event.created_at),
+    }
+
+
+def _last_reply(events):
+    replies = [
+        event for event in events
+        if event.kind in REPLY_EVENTS
+        and (event.data or {}).get("reply")
+        and not (event.data or {}).get("undone_at")
+    ]
+    return _reply(replies[-1]) if replies else None
+
+
+def _last_replies(draft_ids):
+    """{draft id: its latest logged reply}."""
+    if not draft_ids:
+        return {}
+    events = db.session.scalars(
+        sa.select(OutreachEvent)
+        .where(OutreachEvent.draft_id.in_(draft_ids), OutreachEvent.kind.in_(REPLY_EVENTS))
+        .order_by(OutreachEvent.created_at, OutreachEvent.id)
+    ).all()
+    by_draft = {}
+    for event in events:
+        by_draft.setdefault(event.draft_id, []).append(event)
+    latest = {draft_id: _last_reply(held) for draft_id, held in by_draft.items()}
+    return {draft_id: reply for draft_id, reply in latest.items() if reply}
+
+
 def _detail(draft):
     base_study = db.session.get(BaseStudy, draft.base_study_id)
     person = db.session.get(OutreachPerson, draft.person_id) if draft.person_id else None
-    counts = outreach_people.message_counts([draft.person_id] if draft.person_id else [])
+    counts = _people_counts({person.id: person} if person else {})
     events = db.session.scalars(
         sa.select(OutreachEvent)
         .where(OutreachEvent.draft_id == draft.id)
@@ -136,7 +195,11 @@ def _detail(draft):
     ).all()
     links = live_links(draft.id)
     return {
-        **_draft_summary(draft, base_study, person, counts.get(draft.person_id, 0)),
+        **_draft_summary(
+            draft, base_study, person, counts,
+            software_by_base_study([draft.base_study_id]).get(draft.base_study_id),
+        ),
+        "last_reply": _last_reply(events),
         "source_study_id": draft.source_study_id,
         "source_sha256": draft.source_sha256,
         "analyses": draft.analyses,
@@ -158,6 +221,7 @@ async def candidates(request: Request):
 
     def _run():
         rows = db.session.execute(candidates_query(since_year, country).limit(limit)).all()
+        software = software_by_base_study([base_study.id for base_study, _ in rows])
         return [
             {
                 "base_study_id": base_study.id,
@@ -168,6 +232,7 @@ async def candidates(request: Request):
                 "pmcid": base_study.pmcid,
                 "journal": base_study.publication,
                 "result_analyses": count,
+                "software": software.get(base_study.id),
             }
             for base_study, count in rows
         ]
@@ -198,23 +263,50 @@ async def drafts(request: Request):
         # Oldest activity first: the in-progress drafts most likely to be forgotten.
         query = query.order_by(OutreachDraft.last_activity_at, OutreachDraft.id).limit(limit)
         rows = db.session.execute(query).all()
-        person_ids = sorted({d.person_id for d, _ in rows if d.person_id})
-        found = outreach_people.people(person_ids)
-        counts = outreach_people.message_counts(person_ids)
+        found = outreach_people.people(sorted({d.person_id for d, _ in rows if d.person_id}))
+        counts = _people_counts(found)
+        replies = _last_replies([d.id for d, _ in rows])
+        software = software_by_base_study(sorted({d.base_study_id for d, _ in rows}))
         return [
-            _draft_summary(d, b, found.get(d.person_id), counts.get(d.person_id, 0))
+            {
+                **_draft_summary(
+                    d, b, found.get(d.person_id), counts, software.get(d.base_study_id)
+                ),
+                "last_reply": replies.get(d.id),
+            }
             for d, b in rows
         ]
 
     return JSONResponse({"results": await run_in_threadpool(_run)})
 
 
+PAPER_IDS = ("base_study_id", "pmid", "pmcid", "doi")
+
+
+def _paper(body):
+    """The active base study the body names by one of PAPER_IDS, or a 404/422."""
+    given = {key: body[key].strip() for key in PAPER_IDS if isinstance(body.get(key), str)}
+    given = {key: value for key, value in given.items() if value}
+    if len(given) != 1:
+        raise HTTPException(422, f"give exactly one of {', '.join(PAPER_IDS)}")
+    ((key, value),) = given.items()
+    if key == "base_study_id":
+        header = {"neurostore_base_study_id": value}
+    else:
+        header = {"identifiers": {key: value, "publication_status": "published"}}
+    found = find_base_study(db.session, header)
+    if found is None:
+        raise HTTPException(404, f"no paper with {key} {value}")
+    return found.id
+
+
 async def _build(request, actor):
-    base_study_id = (await _body(request)).get("base_study_id")
-    if not isinstance(base_study_id, str):
-        raise HTTPException(422, "base_study_id is required")
+    """Build a draft for the paper the body names: a candidate, or any paper by its id,
+    PMID, PMCID or DOI (a personal contact, or a test paper outside the criteria)."""
+    body = await _body(request)
 
     def _run():
+        base_study_id = _paper(body)
         draft = _write(lambda: build_draft(base_study_id, actor="admin", actor_id=actor))
         return _detail(draft)
 
@@ -249,6 +341,25 @@ async def check(request: Request):
     return JSONResponse(await run_in_threadpool(_run))
 
 
+def _action(change, *body_fields):
+    """A POST route that applies ``change(draft, actor, **fields from the body)``."""
+
+    async def route(request: Request):
+        actor = await outreach_admin(request)
+        draft_id = request.path_params["draft_id"]
+        body = await _body(request) if body_fields else {}
+        fields = {name: body.get(name) for name in body_fields}
+
+        def _run():
+            found = _found(OutreachDraft, draft_id)
+            _write(lambda: change(found, actor, **fields))
+            return _detail(found)
+
+        return JSONResponse(await run_in_threadpool(_run))
+
+    return route
+
+
 async def invitation(request: Request):
     """A new link for the draft and the email that carries it; the link is shown only here."""
     actor = await outreach_admin(request)
@@ -270,6 +381,23 @@ async def invitation(request: Request):
         email = compose_email(found, person, url, signature or None)
         db.session.commit()
         return {"url": url, "expires_at": _iso(link.expires_at), "email": email}
+
+    return JSONResponse(await run_in_threadpool(_run), status_code=201)
+
+
+async def preview(request: Request):
+    """A link that opens the author's page as they would see it, for a day, recording and
+    keeping nothing: to check the page looks right for this paper."""
+    actor = await outreach_admin(request)
+    draft_id = request.path_params["draft_id"]
+    settings = request.state.settings
+
+    def _run():
+        found = _found(OutreachDraft, draft_id)
+        link, token = create_link(found, actor_id=actor, preview=True)
+        db.session.commit()
+        url = f"{settings['OUTREACH_SHARE_URL']}{token}"
+        return {"url": url, "expires_at": _iso(link.expires_at)}
 
     return JSONResponse(await run_in_threadpool(_run), status_code=201)
 
@@ -296,7 +424,11 @@ async def sent(request: Request):
 def _person_detail(person):
     drafts_held, messages = outreach_people.history(person)
     return {
-        **_person(person, len(messages)),
+        **_person(
+            person,
+            len(messages),
+            outreach_people.author_message_counts({person.id: person})[person.id],
+        ),
         "drafts": [
             {"id": d.id, "name": b.name, "year": b.year, "status": d.status}
             for d, b in drafts_held
@@ -351,6 +483,14 @@ def outreach_app():
             Route("/drafts/{draft_id}/check", check, methods=["POST"]),
             Route("/drafts/{draft_id}/invitation", invitation, methods=["POST"]),
             Route("/drafts/{draft_id}/sent", sent, methods=["POST"]),
+            Route("/drafts/{draft_id}/preview", preview, methods=["POST"]),
+            Route("/drafts/{draft_id}/unsend", _action(undo_sent), methods=["POST"]),
+            Route("/drafts/{draft_id}/reply", _action(log_reply, "kind", "note", "link"),
+                  methods=["POST"]),
+            Route("/drafts/{draft_id}/exclude", _action(exclude_draft, "reason", "note"),
+                  methods=["POST"]),
+            Route("/drafts/{draft_id}/reopen", _action(reopen_draft), methods=["POST"]),
+            Route("/drafts/{draft_id}/links/revoke", _action(revoke_links), methods=["POST"]),
             Route("/people/{person_id}", person),
             Route("/people/{person_id}/suppression", suppression, methods=["POST"]),
         ],

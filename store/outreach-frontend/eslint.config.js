@@ -5,7 +5,7 @@ import globals from 'globals';
 import eslintReactRefresh from 'eslint-plugin-react-refresh';
 
 export default [
-    { ignores: ['dist'] },
+    { ignores: ['dist', 'dist-share'] },
     eslint.configs.recommended,
     ...teslint.configs.recommended,
     {
