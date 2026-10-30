@@ -26,11 +26,12 @@ from neurostore.models import (
     OutreachDraft,
     OutreachEvent,
     OutreachLink,
+    OutreachMessage,
     OutreachPerson,
     Study,
 )
 from neurostore.models.data import STUDY_SOURCE, result_analysis_clause
-from neurostore.models.outreach import OUTCOME_STATUSES, PROGRESS_STATUSES
+from neurostore.models.outreach import MESSAGE_KINDS, OUTCOME_STATUSES, PROGRESS_STATUSES
 
 LINK_DAYS = 90
 NEUROVAULT = "NeuroVault"
@@ -221,16 +222,183 @@ def token_sha256(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+def live_links(draft_id):
+    """The draft's links that are neither revoked nor expired."""
+    return db.session.scalars(
+        sa.select(OutreachLink).where(
+            OutreachLink.draft_id == draft_id,
+            OutreachLink.revoked_at.is_(None),
+            OutreachLink.expires_at > sa.func.now(),
+        )
+    ).all()
+
+
 def create_link(draft, actor_id=None, days=LINK_DAYS):
-    """A new link to ``draft``: the row, and the token, which is not kept anywhere."""
+    """A new link to ``draft``: the row, and the token, which is not kept anywhere.
+
+    The draft's earlier links stop working, so only the newest one sent is live.
+    """
+    now = datetime.now(timezone.utc)
+    revoked = []
+    for earlier in live_links(draft.id):
+        earlier.revoked_at = now
+        revoked.append(earlier.id)
     token = secrets.token_urlsafe(32)
     link = OutreachLink(
         draft_id=draft.id,
         token_sha256=token_sha256(token),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=days),
+        expires_at=now + timedelta(days=days),
         created_by=actor_id,
     )
     db.session.add(link)
     db.session.flush()
-    record_event(draft, "link_created", "admin", actor_id, {"link_id": link.id})
+    record_event(
+        draft, "link_created", "admin", actor_id, {"link_id": link.id, "revoked": revoked}
+    )
     return link, token
+
+
+# admin edits
+
+COLLECTION_FIELDS = (
+    "name",
+    "DOI",
+    "authors",
+    "journal_name",
+    "paper_url",
+    "full_dataset_url",
+    "description",
+)
+#: Statuses whose draft an admin can no longer change: its collection is being made or made.
+FROZEN = ("approved", "published")
+
+
+def _number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _clean_point(point):
+    if not isinstance(point, dict) or not all(_number(point.get(axis)) for axis in "xyz"):
+        raise DraftError("each point needs numeric x, y and z")
+    space = point.get("space")
+    if space is not None and not isinstance(space, str):
+        raise DraftError("a point's space must be text")
+    return {"x": point["x"], "y": point["y"], "z": point["z"], "space": space}
+
+
+def clean_analyses(analyses):
+    """``analyses`` as a draft keeps them, or a DraftError naming what is wrong.
+
+    An analysis with no key is new and gets one; keys must be unique.
+    """
+    if not isinstance(analyses, list):
+        raise DraftError("analyses must be a list")
+    cleaned, keys = [], set()
+    for analysis in analyses:
+        if not isinstance(analysis, dict):
+            raise DraftError("each analysis must be an object")
+        name = analysis.get("name")
+        if not isinstance(name, str) or not name.strip():
+            raise DraftError("each analysis needs a name")
+        key = analysis.get("key") or f"added-{secrets.token_hex(6)}"
+        if not isinstance(key, str) or key in keys:
+            raise DraftError(f"analysis key {key!r} is not unique")
+        keys.add(key)
+        description = analysis.get("description")
+        if description is not None and not isinstance(description, str):
+            raise DraftError("an analysis's description must be text")
+        points = analysis.get("points") or []
+        if not isinstance(points, list):
+            raise DraftError("an analysis's points must be a list")
+        cleaned.append({
+            "key": key,
+            "name": name.strip(),
+            "description": description,
+            "points": [_clean_point(point) for point in points],
+        })
+    return cleaned
+
+
+def clean_collection(collection):
+    if not isinstance(collection, dict):
+        raise DraftError("collection must be an object")
+    unknown = set(collection) - set(COLLECTION_FIELDS)
+    if unknown:
+        raise DraftError(f"unknown collection fields: {', '.join(sorted(unknown))}")
+    cleaned = {}
+    for field, value in collection.items():
+        if value is None or value == "":
+            continue
+        if not isinstance(value, str):
+            raise DraftError(f"collection field {field} must be text")
+        cleaned[field] = value.strip()
+    return cleaned
+
+
+def edit_draft(draft, actor_id, analyses=None, collection=None):
+    """Replace the draft's analyses and/or collection fields; never the paper's records."""
+    if draft.status in FROZEN:
+        raise DraftError(f"a draft that is {draft.status} cannot be edited")
+    changed = []
+    if analyses is not None:
+        draft.analyses = clean_analyses(analyses)
+        changed.append("analyses")
+    if collection is not None:
+        draft.collection = clean_collection(collection)
+        changed.append("collection")
+    if changed:
+        record_event(draft, "edited", "admin", actor_id, {"fields": changed})
+    return draft
+
+
+def check_draft(draft, actor_id):
+    """An admin approves the draft's analyses and fields, so its link can be sent."""
+    if not draft.analyses:
+        raise DraftError("a draft with no analyses cannot be approved")
+    if draft.status != "draft":
+        raise DraftError(f"the draft is already {draft.status}")
+    record_event(draft, "checked", "admin", actor_id)
+    return draft
+
+
+def mark_sent(draft, actor_id, kind="invite", batch=None, template_version=None):
+    """Record that the draft's email went out, by hand for now.
+
+    Refused for an unchecked draft, one with no person or no live link, a suppressed
+    person, and an invite to anyone already written to: the pilot sends each person one
+    email.
+    """
+    if kind not in MESSAGE_KINDS:
+        raise DraftError(f"kind must be one of {', '.join(MESSAGE_KINDS)}")
+    if draft.status == "draft":
+        raise DraftError("approve the draft before sending it")
+    if draft.person_id is None:
+        raise DraftError("the draft has no one to write to")
+    person = db.session.get(OutreachPerson, draft.person_id)
+    if person.suppressed:
+        raise DraftError("this person opted out or their address bounced")
+    if not live_links(draft.id):
+        raise DraftError("the draft has no live link to send")
+    if kind == "invite" and messages_to(person.id):
+        raise DraftError("this person has already been emailed")
+    message = OutreachMessage(
+        draft_id=draft.id,
+        person_id=person.id,
+        kind=kind,
+        mode="manual",
+        batch=batch,
+        template_version=template_version,
+        sent_by=actor_id,
+    )
+    db.session.add(message)
+    db.session.flush()
+    record_event(draft, "sent", "admin", actor_id, {"message_id": message.id, "kind": kind})
+    return message
+
+
+def messages_to(person_id):
+    return db.session.scalars(
+        sa.select(OutreachMessage)
+        .where(OutreachMessage.person_id == person_id)
+        .order_by(OutreachMessage.sent_at, OutreachMessage.id)
+    ).all()

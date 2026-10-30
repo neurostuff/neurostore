@@ -481,13 +481,15 @@ stop_services_quietly() {
   compose_for "${service_root}" "${project}" rm -f -s "$@" >/dev/null 2>&1 || true
 }
 
-build_review_frontend() {
-  local frontend_dir="${WORKTREE_DIR}/store/review-frontend"
+build_store_frontend() {
+  local app="$1"
+  local frontend_dir="${WORKTREE_DIR}/store/${app}"
   local main_env="${WORKTREE_DIR}/compose/neurosynth-frontend/.env.${FRONTEND_MODE}"
 
-  # The review app (served by store_nginx at /review/) signs in with the main site's
-  # Auth0 client and calls the same API, so its build settings come from the main
-  # front end's env file. Vite's production build reads .env.production.local.
+  # The review app (served by store_nginx at /review/) and the outreach panel (at
+  # /outreach/) sign in with the main site's Auth0 client and call the same API, so
+  # their build settings come from the main front end's env file. Vite's production
+  # build reads .env.production.local.
   grep -E '^VITE_APP_(AUTH0_DOMAIN|AUTH0_CLIENT_ID|AUTH0_AUDIENCE|NEUROSTORE_API_DOMAIN)=' \
     "${main_env}" >"${frontend_dir}/.env.production.local"
   # Node 22 in a throwaway container, as the worktree's owner, with the repo root
@@ -496,9 +498,14 @@ build_review_frontend() {
     -u "$(stat -c '%u:%g' "${WORKTREE_DIR}")" \
     -e HOME=/tmp \
     -v "${WORKTREE_DIR}:/repo" \
-    -w /repo/store/review-frontend \
+    -w "/repo/store/${app}" \
     node:22 \
     sh -c "npm ci --no-audit --no-fund && npm run build"
+}
+
+build_store_frontends() {
+  build_store_frontend review-frontend
+  build_store_frontend outreach-frontend
 }
 
 deploy_store_staging() {
@@ -540,7 +547,7 @@ deploy_store_staging() {
     store-grafana
   compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
   compose_for "${service_root}" "${project}" exec -T store_redis redis-cli FLUSHDB >/dev/null
-  build_review_frontend
+  build_store_frontends
   recreate_services_cleanly "${service_root}" "${project}" store_nginx
 }
 
@@ -603,7 +610,7 @@ deploy_store_dev() {
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=0
   compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=1 store_release_worker
-  build_review_frontend
+  build_store_frontends
 }
 
 deploy_compose_dev() {

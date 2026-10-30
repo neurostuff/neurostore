@@ -22,7 +22,10 @@ from neurostore.outreach.candidates import candidates_query
 from neurostore.outreach.drafts import (
     DraftError,
     build_draft,
+    check_draft,
+    clean_analyses,
     create_link,
+    edit_draft,
     next_status,
     record_event,
     token_sha256,
@@ -234,6 +237,7 @@ def test_the_migrated_outreach_tables_match_the_models(db):
 def outreach_settings(app, monkeypatch):
     monkeypatch.setitem(app.config, "OUTREACH_ADMINS", "admin-user-id")
     monkeypatch.setitem(app.config, "OUTREACH_DEV_PASSWORD", "dev-secret")
+    monkeypatch.setitem(app.config, "OUTREACH_SHARE_URL", "https://neurostore.org/share/")
     return app.config
 
 
@@ -311,3 +315,126 @@ async def test_an_admin_lists_candidates_and_builds_and_lists_drafts(app, sessio
     assert idle.json()["results"] == []  # just built, so not idle
     assert [e["kind"] for e in detail.json()["events"]] == ["built"]
     assert detail.json()["events"][0]["actor_id"] == "admin-user-id"
+
+
+# admin edits, approval, invitations and sending
+
+
+def test_edited_analyses_are_checked_and_new_ones_get_a_key():
+    cleaned = clean_analyses([
+        {"key": "a1", "name": " Gain ", "points": [{"x": 1, "y": 2, "z": 3, "space": "MNI"}]},
+        {"name": "Added by hand"},
+    ])
+    assert cleaned[0] == {"key": "a1", "name": "Gain", "description": None,
+                          "points": [{"x": 1, "y": 2, "z": 3, "space": "MNI"}]}
+    assert cleaned[1]["key"].startswith("added-") and cleaned[1]["points"] == []
+    for bad in (
+        [{"key": "a1", "name": "x"}, {"key": "a1", "name": "y"}],  # keys repeat
+        [{"key": "a1", "name": ""}],
+        [{"key": "a1", "name": "x", "points": [{"x": 1, "y": "2", "z": 3}]}],
+        {"key": "a1"},
+    ):
+        with pytest.raises(DraftError):
+            clean_analyses(bad)
+
+
+def test_an_approved_draft_is_not_edited(session):
+    draft = build_draft(_upload())
+    record_event(draft, "approved", "admin")
+    with pytest.raises(DraftError, match="cannot be edited"):
+        edit_draft(draft, "admin-user-id", collection={"name": "x"})
+
+
+async def _admin(app):
+    return await _client(app, ADMIN_TOKEN)
+
+
+@pytest.mark.anyio
+async def test_an_admin_checks_a_draft_then_sends_its_invitation(app, session, outreach_settings):
+    first = build_draft(_upload("1001"))
+    second = build_draft(_upload("1002"))  # the same corresponding author
+    db.session.commit()
+    client = await _admin(app)
+    h = client._get_headers()
+    base = "/api/outreach/drafts"
+    try:
+        early = await client.client.post(f"{base}/{first.id}/invitation", headers=h)
+        edited = await client.client.patch(
+            f"{base}/{first.id}", headers=h,
+            json={"collection": {"name": "Renamed", "DOI": "10.1/x"}})
+        checked = await client.client.post(f"{base}/{first.id}/check", headers=h)
+        unlinked = await client.client.post(f"{base}/{first.id}/sent", headers=h, json={})
+        old = await client.client.post(f"{base}/{first.id}/invitation", headers=h)
+        invitation = await client.client.post(f"{base}/{first.id}/invitation", headers=h)
+        sent = await client.client.post(
+            f"{base}/{first.id}/sent", headers=h,
+            json={"batch": "pilot-1", "template_version": "pilot-1"})
+        await client.client.post(f"{base}/{second.id}/check", headers=h)
+        await client.client.post(f"{base}/{second.id}/invitation", headers=h)
+        twice = await client.client.post(f"{base}/{second.id}/sent", headers=h, json={})
+        reminder = await client.client.post(
+            f"{base}/{first.id}/sent", headers=h, json={"kind": "reminder"})
+        listed = await client.client.get(base + "/", headers=h,
+                                         params=[("status", "contacted"), ("status", "checked")])
+        person = await client.client.get(
+            f"/api/outreach/people/{first.person_id}", headers=h)
+    finally:
+        await client.aclose()
+
+    assert early.status_code == 409  # not approved yet
+    assert edited.json()["collection"] == {"name": "Renamed", "DOI": "10.1/x"}
+    assert checked.json()["status"] == "checked"
+    assert unlinked.status_code == 409  # nothing to send yet
+    email = invitation.json()["email"]
+    assert email["to"] == "pi@example.org"
+    assert "Gain > Neutral" in email["body"]
+    assert invitation.json()["url"] in email["body"]
+    assert invitation.json()["url"].startswith("https://neurostore.org/share/")
+    assert old.json()["url"] != invitation.json()["url"]
+    links = db.session.scalars(
+        sa.select(OutreachLink).where(OutreachLink.draft_id == first.id)).all()
+    assert sum(link.revoked_at is None for link in links) == 1  # only the newest is live
+    assert sent.json()["status"] == "contacted"
+    assert twice.status_code == 409  # one email per person in the pilot
+    assert "already been emailed" in twice.json()["detail"]
+    assert reminder.status_code == 200
+    by_id = {row["id"]: row for row in listed.json()["results"]}
+    assert by_id[first.id]["person"]["messages"] == 2
+    assert by_id[second.id]["status"] == "checked"
+    assert [s["kind"] for s in person.json()["sent"]] == ["invite", "reminder"]
+    assert {d["id"] for d in person.json()["drafts"]} == {first.id, second.id}
+
+
+@pytest.mark.anyio
+async def test_no_invitation_goes_to_someone_who_opted_out(app, session, outreach_settings):
+    draft = build_draft(_upload())
+    check_draft(draft, "admin-user-id")
+    db.session.commit()
+    client = await _admin(app)
+    h = client._get_headers()
+    try:
+        opted = await client.client.post(
+            f"/api/outreach/people/{draft.person_id}/suppression", headers=h,
+            json={"what": "opt_out", "note": "replied no thanks"})
+        invitation = await client.client.post(
+            f"/api/outreach/drafts/{draft.id}/invitation", headers=h)
+    finally:
+        await client.aclose()
+
+    assert opted.json()["suppressed"] is True
+    assert opted.json()["notes"] == "replied no thanks"
+    assert invitation.status_code == 409
+
+
+# serving the panel
+
+
+def test_the_outreach_panel_is_served_from_its_build_with_a_fallback_to_its_index():
+    from neurostore.tests.review.test_nginx import NGINX_DIR, STORE_DIR, location
+
+    conf = (NGINX_DIR / "nginx.conf").read_text()
+    app = location(conf, "/outreach/")
+    assert "alias /store/outreach-frontend/dist/" in app
+    assert "try_files $uri $uri/ /outreach/index.html" in app
+    assert "alias /store/outreach-frontend/dist/assets/" in location(conf, "/outreach/assets/")
+    assert "base: '/outreach/'" in (STORE_DIR / "outreach-frontend/vite.config.ts").read_text()
