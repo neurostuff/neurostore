@@ -54,7 +54,8 @@ async def test_read_key_cannot_write(auth_client, key_client):
     created = await _create_key(auth_client, ["read"])
     client = key_client(created["key"])
 
-    assert (await client.get("/api/api-keys/introspect")).status_code == 200
+    resp = await client.get("/api/api-keys/introspect")
+    assert resp.status_code == 200
     resp = await client.post("/api/studies/", data={"name": "nope"})
     assert resp.status_code == 403
 
@@ -80,26 +81,31 @@ async def test_introspect_reports_owner_and_scopes(auth_client, key_client):
 
 
 async def test_introspect_needs_an_api_key(auth_client):
-    assert (await auth_client.get("/api/api-keys/introspect")).status_code == 400
+    resp = await auth_client.get("/api/api-keys/introspect")
+    assert resp.status_code == 400
 
 
 async def test_keys_cannot_manage_keys(auth_client, key_client):
     created = await _create_key(auth_client, ["read", "write"])
     client = key_client(created["key"])
 
-    assert (await client.get("/api/api-keys/")).status_code == 403
+    resp = await client.get("/api/api-keys/")
+    assert resp.status_code == 403
     resp = await client.post("/api/api-keys/", data={"name": "x", "scopes": ["read"]})
     assert resp.status_code == 403
-    assert (await client.delete(f"/api/api-keys/{created['id']}")).status_code == 403
+    resp = await client.delete(f"/api/api-keys/{created['id']}")
+    assert resp.status_code == 403
 
 
 async def test_revoked_key_is_refused(auth_client, key_client):
     created = await _create_key(auth_client, ["read", "write"])
     client = key_client(created["key"])
 
-    assert (await auth_client.delete(f"/api/api-keys/{created['id']}")).status_code == 204
+    resp = await auth_client.delete(f"/api/api-keys/{created['id']}")
+    assert resp.status_code == 204
 
-    assert (await client.get("/api/api-keys/introspect")).status_code == 401
+    resp = await client.get("/api/api-keys/introspect")
+    assert resp.status_code == 401
     listed = (await auth_client.get("/api/api-keys/")).json()["results"]
     assert listed[0]["revoked_at"] is not None
 
@@ -113,8 +119,10 @@ async def test_users_cannot_see_or_revoke_each_others_keys(auth_clients):
     owner, other = auth_clients[0], auth_clients[1]
     created = await _create_key(owner, ["read"])
 
-    assert (await other.get("/api/api-keys/")).json()["results"] == []
-    assert (await other.delete(f"/api/api-keys/{created['id']}")).status_code == 404
+    resp = await other.get("/api/api-keys/")
+    assert resp.json()["results"] == []
+    resp = await other.delete(f"/api/api-keys/{created['id']}")
+    assert resp.status_code == 404
 
 
 @pytest.mark.parametrize("scopes", [[], ["admin"]])

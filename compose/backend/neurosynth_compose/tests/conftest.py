@@ -82,6 +82,7 @@ def _mock_jwt_payload(token):
     # admin user
     elif token == encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"):
         return {"sub": "admin-user-id"}
+    return None
 
 
 class MockResponse:
