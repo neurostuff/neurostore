@@ -1,4 +1,5 @@
 from neurostore.resources import data_views
+from neurostore.resources.api_keys import ApiKeysView
 from neurostore.resources.data import *  # noqa: F401,F403
 from neurostore.resources.neurostore_studyset_releases import (
     NeurostoreStudysetReleasesView,
@@ -28,6 +29,7 @@ from neurostore.resources.users import UsersView
 __all__ = [
     *data_views.__all__,
     "UsersView",
+    "ApiKeysView",
     "PipelinesView",
     "PipelineConfigsView",
     "PipelineStudyResultsView",
