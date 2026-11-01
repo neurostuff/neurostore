@@ -49,6 +49,7 @@ MERGED_FROM_REVISION = "d4e6f8a0b2c4"
 AUTHORS_REVISION = "e7a9c1d3f5b8"
 LINKS_REVISION = "630a3e276f54"
 LICENCE_SPELLING_REVISION = "0ecb2ae2459c"
+API_KEYS_REVISION = "b3d5f7a9c1e4"
 MIGRATIONS = Path(__file__).resolve().parents[3] / "migrations" / "versions"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
@@ -656,9 +657,10 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_licence_spelling_migration_is_the_only_head():
+def test_the_api_keys_migration_is_the_only_head():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [LICENCE_SPELLING_REVISION]
+    assert script.get_heads() == [API_KEYS_REVISION]
+    assert script.get_revision(API_KEYS_REVISION).down_revision == LICENCE_SPELLING_REVISION
     assert script.get_revision(LICENCE_SPELLING_REVISION).down_revision == LINKS_REVISION
     assert script.get_revision(LINKS_REVISION).down_revision == SEARCH_INDEX_REVISION
     assert script.get_revision(SEARCH_INDEX_REVISION).down_revision == AUTHORS_REVISION
