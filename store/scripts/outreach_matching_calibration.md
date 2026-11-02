@@ -30,9 +30,10 @@ scored once downloads were done.
 - **Negatives:** each paper's maps were also scored against the analyses of 3
   randomly chosen other papers. That gives 6,628 own pairs and 15,794 cross pairs.
 
-There is no ground truth for which map goes with which analysis. Collections
-usually hold more maps than the paper tabled, so a map that matches nothing is not
-counted as a failure. Three measures are used instead:
+On real papers there is no ground truth for which map goes with which analysis
+(the NIDM packs below supply it, with ideal coordinates). Collections usually hold
+more maps than the paper tabled, so a map that matches nothing is not counted as a
+failure. Three measures are used instead:
 
 - **Per analysis:** does its own collection hold a map that matches it, against
   how often an unrelated paper's collection does. The second number is the
@@ -66,25 +67,26 @@ flagged-thresholded maps and misreads 1.5% of unthresholded ones.
 
 ## Results at the defaults, unthresholded maps
 
-Defaults: `match=0.65`, `margin=0.1`, `flip_margin=0.2`.
+Defaults: `match=0.65`, `margin=0.1`, `flip_margin=0.2`, and `effect_match=0.7`
+for maps scored as effect maps (see Effect maps).
 
 | measure | rate |
 |---|---|
 | own collection holds a matching map, per analysis | 65.0% |
-| an unrelated collection matches, per analysis (false match) | 3.3% |
-| an unrelated collection gives a match or any flag | 6.0% |
+| an unrelated collection matches, per analysis (false match) | 3.1% |
+| an unrelated collection gives a match or any flag | 5.8% |
 | unrelated pair called `match` | 0.6% |
 | name-matched, same direction: `match` | 78% |
 | name-matched, same direction: warned (`reversed_sign` / `lr_flip`) | 3.4% |
 | name-matched, same direction: `no_match` | 18% |
 | name-matched, reversed direction: caught as `reversed_sign` | 79% |
-| assignment gives an own analysis a map (one / two sides per map) | 65.1% / 71.0% |
-| assignment gives an unrelated analysis a map (one / two sides per map) | 5.5% / 5.5% |
+| assignment gives an own analysis a map (one / two sides per map) | 64.8% / 70.7% |
+| assignment gives an unrelated analysis a map (one / two sides per map) | 5.4% / 5.4% |
 | `lr_flip` on own / unrelated pairs | 0.0% / 0.0% |
 | maps `cannot_assess`, all 2,138 | 13 (10 SUIT or partial field of view, 3 masks) |
 
-By coordinate count, the false-match rate per analysis is 5.4% at 3–4 coordinates,
-2.8% at 5–8, 2.0% at 9–16 and 0.8% at 17+. The own-collection rate is 60–69%
+By coordinate count, the false-match rate per analysis is 4.7% at 3–4 coordinates,
+3.0% at 5–8, 2.0% at 9–16 and 0.8% at 17+. The own-collection rate is 60–69%
 throughout.
 
 **The false-warning rate is about 3%.** A warning (reversed sign or left/right
@@ -97,72 +99,124 @@ come back `no_match`. It is an upper bound: some name-matched maps are a differe
 analysis (a seed map against a multi-seed table, an ROI result against a
 whole-brain map).
 
-## Effect maps
+## Ground truth: NIDM-Results packs
+
+A NIDM-Results pack is one analysis exported by SPM, FSL or SnPM: its peak table
+plus, for each contrast, the t or z map, the contrast (effect) map and its
+standard error map. The peaks are the software's own, taken from that very t map.
+So these are true pairs, and the statistic maps show the ceiling for perfectly
+extracted coordinates. `calibrate_outreach_matching_nidm.py` builds the set.
+
+- **Packs:** NeuroVault's dump lists 645 packs; 546 could be fetched.
+- **Dropped:**
+  - 232 single-subject packs;
+  - 93 contrasts in subject or SUIT space;
+  - 31 packs whose NeuroVault folder holds another upload's files of the same names;
+  - 6 contrasts with fewer than 3 peaks.
+- **Left:** 245 group contrasts in 42 collections, mostly SPM, with FSL and the 21
+  pain studies NiMARE ships. Their maps: 234 t, 106 z, 9 F, 236 effect and
+  236 standard error.
+- **Negatives:** each contrast's maps against the peaks of 5 contrasts from other
+  collections. Any whose peaks largely coincide with its own (the same open dataset
+  exported twice) are skipped.
+
+| map, scored against its own contrast's peaks | n | match | unrelated contrasts: match / any flag (n) |
+|---|---|---|---|
+| t | 234 | 97.9% | 2.3% / 4.0% (1,163) |
+| z | 106 | 100% | 2.8% / 4.7% (529) |
+| F | 9 | 100% | 2.3% / 4.5% (44) |
+| effect, scored as a statistic map | 236 | 59.1% | 1.1% / 2.2% (1,173) |
+| effect, scored as an effect map | 236 | 75.3% | 1.8% / 3.3% (1,173) |
+| standard error | 236 | 0.4% | 0.0% / 0.7% (1,180) |
+
+**With perfect peaks, statistic maps almost always match.** The 6 mm local-peak
+test behind the false-match control costs real t maps about 2%. The gaps on real
+papers (65% of analyses) come from the coordinates, the tables and which maps were
+uploaded, not from the scorer.
+
+**Effect maps lose a lot to the local-peak test.** Their strongest value near a
+peak taken from the t map is itself a local peak 52% of the time, against 89% in
+the t map. With 236 effect maps and 1,173 unrelated contrasts, effect-only scoring
+variants could be compared properly here (6 mm unless noted):
+
+| effect-map scoring | true pairs matched | unrelated matched |
+|---|---|---|
+| statistic rules (off-peak coordinates count as chance), 0.65 | 59.1% | 1.1% |
+| same, threshold set for 2% false matches (0.62) | 70.6% | 2.0% |
+| off-peak coordinates count half, 0.65 | 88.5% | 4.6% |
+| off-peak coordinates count half, 0.68 | 84.7% | 2.2% |
+| **off-peak coordinates count half, 0.70 (adopted)** | **75.3%** | **1.8%** |
+| off-peak coordinates count half, 0.72 | 69.8% | 1.4% |
+| 8 mm, statistic rules, 0.65 | 69.1% | 1.7% |
+| 10 mm, statistic rules, 0.65 | 71.2% | 3.1% |
+| no local-peak test, 0.65 | 94.9% | 16.4% |
+
+For t maps the statistic rules stay best: half credit at 0.70 gives 97.4% / 2.8%,
+against 97.9% / 2.3% now.
+
+**Adopted: an opt-in effect-map mode.** `score_map(..., kind="effect")`, or
+`match_maps(..., kinds={id: "effect"})`, gives off-peak coordinates half credit and
+requires 0.70. Statistic maps are scored exactly as before; that is the default
+`kind`.
+
+**Within a collection, effect maps are also less specific.** This test assigns one
+kind of map at a time against all of its collection's contrasts:
+
+| maps | own contrast | a re-export of the same data | another contrast, negative side | another contrast (wrong) |
+|---|---|---|---|---|
+| t | 82.9% | 12.0% | 0.0% | 2.6% |
+| z | 84.9% | 13.2% | 20.8% | 1.9% |
+| effect (effect mode) | 58.5% | 12.7% | 1.7% | 8.9% |
+| standard error | 5.9% | 0.8% | 3.0% | 1.3% |
+
+The z maps' negative-side share is correct behaviour. Several FSL packs hold both
+A > B and B > A, and both are read off one z map. **Standard error and variance
+maps match nothing, so don't score them.**
+
+## Effect maps on real papers
 
 SPAM asks for each contrast's effect map (FSL cope, SPM con, nilearn
 `effect_size`, FitLins `stat-effect`, NeuroVault "univariate-beta") alongside its
-t or z map. **The effect-map sample is small.** All of NeuroVault (February 2024)
-has unthresholded effect maps in only 55 DOI-linked collections. 22 of those are
-here, with usable coordinates. The other 33 have no analysis with 3+ coordinates,
-or their "effect" files are P maps, anatomicals, or OpenfMRI re-analyses rather
-than the paper's maps. Only 11 papers hold both an effect and a statistic map.
-
-So the numbers below show a direction, not a calibration: each analysis is about
-2 points in the 11-paper rows.
-
-**By map kind, default thresholds:**
+t or z map. **The real-paper effect-map sample is small.** All of NeuroVault
+(February 2024) has unthresholded effect maps in only 55 DOI-linked collections.
+22 of those are here, with usable coordinates. The other 33 have no analysis with
+3+ coordinates, or their "effect" files are P maps, anatomicals, or OpenfMRI
+re-analyses rather than the paper's maps. Only 11 papers hold both an effect and a
+statistic map, so each analysis is about 2 points in the 11-paper rows. The NIDM
+packs above carry the weight; these rows check that the effect mode also helps
+with extracted coordinates.
 
 | kind | papers | maps | analyses | own coll. match | unrelated coll. match (n) | assigned own | assigned unrelated |
 |---|---|---|---|---|---|---|---|
 | statistic | 242 | 1,495 | 784 | 66.8% | 2.8% (2,042) | 71.3% | 5.1% |
-| effect | 22 | 185 | 75 | 40.0% | 6.1% (179) | 38.7% | 7.3% |
+| effect, statistic rules | 22 | 185 | 75 | 40.0% | 6.1% (179) | 38.7% | 7.3% |
+| effect, effect mode | 22 | 185 | 75 | 44.0% | 3.9% (179) | 38.7% | 5.6% |
 | ambiguous | 30 | 162 | 94 | 28.7% | 2.5% (285) | 38.3% | 3.5% |
 | statistic, the 11 papers with both | 11 | 63 | 51 | 58.8% | 0.0% (93) | 45.1% | 2.2% |
-| effect, the 11 papers with both | 11 | 89 | 51 | 49.0% | 8.8% (91) | 43.1% | 9.9% |
+| effect, the 11 papers with both, statistic rules | 11 | 89 | 51 | 49.0% | 8.8% (91) | 43.1% | 9.9% |
+| effect, the 11 papers with both, effect mode | 11 | 89 | 51 | 56.9% | 3.3% (91) | 49.0% | 5.5% |
 
 **Same analysis, effect map against its own statistic map.** This uses 50
 effect/statistic pairs the program can trust: a name match the maps agree with
 (r ≥ 0.8), or a correlation 0.1 clear of every other candidate. That gives 188
 (pair, analysis) comparisons:
 
-| | effect matches | effect doesn't |
-|---|---|---|
-| statistic matches | 15 | 19 |
-| statistic doesn't | 5 | 149 |
+| scoring | statistic matches, effect too | statistic matches, effect doesn't | effect matches, statistic doesn't |
+|---|---|---|---|
+| statistic rules | 15 | 19 | 5 |
+| effect mode | 21 | 13 | 5 |
 
-**Effect maps score clearly worse.** Where the statistic map matches, its effect
-map matches only 44% of the time (15 of 34; 19 against 5 discordant, McNemar
-p ≈ 0.007). The effect map's reading is about 0.10 lower. The strongest value
-near a coordinate is a local peak 49% of the time in effect maps, against 71% in
-statistic maps. That fits effect sizes being largest where the variance is (near
-vessels, edges, ventricles), not where the t is.
-
-**Scorer changes tried, for effect maps only.** Each was re-scored on the 22
-effect-map papers plus 40 others as negatives. The rows below are the 11 papers
-with both kinds (51 analyses per kind):
-
-| variant | statistic: own / unrelated | effect: own / unrelated |
-|---|---|---|
-| current: 6 mm, local-peak test | 58.8% / 0.0% | 49.0% / 1.2% |
-| 4 mm | 39.2% / 0.0% | 37.3% / 0.0% |
-| 8 mm | 58.8% / 4.9% | 52.9% / 1.2% |
-| 10 mm | 68.6% / 7.2% | 64.7% / 7.2% |
-| no local-peak test | 88.2% / 46.9% | 84.3% / 45.1% |
-| peak = strongest value off the sphere's rim | 35.3% / 0.0% | 31.4% / 0.0% |
-
-None is worth adopting on this evidence:
-- **8 mm:** gains 2 of 51 analyses, within noise.
-- **10 mm:** gains more but brings false matches with it, for both kinds.
-- **No local-peak test:** what failed before.
-
-**Statistic-map scoring is unchanged.** These experiments ran from a scratch
-script; the module still uses 6 mm and the local-peak test for every map.
+Where the statistic map matches, its effect map matches 62% of the time in effect
+mode (44% under statistic rules). With statistic rules the gap was significant
+(19 against 5 discordant, McNemar p ≈ 0.007).
 
 **Recommendation: match each contrast set by its statistic map.** Carry that
-assignment to the set's effect and variance maps.
-- **Effect maps:** don't match them against coordinates when a t or z map is in
-  the set. Score one directly only when it is all the author has, and expect about
-  40–50% matches and 6–9% false matches.
+assignment to the set's effect and variance maps. On real papers the statistic
+map is both more sensitive and more specific.
+- **Effect map alone:** score it with `kind="effect"` only when it is all the
+  author has. With perfect coordinates expect about 75% matches; with extracted
+  ones about 45–55%. False matches run about 2–4%.
+- **Variance and standard error maps:** never score them against coordinates.
 - **Effect and variance but no statistic map:** z ≈ effect / √variance at the
   sampled voxels would turn the pair into a statistic map. That isn't built; it is
   worth doing if such uploads turn out to be common.
@@ -192,8 +246,10 @@ The form groups files into effect / statistic / variance sets per contrast.
 
 | | r ≥ 0.8 | r ≤ −0.8 |
 |---|---|---|
-| an effect map against its own statistic map (50 pairs) | 96% | — |
-| against other contrasts' statistic maps in the same collection (341) | 7% | 5% |
+| real papers: an effect map against its own statistic map (50 pairs) | 96% | — |
+| real papers: against other contrasts' statistic maps in the same collection (341) | 7% | 5% |
+| NIDM, true pairs: an effect map against its own contrast's t/z map (338) | 97% | — |
+| NIDM: against other contrasts' t/z maps in the same collection (4,951) | 12% | 9% |
 
 The 7% are near-identical contrasts, which makes them harmless. The 5% at
 r ≤ −0.8 are the reverse contrast.
@@ -264,12 +320,15 @@ mask. Those land as `no_match`, never as an error.
 
 | match | own coll. match | unrelated coll. match | named: match | named: no match | assigned unrelated (2 sides) |
 |---|---|---|---|---|---|
-| 0.600 | 75.6% | 16.2% | 78.4% | 17.0% | 24.1% |
-| 0.625 | 71.2% | 7.8% | 78.4% | 18.2% | 12.4% |
-| **0.650** | **65.0%** | **3.3%** | **78.4%** | **18.2%** | **5.5%** |
-| 0.675 | 59.3% | 1.8% | 70.5% | 26.1% | 2.8% |
-| 0.700 | 56.6% | 1.0% | 64.8% | 31.8% | 1.4% |
-| 0.750 | 41.3% | 0.1% | 50.0% | 47.7% | 0.2% |
+| 0.600 | 75.7% | 16.1% | 78.4% | 17.0% | 24.0% |
+| 0.625 | 71.2% | 7.6% | 78.4% | 18.2% | 12.1% |
+| **0.650** | **65.0%** | **3.1%** | **78.4%** | **18.2%** | **5.4%** |
+| 0.675 | 59.5% | 1.8% | 71.6% | 25.0% | 2.8% |
+| 0.700 | 56.5% | 1.0% | 64.8% | 31.8% | 1.3% |
+| 0.750 | 40.9% | 0.1% | 50.0% | 47.7% | 0.2% |
+
+The sweep moves `match` (statistic maps) with `effect_match` 0.05 above it, the gap
+the defaults keep.
 
 **0.65 is recommended.** It is the knee of the curve: below it, wrong suggestions
 climb fast (0.625 doubles them), while above it true pairs start failing faster
@@ -280,7 +339,7 @@ The other parameters barely matter:
 - **`flip_margin`:** at 0.1 or 0.15 it raises `lr_flip` on unrelated pairs to
   0.1–0.3% with nothing gained, hence 0.2.
 - **Unsigned reading** (tables that mix increases and decreases): dropping it
-  lowers false matches from 3.3% to 3.0% and own matches from 65.0% to 64.2%. It
+  lowers false matches from 3.1% to 2.8% and own matches from 65.0% to 64.1%. It
   stays.
 
 ## Speed
@@ -314,8 +373,9 @@ built with `to_mni(coordinates, space)` and store them as MNI. Otherwise
 - **Labels are proxies.** Name agreement is noisy, and the cross-paper null is
   easier than the case that matters most, a wrong map from the same paper.
   Swapped same-paper maps are covered by synthetic tests only.
-- **Effect-map numbers rest on 22 papers** (11 with both kinds). Treat them as
-  direction, not calibration.
+- **Effect-map ground truth has ideal coordinates.** The NIDM packs show the
+  matcher with the software's own peaks. On real papers the effect-map numbers
+  rest on 22 papers (11 with both kinds), so treat those as direction.
 - **Reverse pairs were found by name.** Only 69 analysis pairs, so the 83% figure
   is a rough estimate.
 - **`lr_flip` is not validated on real data.** No real left/right flips exist in
@@ -325,13 +385,56 @@ built with `to_mni(coordinates, space)` and store them as MNI. Otherwise
   shared maps. Re-run the calibration once outreach uploads exist, which will also
   bring the effect maps this sample lacks.
 
+## TODO: more test data
+
+The calibration's weak points were effect maps (22 papers) and ground truth. The
+NIDM packs now cover both for perfectly extracted coordinates.
+
+Done:
+
+- [x] **NIDM-Results packs on NeuroVault:** 245 group contrasts with their own
+  peaks, see Ground truth above.
+
+Next, in priority order:
+
+- [ ] **NARPS** (70 teams, the same 9 hypotheses, maps on NeuroVault). The
+  hypotheses aren't one paper's analyses, so this is not a per-paper match. It is
+  one contrast run through FSL, SPM, AFNI and others, which tests robustness to the
+  pipeline, with each team's own reported results as coordinates.
+- [ ] **FSL outputs in OpenNeuro derivatives.** Group-level FEAT/FLAME directories
+  (`cope`, `varcope`, `tstat`, `zstat`) are more realistic effect / variance /
+  statistic sets than NeuroVault's renamed uploads.
+  - Where a dataset's `dataset_description.json` cites its paper, take the
+    coordinates from neurostore.
+  - Otherwise, use the cluster tables FSL wrote alongside (`cluster_zstat*.txt`)
+    as the reported peaks.
+- [ ] **NeuroStore's NeuroVault links.** Once NeuroStore updates its links to
+  NeuroVault, there will be more DOI ↔ collection records. Re-run `fetch`, `select`
+  and `score` then: the sample here is every such record that exists today.
+
+Lower priority:
+
+- [ ] Neuroscout's FitLins uploads, for effect / statistic / variance grouping by
+  BIDS name.
+- [ ] HCP group-average task maps.
+- [ ] Re-extracted coordinates for collections that have maps but no usable table.
+- [ ] BrainMap / Sleuth coordinates.
+- [ ] AFNI multi-volume outputs. The matcher rejects files with several volumes
+  today.
+- [ ] Labelled pairs from the pilot's own confirmed assignments.
+
 ## Re-running
 
 ```bash
 python store/scripts/calibrate_outreach_matching.py all --work /path/to/work \
     --nv-dump /path/to/nv-data/february_2024 --max-papers 1000 --max-effect-maps 40
+python store/scripts/calibrate_outreach_matching_nidm.py all --work /path/to/nidm \
+    --nv-dump /path/to/nv-data/february_2024
 python store/scripts/benchmark_outreach_matching.py --work /path/to/bench
 ```
+
+The NIDM script needs `rdflib` (`pip install rdflib`) to read the packs' Turtle and
+downloads about 1.2 GB.
 
 `all` runs `fetch`, `select`, `download`, `score` and `report`. Each step resumes
 from the work directory, and `report` re-decides outcomes from the stored readings,
