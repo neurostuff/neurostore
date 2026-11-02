@@ -124,6 +124,12 @@ test('an effect map is not asked for its t/z map when none was uploaded', () => 
     expect(texts(view([effect, f])).some((text) => text.startsWith('Which t or z map'))).toBe(false);
 });
 
+test('coverage prompts carry no uploadId, so the submit summary can pick them out', () => {
+    const found = prompts(view([upload('1', ['a'], { a: fit('no_match') })]));
+    expect(found.filter((prompt) => !prompt.uploadId).map((prompt) => prompt.analysisKey)).toEqual(['b']);
+    expect(found.filter((prompt) => prompt.uploadId)).toHaveLength(1);
+});
+
 test('rows drop the folder their files share', () => {
     const folder = commonFolder(['paper/group.gfeat/cope1.feat/stats/zstat1.nii.gz', 'paper/group.gfeat/cope2.feat/stats/zstat1.nii.gz']);
     expect(folder).toBe('paper/group.gfeat');

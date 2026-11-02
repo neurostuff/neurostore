@@ -33,7 +33,7 @@ import {
     type Tone,
 } from './review';
 import { HelpDialog, IssueDialog, ReplyDialog } from './ShareDialogs';
-import { pickMaps, withPaths, type Candidate } from './tree';
+import { droppedEntries, filesUnder, pickMaps, withPaths, type Candidate } from './tree';
 import { TreePicker } from './TreePicker';
 import { ISSUE_REASONS, MAP_TYPES, type IssueReason, type MapType, type ShareUpload, type ShareView } from './types';
 
@@ -194,7 +194,7 @@ function FileRow({
                                 <MenuItem key={analysis.key} value={analysis.key}>
                                     <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
                                         <span style={{ flexGrow: 1 }}>{analysis.name}</span>
-                                        {fit && upload.kind === 'statistic' && (
+                                        {fit && upload.kind !== 'variance' && (
                                             <Chip size="small" color={FITS[fit.outcome].tone} variant="outlined" label={FITS[fit.outcome].label} />
                                         )}
                                     </Stack>
@@ -203,7 +203,12 @@ function FileRow({
                         })}
                     </TextField>
                 )}
-                {upload.check_status === 'ok' && upload.kind === 'statistic' && upload.analysis_keys.length > 0 && (
+                {/* Variance maps match nothing by design, and a paired map's analysis comes
+                    from its t/z map, not from a fit of its own. */}
+                {upload.check_status === 'ok' &&
+                    upload.kind !== 'variance' &&
+                    !(partner && upload.assigned_by !== 'author') &&
+                    upload.analysis_keys.length > 0 && (
                     <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
                         {upload.analysis_keys.map((key) => {
                             const fit = upload.fits[key];
@@ -352,10 +357,25 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
 
     const onDrop = (event: DragEvent) => {
         event.preventDefault();
-        if (editable) void send(Array.from(event.dataTransfer.files).map((file) => ({ file })));
+        if (!editable) return;
+        const entries = droppedEntries(event.dataTransfer.items);
+        if (entries.some((entry) => entry.isDirectory)) {
+            // A dropped folder goes through the same picker as a chosen one.
+            const remaining = view.limits.max_files - view.uploads.length;
+            Promise.all(entries.map(filesUnder))
+                .then((found) => setPicking(pickMaps(found.flat(), remaining)))
+                .catch(() => setError('We could not read the dropped folder. Try "Choose a results folder" instead.'));
+            return;
+        }
+        void send(Array.from(event.dataTransfer.files).map((file) => ({ file })));
     };
     const uploading = queue.some((item) => !item.error);
     const unassigned = view.analyses.filter((a) => !view.uploads.some((u) => u.analysis_keys.includes(a.key)));
+    // What is still open before submitting: analyses with no file (shown nowhere else)
+    // and how many files above carry a note.
+    const reminders = prompts(view);
+    const unfiled = reminders.filter((prompt) => !prompt.uploadId);
+    const flagged = new Set(reminders.filter((prompt) => prompt.uploadId).map((prompt) => prompt.uploadId)).size;
     const shared = commonFolder(view.uploads.map((upload) => upload.path));
     const { paper } = view;
 
@@ -475,7 +495,7 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                                 </Button>
                             </Stack>
                             <Typography variant="body2" color="text.secondary">
-                                or drag .nii / .nii.gz files here
+                                or drop your results folder, or .nii / .nii.gz files, here
                             </Typography>
                             <input
                                 ref={folder}
@@ -631,6 +651,29 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
 
                     <Section step={4} title="Submit">
                         <Stack spacing={1.5}>
+                            {usableFiles(view).length > 0 && (
+                                <Stack spacing={0.75}>
+                                    <Typography variant="body2">
+                                        You're sending {usableFiles(view).length} map
+                                        {usableFiles(view).length === 1 ? '' : 's'} covering{' '}
+                                        {view.analyses.length - unassigned.length} of the paper's {view.analyses.length}{' '}
+                                        {view.analyses.length === 1 ? 'analysis' : 'analyses'}.
+                                    </Typography>
+                                    {unfiled.map((prompt) => (
+                                        <Alert key={prompt.text} severity={prompt.tone} sx={{ py: 0 }}>
+                                            {prompt.text}
+                                        </Alert>
+                                    ))}
+                                    {flagged > 0 && (
+                                        <Alert severity="info" sx={{ py: 0 }}>
+                                            {flagged === 1
+                                                ? 'One file above still has a note'
+                                                : `${flagged} files above still have notes`}
+                                            . Submitting anyway is fine; we check everything before it is published.
+                                        </Alert>
+                                    )}
+                                </Stack>
+                            )}
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                                 <TextField
                                     size="small"
@@ -678,6 +721,7 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                 <TreePicker
                     candidates={picking}
                     limit={view.limits.max_files - view.uploads.length}
+                    analyses={view.analyses}
                     onClose={() => setPicking(null)}
                     onUpload={(chosen) => {
                         setPicking(null);

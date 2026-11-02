@@ -1,5 +1,5 @@
 import { defaultSoftware } from './instructions';
-import { guessKind, pickMaps, setKey } from './tree';
+import { filesUnder, guessKind, pickMaps, setKey } from './tree';
 
 const at = (path: string, size = 1000) => ({ file: new File([new Uint8Array(size)], path.split('/').pop()!), path });
 
@@ -89,6 +89,41 @@ test('files left unticked say why in plain words', () => {
         'thresholded copy',
     ]);
     expect(picked.some((c) => c.selected)).toBe(false);
+});
+
+const fileEntry = (path: string) =>
+    ({
+        isFile: true,
+        isDirectory: false,
+        fullPath: `/${path}`,
+        file: (resolve: (file: File) => void) => resolve(new File(['x'], path.split('/').pop()!)),
+    }) as unknown as FileSystemEntry;
+
+const folderEntry = (path: string, children: FileSystemEntry[]) => {
+    let given = 0;
+    return {
+        isFile: false,
+        isDirectory: true,
+        fullPath: `/${path}`,
+        createReader: () => ({
+            // The real API hands out at most 100 entries per call.
+            readEntries: (resolve: (batch: FileSystemEntry[]) => void) => {
+                const batch = children.slice(given, given + 100);
+                given += batch.length;
+                resolve(batch);
+            },
+        }),
+    } as unknown as FileSystemEntry;
+};
+
+test('a dropped folder is walked whole, past the 100-entry read batches', async () => {
+    const stats = Array.from({ length: 120 }, (_, i) => fileEntry(`results/stats/zstat${i + 1}.nii.gz`));
+    const dropped = folderEntry('results', [folderEntry('results/stats', stats), fileEntry('results/cope1.nii.gz')]);
+    const found = await filesUnder(dropped);
+    expect(found).toHaveLength(121);
+    const paths = found.map(({ path }) => path);
+    expect(paths).toContain('results/stats/zstat120.nii.gz');
+    expect(paths).toContain('results/cope1.nii.gz');
 });
 
 test('instructions open on the first package the paper reports that we know', () => {
