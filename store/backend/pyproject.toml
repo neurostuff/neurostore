@@ -59,7 +59,7 @@ dev = [
     "flake8~=7.4",
     "pip-chill~=1.0",
     "wheel~=0.48",
-    "pytest~=9.1",
+    "pytest~=9.2",
     "vcrpy~=8.3",
     "pytest-recording~=0.14.0",
     # study_schema.layouts (check_revision) imports pyarty.
