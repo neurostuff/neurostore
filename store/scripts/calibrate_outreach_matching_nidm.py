@@ -446,19 +446,27 @@ def score(args):
 # -------------------------------------------------------------------- report
 
 
-def report(args):
+def read_pairs(work):
+    """The scored pairs, marking each contrast's own peaks and its unrelated ones."""
     import pandas as pd
 
-    matching = calibration.load_matching()
-    pairs = pd.read_csv(args.work / "nidm_pairs.csv")
+    pairs = pd.read_csv(work / "nidm_pairs.csv")
     pairs["own"] = pairs["own"].astype(bool)
-    negatives = json.loads((args.work / "nidm_negatives.json").read_text())
+    negatives = json.loads((work / "nidm_negatives.json").read_text())
     negative_pairs = {
         (contrast, other) for contrast, others in negatives.items() for other in others
     }
     pairs["negative"] = [
         (c, a) in negative_pairs for c, a in zip(pairs["contrast"], pairs["analysis"])
     ]
+    return pairs
+
+
+def report(args):
+    import pandas as pd
+
+    matching = calibration.load_matching()
+    pairs = read_pairs(args.work)
     contrasts = json.loads((args.work / "contrasts.json").read_text())
     lines = []
     out = lines.append

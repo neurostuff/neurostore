@@ -1,8 +1,10 @@
 # Outreach map matching: calibration and benchmark
 
 Calibrates `neurostore/outreach/matching.py` against real papers, the scorer behind
-the SPAM upload form. Produced by `calibrate_outreach_matching.py` (calibration) and
-`benchmark_outreach_matching.py` (timings). Run on 2026-10-30.
+the SPAM upload form. Produced by `calibrate_outreach_matching.py` and
+`calibrate_outreach_matching_nidm.py` (calibration), `benchmark_outreach_matching.py`
+(timings) and `plot_outreach_matching.py` (the figure). Run on 2026-10-30, with the
+NIDM packs and the figure added on 2026-11-02.
 
 ## Data
 
@@ -65,6 +67,20 @@ below threshold. A non-zero share alone misread 39% of NeuroVault's unthresholde
 maps. The rule used combines that share with a gap around zero: it catches 83% of
 flagged-thresholded maps and misreads 1.5% of unthresholded ones.
 
+**A map with no values of one sign gets no reading of that sign.** F maps, standard
+error maps and one-sided t maps have no negative values, yet the matcher used to
+read their troughs as a reversed contrast.
+- **Before:** 4.8% of unrelated F pairs came back `reversed_sign`, against 0.4% for
+  t maps. NIDM standard error maps came back `reversed_sign` against their own
+  peaks 7.2% of the time.
+- **Now:** the negated readings of such a map are left out (None), and likewise the
+  signed readings of a map with no positive values.
+  - **Unrelated F pairs:** 0.4% come back `reversed_sign`.
+  - **Unrelated analyses given a map by the assignment:** 4.6% instead of 5.4%.
+  - **Unchanged:** t and z map outcomes, own-collection matches, and timing.
+- **Why "no values" is enough:** a sign is almost never present as just a trace. Of
+  the 2,138 maps, 2 have negative values below 0.1% of the voxels sampled.
+
 ## Results at the defaults, unthresholded maps
 
 Defaults: `match=0.65`, `margin=0.1`, `flip_margin=0.2`, and `effect_match=0.7`
@@ -74,14 +90,14 @@ for maps scored as effect maps (see Effect maps).
 |---|---|
 | own collection holds a matching map, per analysis | 65.0% |
 | an unrelated collection matches, per analysis (false match) | 3.1% |
-| an unrelated collection gives a match or any flag | 5.8% |
+| an unrelated collection gives a match or any flag | 4.9% |
 | unrelated pair called `match` | 0.6% |
 | name-matched, same direction: `match` | 78% |
 | name-matched, same direction: warned (`reversed_sign` / `lr_flip`) | 3.4% |
 | name-matched, same direction: `no_match` | 18% |
 | name-matched, reversed direction: caught as `reversed_sign` | 79% |
-| assignment gives an own analysis a map (one / two sides per map) | 64.8% / 70.7% |
-| assignment gives an unrelated analysis a map (one / two sides per map) | 5.4% / 5.4% |
+| assignment gives an own analysis a map (one / two sides per map) | 64.8% / 70.6% |
+| assignment gives an unrelated analysis a map (one / two sides per map) | 4.6% / 4.6% |
 | `lr_flip` on own / unrelated pairs | 0.0% / 0.0% |
 | maps `cannot_assess`, all 2,138 | 13 (10 SUIT or partial field of view, 3 masks) |
 
@@ -124,10 +140,10 @@ extracted coordinates. `calibrate_outreach_matching_nidm.py` builds the set.
 |---|---|---|---|
 | t | 234 | 97.9% | 2.3% / 4.0% (1,163) |
 | z | 106 | 100% | 2.8% / 4.7% (529) |
-| F | 9 | 100% | 2.3% / 4.5% (44) |
+| F | 9 | 100% | 2.3% / 2.3% (44) |
 | effect, scored as a statistic map | 236 | 59.1% | 1.1% / 2.2% (1,173) |
 | effect, scored as an effect map | 236 | 75.3% | 1.8% / 3.3% (1,173) |
-| standard error | 236 | 0.4% | 0.0% / 0.7% (1,180) |
+| standard error | 236 | 0.4% | 0.0% / 0.0% (1,180) |
 
 **With perfect peaks, statistic maps almost always match.** The 6 mm local-peak
 test behind the false-match control costs real t maps about 2%. The gaps on real
@@ -167,7 +183,7 @@ kind of map at a time against all of its collection's contrasts:
 | t | 82.9% | 12.0% | 0.0% | 2.6% |
 | z | 84.9% | 13.2% | 20.8% | 1.9% |
 | effect (effect mode) | 58.5% | 12.7% | 1.7% | 8.9% |
-| standard error | 5.9% | 0.8% | 3.0% | 1.3% |
+| standard error | 0.4% | 0.4% | 0.0% | 1.3% |
 
 The z maps' negative-side share is correct behaviour. Several FSL packs hold both
 A > B and B > A, and both are read off one z map. **Standard error and variance
@@ -188,11 +204,11 @@ with extracted coordinates.
 
 | kind | papers | maps | analyses | own coll. match | unrelated coll. match (n) | assigned own | assigned unrelated |
 |---|---|---|---|---|---|---|---|
-| statistic | 242 | 1,495 | 784 | 66.8% | 2.8% (2,042) | 71.3% | 5.1% |
+| statistic | 242 | 1,495 | 784 | 66.8% | 2.8% (2,042) | 71.3% | 4.3% |
 | effect, statistic rules | 22 | 185 | 75 | 40.0% | 6.1% (179) | 38.7% | 7.3% |
 | effect, effect mode | 22 | 185 | 75 | 44.0% | 3.9% (179) | 38.7% | 5.6% |
-| ambiguous | 30 | 162 | 94 | 28.7% | 2.5% (285) | 38.3% | 3.5% |
-| statistic, the 11 papers with both | 11 | 63 | 51 | 58.8% | 0.0% (93) | 45.1% | 2.2% |
+| ambiguous | 30 | 162 | 94 | 28.7% | 2.5% (285) | 36.2% | 3.2% |
+| statistic, the 11 papers with both | 11 | 63 | 51 | 58.8% | 0.0% (93) | 45.1% | 1.1% |
 | effect, the 11 papers with both, statistic rules | 11 | 89 | 51 | 49.0% | 8.8% (91) | 43.1% | 9.9% |
 | effect, the 11 papers with both, effect mode | 11 | 89 | 51 | 56.9% | 3.3% (91) | 49.0% | 5.5% |
 
@@ -265,6 +281,55 @@ r ≤ −0.8 are the reverse contrast.
 `related_maps` calls an effect map and its own t map a `duplicate` whenever
 r ≥ 0.95 (48 pairs here), so only read it within one kind of map.
 
+## Both experiments by map kind
+
+![Match rates on true and unrelated pairs for t, z and effect maps, NIDM packs against real papers](outreach_matching_by_kind.png)
+
+`plot_outreach_matching.py` draws this from both work directories and writes the
+rates, intervals and sample sizes to `outreach_matching_by_kind.csv`. The intervals
+resample whole collections (NIDM) or papers (real papers), since one paper's
+analyses share its tables and maps.
+
+The two experiments measure slightly different things:
+- **NIDM:** each map has one known true pair, so the rate is per pair.
+- **Real papers:** the share of a paper's analyses whose own collection holds a
+  matching map of that kind. Some analyses have no map in their collection, so this
+  undercounts true matches, and NIDM is the ceiling.
+
+Real-paper statistic maps are split by file name before NeuroVault's map type, so
+an FSL `zstat` uploaded as "T map" counts as z. Of the 1,495 unthresholded
+statistic maps, 1,104 are t, 324 z and 67 F.
+
+| map kind | NIDM: true pairs | NIDM: unrelated | real papers: own collection | real papers: unrelated collection |
+|---|---|---|---|---|
+| t | 97.9% (94–100) | 2.3% (0.8–4.3) | 63.1% (58–68) | 2.2% (1.4–2.9) |
+| z | 100% | 2.8% (0.4–6.0) | 75.3% (66–84) | 5.7% (2.9–9.2) |
+| effect, effect mode | 75.3% (65–87) | 1.8% (0.7–3.3) | 44.0% (19–65) | 3.9% (0–8.8) |
+
+Sample sizes: NIDM 233 t, 106 z and 235 effect pairs. Real papers 609 t, 162 z and
+75 effect analyses, from 187, 47 and 22 papers.
+
+- **t maps are the dependable case.** With perfect peaks almost every pair matches.
+  False matches stay near 2% in both experiments, and the real-paper interval is
+  tight. The gap from 98% to 63% comes from the extracted coordinates and from
+  which maps were uploaded.
+- **On real papers, z maps match more often, and falsely more often.**
+  - **Suggested assignment:** an own analysis gets a z map 78.4% of the time and an
+    unrelated one 7.0%, against 68.1% and 3.5% for t maps.
+  - **Per pair:** 1.4% of unrelated z pairs match, against 0.4% of t pairs. So
+    z collections' slightly larger size (6.8 maps per paper against 5.8) explains
+    only part of the difference.
+  - **Not explained yet:** with perfect peaks, z maps are as specific as t maps
+    (2.8% against 2.3%). So the difference lies in these particular z maps or their
+    papers, not in z statistics. With 48 papers it may also be partly chance.
+- **Effect maps are the weakest, even in effect mode.** With perfect peaks, 75%
+  match. On real papers 44% do, but on 22 papers, with an interval from 19% to 65%.
+  Matching sets through their t or z map stays the recommendation.
+- **F maps** (67 maps, 18 papers, not plotted): 54.7% of own analyses match and
+  0.6% of unrelated ones. This split is what found the sign problem described
+  under What the calibration changed: before the fix, the suggested assignment
+  gave an F map to 12.9% of unrelated analyses. It now gives one to 1.9%.
+
 ## Reverse contrasts and inverse uploads
 
 The coordinate parse splits A > B and B > A into two analyses, because papers
@@ -298,9 +363,9 @@ it is. The results:
 
 - **Reverse pairs:** both analyses of a pair get a map 83% of the time, against
   35% when each map carries one analysis.
-- **Coverage overall:** a paper's own analyses get a map 71.0% of the time
-  instead of 65.1%.
-- **No cost:** the false-suggestion rate stays at 5.5%.
+- **Coverage overall:** a paper's own analyses get a map 70.6% of the time
+  instead of 64.8%.
+- **No cost:** the false-suggestion rate stays at 4.6%.
 
 Each assigned pair carries `side` (`positive` / `negative`), so the form can say
 "B > A matches the negative side of your A > B map". That is expected, not an
@@ -320,11 +385,11 @@ mask. Those land as `no_match`, never as an error.
 
 | match | own coll. match | unrelated coll. match | named: match | named: no match | assigned unrelated (2 sides) |
 |---|---|---|---|---|---|
-| 0.600 | 75.7% | 16.1% | 78.4% | 17.0% | 24.0% |
-| 0.625 | 71.2% | 7.6% | 78.4% | 18.2% | 12.1% |
-| **0.650** | **65.0%** | **3.1%** | **78.4%** | **18.2%** | **5.4%** |
-| 0.675 | 59.5% | 1.8% | 71.6% | 25.0% | 2.8% |
-| 0.700 | 56.5% | 1.0% | 64.8% | 31.8% | 1.3% |
+| 0.600 | 75.7% | 16.1% | 78.4% | 17.0% | 22.5% |
+| 0.625 | 71.2% | 7.6% | 78.4% | 18.2% | 11.0% |
+| **0.650** | **65.0%** | **3.1%** | **78.4%** | **18.2%** | **4.6%** |
+| 0.675 | 59.5% | 1.8% | 71.6% | 25.0% | 2.3% |
+| 0.700 | 56.5% | 1.0% | 64.8% | 31.8% | 1.2% |
 | 0.750 | 40.9% | 0.1% | 50.0% | 47.7% | 0.2% |
 
 The sweep moves `match` (statistic maps) with `effect_match` 0.05 above it, the gap
@@ -431,10 +496,13 @@ python store/scripts/calibrate_outreach_matching.py all --work /path/to/work \
 python store/scripts/calibrate_outreach_matching_nidm.py all --work /path/to/nidm \
     --nv-dump /path/to/nv-data/february_2024
 python store/scripts/benchmark_outreach_matching.py --work /path/to/bench
+python store/scripts/plot_outreach_matching.py --work /path/to/work --nidm-work /path/to/nidm \
+    --out store/scripts/outreach_matching_by_kind.png
 ```
 
 The NIDM script needs `rdflib` (`pip install rdflib`) to read the packs' Turtle and
-downloads about 1.2 GB.
+downloads about 1.2 GB. The figure script needs `matplotlib` and runs after both
+calibrations' `score` steps.
 
 `all` runs `fetch`, `select`, `download`, `score` and `report`. Each step resumes
 from the work directory, and `report` re-decides outcomes from the stored readings,
