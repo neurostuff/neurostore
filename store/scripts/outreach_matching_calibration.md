@@ -1,8 +1,10 @@
 # Outreach map matching: calibration and benchmark
 
 Calibrates `neurostore/outreach/matching.py` against real papers, the scorer behind
-the SPAM upload form. Produced by `calibrate_outreach_matching.py` (calibration) and
-`benchmark_outreach_matching.py` (timings). Run on 2026-10-30.
+the SPAM upload form. Produced by `calibrate_outreach_matching.py` and
+`calibrate_outreach_matching_nidm.py` (calibration), `benchmark_outreach_matching.py`
+(timings) and `plot_outreach_matching.py` (the figure). Run on 2026-10-30, with the
+NIDM packs and the figure added on 2026-11-02.
 
 ## Data
 
@@ -265,6 +267,59 @@ r ≤ −0.8 are the reverse contrast.
 `related_maps` calls an effect map and its own t map a `duplicate` whenever
 r ≥ 0.95 (48 pairs here), so only read it within one kind of map.
 
+## Both experiments by map kind
+
+![Match rates on true and unrelated pairs for t, z and effect maps, NIDM packs against real papers](outreach_matching_by_kind.png)
+
+`plot_outreach_matching.py` draws this from both work directories and writes the
+rates, intervals and sample sizes to `outreach_matching_by_kind.csv`. The intervals
+resample whole collections (NIDM) or papers (real papers), since one paper's
+analyses share its tables and maps.
+
+The two experiments measure slightly different things:
+- **NIDM:** each map has one known true pair, so the rate is per pair.
+- **Real papers:** the share of a paper's analyses whose own collection holds a
+  matching map of that kind. Some analyses have no map in their collection, so this
+  undercounts true matches, and NIDM is the ceiling.
+
+Real-paper statistic maps are split by file name before NeuroVault's map type, so
+an FSL `zstat` uploaded as "T map" counts as z. Of the 1,495 unthresholded
+statistic maps, 1,104 are t, 324 z and 67 F.
+
+| map kind | NIDM: true pairs | NIDM: unrelated | real papers: own collection | real papers: unrelated collection |
+|---|---|---|---|---|
+| t | 97.9% (94–100) | 2.3% (0.8–4.3) | 63.1% (58–68) | 2.2% (1.4–2.9) |
+| z | 100% | 2.8% (0.4–6.0) | 75.3% (66–84) | 5.7% (2.9–9.2) |
+| effect, effect mode | 75.3% (65–87) | 1.8% (0.7–3.3) | 44.0% (19–65) | 3.9% (0–8.8) |
+
+Sample sizes: NIDM 233 t, 106 z and 235 effect pairs. Real papers 609 t, 162 z and
+75 effect analyses, from 187, 47 and 22 papers.
+
+- **t maps are the dependable case.** With perfect peaks almost every pair matches.
+  False matches stay near 2% in both experiments, and the real-paper interval is
+  tight. The gap from 98% to 63% comes from the extracted coordinates and from
+  which maps were uploaded.
+- **On real papers, z maps match more often, and falsely more often.**
+  - **Suggested assignment:** an own analysis gets a z map 78.4% of the time and an
+    unrelated one 7.0%, against 68.1% and 3.5% for t maps.
+  - **Per pair:** 1.4% of unrelated z pairs match, against 0.4% of t pairs. So
+    z collections' slightly larger size (6.8 maps per paper against 5.8) explains
+    only part of the difference.
+  - **Not explained yet:** with perfect peaks, z maps are as specific as t maps
+    (2.8% against 2.3%). So the difference lies in these particular z maps or their
+    papers, not in z statistics. With 48 papers it may also be partly chance.
+- **Effect maps are the weakest, even in effect mode.** With perfect peaks, 75%
+  match. On real papers 44% do, but on 22 papers, with an interval from 19% to 65%.
+  Matching sets through their t or z map stays the recommendation.
+- **F maps** (67 maps, 18 papers, not plotted): 54.7% of own analyses match and
+  0.6% of unrelated ones.
+  - **Problem:** the suggested assignment still gives an F map to 12.9% of
+    unrelated analyses. An F map has no negative values, yet the matcher reads its
+    troughs as a reversed contrast: 4.8% of unrelated F pairs come back
+    `reversed_sign`, against 0.4% for t maps.
+  - **Not fixed yet:** skipping the negated readings for a map with no negative
+    values would fix it.
+
 ## Reverse contrasts and inverse uploads
 
 The coordinate parse splits A > B and B > A into two analyses, because papers
@@ -431,10 +486,13 @@ python store/scripts/calibrate_outreach_matching.py all --work /path/to/work \
 python store/scripts/calibrate_outreach_matching_nidm.py all --work /path/to/nidm \
     --nv-dump /path/to/nv-data/february_2024
 python store/scripts/benchmark_outreach_matching.py --work /path/to/bench
+python store/scripts/plot_outreach_matching.py --work /path/to/work --nidm-work /path/to/nidm \
+    --out store/scripts/outreach_matching_by_kind.png
 ```
 
 The NIDM script needs `rdflib` (`pip install rdflib`) to read the packs' Turtle and
-downloads about 1.2 GB.
+downloads about 1.2 GB. The figure script needs `matplotlib` and runs after both
+calibrations' `score` steps.
 
 `all` runs `fetch`, `select`, `download`, `score` and `report`. Each step resumes
 from the work directory, and `report` re-decides outcomes from the stored readings,

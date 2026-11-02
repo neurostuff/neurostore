@@ -108,6 +108,37 @@ def map_kind(image):
     return AMBIGUOUS
 
 
+# Which statistic a statistic map holds, again going by its file name before
+# NeuroVault's map type: an FSL zstat uploaded as "T map" is a z map.
+STATISTIC_TYPE_NAMES = {
+    "z": re.compile(
+        r"zstat|spmz|stat-z(?![a-z])|z[_-]?score|(^|[^a-z])z[_-]?(map|stat)|_z\.nii", re.I
+    ),
+    "t": re.compile(r"tstat|spmt|stat-t(?![a-z])|(^|[^a-z])t[_-]?(map|stat)|_t\.nii", re.I),
+    "F": re.compile(r"fstat|spmf|stat-f(?![a-z])|(^|[^a-z])f[_-]?(map|stat)|_f\.nii", re.I),
+}
+STATISTIC_VALUE_TYPES = {"T map": "t", "Z map": "z", "F map": "F"}
+
+
+def statistic_type(image):
+    """t, z or F for a statistic map; None when neither its name nor its type says."""
+    filename = image.get("filename") or ""
+    for statistic, pattern in STATISTIC_TYPE_NAMES.items():
+        if pattern.search(filename):
+            return statistic
+    return STATISTIC_VALUE_TYPES.get(image.get("value_type"))
+
+
+def statistic_types(papers):
+    """(paper, map key) -> t, z or F, for every statistic map in papers.json."""
+    return {
+        (paper["base_study"], image["key"]): statistic_type(image)
+        for paper in papers
+        for image in paper["images"]
+        if image["kind"] == STATISTIC
+    }
+
+
 def contrast_key(text):
     """The words and numbers of a file or map name that name its contrast."""
     stem = re.sub(r"\.(nii|img|hdr)(\.gz)?$", "", (text or "").lower())
@@ -672,6 +703,14 @@ def read_rows(work):
     return pairs, maps
 
 
+def unthresholded(maps):
+    """Maps neither NeuroVault nor the matcher calls thresholded; outreach asks for these."""
+    return maps[
+        (maps["nv_thresholded"].astype(str) != "True")
+        & (maps["read_thresholded"].astype(str) == "False")
+    ]
+
+
 def redecide(matching, pairs, thresholds, mixed=True):
     """Outcomes and scores under other thresholds, from the stored readings.
 
@@ -855,6 +894,57 @@ def kind_summary(matching, pairs):
     return rows
 
 
+def cluster_interval(matched, clusters, n_boot=4000, seed=0):
+    """95% interval for a match rate, resampling whole clusters (papers, collections).
+
+    One paper's analyses share its tables and its maps, so they don't count as
+    independent; resampling papers keeps the interval honest about that.
+    """
+    import pandas as pd
+
+    per = pd.DataFrame({"matched": matched, "cluster": clusters}).groupby("cluster")["matched"]
+    sums, counts = per.sum().to_numpy(), per.count().to_numpy()
+    picks = np.random.default_rng(seed).integers(0, len(sums), size=(n_boot, len(sums)))
+    rates = sums[picks].sum(axis=1) / counts[picks].sum(axis=1)
+    return tuple(np.percentile(rates, [2.5, 97.5]))
+
+
+def statistic_type_summary(matching, pairs, types):
+    """The per-analysis rates for t, z and F maps apart, with intervals over papers."""
+    pairs = pairs.assign(
+        statistic=[types.get(key) for key in zip(pairs["paper"], pairs["map_key"])]
+    )
+    rows = []
+    for statistic in ("t", "z", "F"):
+        sub = pairs[pairs["statistic"] == statistic]
+        if sub.empty:
+            continue
+        own_best, foreign_best = analysis_level(matching, sub)
+        own_matched = own_best["outcome"] == matching.MATCH
+        foreign_matched = foreign_best["outcome"] == matching.MATCH
+        cross = sub[~sub["own"] & (sub["outcome"] != matching.CANNOT_ASSESS)]
+        counts = assignment_counts(matching, sub)
+        maps = sub.drop_duplicates(["paper", "map_key"])
+        rows.append(
+            {
+                "type": statistic,
+                "n papers": sub["paper"].nunique(),
+                "maps": len(maps),
+                "maps per paper": len(maps) / maps["paper"].nunique(),
+                "own analyses": len(own_best),
+                "own coll. match": own_matched.mean(),
+                "own 95%": cluster_interval(own_matched, own_best["paper"]),
+                "unrel. n": len(foreign_best),
+                "unrel. coll. match": foreign_matched.mean(),
+                "unrel. 95%": cluster_interval(foreign_matched, foreign_best["paper"]),
+                "unrel. pair match": (cross["outcome"] == matching.MATCH).mean(),
+                "assigned own": counts["own_assigned"] / max(counts["own_total"], 1),
+                "assigned unrel.": counts["foreign_assigned"] / max(counts["foreign_total"], 1),
+            }
+        )
+    return rows
+
+
 def effect_statistic_pairs(matching, papers, fingerprints, keep):
     """Each effect map's statistic map, found by name and by correlation."""
     rows = []
@@ -964,11 +1054,7 @@ def report(args):
     pairs["own"] = pairs["own"].astype(bool)
     maps = all_maps
     if args.maps == "unthresholded":
-        # outreach asks authors for unthresholded maps only
-        maps = all_maps[
-            (all_maps["nv_thresholded"].astype(str) != "True")
-            & (all_maps["read_thresholded"].astype(str) == "False")
-        ]
+        maps = unthresholded(all_maps)
         keep = set(zip(maps["paper"], maps["map_key"]))
         pairs = pairs[[key in keep for key in zip(pairs["paper"], pairs["map_key"])]]
         related = related[
@@ -1108,6 +1194,12 @@ def report(args):
     out("by map kind (statistic: t/z/F; effect: beta, cope, con, effect size):")
     kinds = pd.DataFrame(kind_summary(matching, pairs))
     out(kinds.to_string(index=False, float_format=lambda v: f"{v:.3f}"))
+    out("")
+    out("statistic maps by type (95% intervals resample papers):")
+    by_type = pd.DataFrame(statistic_type_summary(matching, pairs, statistic_types(papers)))
+    for column in ("own 95%", "unrel. 95%"):
+        by_type[column] = by_type[column].map(lambda bounds: "{:.3f}-{:.3f}".format(*bounds))
+    out(by_type.to_string(index=False, float_format=lambda v: f"{v:.3f}"))
     out("")
     fingerprints = {}
     for line in open(args.work / "fingerprints.jsonl"):
