@@ -1,4 +1,4 @@
-from neurostore.models.auth import Role, User
+from neurostore.models.auth import ApiKey, Role, User
 from neurostore.models.data import (
     Analysis,
     Author,
@@ -71,6 +71,7 @@ __all__ = [
     "PointValue",
     "AnalysisConditions",
     "User",
+    "ApiKey",
     "Role",
     "Pipeline",
     "PipelineConfig",

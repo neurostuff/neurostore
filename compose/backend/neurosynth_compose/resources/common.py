@@ -48,6 +48,12 @@ def create_user():
     if auth is None:
         return None
 
+    user_id = connexion.context.request.context.get("user")
+    token_info = connexion.context.request.context.get("token_info") or {}
+    if token_info.get("api_key"):
+        # Auth0's userinfo only accepts login tokens; Neurostore named the key's owner
+        return User(external_id=user_id, name=token_info.get("name") or "Unknown")
+
     token = auth.split()[1]
 
     try:
@@ -60,8 +66,6 @@ def create_user():
     name = profile_info.get("name", "Unknown")
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
-
-    user_id = connexion.context.request.context.get("user")
 
     return User(external_id=user_id, name=name)
 

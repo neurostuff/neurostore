@@ -110,7 +110,16 @@ def monkeysession(request):
         yield mp
 
 
-def mock_decode_token(token):
+async def mock_decode_token(token, request=None):
+    """Stand in for Auth0's JWT check; API keys still take the real path."""
+    from neurostore.resources.auth import API_KEY_PREFIX, verify_api_key
+
+    if token.startswith(API_KEY_PREFIX):
+        return await verify_api_key(token, request.method)
+    return _mock_jwt_payload(token)
+
+
+def _mock_jwt_payload(token):
     if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
         return {"sub": "user1-id"}
     elif token == encode({"sub": "user2-id"}, "123", algorithm="HS256"):
@@ -127,6 +136,7 @@ def mock_decode_token(token):
     # admin user
     elif token == encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"):
         return {"sub": "admin-user-id"}
+    return None
 
 
 @pytest.fixture(scope="session")
@@ -415,7 +425,7 @@ def mock_add_users(app, db, session, mock_auth):
 
     tokens = {}
     for u in users:
-        token_info = mock_decode_token(u["access_token"])
+        token_info = _mock_jwt_payload(u["access_token"])
         tokens[u["name"]] = {
             "token": u["access_token"],
             "external_id": token_info["sub"],
