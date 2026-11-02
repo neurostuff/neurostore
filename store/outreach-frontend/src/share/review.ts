@@ -30,6 +30,8 @@ export function coverage(view: ShareView): Map<string, ShareUpload[]> {
  * opposite-sign warning. */
 export function prompts(view: ShareView): Prompt[] {
     const name = new Map(view.analyses.map((analysis) => [analysis.key, analysis.name]));
+    // Asking which t/z map an effect map goes with only helps when there is one to pick.
+    const statistics = view.uploads.some((upload) => upload.kind === 'statistic' && upload.check_status === 'ok');
     const found: Prompt[] = [];
     for (const upload of view.uploads) {
         if (upload.check_status === 'problem') {
@@ -44,13 +46,14 @@ export function prompts(view: ShareView): Prompt[] {
             });
         if (upload.kind === 'effect' || upload.kind === 'variance') {
             const partner = view.uploads.find((other) => other.id === upload.partner_id);
-            if (!partner)
-                found.push({
-                    uploadId: upload.id,
-                    tone: 'info',
-                    text: `Which t or z map does this ${upload.kind} map go with? Pick it, so it goes with the same analysis.`,
-                });
-            else if (upload.reversed)
+            if (!partner) {
+                if (statistics)
+                    found.push({
+                        uploadId: upload.id,
+                        tone: 'info',
+                        text: `Which t or z map does this ${upload.kind} map go with? Pick it, so it goes with the same analysis.`,
+                    });
+            } else if (upload.reversed)
                 found.push({
                     uploadId: upload.id,
                     tone: 'warning',
@@ -117,6 +120,23 @@ export function refusal(file: File, view: ShareView, queued: number): string | n
         return `This paper takes at most ${view.limits.max_files} files.`;
     return null;
 }
+
+/** The folder every path sits in, so rows can show only what tells them apart. Empty
+ * when any file came without its folder or the paths share none. */
+export function commonFolder(paths: (string | null)[]): string {
+    if (paths.length === 0 || paths.some((path) => !path)) return '';
+    const folders = paths.map((path) => path!.split('/').slice(0, -1));
+    const shared: string[] = [];
+    for (const [index, segment] of folders[0].entries()) {
+        if (!folders.every((folder) => folder[index] === segment)) break;
+        shared.push(segment);
+    }
+    return shared.join('/');
+}
+
+/** ``path`` without the ``folder`` it sits in. */
+export const inFolder = (path: string, folder: string) =>
+    folder && path.startsWith(`${folder}/`) ? path.slice(folder.length + 1) : path;
 
 /** The uploads in reading order: each statistic map, then the maps that go with it. */
 export function ordered(view: ShareView): ShareUpload[] {

@@ -3,9 +3,10 @@
  * A results folder holds far more than the maps we want: FSL's .gfeat has 4D residuals and
  * masks, SPM's has betas and ResMS. We pre-select the t/z, effect and variance maps, leave
  * out thresholded copies, and keep each file's path so the server can tell which effect
- * map sits beside which statistic map. Names here mirror the server's
- * (store/backend/neurostore/outreach/map_sets.py), but only choose what to suggest; the
- * server reads each file's own header too. */
+ * map sits beside which statistic map. When the folder holds more maps than the paper
+ * takes, whole sets are ticked first: a t/z map, then its effect and variance maps. Names
+ * here mirror the server's (store/backend/neurostore/outreach/map_sets.py), but only
+ * choose what to suggest; the server reads each file's own header too. */
 
 export type GuessedKind = 't' | 'z' | 'f' | 'effect' | 'variance' | 'other';
 
@@ -28,7 +29,12 @@ const RULES: [GuessedKind, RegExp][] = [
 ];
 /** Files in a results folder that are never a group map we ask for. */
 const SKIP = /thresh|random_effects|weights|filtered_func|res4d|mask|mean_func|example_func|bg_image|sigmasquareds|resms|(^|[_-])rpv|(^|[_-])pe\d|tdof|(^|[_-])dof|smoothness|rendered|mni152|template|(^|[_-])t1w?([_.-]|$)|zfstat/;
+const THRESHOLDED = /thresh/;
 const NIFTI = /\.nii(\.gz)?$/i;
+/** What tells the maps of one set apart, as the server's set_key strips it. */
+const KIND_TOKENS =
+    /varcope|cope|zstat|tstat|fstat|spmt|spmf|spmz|con|effect_size|effect_variance|z_score|zscore|t_score|stat-(t|z|f|effect|variance)|variance|effect|beta|statmap|(?<![a-z0-9])[tzf](?![a-z0-9])/g;
+const STATISTIC: GuessedKind[] = ['t', 'z'];
 
 export function guessKind(name: string): GuessedKind {
     const stem = name.toLowerCase().replace(NIFTI, '');
@@ -38,6 +44,27 @@ export function guessKind(name: string): GuessedKind {
 const folderOf = (path: string) => path.split('/').slice(0, -1).join('/');
 const numberOf = (name: string) => name.match(/(\d+)(?!.*\d)/)?.[1]?.replace(/^0+(?=\d)/, '') ?? '';
 
+/** (folder, stem) that a t/z map shares with its effect and variance maps: cope3 and
+ * zstat3 in one folder share "3"; faces_Beta and faces_T share "faces". */
+export function setKey(path: string): string {
+    const lowered = path.toLowerCase();
+    const stem = (lowered.split('/').pop() ?? '')
+        .replace(NIFTI, '')
+        .replace(KIND_TOKENS, ' ')
+        .replace(/\d+/g, (digits) => String(Number(digits)))
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    return `${folderOf(lowered)}|${stem}`;
+}
+
+function note(name: string, kind: GuessedKind): string | null {
+    if (THRESHOLDED.test(name)) return 'thresholded copy';
+    if (SKIP.test(name)) return 'not a group map';
+    if (kind === 'f') return 'tick it if an analysis is an F test';
+    if (kind === 'other') return 'not recognised; tick it if it is a group map';
+    return null;
+}
+
 /** The maps in a chosen folder, the likely ones selected, up to ``limit`` of them. */
 export function pickMaps(files: { file: File; path: string }[], limit: number): Candidate[] {
     const maps = files
@@ -45,14 +72,8 @@ export function pickMaps(files: { file: File; path: string }[], limit: number): 
         .map(({ file, path }) => {
             const name = file.name.toLowerCase();
             const kind = guessKind(name);
-            const skipped = SKIP.test(name) || kind === 'other' || kind === 'f';
-            return {
-                file,
-                path,
-                kind,
-                selected: !skipped,
-                note: SKIP.test(name) ? 'not a group map' : kind === 'f' ? 'F map' : kind === 'other' ? 'unrecognised' : null,
-            };
+            const why = note(name, kind);
+            return { file, path, kind, selected: why === null, note: why };
         })
         .sort((a, b) => a.path.localeCompare(b.path));
     // FSL writes a t and a z map of each contrast side by side: ask for the z.
@@ -67,12 +88,23 @@ export function pickMaps(files: { file: File; path: string }[], limit: number): 
         );
         if (twin) Object.assign(map, { selected: false, note: 'its z map is selected' });
     }
-    let chosen = 0;
-    for (const map of maps) {
-        if (!map.selected) continue;
-        if (chosen >= limit) Object.assign(map, { selected: false, note: 'over the limit' });
-        else chosen += 1;
-    }
+    // Whole sets first, in folder order: each t/z map with one effect and one variance map
+    // (a contrast map before an SPM beta, which is a regressor), then the rest.
+    const wanted = maps.filter((map) => map.selected);
+    const isBeta = (map: Candidate) => Number(/beta/.test(map.file.name.toLowerCase()));
+    const partner = (statistic: Candidate, kind: GuessedKind) =>
+        wanted
+            .filter((map) => map.kind === kind && setKey(map.path) === setKey(statistic.path))
+            .sort((a, b) => isBeta(a) - isBeta(b))[0];
+    const order = [
+        ...wanted
+            .filter((map) => STATISTIC.includes(map.kind))
+            .flatMap((statistic) => [statistic, partner(statistic, 'effect'), partner(statistic, 'variance')]),
+        ...wanted,
+    ].filter((map): map is Candidate => map !== undefined);
+    const chosen = new Set<Candidate>();
+    for (const map of order) if (chosen.size < limit) chosen.add(map);
+    for (const map of wanted) if (!chosen.has(map)) Object.assign(map, { selected: false, note: 'over the limit' });
     return maps;
 }
 

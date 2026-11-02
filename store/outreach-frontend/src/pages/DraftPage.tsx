@@ -83,6 +83,8 @@ export function DraftPage() {
     const sentHere = wasSent(data);
     const emailedElsewhere = !sentHere && (data.person?.author_messages ?? 0) > 0;
     const closed = ['declined', 'excluded'].includes(data.status);
+    // The author is done: nothing to remind them of, only their submission to review.
+    const submitted = data.status === 'submitted';
     const error = [edit.error, check.error, invite.error, resolve.error, download.error].find(Boolean);
 
     return (
@@ -110,7 +112,7 @@ export function DraftPage() {
                             Approve draft
                         </Button>
                     )}
-                    {data.status !== 'draft' && !frozen && !closed && (
+                    {data.status !== 'draft' && !frozen && !closed && !submitted && (
                         <Button
                             variant="contained"
                             disabled={invite.isPending || !data.person || data.person.suppressed || emailedElsewhere}
@@ -120,6 +122,12 @@ export function DraftPage() {
                         </Button>
                     )}
                 </Stack>
+                {submitted && (
+                    <Typography variant="body2">
+                        Submitted{data.submitter_name ? ` by ${data.submitter_name}` : ''}: review the uploads and
+                        anything the author reported below.
+                    </Typography>
+                )}
                 <DraftActions draft={data} onChange={refresh} />
                 {emailedElsewhere && (
                     <Alert severity="info">

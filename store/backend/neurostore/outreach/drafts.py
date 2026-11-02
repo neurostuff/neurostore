@@ -485,10 +485,15 @@ def messages_to(person):
 
 def undo_sent(draft, actor_id):
     """Take back the draft's last "mark as sent": its message is deleted, so the person
-    counts as not emailed again, and the draft's status is replayed without it."""
+    counts as not emailed again, and the draft's status is replayed without it. Refused
+    once the author has used the link since: then the email plainly went out."""
     sent = _latest(draft, ("sent",))
     if sent is None:
         raise DraftError("nothing was marked sent for this draft")
+    events = events_of(draft.id)
+    since = events[[e.id for e in events].index(sent.id) + 1 :]
+    if any(e.actor == "author" and not _undone(e) for e in since):
+        raise DraftError("the author has used the link since it was sent, so the email went out")
     message = db.session.get(OutreachMessage, (sent.data or {}).get("message_id"))
     if message is not None:
         db.session.delete(message)

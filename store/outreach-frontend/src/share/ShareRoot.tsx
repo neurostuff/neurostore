@@ -5,7 +5,8 @@ import { SharePage } from './SharePage';
 import type { ShareView } from './types';
 
 /** Reads the link's token from the URL's fragment, trades it for a cookie, and takes the
- * token out of the address bar. A return visit without the fragment uses the cookie. */
+ * token out of the address bar. A return visit without the fragment uses the cookie, and
+ * a new link opened in the same tab starts over with its own token. */
 export function ShareRoot({ api }: { api: ShareApi }) {
     const [view, setView] = useState<ShareView | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -29,8 +30,13 @@ export function ShareRoot({ api }: { api: ShareApi }) {
                 );
             }
         );
+        // Another paper's link opened in this tab changes only the fragment, which loads
+        // nothing: reload, so its token is traded for this page's cookie.
+        const switched = () => tokenFrom(window.location.hash) && window.location.reload();
+        window.addEventListener('hashchange', switched);
         return () => {
             live = false;
+            window.removeEventListener('hashchange', switched);
         };
     }, [api]);
 

@@ -11,6 +11,7 @@ import {
     Link,
     MenuItem,
     Paper,
+    Snackbar,
     Stack,
     TextField,
     Typography,
@@ -19,7 +20,18 @@ import { useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { paperLinks } from '../links';
 import type { ShareApi } from './api';
 import { defaultSoftware, INSTRUCTIONS } from './instructions';
-import { formatBytes, FITS, ordered, prompts, refusal, TYPE_LABELS, usableFiles } from './review';
+import {
+    commonFolder,
+    formatBytes,
+    FITS,
+    inFolder,
+    ordered,
+    prompts,
+    refusal,
+    TYPE_LABELS,
+    usableFiles,
+    type Tone,
+} from './review';
 import { HelpDialog, IssueDialog, ReplyDialog } from './ShareDialogs';
 import { pickMaps, withPaths, type Candidate } from './tree';
 import { TreePicker } from './TreePicker';
@@ -50,8 +62,9 @@ function Section({ step, title, children }: { step?: number; title: string; chil
     );
 }
 
-/** The end of a file's path: enough to tell cope1.feat/stats/zstat1 from cope2's. */
-const shortPath = (upload: ShareUpload) => (upload.path ?? upload.filename).split('/').slice(-3).join('/');
+/** A file's path inside the folder all the uploads share: enough to tell
+ * cope1.feat/stats/zstat1 from cope2's, without repeating the folder on every row. */
+const shownPath = (upload: ShareUpload, folder: string) => (upload.path ? inFolder(upload.path, folder) : upload.filename);
 
 const PAIRED_BY: Record<string, string> = {
     name: 'by its name',
@@ -63,12 +76,15 @@ const PAIRED_BY: Record<string, string> = {
 function FileRow({
     upload,
     view,
+    folder,
     disabled,
     onChange,
     onRemove,
 }: {
     upload: ShareUpload;
     view: ShareView;
+    /** The folder every upload sits in, left off each row's path. */
+    folder: string;
     disabled: boolean;
     onChange: (change: Parameters<ShareApi['assign']>[1]) => void;
     onRemove: () => void;
@@ -88,8 +104,8 @@ function FileRow({
         >
             <Stack spacing={1}>
                 <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="subtitle2" sx={{ flexGrow: 1, wordBreak: 'break-all' }}>
-                        {upload.path ?? upload.filename}{' '}
+                    <Typography variant="subtitle2" sx={{ flexGrow: 1, overflowWrap: 'anywhere' }}>
+                        {shownPath(upload, folder)}{' '}
                         <Typography component="span" variant="caption" color="text.secondary">
                             {formatBytes(upload.size_bytes)}
                         </Typography>
@@ -128,7 +144,7 @@ function FileRow({
                                     displayEmpty: true,
                                     renderValue: (value) => {
                                         const chosen = statistics.find((other) => other.id === value);
-                                        return chosen ? shortPath(chosen) : 'no t/z map';
+                                        return chosen ? shownPath(chosen, folder) : 'no t/z map';
                                     },
                                 }}
                                 InputLabelProps={{ shrink: true }}
@@ -140,7 +156,7 @@ function FileRow({
                                 <MenuItem value="">no t/z map</MenuItem>
                                 {statistics.map((other) => (
                                     <MenuItem key={other.id} value={other.id}>
-                                        {other.path ?? other.filename}
+                                        {shownPath(other, folder)}
                                     </MenuItem>
                                 ))}
                             </TextField>
@@ -151,7 +167,9 @@ function FileRow({
                     <Typography variant="body2" color="text.secondary">
                         {upload.analysis_keys.length > 0
                             ? `Goes with ${names(upload.analysis_keys)}, as its t/z map does.`
-                            : 'Takes the analysis of its t/z map once that has one.'}
+                            : partner.label
+                              ? `Goes with “${partner.label}”, as its t/z map does.`
+                              : 'Takes the analysis of its t/z map once that has one.'}
                     </Typography>
                 )}
                 {upload.check_status === 'ok' && !(partner && upload.assigned_by !== 'author') && (
@@ -222,6 +240,45 @@ function FileRow({
     );
 }
 
+/** What the author submitted: each file and what it is for, so the thank-you page is
+ * not the last they see of it. */
+function Sent({ view, folder }: { view: ShareView; folder: string }) {
+    const names = (keys: string[]) => keys.map((key) => view.analyses.find((a) => a.key === key)?.name).join(', ');
+    const files = ordered(view).filter((upload) => upload.check_status === 'ok');
+    const issues = view.issues.filter((issue) => issue.kind === 'extraction_error').length;
+    return (
+        <Section title="What you sent">
+            <Stack spacing={0.75}>
+                {files.map((upload) => {
+                    const partner = view.uploads.find((other) => other.id === upload.partner_id);
+                    const what =
+                        upload.analysis_keys.length > 0
+                            ? names(upload.analysis_keys)
+                            : upload.label
+                              ? `“${upload.label}”`
+                              : partner
+                                ? `with ${shownPath(partner, folder)}`
+                                : 'no analysis';
+                    return (
+                        <Typography key={upload.id} variant="body2" sx={{ overflowWrap: 'anywhere', pl: partner ? 2 : 0 }}>
+                            {shownPath(upload, folder)}{' '}
+                            <Typography component="span" variant="body2" color="text.secondary">
+                                · {TYPE_LABELS[upload.map_type ?? 'other']} · {what}
+                            </Typography>
+                        </Typography>
+                    );
+                })}
+                {issues > 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                        You also told us about {issues} {issues === 1 ? 'problem' : 'problems'} with the analyses we found.
+                        Thank you.
+                    </Typography>
+                )}
+            </Stack>
+        </Section>
+    );
+}
+
 export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView }) {
     const [view, setView] = useState(initial);
     const [error, setError] = useState<string | null>(null);
@@ -233,6 +290,9 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
     const [busy, setBusy] = useState(false);
     const [software, setSoftware] = useState(() => defaultSoftware(view.software?.packages));
     const [picking, setPicking] = useState<Candidate[] | null>(null);
+    const [notice, setNotice] = useState<{ tone: Tone; text: string } | null>(null);
+    // Bumped after each message that went through, so its dialog opens empty next time.
+    const [told, setTold] = useState(0);
     const input = useRef<HTMLInputElement>(null);
     const folder = useRef<HTMLInputElement>(null);
     const instructions = INSTRUCTIONS.find((item) => item.software === software) ?? INSTRUCTIONS[INSTRUCTIONS.length - 1];
@@ -250,6 +310,20 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
             setError(failure instanceof Error ? failure.message : String(failure));
         } finally {
             setBusy(false);
+        }
+    }
+
+    /** A message from one of the dialogs: say plainly whether it went through, wherever
+     * on the page the author is. */
+    async function tell(call: () => Promise<ShareView>, thanks: string) {
+        setDialog(null);
+        try {
+            setView(await call());
+            setTold((count) => count + 1);
+            setNotice({ tone: 'success', text: thanks });
+        } catch (failure) {
+            const message = failure instanceof Error ? failure.message : String(failure);
+            setNotice({ tone: 'error', text: `That did not go through (${message}). Please try again.` });
         }
     }
 
@@ -282,6 +356,7 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
     };
     const uploading = queue.some((item) => !item.error);
     const unassigned = view.analyses.filter((a) => !view.uploads.some((u) => u.analysis_keys.includes(a.key)));
+    const shared = commonFolder(view.uploads.map((upload) => upload.path));
     const { paper } = view;
 
     return (
@@ -311,6 +386,7 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                     you when your collection is live.
                 </Alert>
             )}
+            {submitted && <Sent view={view} folder={shared} />}
             {error && (
                 <Alert severity="error" onClose={() => setError(null)}>
                     {error}
@@ -324,8 +400,8 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                         <Link href="https://neurovault.org" target="_blank" rel="noreferrer">
                             NeuroVault
                         </Link>
-                        , so others can reuse them. Our software read the paper and found the {view.analyses.length}{' '}
-                        {view.analyses.length === 1 ? 'analysis' : 'analyses'} below. Point us at your results folder (or
+                        , so others can reuse them. Our software read the paper and found {view.analyses.length}{' '}
+                        {view.analyses.length === 1 ? 'analysis' : 'analyses'} in it. Point us at your results folder (or
                         drop in the maps), check that each landed on the right analysis, and submit. It takes a few
                         minutes and needs no account.
                     </Typography>
@@ -442,6 +518,11 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                             and variance maps go with their t/z map. Change any that are wrong. If an analysis below is
                             wrong or missing, tell us; you don't need to fix it.
                         </Typography>
+                        {shared && (
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, overflowWrap: 'anywhere' }}>
+                                Files from {shared}/
+                            </Typography>
+                        )}
                         <Grid container spacing={2}>
                             <Grid item xs={12} md={7}>
                                 <Stack spacing={1.5}>
@@ -453,6 +534,7 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                                             key={`${upload.id}-${upload.label ?? ''}`}
                                             upload={upload}
                                             view={view}
+                                            folder={shared}
                                             disabled={!editable || busy}
                                             onChange={(change) => void run(() => api.assign(upload.id, change))}
                                             onRemove={() => void run(() => api.remove(upload.id))}
@@ -467,7 +549,8 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                                 <Stack spacing={1}>
                                     {view.analyses.map((analysis) => (
                                         <Box key={analysis.key}>
-                                            <Typography variant="body2">
+                                            {/* A div, not a p: the "no file" chip is a div. */}
+                                            <Typography variant="body2" component="div">
                                                 {analysis.name}
                                                 {unassigned.includes(analysis) && (
                                                     <Chip size="small" label="no file" sx={{ ml: 1 }} />
@@ -603,6 +686,7 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                 />
             )}
             <IssueDialog
+                key={`issue-${told}`}
                 open={typeof dialog === 'object' && dialog !== null}
                 analysis={
                     typeof dialog === 'object' && dialog?.issue
@@ -610,18 +694,41 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
                         : null
                 }
                 onClose={() => setDialog(null)}
-                onSend={(issue) => run(() => api.issue(issue)).then(() => setDialog(null))}
+                onSend={(issue) =>
+                    void tell(() => api.issue(issue), "Thanks, we've noted it. You can carry on; you don't need to fix it.")
+                }
             />
             <ReplyDialog
+                key={`reply-${told}`}
                 open={dialog === 'reply'}
                 onClose={() => setDialog(null)}
-                onSend={(reply) => run(() => api.reply(reply)).then(() => setDialog(null))}
+                onSend={(reply) =>
+                    void tell(
+                        () => api.reply(reply),
+                        reply.kind === 'unsubscribe'
+                            ? "Done. We won't email this address again."
+                            : 'Thanks for letting us know. You can still upload maps here if that changes.'
+                    )
+                }
             />
             <HelpDialog
+                key={`help-${told}`}
                 open={dialog === 'help'}
                 onClose={() => setDialog(null)}
-                onSend={(note) => run(() => api.issue({ kind: 'help', note })).then(() => setDialog(null))}
+                onSend={(note) =>
+                    void tell(() => api.issue({ kind: 'help', note }), 'Sent. The person who emailed you will reply by email.')
+                }
             />
+            <Snackbar
+                open={notice !== null}
+                autoHideDuration={8000}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                onClose={(_, reason) => reason !== 'clickaway' && setNotice(null)}
+            >
+                <Alert severity={notice?.tone ?? 'success'} variant="filled" onClose={() => setNotice(null)}>
+                    {notice?.text}
+                </Alert>
+            </Snackbar>
         </Stack>
     );
 }

@@ -1,5 +1,5 @@
 import { tokenFrom } from './api';
-import { prompts, refusal } from './review';
+import { commonFolder, inFolder, prompts, refusal } from './review';
 import type { Fit, ShareUpload, ShareView } from './types';
 
 const fit = (outcome: Fit['outcome']): Fit => ({ outcome, score: 0.9, reason: null });
@@ -112,4 +112,20 @@ test('an effect map follows its t/z map, and one without a partner asks for it',
     ]);
     const reversed = upload('e', ['a'], {}, { kind: 'effect', partner_id: 'z', reversed: true });
     expect(texts(view([z, reversed]))[0]).toBe('This effect map runs opposite to z.nii.gz. Is one of them the reverse contrast?');
+});
+
+test('an effect map is not asked for its t/z map when none was uploaded', () => {
+    const effect = upload('e', ['a'], { a: fit('match') }, { kind: 'effect', map_type: 'effect' });
+    const found = texts(view([effect]));
+    expect(found.some((text) => text.startsWith('Which t or z map'))).toBe(false);
+    expect(found).toEqual(["No file for “Houses > Faces” yet. Pick one, or leave it if you don't have it."]);
+});
+
+test('rows drop the folder their files share', () => {
+    const folder = commonFolder(['paper/group.gfeat/cope1.feat/stats/zstat1.nii.gz', 'paper/group.gfeat/cope2.feat/stats/zstat1.nii.gz']);
+    expect(folder).toBe('paper/group.gfeat');
+    expect(inFolder('paper/group.gfeat/cope1.feat/stats/zstat1.nii.gz', folder)).toBe('cope1.feat/stats/zstat1.nii.gz');
+    expect(commonFolder(['paper/a.nii', null])).toBe('');
+    expect(commonFolder(['a.nii', 'b.nii'])).toBe('');
+    expect(inFolder('a.nii', '')).toBe('a.nii');
 });

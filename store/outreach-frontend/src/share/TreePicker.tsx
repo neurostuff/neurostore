@@ -11,7 +11,7 @@ import {
     Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { formatBytes, TYPE_LABELS } from './review';
+import { commonFolder, formatBytes, inFolder, TYPE_LABELS } from './review';
 import type { Candidate } from './tree';
 
 /** The maps we found in the folder the author chose, the likely ones ticked. Nothing is
@@ -36,9 +36,13 @@ export function TreePicker({
             return next;
         });
     const chosen = candidates.filter((candidate) => selected.has(candidate.path));
+    const folder = commonFolder(candidates.map((candidate) => candidate.path));
+    const over = candidates.filter((candidate) => candidate.note === 'over the limit').length;
     return (
         <Dialog open fullWidth maxWidth="md" onClose={onClose}>
-            <DialogTitle>Maps in this folder</DialogTitle>
+            <DialogTitle sx={{ overflowWrap: 'anywhere' }}>
+                Maps in {folder ? `${folder}/` : 'this folder'}
+            </DialogTitle>
             <DialogContent>
                 <Stack spacing={1}>
                     {candidates.length === 0 && (
@@ -49,6 +53,12 @@ export function TreePicker({
                             We ticked the t/z, effect and variance maps and left out thresholded copies and other files.
                             Change the selection if needed; their folders help us tell which maps belong together.
                         </Typography>
+                    )}
+                    {over > 0 && (
+                        <Alert severity="info">
+                            This folder has more maps than this paper takes ({limit}), so we ticked whole sets first: each t
+                            or z map with its effect map. Untick any that are not in the paper and tick the ones that are.
+                        </Alert>
                     )}
                     {candidates.map((candidate) => (
                         <FormControlLabel
@@ -61,8 +71,8 @@ export function TreePicker({
                                 />
                             }
                             label={
-                                <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
-                                    {candidate.path}{' '}
+                                <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+                                    {inFolder(candidate.path, folder)}{' '}
                                     <Typography component="span" variant="caption" color="text.secondary">
                                         {TYPE_LABELS[candidate.kind] ?? candidate.kind} · {formatBytes(candidate.file.size)}
                                         {candidate.note && ` · ${candidate.note}`}

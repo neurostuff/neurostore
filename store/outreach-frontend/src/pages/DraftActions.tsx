@@ -13,7 +13,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { useApi } from '../context';
-import { sentHere } from '../drafts';
+import { canUndoSent, sentHere } from '../drafts';
 import { EXCLUSION_LABELS, REPLY_LABELS } from '../format';
 import {
     EXCLUSION_REASONS,
@@ -114,7 +114,7 @@ export function DraftActions({ draft, onChange }: { draft: DraftDetail; onChange
                         </Button>
                     )
                 )}
-                {emailed && !frozen && (
+                {canUndoSent(draft) && !frozen && (
                     <Button size="small" onClick={() => setOpen('unsend')}>
                         Undo mark sent
                     </Button>

@@ -510,6 +510,28 @@ async def test_undoing_a_send_frees_the_person_and_replays_the_status(
 
 
 @pytest.mark.anyio
+async def test_a_send_the_author_has_acted_on_cannot_be_undone(app, session, outreach_settings):
+    draft = build_draft(_upload())
+    db.session.commit()
+    client = await _admin(app)
+    try:
+        await _invite(client, draft.id)
+        # A fresh transaction, so the event's now() falls after the send's.
+        db.session.commit()
+        db.session.refresh(draft)
+        record_event(draft, "opened", "author")
+        db.session.commit()
+        refused = await _post(client, f"/api/outreach/drafts/{draft.id}/unsend")
+    finally:
+        await client.aclose()
+
+    assert refused.status_code == 409
+    assert "the author has used the link" in refused.json()["detail"]
+    db.session.refresh(draft)
+    assert draft.status == "opened"
+
+
+@pytest.mark.anyio
 async def test_an_excluded_paper_leaves_outreach_until_reopened(app, session, outreach_settings):
     draft = build_draft(_upload())
     check_draft(draft, "admin-user-id")
