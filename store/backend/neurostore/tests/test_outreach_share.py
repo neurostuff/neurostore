@@ -457,6 +457,27 @@ async def test_the_author_can_pair_or_unpair_a_map_themselves(author, session, s
     assert bad.status_code == 409  # a map goes with a statistic map, not an effect map
 
 
+async def test_an_effect_map_is_scored_as_one_and_rescored_when_relabelled(author, session,
+                                                                           share_settings):
+    draft, token = _sent_draft()
+    tmp = share_settings
+    await author.post("/api/share/session", json={"token": token})
+    uploaded = await _upload(author, "beta_0003.nii.gz",
+                             _nifti(tmp, "a.nii.gz", synthetic_map(PEAKS_A)))
+    upload_id = uploaded.json()["uploads"][0]["id"]
+
+    def stored_kind():
+        db.session.expire_all()
+        return db.session.get(OutreachUpload, upload_id).check_details["scores"]["kind"]
+
+    # named like a GLM beta, it is scored on the effect scale
+    assert stored_kind() == "effect"
+    await author.patch(f"/api/share/uploads/{upload_id}", json={"map_type": "t"})
+    assert stored_kind() == "statistic"
+    await author.patch(f"/api/share/uploads/{upload_id}", json={"map_type": "effect"})
+    assert stored_kind() == "effect"
+
+
 # what the admin panel sees of it
 
 

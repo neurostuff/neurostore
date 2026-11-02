@@ -292,10 +292,22 @@ def _analyses_for_matching(draft):
     return prepared
 
 
+def _matcher_kind(map_type):
+    # Only effect maps are scored on their own scale (off-peak coordinates get
+    # half credit, against a higher bar). Variance maps stay on the statistic
+    # scale, where they match nothing — they should never take an analysis.
+    statistic = map_sets.KIND.get(map_type) != map_sets.EFFECT
+    return matching.STATISTIC if statistic else matching.EFFECT
+
+
 def score(draft, upload, image):
     deadline = time.perf_counter() + SCORE_SECONDS
     scores = matching.score_map(
-        image, _analyses_for_matching(draft), map_id=upload.id, deadline=deadline
+        image,
+        _analyses_for_matching(draft),
+        map_id=upload.id,
+        kind=_matcher_kind(upload.map_type),
+        deadline=deadline,
     )
     return scores.to_dict()
 
@@ -477,10 +489,10 @@ async def upload(request: Request):
         partial.rename(stored)
         row.path = str(stored)
         image, problem = check_file(stored)
-        details = {"problem": problem, "path": path}
+        row.map_type, map_type_by = map_sets.detect_type(image, filename, path)
+        details = {"problem": problem, "path": path, "map_type_by": map_type_by}
         if image is not None:
             details["scores"] = score(draft, row, image)
-        row.map_type, details["map_type_by"] = map_sets.detect_type(image, filename, path)
         row.check_status = "ok" if problem is None else "problem"
         row.check_details = details
         _act(link, draft, "file_uploaded", {"upload_id": row.id, "filename": filename})
@@ -521,8 +533,13 @@ def _assign(link, draft, body, request):
     if "map_type" in body:
         if body["map_type"] not in MAP_TYPES:
             raise DraftError(f"map_type must be one of {', '.join(MAP_TYPES)}")
+        kind_before = _matcher_kind(row.map_type)
         row.map_type = body["map_type"]
         details["map_type_by"] = "author"
+        if _matcher_kind(row.map_type) != kind_before and details.get("scores") and row.path:
+            image, _ = check_file(Path(row.path))
+            if image is not None:
+                details["scores"] = score(draft, row, image)
     if "partner_id" in body:
         partner = body["partner_id"]
         if partner is not None:
