@@ -61,7 +61,7 @@ export function Uploads({
                     >
                         <Stack spacing={0.75}>
                             <Stack direction="row" spacing={1} alignItems="center">
-                                <Typography variant="subtitle2" sx={{ flexGrow: 1, wordBreak: 'break-all' }}>
+                                <Typography variant="subtitle2" sx={{ flexGrow: 1, overflowWrap: 'anywhere' }}>
                                     {upload.path ?? upload.filename}
                                 </Typography>
                                 {!deleted && (
@@ -93,11 +93,14 @@ export function Uploads({
                                         for {upload.analysis_keys.map(name).join(', ')}
                                     </Typography>
                                 )}
-                                {upload.analysis_keys.length === 0 && (
-                                    <Typography variant="caption" color="text.secondary">
-                                        {upload.label ? `labelled “${upload.label}”` : 'no analysis'}
-                                    </Typography>
-                                )}
+                                {upload.analysis_keys.length === 0 &&
+                                    (upload.label ? (
+                                        <Chip size="small" color="info" variant="outlined" label={`author's label: “${upload.label}”`} />
+                                    ) : (
+                                        <Typography variant="caption" color="text.secondary">
+                                            no analysis
+                                        </Typography>
+                                    ))}
                             </Stack>
                             <Typography variant="caption" color="text.secondary">
                                 {partner &&

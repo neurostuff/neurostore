@@ -30,8 +30,11 @@ export function coverage(view: ShareView): Map<string, ShareUpload[]> {
  * opposite-sign warning. */
 export function prompts(view: ShareView): Prompt[] {
     const name = new Map(view.analyses.map((analysis) => [analysis.key, analysis.name]));
-    // Asking which t/z map an effect map goes with only helps when there is one to pick.
-    const statistics = view.uploads.some((upload) => upload.kind === 'statistic' && upload.check_status === 'ok');
+    // Asking which t/z map an effect map goes with only helps when there is one to pick;
+    // an F map is no effect map's partner.
+    const statistics = view.uploads.some(
+        (upload) => (upload.map_type === 't' || upload.map_type === 'z') && upload.check_status === 'ok'
+    );
     const found: Prompt[] = [];
     for (const upload of view.uploads) {
         if (upload.check_status === 'problem') {

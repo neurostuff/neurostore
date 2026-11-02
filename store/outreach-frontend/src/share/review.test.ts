@@ -119,6 +119,9 @@ test('an effect map is not asked for its t/z map when none was uploaded', () => 
     const found = texts(view([effect]));
     expect(found.some((text) => text.startsWith('Which t or z map'))).toBe(false);
     expect(found).toEqual(["No file for “Houses > Faces” yet. Pick one, or leave it if you don't have it."]);
+    // F maps for an F-test analysis are no t/z map to pick either
+    const f = upload('f', ['b'], { b: fit('match') }, { map_type: 'f' });
+    expect(texts(view([effect, f])).some((text) => text.startsWith('Which t or z map'))).toBe(false);
 });
 
 test('rows drop the folder their files share', () => {

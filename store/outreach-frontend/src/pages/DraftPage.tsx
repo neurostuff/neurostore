@@ -36,8 +36,15 @@ function Events({ draft }: { draft: DraftDetail }) {
                         sx={data.undone_at ? { textDecoration: 'line-through', color: 'text.disabled' } : undefined}
                     >
                         {when(event.created_at)} · {event.kind.replace(/_/g, ' ')}
-                        {detail.length > 0 && `: ${detail.join(' · ')}`} · {event.actor}
-                        {event.actor_id && ` (${event.actor_id})`}
+                        {detail.length > 0 && `: ${detail.join(' · ')}`} ·{' '}
+                        {event.actor === 'author' ? (
+                            <span title={event.actor_id ? `through link ${event.actor_id}` : undefined}>author</span>
+                        ) : (
+                            <>
+                                {event.actor}
+                                {event.actor_id && ` (${event.actor_id})`}
+                            </>
+                        )}
                     </Typography>
                 );
             })}
@@ -124,8 +131,7 @@ export function DraftPage() {
                 </Stack>
                 {submitted && (
                     <Typography variant="body2">
-                        Submitted{data.submitter_name ? ` by ${data.submitter_name}` : ''}: review the uploads and
-                        anything the author reported below.
+                        The author has submitted: review the uploads and anything they reported below.
                     </Typography>
                 )}
                 <DraftActions draft={data} onChange={refresh} />
