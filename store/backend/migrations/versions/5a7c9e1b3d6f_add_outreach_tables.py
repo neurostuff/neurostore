@@ -5,7 +5,7 @@ is our copy of the paper's analyses; a person is an email address, found by its 
 hash only. No public endpoint serves these tables.
 
 Revision ID: 5a7c9e1b3d6f
-Revises: 0ecb2ae2459c
+Revises: b3d5f7a9c1e4
 Create Date: 2026-10-30
 
 """
@@ -17,7 +17,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "5a7c9e1b3d6f"
-down_revision = "0ecb2ae2459c"
+down_revision = "b3d5f7a9c1e4"
 branch_labels = None
 depends_on = None
 

@@ -561,7 +561,7 @@ def _resolve_base_study(body, parse, parsed_paper, create):
     lock_identifiers(db.session, identifiers)
     held = held_by(db.session, identifiers)
 
-    base_study, merged_from = None, []
+    base_study, merged_from, pruned = None, [], None
     base_study_id = body.get("base_study_id") or header.get("neurostore_base_study_id")
     if base_study_id:
         chain = supersession_chain(db.session, base_study_id)
@@ -572,12 +572,20 @@ def _resolve_base_study(body, parse, parsed_paper, create):
         # An inactive base study with no successor (a pruned import) is passed over for
         # the paper's identifiers.
         if not base_study.is_active:
-            base_study, merged_from = None, []
+            pruned, base_study, merged_from = base_study.id, None, []
     if base_study is None:
         found_id = resolve(identifiers, held)
         if found_id is not None:
             base_study = db.session.get(BaseStudy, found_id)
 
+    if base_study is None and pruned is not None:
+        # Creating one would undo the pruning: the paper would come back as a new base
+        # study beside the one taken out.
+        abort_validation(
+            f"Base study {pruned} is inactive and no active base study holds the "
+            "paper's identifiers.",
+            [make_field_error("base_study_id", pruned, code="INACTIVE")],
+        )
     if base_study is None:
         if not create:
             abort_validation(
