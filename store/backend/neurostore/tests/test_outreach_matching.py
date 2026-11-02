@@ -165,6 +165,44 @@ def test_sign_flipped_map_is_reversed():
     assert pair.readings["signed"] <= 0.55
 
 
+def f_map(peaks, seed):
+    """An F map: a t map squared, so it has no negative values at all."""
+    t_map = synthetic_map(peaks, seed=seed)
+    return nib.Nifti1Image(np.asarray(t_map.dataobj) ** 2, MNI_2MM)
+
+
+def test_an_f_map_has_no_negative_side():
+    # an F map's troughs are not a reversed contrast, however they line up
+    unrelated = [analysis("B", PEAKS_B), analysis("C", PEAKS_C)]
+    pairs = [
+        pair
+        for seed in range(20)
+        for pair in score_map(f_map(PEAKS_A, seed), unrelated).pairs.values()
+    ]
+
+    assert all(pair.outcome != REVERSED_SIGN for pair in pairs)
+    assert all(pair.readings["negated"] is None for pair in pairs)
+    assert all(pair.readings["mirrored_negated"] is None for pair in pairs)
+    assert all(pair.peak_fraction["negated"] is None for pair in pairs)
+
+
+def test_an_f_map_still_matches_its_own_peaks():
+    pair = score_map(f_map(PEAKS_A, seed=9), [analysis("A", PEAKS_A)]).pairs["A"]
+
+    assert pair.outcome == MATCH
+    assert pair.readings["signed"] > 0.75
+
+
+def test_a_map_with_only_negative_values_reads_reversed():
+    negative = nib.Nifti1Image(-np.asarray(f_map(PEAKS_A, seed=10).dataobj), MNI_2MM)
+
+    scores = score_map(negative, [analysis("A", PEAKS_A), analysis("B", PEAKS_B)])
+
+    assert scores.pairs["A"].outcome == REVERSED_SIGN
+    assert scores.pairs["A"].readings["signed"] is None
+    assert scores.pairs["B"].outcome == NO_MATCH
+
+
 def test_mirrored_map_is_a_left_right_flip():
     mirrored = synthetic_map(mirror(PEAKS_A), seed=5)
 

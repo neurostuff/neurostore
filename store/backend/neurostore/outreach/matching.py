@@ -231,7 +231,8 @@ class PairScore:
     n_outside: int = 0
     # Every reading, so a reviewer can see why: signed, negated and unsigned
     # (strongest value of either sign, for tables that mix increases and
-    # decreases), each again with x mirrored.
+    # decreases), each again with x mirrored. None for a sign the map has no
+    # values of.
     readings: dict | None = None
     # Share of coordinates whose strongest nearby value is itself a local peak,
     # for the signed and negated readings.
@@ -737,11 +738,14 @@ def _decide(readings, thresholds):
     signed = readings["signed"]
     negated = readings["negated"]
     unsigned = readings["unsigned"]
-    straight = max(signed, unsigned)
+    # A map with no values of one sign has no reading of that sign (None); a
+    # negated reading then has to beat chance instead.
+    straight = max((value for value in (signed, unsigned) if value is not None), default=0.5)
+    signed_or_chance = 0.5 if signed is None else signed
 
     if thresholds.passes(signed):
         return MATCH, signed
-    if thresholds.passes(negated) and negated >= signed + thresholds.margin:
+    if thresholds.passes(negated) and negated >= signed_or_chance + thresholds.margin:
         return REVERSED_SIGN, negated
     # The strongest value of either sign: a table that lists increases and
     # decreases as one analysis fits the map, just not with one sign.
@@ -759,7 +763,7 @@ def _decide(readings, thresholds):
 
 
 def _round(value):
-    return None if value is None else round(float(value), 4)
+    return None if value is None or np.isnan(value) else round(float(value), 4)
 
 
 def _score_volume(map_id, data, affine, prepared, thresholds, kind=STATISTIC):
@@ -789,6 +793,16 @@ def _score_volume(map_id, data, affine, prepared, thresholds, kind=STATISTIC):
     thresholded = share < SPARSE_SHARE or (
         share < DENSE_SHARE and low >= THRESHOLD_GAP * high
     )
+    # A map with no values of one sign (an F map, a one-sided t map) says nothing
+    # about that sign: an F map's troughs are not a reversed contrast. Read anyway,
+    # they put 4.8% of unrelated pairs on an F map's negative side, against
+    # 0.4% for a t map. Real maps almost never hold just a trace of a sign: of
+    # 2,138, 2 have negative values below 0.1% of the sampled voxels.
+    lacking = []
+    if not (values < 0).any():
+        lacking += ["negated", "mirrored_negated"]
+    if not (values > 0).any():
+        lacking += ["signed", "mirrored"]
 
     baseline = _spheres(volume, thresholded=thresholded, gathered=gathered)
     coverage = float(baseline.covered.mean())
@@ -850,6 +864,10 @@ def _score_volume(map_id, data, affine, prepared, thresholds, kind=STATISTIC):
         "signed": per_analysis(peak_high.astype(float), straight.covered)[0],
         "negated": per_analysis(peak_low.astype(float), straight.covered)[0],
     }
+    for key in lacking:
+        readings[key] = np.full(n_analyses, np.nan)
+        if key in peaks:
+            peaks[key] = np.full(n_analyses, np.nan)
     totals = np.bincount(prepared.owner, minlength=n_analyses)
 
     pairs = {}
