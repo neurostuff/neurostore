@@ -49,6 +49,7 @@ from neurostore.resources.utils import (
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
 )
+from neurostore.services.data_source_links import recompute_data_source_links
 from neurostore.services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
@@ -258,6 +259,9 @@ class BaseView:
         base_studies = {id_ for id_ in base_studies if id_}
         if not base_studies:
             return
+
+        # kept synchronous: a write's response may list the data sources it changed
+        recompute_data_source_links(base_studies)
 
         config = request.state.settings
         if config.get("BASE_STUDY_FLAGS_ASYNC", True):

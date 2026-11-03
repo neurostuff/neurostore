@@ -37,6 +37,7 @@ from neurostore.resources.data_views.cloning import (
     load_study_clone_source,
 )
 from neurostore.resources.data_views.common import (
+    DATA_SOURCE_DETAIL_ARGS,
     IMAGE_DETAIL_ARGS,
     LIST_CLONE_ARGS,
     LIST_NESTED_ARGS,
@@ -139,6 +140,7 @@ class StudiesView(ObjectView, ListView):
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
         **IMAGE_DETAIL_ARGS,
+        **DATA_SOURCE_DETAIL_ARGS,
     }
     _multi_search = ("name", "description")
     _m2o = {"base_study": "BaseStudiesView"}
@@ -203,6 +205,10 @@ class StudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        if args.get("data_sources"):
+            q = q.options(
+                selectinload(Study.data_sources).options(raiseload("*", sql_only=True))
+            )
         if args.get("nested"):
             return q.options(
                 selectinload(Study.user)

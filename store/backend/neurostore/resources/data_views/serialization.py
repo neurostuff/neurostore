@@ -18,6 +18,7 @@ from neurostore.models import (
     StudysetStudy,
 )
 from neurostore.services.image_value_summary import serialize_image_value_summary
+from neurostore.schemas.data import AnalysisSchema, dump_computed_data_sources
 
 
 def _serialize_dt(value):
@@ -132,7 +133,7 @@ def serialize_analysis_record(analysis, context=None):
         )
     ]
 
-    return {
+    payload = {
         "id": analysis.id,
         "user": analysis.user_id,
         "username": _serialize_username(getattr(analysis, "user", None)),
@@ -159,6 +160,9 @@ def serialize_analysis_record(analysis, context=None):
         "outcome": analysis.outcome,
         "from_prior_study": analysis.from_prior_study,
     }
+    if (context or {}).get("data_sources"):
+        payload["data_sources"] = AnalysisSchema().dump_data_sources(analysis)
+    return payload
 
 
 def serialize_analysis_detail(analysis, context=None):
@@ -173,7 +177,7 @@ def serialize_study_record(study, context=None):
             key=lambda analysis: _order_sort_key(analysis.order, analysis.id),
         )
     ]
-    return {
+    payload = {
         "id": study.id,
         "user": study.user_id,
         "username": _serialize_username(getattr(study, "user", None)),
@@ -201,6 +205,9 @@ def serialize_study_record(study, context=None):
         "has_beta_and_variance_maps": study.has_beta_and_variance_maps,
         "source_updated_at": _serialize_dt(study.source_updated_at),
     }
+    if (context or {}).get("data_sources"):
+        payload["data_sources"] = dump_computed_data_sources(study)
+    return payload
 
 
 def serialize_study_detail(study, context=None):
