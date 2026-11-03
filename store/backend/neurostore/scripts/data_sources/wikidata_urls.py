@@ -25,13 +25,17 @@ HEADERS = {"User-Agent": "neurostore-consortia-dictionary/0.1"}
 def call(**params):
     q = urllib.parse.urlencode({**params, "format": "json"})
     req = urllib.request.Request(f"{API}?{q}", headers=HEADERS)
-    for attempt in range(5):
+    # rate limited (429): wait as asked and retry; the last attempt's error is raised
+    for _ in range(4):
         try:
-            return json.load(urllib.request.urlopen(req, timeout=60))
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.load(r)
         except urllib.error.HTTPError as e:
-            if e.code != 429 or attempt == 4:
+            if e.code != 429:
                 raise
             time.sleep(int(e.headers.get("Retry-After") or 30))
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r)
 
 
 def main():

@@ -232,7 +232,7 @@ async def test_seed_round_trips_through_the_api(auth_client, session):
     rows = {r["id"]: r for r in match.dictionary_rows(resp.json()["results"])}
     columns = ("name", "roles", "modality", "hosted_by", "rrid", "re3data_id", "source", "url")
     alias_columns = tuple(match.ALIAS_COLUMNS.values())
-    for expected in match.csv.DictReader(open(seed, encoding="utf-8"), delimiter="\t"):
+    for expected in match.read_tsv(seed):
         got = rows.pop(expected["id"])
         assert {c: got[c] for c in columns} == {c: expected[c] for c in columns}
         for column in alias_columns:
