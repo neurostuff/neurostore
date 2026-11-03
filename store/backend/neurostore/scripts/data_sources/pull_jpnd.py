@@ -39,7 +39,10 @@ def parse(post):
 
 def main():
     out, pages = sys.argv[1], sys.argv[2:]
-    rows = [parse(p) for page in pages for p in json.load(open(page, encoding="utf-8"))]
+    rows = []
+    for page in pages:
+        with open(page, encoding="utf-8") as f:
+            rows += [parse(p) for p in json.load(f)]
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS, delimiter="\t")
         w.writeheader()

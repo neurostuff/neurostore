@@ -242,6 +242,16 @@ def pick_text(paper_dir):
     return best
 
 
+def read_tsv(path):
+    with open(path, encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f, delimiter="\t"))
+
+
+def read_lines(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read().splitlines()
+
+
 def read_json(path):
     try:
         with open(path, encoding="utf-8") as f:

@@ -13,7 +13,7 @@ import sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from match import key, load_dictionary  # noqa: E402
+from match import key, load_dictionary, read_tsv  # noqa: E402
 
 FOOTNOTE = re.compile(
     r"[\*†‡§¶#¹²³⁴⁵⁶⁷⁸⁹⁰]+|\s*\((?:n|N)\s*=\s*[\d,]+\)|\s*\[\d+(?:[,–-]\d+)*\]$|\s+[a-h]$"
@@ -75,7 +75,7 @@ def main():
     found = defaultdict(
         lambda: {"papers": set(), "variants": defaultdict(int), "row": "", "title": ""}
     )
-    for r in csv.DictReader(open(cells_path, encoding="utf-8"), delimiter="\t"):
+    for r in read_tsv(cells_path):
         name = clean(r["cell"])
         if not keep(name):
             continue

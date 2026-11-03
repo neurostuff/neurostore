@@ -11,7 +11,7 @@ import subprocess
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from match import key, read_dictionary_rows, split  # noqa: E402
+from match import key, read_dictionary_rows, read_lines, split  # noqa: E402
 
 URL = "https://scicrunch.org/api/1/elastic/RIN_Tool_pr/_search"
 
@@ -61,11 +61,7 @@ def search(text):
 def main():
     dict_path, ids_path, out = sys.argv[1:4]
     rows = {r["id"]: r for r in read_dictionary_rows(dict_path)}
-    ids = [
-        ln.split("\t", 1)[0].strip()
-        for ln in open(ids_path, encoding="utf-8")
-        if ln.strip()
-    ]
+    ids = [ln.split("\t", 1)[0].strip() for ln in read_lines(ids_path) if ln.strip()]
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter="\t", lineterminator="\n")
         w.writerow(["id", "rrid", "label", "url"])

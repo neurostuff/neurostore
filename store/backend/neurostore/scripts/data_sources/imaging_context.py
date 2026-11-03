@@ -12,7 +12,7 @@ from collections import defaultdict
 from multiprocessing import Pool
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from match import alias_pattern, key, pick_text, snippet  # noqa: E402
+from match import alias_pattern, key, pick_text, read_tsv, snippet  # noqa: E402
 
 IMAGING = re.compile(
     r"\b(?:MRI|fMRI|MR imaging|magnetic resonance|PET|positron|neuroimaging|brain imaging|DTI|"
@@ -24,9 +24,7 @@ WINDOW = 400
 
 def init(path):
     global NAME_RE, NAMES
-    names = [
-        r["name"] for r in csv.DictReader(open(path, encoding="utf-8"), delimiter="\t")
-    ]
+    names = [r["name"] for r in read_tsv(path)]
     NAMES = {key(n): n for n in names}
     NAME_RE = re.compile(
         r"(?<!\w)(?:"

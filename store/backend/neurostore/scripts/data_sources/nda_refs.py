@@ -13,7 +13,14 @@ import sys
 from multiprocessing import Pool
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from match import pick_text, read_json, section_at, sections, snippet  # noqa: E402
+from match import (
+    pick_text,
+    read_json,
+    read_tsv,
+    section_at,
+    sections,
+    snippet,
+)  # noqa: E402
 
 COLLECTION = re.compile(
     r"edit_collection\.html\?id=(?P<a>\d{2,5})|"
@@ -38,9 +45,7 @@ FIELDS = [
 
 def init(path):
     global COLLECTIONS
-    COLLECTIONS = {
-        r["id"]: r for r in csv.DictReader(open(path, encoding="utf-8"), delimiter="\t")
-    }
+    COLLECTIONS = {r["id"]: r for r in read_tsv(path)}
 
 
 def search(paper_dir):

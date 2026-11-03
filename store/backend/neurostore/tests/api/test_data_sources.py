@@ -33,7 +33,8 @@ async def create_data_source(admin_client, payload=UKB):
 
 
 async def test_only_admins_write_data_sources(admin_client, auth_client):
-    assert (await auth_client.post("/api/data-sources/", data=UKB)).status_code == 403
+    denied = await auth_client.post("/api/data-sources/", data=UKB)
+    assert denied.status_code == 403
 
     created = await create_data_source(admin_client)
     assert created["slug"] == "ukb"
@@ -45,7 +46,8 @@ async def test_only_admins_write_data_sources(admin_client, auth_client):
     url = f"/api/data-sources/{created['id']}"
     put = await auth_client.put(url, data={"name": "changed"})
     assert put.status_code == 403
-    assert (await auth_client.delete(url)).status_code == 403
+    denied = await auth_client.delete(url)
+    assert denied.status_code == 403
 
     put = await admin_client.put(url, data={"aliases": [{"alias": "UKBB", "tier": "safe"}]})
     assert put.status_code == 200, put.text
@@ -102,13 +104,15 @@ async def test_analysis_link_shows_on_study_and_base_study(admin_client, auth_cl
     shown = await auth_client.get(f"/api/analyses/{analysis_id}?data_sources=true")
     assert shown.json()["data_sources"] == summary
 
-    assert "data_sources" not in (await auth_client.get(f"/api/studies/{study.id}")).json()
+    plain_study = await auth_client.get(f"/api/studies/{study.id}")
+    assert "data_sources" not in plain_study.json()
     for url in (
         f"/api/studies/{study.id}?data_sources=true",
         f"/api/studies/{study.id}?data_sources=true&nested=true",
         f"/api/base-studies/{base_study_id}?data_sources=true",
     ):
-        assert (await auth_client.get(url)).json()["data_sources"] == summary, url
+        resp = await auth_client.get(url)
+        assert resp.json()["data_sources"] == summary, url
     nested = (
         await auth_client.get(f"/api/studies/{study.id}?data_sources=true&nested=true")
     ).json()

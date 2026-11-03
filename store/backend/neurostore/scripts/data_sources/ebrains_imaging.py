@@ -25,7 +25,8 @@ def load(kg, ty):
 
     out = []
     for path in sorted(glob.glob(os.path.join(kg, f"{ty}_*.json"))):
-        out += json.load(open(path, encoding="utf-8"))["data"]
+        with open(path, encoding="utf-8") as f:
+            out += json.load(f)["data"]
     return out
 
 

@@ -127,7 +127,8 @@ def fetch(row, out, max_bytes):
         except Exception as e:  # noqa: BLE001
             print(f"{pmcid} epmc xml: {e}", file=sys.stderr)
         time.sleep(0.2)
-    open(os.path.join(d, ".done"), "w").close()
+    with open(os.path.join(d, ".done"), "w"):
+        pass
     return pmcid, status
 
 

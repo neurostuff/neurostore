@@ -16,7 +16,7 @@ import urllib.parse
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from match import key, read_dictionary_rows, split  # noqa: E402
+from match import key, read_dictionary_rows, read_lines, split  # noqa: E402
 
 API = "https://www.wikidata.org/w/api.php"
 HEADERS = {"User-Agent": "neurostore-consortia-dictionary/0.1"}
@@ -37,11 +37,7 @@ def call(**params):
 def main():
     dict_path, ids_path, out = sys.argv[1:4]
     rows = {r["id"]: r for r in read_dictionary_rows(dict_path)}
-    ids = [
-        ln.split("\t", 1)[0].strip()
-        for ln in open(ids_path, encoding="utf-8")
-        if ln.strip()
-    ]
+    ids = [ln.split("\t", 1)[0].strip() for ln in read_lines(ids_path) if ln.strip()]
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter="\t", lineterminator="\n")
         w.writerow(["id", "qid", "label", "url"])

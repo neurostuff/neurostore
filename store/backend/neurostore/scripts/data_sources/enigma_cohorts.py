@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from enigma import MENTION, group_at  # noqa: E402
 from enigma_samples import clean, keep  # noqa: E402
-from match import key, load_dictionary  # noqa: E402
+from match import key, load_dictionary, read_tsv  # noqa: E402
 
 
 def paper_group(title, xml_path):
@@ -44,16 +44,10 @@ def main():
     for acr, ents in acronyms.items():
         by_key.setdefault(key(acr), ents[0][0])
     papers = {
-        r["pmcid"]: r
-        for r in csv.DictReader(
-            open(os.path.join(epmc, "papers.tsv"), encoding="utf-8"), delimiter="\t"
-        )
-        if r["pmcid"]
+        r["pmcid"]: r for r in read_tsv(os.path.join(epmc, "papers.tsv")) if r["pmcid"]
     }
     cohorts, labels = defaultdict(set), defaultdict(set)
-    for r in csv.DictReader(
-        open(os.path.join(epmc, "cells.tsv"), encoding="utf-8"), delimiter="\t"
-    ):
+    for r in read_tsv(os.path.join(epmc, "cells.tsv")):
         name = clean(r["cell"])
         if not keep(name):
             continue

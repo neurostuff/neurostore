@@ -41,7 +41,9 @@ with open(sys.argv[2], "w", newline="", encoding="utf-8") as f:
             "description",
         ]
     )
-    for line in open(sys.argv[1]):
+    with open(sys.argv[1]) as f:
+        lines = f.read().splitlines()
+    for line in lines:
         n, scr = line.split()
         src = resolve(scr)
         time.sleep(0.2)

@@ -3,18 +3,17 @@
 usage: python -I compare_source.py API_URL SOURCE.tsv [FILTER_COLUMN]
 """
 
-import csv
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from match import key, load_dictionary  # noqa: E402
+from match import key, load_dictionary, read_tsv  # noqa: E402
 
 entities, names, acronyms, _, _ = load_dictionary(sys.argv[1])
 known = set(names) | {key(e["name"]) for e in entities.values()}
 known_acr = {key(a) for a in acronyms}
 col = sys.argv[3] if len(sys.argv) > 3 else None
-for r in csv.DictReader(open(sys.argv[2], encoding="utf-8"), delimiter="\t"):
+for r in read_tsv(sys.argv[2]):
     if col and not any(
         t in r[col] for t in ("MRI", "PET", "Magnetic resonance", "Positron")
     ):

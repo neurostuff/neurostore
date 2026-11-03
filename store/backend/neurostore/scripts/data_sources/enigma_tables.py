@@ -167,13 +167,10 @@ def paper_tables(d):
 
 def main():
     epmc, out = sys.argv[1], sys.argv[2]
-    papers = {
-        r["pmcid"]: r
-        for r in csv.DictReader(
-            open(os.path.join(epmc, "papers.tsv"), encoding="utf-8"), delimiter="\t"
-        )
-        if r["pmcid"]
-    }
+    with open(os.path.join(epmc, "papers.tsv"), encoding="utf-8") as f:
+        papers = {
+            r["pmcid"]: r for r in csv.DictReader(f, delimiter="\t") if r["pmcid"]
+        }
     n_tables = n_cells = 0
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS, delimiter="\t")
