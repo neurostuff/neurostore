@@ -39,7 +39,7 @@ describe('NavDrawer component', () => {
             options?.onSuccess?.({ data: { id: 'new-project-id' } });
         });
         (useCreateProject as Mock).mockReturnValue({
-            isLoading: false,
+            isPending: false,
             isError: false,
             mutate: mockMutate,
         });

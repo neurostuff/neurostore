@@ -74,15 +74,15 @@ describe('useCloneStudy', () => {
         (useProjectExtractionReplaceStudyListStatusId as Mock).mockReturnValue(mockReplaceStudyWithNewClonedStudy);
 
         (useCreateStudy as Mock).mockReturnValue({
-            isLoading: false,
+            isPending: false,
             mutateAsync: vi.fn().mockResolvedValue({ data: clonedStudy }),
         });
         (useUpdateStudyset as Mock).mockReturnValue({
-            isLoading: false,
+            isPending: false,
             mutateAsync: vi.fn().mockResolvedValue({}),
         });
         (useUpdateAnnotationByAnnotationAndAnalysisIds as Mock).mockReturnValue({
-            isLoading: false,
+            isPending: false,
             mutateAsync: vi.fn().mockResolvedValue({}),
         });
         (useGetAnnotationById as Mock).mockReturnValue({
