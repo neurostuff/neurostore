@@ -27,7 +27,7 @@ def paper_group(title, xml_path):
                 " ".join(root.itertext()),
             ]
         except ET.ParseError:
-            pass  # unparseable full text: the group is looked for in the title alone
+            pass  # unparsable full text: the group is looked for in the title alone
     for text in texts:
         groups = Counter(
             g for g in (group_at(text, m)[0] for m in MENTION.finditer(text)) if g
