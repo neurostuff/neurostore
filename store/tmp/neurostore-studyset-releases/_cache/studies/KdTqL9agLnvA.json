@@ -1,0 +1,441 @@
+{
+  "analyses": [
+    {
+      "conditions": [],
+      "description": "Coordinate analysis",
+      "id": "k8263kmGTjBf",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 1",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            42.8,
+            -73.85,
+            65.66
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            23.51,
+            -48.25,
+            53.34
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            40.61,
+            62.79,
+            58.43
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -65.37,
+            51.04,
+            14.83
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -4.58,
+            31.3,
+            56.94
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            0.14,
+            32.53,
+            53.13
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            7.95,
+            77.58,
+            -20.53
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -37.35,
+            -93.42,
+            31.59
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            56.88,
+            -22.09,
+            65.09
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Coordinate analysis",
+      "id": "sVdCKNKEgvAk",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 2",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            63.85,
+            -16.08,
+            57.96
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -35.64,
+            24.29,
+            19.65
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            18.96,
+            16.62,
+            64.73
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            13.03,
+            -38.98,
+            -21.04
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -29.46,
+            -88.49,
+            38.1
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Coordinate analysis",
+      "id": "k6D4QZdwTY3B",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 3",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            24.3,
+            -13.71,
+            29.11
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -7.63,
+            -35.07,
+            23.21
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            22.02,
+            0.84,
+            63.84
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            2.83,
+            34.25,
+            38.7
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            58.72,
+            -40.87,
+            9.68
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            48.89,
+            -69.97,
+            24.67
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            12.35,
+            -34.54,
+            51.5
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -3.92,
+            -30.35,
+            37.2
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -4.85,
+            -65.05,
+            -15.03
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    }
+  ],
+  "authors": null,
+  "description": "Seeded coordinate-only mock study.",
+  "doi": null,
+  "id": "KdTqL9agLnvA",
+  "metadata": null,
+  "name": "Mock coordinate study 8",
+  "pmcid": null,
+  "pmid": "MCKC000008",
+  "publication": null,
+  "year": null
+}

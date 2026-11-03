@@ -1,0 +1,126 @@
+{
+  "analyses": [
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "aBrPQqTboCif",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 1",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            58.47,
+            -39.38,
+            -3.96
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -9.44,
+            61.93,
+            53.12
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            10.44,
+            19.7,
+            27.9
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            47.99,
+            1.84,
+            23.44
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "M728gavsKaAg",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 2",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "FXbBAaNvaHuR",
+      "images": [
+        {
+          "add_date": null,
+          "analysis": "FXbBAaNvaHuR",
+          "filename": "mock_seed_map_1.nii.gz",
+          "metadata": null,
+          "space": "MNI152NLin2009cAsym",
+          "url": "https://example.invalid/mock/map_1.nii.gz",
+          "value_type": "variance"
+        }
+      ],
+      "metadata": null,
+      "name": "Analysis 3",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    }
+  ],
+  "authors": null,
+  "description": "Seeded image mock study.",
+  "doi": null,
+  "id": "92dekENUD94o",
+  "metadata": null,
+  "name": "Mock image study 5",
+  "pmcid": null,
+  "pmid": "MCKI000005",
+  "publication": null,
+  "year": null
+}

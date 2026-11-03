@@ -1,0 +1,86 @@
+{
+  "analyses": [
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "3X8Z3fcN58mn",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 1",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "RHn9ZbLxdURw",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 2",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "6JbgmVKXnL5D",
+      "images": [
+        {
+          "add_date": null,
+          "analysis": "6JbgmVKXnL5D",
+          "filename": "mock_seed_map_1.nii.gz",
+          "metadata": null,
+          "space": "MNI",
+          "url": "https://example.invalid/mock/map_1.nii.gz",
+          "value_type": "univariate-beta map"
+        }
+      ],
+      "metadata": null,
+      "name": "Analysis 3",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "8RYPWA9ospi5",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 4",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -11.45,
+            62.43,
+            -9.18
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    }
+  ],
+  "authors": null,
+  "description": "Seeded image mock study.",
+  "doi": null,
+  "id": "DmwjSoYtFQvF",
+  "metadata": null,
+  "name": "Mock image study 10",
+  "pmcid": null,
+  "pmid": "MCKI000010",
+  "publication": null,
+  "year": null
+}

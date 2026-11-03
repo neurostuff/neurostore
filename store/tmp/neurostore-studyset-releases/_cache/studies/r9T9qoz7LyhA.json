@@ -1,0 +1,178 @@
+{
+  "analyses": [
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "JnQ4WzGFsUtX",
+      "images": [
+        {
+          "add_date": null,
+          "analysis": "JnQ4WzGFsUtX",
+          "filename": "mock_seed_map_3.nii.gz",
+          "metadata": null,
+          "space": "MNI",
+          "url": "https://example.invalid/mock/map_3.nii.gz",
+          "value_type": "T map"
+        },
+        {
+          "add_date": null,
+          "analysis": "JnQ4WzGFsUtX",
+          "filename": "mock_seed_map_2.nii.gz",
+          "metadata": null,
+          "space": "MNI152",
+          "url": "https://example.invalid/mock/map_2.nii.gz",
+          "value_type": "F map"
+        },
+        {
+          "add_date": null,
+          "analysis": "JnQ4WzGFsUtX",
+          "filename": "mock_seed_map_1.nii.gz",
+          "metadata": null,
+          "space": "MNI",
+          "url": "https://example.invalid/mock/map_1.nii.gz",
+          "value_type": "other"
+        }
+      ],
+      "metadata": null,
+      "name": "Analysis 1",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "7djR6nyg2LDq",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 2",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "hWbP9T28xQe4",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 3",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            66.52,
+            -21.34,
+            45.73
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -28.5,
+            -77.26,
+            44.56
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -66.53,
+            20.06,
+            -41.45
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            60.23,
+            86.07,
+            15.12
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -40.21,
+            -93.72,
+            41.24
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -47.93,
+            -99.2,
+            4.72
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    }
+  ],
+  "authors": null,
+  "description": "Seeded image mock study.",
+  "doi": null,
+  "id": "r9T9qoz7LyhA",
+  "metadata": null,
+  "name": "Mock image study 45",
+  "pmcid": null,
+  "pmid": "MCKI000045",
+  "publication": null,
+  "year": null
+}

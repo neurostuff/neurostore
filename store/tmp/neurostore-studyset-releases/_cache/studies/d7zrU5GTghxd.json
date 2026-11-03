@@ -1,0 +1,223 @@
+{
+  "analyses": [
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "uFam2GbmpzFT",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 1",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "N5ed63zTgwgJ",
+      "images": [
+        {
+          "add_date": null,
+          "analysis": "N5ed63zTgwgJ",
+          "filename": "mock_seed_map_2.nii.gz",
+          "metadata": null,
+          "space": "MNI",
+          "url": "https://example.invalid/mock/map_2.nii.gz",
+          "value_type": "Z map"
+        },
+        {
+          "add_date": null,
+          "analysis": "N5ed63zTgwgJ",
+          "filename": "mock_seed_map_1.nii.gz",
+          "metadata": null,
+          "space": "MNI152NLin2009cAsym",
+          "url": "https://example.invalid/mock/map_1.nii.gz",
+          "value_type": "F map"
+        },
+        {
+          "add_date": null,
+          "analysis": "N5ed63zTgwgJ",
+          "filename": "mock_seed_map_3.nii.gz",
+          "metadata": null,
+          "space": "MNI152",
+          "url": "https://example.invalid/mock/map_3.nii.gz",
+          "value_type": "ROI/mask"
+        }
+      ],
+      "metadata": null,
+      "name": "Analysis 2",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "T4AfNvYNvfNx",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 3",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "mZoKq3qWHw9T",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 4",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            22.17,
+            32.69,
+            48.44
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -40.36,
+            -3.49,
+            66.56
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            45.97,
+            99.77,
+            -8.62
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            23.25,
+            40.32,
+            44.72
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -48.68,
+            10.78,
+            57.67
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            68.04,
+            14.02,
+            34.45
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            68.68,
+            -67.44,
+            45.87
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -27.3,
+            -79.47,
+            14.94
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    }
+  ],
+  "authors": null,
+  "description": "Seeded image mock study.",
+  "doi": null,
+  "id": "d7zrU5GTghxd",
+  "metadata": null,
+  "name": "Mock image study 20",
+  "pmcid": null,
+  "pmid": "MCKI000020",
+  "publication": null,
+  "year": null
+}

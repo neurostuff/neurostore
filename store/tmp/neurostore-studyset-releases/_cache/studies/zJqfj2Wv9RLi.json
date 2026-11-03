@@ -1,0 +1,106 @@
+{
+  "analyses": [
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "HV42XZPTZmKG",
+      "images": [
+        {
+          "add_date": null,
+          "analysis": "HV42XZPTZmKG",
+          "filename": "mock_seed_map_2.nii.gz",
+          "metadata": null,
+          "space": "MNI152",
+          "url": "https://example.invalid/mock/map_2.nii.gz",
+          "value_type": "1-P map (\"inverted\" probability)"
+        },
+        {
+          "add_date": null,
+          "analysis": "HV42XZPTZmKG",
+          "filename": "mock_seed_map_1.nii.gz",
+          "metadata": null,
+          "space": "MNI152NLin2009cAsym",
+          "url": "https://example.invalid/mock/map_1.nii.gz",
+          "value_type": "parcellation"
+        }
+      ],
+      "metadata": null,
+      "name": "Analysis 1",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "A8HdhkLgb7m2",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 2",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "rLKiPg7F6eX2",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 3",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            28.36,
+            -81.71,
+            51.1
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "TAL",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "oCWHFVv245Ur",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 4",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "Xr2NWuoBZFPB",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 5",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    }
+  ],
+  "authors": null,
+  "description": "Seeded image mock study.",
+  "doi": null,
+  "id": "zJqfj2Wv9RLi",
+  "metadata": null,
+  "name": "Mock image study 13",
+  "pmcid": null,
+  "pmid": "MCKI000013",
+  "publication": null,
+  "year": null
+}

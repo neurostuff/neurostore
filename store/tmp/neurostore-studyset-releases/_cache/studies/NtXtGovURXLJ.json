@@ -1,0 +1,176 @@
+{
+  "analyses": [
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "GtDcBcwrkcca",
+      "images": [],
+      "metadata": null,
+      "name": "Analysis 1",
+      "points": [
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            60.93,
+            61.73,
+            62.91
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -50.77,
+            91.01,
+            -17.66
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -28.73,
+            21.6,
+            61.23
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            41.1,
+            15.46,
+            28.04
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "cluster",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -60.16,
+            -44.93,
+            -21.29
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        },
+        {
+          "cluster_measurement_unit": null,
+          "cluster_size": null,
+          "coordinates": [
+            -36.27,
+            24.86,
+            55.72
+          ],
+          "deactivation": false,
+          "image": null,
+          "is_seed": false,
+          "kind": "peak",
+          "label_id": null,
+          "space": "MNI",
+          "subpeak": null,
+          "values": []
+        }
+      ],
+      "table_id": null,
+      "weights": []
+    },
+    {
+      "conditions": [],
+      "description": "Image or mixed analysis",
+      "id": "BcfUTAAwGyUS",
+      "images": [
+        {
+          "add_date": null,
+          "analysis": "BcfUTAAwGyUS",
+          "filename": "mock_seed_map_1.nii.gz",
+          "metadata": null,
+          "space": "MNI152",
+          "url": "https://example.invalid/mock/map_1.nii.gz",
+          "value_type": "F map"
+        },
+        {
+          "add_date": null,
+          "analysis": "BcfUTAAwGyUS",
+          "filename": "mock_seed_map_2.nii.gz",
+          "metadata": null,
+          "space": "MNI152NLin2009cAsym",
+          "url": "https://example.invalid/mock/map_2.nii.gz",
+          "value_type": "P map (given null hypothesis)"
+        },
+        {
+          "add_date": null,
+          "analysis": "BcfUTAAwGyUS",
+          "filename": "mock_seed_map_3.nii.gz",
+          "metadata": null,
+          "space": "MNI152",
+          "url": "https://example.invalid/mock/map_3.nii.gz",
+          "value_type": "1-P map (\"inverted\" probability)"
+        },
+        {
+          "add_date": null,
+          "analysis": "BcfUTAAwGyUS",
+          "filename": "mock_seed_map_4.nii.gz",
+          "metadata": null,
+          "space": "MNI152",
+          "url": "https://example.invalid/mock/map_4.nii.gz",
+          "value_type": "anatomical"
+        }
+      ],
+      "metadata": null,
+      "name": "Analysis 2",
+      "points": [],
+      "table_id": null,
+      "weights": []
+    }
+  ],
+  "authors": null,
+  "description": "Seeded image mock study.",
+  "doi": null,
+  "id": "NtXtGovURXLJ",
+  "metadata": null,
+  "name": "Mock image study 43",
+  "pmcid": null,
+  "pmid": "MCKI000043",
+  "publication": null,
+  "year": null
+}
