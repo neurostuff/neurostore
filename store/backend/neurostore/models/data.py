@@ -1115,8 +1115,8 @@ class DataSource(BaseMixin, db.Model):
 
     __tablename__ = "data_sources"
 
-    # the dictionary key (e.g. "ukb"), stable across re-ingests of the seed TSV
-    slug = db.Column(db.Text, nullable=False, unique=True)
+    # the dictionary key (e.g. "ukb"), given on create: records made before upload name it
+    id = db.Column(db.Text, primary_key=True, index=True)
     name = db.Column(db.Text, nullable=False)
     description = db.Column(db.Text)
     kinds = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
@@ -1129,8 +1129,6 @@ class DataSource(BaseMixin, db.Model):
     url_kind = db.Column(db.Text)
     rrids = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
     re3data_ids = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
-    # the catalogues it was found in (jpnd, cosmic, scicrunch, ...)
-    listed_in = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship(
         "User",
@@ -1138,52 +1136,11 @@ class DataSource(BaseMixin, db.Model):
         cascade_backrefs=False,
     )
     part_of = relationship("DataSource", remote_side="DataSource.id", lazy="raise")
-    aliases = relationship(
-        "DataSourceAlias",
-        backref=backref("data_source"),
-        passive_deletes=True,
-        cascade="all, delete-orphan",
-        cascade_backrefs=False,
-        order_by="DataSourceAlias.alias",
-    )
     analysis_data_sources = relationship(
         "AnalysisDataSource",
         backref=backref("data_source", cascade_backrefs=False),
         passive_deletes=True,
         cascade="all, delete-orphan",
-        cascade_backrefs=False,
-    )
-
-
-class DataSourceAlias(BaseMixin, db.Model):
-    """A string that names a data source in text, with the evidence a match on it needs.
-
-    tier: name (full name, case-insensitive), safe (acronym that stands alone), context (acronym
-    needing an imaging cue nearby), defined (acronym needing the full name in the same paper),
-    qualified (needs a qualifier such as "cohort" or an accession).
-    """
-
-    __tablename__ = "data_source_aliases"
-    __table_args__ = (
-        db.UniqueConstraint(
-            "data_source_id", "alias", "tier", name="uq_data_source_aliases"
-        ),
-    )
-
-    data_source_id = db.Column(
-        db.Text,
-        db.ForeignKey("data_sources.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-    )
-    alias = db.Column(db.Text, nullable=False)
-    tier = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    user = relationship(
-        "User",
-        backref=backref(
-            "data_source_aliases", cascade_backrefs=False, passive_deletes=True
-        ),
         cascade_backrefs=False,
     )
 

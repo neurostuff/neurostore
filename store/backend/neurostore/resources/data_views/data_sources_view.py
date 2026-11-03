@@ -3,19 +3,13 @@ from sqlalchemy.orm import raiseload, selectinload
 from webargs import fields
 
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import abort_permission
-from neurostore.models import (
-    Analysis,
-    AnalysisDataSource,
-    BaseStudy,
-    DataSource,
-    DataSourceAlias,
-    Study,
-)
+from neurostore.exceptions.utils.error_helpers import abort_conflict, abort_permission
+from neurostore.models import Analysis, AnalysisDataSource, BaseStudy, DataSource, Study
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import BaseView, ListView, ObjectView
+from neurostore.resources.mutation_core import DefaultMutationPolicy
 from neurostore.resources.utils import is_user_admin, view_maker
-from neurostore.schemas import AnalysisDataSourceSchema, DataSourceAliasSchema
+from neurostore.schemas import AnalysisDataSourceSchema
 
 
 def require_admin():
@@ -23,18 +17,25 @@ def require_admin():
         abort_permission("Only an admin can create, change or delete data sources.")
 
 
+class DataSourceMutationPolicy(DefaultMutationPolicy):
+    def load_existing_record(self):
+        # a link names an existing data source; a full body creates one under its id
+        if self.context.only_ids:
+            return super().load_existing_record()
+        if db.session.get(DataSource, self.context.id) is not None:
+            abort_conflict(f"Data source {self.context.id!r} already exists.")
+        record = self.init_new_record()
+        record.id = self.context.id
+        return record
+
+
 @view_maker
 class DataSourcesView(ObjectView, ListView):
-    _view_fields = {
-        "kind": fields.String(load_default=None),
-        "slug": fields.String(load_default=None),
-    }
-    _o2m = {
-        "aliases": "DataSourceAliasesResource",
-        "analysis_data_sources": "AnalysisDataSourcesResource",
-    }
-    _nested = {"aliases": "DataSourceAliasesResource"}
+    _view_fields = {"kind": fields.String(load_default=None)}
+    _o2m = {"analysis_data_sources": "AnalysisDataSourcesResource"}
     _search_fields = ("name", "description")
+    _client_id = True
+    mutation_policy_cls = DataSourceMutationPolicy
 
     def post(self, body):
         require_admin()
@@ -48,30 +49,14 @@ class DataSourcesView(ObjectView, ListView):
         require_admin()
         return super().delete(id)
 
-    @classmethod
-    def load_nested_records(cls, data, record=None):
-        # an alias given again keeps its row: a replacement would be inserted before
-        # the old row is deleted, against the unique constraint
-        if record is not None and data.get("aliases") is not None:
-            current = {(a.alias, a.tier): a.id for a in record.aliases}
-            for alias in data["aliases"]:
-                if isinstance(alias, dict) and not alias.get("id"):
-                    existing = current.get((alias.get("alias"), alias.get("tier")))
-                    if existing:
-                        alias["id"] = existing
-        return data
-
     def view_search(self, q, args):
         if args.get("kind"):
             q = q.filter(DataSource.kinds.any(args["kind"]))
-        if args.get("slug"):
-            q = q.filter(DataSource.slug == args["slug"])
         return q
 
     def eager_load(self, q, args=None):
         return q.options(
             selectinload(DataSource.user).options(raiseload("*", sql_only=True)),
-            selectinload(DataSource.aliases).options(raiseload("*", sql_only=True)),
         )
 
     def get_affected_ids(self, ids):
@@ -109,14 +94,6 @@ class DataSourcesView(ObjectView, ListView):
             if base_study_id:
                 unique_ids["base-studies"].add(base_study_id)
         return unique_ids
-
-
-class DataSourceAliasesResource(BaseView):
-    _m2o = {"data_source": "DataSourcesView"}
-    _parent = {"data_source": "DataSourcesView"}
-    _model = DataSourceAlias
-    _schema = DataSourceAliasSchema
-    _composite_key = {}
 
 
 class AnalysisDataSourcesResource(BaseView):

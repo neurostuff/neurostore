@@ -134,7 +134,7 @@ def data_sources_group():
 @data_sources_group.command("load")
 @click.argument("tsv", type=click.Path(exists=True, dir_okay=False))
 @click.option(
-    "--update", is_flag=True, help="overwrite data sources whose slug already exists"
+    "--update", is_flag=True, help="overwrite data sources whose id already exists"
 )
 def load_data_sources_command(tsv, update):
     """Create data sources from a dictionary TSV (scripts/data_sources/data_sources.tsv)."""

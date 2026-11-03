@@ -327,19 +327,9 @@ class ConditionSchema(BaseDataSchema):
 
 
 DATA_SOURCE_KINDS = ("study", "consortium", "repository")
-DATA_SOURCE_ALIAS_TIERS = ("name", "safe", "context", "defined", "qualified")
-
-
-class DataSourceAliasSchema(BaseSchema):
-    alias = fields.String(required=True)
-    tier = fields.String(required=True, validate=validate.OneOf(DATA_SOURCE_ALIAS_TIERS))
-    data_source_id = fields.String(
-        data_key="data_source", load_only=True, metadata={"id_field": True}
-    )
 
 
 class DataSourceSchema(BaseDataSchema):
-    slug = fields.String(required=True)
     name = fields.String(required=True)
     description = fields.String(allow_none=True)
     kinds = fields.List(fields.String(validate=validate.OneOf(DATA_SOURCE_KINDS)))
@@ -351,11 +341,12 @@ class DataSourceSchema(BaseDataSchema):
     url_kind = fields.String(allow_none=True)
     rrids = fields.List(fields.String())
     re3data_ids = fields.List(fields.String())
-    listed_in = fields.List(fields.String())
-    aliases = fields.Nested(DataSourceAliasSchema, many=True)
 
+    # the dictionary key (e.g. "ukb"), required on create
     id = fields.String(
-        metadata={"info_field": True, "id_field": True, "preserve_on_clone": True}
+        required=True,
+        validate=validate.Regexp(r"^[a-z0-9][a-z0-9_]*$"),
+        metadata={"info_field": True, "id_field": True, "preserve_on_clone": True},
     )
 
 
@@ -380,7 +371,6 @@ def data_source_summary(data_source):
     """The few fields a study, base study or analysis shows of each of its data sources."""
     return {
         "id": data_source.id,
-        "slug": data_source.slug,
         "name": data_source.name,
         "url": data_source.url,
     }

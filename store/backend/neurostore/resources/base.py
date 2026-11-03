@@ -111,6 +111,8 @@ class BaseView:
     mutation_policy_cls = DefaultMutationPolicy
     object_view_policy_cls = DefaultObjectViewPolicy
     request_body_validation_skip = ()
+    # whether a POST names the new record's id instead of having one generated
+    _client_id = False
     # _default_exclude = None
 
     @classmethod
@@ -662,7 +664,7 @@ class ListView(BaseView):
         source = args.get("source") or "neurostore"
 
         unknown = self.__class__._schema.opts.unknown
-        schema = self.__class__._schema(exclude=("id",))
+        schema = self.__class__._schema(exclude=() if self._client_id else ("id",))
         data = load_schema_or_abort(schema, body, unknown=unknown)
 
         if source_id:

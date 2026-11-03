@@ -1,23 +1,22 @@
 import pytest
 
+from pathlib import Path
+
 from neurostore.models import Analysis, DataSource, Study, User
+from neurostore.scripts.data_sources import ingest
 from neurostore.scripts.data_sources.ingest import link_matches, load_data_sources
 from neurostore.services.data_source_links import data_sources_of
 
 pytestmark = pytest.mark.anyio
 
 UKB = {
-    "slug": "ukb",
+    "id": "ukb",
     "name": "UK Biobank",
     "kinds": ["study"],
     "modalities": ["MRI"],
     "url": "https://www.ukbiobank.ac.uk",
     "url_kind": "rrid",
     "rrids": ["SCR_012815"],
-    "aliases": [
-        {"alias": "UK Biobank", "tier": "name"},
-        {"alias": "UKB", "tier": "context"},
-    ],
 }
 
 
@@ -37,41 +36,41 @@ async def test_only_admins_write_data_sources(admin_client, auth_client):
     assert denied.status_code == 403
 
     created = await create_data_source(admin_client)
-    assert created["slug"] == "ukb"
-    assert {(a["alias"], a["tier"]) for a in created["aliases"]} == {
-        ("UK Biobank", "name"),
-        ("UKB", "context"),
-    }
+    assert created["id"] == "ukb"
+    assert created["name"] == "UK Biobank"
 
-    url = f"/api/data-sources/{created['id']}"
+    url = "/api/data-sources/ukb"
     put = await auth_client.put(url, data={"name": "changed"})
     assert put.status_code == 403
     denied = await auth_client.delete(url)
     assert denied.status_code == 403
 
-    put = await admin_client.put(url, data={"aliases": [{"alias": "UKBB", "tier": "safe"}]})
+    put = await admin_client.put(url, data={"id": "other", "name": "UK Biobank (UKB)"})
     assert put.status_code == 200, put.text
-    assert [(a["alias"], a["tier"]) for a in put.json()["aliases"]] == [("UKBB", "safe")]
-
-    # an alias given again keeps its row
-    again = [{"alias": "UKBB", "tier": "safe"}, {"alias": "UKB", "tier": "context"}]
-    put = await admin_client.put(url, data={"aliases": again})
-    assert put.status_code == 200, put.text
-    assert sorted(a["alias"] for a in put.json()["aliases"]) == ["UKB", "UKBB"]
+    assert (put.json()["id"], put.json()["name"]) == ("ukb", "UK Biobank (UKB)")
 
 
-async def test_list_filters_by_kind_and_slug(admin_client, auth_client):
+async def test_post_requires_a_new_well_formed_id(admin_client):
+    await create_data_source(admin_client)
+    again = await admin_client.post("/api/data-sources/", data=UKB)
+    assert again.status_code == 409, again.text
+    for bad in ({"name": "no id"}, {"id": "UK Biobank", "name": "UK Biobank"}):
+        resp = await admin_client.post("/api/data-sources/", data=bad)
+        assert resp.status_code in (400, 422), resp.text
+    assert DataSource.query.count() == 1
+
+
+async def test_list_filters_by_kind(admin_client, auth_client):
     await create_data_source(admin_client)
     await create_data_source(
         admin_client,
-        {"slug": "openneuro", "name": "OpenNeuro", "kinds": ["repository"]},
+        {"id": "openneuro", "name": "OpenNeuro", "kinds": ["repository"]},
     )
 
     resp = await auth_client.get("/api/data-sources/?kind=repository")
-    assert [r["slug"] for r in resp.json()["results"]] == ["openneuro"]
-    resp = await auth_client.get("/api/data-sources/?slug=ukb")
-    assert [r["name"] for r in resp.json()["results"]] == ["UK Biobank"]
-    assert resp.json()["results"][0]["aliases"]
+    assert [r["id"] for r in resp.json()["results"]] == ["openneuro"]
+    resp = await auth_client.get("/api/data-sources/ukb")
+    assert resp.json()["name"] == "UK Biobank"
 
 
 async def test_analysis_link_shows_on_study_and_base_study(admin_client, auth_client):
@@ -82,7 +81,6 @@ async def test_analysis_link_shows_on_study_and_base_study(admin_client, auth_cl
     summary = [
         {
             "id": data_source["id"],
-            "slug": "ukb",
             "name": "UK Biobank",
             "url": "https://www.ukbiobank.ac.uk",
         }
@@ -138,7 +136,7 @@ async def test_analysis_rejects_nested_data_source(auth_client, user_data):
     assert put.status_code in (400, 422)
     put = await auth_client.put(
         f"/api/analyses/{analysis_id}",
-        data={"analysis_data_sources": [{"data_source": {"slug": "x", "name": "x"}}]},
+        data={"analysis_data_sources": [{"data_source": {"id": "x", "name": "x"}}]},
     )
     assert put.status_code in (400, 422)
     assert DataSource.query.count() == 0
@@ -158,13 +156,12 @@ async def test_deleting_data_source_clears_study_list(admin_client, auth_client)
     assert shown.json()["data_sources"] == []
 
 
+# the child row first: its parent is set once every row exists
 DICTIONARY = (
-    "id\tname\troles\tmodality\thosted_by\tfull_names\tacronyms_safe\tacronyms_context\t"
-    "acronyms_defined\tqualified_names\trrid\tre3data_id\tsource\turl\turl_source\n"
-    "openneuro\tOpenNeuro\trepository\tMRI|PET\t\tOpenNeuro\t\t\t\t\t\t\thand\t"
+    "id\tname\troles\tmodality\thosted_by\trrid\tre3data_id\turl\turl_source\n"
+    "msc\tMidnight Scan Club\tstudy\tMRI\topenneuro\t\t\t\t\n"
+    "openneuro\tOpenNeuro\trepository\tMRI|PET\t\t\t\t"
     "https://openneuro.org\tchecked:official\n"
-    "msc\tMidnight Scan Club\tstudy\tMRI\topenneuro\tMidnight Scan Club\t\tMSC\t\t\t\t\t"
-    "hand|reviews\t\t\n"
 )
 
 
@@ -174,20 +171,16 @@ def test_load_data_sources_seeds_once(tmp_path, session):
 
     result = load_data_sources(path)
     assert sorted(result.created) == ["msc", "openneuro"]
-    msc = DataSource.query.filter_by(slug="msc").one()
-    assert DataSource.query.get(msc.part_of_id).slug == "openneuro"
-    assert msc.listed_in == ["hand", "reviews"]
-    assert {(a.alias, a.tier) for a in msc.aliases} == {
-        ("Midnight Scan Club", "name"),
-        ("MSC", "context"),
-    }
+    msc = session.get(DataSource, "msc")
+    assert msc.part_of_id == "openneuro"
+    assert msc.modalities == ["MRI"]
 
     msc.name = "edited in neurostore"
     session.flush()
     assert sorted(load_data_sources(path).skipped) == ["msc", "openneuro"]
-    assert DataSource.query.filter_by(slug="msc").one().name == "edited in neurostore"
+    assert session.get(DataSource, "msc").name == "edited in neurostore"
     assert load_data_sources(path, update=True).updated
-    assert DataSource.query.filter_by(slug="msc").one().name == "Midnight Scan Club"
+    assert session.get(DataSource, "msc").name == "Midnight Scan Club"
 
 
 def test_link_matches_links_every_analysis(tmp_path, session, user_data):
@@ -214,27 +207,23 @@ def test_link_matches_links_every_analysis(tmp_path, session, user_data):
     assert result.links == len(analyses) > 0
     assert result.unmatched_papers == {"p2"}
     assert result.unknown_data_sources == {"gone"}
-    assert [ds.slug for ds in data_sources_of(base_study)] == ["msc"]
+    assert [ds.id for ds in data_sources_of(base_study)] == ["msc"]
     assert link_matches(matches).links == 0
 
 
-async def test_seed_round_trips_through_the_api(auth_client, session):
-    """The matcher reads its dictionary from the API, so it must get back the seed."""
-    from pathlib import Path
-
-    from neurostore.scripts.data_sources import match
-
-    seed = Path(match.__file__).with_name("data_sources.tsv")
-    load_data_sources(seed)
+async def test_seed_loads_and_reads_back_through_the_api(auth_client, session):
+    seed = Path(ingest.__file__).with_name("data_sources.tsv")
+    rows = ingest.read_tsv(seed)
+    assert len(load_data_sources(seed).created) == len(rows)
     session.commit()
 
-    resp = await auth_client.get("/api/data-sources/?page_size=1000&sort=slug&desc=false")
-    rows = {r["id"]: r for r in match.dictionary_rows(resp.json()["results"])}
-    columns = ("name", "roles", "modality", "hosted_by", "rrid", "re3data_id", "source", "url")
-    alias_columns = tuple(match.ALIAS_COLUMNS.values())
-    for expected in match.read_tsv(seed):
-        got = rows.pop(expected["id"])
-        assert {c: got[c] for c in columns} == {c: expected[c] for c in columns}
-        for column in alias_columns:
-            assert set(match.split(got[column])) == set(match.split(expected[column]))
-    assert rows == {}
+    resp = await auth_client.get("/api/data-sources/?page_size=1000")
+    got = {r["id"]: r for r in resp.json()["results"]}
+    assert set(got) == {row["id"] for row in rows}
+    for row in rows:
+        record = got[row["id"]]
+        assert record["name"] == row["name"]
+        assert record["part_of"] == (row["hosted_by"] or None)
+        assert record["kinds"] == ingest.split(row["roles"])
+        assert record["rrids"] == ingest.split(row["rrid"])
+        assert record["url"] == (row["url"] or None)

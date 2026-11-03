@@ -37,7 +37,6 @@ def upgrade():
             nullable=True,
         ),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("slug", sa.Text(), nullable=False),
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         _text_array("kinds"),
@@ -47,49 +46,16 @@ def upgrade():
         sa.Column("url_kind", sa.Text(), nullable=True),
         _text_array("rrids"),
         _text_array("re3data_ids"),
-        _text_array("listed_in"),
         sa.Column("user_id", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(
             ["part_of_id"], ["data_sources.id"], ondelete="SET NULL"
         ),
         sa.ForeignKeyConstraint(["user_id"], ["users.external_id"]),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("slug"),
     )
     for column in ("id", "created_at", "updated_at", "part_of_id", "user_id"):
         op.create_index(
             op.f(f"ix_data_sources_{column}"), "data_sources", [column], unique=False
-        )
-
-    op.create_table(
-        "data_source_aliases",
-        sa.Column("id", sa.Text(), nullable=False),
-        sa.Column(
-            "created_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=True,
-        ),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("data_source_id", sa.Text(), nullable=False),
-        sa.Column("alias", sa.Text(), nullable=False),
-        sa.Column("tier", sa.Text(), nullable=False),
-        sa.Column("user_id", sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["data_source_id"], ["data_sources.id"], ondelete="CASCADE"
-        ),
-        sa.ForeignKeyConstraint(["user_id"], ["users.external_id"]),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "data_source_id", "alias", "tier", name="uq_data_source_aliases"
-        ),
-    )
-    for column in ("id", "created_at", "updated_at", "data_source_id", "user_id"):
-        op.create_index(
-            op.f(f"ix_data_source_aliases_{column}"),
-            "data_source_aliases",
-            [column],
-            unique=False,
         )
 
     op.create_table(
@@ -139,5 +105,4 @@ def downgrade():
     op.drop_table("base_study_data_sources")
     op.drop_table("study_data_sources")
     op.drop_table("analysis_data_sources")
-    op.drop_table("data_source_aliases")
     op.drop_table("data_sources")

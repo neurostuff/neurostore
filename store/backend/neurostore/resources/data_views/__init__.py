@@ -12,7 +12,6 @@ DATA_VIEW_MODULES = {
     "BaseStudiesView": "neurostore.resources.data_views.base_studies_view",
     "ConditionsView": "neurostore.resources.data_views.conditions_view",
     "DataSourcesView": "neurostore.resources.data_views.data_sources_view",
-    "DataSourceAliasesResource": "neurostore.resources.data_views.data_sources_view",
     "AnalysisDataSourcesResource": (
         "neurostore.resources.data_views.data_sources_view"
     ),
