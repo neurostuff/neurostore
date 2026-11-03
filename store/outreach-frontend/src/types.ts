@@ -179,6 +179,8 @@ export interface Invitation {
 }
 
 export interface PersonDetail extends PersonSummary {
+    /** They asked to stop on their own page; that opt-out cannot be undone here. */
+    asked_to_stop: boolean;
     drafts: { id: string; name: string | null; year: number | null; status: DraftStatus }[];
     sent: { draft_id: string; kind: 'invite' | 'reminder'; batch: string | null; sent_at: string; sent_by: string | null }[];
 }

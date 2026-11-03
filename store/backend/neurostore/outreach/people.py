@@ -7,10 +7,17 @@ from datetime import datetime, timezone
 import sqlalchemy as sa
 
 from neurostore.database import db
-from neurostore.models import BaseStudy, OutreachDraft, OutreachMessage, OutreachPerson
+from neurostore.models import (
+    BaseStudy,
+    OutreachDraft,
+    OutreachEvent,
+    OutreachMessage,
+    OutreachPerson,
+)
 from neurostore.outreach.drafts import DraftError
 
 SUPPRESSIONS = {"opt_out": "opted_out_at", "bounced": "bounced_at"}
+SUPPRESSION_LABELS = {"opt_out": "opt-out", "bounced": "bounce"}
 
 
 def history(person):
@@ -38,6 +45,32 @@ def suppress(person, what, note=None):
         setattr(person, column, datetime.now(timezone.utc))
     if note:
         person.notes = f"{person.notes}\n{note}" if person.notes else note
+    return person
+
+
+def asked_to_stop(person):
+    """Whether the author asked to stop on their own page, which no admin takes back."""
+    events = db.session.scalars(
+        sa.select(OutreachEvent)
+        .join(OutreachDraft, OutreachDraft.id == OutreachEvent.draft_id)
+        .where(OutreachDraft.person_id == person.id, OutreachEvent.kind == "declined")
+    ).all()
+    return any((event.data or {}).get("unsubscribed") for event in events)
+
+
+def unsuppress(person, what, actor_id=None):
+    """Take back an opt-out or bounce an admin recorded by mistake, noting who did."""
+    column = SUPPRESSIONS.get(what)
+    if column is None:
+        raise DraftError(f"suppression must be one of {', '.join(SUPPRESSIONS)}")
+    if getattr(person, column) is None:
+        raise DraftError(f"there is no {SUPPRESSION_LABELS[what]} to undo")
+    if what == "opt_out" and asked_to_stop(person):
+        raise DraftError("the author asked to stop on their own page: that opt-out stands")
+    setattr(person, column, None)
+    day = datetime.now(timezone.utc).date().isoformat()
+    line = f"{SUPPRESSION_LABELS[what]} undone {day} by {actor_id or 'an admin'}"
+    person.notes = f"{person.notes}\n{line}" if person.notes else line
     return person
 
 

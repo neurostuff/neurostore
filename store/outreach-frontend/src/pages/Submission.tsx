@@ -12,6 +12,11 @@ const FIT_LABELS: Record<string, { label: string; color: 'success' | 'warning' |
     cannot_assess: { label: "can't check", color: 'default' },
 };
 
+/** Whether the map's analyses rest on its own fit: variance maps match nothing by design,
+ * and a map paired to a t/z map takes that map's analyses unless the author chose. */
+const ownFit = (upload: AdminUpload, partner: AdminUpload | undefined) =>
+    upload.kind !== 'variance' && !(partner && upload.assigned_by !== 'author');
+
 /** Each statistic map, then the effect and variance maps that go with it. */
 function inSets(uploads: AdminUpload[]): AdminUpload[] {
     const ids = new Set(uploads.map((upload) => upload.id));
@@ -74,23 +79,28 @@ export function Uploads({
                                 <Chip size="small" label={upload.map_type ?? 'other'} />
                                 {upload.check_status === 'problem' && <Chip size="small" color="error" label="unusable" />}
                                 {upload.thresholded && <Chip size="small" color="warning" label="thresholded" />}
-                                {upload.kind === 'statistic' &&
+                                {ownFit(upload, partner) &&
                                     upload.analysis_keys.map((key) => {
                                         const fit = upload.fits[key];
                                         const shown = fit ? FIT_LABELS[fit.outcome] : undefined;
+                                        const score = fit?.score !== null && fit?.score !== undefined ? ` · ${fit.score.toFixed(2)}` : '';
                                         return (
                                             <Chip
                                                 key={key}
                                                 size="small"
                                                 color={shown?.color ?? 'default'}
                                                 variant="outlined"
-                                                label={`${name(key)}: ${shown?.label ?? 'not checked'}`}
+                                                title={fit?.reason ?? undefined}
+                                                label={`${name(key)}: ${shown?.label ?? 'not checked'}${score}${
+                                                    upload.assigned_by === 'suggestion' ? ' (suggested)' : ''
+                                                }`}
                                             />
                                         );
                                     })}
-                                {upload.kind !== 'statistic' && upload.analysis_keys.length > 0 && (
+                                {!ownFit(upload, partner) && upload.analysis_keys.length > 0 && (
                                     <Typography variant="caption">
                                         for {upload.analysis_keys.map(name).join(', ')}
+                                        {partner && upload.assigned_by !== 'author' && ', as its t/z map is'}
                                     </Typography>
                                 )}
                                 {upload.analysis_keys.length === 0 &&

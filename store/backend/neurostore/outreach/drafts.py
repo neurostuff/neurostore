@@ -28,6 +28,7 @@ from neurostore.models import (
     OutreachLink,
     OutreachMessage,
     OutreachPerson,
+    OutreachUpload,
     Study,
 )
 from neurostore.models.data import STUDY_SOURCE, result_analysis_clause
@@ -405,7 +406,9 @@ def edit_draft(draft, actor_id, analyses=None, collection=None):
         raise DraftError(f"a draft that is {draft.status} cannot be edited")
     changed = []
     if analyses is not None:
-        draft.analyses = clean_analyses(analyses)
+        cleaned = clean_analyses(analyses)
+        _keep_assigned(draft, {analysis["key"] for analysis in cleaned})
+        draft.analyses = cleaned
         changed.append("analyses")
     if collection is not None:
         draft.collection = clean_collection(collection)
@@ -413,6 +416,26 @@ def edit_draft(draft, actor_id, analyses=None, collection=None):
     if changed:
         record_event(draft, "edited", "admin", actor_id, {"fields": changed})
     return draft
+
+
+def _keep_assigned(draft, keys):
+    """Refuse an edit that drops an analysis one of the author's maps is on: the map would
+    be left on nothing. Renaming it, or merging others into it, keeps its key."""
+    names = {analysis["key"]: analysis["name"] for analysis in draft.analyses or []}
+    uploads = db.session.scalars(
+        sa.select(OutreachUpload).where(
+            OutreachUpload.draft_id == draft.id, OutreachUpload.deleted_at.is_(None)
+        )
+    ).all()
+    dropped = sorted({
+        key
+        for upload in uploads
+        for key in (upload.check_details or {}).get("analysis_keys") or []
+        if key in names and key not in keys
+    })
+    if dropped:
+        listed = ", ".join(f"“{names[key]}”" for key in dropped)
+        raise DraftError(f"the author's maps are on {listed}: it cannot be deleted or merged away")
 
 
 def check_draft(draft, actor_id):

@@ -107,6 +107,8 @@ export function outreachApi(base: string, authorize: Authorize) {
         person: (id: string) => request<PersonDetail>(`/people/${id}`),
         suppress: (id: string, what: 'opt_out' | 'bounced', note?: string) =>
             post<PersonDetail>(`/people/${id}/suppression`, { what, note }),
+        unsuppress: (id: string, what: 'opt_out' | 'bounced') =>
+            post<PersonDetail>(`/people/${id}/suppression/undo`, { what }),
     };
 }
 

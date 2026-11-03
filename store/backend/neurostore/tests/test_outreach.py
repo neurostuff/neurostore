@@ -2,6 +2,7 @@
 candidates, merges, and who may use the admin API."""
 
 import base64
+from datetime import datetime, timezone
 
 import pytest
 import sqlalchemy as sa
@@ -17,6 +18,7 @@ from neurostore.models import (
     OutreachEvent,
     OutreachLink,
     OutreachPerson,
+    OutreachUpload,
 )
 from neurostore.outreach.candidates import candidates_query
 from neurostore.outreach.software import packages, software_by_base_study
@@ -352,6 +354,22 @@ def test_an_approved_draft_is_not_edited(session):
         edit_draft(draft, "admin-user-id", collection={"name": "x"})
 
 
+def test_an_analysis_the_authors_maps_are_on_is_not_dropped(session):
+    loss = fx.table_analysis("tbl3", [0], "Loss > Neutral", [fx.point((5, 5, 5))])
+    draft = build_draft(_upload(analyses=(GAIN, loss)))
+    first, second = draft.analyses
+    for keys, deleted in (([first["key"]], None), ([second["key"]], datetime.now(timezone.utc))):
+        db.session.add(OutreachUpload(
+            draft_id=draft.id, filename="zstat1.nii.gz", size_bytes=1, sha256="0" * 64,
+            check_details={"analysis_keys": keys}, deleted_at=deleted))
+    db.session.flush()
+    with pytest.raises(DraftError, match=f"“{first['name']}”"):
+        edit_draft(draft, "admin-user-id", analyses=[second])
+    # Renaming it keeps its key, and a deleted file holds nothing.
+    edit_draft(draft, "admin-user-id", analyses=[{**first, "name": "Renamed"}])
+    assert [a["name"] for a in draft.analyses] == ["Renamed"]
+
+
 async def _admin(app):
     return await _client(app, ADMIN_TOKEN)
 
@@ -432,6 +450,33 @@ async def test_no_invitation_goes_to_someone_who_opted_out(app, session, outreac
     assert opted.json()["suppressed"] is True
     assert opted.json()["notes"] == "replied no thanks"
     assert invitation.status_code == 409
+
+
+@pytest.mark.anyio
+async def test_a_mistaken_opt_out_is_undone_but_not_one_the_author_asked_for(
+    app, session, outreach_settings
+):
+    draft = build_draft(_upload())
+    db.session.commit()
+    client = await _admin(app)
+    path = f"/api/outreach/people/{draft.person_id}/suppression"
+    try:
+        await _post(client, path, {"what": "opt_out"})
+        undone = await _post(client, f"{path}/undo", {"what": "opt_out"})
+        again = await _post(client, f"{path}/undo", {"what": "opt_out"})
+        await _post(client, path, {"what": "opt_out"})
+        record_event(draft, "declined", "author", None, {"unsubscribed": True})
+        db.session.commit()
+        refused = await _post(client, f"{path}/undo", {"what": "opt_out"})
+    finally:
+        await client.aclose()
+
+    assert undone.json()["suppressed"] is False
+    assert undone.json()["notes"].startswith("opt-out undone ")
+    assert undone.json()["asked_to_stop"] is False
+    assert again.status_code == 409  # nothing left to undo
+    assert refused.status_code == 409
+    assert "asked to stop" in refused.json()["detail"]
 
 
 # serving the panel

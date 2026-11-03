@@ -249,8 +249,9 @@ export function PapersPage() {
             </Stack>
             <Stack direction="row" spacing={2} alignItems="center">
                 <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
-                    Showing {rows.length} of {all.length}. A person's newest approved paper is the one ready to email;
-                    their others are held so no one gets two emails.
+                    Showing {rows.length} of {all.length}. Papers not started are those published in {filters.sinceYear}{' '}
+                    or later; lower "Candidates from" to see older ones. A person's newest approved paper is the one
+                    ready to email; their others are held so no one gets two emails.
                 </Typography>
                 <Button
                     variant="contained"

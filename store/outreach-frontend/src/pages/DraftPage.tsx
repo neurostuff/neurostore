@@ -66,7 +66,14 @@ export function DraftPage() {
     };
     const edit = useMutation({ mutationFn: (change: Parameters<typeof api.editDraft>[1]) => api.editDraft(draftId, change), onSuccess: refresh });
     const check = useMutation({ mutationFn: () => api.checkDraft(draftId), onSuccess: refresh });
-    const invite = useMutation({ mutationFn: () => api.invitation(draftId), onSuccess: setInvitation });
+    const invite = useMutation({
+        mutationFn: () => api.invitation(draftId),
+        onSuccess: (made) => {
+            setInvitation(made);
+            // Making it created a live link: the history and link date change now, sent or not.
+            void queryClient.invalidateQueries({ queryKey: ['draft', draftId] });
+        },
+    });
     const resolve = useMutation({
         mutationFn: ({ issueId, resolution }: { issueId: string; resolution: string }) =>
             api.resolveIssue(draftId, issueId, resolution || undefined),
@@ -93,6 +100,9 @@ export function DraftPage() {
     // The author is done: nothing to remind them of, only their submission to review.
     const submitted = data.status === 'submitted';
     const error = [edit.error, check.error, invite.error, resolve.error, download.error].find(Boolean);
+    const assigned: Record<string, number> = {};
+    for (const upload of data.uploads)
+        if (!upload.deleted_at) for (const key of upload.analysis_keys) assigned[key] = (assigned[key] ?? 0) + 1;
 
     return (
         <Stack spacing={3}>
@@ -164,6 +174,7 @@ export function DraftPage() {
                             <AnalysesEditor
                                 key={JSON.stringify(data.analyses)}
                                 analyses={data.analyses}
+                                assigned={assigned}
                                 disabled={frozen}
                                 saving={edit.isPending}
                                 onSave={(analyses) => edit.mutate({ analyses })}

@@ -4,14 +4,18 @@ import { mergeAnalyses } from '../merge';
 import type { DraftAnalysis } from '../types';
 
 /** The draft's analyses, editable: rename, describe, delete, merge, add. Edits change only
- * the draft, never the paper's records. */
+ * the draft, never the paper's records. An analysis the author's maps are on can be
+ * renamed, or have others merged into it, but not deleted or merged away. */
 export function AnalysesEditor({
     analyses,
+    assigned = {},
     disabled,
     saving,
     onSave,
 }: {
     analyses: DraftAnalysis[];
+    /** How many of the author's kept maps are on each analysis, by key. */
+    assigned?: Record<string, number>;
     disabled: boolean;
     saving: boolean;
     onSave: (analyses: DraftAnalysis[]) => void;
@@ -24,6 +28,10 @@ export function AnalysesEditor({
     const toggle = (index: number) =>
         setSelected((current) => (current.includes(index) ? current.filter((i) => i !== index) : [...current, index]));
     const unnamed = edited.some((analysis) => !analysis.name.trim());
+    const maps = (analysis: DraftAnalysis) => (analysis.key ? assigned[analysis.key] ?? 0 : 0);
+    // A merge keeps the topmost selected analysis and drops the rest.
+    const mergedAway = [...selected].sort((a, b) => a - b).slice(1);
+    const mergeBlocked = mergedAway.some((index) => maps(edited[index]) > 0);
 
     return (
         <Stack spacing={1.5}>
@@ -33,7 +41,7 @@ export function AnalysesEditor({
                 </Typography>
                 <Button
                     size="small"
-                    disabled={disabled || selected.length < 2}
+                    disabled={disabled || selected.length < 2 || mergeBlocked}
                     onClick={() => {
                         setEdited((current) => mergeAnalyses(current, selected));
                         setSelected([]);
@@ -56,6 +64,12 @@ export function AnalysesEditor({
                 </Button>
             </Stack>
             {unnamed && <Alert severity="warning">Every analysis needs a name.</Alert>}
+            {mergeBlocked && (
+                <Alert severity="info">
+                    A merge keeps the topmost selected analysis and drops the others, and the author's maps are on one it
+                    would drop. Leave that one out of the merge.
+                </Alert>
+            )}
             {edited.map((analysis, index) => (
                 <Paper key={analysis.key ?? `new-${index}`} variant="outlined" sx={{ p: 1.5 }}>
                     <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -90,12 +104,15 @@ export function AnalysesEditor({
                                             .map((p) => `(${p.x}, ${p.y}, ${p.z})`)
                                             .join(' ')}${analysis.points.length > 4 ? ' …' : ''}`}
                                     {analysis.points[0]?.space && ` ${analysis.points[0].space}`}
+                                    {maps(analysis) > 0 &&
+                                        ` · the author's ${maps(analysis) === 1 ? 'map is' : `${maps(analysis)} maps are`} on it`}
                                 </Typography>
                             </Box>
                         </Stack>
                         <Button
                             color="error"
-                            disabled={disabled}
+                            disabled={disabled || maps(analysis) > 0}
+                            title={maps(analysis) > 0 ? "The author's maps are on it: rename it instead" : undefined}
                             onClick={() => {
                                 setEdited((current) => current.filter((_, i) => i !== index));
                                 setSelected([]);

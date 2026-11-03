@@ -38,7 +38,8 @@ export const PHASES = [
     { key: 'drafting', label: 'Draft', stages: ['draft', 'checked'] },
     { key: 'emailed', label: 'Emailed', stages: ['contacted', 'opened'] },
     { key: 'uploading', label: 'Upload in progress', stages: ['uploading'] },
-    { key: 'completed', label: 'Upload completed', stages: ['submitted', 'approved', 'published'] },
+    { key: 'submitted', label: 'Submitted, to review', stages: ['submitted'] },
+    { key: 'completed', label: 'Approved or published', stages: ['approved', 'published'] },
     { key: 'closed', label: 'Closed', stages: ['declined', 'excluded', 'rejected', 'failed', 'files_deleted'] },
 ] as const satisfies readonly { key: string; label: string; stages: readonly Stage[] }[];
 export type Phase = (typeof PHASES)[number]['key'];
@@ -90,6 +91,7 @@ export const defaultFilters = (year = new Date().getFullYear()): Filters => ({
 
 export const PRESETS: { label: string; filters: Partial<Filters> }[] = [
     { label: 'Everything', filters: {} },
+    { label: 'To review', filters: { phases: ['submitted'], sort: 'oldest_activity' } },
     { label: 'To build', filters: { phases: ['not_started'] } },
     { label: 'To approve', filters: { phases: ['drafting'] } },
     { label: 'Ready to email', filters: { phases: ['drafting'], ready: true } },

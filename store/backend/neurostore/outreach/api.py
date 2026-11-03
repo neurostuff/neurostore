@@ -512,6 +512,7 @@ def _person_detail(person):
             len(messages),
             outreach_people.author_message_counts({person.id: person})[person.id],
         ),
+        "asked_to_stop": outreach_people.asked_to_stop(person),
         "drafts": [
             {"id": d.id, "name": b.name, "year": b.year, "status": d.status}
             for d, b in drafts_held
@@ -552,6 +553,19 @@ async def suppression(request: Request):
     return JSONResponse(await run_in_threadpool(_run))
 
 
+async def unsuppression(request: Request):
+    actor = await outreach_admin(request)
+    person_id = request.path_params["person_id"]
+    body = await _body(request)
+
+    def _run():
+        found = _found(OutreachPerson, person_id)
+        _write(lambda: outreach_people.unsuppress(found, body.get("what"), actor))
+        return _person_detail(found)
+
+    return JSONResponse(await run_in_threadpool(_run))
+
+
 async def _http_error(request, exc):
     return JSONResponse({"detail": exc.detail, "status": exc.status_code}, exc.status_code)
 
@@ -581,6 +595,7 @@ def outreach_app():
             Route("/drafts/{draft_id}/uploads/{upload_id}/file", upload_file),
             Route("/people/{person_id}", person),
             Route("/people/{person_id}/suppression", suppression, methods=["POST"]),
+            Route("/people/{person_id}/suppression/undo", unsuppression, methods=["POST"]),
         ],
         exception_handlers={HTTPException: _http_error},
     )

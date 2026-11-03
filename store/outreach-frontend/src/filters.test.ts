@@ -3,6 +3,7 @@ import {
     matches,
     nextStep,
     paperRows,
+    PRESETS,
     readFilters,
     sortRows,
     writeFilters,
@@ -68,6 +69,17 @@ test('one view holds candidates and drafts, filtered by phase', () => {
     expect(ids(rows, filters())).toEqual(['c1', 'd1', 'd2', 'd3']);
     expect(ids(rows, filters({ phases: ['not_started'] }))).toEqual(['c1']);
     expect(ids(rows, filters({ phases: ['emailed', 'uploading'] }))).toEqual(['d2', 'd3']);
+});
+
+test('submitted papers are their own phase, the one the To review preset shows', () => {
+    const rows = paperRows(
+        [],
+        [draft('d1', { status: 'submitted' }), draft('d2', { status: 'approved' }), draft('d3', { status: 'uploading' })]
+    );
+    const toReview = PRESETS.find((preset) => preset.label === 'To review')!.filters;
+    expect(ids(rows, filters(toReview))).toEqual(['d1']);
+    expect(ids(rows, filters({ phases: ['completed'] }))).toEqual(['d2']);
+    expect(nextStep(rows[0])).toBe('Review the submission');
 });
 
 test('ready to email holds back a second paper by the same person, whatever is filtered', () => {
