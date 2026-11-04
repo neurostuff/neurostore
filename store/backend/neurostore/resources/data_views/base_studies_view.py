@@ -52,6 +52,7 @@ from neurostore.resources.data_views.common import (
     apply_map_type_filter,
 )
 from neurostore.resources.text_search import TextMatch, bm25_clause, bm25_search
+from neurostore.outreach.drafts import outreach_draft_count
 from neurostore.resources.utils import view_maker, visibility_filters
 from neurostore.review.app.service import review_source_count
 from neurostore.schemas.data import (
@@ -419,10 +420,16 @@ class BaseStudiesView(ObjectView, ListView):
             return super().delete(id)
         except IntegrityError:
             db.session.rollback()
-            # review_sources' fulltext FK is RESTRICT; report it as 409.
+            # review_sources' fulltext FK and outreach_drafts' base study FK are
+            # RESTRICT; report either as 409.
             count = review_source_count(db.session, id)
-            if not count:
-                raise
-            abort_conflict(
-                "The base study has papers loaded for review.", under_review=count
-            )
+            if count:
+                abort_conflict(
+                    "The base study has papers loaded for review.", under_review=count
+                )
+            drafts = outreach_draft_count(db.session, id)
+            if drafts:
+                abort_conflict(
+                    "The base study has outreach drafts.", in_outreach=drafts
+                )
+            raise

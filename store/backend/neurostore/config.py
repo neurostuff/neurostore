@@ -108,6 +108,16 @@ class Config(object):
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
     # A Fernet key (`Fernet.generate_key()`); corresponding author emails are kept under it.
     CONTACT_EMAIL_KEY = os.environ.get("CONTACT_EMAIL_KEY")
+    # The Auth0 subs allowed into outreach's admin API, comma-separated.
+    OUTREACH_ADMINS = os.environ.get("OUTREACH_ADMINS", "")
+    # A shared password for outreach's admin API, honoured only in development and tests.
+    OUTREACH_DEV_PASSWORD = os.environ.get("OUTREACH_DEV_PASSWORD")
+    # Where an author's link opens; the token is appended, after a "#" so no server logs it.
+    OUTREACH_SHARE_URL = os.environ.get("OUTREACH_SHARE_URL", "https://neurostore.org/share/#")
+    # Where authors' uploaded maps are kept; FILE_DIR/outreach-uploads when unset.
+    OUTREACH_UPLOAD_DIR = os.environ.get("OUTREACH_UPLOAD_DIR")
+    # How outreach emails are signed (\n for new lines).
+    OUTREACH_SIGNATURE = os.environ.get("OUTREACH_SIGNATURE")
     BEARERINFO_FUNC = os.environ.get(
         "BEARERINFO_FUNC", "neurostore.resources.auth.decode_token"
     )
