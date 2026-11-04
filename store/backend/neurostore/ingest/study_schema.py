@@ -45,6 +45,11 @@ Every result an upload writes carries the caller's ``run_id``. Replaying a run (
 run_id, same documents) returns the same results and adds none; the same run_id with a
 different document for the paper is refused (RUN_ID_REUSED).
 
+A record's config is keyed on what made it. ``pipeline.runs`` names the runs behind the
+record (its record run, and the evidence and normalize runs that filled it in); their
+config holds them, so uploads made by the same runs share one config and any other run
+gets another (docs/adr/0018-record-config-names-its-runs.md).
+
 Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
 refused (NOT_CURRENT), and so is a revision of a parse that is not current, unless the
 current parse descends from the one it revises and the revision's header inputs name the
@@ -185,6 +190,19 @@ SHARED_NAME = "shared_name"
 
 _MAX_REPORTED_ERRORS = 20
 
+# The stages a record's runs come from, in the order they ran; a record has a record run.
+RUN_STAGES = ("record", "evidence", "normalize")
+# Each run's fields: required ones, and the rest (a string or null).
+RUN_REQUIRED = ("run_id", "stage", "source", "created_at")
+RUN_OPTIONAL = (
+    "model",
+    "adapter",
+    "prompt_version",
+    "schema_version",
+    "code_commit",
+    "machine",
+)
+
 
 def is_content_key(key):
     return bool(key) and _CONTENT_KEY.fullmatch(key) is not None
@@ -209,6 +227,9 @@ def ingest_upload(body, user=None):
         _check_keys(parse)
     if parsed_paper is not None:
         _check_links(parsed_paper)
+    runs = (body.get("pipeline") or {}).get("runs")
+    if runs is not None:
+        runs = _check_runs(runs)
     text = body.get("text")
     if text is not None:
         _check_text(text, parsed_paper)
@@ -310,6 +331,7 @@ def ingest_upload(body, user=None):
             body.get("pipeline") or {},
             user,
             body.get("run_id"),
+            runs,
         )
 
     if study is not None:
@@ -474,6 +496,91 @@ def _check_links(parsed_paper):
         abort_unprocessable(
             "A link is an http(s) URL with a host.", errors[:_MAX_REPORTED_ERRORS]
         )
+
+
+def _check_runs(runs):
+    """Return ``runs`` with every field present, in stage order; refuse a malformed one."""
+    field = "pipeline/runs"
+    if not isinstance(runs, list) or not runs:
+        abort_unprocessable(
+            "pipeline.runs is a non-empty list of runs.",
+            [make_field_error(field, runs, code="SCHEMA")],
+        )
+    errors, seen, run_ids = [], {}, set()
+    for index, run in enumerate(runs):
+        at = f"{field}/{index}"
+        if not isinstance(run, dict):
+            errors.append(make_field_error(at, run, code="SCHEMA"))
+            continue
+        for name in sorted(set(run) - set(RUN_REQUIRED) - set(RUN_OPTIONAL)):
+            errors.append(make_field_error(f"{at}/{name}", run[name], code="SCHEMA"))
+        for name in RUN_REQUIRED:
+            value = run.get(name)
+            if not isinstance(value, str) or not value:
+                errors.append(make_field_error(f"{at}/{name}", value, code="SCHEMA"))
+        for name in RUN_OPTIONAL:
+            value = run.get(name)
+            if value is not None and not isinstance(value, str):
+                errors.append(make_field_error(f"{at}/{name}", value, code="SCHEMA"))
+        stage = run.get("stage")
+        if isinstance(stage, str) and stage and stage not in RUN_STAGES:
+            errors.append(
+                make_field_error(f"{at}/stage", stage, list(RUN_STAGES), code="SCHEMA")
+            )
+        created_at = run.get("created_at")
+        if isinstance(created_at, str) and created_at and not _is_timestamp(created_at):
+            errors.append(make_field_error(f"{at}/created_at", created_at, code="SCHEMA"))
+        if stage in seen:
+            errors.append(make_field_error(f"{at}/stage", stage, code="DUPLICATE_STAGE"))
+        seen.setdefault(stage, index)
+        if run.get("run_id") in run_ids:
+            errors.append(
+                make_field_error(f"{at}/run_id", run["run_id"], code="DUPLICATE_RUN_ID")
+            )
+        run_ids.add(run.get("run_id"))
+    if not errors and "record" not in seen:
+        errors.append(make_field_error(field, sorted(seen), ["record"], code="SCHEMA"))
+    if errors:
+        abort_unprocessable(
+            "Each run names its run_id, stage, source and created_at; no stage or run_id "
+            "is named twice, and a record has a record run.",
+            errors[:_MAX_REPORTED_ERRORS],
+        )
+    return sorted(
+        ({name: run.get(name) for name in RUN_REQUIRED + RUN_OPTIONAL} for run in runs),
+        key=lambda run: RUN_STAGES.index(run["stage"]),
+    )
+
+
+def _is_timestamp(value):
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return True
+
+
+def _check_run_ids(runs):
+    """Refuse a run whose run_id a stored config holds with other fields."""
+    for index, run in enumerate(runs):
+        held = PipelineConfig.query.filter(
+            PipelineConfig.config_args["runs"].contains([{"run_id": run["run_id"]}])
+        )
+        for config in held:
+            stored = next(
+                r for r in config.config_args["runs"] if r["run_id"] == run["run_id"]
+            )
+            if stored != run:
+                abort_unprocessable(
+                    "This run_id names a stored run with other fields.",
+                    [
+                        make_field_error(
+                            f"pipeline/runs/{index}",
+                            {"run": run, "stored": stored},
+                            code="RUN_CONFLICT",
+                        )
+                    ],
+                )
 
 
 def _check_keys(parse):
@@ -904,6 +1011,7 @@ def _provenance(result):
         "commit": args.get("commit"),
         "schema": config.schema,
         "parse_version": args.get("parse_version") or args.get("producer"),
+        "runs": args.get("runs"),
         "date_executed": _iso(result.date_executed),
         "created_at": _iso(result.created_at),
         "updated_at": _iso(result.updated_at),
@@ -1363,7 +1471,7 @@ def _merge_claim(claim, copy):
 # ---------------------------------------------------------------------------
 
 
-def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None):
+def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None, runs=None):
     metadata = record["extraction_metadata"]
     schema_version = load_json_schema("extraction-record").get("version")
     config_args = {
@@ -1376,6 +1484,9 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
     if pipeline.get("commit"):
         # The code that produced the record, so two builds of one version stay apart.
         config_args["commit"] = pipeline["commit"]
+    if runs is not None:
+        _check_run_ids(runs)
+        config_args["runs"] = runs
     config = _get_config(
         pipeline.get("name") or DEFAULT_RECORD_PIPELINE,
         pipeline.get("version") or metadata["extractor_version"],
