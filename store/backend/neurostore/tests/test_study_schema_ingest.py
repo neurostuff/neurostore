@@ -361,6 +361,7 @@ def test_upload_reports_the_provenance_of_each_run(session):
 # record run on Vista, ev1's evidence on LS6, and the normalization fit on beast.
 RECORD_RUN = {
     "run_id": "ns-27b-e-20261031",
+    "kind": "model",
     "stage": "record",
     "source": "ns-27b",
     "model": "Qwen/Qwen3.8-27B",
@@ -388,6 +389,7 @@ NORMALIZE_RUN = {
     "stage": "normalize",
     "source": "ns-27b",
     "model": "SapBERT + MONDO",
+    "fit": "fit-3f9c2a17d0b4e865",
     "created_at": "2026-11-01T22:05:00Z",
 }
 
@@ -417,8 +419,10 @@ def test_a_record_config_names_the_runs_that_made_it(session):
 
     runs = summary["provenance"]["record"]["runs"]
     assert [run["stage"] for run in runs] == ["record", "evidence", "normalize"]
-    assert runs[0] == RECORD_RUN
-    assert runs[2]["adapter"] is None and runs[2]["machine"] is None
+    assert runs[0] == {**dict.fromkeys(runs[0]), **RECORD_RUN}
+    assert len(runs[0]) == 14
+    assert runs[2]["adapter"] is None and runs[2]["fit"] == NORMALIZE_RUN["fit"]
+    assert runs[1]["kind"] is None
     assert db_config(summary["record"]["config_id"]).config_args["runs"] == runs
 
 
@@ -458,6 +462,20 @@ def test_a_rerun_with_another_model_gets_another_config(session):
     assert PipelineStudyResult.query.filter_by(base_study_id=base_study_id).count() == 3
 
 
+def test_a_rerun_of_the_same_model_joins_its_run(session):
+    # ns-pond mints run_id from what made the output, so a rerun of missing records with
+    # the same model and inputs sends the same run, and its record lands in that config.
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    first = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, NORMALIZE_RUN]))
+    rerun = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, NORMALIZE_RUN]))
+    refit = {**NORMALIZE_RUN, "run_id": "astra-norm-20261110", "fit": "fit-0a1b2c3d4e5f6789"}
+    refitted = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, refit]))
+
+    assert rerun["record"]["config_id"] == first["record"]["config_id"]
+    # A refit is a new run, so the record it normalized is under another config.
+    assert refitted["record"]["config_id"] != first["record"]["config_id"]
+
+
 def test_an_upload_without_runs_keeps_its_config(session):
     base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
     body = _offloaded(base_study_id, None)
@@ -487,7 +505,8 @@ def test_an_upload_without_runs_keeps_its_config(session):
             {("SCHEMA", "pipeline/runs/0/created_at")},
         ),
         ([{**RECORD_RUN, "model": 27}], {("SCHEMA", "pipeline/runs/0/model")}),
-        ([{**RECORD_RUN, "kind": "model"}], {("SCHEMA", "pipeline/runs/0/kind")}),
+        ([{**RECORD_RUN, "bundle_id": "b1"}], {("SCHEMA", "pipeline/runs/0/bundle_id")}),
+        ([{**RECORD_RUN, "kind": "rerun"}], {("SCHEMA", "pipeline/runs/0/kind")}),
         ([EVIDENCE_RUN, NORMALIZE_RUN], {("SCHEMA", "pipeline/runs")}),
         (
             [RECORD_RUN, {**RECORD_RUN, "run_id": "ns-27b-e-20261105"}],
@@ -528,7 +547,7 @@ async def test_upload_endpoint_takes_runs(admin_client, session):
     ]
 
     response = await admin_client.post(
-        url, data=_offloaded(base_study_id, [{**RECORD_RUN, "kind": "model"}])
+        url, data=_offloaded(base_study_id, [{**RECORD_RUN, "bundle_id": "b1"}])
     )
     assert response.status_code == 422, response.text
 

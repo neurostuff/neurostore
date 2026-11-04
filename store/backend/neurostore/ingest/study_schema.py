@@ -47,8 +47,8 @@ different document for the paper is refused (RUN_ID_REUSED).
 
 A record's config is keyed on what made it. ``pipeline.runs`` names the runs behind the
 record (its record run, and the evidence and normalize runs that filled it in); their
-config holds them, so uploads made by the same runs share one config and any other run
-gets another (docs/adr/0018-record-config-names-its-runs.md).
+config holds them, so uploads made by the same runs share one config and a run of another
+model, adapter, prompt or fit gets another (docs/adr/0018-record-config-names-its-runs.md).
 
 Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
 refused (NOT_CURRENT), and so is a revision of a parse that is not current, unless the
@@ -192,15 +192,21 @@ _MAX_REPORTED_ERRORS = 20
 
 # The stages a record's runs come from, in the order they ran; a record has a record run.
 RUN_STAGES = ("record", "evidence", "normalize")
-# Each run's fields: required ones, and the rest (a string or null).
+RUN_KINDS = ("model", "migration")
+# Each run's fields: required ones, and the rest (a string or null). ``fit`` is the
+# fingerprint of the fitted normalization model a normalize run assigned with.
 RUN_REQUIRED = ("run_id", "stage", "source", "created_at")
 RUN_OPTIONAL = (
+    "kind",
+    "pipeline",
+    "version",
     "model",
     "adapter",
     "prompt_version",
     "schema_version",
     "code_commit",
     "machine",
+    "fit",
 )
 
 
@@ -527,6 +533,9 @@ def _check_runs(runs):
             errors.append(
                 make_field_error(f"{at}/stage", stage, list(RUN_STAGES), code="SCHEMA")
             )
+        kind = run.get("kind")
+        if isinstance(kind, str) and kind not in RUN_KINDS:
+            errors.append(make_field_error(f"{at}/kind", kind, list(RUN_KINDS), code="SCHEMA"))
         created_at = run.get("created_at")
         if isinstance(created_at, str) and created_at and not _is_timestamp(created_at):
             errors.append(make_field_error(f"{at}/created_at", created_at, code="SCHEMA"))

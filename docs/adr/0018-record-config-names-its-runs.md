@@ -8,14 +8,15 @@ A record's `PipelineConfig` was keyed on what one pipeline was: its name and ver
 
 ## Decision
 
-The upload's `pipeline.runs` lists the record's runs, one per stage (`record` required, `evidence` and `normalize` when they ran), each with `run_id`, `stage`, `source`, `created_at` and, string or null, `model`, `adapter`, `prompt_version`, `schema_version`, `code_commit` and `machine`: the fields of ns-pond's `runs` table. The ingester stores them in stage order, every field present, in the config's `config_args.runs`, so the config hash covers them. A record config with runs is therefore one combination of runs: uploads made by the same runs share it, and any other run, even of the same model, gets another config and its own result. The record stays as extracted (as in 0008); its provenance sits beside it in the config, and each upload's response returns it in `provenance.record.runs`.
+The upload's `pipeline.runs` lists the record's runs, one per stage (`record` required, `evidence` and `normalize` when they ran), each with `run_id`, `stage`, `source`, `created_at` and, string or null, `kind` (model or migration), `pipeline`, `version`, `model`, `adapter`, `prompt_version`, `schema_version`, `code_commit`, `machine` and `fit` (the fingerprint of a normalize run's fitted clustering model): the fields of ns-pond's `runs` table. The ingester stores them in stage order, every field present, in the config's `config_args.runs`, so the config hash covers them. A record config with runs is therefore one combination of runs: uploads made by the same runs share it, and a run of another model, adapter, prompt or fit gets another config and its own result. ns-pond mints a run_id from what made the output (kind, stage, source, version, model, adapter, prompt version, schema version, fit) and always sends a run as its catalog first stored it, so a rerun of missing records with the same model and inputs is the same run and lands in the same config. The record stays as extracted (as in 0008); its provenance sits beside it in the config, and each upload's response returns it in `provenance.record.runs`.
 
 A run_id names one run: a run_id stored with other fields is refused (RUN_CONFLICT). An upload without `runs` is keyed exactly as before.
 
 ## Consequences
 
-- A re-run with a new run_id makes a second record result for the paper, not a replacement. The current record is the latest by `date_executed` (the record's `extraction_date`, else the upload time; `_latest_records`), as across commits before. Claims from the earlier run stay linked to its config.
-- ns-pond's own freshness ignores `run_id`, `code_commit`, `machine` and `created_at` (its `RUN_IDENTITY`); neurostore's config does not, because it records which runs made a record rather than whether a record is stale.
+- A refit of the normalization model, or a record run with another adapter, makes a second record result for the paper, not a replacement. The current record is the latest by `date_executed` (the record's `extraction_date`, else the upload time; `_latest_records`), as across commits before. Claims from the earlier run stay linked to its config.
+- The config holds `code_commit`, `machine` and `created_at`, which are not part of a run's identity; they are stable because ns-pond sends the run's first stored values.
+- The fit is a field, not an entity of its own; a fit entity (to list the records one fit normalized, say) can be added later from these fields.
 - Finding the records one run made is a JSONB containment query on `config_args.runs`.
 
 ## Rejected
