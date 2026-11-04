@@ -40,7 +40,7 @@ dependencies = [
     "orjson~=3.13",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.22.1",
-    "openai~=3.37",
+    "openai~=3.41",
     "tenacity~=9.2",
     "sentry-sdk~=2.73",
     # A link's registrable domain, from the public suffix list snapshot it ships.
