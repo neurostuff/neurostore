@@ -67,7 +67,6 @@ from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
 from study_schema.jsonschema import load as load_json_schema
 from study_schema.models.paper_parse import CorrectionKind
@@ -91,6 +90,7 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
 )
 from neurostore.exceptions.utils.errors import ErrorDetail
+from neurostore.ingest.analysis_features import latest_records, sync_analysis_features
 from neurostore.ingest.study_entities import (
     CONTENT_KEYED_CLASSES,
     stable_id_problems,
@@ -100,7 +100,6 @@ from neurostore.models.data import (
     HISTORY_SOURCE,
     PARSE_PIPELINE,
     PIPELINE_STUDY_SOURCES,
-    RECORD_SCHEMA_NAME,
     STUDY_SOURCE,
     study_entity_hash,
 )
@@ -136,9 +135,12 @@ from neurostore.study_schema_tools import (
     expected_key,
     extracted_value,
     is_extracted,
+    record_analysis_key,
     refs,
+    reported_value,
     schema_errors,
     sha256_of,
+    split_of,
     version_mismatch,
 )
 
@@ -342,6 +344,8 @@ def ingest_upload(body, user=None):
 
     if study is not None:
         summary["study_id"] = study.id
+        db.session.flush()
+        sync_analysis_features(base_study.id, study.id)
     db.session.flush()
     summary["provenance"] = {name: _provenance(result) for name, result in provenance.items()}
     recompute_media_flags([base_study.id])
@@ -1686,7 +1690,7 @@ def _replaced_by(revisions, key):
 
 
 def _split(analysis):
-    return (analysis.metadata_ or {}).get("split") or {}
+    return split_of(analysis.metadata_)
 
 
 def _inverse_half(study, analysis):
@@ -1806,8 +1810,7 @@ def _want_outcome(wanted, analysis, extracted, derived):
     An analysis's own entry sets its outcome, to null when the record does not report it;
     a derived one (the other half of a split, a key a revision replaced) only adds one.
     """
-    outcome = extracted.get("outcome") or {}
-    value = outcome.get("value") if outcome.get("extraction_status") == "extracted" else None
+    value = reported_value(extracted.get("outcome"))
     if derived and (value is None or (analysis.id in wanted and not wanted[analysis.id][2])):
         return
     wanted[analysis.id] = (analysis, value, derived)
@@ -1822,36 +1825,14 @@ def _claimed_outcome(base_study_id, key):
     to one execution of it: a claim an earlier run made and the latest one dropped stays
     linked and would otherwise be restored.
     """
-    return _record_outcome(_latest_records([base_study_id]).get(base_study_id), key)
-
-
-def _latest_records(base_study_ids):
-    """Each paper's latest stored extraction record, by base study id, in one query."""
-    rows = db.session.execute(
-        sa.select(PipelineStudyResult.base_study_id, PipelineStudyResult.result_data)
-        .join(PipelineConfig, PipelineConfig.id == PipelineStudyResult.config_id)
-        .where(
-            PipelineStudyResult.base_study_id.in_(base_study_ids),
-            PipelineConfig.schema["name"].astext == RECORD_SCHEMA_NAME,
-        )
-        .order_by(
-            PipelineStudyResult.base_study_id,
-            PipelineStudyResult.date_executed.desc().nulls_last(),
-            PipelineStudyResult.updated_at.desc().nulls_last(),
-            PipelineStudyResult.created_at.desc(),
-        )
-        .ext(distinct_on(PipelineStudyResult.base_study_id))
-    )
-    return {base_study_id: record for base_study_id, record in rows}
+    latest = latest_records([base_study_id]).get(base_study_id, (None, None))
+    return _record_outcome(latest[1], key)
 
 
 def _record_outcome(record, key):
     for item in (record or {}).get("analyses") or []:
         if _record_key("Analysis", item) == key:
-            outcome = item.get("outcome") or {}
-            if outcome.get("extraction_status") == "extracted":
-                return outcome.get("value")
-            return None
+            return reported_value(item.get("outcome"))
     return None
 
 
@@ -2006,7 +1987,7 @@ def _local_id_names(record):
 
 def _record_key(cls, item):
     if cls == "Analysis":
-        return (item.get("source_table_analysis") or {}).get("value")
+        return record_analysis_key(item)
     if cls in ("CoordinateSet", "Table"):
         return item.get("local_id")
     name = item.get("name")
@@ -2292,7 +2273,7 @@ def _backfill_batch(base_study_ids, apply, summary):
     if not apply or not resolved:
         return
 
-    records = _latest_records(
+    records = latest_records(
         list({s.base_study_id for _, s, role, *_ in resolved.values() if role in OUTCOME_ROLES})
     )
     changed = set()
@@ -2302,7 +2283,9 @@ def _backfill_batch(base_study_ids, apply, summary):
         analysis.relabelled_by = relabelled_by
         if role in OUTCOME_ROLES and analysis.outcome is None:
             if study.source in PIPELINE_STUDY_SOURCES:
-                outcome = _record_outcome(records.get(study.base_study_id), analysis.source_id)
+                outcome = _record_outcome(
+                    records.get(study.base_study_id, (None, None))[1], analysis.source_id
+                )
             elif analysis.source_id in resolved:
                 outcome = resolved[analysis.source_id][4]
             analysis.outcome = outcome
