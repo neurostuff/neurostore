@@ -6,7 +6,32 @@ describe('ImportSleuthDialog', () => {
     const neurostoreAPIBaseURL = Cypress.env('neurostoreAPIBaseURL');
     console.log('neurostoreAPIBaseURL', neurostoreAPIBaseURL);
 
+    // TEMPORARY diagnostics for the CI-only failure: log every request and browser error of a failed test
+    let diagnostics: string[] = [];
     beforeEach(() => {
+        diagnostics = [];
+        cy.intercept({ url: '**', middleware: true }, (req) => {
+            if (/\/(assets|static)\//.test(req.url)) return;
+            const t0 = Date.now();
+            diagnostics.push(`${new Date().toISOString()} -> ${req.method} ${req.url}`);
+            req.on('after:response', (res) => {
+                diagnostics.push(
+                    `${new Date().toISOString()} <- ${res.statusCode} ${req.method} ${req.url} (${Date.now() - t0}ms)`
+                );
+            });
+        });
+        cy.on('window:before:load', (win) => {
+            const orig = win.console.error.bind(win.console);
+            win.console.error = (...args: unknown[]) => {
+                diagnostics.push(
+                    `${new Date().toISOString()} console.error ${args.map((a) => (a instanceof Error ? a.stack : String(a))).join(' ')}`
+                );
+                orig(...args);
+            };
+            win.addEventListener('unhandledrejection', (e) =>
+                diagnostics.push(`unhandledrejection ${String(e.reason)}`)
+            );
+        });
         cy.clearLocalStorage();
         cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as('googleAnalyticsFixture');
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
@@ -20,6 +45,10 @@ describe('ImportSleuthDialog', () => {
         cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
         cy.contains('button', 'Search').parent().find('button').last().click();
         cy.contains('Sleuth').click();
+    });
+
+    afterEach(function () {
+        if (this.currentTest?.state === 'failed') cy.task('log', diagnostics.join('\n'));
     });
 
     describe('upload page', () => {
