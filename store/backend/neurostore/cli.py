@@ -308,6 +308,35 @@ def review_export_command(out, source_ids, base_study_ids, user_ids, states, inc
     click.echo(json.dumps(manifest, indent=2))
 
 
+@main.command("backfill-analysis-features")
+@click.option(
+    "--base-study-id",
+    default=None,
+    help="only this base study (default: every base study with a current pipeline Study)",
+)
+@click.option(
+    "--batch-size",
+    default=200,
+    show_default=True,
+    type=int,
+    help="base studies per batch, whose records are held in memory; each batch commits",
+)
+def backfill_analysis_features(base_study_id, batch_size):
+    """Rewrite the analysis_features rows from each paper's latest stored record.
+
+    Uploads write them; this is for records stored before the table existed, or after
+    the resolver changes.
+    """
+
+    def _run(_app, db):
+        from neurostore.ingest.analysis_features import backfill_analysis_features as backfill
+
+        summary = backfill(base_study_id=base_study_id, batch_size=batch_size)
+        click.echo(f"{summary['analyses']} analysis feature rows over {summary['papers']} papers")
+
+    _run_with_runtime(_run)
+
+
 @main.command("backfill-analysis-roles")
 @click.option(
     "--dry-run/--apply",

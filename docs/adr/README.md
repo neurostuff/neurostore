@@ -22,5 +22,6 @@ Decisions behind neurostore's /review app and its base studies that are hard to 
 | [0016](0016-base-study-search-bm25.md) | Base-study text search runs on BM25 indexes inside Postgres (ParadeDB's pg_search) | accepted, built |
 | [0017](0017-paper-links-and-licences.md) | A paper's links and licences are stored as rows and categories from the upload, and served nowhere yet | accepted, built |
 | [0018](0018-record-config-names-its-runs.md) | A record's pipeline config holds the runs that made it (record, evidence, normalize), so another run is another config | accepted, built |
+| [0019](0019-analysis-features-query-surface.md) | Analyses are queried through typed features resolved from the latest record at ingest, not by reading records | accepted, built |
 
 Each file has Status, Context, Decision and Consequences, and names what was rejected.
