@@ -48,9 +48,9 @@ dependencies = [
     # A journal's name close to a known one (services/journals.py).
     "rapidfuzz~=3.9",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
-    # entity hashes read, pinned to the merge of neurostuff/study_schema#58, which follows
-    # #57 (Bibliography.venue).
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@93cfc88458e14eb0eba69149097eba1105a8a69b",
+    # entity hashes read, pinned to study_schema main at the merge of neurostuff/study_schema#59
+    # (after #57, Bibliography.venue, and #58, the correlation and voxel members).
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@2937ab19e3e0ddef49e4fb214164a461d05a6201",
 ]
 
 [tool.setuptools.packages.find]
