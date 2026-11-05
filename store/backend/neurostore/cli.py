@@ -187,6 +187,67 @@ def link_data_source_matches_command(tsv, statuses):
     _run_with_runtime(_run)
 
 
+@main.group("journals")
+def journals_group():
+    """The journals papers appeared in (docs/journals/DESIGN.md)."""
+
+
+@journals_group.command("match")
+@click.option("--batch-size", default=100, show_default=True, type=int)
+@click.option(
+    "--review",
+    type=click.Path(dir_okay=False, writable=True),
+    default="journal-review.csv",
+    show_default=True,
+    help="CSV of close names left for a person to check",
+)
+def match_journals_command(batch_size, review):
+    """Match every active base study that has no journal, in batches of DOIs."""
+
+    def _run(app, db):
+        import sqlalchemy as sa
+
+        from neurostore.cache_versioning import bump_cache_versions
+        from neurostore.models import BaseStudy
+        from neurostore.services import journals
+
+        ids = db.session.scalars(
+            sa.select(BaseStudy.id)
+            .where(BaseStudy.journal_id.is_(None), BaseStudy.is_active.is_(True))
+            .order_by(BaseStudy.id)
+        ).all()
+        matched = 0
+        with open(review, "w", newline="") as handle:
+            writer = journals.review_csv(handle)
+            for start in range(0, len(ids), batch_size):
+                batch = BaseStudy.query.filter(
+                    BaseStudy.id.in_(ids[start:start + batch_size])
+                ).all()
+                matched += journals.match_and_attach(
+                    batch, settings=app.config, logger=app.logger, review_writer=writer
+                )
+                db.session.commit()
+                bump_cache_versions({"base-studies": {bs.id for bs in batch}})
+                click.echo(f"{start + len(batch)}/{len(ids)} read, {matched} matched")
+        click.echo(f"matched {matched} of {len(ids)}; close names in {review}")
+
+    _run_with_runtime(_run)
+
+
+@journals_group.command("refresh")
+def refresh_journals_command():
+    """Re-read every journal from OpenAlex and NLM, and follow merged OpenAlex ids."""
+
+    def _run(app, db):
+        from neurostore.services import journals
+
+        refreshed, merged = journals.refresh_journals(settings=app.config, logger=app.logger)
+        db.session.commit()
+        click.echo(f"refreshed {refreshed}, merged {merged}")
+
+    _run_with_runtime(_run)
+
+
 @main.command("rehash-entities")
 @click.option(
     "--base-study-id",

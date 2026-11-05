@@ -1,0 +1,1246 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/works?filter=doi%3A10.1002%2Fmds.26295&per_page=100&select=doi%2Cids%2Cprimary_location%2Clocations
+  response:
+    body:
+      string: '{"meta": {"notice": "No API key, so this request shares one free daily
+        budget ($0.10) with everyone on your network''s IP address. The mailto parameter
+        doesn''t raise this limit. Get a free key with its own $1/day at https://openalex.org/settings/api
+        and add api_key=YOUR_KEY to your requests. An AI agent can get one for its
+        user in one call: POST https://api.openalex.org/api-keys with {\"email\":
+        \"<your user''s email>\"}; we email them a link, and the key works once they
+        click it. Docs for agents: https://help.openalex.org/llms.txt", "count": 4,
+        "db_response_time_ms": 10, "page": 1, "per_page": 100, "groups_count": null,
+        "x_query": {"oql": "get works where DOI is 10.1002/mds.26295", "x_new_oql":
+        "get works where DOI is 10.1002/mds.26295", "oqo": {"get_rows": "works", "filter_rows":
+        [{"column_id": "doi", "value": "10.1002/mds.26295"}]}, "url": "/works?filter=doi:10.1002%2Fmds.26295&per_page=100",
+        "order": "most cited (age-adjusted) first", "order_default": true}, "cost_usd":
+        0.0001}, "results": [{"doi": "https://doi.org/10.1002/mds.26295", "ids": {"openalex":
+        "https://openalex.org/W2183546547", "doi": "https://doi.org/10.1002/mds.26295",
+        "mag": "2183546547"}, "primary_location": {"id": "pmh:oai:ris.utwente.nl:openaire_cris_publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.utwente.nl/en/publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4406922991", "display_name":
+        "University of Twente Research Information", "issn_l": null, "issn": null,
+        "is_oa": false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        null, "host_organization_name": null, "host_organization_lineage": [], "host_organization_lineage_names":
+        [], "type": "repository"}, "license": null, "license_id": null, "version":
+        "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
+        "Zhao, Y, Heida, T, Nonnekes, J H & van Wezel, R J A 2015, Rhythmic cueing
+        with the Google Glass for patients with Parkinson''s disease. in 19th International
+        Congress of Parkinson''s Disease and Movement Disorders. Wiley, Malden, pp.
+        138-138, 19th International Congress of Parkinson''s Disease and Movement
+        Disorders 2015, San Diego, California, United States, 14/06/15. https://doi.org/10.1002/mds.26295",
+        "raw_type": "info:eu-repo/semantics/conferenceObject"}, "locations": [{"id":
+        "pmh:oai:ris.utwente.nl:openaire_cris_publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.utwente.nl/en/publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4406922991", "display_name":
+        "University of Twente Research Information", "issn_l": null, "issn": null,
+        "is_oa": false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        null, "host_organization_name": null, "host_organization_lineage": [], "host_organization_lineage_names":
+        [], "type": "repository"}, "license": null, "license_id": null, "version":
+        "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
+        "Zhao, Y, Heida, T, Nonnekes, J H & van Wezel, R J A 2015, Rhythmic cueing
+        with the Google Glass for patients with Parkinson''s disease. in 19th International
+        Congress of Parkinson''s Disease and Movement Disorders. Wiley, Malden, pp.
+        138-138, 19th International Congress of Parkinson''s Disease and Movement
+        Disorders 2015, San Diego, California, United States, 14/06/15. https://doi.org/10.1002/mds.26295",
+        "raw_type": "info:eu-repo/semantics/conferenceObject"}, {"id": "pmh:ut:oai:ris.utwente.nl:publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.utwente.nl/en/publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4406922991", "display_name":
+        "University of Twente Research Information", "issn_l": null, "issn": null,
+        "is_oa": false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        null, "host_organization_name": null, "host_organization_lineage": [], "host_organization_lineage_names":
+        [], "type": "repository"}, "license": null, "license_id": null, "version":
+        "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
+        "19th International Congress of Parkinson''s Disease and Movement Disorders,
+        138 - 138", "raw_type": "info:eu-repo/semantics/conferencepaper"}, {"id":
+        "mag:2183546547", "doi": null, "is_oa": false, "landing_page_url": "https://pdxscholar.library.pdx.edu/ece_fac/343/",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S163027424", "display_name":
+        "Movement Disorders", "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"],
+        "is_oa": false, "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1",
+        "poland-140", "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": null, "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders", "raw_type": null}]}, {"doi":
+        "https://doi.org/10.1002/mds.26295", "ids": {"openalex": "https://openalex.org/W4292577873",
+        "doi": "https://doi.org/10.1002/mds.26295", "pmid": "https://pubmed.ncbi.nlm.nih.gov/26095114"},
+        "primary_location": {"id": "doi:10.1002/mds.26295", "doi": "https://doi.org/10.1002/mds.26295",
+        "is_oa": false, "landing_page_url": "https://doi.org/10.1002/mds.26295", "pdf_url":
+        null, "source": {"id": "https://openalex.org/S163027424", "display_name":
+        "Movement Disorders", "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"],
+        "is_oa": false, "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1",
+        "poland-140", "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": "publishedVersion", "is_accepted": true,
+        "is_published": true, "raw_source_name": "Movement Disorders", "raw_type":
+        "journal-article"}, "locations": [{"id": "doi:10.1002/mds.26295", "doi": "https://doi.org/10.1002/mds.26295",
+        "is_oa": false, "landing_page_url": "https://doi.org/10.1002/mds.26295", "pdf_url":
+        null, "source": {"id": "https://openalex.org/S163027424", "display_name":
+        "Movement Disorders", "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"],
+        "is_oa": false, "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1",
+        "poland-140", "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": "publishedVersion", "is_accepted": true,
+        "is_published": true, "raw_source_name": "Movement Disorders", "raw_type":
+        "journal-article"}, {"id": "pmid:26095114", "doi": null, "is_oa": false, "landing_page_url":
+        "https://pubmed.ncbi.nlm.nih.gov/26095114", "pdf_url": null, "source": {"id":
+        "https://openalex.org/S4306525036", "display_name": "PubMed", "issn_l": null,
+        "issn": null, "is_oa": false, "is_in_doaj": false, "is_core": false, "listed_in":
+        [], "host_organization": "https://openalex.org/I1299303238", "host_organization_name":
+        "National Institutes of Health", "host_organization_lineage": ["https://openalex.org/I1299303238"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "publishedVersion", "is_accepted": true, "is_published":
+        true, "raw_source_name": "Movement disorders : official journal of the Movement
+        Disorder Society", "raw_type": "Journal Article"}, {"id": "pmh:oai:pdxscholar.library.pdx.edu:ece_fac-1334",
+        "doi": null, "is_oa": false, "landing_page_url": "https://pdxscholar.library.pdx.edu/ece_fac/343",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4377196300", "display_name":
+        "PDXScholar  (Portland State University)", "issn_l": null, "issn": null, "is_oa":
+        false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I126345244", "host_organization_name": "Portland State
+        University", "host_organization_lineage": ["https://openalex.org/I126345244"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Electrical and Computer Engineering Faculty Publications
+        and Presentations", "raw_type": "text"}, {"id": "pmh:oai:pure.rug.nl:openaire_cris_publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "doi": null, "is_oa": false, "landing_page_url": "https://research.rug.nl/en/publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Luinstra, M, Rutgers, W A W F, Dijkstra, H, Grasmeijer,
+        F, Hagedoorn, P, Vogelzang, J, Frijlink, H W & De Boer, A H 2015, ''The ability
+        of Parkinson''s disease patients to use dry powder inhalers during off periods'',
+        Movement Disorders, vol. 30, pp. 101. https://doi.org/10.1002/mds.26295",
+        "raw_type": "info:eu-repo/semantics/conferenceObject"}, {"id": "pmh:oai:pure.rug.nl:openaire_cris_publications/0ce7e1fc-faa5-4ba9-845f-8322f4f0aa00",
+        "doi": null, "is_oa": false, "landing_page_url": "https://research.rug.nl/en/publications/0ce7e1fc-faa5-4ba9-845f-8322f4f0aa00",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Brandsma, R, Lawerman, T F, Kuiper, M J, Geffen,
+        van, J, Lunsing, I J, Burger, H, de Koning, T J, de Vries, J J, de Koning-Tijssen,
+        M A J & Sival, D A 2015, ''Reliability and discriminant validity of ataxia
+        rating scales in early onset ataxia'', Movement Disorders, vol. 30, no. Supplement
+        1, 915, pp. S356-S356. https://doi.org/10.1002/mds.26295", "raw_type": "info:eu-repo/semantics/conferenceObject"},
+        {"id": "pmh:oai:repository.ubn.ru.nl:2066/218342", "doi": null, "is_oa": false,
+        "landing_page_url": "https://hdl.handle.net/2066/218342", "pdf_url": null,
+        "source": {"id": "https://openalex.org/S4306401067", "display_name": "Radboud
+        Repository (Radboud University)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I145872427", "host_organization_name": "Radboud University
+        Nijmegen", "host_organization_lineage": ["https://openalex.org/I145872427"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "", "raw_type": "Article / Letter to editor"}, {"id":
+        "pmh:rug:oai:pure.rug.nl:publications/0ce7e1fc-faa5-4ba9-845f-8322f4f0aa00",
+        "doi": null, "is_oa": false, "landing_page_url": "https://research.rug.nl/en/publications/0ce7e1fc-faa5-4ba9-845f-8322f4f0aa00",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30(Supplement 1):915, S356
+        - S356. Wiley", "raw_type": "info:eu-repo/semantics/article"}]}, {"doi": "https://doi.org/10.1002/mds.26295",
+        "ids": {"openalex": "https://openalex.org/W2477211393", "doi": "https://doi.org/10.1002/mds.26295",
+        "mag": "2477211393"}, "primary_location": {"id": "pmh:rug:oai:pure.rug.nl:publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.rug.nl/en/publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30. Wiley", "raw_type": "info:eu-repo/semantics/article"},
+        "locations": [{"id": "pmh:rug:oai:pure.rug.nl:publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.rug.nl/en/publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30. Wiley", "raw_type": "info:eu-repo/semantics/article"},
+        {"id": "mag:2477211393", "doi": null, "is_oa": false, "landing_page_url":
+        "https://research.rug.nl/en/publications/the-ability-of-parkinsons-disease-patients-to-use-dry-powder-inha",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S163027424", "display_name":
+        "Movement Disorders", "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"],
+        "is_oa": false, "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1",
+        "poland-140", "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": null, "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders", "raw_type": null}]}, {"doi":
+        "https://doi.org/10.1002/mds.26295", "ids": {"openalex": "https://openalex.org/W3025146656",
+        "doi": "https://doi.org/10.1002/mds.26295", "mag": "3025146656"}, "primary_location":
+        {"id": "pmh:ru:oai:repository.ubn.ru.nl:2066/218342", "doi": "https://doi.org/10.1002/mds.26295",
+        "is_oa": false, "landing_page_url": "http://hdl.handle.net/2066/218342", "pdf_url":
+        null, "source": {"id": "https://openalex.org/S4306401067", "display_name":
+        "Radboud Repository (Radboud University)", "issn_l": null, "issn": null, "is_oa":
+        false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I145872427", "host_organization_name": "Radboud University
+        Nijmegen", "host_organization_lineage": ["https://openalex.org/I145872427"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30, S4 - S5", "raw_type": "info:eu-repo/semantics/article"},
+        "locations": [{"id": "pmh:ru:oai:repository.ubn.ru.nl:2066/218342", "doi":
+        "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url": "http://hdl.handle.net/2066/218342",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306401067", "display_name":
+        "Radboud Repository (Radboud University)", "issn_l": null, "issn": null, "is_oa":
+        false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I145872427", "host_organization_name": "Radboud University
+        Nijmegen", "host_organization_lineage": ["https://openalex.org/I145872427"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30, S4 - S5", "raw_type": "info:eu-repo/semantics/article"},
+        {"id": "mag:3025146656", "doi": null, "is_oa": false, "landing_page_url":
+        "https://repository.ubn.ru.nl/handle/2066/218342", "pdf_url": null, "source":
+        {"id": "https://openalex.org/S163027424", "display_name": "Movement Disorders",
+        "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"], "is_oa": false,
+        "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific", "cwts-core",
+        "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1", "poland-140",
+        "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": null, "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders", "raw_type": null}]}], "group_by":
+        []}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55f0085e81b74e4-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:37:51 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0.0001'
+      X-RateLimit-Credits-Used:
+      - '1'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '199'
+      X-RateLimit-Remaining-USD:
+      - '0.0199'
+      X-RateLimit-Reset:
+      - '8529'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=AeWPAngI5LWNFQXZoqi1IMNIt7kwiORMJbKcVMYjxSk%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914671"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=AeWPAngI5LWNFQXZoqi1IMNIt7kwiORMJbKcVMYjxSk%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914671"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/works?filter=pmid%3A15090336%7C20857849%7C5107855&per_page=100&select=doi%2Cids%2Cprimary_location%2Clocations
+  response:
+    body:
+      string: '{"meta": {"notice": "No API key, so this request shares one free daily
+        budget ($0.10) with everyone on your network''s IP address. The mailto parameter
+        doesn''t raise this limit. Get a free key with its own $1/day at https://openalex.org/settings/api
+        and add api_key=YOUR_KEY to your requests. An AI agent can get one for its
+        user in one call: POST https://api.openalex.org/api-keys with {\"email\":
+        \"<your user''s email>\"}; we email them a link, and the key works once they
+        click it. Docs for agents: https://help.openalex.org/llms.txt", "count": 2,
+        "db_response_time_ms": 37, "page": 1, "per_page": 100, "groups_count": null,
+        "x_query": {"oql": "get works where PMID is (15090336 or 20857849 or 5107855)",
+        "x_new_oql": "get works where PMID is (15090336 or 20857849 or 5107855)",
+        "oqo": {"get_rows": "works", "filter_rows": [{"join": "or", "filters": [{"column_id":
+        "ids.pmid", "value": "15090336"}, {"column_id": "ids.pmid", "value": "20857849"},
+        {"column_id": "ids.pmid", "value": "5107855"}]}]}, "url": "/works?filter=ids.pmid:15090336|20857849|5107855&per_page=100",
+        "order": "most cited (age-adjusted) first", "order_default": true}, "cost_usd":
+        0.0001}, "results": [{"doi": null, "ids": {"openalex": "https://openalex.org/W2143742644",
+        "mag": "2143742644", "pmid": "https://pubmed.ncbi.nlm.nih.gov/15090336", "pmcid":
+        "https://www.ncbi.nlm.nih.gov/pmc/articles/7975607"}, "primary_location":
+        {"id": "pmh:oai:pubmedcentral.nih.gov:7975607", "doi": null, "is_oa": true,
+        "landing_page_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/7975607", "pdf_url":
+        null, "source": {"id": "https://openalex.org/S2764455111", "display_name":
+        "PubMed Central", "issn_l": null, "issn": null, "is_oa": true, "is_in_doaj":
+        false, "is_core": false, "listed_in": [], "host_organization": "https://openalex.org/I1299303238",
+        "host_organization_name": "National Institutes of Health", "host_organization_lineage":
+        ["https://openalex.org/I1299303238"], "host_organization_lineage_names": [],
+        "type": "repository"}, "license": null, "license_id": null, "version": "publishedVersion",
+        "is_accepted": true, "is_published": true, "raw_source_name": "AJNR Am J Neuroradiol",
+        "raw_type": "Text"}, "locations": [{"id": "pmh:oai:pubmedcentral.nih.gov:7975607",
+        "doi": null, "is_oa": true, "landing_page_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/7975607",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S2764455111", "display_name":
+        "PubMed Central", "issn_l": null, "issn": null, "is_oa": true, "is_in_doaj":
+        false, "is_core": false, "listed_in": [], "host_organization": "https://openalex.org/I1299303238",
+        "host_organization_name": "National Institutes of Health", "host_organization_lineage":
+        ["https://openalex.org/I1299303238"], "host_organization_lineage_names": [],
+        "type": "repository"}, "license": null, "license_id": null, "version": "publishedVersion",
+        "is_accepted": true, "is_published": true, "raw_source_name": "AJNR Am J Neuroradiol",
+        "raw_type": "Text"}, {"id": "pmid:15090336", "doi": null, "is_oa": false,
+        "landing_page_url": "https://pubmed.ncbi.nlm.nih.gov/15090336", "pdf_url":
+        null, "source": {"id": "https://openalex.org/S4306525036", "display_name":
+        "PubMed", "issn_l": null, "issn": null, "is_oa": false, "is_in_doaj": false,
+        "is_core": false, "listed_in": [], "host_organization": "https://openalex.org/I1299303238",
+        "host_organization_name": "National Institutes of Health", "host_organization_lineage":
+        ["https://openalex.org/I1299303238"], "host_organization_lineage_names": [],
+        "type": "repository"}, "license": null, "license_id": null, "version": "publishedVersion",
+        "is_accepted": true, "is_published": true, "raw_source_name": "AJNR. American
+        journal of neuroradiology", "raw_type": "Journal Article"}, {"id": "pmh:oai:CiteSeerX.psu:10.1.1.487.9045",
+        "doi": null, "is_oa": false, "landing_page_url": "http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.487.9045",
+        "pdf_url": null, "source": null, "license": null, "license_id": null, "version":
+        "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
+        "http://www.ajnr.org/content/25/4/523.full.pdf", "raw_type": "text"}]}, {"doi":
+        null, "ids": {"openalex": "https://openalex.org/W80047910", "mag": "80047910",
+        "pmid": "https://pubmed.ncbi.nlm.nih.gov/20857849"}, "primary_location": {"id":
+        "pmh:oai:mattioli1885journals.com:article/306", "doi": null, "is_oa": true,
+        "landing_page_url": "https://www.mattioli1885journals.com/index.php/actabiomedica/article/view/306",
+        "pdf_url": "https://www.mattioli1885journals.com/index.php/actabiomedica/article/download/306/267",
+        "source": {"id": "https://openalex.org/S4393915150", "display_name": "Acta
+        bio-medica dell''Ateneo parmense/Acta biomedica", "issn_l": "0392-4203", "issn":
+        ["0392-4203", "2531-6745"], "is_oa": true, "is_in_doaj": false, "is_core":
+        true, "listed_in": ["anvur-scientific", "cwts-core", "norway-1", "poland-20",
+        "russia-white-list-2"], "host_organization": null, "host_organization_name":
+        null, "host_organization_lineage": [], "host_organization_lineage_names":
+        [], "type": "journal"}, "license": "cc-by-nc", "license_id": "https://openalex.org/licenses/cc-by-nc",
+        "version": "publishedVersion", "is_accepted": true, "is_published": true,
+        "raw_source_name": "0392-4203", "raw_type": "info:eu-repo/semantics/article"},
+        "locations": [{"id": "pmh:oai:mattioli1885journals.com:article/306", "doi":
+        null, "is_oa": true, "landing_page_url": "https://www.mattioli1885journals.com/index.php/actabiomedica/article/view/306",
+        "pdf_url": "https://www.mattioli1885journals.com/index.php/actabiomedica/article/download/306/267",
+        "source": {"id": "https://openalex.org/S4393915150", "display_name": "Acta
+        bio-medica dell''Ateneo parmense/Acta biomedica", "issn_l": "0392-4203", "issn":
+        ["0392-4203", "2531-6745"], "is_oa": true, "is_in_doaj": false, "is_core":
+        true, "listed_in": ["anvur-scientific", "cwts-core", "norway-1", "poland-20",
+        "russia-white-list-2"], "host_organization": null, "host_organization_name":
+        null, "host_organization_lineage": [], "host_organization_lineage_names":
+        [], "type": "journal"}, "license": "cc-by-nc", "license_id": "https://openalex.org/licenses/cc-by-nc",
+        "version": "publishedVersion", "is_accepted": true, "is_published": true,
+        "raw_source_name": "0392-4203", "raw_type": "info:eu-repo/semantics/article"},
+        {"id": "pmid:20857849", "doi": null, "is_oa": false, "landing_page_url": "https://pubmed.ncbi.nlm.nih.gov/20857849",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306525036", "display_name":
+        "PubMed", "issn_l": null, "issn": null, "is_oa": false, "is_in_doaj": false,
+        "is_core": false, "listed_in": [], "host_organization": "https://openalex.org/I1299303238",
+        "host_organization_name": "National Institutes of Health", "host_organization_lineage":
+        ["https://openalex.org/I1299303238"], "host_organization_lineage_names": [],
+        "type": "repository"}, "license": null, "license_id": null, "version": "publishedVersion",
+        "is_accepted": true, "is_published": true, "raw_source_name": "Acta bio-medica
+        : Atenei Parmensis", "raw_type": "Clinical Trial"}, {"id": "mag:80047910",
+        "doi": null, "is_oa": false, "landing_page_url": "https://pubmed.ncbi.nlm.nih.gov/20857849",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306525036", "display_name":
+        "PubMed", "issn_l": null, "issn": null, "is_oa": false, "is_in_doaj": false,
+        "is_core": false, "listed_in": [], "host_organization": "https://openalex.org/I1299303238",
+        "host_organization_name": "National Institutes of Health", "host_organization_lineage":
+        ["https://openalex.org/I1299303238"], "host_organization_lineage_names": [],
+        "type": "repository"}, "license": null, "license_id": null, "version": null,
+        "is_accepted": false, "is_published": false, "raw_source_name": "PubMed",
+        "raw_type": null}]}], "group_by": []}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55f0087ede9ddab-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:37:51 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0.0001'
+      X-RateLimit-Credits-Used:
+      - '1'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '198'
+      X-RateLimit-Remaining-USD:
+      - '0.0198'
+      X-RateLimit-Reset:
+      - '8529'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=AeWPAngI5LWNFQXZoqi1IMNIt7kwiORMJbKcVMYjxSk%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914671"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=AeWPAngI5LWNFQXZoqi1IMNIt7kwiORMJbKcVMYjxSk%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914671"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=15090336%2C5107855&retmode=json
+  response:
+    body:
+      string: "{\"header\":{\"type\":\"esummary\",\"version\":\"0.3\"},\"result\":{\"uids\":[\"15090336\",\"5107855\"],\"15090336\":{\"uid\":\"15090336\",\"pubdate\":\"2004
+        Apr\",\"epubdate\":\"\",\"source\":\"AJNR Am J Neuroradiol\",\"authors\":[{\"name\":\"Pillai
+        JJ\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Allison JD\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Sethuraman
+        S\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Araque JM\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Thiruvaiyaru
+        D\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Ison CB\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Loring
+        DW\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Lavin T\",\"authtype\":\"Author\",\"clusterid\":\"\"}],\"lastauthor\":\"Lavin
+        T\",\"title\":\"Functional MR imaging study of language-related differences
+        in bilingual cerebellar activation.\",\"sorttitle\":\"functional mr imaging
+        study of language related differences in bilingual cerebellar activation\",\"volume\":\"25\",\"issue\":\"4\",\"pages\":\"523-32\",\"lang\":[\"eng\"],\"nlmuniqueid\":\"8003708\",\"issn\":\"0195-6108\",\"essn\":\"1936-959X\",\"pubtype\":[\"Journal
+        Article\",\"Research Support, Non-U.S. Gov't\"],\"recordstatus\":\"PubMed
+        - indexed for MEDLINE\",\"pubstatus\":\"4\",\"articleids\":[{\"idtype\":\"pubmed\",\"idtypen\":1,\"value\":\"15090336\"},{\"idtype\":\"pmc\",\"idtypen\":8,\"value\":\"PMC7975607\"},{\"idtype\":\"pmcid\",\"idtypen\":5,\"value\":\"pmc-id:
+        PMC7975607;\"}],\"history\":[{\"pubstatus\":\"pubmed\",\"date\":\"2004/04/20
+        05:00\"},{\"pubstatus\":\"medline\",\"date\":\"2004/07/20 05:00\"},{\"pubstatus\":\"entrez\",\"date\":\"2004/04/20
+        05:00\"},{\"pubstatus\":\"pmc-release\",\"date\":\"2005/04/01 00:00\"}],\"references\":[],\"attributes\":[\"Has
+        Abstract\"],\"pmcrefcount\":60,\"fulljournalname\":\"AJNR. American journal
+        of neuroradiology\",\"elocationid\":\"\",\"doctype\":\"citation\",\"srccontriblist\":[],\"booktitle\":\"\",\"medium\":\"\",\"edition\":\"\",\"publisherlocation\":\"\",\"publishername\":\"\",\"srcdate\":\"\",\"reportnumber\":\"\",\"availablefromurl\":\"\",\"locationlabel\":\"\",\"doccontriblist\":[],\"docdate\":\"\",\"bookname\":\"\",\"chapter\":\"\",\"sortpubdate\":\"2004/04/01
+        00:00\",\"sortfirstauthor\":\"Pillai JJ\",\"vernaculartitle\":\"\"},\"5107855\":{\"uid\":\"5107855\",\"pubdate\":\"1971
+        Jan\",\"epubdate\":\"\",\"source\":\"Arzneimittelforschung\",\"authors\":[{\"name\":\"Hach
+        B\",\"authtype\":\"Author\",\"clusterid\":\"\"},{\"name\":\"Heim F\",\"authtype\":\"Author\",\"clusterid\":\"\"}],\"lastauthor\":\"Heim
+        F\",\"title\":\"[Comparative studieson the central stimulating effects of
+        caffeie and chlorogenic acid in white mice].\",\"sorttitle\":\"comparative
+        studieson the central stimulating effects of caffeie and chlorogenic acid
+        in white mice\",\"volume\":\"2\",\"issue\":\"\",\"pages\":\"23-5\",\"lang\":[\"ger\"],\"nlmuniqueid\":\"0372660\",\"issn\":\"0004-4172\",\"essn\":\"\",\"pubtype\":[\"Comparative
+        Study\",\"Journal Article\"],\"recordstatus\":\"PubMed - indexed for MEDLINE\",\"pubstatus\":\"4\",\"articleids\":[{\"idtype\":\"pubmed\",\"idtypen\":1,\"value\":\"5107855\"}],\"history\":[{\"pubstatus\":\"pubmed\",\"date\":\"1971/01/01
+        00:00\"},{\"pubstatus\":\"medline\",\"date\":\"1971/01/01 00:01\"},{\"pubstatus\":\"entrez\",\"date\":\"1971/01/01
+        00:00\"}],\"references\":[],\"attributes\":[],\"pmcrefcount\":\"\",\"fulljournalname\":\"Arzneimittel-Forschung\",\"elocationid\":\"\",\"doctype\":\"citation\",\"srccontriblist\":[],\"booktitle\":\"\",\"medium\":\"\",\"edition\":\"\",\"publisherlocation\":\"\",\"publishername\":\"\",\"srcdate\":\"\",\"reportnumber\":\"\",\"availablefromurl\":\"\",\"locationlabel\":\"\",\"doccontriblist\":[],\"docdate\":\"\",\"bookname\":\"\",\"chapter\":\"\",\"sortpubdate\":\"1971/01/01
+        00:00\",\"sortfirstauthor\":\"Hach B\",\"vernaculartitle\":\"Vergleichende
+        Untersuchungen \xFCber die zentralerregen Wirkung von Coffein und Chlorogens\xFCre
+        anweissen M\xE4usen.\"}}}\n"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 05 Nov 2026 21:37:50 GMT
+      Ncbi-Phid:
+      - 1D338DC87AA6A5A50000434F880B33C6.1.1.m_1
+      Ncbi-Sid:
+      - 48F08DDFA828C6BB_D408SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=48F08DDFA828C6BB_D408SID; domain=.nih.gov; path=/; expires=Fri, 05
+        Nov 2027 21:37:51 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '2'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/sources/issn:0195-6108
+  response:
+    body:
+      string: '{"id":"https://openalex.org/S101278519","issn_l":"0195-6108","issn":["0195-6108","1936-959X"],"display_name":"American
+        Journal of Neuroradiology","host_organization":"https://openalex.org/P4310316165","host_organization_name":"American
+        Society of Neuroradiology","host_organization_lineage":["https://openalex.org/P4310316165"],"works_count":8640,"oa_works_count":8464,"cited_by_count":300897,"summary_stats":{"2yr_mean_citedness":5.098245614035088,"h_index":182,"i10_index":5326},"is_oa":false,"is_in_doaj":false,"is_in_doaj_since_year":null,"is_high_oa_rate":false,"is_high_oa_rate_since_year":null,"is_in_scielo":false,"is_ojs":false,"is_preprint_repository":false,"is_core":true,"listed_in":["cwts-core","dongbi-b","doyens","jufo-1","ki-jl-1","medline","norway-1","poland-100","russia-white-list-1","vabb-shw"],"oa_flip_year":null,"first_publication_year":1882,"last_publication_year":2026,"ids":{"openalex":"https://openalex.org/S101278519","issn_l":"0195-6108","issn":["0195-6108","1936-959X"],"mag":"101278519","wikidata":"https://www.wikidata.org/entity/Q15762571"},"homepage_url":"http://www.ajnr.org","apc_prices":[],"apc_usd":null,"apc_usd_by_year":null,"country_code":"US","societies":[],"alternate_titles":["AJNR","American
+        journal of neuroradiology"],"type":"journal","topics":[{"id":"https://openalex.org/T10378","display_name":"Advanced
+        MRI Techniques and Applications","count":2306,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10420","display_name":"Intracranial
+        Aneurysms: Treatment and Complications","count":1769,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10816","display_name":"Cerebrovascular
+        and Carotid Artery Diseases","count":1657,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10227","display_name":"Acute Ischemic
+        Stroke Management","count":1305,"subfield":{"id":"https://openalex.org/subfields/2713","display_name":"Epidemiology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11402","display_name":"Vascular Malformations
+        Diagnosis and Treatment","count":1124,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11304","display_name":"Advanced Neuroimaging
+        Techniques and Applications","count":966,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10129","display_name":"Glioma Diagnosis
+        and Treatment","count":581,"subfield":{"id":"https://openalex.org/subfields/2716","display_name":"Genetics
+        (clinical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11894","display_name":"Radiology
+        practices and education","count":520,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12552","display_name":"Fetal and
+        Pediatric Neurological Disorders","count":518,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10983","display_name":"Aortic aneurysm
+        repair treatments","count":517,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11929","display_name":"Cerebral Venous
+        Sinus Thrombosis","count":517,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12622","display_name":"Neurosurgical
+        Procedures and Complications","count":473,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10522","display_name":"Medical Imaging
+        Techniques and Applications","count":402,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11763","display_name":"Intracerebral
+        and Subarachnoid Hemorrhage Research","count":341,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10137","display_name":"Multiple Sclerosis
+        Research Studies","count":313,"subfield":{"id":"https://openalex.org/subfields/2734","display_name":"Pathology
+        and Forensic Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10009","display_name":"Dementia and
+        Cognitive Impairment Research","count":279,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11885","display_name":"MRI in cancer
+        diagnosis","count":263,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10238","display_name":"Spine and
+        Intervertebral Disc Pathology","count":233,"subfield":{"id":"https://openalex.org/subfields/2734","display_name":"Pathology
+        and Forensic Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11184","display_name":"Neonatal and
+        fetal brain pathology","count":230,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12422","display_name":"Radiomics
+        and Machine Learning in Medical Imaging","count":219,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11833","display_name":"Spinal Dysraphism
+        and Malformations","count":216,"subfield":{"id":"https://openalex.org/subfields/2739","display_name":"Public
+        Health, Environmental and Occupational Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10980","display_name":"Vascular Malformations
+        and Hemangiomas","count":213,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10241","display_name":"Functional
+        Brain Connectivity Studies","count":207,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11406","display_name":"Cerebrospinal
+        fluid and hydrocephalus","count":194,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10052","display_name":"Medical Image
+        Segmentation Techniques","count":187,"subfield":{"id":"https://openalex.org/subfields/1707","display_name":"Computer
+        Vision and Pattern Recognition"},"field":{"id":"https://openalex.org/fields/17","display_name":"Computer
+        Science"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}}],"topic_share":[{"id":"https://openalex.org/T11402","display_name":"Vascular
+        Malformations Diagnosis and Treatment","value":0.0090178,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10420","display_name":"Intracranial
+        Aneurysms: Treatment and Complications","value":0.0080446,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11304","display_name":"Advanced Neuroimaging
+        Techniques and Applications","value":0.0066197,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10378","display_name":"Advanced MRI
+        Techniques and Applications","value":0.0057928,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10816","display_name":"Cerebrovascular
+        and Carotid Artery Diseases","value":0.0056565,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12747","display_name":"Moyamoya disease
+        diagnosis and treatment","value":0.0048572,"subfield":{"id":"https://openalex.org/subfields/2745","display_name":"Rheumatology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11929","display_name":"Cerebral Venous
+        Sinus Thrombosis","value":0.0042373,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12552","display_name":"Fetal and
+        Pediatric Neurological Disorders","value":0.0037999,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13648","display_name":"Cerebrovascular
+        and genetic disorders","value":0.0035668,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10983","display_name":"Aortic aneurysm
+        repair treatments","value":0.0028547,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12622","display_name":"Neurosurgical
+        Procedures and Complications","value":0.0026977,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12702","display_name":"Brain Tumor
+        Detection and Classification","value":0.0026808,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10227","display_name":"Acute Ischemic
+        Stroke Management","value":0.0024405,"subfield":{"id":"https://openalex.org/subfields/2713","display_name":"Epidemiology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11763","display_name":"Intracerebral
+        and Subarachnoid Hemorrhage Research","value":0.0022797,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11894","display_name":"Radiology
+        practices and education","value":0.0021196,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13323","display_name":"Spinal Hematomas
+        and Complications","value":0.0020967,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11885","display_name":"MRI in cancer
+        diagnosis","value":0.0019677,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10129","display_name":"Glioma Diagnosis
+        and Treatment","value":0.001681,"subfield":{"id":"https://openalex.org/subfields/2716","display_name":"Genetics
+        (clinical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11406","display_name":"Cerebrospinal
+        fluid and hydrocephalus","value":0.0016698,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13481","display_name":"Neurological
+        diseases and metabolism","value":0.0016237,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11833","display_name":"Spinal Dysraphism
+        and Malformations","value":0.0015719,"subfield":{"id":"https://openalex.org/subfields/2739","display_name":"Public
+        Health, Environmental and Occupational Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12386","display_name":"Advanced X-ray
+        and CT Imaging","value":0.001523,"subfield":{"id":"https://openalex.org/subfields/2204","display_name":"Biomedical
+        Engineering"},"field":{"id":"https://openalex.org/fields/22","display_name":"Engineering"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T11184","display_name":"Neonatal and
+        fetal brain pathology","value":0.0014647,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10241","display_name":"Functional
+        Brain Connectivity Studies","value":0.0013192,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10980","display_name":"Vascular Malformations
+        and Hemangiomas","value":0.0013119,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}}],"counts_by_year":[{"year":2026,"works_count":557,"oa_works_count":430,"cited_by_count":17970},{"year":2025,"works_count":426,"oa_works_count":425,"cited_by_count":22162},{"year":2024,"works_count":442,"oa_works_count":442,"cited_by_count":23196},{"year":2023,"works_count":263,"oa_works_count":263,"cited_by_count":22349},{"year":2022,"works_count":313,"oa_works_count":313,"cited_by_count":24415},{"year":2021,"works_count":373,"oa_works_count":373,"cited_by_count":26071},{"year":2020,"works_count":499,"oa_works_count":499,"cited_by_count":22156},{"year":2019,"works_count":378,"oa_works_count":377,"cited_by_count":19364},{"year":2018,"works_count":412,"oa_works_count":412,"cited_by_count":18148},{"year":2017,"works_count":443,"oa_works_count":443,"cited_by_count":16816},{"year":2016,"works_count":394,"oa_works_count":393,"cited_by_count":16243},{"year":2015,"works_count":447,"oa_works_count":446,"cited_by_count":14996},{"year":2014,"works_count":373,"oa_works_count":373,"cited_by_count":13606},{"year":2013,"works_count":430,"oa_works_count":428,"cited_by_count":12271},{"year":2012,"works_count":503,"oa_works_count":503,"cited_by_count":9774},{"year":2011,"works_count":541,"oa_works_count":540,"cited_by_count":0},{"year":2010,"works_count":386,"oa_works_count":386,"cited_by_count":0},{"year":2009,"works_count":533,"oa_works_count":533,"cited_by_count":0},{"year":2008,"works_count":516,"oa_works_count":515,"cited_by_count":0},{"year":2007,"works_count":370,"oa_works_count":370,"cited_by_count":0},{"year":2006,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":2005,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":2004,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":2003,"works_count":4,"oa_works_count":0,"cited_by_count":0},{"year":2001,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":2000,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1999,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":1998,"works_count":4,"oa_works_count":0,"cited_by_count":0},{"year":1995,"works_count":5,"oa_works_count":0,"cited_by_count":0},{"year":1994,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":1993,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1990,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1989,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1988,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1986,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":1983,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1980,"works_count":2,"oa_works_count":0,"cited_by_count":0}],"works_api_url":"https://api.openalex.org/works?filter=primary_location.source.id:S101278519","updated_date":"2026-11-05T14:08:14","created_date":"2016-06-24T00:00:00"}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55f008a8846f36c-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:37:51 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0'
+      X-RateLimit-Credits-Used:
+      - '0'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '198'
+      X-RateLimit-Remaining-USD:
+      - '0.0198'
+      X-RateLimit-Reset:
+      - '8529'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=AeWPAngI5LWNFQXZoqi1IMNIt7kwiORMJbKcVMYjxSk%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914671"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=AeWPAngI5LWNFQXZoqi1IMNIt7kwiORMJbKcVMYjxSk%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914671"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/sources/issn:1936-959X
+  response:
+    body:
+      string: '{"id":"https://openalex.org/S101278519","issn_l":"0195-6108","issn":["0195-6108","1936-959X"],"display_name":"American
+        Journal of Neuroradiology","host_organization":"https://openalex.org/P4310316165","host_organization_name":"American
+        Society of Neuroradiology","host_organization_lineage":["https://openalex.org/P4310316165"],"works_count":8640,"oa_works_count":8464,"cited_by_count":300897,"summary_stats":{"2yr_mean_citedness":5.098245614035088,"h_index":182,"i10_index":5326},"is_oa":false,"is_in_doaj":false,"is_in_doaj_since_year":null,"is_high_oa_rate":false,"is_high_oa_rate_since_year":null,"is_in_scielo":false,"is_ojs":false,"is_preprint_repository":false,"is_core":true,"listed_in":["cwts-core","dongbi-b","doyens","jufo-1","ki-jl-1","medline","norway-1","poland-100","russia-white-list-1","vabb-shw"],"oa_flip_year":null,"first_publication_year":1882,"last_publication_year":2026,"ids":{"openalex":"https://openalex.org/S101278519","issn_l":"0195-6108","issn":["0195-6108","1936-959X"],"mag":"101278519","wikidata":"https://www.wikidata.org/entity/Q15762571"},"homepage_url":"http://www.ajnr.org","apc_prices":[],"apc_usd":null,"apc_usd_by_year":null,"country_code":"US","societies":[],"alternate_titles":["AJNR","American
+        journal of neuroradiology"],"type":"journal","topics":[{"id":"https://openalex.org/T10378","display_name":"Advanced
+        MRI Techniques and Applications","count":2306,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10420","display_name":"Intracranial
+        Aneurysms: Treatment and Complications","count":1769,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10816","display_name":"Cerebrovascular
+        and Carotid Artery Diseases","count":1657,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10227","display_name":"Acute Ischemic
+        Stroke Management","count":1305,"subfield":{"id":"https://openalex.org/subfields/2713","display_name":"Epidemiology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11402","display_name":"Vascular Malformations
+        Diagnosis and Treatment","count":1124,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11304","display_name":"Advanced Neuroimaging
+        Techniques and Applications","count":966,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10129","display_name":"Glioma Diagnosis
+        and Treatment","count":581,"subfield":{"id":"https://openalex.org/subfields/2716","display_name":"Genetics
+        (clinical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11894","display_name":"Radiology
+        practices and education","count":520,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12552","display_name":"Fetal and
+        Pediatric Neurological Disorders","count":518,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10983","display_name":"Aortic aneurysm
+        repair treatments","count":517,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11929","display_name":"Cerebral Venous
+        Sinus Thrombosis","count":517,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12622","display_name":"Neurosurgical
+        Procedures and Complications","count":473,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10522","display_name":"Medical Imaging
+        Techniques and Applications","count":402,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11763","display_name":"Intracerebral
+        and Subarachnoid Hemorrhage Research","count":341,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10137","display_name":"Multiple Sclerosis
+        Research Studies","count":313,"subfield":{"id":"https://openalex.org/subfields/2734","display_name":"Pathology
+        and Forensic Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10009","display_name":"Dementia and
+        Cognitive Impairment Research","count":279,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11885","display_name":"MRI in cancer
+        diagnosis","count":263,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10238","display_name":"Spine and
+        Intervertebral Disc Pathology","count":233,"subfield":{"id":"https://openalex.org/subfields/2734","display_name":"Pathology
+        and Forensic Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11184","display_name":"Neonatal and
+        fetal brain pathology","count":230,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12422","display_name":"Radiomics
+        and Machine Learning in Medical Imaging","count":219,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11833","display_name":"Spinal Dysraphism
+        and Malformations","count":216,"subfield":{"id":"https://openalex.org/subfields/2739","display_name":"Public
+        Health, Environmental and Occupational Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10980","display_name":"Vascular Malformations
+        and Hemangiomas","count":213,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10241","display_name":"Functional
+        Brain Connectivity Studies","count":207,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11406","display_name":"Cerebrospinal
+        fluid and hydrocephalus","count":194,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10052","display_name":"Medical Image
+        Segmentation Techniques","count":187,"subfield":{"id":"https://openalex.org/subfields/1707","display_name":"Computer
+        Vision and Pattern Recognition"},"field":{"id":"https://openalex.org/fields/17","display_name":"Computer
+        Science"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}}],"topic_share":[{"id":"https://openalex.org/T11402","display_name":"Vascular
+        Malformations Diagnosis and Treatment","value":0.0090178,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10420","display_name":"Intracranial
+        Aneurysms: Treatment and Complications","value":0.0080446,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11304","display_name":"Advanced Neuroimaging
+        Techniques and Applications","value":0.0066197,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10378","display_name":"Advanced MRI
+        Techniques and Applications","value":0.0057928,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10816","display_name":"Cerebrovascular
+        and Carotid Artery Diseases","value":0.0056565,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12747","display_name":"Moyamoya disease
+        diagnosis and treatment","value":0.0048572,"subfield":{"id":"https://openalex.org/subfields/2745","display_name":"Rheumatology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11929","display_name":"Cerebral Venous
+        Sinus Thrombosis","value":0.0042373,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12552","display_name":"Fetal and
+        Pediatric Neurological Disorders","value":0.0037999,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13648","display_name":"Cerebrovascular
+        and genetic disorders","value":0.0035668,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10983","display_name":"Aortic aneurysm
+        repair treatments","value":0.0028547,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12622","display_name":"Neurosurgical
+        Procedures and Complications","value":0.0026977,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12702","display_name":"Brain Tumor
+        Detection and Classification","value":0.0026808,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10227","display_name":"Acute Ischemic
+        Stroke Management","value":0.0024405,"subfield":{"id":"https://openalex.org/subfields/2713","display_name":"Epidemiology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11763","display_name":"Intracerebral
+        and Subarachnoid Hemorrhage Research","value":0.0022797,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11894","display_name":"Radiology
+        practices and education","value":0.0021196,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13323","display_name":"Spinal Hematomas
+        and Complications","value":0.0020967,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11885","display_name":"MRI in cancer
+        diagnosis","value":0.0019677,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10129","display_name":"Glioma Diagnosis
+        and Treatment","value":0.001681,"subfield":{"id":"https://openalex.org/subfields/2716","display_name":"Genetics
+        (clinical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11406","display_name":"Cerebrospinal
+        fluid and hydrocephalus","value":0.0016698,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13481","display_name":"Neurological
+        diseases and metabolism","value":0.0016237,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11833","display_name":"Spinal Dysraphism
+        and Malformations","value":0.0015719,"subfield":{"id":"https://openalex.org/subfields/2739","display_name":"Public
+        Health, Environmental and Occupational Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12386","display_name":"Advanced X-ray
+        and CT Imaging","value":0.001523,"subfield":{"id":"https://openalex.org/subfields/2204","display_name":"Biomedical
+        Engineering"},"field":{"id":"https://openalex.org/fields/22","display_name":"Engineering"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T11184","display_name":"Neonatal and
+        fetal brain pathology","value":0.0014647,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10241","display_name":"Functional
+        Brain Connectivity Studies","value":0.0013192,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10980","display_name":"Vascular Malformations
+        and Hemangiomas","value":0.0013119,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}}],"counts_by_year":[{"year":2026,"works_count":557,"oa_works_count":430,"cited_by_count":17970},{"year":2025,"works_count":426,"oa_works_count":425,"cited_by_count":22162},{"year":2024,"works_count":442,"oa_works_count":442,"cited_by_count":23196},{"year":2023,"works_count":263,"oa_works_count":263,"cited_by_count":22349},{"year":2022,"works_count":313,"oa_works_count":313,"cited_by_count":24415},{"year":2021,"works_count":373,"oa_works_count":373,"cited_by_count":26071},{"year":2020,"works_count":499,"oa_works_count":499,"cited_by_count":22156},{"year":2019,"works_count":378,"oa_works_count":377,"cited_by_count":19364},{"year":2018,"works_count":412,"oa_works_count":412,"cited_by_count":18148},{"year":2017,"works_count":443,"oa_works_count":443,"cited_by_count":16816},{"year":2016,"works_count":394,"oa_works_count":393,"cited_by_count":16243},{"year":2015,"works_count":447,"oa_works_count":446,"cited_by_count":14996},{"year":2014,"works_count":373,"oa_works_count":373,"cited_by_count":13606},{"year":2013,"works_count":430,"oa_works_count":428,"cited_by_count":12271},{"year":2012,"works_count":503,"oa_works_count":503,"cited_by_count":9774},{"year":2011,"works_count":541,"oa_works_count":540,"cited_by_count":0},{"year":2010,"works_count":386,"oa_works_count":386,"cited_by_count":0},{"year":2009,"works_count":533,"oa_works_count":533,"cited_by_count":0},{"year":2008,"works_count":516,"oa_works_count":515,"cited_by_count":0},{"year":2007,"works_count":370,"oa_works_count":370,"cited_by_count":0},{"year":2006,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":2005,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":2004,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":2003,"works_count":4,"oa_works_count":0,"cited_by_count":0},{"year":2001,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":2000,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1999,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":1998,"works_count":4,"oa_works_count":0,"cited_by_count":0},{"year":1995,"works_count":5,"oa_works_count":0,"cited_by_count":0},{"year":1994,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":1993,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1990,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1989,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1988,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1986,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":1983,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1980,"works_count":2,"oa_works_count":0,"cited_by_count":0}],"works_api_url":"https://api.openalex.org/works?filter=primary_location.source.id:S101278519","updated_date":"2026-11-05T14:08:14","created_date":"2016-06-24T00:00:00"}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55f008bffd76719-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:37:52 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0'
+      X-RateLimit-Credits-Used:
+      - '0'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '198'
+      X-RateLimit-Remaining-USD:
+      - '0.0198'
+      X-RateLimit-Reset:
+      - '8528'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=jkrxnt4bbkiKmHZ3dxixJraxYkbMrDx01taxVuvqW5U%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914672"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=jkrxnt4bbkiKmHZ3dxixJraxYkbMrDx01taxVuvqW5U%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914672"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/sources/issn:0004-4172
+  response:
+    body:
+      string: '{"id":"https://openalex.org/S132758211","issn_l":"0004-4172","issn":["0004-4172","1616-7066"],"display_name":"Arzneimittelforschung","host_organization":"https://openalex.org/P4310320000","host_organization_name":"Thieme
+        Medical Publishers (Germany)","host_organization_lineage":["https://openalex.org/P4310320000"],"works_count":2135,"oa_works_count":50,"cited_by_count":21501,"summary_stats":{"2yr_mean_citedness":0.0,"h_index":58,"i10_index":621},"is_oa":false,"is_in_doaj":false,"is_in_doaj_since_year":null,"is_high_oa_rate":false,"is_high_oa_rate_since_year":null,"is_in_scielo":false,"is_ojs":false,"is_preprint_repository":false,"is_core":true,"listed_in":["cwts-core"],"oa_flip_year":null,"first_publication_year":1807,"last_publication_year":2021,"ids":{"openalex":"https://openalex.org/S132758211","issn_l":"0004-4172","issn":["0004-4172","1616-7066"],"mag":"132758211","wikidata":"https://www.wikidata.org/entity/Q27717877"},"homepage_url":"https://www.thieme.de/de/arzneimittelforschung-drug-research/journal-information-4521.htm","apc_prices":[],"apc_usd":null,"apc_usd_by_year":null,"country_code":"DE","societies":[],"alternate_titles":["Arzneimittel-Forschung
+        (Aulendorf. Print)","Drug research (Stuttgart. Internet)","Drug research (Aulendorf.
+        Print)","ArzneimForsch (Aulendorf. Internet)","Arzneimittelforschung (Stuttgart.
+        Internet)","Arzneimittelforschung (Stuttgart. Print)","Drug research (Stuttgart.
+        Print)","Drug research (Aulendorf. Internet)","ArzneimForsch (Aulendorf. Print)"],"type":"journal","topics":[{"id":"https://openalex.org/T11460","display_name":"Analytical
+        Methods in Pharmaceuticals","count":303,"subfield":{"id":"https://openalex.org/subfields/1602","display_name":"Analytical
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T10274","display_name":"Heterocyclic
+        Compound Synthesis and Bioactivity","count":283,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T10375","display_name":"Pharmacogenetics
+        and Drug Metabolism","count":239,"subfield":{"id":"https://openalex.org/subfields/3004","display_name":"Pharmacology"},"field":{"id":"https://openalex.org/fields/30","display_name":"Pharmacology,
+        Toxicology and Pharmaceutics"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11235","display_name":"Statistical
+        Methods in Clinical Trials","count":188,"subfield":{"id":"https://openalex.org/subfields/2613","display_name":"Statistics
+        and Probability"},"field":{"id":"https://openalex.org/fields/26","display_name":"Mathematics"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T12547","display_name":"Pharmaceutical
+        studies and practices","count":138,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T14099","display_name":"Synthesis
+        and Characterization of Heterocyclic Compounds","count":102,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T12255","display_name":"Biosimilars
+        and Bioanalytical Methods","count":93,"subfield":{"id":"https://openalex.org/subfields/2403","display_name":"Immunology"},"field":{"id":"https://openalex.org/fields/24","display_name":"Immunology
+        and Microbiology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10256","display_name":"Drug Solubulity
+        and Delivery Systems","count":86,"subfield":{"id":"https://openalex.org/subfields/3003","display_name":"Pharmaceutical
+        Science"},"field":{"id":"https://openalex.org/fields/30","display_name":"Pharmacology,
+        Toxicology and Pharmaceutics"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10678","display_name":"Inflammatory
+        mediators and NSAID effects","count":85,"subfield":{"id":"https://openalex.org/subfields/2736","display_name":"Pharmacology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11036","display_name":"Antibiotics
+        Pharmacokinetics and Efficacy","count":75,"subfield":{"id":"https://openalex.org/subfields/2736","display_name":"Pharmacology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11792","display_name":"Pharmaceutical
+        Economics and Policy","count":64,"subfield":{"id":"https://openalex.org/subfields/2002","display_name":"Economics
+        and Econometrics"},"field":{"id":"https://openalex.org/fields/20","display_name":"Economics,
+        Econometrics and Finance"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10800","display_name":"Forensic Toxicology
+        and Drug Analysis","count":63,"subfield":{"id":"https://openalex.org/subfields/3005","display_name":"Toxicology"},"field":{"id":"https://openalex.org/fields/30","display_name":"Pharmacology,
+        Toxicology and Pharmaceutics"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11649","display_name":"Pharmaceutical
+        industry and healthcare","count":62,"subfield":{"id":"https://openalex.org/subfields/3004","display_name":"Pharmacology"},"field":{"id":"https://openalex.org/fields/30","display_name":"Pharmacology,
+        Toxicology and Pharmaceutics"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10144","display_name":"Blood Pressure
+        and Hypertension Studies","count":60,"subfield":{"id":"https://openalex.org/subfields/2705","display_name":"Cardiology
+        and Cardiovascular Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10856","display_name":"Intellectual
+        Property and Patents","count":60,"subfield":{"id":"https://openalex.org/subfields/1405","display_name":"Management
+        of Technology and Innovation"},"field":{"id":"https://openalex.org/fields/14","display_name":"Business,
+        Management and Accounting"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T13160","display_name":"Synthesis
+        and Biological Evaluation","count":59,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T10920","display_name":"Advanced Drug
+        Delivery Systems","count":57,"subfield":{"id":"https://openalex.org/subfields/3003","display_name":"Pharmaceutical
+        Science"},"field":{"id":"https://openalex.org/fields/30","display_name":"Pharmacology,
+        Toxicology and Pharmaceutics"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10051","display_name":"Asthma and
+        respiratory diseases","count":43,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10570","display_name":"Drug Transport
+        and Resistance Mechanisms","count":41,"subfield":{"id":"https://openalex.org/subfields/2730","display_name":"Oncology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10155","display_name":"Nitric Oxide
+        and Endothelin Effects","count":40,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10902","display_name":"Complementary
+        and Alternative Medicine Studies","count":40,"subfield":{"id":"https://openalex.org/subfields/2707","display_name":"Complementary
+        and alternative medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11199","display_name":"Pain Management
+        and Opioid Use","count":40,"subfield":{"id":"https://openalex.org/subfields/2703","display_name":"Anesthesiology
+        and Pain Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12410","display_name":"Structural
+        and Chemical Analysis of Organic and Inorganic Compounds","count":40,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T13876","display_name":"Chemical synthesis
+        and pharmacological studies","count":40,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T10094","display_name":"Epilepsy research
+        and treatment","count":33,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}}],"topic_share":[{"id":"https://openalex.org/T13483","display_name":"Herbal
+        Medicine Research Studies","value":0.001404,"subfield":{"id":"https://openalex.org/subfields/2707","display_name":"Complementary
+        and alternative medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12255","display_name":"Biosimilars
+        and Bioanalytical Methods","value":0.0010319,"subfield":{"id":"https://openalex.org/subfields/2403","display_name":"Immunology"},"field":{"id":"https://openalex.org/fields/24","display_name":"Immunology
+        and Microbiology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11235","display_name":"Statistical
+        Methods in Clinical Trials","value":0.0008942,"subfield":{"id":"https://openalex.org/subfields/2613","display_name":"Statistics
+        and Probability"},"field":{"id":"https://openalex.org/fields/26","display_name":"Mathematics"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T13160","display_name":"Synthesis
+        and Biological Evaluation","value":0.0008014,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T10274","display_name":"Heterocyclic
+        Compound Synthesis and Bioactivity","value":0.000771,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T12318","display_name":"Quinazolinone
+        synthesis and applications","value":0.0007269,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T12547","display_name":"Pharmaceutical
+        studies and practices","value":0.0006687,"subfield":{"id":"https://openalex.org/subfields/2735","display_name":"Pediatrics,
+        Perinatology and Child Health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11460","display_name":"Analytical
+        Methods in Pharmaceuticals","value":0.0005897,"subfield":{"id":"https://openalex.org/subfields/1602","display_name":"Analytical
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T10375","display_name":"Pharmacogenetics
+        and Drug Metabolism","value":0.000528,"subfield":{"id":"https://openalex.org/subfields/3004","display_name":"Pharmacology"},"field":{"id":"https://openalex.org/fields/30","display_name":"Pharmacology,
+        Toxicology and Pharmaceutics"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T14099","display_name":"Synthesis
+        and Characterization of Heterocyclic Compounds","value":0.0004885,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T12477","display_name":"Toxin Mechanisms
+        and Immunotoxins","value":0.0004675,"subfield":{"id":"https://openalex.org/subfields/2403","display_name":"Immunology"},"field":{"id":"https://openalex.org/fields/24","display_name":"Immunology
+        and Microbiology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T12846","display_name":"Ginkgo biloba
+        and Cashew Applications","value":0.0004514,"subfield":{"id":"https://openalex.org/subfields/2707","display_name":"Complementary
+        and alternative medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13454","display_name":"Phenothiazines
+        and Benzothiazines Synthesis and Activities","value":0.0004156,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10256","display_name":"Drug Solubulity
+        and Delivery Systems","value":0.0003725,"subfield":{"id":"https://openalex.org/subfields/3003","display_name":"Pharmaceutical
+        Science"},"field":{"id":"https://openalex.org/fields/30","display_name":"Pharmacology,
+        Toxicology and Pharmaceutics"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11649","display_name":"Pharmaceutical
+        industry and healthcare","value":0.0003664,"subfield":{"id":"https://openalex.org/subfields/3004","display_name":"Pharmacology"},"field":{"id":"https://openalex.org/fields/30","display_name":"Pharmacology,
+        Toxicology and Pharmaceutics"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10678","display_name":"Inflammatory
+        mediators and NSAID effects","value":0.0003485,"subfield":{"id":"https://openalex.org/subfields/2736","display_name":"Pharmacology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13023","display_name":"Synthesis
+        of Organic Compounds","value":0.0003419,"subfield":{"id":"https://openalex.org/subfields/2736","display_name":"Pharmacology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13876","display_name":"Chemical synthesis
+        and pharmacological studies","value":0.0003053,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T13992","display_name":"Cynara cardunculus
+        studies","value":0.0002965,"subfield":{"id":"https://openalex.org/subfields/1110","display_name":"Plant
+        Science"},"field":{"id":"https://openalex.org/fields/11","display_name":"Agricultural
+        and Biological Sciences"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11036","display_name":"Antibiotics
+        Pharmacokinetics and Efficacy","value":0.0002938,"subfield":{"id":"https://openalex.org/subfields/2736","display_name":"Pharmacology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13651","display_name":"Medicinal
+        Plants and Bioactive Compounds","value":0.0002863,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13335","display_name":"Pharmacological
+        Effects of Medicinal Plants","value":0.0002834,"subfield":{"id":"https://openalex.org/subfields/2736","display_name":"Pharmacology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13489","display_name":"Synthesis
+        of \u03b2-Lactam Compounds","value":0.0002684,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T12562","display_name":"Synthesis
+        and Characterization of Pyrroles","value":0.0002635,"subfield":{"id":"https://openalex.org/subfields/1605","display_name":"Organic
+        Chemistry"},"field":{"id":"https://openalex.org/fields/16","display_name":"Chemistry"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T12087","display_name":"Natural Compound
+        Pharmacology Studies","value":0.0002586,"subfield":{"id":"https://openalex.org/subfields/1110","display_name":"Plant
+        Science"},"field":{"id":"https://openalex.org/fields/11","display_name":"Agricultural
+        and Biological Sciences"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}}],"counts_by_year":[{"year":2026,"works_count":0,"oa_works_count":0,"cited_by_count":281},{"year":2025,"works_count":0,"oa_works_count":0,"cited_by_count":557},{"year":2024,"works_count":0,"oa_works_count":0,"cited_by_count":714},{"year":2023,"works_count":0,"oa_works_count":0,"cited_by_count":771},{"year":2022,"works_count":0,"oa_works_count":0,"cited_by_count":888},{"year":2021,"works_count":0,"oa_works_count":0,"cited_by_count":1023},{"year":2020,"works_count":0,"oa_works_count":0,"cited_by_count":1109},{"year":2019,"works_count":0,"oa_works_count":0,"cited_by_count":925},{"year":2018,"works_count":0,"oa_works_count":0,"cited_by_count":849},{"year":2017,"works_count":1,"oa_works_count":0,"cited_by_count":962},{"year":2016,"works_count":0,"oa_works_count":0,"cited_by_count":1020},{"year":2015,"works_count":0,"oa_works_count":0,"cited_by_count":1029},{"year":2014,"works_count":0,"oa_works_count":0,"cited_by_count":1169},{"year":2013,"works_count":1,"oa_works_count":0,"cited_by_count":1182},{"year":2012,"works_count":195,"oa_works_count":24,"cited_by_count":1115},{"year":2011,"works_count":1916,"oa_works_count":26,"cited_by_count":0},{"year":1994,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1991,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1990,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1986,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1984,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1983,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1982,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1977,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1975,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1971,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1970,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1966,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1964,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1962,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1960,"works_count":2,"oa_works_count":0,"cited_by_count":0},{"year":1958,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":1949,"works_count":1,"oa_works_count":0,"cited_by_count":0}],"works_api_url":"https://api.openalex.org/works?filter=primary_location.source.id:S132758211","updated_date":"2026-11-04T21:21:00","created_date":"2016-06-24T00:00:00"}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55f008d7e32ff98-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:37:52 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0'
+      X-RateLimit-Credits-Used:
+      - '0'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '198'
+      X-RateLimit-Remaining-USD:
+      - '0.0198'
+      X-RateLimit-Reset:
+      - '8528'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=jkrxnt4bbkiKmHZ3dxixJraxYkbMrDx01taxVuvqW5U%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914672"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=jkrxnt4bbkiKmHZ3dxixJraxYkbMrDx01taxVuvqW5U%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914672"
+    status:
+      code: 200
+      message: OK
+version: 1

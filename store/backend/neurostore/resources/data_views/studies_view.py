@@ -1,6 +1,6 @@
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import select, update
-from sqlalchemy.orm import raiseload, selectinload
+from sqlalchemy.orm import raiseload, selectinload, undefer
 from study_schema.models.paper_parse import CoordinateRole
 from webargs import fields, validate
 
@@ -134,6 +134,7 @@ class StudiesView(ObjectView, ListView):
         ),
         "map_type": fields.String(load_default=None),
         "studyset_owner": fields.String(load_default=None),
+        "journal_id": fields.String(load_default=None),
         "level": fields.String(dump_default="group", load_default="group"),
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
@@ -205,6 +206,7 @@ class StudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        q = q.options(undefer(Study.journal))
         if args.get("data_sources"):
             q = q.options(
                 selectinload(Study.data_sources).options(raiseload("*", sql_only=True))
@@ -282,6 +284,12 @@ class StudiesView(ObjectView, ListView):
                 .where(Analysis.study_id == self._model.id)
                 .where(analysis_role_clause(args["role"]))
                 .exists()
+            )
+        if args.get("journal_id"):
+            q = q.filter(
+                self._model.base_study_id.in_(
+                    select(BaseStudy.id).where(BaseStudy.journal_id == args["journal_id"])
+                )
             )
         q = apply_map_type_filter(q, self._model, args.get("map_type"))
         q = q.filter(self._model.level == args.get("level"))

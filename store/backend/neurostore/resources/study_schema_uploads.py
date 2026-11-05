@@ -1,5 +1,7 @@
 """The one endpoint the pipeline writes coordinates and extraction records through."""
 
+from connexion import request
+
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_permission
@@ -20,7 +22,7 @@ class StudySchemaUploadsView:
         # Local so that importing the package does not load the ingest stack.
         from neurostore.ingest.study_schema import ingest_upload
 
-        summary = ingest_upload(body, user=user)
+        summary = ingest_upload(body, user=user, settings=request.state.settings)
         study_ids = {
             study_id
             for (study_id,) in db.session.query(Study.id).filter_by(

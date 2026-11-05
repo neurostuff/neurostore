@@ -45,10 +45,12 @@ dependencies = [
     "sentry-sdk~=2.73",
     # A link's registrable domain, from the public suffix list snapshot it ships.
     "tldextract~=5.4",
+    # A journal's name close to a known one (services/journals.py).
+    "rapidfuzz~=3.9",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
-    # entity hashes read, pinned to the merge of neurostuff/study_schema#56 (the
-    # `normalized` sidecar on every extracted value).
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@b7efbdd6c465a00e2ef80d19b47acff6bb17471e",
+    # entity hashes read, pinned to the merge of neurostuff/study_schema#57
+    # (Bibliography.venue).
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@dfdf5b255d89488b8d778fd293467b0b8f75f599",
 ]
 
 [tool.setuptools.packages.find]

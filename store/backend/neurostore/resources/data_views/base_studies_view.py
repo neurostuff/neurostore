@@ -105,6 +105,7 @@ class BaseStudiesView(ObjectView, ListView):
         "data_type": fields.String(load_default=None),
         "map_type": fields.String(load_default=None),
         "is_oa": fields.Boolean(load_default=None, allow_none=True),
+        "journal_id": fields.String(load_default=None),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "pipeline_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
@@ -141,7 +142,9 @@ class BaseStudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
-        q = self._eager_load_versions(q, args).options(undefer(BaseStudy.identifiers))
+        q = self._eager_load_versions(q, args).options(
+            undefer(BaseStudy.identifiers), undefer(BaseStudy.journal)
+        )
         if args.get("data_sources"):
             q = q.options(
                 selectinload(BaseStudy.data_sources).options(
@@ -241,6 +244,8 @@ class BaseStudiesView(ObjectView, ListView):
         )
 
     def view_search(self, q, args):
+        if args.get("journal_id"):
+            q = q.filter(BaseStudy.journal_id == args["journal_id"])
         return self.search_service.apply(q, args)
 
     def text_search(self, args):
