@@ -21,17 +21,22 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import API from 'api/api.config';
 import { arrayToMetadata } from 'pages/StudyCBMA/components/EditStudyMetadata';
-import { StudyAnnotationEdits, StudyAnnotationsTableHandle } from 'pages/StudyCBMA/context/StudyCBMAContext';
+import {
+    PointsTableHandle,
+    StudyAnnotationEdits,
+    StudyAnnotationsTableHandle,
+} from 'pages/StudyCBMA/context/StudyCBMAContext';
 import {
     useStudy,
     useStudyAnalyses,
     useStudyHasBeenEdited,
     useStudyUser,
+    useStudyStore,
     useUpdateStudyInDB,
     useUpdateStudyIsLoading,
 } from 'stores/study/StudyStore';
 import { storeAnalysesToStudyAnalyses } from 'stores/study/StudyStore.helpers';
-import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './useSaveStudy.helpers';
+import { hasDuplicateStudyAnalysisNames, hasMissingPointInfo, pointFieldsAreValidTypes } from './useSaveStudy.helpers';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import annotationQueries from 'hooks/annotations/annotationQueries';
 import studysetQueries from 'hooks/studysets/studysetQueries';
@@ -44,8 +49,10 @@ const annotationEditsHaveChanges = (
 /** Called once by StudyCBMAProvider, which passes in the study annotations table and its edit flag. */
 const useSaveStudy = (
     studyAnnotationsTableRef: React.RefObject<StudyAnnotationsTableHandle | null>,
+    pointsTableRef: React.RefObject<PointsTableHandle | null>,
     annotationHasEdits: boolean,
-    setAnnotationHasEdits: (hasEdits: boolean) => void
+    setAnnotationHasEdits: (hasEdits: boolean) => void,
+    bumpPointsTableSeed: () => void
 ) => {
     const { user } = useAuth0();
     const queryClient = useQueryClient();
@@ -108,24 +115,21 @@ const useSaveStudy = (
         const annotationHasChanges = annotationEditsHaveChanges(annotationEdits);
         try {
             if (studyHasBeenEdited) {
+                const updatedStudy = await updateStudyInDB();
+                // the reloaded study has real point ids, so the open table must seed again
+                bumpPointsTableSeed();
+
                 // new analyses have temporary ids until the study save creates them. Analysis names are unique,
                 // so each saved analysis is found by the name it had before saving
-                const tempIdToAnalysisName = new Map(
-                    (annotationEdits?.rows ?? [])
-                        .filter((row) => row.isNew)
-                        .map((row) => [
-                            row.analysis,
-                            analyses.find((analysis) => analysis.id === row.analysis)?.name,
-                        ])
-                );
-                const updatedStudy = await updateStudyInDB();
                 const tempIdToAnalysisId = new Map<string, string>();
-                tempIdToAnalysisName.forEach((analysisName, temporaryAnalysisId) => {
-                    const savedAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
-                        (analysis) => analysis.name === analysisName
-                    );
-                    if (savedAnalysis?.id) tempIdToAnalysisId.set(temporaryAnalysisId, savedAnalysis.id);
-                });
+                annotationEdits?.rows
+                    .filter((row) => row.isNew)
+                    .forEach((row) => {
+                        const savedAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
+                            (analysis) => analysis.name === row.analysis_name
+                        );
+                        if (savedAnalysis?.id) tempIdToAnalysisId.set(row.analysis, savedAnalysis.id);
+                    });
 
                 if (annotationHasChanges) {
                     await updateAnnotationInDB({
@@ -163,16 +167,17 @@ const useSaveStudy = (
     };
 
     const getNewScrubbedStudyFromStore = () => {
+        const currentStudy = useStudyStore.getState().study;
         const updatedStudy: StudyRequest = {
-            name: storeStudy.name,
-            description: storeStudy.description,
-            doi: storeStudy.doi,
-            pmid: storeStudy.pmid,
-            metadata: arrayToMetadata(storeStudy.metadata),
-            publication: storeStudy.publication,
-            authors: storeStudy.authors,
-            year: storeStudy.year,
-            analyses: storeAnalysesToStudyAnalyses(storeStudy.analyses),
+            name: currentStudy.name,
+            description: currentStudy.description,
+            doi: currentStudy.doi,
+            pmid: currentStudy.pmid,
+            metadata: arrayToMetadata(currentStudy.metadata),
+            publication: currentStudy.publication,
+            authors: currentStudy.authors,
+            year: currentStudy.year,
+            analyses: storeAnalysesToStudyAnalyses(currentStudy.analyses),
         };
 
         return updatedStudy;
@@ -240,7 +245,7 @@ const useSaveStudy = (
 
             // 4. as this is a completely new study, that we've just created, the annotations are cleared.
             // We need to update the annotations with our latest changes, and associate newly created analyses with their corresponding analysis changes.
-            //      - we do this based on the analysis names since the IDs are reinitialized by neurostore
+            //      - we do this based on the analysis names since the temp UUIDs are reinitialized by neurostore
             if (annotationEditsHaveChanges(annotationEdits)) {
                 const analysisIdToName = new Map(analyses.map((analysis) => [analysis.id, analysis.name]));
                 const cloneAnalysisNameToId = new Map(
@@ -280,16 +285,28 @@ const useSaveStudy = (
     };
 
     const handleSave = async () => {
-        const { isError: hasDuplicateError, errorMessage: hasDuplicateErrorMessage } =
-            hasDuplicateStudyAnalysisNames(analyses);
-        if (hasDuplicateError) {
+        // the mounted coordinates table still holds the draft rows; the analyses from this render are older
+        pointsTableRef.current?.flushPoints();
+        const analysesForSave = useStudyStore.getState().study.analyses;
+
+        const { isValid: analysisNamesAreValid, errorMessage: hasDuplicateErrorMessage } =
+            hasDuplicateStudyAnalysisNames(analysesForSave);
+        if (!analysisNamesAreValid) {
             enqueueSnackbar(hasDuplicateErrorMessage, { variant: 'warning' });
             return;
         }
 
-        const { isError: emptyPointError, errorMessage: emptyPointErrorMessage } = hasEmptyStudyPoints(analyses);
-        if (emptyPointError) {
+        const { isValid: allPointsHaveData, errorMessage: emptyPointErrorMessage } =
+            hasMissingPointInfo(analysesForSave);
+        if (!allPointsHaveData) {
             enqueueSnackbar(emptyPointErrorMessage, { variant: 'warning' });
+            return;
+        }
+
+        const { isValid: pointFieldsAreValid, errorMessage: nonNumericPointErrorMessage } =
+            pointFieldsAreValidTypes(analysesForSave);
+        if (!pointFieldsAreValid) {
+            enqueueSnackbar(nonNumericPointErrorMessage, { variant: 'warning' });
             return;
         }
 

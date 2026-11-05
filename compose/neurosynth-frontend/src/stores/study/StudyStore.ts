@@ -8,8 +8,10 @@ import {
     IStoreCondition,
     IStorePoint,
     IStoreStudy,
+    PointWarnings,
     StudyDetails,
     getEmptyStudy,
+    getPointWarnings,
     storeAnalysesToStudyAnalyses,
     studyAnalysesToStoreAnalyses,
 } from './StudyStore.helpers';
@@ -19,6 +21,7 @@ import API from 'api/api.config';
 import { v4 as uuid } from 'uuid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 
 export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
@@ -32,9 +35,12 @@ export type StudyStoreActions = {
     createCondition: (condition: IStoreCondition) => IStoreCondition;
     addOrUpdateConditionWeightPairForAnalysis: (analysisId: string, condition: IStoreCondition, weight: number) => void;
     deleteConditionFromAnalysis: (analysisId: string, conditionId: string) => void;
-    createAnalysisPoints: (analysisId: string, points: IStorePoint[], index: number) => void;
-    deleteAnalysisPoints: (analysisId: string, pointIds: string[]) => void;
-    updateAnalysisPoints: (analysisId: string, points: IStorePoint[]) => void;
+    /** Turns on Save and the leave warning. Does not write point rows. */
+    markStudyEdited: () => void;
+    /** Replaces one analysis's points. Does not mark the study edited. */
+    replaceAnalysisPoints: (analysisId: string, points: IStorePoint[]) => void;
+    /** Live warnings from the coordinates table, which holds unsaved rows. Pass undefined to remove them. */
+    setAnalysisPointWarnings: (analysisId: string, pointWarnings?: PointWarnings) => void;
 };
 
 type StudyStoreMetadata = {
@@ -42,9 +48,10 @@ type StudyStoreMetadata = {
     getStudyIsLoading: boolean;
     updateStudyIsLoading: boolean;
     isError: boolean; // for http errors that occur
+    validation: Record<string, PointWarnings>; // analysis id -> warnings
 };
 
-const useStudyStore = create<
+export const useStudyStore = create<
     {
         study: IStoreStudy;
         conditions: IStoreCondition[];
@@ -61,6 +68,7 @@ const useStudyStore = create<
                     getStudyIsLoading: false,
                     updateStudyIsLoading: false,
                     isError: false,
+                    validation: {},
                 },
                 initStudyStore: async (studyId) => {
                     if (!studyId) return;
@@ -70,6 +78,7 @@ const useStudyStore = create<
                             ...state.storeMetadata,
                             getStudyIsLoading: true,
                             updateStudyIsLoading: true,
+                            validation: {},
                         },
                     }));
                     try {
@@ -120,6 +129,7 @@ const useStudyStore = create<
                             getStudyIsLoading: false,
                             updateStudyIsLoading: false,
                             isError: false,
+                            validation: {},
                         },
                         conditions: [],
                     }));
@@ -426,39 +436,12 @@ const useStudyStore = create<
                         };
                     });
                 },
-                createAnalysisPoints: (analysisId, points, index) => {
+                markStudyEdited: () => {
                     setUnloadHandler('study');
                     set((state) => {
-                        const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex((x) => x.id === analysisId);
-                        if (foundAnalysisIndex < 0) return state;
-                        const updatedPoints = [...state.study.analyses[foundAnalysisIndex].points];
-
-                        updatedPoints.splice(
-                            index,
-                            0,
-                            ...points.map((x) => ({
-                                x: undefined,
-                                y: undefined,
-                                z: undefined,
-                                cluster_size: undefined,
-                                subpeak: undefined,
-                                ...x,
-                                isNew: true,
-                                id: uuid(), // temporary ID until one is assigned by neurostore
-                            }))
-                        );
-                        updatedAnalyses[foundAnalysisIndex] = {
-                            ...updatedAnalyses[foundAnalysisIndex],
-                            points: updatedPoints,
-                        };
-
+                        if (state.storeMetadata.studyIsEdited) return state;
                         return {
                             ...state,
-                            study: {
-                                ...state.study,
-                                analyses: updatedAnalyses,
-                            },
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsEdited: true,
@@ -466,32 +449,17 @@ const useStudyStore = create<
                         };
                     });
                 },
-                deleteAnalysisPoints: (analysisId, ids) => {
-                    setUnloadHandler('study');
+                replaceAnalysisPoints: (analysisId, points) => {
                     set((state) => {
-                        const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex((x) => x.id === analysisId);
-                        if (foundAnalysisIndex < 0) return state;
-                        const updatedPoints = [...state.study.analyses[foundAnalysisIndex].points].filter(
-                            (point) => !ids.includes(point.id as string)
+                        const foundAnalysisIndex = state.study.analyses.findIndex(
+                            (analysis) => analysis.id === analysisId
                         );
+                        if (foundAnalysisIndex < 0) return state;
 
-                        if (updatedPoints.length === 0) {
-                            updatedPoints.push({
-                                x: undefined,
-                                y: undefined,
-                                z: undefined,
-                                cluster_size: undefined,
-                                subpeak: undefined,
-                                id: uuid(), // temporary ID until one is assigned by neurostore
-                                value: undefined,
-                                isNew: true,
-                            });
-                        }
-
+                        const updatedAnalyses = [...state.study.analyses];
                         updatedAnalyses[foundAnalysisIndex] = {
                             ...updatedAnalyses[foundAnalysisIndex],
-                            points: updatedPoints,
+                            points,
                         };
 
                         return {
@@ -499,45 +467,21 @@ const useStudyStore = create<
                             study: {
                                 ...state.study,
                                 analyses: updatedAnalyses,
-                            },
-                            storeMetadata: {
-                                ...state.storeMetadata,
-                                studyIsEdited: true,
                             },
                         };
                     });
                 },
-                updateAnalysisPoints: (analysisId, pointsToUpdate) => {
-                    setUnloadHandler('study');
+                setAnalysisPointWarnings: (analysisId, pointWarnings) => {
                     set((state) => {
-                        const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex((x) => x.id === analysisId);
-                        if (foundAnalysisIndex < 0) return state;
+                        const updatedValidation = { ...state.storeMetadata.validation };
+                        if (pointWarnings) updatedValidation[analysisId] = pointWarnings;
+                        else delete updatedValidation[analysisId];
 
-                        const updatedPoints = [...state.study.analyses[foundAnalysisIndex].points];
-                        pointsToUpdate.forEach((pointToUpdate) => {
-                            const pointToUpdateId = pointToUpdate.id as string;
-                            const foundPointIndex = updatedPoints.findIndex((x) => x.id === pointToUpdateId);
-                            if (foundPointIndex < 0) return;
-                            updatedPoints[foundPointIndex] = {
-                                ...updatedPoints[foundPointIndex],
-                                ...pointToUpdate,
-                            };
-                        });
-
-                        updatedAnalyses[foundAnalysisIndex] = {
-                            ...updatedAnalyses[foundAnalysisIndex],
-                            points: updatedPoints,
-                        };
                         return {
                             ...state,
-                            study: {
-                                ...state.study,
-                                analyses: updatedAnalyses,
-                            },
                             storeMetadata: {
                                 ...state.storeMetadata,
-                                studyIsEdited: true,
+                                validation: updatedValidation,
                             },
                         };
                     });
@@ -634,6 +578,24 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
         if (!foundAnalysis) return null;
         return foundAnalysis.pointStatistic;
     });
+export const useStudyAnalysisWarnings = (analysisId?: string) =>
+    useStudyStore(
+        useShallow((state) => {
+            const foundAnalysis = analysisId ? state.study.analyses.find((x) => x.id === analysisId) : undefined;
+            const name = foundAnalysis ? foundAnalysis.name : '';
+            // the coordinates table holds unsaved rows, so its warnings win over the stored points.
+            // state persisted before validation existed has no validation object
+            const pointWarnings =
+                (analysisId && state.storeMetadata.validation?.[analysisId]) ||
+                getPointWarnings(foundAnalysis?.points || []);
+
+            return {
+                hasNoName: (name || '').length === 0,
+                hasDuplicateName: state.study.analyses.some((x) => x.id !== analysisId && x.name === name),
+                ...pointWarnings,
+            };
+        })
+    );
 
 // keep stable reference to empty array
 const EMPTY_ANALYSIS_IMAGES: ImageReturn[] = [];
@@ -669,9 +631,9 @@ export const useCreateCondition = () => useStudyStore((state) => state.createCon
 export const useAddOrUpdateConditionWeightPairForAnalysis = () =>
     useStudyStore((state) => state.addOrUpdateConditionWeightPairForAnalysis);
 export const useDeleteConditionFromAnalysis = () => useStudyStore((state) => state.deleteConditionFromAnalysis);
-export const useUpdateAnalysisPoints = () => useStudyStore((state) => state.updateAnalysisPoints);
-export const useCreateAnalysisPoints = () => useStudyStore((state) => state.createAnalysisPoints);
-export const useDeleteAnalysisPoints = () => useStudyStore((state) => state.deleteAnalysisPoints);
+export const useMarkStudyEdited = () => useStudyStore((state) => state.markStudyEdited);
+export const useReplaceAnalysisPoints = () => useStudyStore((state) => state.replaceAnalysisPoints);
+export const useSetAnalysisPointWarnings = () => useStudyStore((state) => state.setAnalysisPointWarnings);
 export const useDeleteAnalysis = () => useStudyStore((state) => state.deleteAnalysis);
 export const useInitStudyStoreIfRequired = () => {
     const clearStudyStore = useClearStudyStore();

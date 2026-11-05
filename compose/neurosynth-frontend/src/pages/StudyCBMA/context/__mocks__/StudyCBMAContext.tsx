@@ -2,6 +2,8 @@ import { vi } from 'vitest';
 
 const useStudyCBMAContext = vi.fn().mockReturnValue({
     studyAnnotationsTableRef: { current: null },
+    pointsTableRef: { current: null },
+    pointsTableSeed: 0,
     annotationHasEdits: false,
     setAnnotationHasEdits: vi.fn(),
     saveStudy: {

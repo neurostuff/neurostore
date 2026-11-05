@@ -71,7 +71,7 @@ const StudyCBMAPage: React.FC = () => {
     return (
         // keyed so that each study, including a clone after saving, starts without annotation edits
         <StudyCBMAProvider key={studyId}>
-            <StateHandlerComponent disableShrink={false} isError={false} isLoading={!studyStoreId || getStudyIsLoading}>
+            <StateHandlerComponent disableShrink={true} isError={false} isLoading={!studyStoreId || getStudyIsLoading}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <NeurosynthBreadcrumbs
                         breadcrumbItems={[

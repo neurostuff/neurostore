@@ -12,12 +12,12 @@ const EditStudyAnalysesCBMA = React.memo(() => {
     const analyses = useStudyAnalyses();
     const studyId = useStudyId();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
-    const { studyAnnotationsTableRef } = useStudyCBMAContext();
+    const { studyAnnotationsTableRef, pointsTableRef } = useStudyCBMAContext();
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>();
-
     const handleCreateNewAnalysis = () => {
         if (!studyId) return;
 
+        pointsTableRef.current?.flushPoints();
         const createdAnalysis = addOrUpdateAnalysis({
             name: '',
             description: '',
@@ -32,9 +32,13 @@ const EditStudyAnalysesCBMA = React.memo(() => {
         setSelectedAnalysisId(createdAnalysis.id);
     };
 
-    const handleSelectAnalysis = useCallback((analysisId: string) => {
-        setSelectedAnalysisId(analysisId);
-    }, []);
+    const handleSelectAnalysis = useCallback(
+        (analysisId: string) => {
+            pointsTableRef.current?.flushPoints();
+            setSelectedAnalysisId(analysisId);
+        },
+        [pointsTableRef]
+    );
 
     const handleAfterAnalysisDeleted = () => {
         if (analyses.length <= 1) {

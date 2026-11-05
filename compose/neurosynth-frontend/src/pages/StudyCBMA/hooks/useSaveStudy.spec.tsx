@@ -10,13 +10,18 @@ import {
     useUpdateStudyset,
 } from 'hooks';
 import { useSnackbar } from 'notistack';
-import { StudyAnnotationEdits, StudyAnnotationsTableHandle } from 'pages/StudyCBMA/context/StudyCBMAContext';
+import {
+    PointsTableHandle,
+    StudyAnnotationEdits,
+    StudyAnnotationsTableHandle,
+} from 'pages/StudyCBMA/context/StudyCBMAContext';
 import { useNavigate } from 'react-router-dom';
 import {
     useStudy,
     useStudyAnalyses,
     useStudyHasBeenEdited,
     useStudyUser,
+    useStudyStore,
     useUpdateStudyInDB,
 } from 'stores/study/StudyStore';
 import { mockAnalyses, mockStorePoints, mockStoreStudy, mockStudysetNotNested } from 'testing/mockData';
@@ -32,16 +37,20 @@ vi.mock('hooks');
 vi.mock('api/api.config');
 
 const setAnnotationHasEdits = vi.fn();
+const bumpPointsTableSeed = vi.fn();
 
 // Using a dummy component in order to test a custom hook
 const DummyComponent = (props: {
     studyAnnotationsTable?: StudyAnnotationsTableHandle;
+    pointsTable?: PointsTableHandle;
     annotationHasEdits?: boolean;
 }) => {
     const { isLoading, hasEdits, handleSave } = useSaveStudy(
         { current: props.studyAnnotationsTable ?? null },
+        { current: props.pointsTable ?? null },
         props.annotationHasEdits ?? false,
-        setAnnotationHasEdits
+        setAnnotationHasEdits,
+        bumpPointsTableSeed
     );
     return (
         <div>
@@ -109,7 +118,7 @@ describe('useSaveStudy hook', () => {
         const mockAnalysesWithoutPoints = mockAnalyses();
         mockAnalysesWithoutPoints[0].points = [
             {
-                x: undefined,
+                x: 10,
                 y: undefined,
                 z: undefined,
             },
@@ -130,6 +139,61 @@ describe('useSaveStudy hook', () => {
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
     });
 
+    it('should throw an error for a non-numeric coordinate', async () => {
+        const analysesWithText = mockAnalyses();
+        analysesWithText[0].points = [
+            {
+                x: 'left' as unknown as number,
+                y: 0,
+                z: 0,
+            },
+        ];
+        (useStudyAnalyses as Mock).mockReturnValue(analysesWithText);
+        (useStudyHasBeenEdited as Mock).mockReturnValue(true);
+
+        render(<DummyComponent studyAnnotationsTable={createStudyAnnotationsTable(createAnnotationEdits())} />);
+        await clickSave();
+
+        expect(useSnackbar().enqueueSnackbar).toHaveBeenCalledWith(expect.stringContaining('non-numeric'), {
+            variant: 'warning',
+        });
+        expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
+    });
+
+    it('should flush the points table before checking for empty coordinates', async () => {
+        const analysesWithPoints = mockAnalyses();
+        analysesWithPoints[0].points = mockStorePoints();
+        (useStudyAnalyses as Mock).mockReturnValue(analysesWithPoints);
+        (useStudyHasBeenEdited as Mock).mockReturnValue(true);
+
+        const analysesWithEmptyPoints = mockAnalyses();
+        analysesWithEmptyPoints[0].points = [
+            { x: 10, y: undefined, z: undefined },
+            { x: undefined, y: undefined, z: undefined },
+        ];
+        const flushPoints = vi.fn(() => {
+            (useStudyStore.getState as Mock).mockReturnValueOnce({
+                study: {
+                    ...useStudy(),
+                    analyses: analysesWithEmptyPoints,
+                },
+            });
+        });
+
+        render(
+            <DummyComponent
+                studyAnnotationsTable={createStudyAnnotationsTable(createAnnotationEdits())}
+                pointsTable={{ flushPoints }}
+            />
+        );
+        await clickSave();
+
+        expect(flushPoints).toHaveBeenCalled();
+        expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
+        expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
+        expect(bumpPointsTableSeed).not.toHaveBeenCalled();
+    });
+
     it('should POST only the edited rows when the note keys have not changed', async () => {
         const studyAnnotationsTable = createStudyAnnotationsTable(createAnnotationEdits());
 
@@ -143,6 +207,7 @@ describe('useSaveStudy hook', () => {
         ]);
         expect(studyAnnotationsTable.markSaved).toHaveBeenCalled();
         expect(setAnnotationHasEdits).toHaveBeenCalledWith(false);
+        expect(bumpPointsTableSeed).not.toHaveBeenCalled();
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalledWith('Annotation saved', { variant: 'success' });
     });
 
@@ -180,6 +245,7 @@ describe('useSaveStudy hook', () => {
         await clickSave();
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
+        expect(bumpPointsTableSeed).toHaveBeenCalled();
         expect(useUpdateAnnotationByAnnotationAndAnalysisIds('').mutateAsync).toHaveBeenCalled();
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalledWith('Study and annotation saved', {
             variant: 'success',
@@ -215,7 +281,15 @@ describe('useSaveStudy hook', () => {
         );
         const studyAnnotationsTable = createStudyAnnotationsTable(
             createAnnotationEdits({
-                rows: [{ analysis: 'temporary-id', study: 'study-id', isNew: true, note: { included: false } }],
+                rows: [
+                    {
+                        analysis: 'temporary-id',
+                        analysis_name: 'new analysis',
+                        study: 'study-id',
+                        isNew: true,
+                        note: { included: false },
+                    },
+                ],
                 editedRowIndexes: new Set([0]),
             })
         );
