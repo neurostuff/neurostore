@@ -357,6 +357,214 @@ def test_upload_reports_the_provenance_of_each_run(session):
     assert "parse" not in again["provenance"]
 
 
+# The runs behind one offloaded record, as ns-pond's runs table holds them: the 27B
+# record run on Vista, ev1's evidence on LS6, and the normalization fit on beast.
+RECORD_RUN = {
+    "run_id": "ns-27b-e-20261031",
+    "kind": "model",
+    "stage": "record",
+    "source": "ns-27b",
+    "model": "Qwen/Qwen3.8-27B",
+    "adapter": "jdkent/qwen3.8-27b-ns-record@dbfd846bd3e1259039eb2f3117dc12bd733c640a",
+    "prompt_version": "astra-record-v3",
+    "schema_version": "1.6.0",
+    "code_commit": "4b51872",
+    "machine": "vista",
+    "created_at": "2026-10-31T13:43:00+00:00",
+}
+EVIDENCE_RUN = {
+    "run_id": "ns-ev1-20261102",
+    "stage": "evidence",
+    "source": "ns-27b",
+    "model": "numind/NuExtract3",
+    "adapter": "jdkent/nuextract3-ns-evidence@ea9be65e535cec75ba9a03dc637352b96d07e9b6",
+    "prompt_version": "ev1",
+    "schema_version": "1.6.0",
+    "code_commit": "4b51872",
+    "machine": "ls6",
+    "created_at": "2026-11-02T08:10:00+00:00",
+}
+NORMALIZE_RUN = {
+    "run_id": "astra-norm-out_all2-20261101",
+    "stage": "normalize",
+    "source": "ns-27b",
+    "model": "SapBERT + MONDO",
+    "fit": "fit-3f9c2a17d0b4e865",
+    "created_at": "2026-11-01T22:05:00Z",
+}
+
+
+def _offloaded(base_study_id, runs, record=None):
+    """A record alone, uploaded with the runs that made it."""
+    record = record or _record(GAIN)
+    record["extraction_metadata"] = {
+        "extractor_model": "Qwen/Qwen3.8-27B",
+        "extractor_version": "ns-27b-e-20261031",
+    }
+    return {
+        "record": record,
+        "parse_id": ORIGINAL["parse_id"],
+        "base_study_id": base_study_id,
+        "pipeline": {"name": "ns-pond", "version": "ns-27b-e-20261031", "runs": runs},
+    }
+
+
+def test_a_record_config_names_the_runs_that_made_it(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+
+    # Sent in any order, the runs are stored in stage order, every field present.
+    summary = ingest_upload(
+        _offloaded(base_study_id, [NORMALIZE_RUN, RECORD_RUN, EVIDENCE_RUN])
+    )
+
+    runs = summary["provenance"]["record"]["runs"]
+    assert [run["stage"] for run in runs] == ["record", "evidence", "normalize"]
+    assert runs[0] == {**dict.fromkeys(runs[0]), **RECORD_RUN}
+    assert len(runs[0]) == 14
+    assert runs[2]["adapter"] is None and runs[2]["fit"] == NORMALIZE_RUN["fit"]
+    assert runs[1]["kind"] is None
+    assert db_config(summary["record"]["config_id"]).config_args["runs"] == runs
+
+
+def test_uploads_by_the_same_runs_share_a_config(session):
+    first = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    other = fx.parse([LOSS], pmid="87654321")
+    second = ingest_upload({"coordinate_parse": other})["base_study_id"]
+    runs = [RECORD_RUN, EVIDENCE_RUN]
+
+    one = ingest_upload(_offloaded(first, runs))
+    two = ingest_upload(
+        {**_offloaded(second, list(reversed(runs)), _record(LOSS)), "parse_id": other["parse_id"]}
+    )
+    # A run named with its optional fields left out is the run with them null.
+    sparse = {k: v for k, v in NORMALIZE_RUN.items() if v is not None}
+    with_normalize = ingest_upload(_offloaded(first, runs + [sparse]))
+    again = ingest_upload(_offloaded(first, runs + [{**sparse, "machine": None}]))
+
+    assert one["record"]["config_id"] == two["record"]["config_id"]
+    assert with_normalize["record"]["config_id"] != one["record"]["config_id"]
+    assert again["record"]["config_id"] == with_normalize["record"]["config_id"]
+
+
+def test_a_rerun_with_another_model_gets_another_config(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    rerun = {
+        **RECORD_RUN,
+        "run_id": "ns-27b-e-20261105",
+        "adapter": "jdkent/qwen3.8-27b-ns-record@0123456789abcdef0123456789abcdef01234567",
+    }
+
+    old = ingest_upload(_offloaded(base_study_id, [RECORD_RUN]))
+    new = ingest_upload(_offloaded(base_study_id, [rerun]))
+
+    assert new["record"]["config_id"] != old["record"]["config_id"]
+    # Each record stays under the runs that made it.
+    assert PipelineStudyResult.query.filter_by(base_study_id=base_study_id).count() == 3
+
+
+def test_a_rerun_of_the_same_model_joins_its_run(session):
+    # ns-pond mints run_id from what made the output, so a rerun of missing records with
+    # the same model and inputs sends the same run, and its record lands in that config.
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    first = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, NORMALIZE_RUN]))
+    rerun = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, NORMALIZE_RUN]))
+    refit = {**NORMALIZE_RUN, "run_id": "astra-norm-20261110", "fit": "fit-0a1b2c3d4e5f6789"}
+    refitted = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, refit]))
+
+    assert rerun["record"]["config_id"] == first["record"]["config_id"]
+    # A refit is a new run, so the record it normalized is under another config.
+    assert refitted["record"]["config_id"] != first["record"]["config_id"]
+
+
+def test_an_upload_without_runs_keeps_its_config(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    body = _offloaded(base_study_id, None)
+    body["pipeline"].pop("runs")
+
+    summary = ingest_upload(body)
+
+    config = db_config(summary["record"]["config_id"])
+    assert "runs" not in config.config_args
+    assert summary["provenance"]["record"]["runs"] is None
+    assert ingest_upload(body)["record"]["config_id"] == config.id
+
+
+@pytest.mark.parametrize(
+    "runs, errors",
+    [
+        ([], {("SCHEMA", "pipeline/runs")}),
+        ({"run_id": "x"}, {("SCHEMA", "pipeline/runs")}),
+        (["ns-27b-e-20261031"], {("SCHEMA", "pipeline/runs/0")}),
+        (
+            [{k: v for k, v in RECORD_RUN.items() if k not in ("run_id", "created_at")}],
+            {("SCHEMA", "pipeline/runs/0/run_id"), ("SCHEMA", "pipeline/runs/0/created_at")},
+        ),
+        ([{**RECORD_RUN, "stage": "extraction"}], {("SCHEMA", "pipeline/runs/0/stage")}),
+        (
+            [{**RECORD_RUN, "created_at": "31 Oct 2026"}],
+            {("SCHEMA", "pipeline/runs/0/created_at")},
+        ),
+        ([{**RECORD_RUN, "model": 27}], {("SCHEMA", "pipeline/runs/0/model")}),
+        ([{**RECORD_RUN, "bundle_id": "b1"}], {("SCHEMA", "pipeline/runs/0/bundle_id")}),
+        ([{**RECORD_RUN, "kind": "rerun"}], {("SCHEMA", "pipeline/runs/0/kind")}),
+        ([EVIDENCE_RUN, NORMALIZE_RUN], {("SCHEMA", "pipeline/runs")}),
+        (
+            [RECORD_RUN, {**RECORD_RUN, "run_id": "ns-27b-e-20261105"}],
+            {("DUPLICATE_STAGE", "pipeline/runs/1/stage")},
+        ),
+        (
+            [RECORD_RUN, {**EVIDENCE_RUN, "run_id": RECORD_RUN["run_id"]}],
+            {("DUPLICATE_RUN_ID", "pipeline/runs/1/run_id")},
+        ),
+    ],
+)
+def test_a_malformed_run_is_refused(session, runs, errors):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(_offloaded(base_study_id, runs))
+
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == errors
+    assert not PipelineConfig.query.filter_by(version="ns-27b-e-20261031").count()
+
+
+@pytest.mark.anyio
+async def test_upload_endpoint_takes_runs(admin_client, session):
+    url = "/api/study-schema-uploads/"
+    parse = await admin_client.post(url, data={"coordinate_parse": ORIGINAL})
+    base_study_id = parse.json()["base_study_id"]
+
+    response = await admin_client.post(
+        url, data=_offloaded(base_study_id, [RECORD_RUN, EVIDENCE_RUN, NORMALIZE_RUN])
+    )
+    assert response.status_code == 200, response.text
+    runs = response.json()["provenance"]["record"]["runs"]
+    assert [run["run_id"] for run in runs] == [
+        RECORD_RUN["run_id"],
+        EVIDENCE_RUN["run_id"],
+        NORMALIZE_RUN["run_id"],
+    ]
+
+    response = await admin_client.post(
+        url, data=_offloaded(base_study_id, [{**RECORD_RUN, "bundle_id": "b1"}])
+    )
+    assert response.status_code == 422, response.text
+
+
+def test_a_run_id_names_one_run(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    ingest_upload(_offloaded(base_study_id, [RECORD_RUN]))
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(_offloaded(base_study_id, [{**RECORD_RUN, "machine": "ls6"}]))
+
+    assert error.value.status_code == 422
+    assert [(e.code, e.field) for e in error.value.errors] == [
+        ("RUN_CONFLICT", "pipeline/runs/0")
+    ]
+
+
 def test_record_attaches_later_to_the_stored_parse(session):
     base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
 
