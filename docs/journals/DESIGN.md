@@ -194,18 +194,18 @@ venues it has already identified, plus J_Medline, and send ambiguous strings to 
 
 ```
 venue: Optional[Venue]
-Venue:
-  openalex_id: str            # "S137773608"
-  kind: str                   # OpenAlex source type: journal | repository | conference | book series | ebook platform | other
-  title: str                  # OpenAlex display_name
-  abbreviation: Optional[str] # NLM IsoAbbr, else MedAbbr
-  issn_l: Optional[str]
-  issns: list[str]
-  nlm_id: Optional[str]
-  wikidata_id: Optional[str]
-  match: str                  # doi | pmid | preprint_server | issn | title | fuzzy
-  score: Optional[float]      # fuzzy only
+Venue:                         # which journal this paper appeared in, and how that was decided
+  openalex_id: str             # "S121666818"
+  match: VenueMatch            # doi | pmid | preprint_server | issn | title | fuzzy
+  score: Optional[float]       # fuzzy only
 ```
+
+`Venue` holds only what belongs to the paper. What belongs to the journal is held once, in neurostore's
+`journals` row: its title, ISSNs, NLM id, abbreviation and kind. Otherwise every paper's upload would repeat
+it.
+- neurostore fills a new row from OpenAlex's source record (`GET /sources/{id}`, a free single-entity
+  call) the first time an id appears.
+- It adds the NLM id and abbreviation from J_Medline by ISSN.
 
 **neurostore:**
 
@@ -216,8 +216,8 @@ journals
   kind              text  NOT NULL
   title             text  NOT NULL
   abbreviation      text  NULL
-  issn_l            text  NULL UNIQUE
-  issns             text[] NOT NULL DEFAULT '{}'   -- GIN index
+  issns             text[] NOT NULL DEFAULT '{}'   -- every ISSN of the title; GIN index
+  issn_l            text  NULL UNIQUE               -- which of `issns` is the linking ISSN; CHECK issn_l = ANY(issns)
   nlm_id            text  NULL                      -- not unique: NLM's parent record can stand for two sources
   wikidata_id       text  NULL
   created_at, updated_at
@@ -292,6 +292,10 @@ was never touched, so nothing is lost and the API's old field is unchanged throu
 
 ## Questions for James
 
+James, 2026-11-05: agreed to `Venue` as long as no information is held twice. `Venue` is therefore cut to
+the paper's own facts.
+
+
 Answers, 2026-11-05:
 
 1. **Neurostore owns the journal; no user owns one.** `journals` has no `user_id` (like `Author` and
@@ -314,12 +318,12 @@ Mapping` (803), `Hum Brain Mapp` (366) and `HUMAN BRAIN MAPPING` (2).
 |---|---|---|---|
 | study_schema `Bibliography.journal` | The name as one provider printed it. Unchanged | `Hum Brain Mapp` | becomes neurostore `publication` |
 | neurostore `publication` | The same raw string, kept as received | `Hum Brain Mapp` | `base_studies`, `studies` |
-| ISSN | The number of one medium version: print or online | `1065-9471` (print), `1097-0193` (online) | `venue.issns` → `journals.issns` |
-| ISSN-L | The one ISSN that links a title's print and online versions | `1065-9471` | `venue.issn_l` → `journals.issn_l` |
-| OpenAlex source id | One per ISSN-L, plus preprint servers and conference series, which mostly have no ISSN | `S121666818` (bioRxiv is `S4306402567`, with no ISSN-L) | `venue.openalex_id` → `journals.openalex_id` |
-| NLM Unique ID | PubMed's id for the title, which brings its abbreviation | `9419065`, `Hum Brain Mapp` | `venue.nlm_id`, `venue.abbreviation` |
-| study_schema `Bibliography.venue` | The identified journal: the ids above, its canonical title and how it was matched | `{openalex_id: S121666818, title: Human Brain Mapping, abbreviation: Hum Brain Mapp, issn_l: 1065-9471, issns: [1065-9471, 1097-0193], nlm_id: 9419065, wikidata_id: Q5936947, kind: journal, match: doi}` | becomes one `journals` row and `base_studies.journal_id` |
-| neurostore `journals` row | One row per OpenAlex source, shared by every paper in that journal | the four strings above all point at it | `journals` |
+| ISSN | The number of one medium version: print or online | `1065-9471` (print), `1097-0193` (online) | `journals.issns` |
+| ISSN-L | Which of the title's ISSNs links its print and online versions (always one of `issns`) | `1065-9471` | `journals.issn_l` |
+| OpenAlex source id | One per ISSN-L, plus preprint servers and conference series, which mostly have no ISSN | `S121666818` (bioRxiv is `S4306402567`, with no ISSN-L) | `venue.openalex_id`, `journals.openalex_id` |
+| NLM Unique ID | PubMed's id for the title, which brings its abbreviation | `9419065`, `Hum Brain Mapp` | `journals.nlm_id`, `journals.abbreviation` |
+| study_schema `Bibliography.venue` | Which journal the paper appeared in, and how that was decided | `{openalex_id: S121666818, match: doi}` | becomes `base_studies.journal_id` and `journal_match` |
+| neurostore `journals` row | One row per OpenAlex source, shared by every paper in that journal: title, ISSNs, ISSN-L, NLM id, abbreviation, kind | `Human Brain Mapping`, `[1065-9471, 1097-0193]`, `1065-9471`, `9419065`, `Hum Brain Mapp`, `journal`; all four strings point at it | `journals` |
 
 So a string says what a paper's metadata called the journal; `venue` says which journal that is.
 
