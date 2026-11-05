@@ -565,6 +565,35 @@ def test_a_run_id_names_one_run(session):
     ]
 
 
+def test_a_record_keeps_its_normalized_sidecars(session):
+    # A normalizer's reading sits beside the value it read (study_schema#56).
+    record = _record(GAIN)
+    record["description"] = {
+        "extraction_status": "extracted",
+        "value": "Probable Alzheimer's disease; healthy older adults",
+        "value_source": "reported",
+        "evidence": {"status": "not_found"},
+        "normalized": [
+            {
+                "vocabulary": "MONDO",
+                "status": "mapped",
+                "value": "MONDO:0004975",
+                "label": "Alzheimer disease",
+                "item": 0,
+                "method": "lexical",
+                "mapping_tool": "pondie.normalization.medical_condition 16a42d8",
+                "confidence": 1.0,
+            },
+            {"vocabulary": "MONDO", "status": "absent", "item": 1, "mapping_tool": "m"},
+        ],
+    }
+
+    summary = ingest_upload({"coordinate_parse": ORIGINAL, "record": record})
+
+    stored = PipelineStudyResult.query.get(summary["provenance"]["record"]["result_id"])
+    assert stored.result_data["description"]["normalized"] == record["description"]["normalized"]
+
+
 def test_record_attaches_later_to_the_stored_parse(session):
     base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
 
