@@ -16,6 +16,7 @@ DATA_VIEW_MODULES = {
         "neurostore.resources.data_views.data_sources_view"
     ),
     "EntitiesResource": "neurostore.resources.data_views.entities_resource",
+    "JournalsView": "neurostore.resources.data_views.journals_view",
     "ImagesView": "neurostore.resources.data_views.images_view",
     "PointsView": "neurostore.resources.data_views.points_view",
     "PointValuesView": "neurostore.resources.data_views.point_values_view",

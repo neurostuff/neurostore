@@ -187,6 +187,7 @@ def serialize_study_record(study, context=None):
         "name": study.name,
         "description": study.description,
         "publication": study.publication,
+        "journal": study.journal,
         "doi": study.doi,
         "pmid": study.pmid,
         "pmcid": study.pmcid,

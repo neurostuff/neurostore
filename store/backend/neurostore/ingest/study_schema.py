@@ -61,6 +61,7 @@ split gets its original half's conditions, negated.
 """
 
 import hashlib
+import logging
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -126,6 +127,10 @@ from neurostore.models import (
 )
 from neurostore import authors, corresponding_authors
 from neurostore.models.fulltext import find_or_add_fulltext
+from neurostore.services import journals
+from neurostore.services.base_study_metadata_enrichment import (
+    enqueue_base_study_metadata_updates,
+)
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.stored_parses import stored_parse, stored_parse_result
 from neurostore.study_schema_tools import (
@@ -209,13 +214,17 @@ RUN_OPTIONAL = (
     "fit",
 )
 
+logger = logging.getLogger(__name__)
+
 
 def is_content_key(key):
     return bool(key) and _CONTENT_KEY.fullmatch(key) is not None
 
 
-def ingest_upload(body, user=None):
-    """Store one upload; return a summary of what changed. Does not commit."""
+def ingest_upload(body, user=None, settings=None):
+    """Store one upload; return a summary of what changed. Does not commit.
+
+    ``settings`` reach OpenAlex and NLM the first time a journal is seen."""
     parse = body.get("coordinate_parse")
     record = body.get("record")
     parsed_paper = body.get("parsed_paper")
@@ -281,6 +290,7 @@ def ingest_upload(body, user=None):
     if previous_owner is not None:
         summary["took_ownership_from"] = previous_owner
     _set_retraction(base_study, parsed_paper)
+    _set_journal(base_study, parsed_paper, settings)
     listed = authors.store_authors(base_study.id, parsed_paper)
     corresponding_authors.add_emails(base_study.id, authors.correspondence(parsed_paper), listed)
     if parsed_paper is not None:
@@ -741,6 +751,22 @@ def _bibliography(parsed_paper):
         "authors": authors.authors_string(a["name"] for a in bib.get("authors") or []),
     }
     return {k: v for k, v in fields.items() if v is not None}
+
+
+def _set_journal(base_study, parsed_paper, settings):
+    """Point the base study at the journal the parsed paper names. A journal neurostore
+    has not seen is read from OpenAlex; when that fails the upload still stands, and the
+    metadata outbox matches the paper by neurostore's own rules."""
+    venue = ((parsed_paper or {}).get("bibliography") or {}).get("venue")
+    if venue is None:
+        return
+    match = journals.Match(venue["openalex_id"], venue["match"], venue.get("score"))
+    try:
+        with db.session.begin_nested():
+            journals.attach(base_study, match, settings=settings or {})
+    except Exception as exc:  # noqa: BLE001 - the journal must not cost the upload
+        logger.warning("journal %s for %s not read: %s", match.openalex_id, base_study.id, exc)
+        enqueue_base_study_metadata_updates([base_study.id], reason="journal")
 
 
 def _set_retraction(base_study, parsed_paper):

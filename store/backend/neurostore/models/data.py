@@ -295,6 +295,13 @@ class BaseStudy(BaseMixin, db.Model):
     # row, so a scan is what the planner uses.
     is_retracted = db.Column(db.Boolean, nullable=True)
     retraction_notice = db.Column(JSONB, nullable=True)
+    #: The journal neurostore identified (models/journals.py); ``publication`` keeps the
+    #: name as the source printed it.
+    journal_id = db.Column(
+        db.Text, db.ForeignKey("journals.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    #: How: study_schema's ``VenueMatch``.
+    journal_match = db.Column(db.Text, nullable=True)
     #: The paper's licence, which governs its abstract (study_schema's
     #: ``bibliography.license.license_id``); NULL until a pipeline upload sets it.
     license = db.Column(license_type("base_studies"), nullable=True)
@@ -337,6 +344,10 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint(
             "publication_status IN ('preprint', 'published')",
             name="ck_base_studies_publication_status",
+        ),
+        db.CheckConstraint(
+            "journal_match IN ('doi', 'pmid', 'preprint_server', 'issn', 'title', 'fuzzy')",
+            name="ck_base_studies_journal_match",
         ),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),

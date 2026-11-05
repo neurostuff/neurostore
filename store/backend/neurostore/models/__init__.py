@@ -41,6 +41,7 @@ from neurostore.models.data import (
     University,
 )
 from neurostore.models.fulltext import Fulltext
+from neurostore.models.journals import Journal
 from neurostore.models.links import BaseStudyLink, LinkDomain
 from neurostore.models.review import (
     Review,
@@ -50,6 +51,7 @@ from neurostore.models.review import (
 )
 
 __all__ = [
+    "Journal",
     "Studyset",
     "StudysetStudy",
     "Annotation",

@@ -5,6 +5,7 @@ from marshmallow import (
     SchemaOpts,
     ValidationError,
     fields,
+    missing,
     post_dump,
     post_load,
     pre_dump,
@@ -324,6 +325,31 @@ class ConditionSchema(BaseDataSchema):
     id = fields.String(
         metadata={"info_field": True, "id_field": True, "preserve_on_clone": True}
     )
+
+
+def dump_loaded_journal(obj):
+    """The study's or base study's journal summary when the view loaded it; left out
+    otherwise, so a schema nested many times over does not query once per record."""
+    from sqlalchemy import inspect as sa_inspect
+
+    if "journal" in sa_inspect(obj).unloaded:
+        return missing
+    return obj.journal
+
+
+class JournalSchema(BaseSchema):
+    """A journal as neurostore identified it; read only."""
+
+    openalex_id = fields.String(dump_only=True)
+    kind = fields.String(dump_only=True)
+    title = fields.String(dump_only=True)
+    abbreviation = fields.String(dump_only=True, allow_none=True)
+    issns = fields.List(fields.String(), dump_only=True)
+    issn_l = fields.String(dump_only=True, allow_none=True)
+    nlm_id = fields.String(dump_only=True, allow_none=True)
+    wikidata_id = fields.String(dump_only=True, allow_none=True)
+    created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
+    updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
 
 
 DATA_SOURCE_KINDS = ("study", "consortium", "repository")
@@ -762,6 +788,7 @@ class BaseStudySchema(BaseDataSchema, ArticleIdentifiersSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
     publication = fields.String(allow_none=True)
+    journal = fields.Method("dump_journal", dump_only=True)
     doi = fields.String(allow_none=True)
     pmid = fields.String(allow_none=True)
     pmcid = fields.String(allow_none=True)
@@ -781,6 +808,9 @@ class BaseStudySchema(BaseDataSchema, ArticleIdentifiersSchema):
     )
     ace_fulltext = fields.String(load_only=True, allow_none=True)
     pubget_fulltext = fields.String(load_only=True, allow_none=True)
+
+    def dump_journal(self, obj):
+        return dump_loaded_journal(obj)
 
     def dump_data_sources(self, obj):
         return dump_computed_data_sources(obj)
@@ -852,6 +882,7 @@ class StudySchema(BaseDataSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
     publication = fields.String(allow_none=True)
+    journal = fields.Method("dump_journal", dump_only=True)
     doi = fields.String(allow_none=True)
     pmid = fields.String(allow_none=True)
     pmcid = fields.String(allow_none=True)
@@ -887,6 +918,9 @@ class StudySchema(BaseDataSchema):
     class Meta:
         # studysets can be very large and are hidden by default.
         exclude = ("studysets",)
+
+    def dump_journal(self, obj):
+        return dump_loaded_journal(obj)
 
     @pre_load
     def check_nulls(self, data, **kwargs):

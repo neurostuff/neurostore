@@ -115,7 +115,11 @@ Not chosen:
 Known OpenAlex faults, each with a rule:
 - **`primary_location` is sometimes a repository** (Radboud Repository, PubMed Central) while a journal
   location exists: 3 of 1,000 in the sample. Rule: take the first location whose source `type` is
-  `journal`, `conference`, `book series` or `ebook platform`, else the primary. ns-pond's PDF extractor
+  `journal`, `conference`, `book series` or `ebook platform`. Failing that, take the primary
+  location only when it is one of the seven preprint servers. Any other repository (PubMed
+  Central, a university's) holds a copy, so the paper falls through to the ISSN tier. Found
+  in the tests: the AJNR paper with PMID 15090336 has only a PubMed Central copy in OpenAlex,
+  and PubMed's ISSN names the journal. ns-pond's PDF extractor
   already uses this set (`_PUBLISHER_SOURCE_TYPES`).
 - **A source id can be merged** into another. neurostore follows a merged id to the survivor when it
   refreshes journals.

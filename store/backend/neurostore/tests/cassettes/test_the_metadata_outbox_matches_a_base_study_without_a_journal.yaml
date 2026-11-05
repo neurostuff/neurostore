@@ -1,0 +1,667 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/works?filter=doi%3A10.1002%2Fmds.26295&per_page=100&select=doi%2Cids%2Cprimary_location%2Clocations
+  response:
+    body:
+      string: '{"meta": {"notice": "No API key, so this request shares one free daily
+        budget ($0.10) with everyone on your network''s IP address. The mailto parameter
+        doesn''t raise this limit. Get a free key with its own $1/day at https://openalex.org/settings/api
+        and add api_key=YOUR_KEY to your requests. An AI agent can get one for its
+        user in one call: POST https://api.openalex.org/api-keys with {\"email\":
+        \"<your user''s email>\"}; we email them a link, and the key works once they
+        click it. Docs for agents: https://help.openalex.org/llms.txt", "count": 4,
+        "db_response_time_ms": 12, "page": 1, "per_page": 100, "groups_count": null,
+        "x_query": {"oql": "get works where DOI is 10.1002/mds.26295", "x_new_oql":
+        "get works where DOI is 10.1002/mds.26295", "oqo": {"get_rows": "works", "filter_rows":
+        [{"column_id": "doi", "value": "10.1002/mds.26295"}]}, "url": "/works?filter=doi:10.1002%2Fmds.26295&per_page=100",
+        "order": "most cited (age-adjusted) first", "order_default": true}, "cost_usd":
+        0.0001}, "results": [{"doi": "https://doi.org/10.1002/mds.26295", "ids": {"openalex":
+        "https://openalex.org/W2183546547", "doi": "https://doi.org/10.1002/mds.26295",
+        "mag": "2183546547"}, "primary_location": {"id": "pmh:oai:ris.utwente.nl:openaire_cris_publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.utwente.nl/en/publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4406922991", "display_name":
+        "University of Twente Research Information", "issn_l": null, "issn": null,
+        "is_oa": false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        null, "host_organization_name": null, "host_organization_lineage": [], "host_organization_lineage_names":
+        [], "type": "repository"}, "license": null, "license_id": null, "version":
+        "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
+        "Zhao, Y, Heida, T, Nonnekes, J H & van Wezel, R J A 2015, Rhythmic cueing
+        with the Google Glass for patients with Parkinson''s disease. in 19th International
+        Congress of Parkinson''s Disease and Movement Disorders. Wiley, Malden, pp.
+        138-138, 19th International Congress of Parkinson''s Disease and Movement
+        Disorders 2015, San Diego, California, United States, 14/06/15. https://doi.org/10.1002/mds.26295",
+        "raw_type": "info:eu-repo/semantics/conferenceObject"}, "locations": [{"id":
+        "pmh:oai:ris.utwente.nl:openaire_cris_publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.utwente.nl/en/publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4406922991", "display_name":
+        "University of Twente Research Information", "issn_l": null, "issn": null,
+        "is_oa": false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        null, "host_organization_name": null, "host_organization_lineage": [], "host_organization_lineage_names":
+        [], "type": "repository"}, "license": null, "license_id": null, "version":
+        "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
+        "Zhao, Y, Heida, T, Nonnekes, J H & van Wezel, R J A 2015, Rhythmic cueing
+        with the Google Glass for patients with Parkinson''s disease. in 19th International
+        Congress of Parkinson''s Disease and Movement Disorders. Wiley, Malden, pp.
+        138-138, 19th International Congress of Parkinson''s Disease and Movement
+        Disorders 2015, San Diego, California, United States, 14/06/15. https://doi.org/10.1002/mds.26295",
+        "raw_type": "info:eu-repo/semantics/conferenceObject"}, {"id": "pmh:ut:oai:ris.utwente.nl:publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.utwente.nl/en/publications/93a15ef8-a0e9-4d39-a727-49788821b237",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4406922991", "display_name":
+        "University of Twente Research Information", "issn_l": null, "issn": null,
+        "is_oa": false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        null, "host_organization_name": null, "host_organization_lineage": [], "host_organization_lineage_names":
+        [], "type": "repository"}, "license": null, "license_id": null, "version":
+        "submittedVersion", "is_accepted": false, "is_published": false, "raw_source_name":
+        "19th International Congress of Parkinson''s Disease and Movement Disorders,
+        138 - 138", "raw_type": "info:eu-repo/semantics/conferencepaper"}, {"id":
+        "mag:2183546547", "doi": null, "is_oa": false, "landing_page_url": "https://pdxscholar.library.pdx.edu/ece_fac/343/",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S163027424", "display_name":
+        "Movement Disorders", "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"],
+        "is_oa": false, "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1",
+        "poland-140", "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": null, "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders", "raw_type": null}]}, {"doi":
+        "https://doi.org/10.1002/mds.26295", "ids": {"openalex": "https://openalex.org/W4292577873",
+        "doi": "https://doi.org/10.1002/mds.26295", "pmid": "https://pubmed.ncbi.nlm.nih.gov/26095114"},
+        "primary_location": {"id": "doi:10.1002/mds.26295", "doi": "https://doi.org/10.1002/mds.26295",
+        "is_oa": false, "landing_page_url": "https://doi.org/10.1002/mds.26295", "pdf_url":
+        null, "source": {"id": "https://openalex.org/S163027424", "display_name":
+        "Movement Disorders", "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"],
+        "is_oa": false, "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1",
+        "poland-140", "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": "publishedVersion", "is_accepted": true,
+        "is_published": true, "raw_source_name": "Movement Disorders", "raw_type":
+        "journal-article"}, "locations": [{"id": "doi:10.1002/mds.26295", "doi": "https://doi.org/10.1002/mds.26295",
+        "is_oa": false, "landing_page_url": "https://doi.org/10.1002/mds.26295", "pdf_url":
+        null, "source": {"id": "https://openalex.org/S163027424", "display_name":
+        "Movement Disorders", "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"],
+        "is_oa": false, "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1",
+        "poland-140", "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": "publishedVersion", "is_accepted": true,
+        "is_published": true, "raw_source_name": "Movement Disorders", "raw_type":
+        "journal-article"}, {"id": "pmid:26095114", "doi": null, "is_oa": false, "landing_page_url":
+        "https://pubmed.ncbi.nlm.nih.gov/26095114", "pdf_url": null, "source": {"id":
+        "https://openalex.org/S4306525036", "display_name": "PubMed", "issn_l": null,
+        "issn": null, "is_oa": false, "is_in_doaj": false, "is_core": false, "listed_in":
+        [], "host_organization": "https://openalex.org/I1299303238", "host_organization_name":
+        "National Institutes of Health", "host_organization_lineage": ["https://openalex.org/I1299303238"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "publishedVersion", "is_accepted": true, "is_published":
+        true, "raw_source_name": "Movement disorders : official journal of the Movement
+        Disorder Society", "raw_type": "Journal Article"}, {"id": "pmh:oai:pdxscholar.library.pdx.edu:ece_fac-1334",
+        "doi": null, "is_oa": false, "landing_page_url": "https://pdxscholar.library.pdx.edu/ece_fac/343",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4377196300", "display_name":
+        "PDXScholar  (Portland State University)", "issn_l": null, "issn": null, "is_oa":
+        false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I126345244", "host_organization_name": "Portland State
+        University", "host_organization_lineage": ["https://openalex.org/I126345244"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Electrical and Computer Engineering Faculty Publications
+        and Presentations", "raw_type": "text"}, {"id": "pmh:oai:pure.rug.nl:openaire_cris_publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "doi": null, "is_oa": false, "landing_page_url": "https://research.rug.nl/en/publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Luinstra, M, Rutgers, W A W F, Dijkstra, H, Grasmeijer,
+        F, Hagedoorn, P, Vogelzang, J, Frijlink, H W & De Boer, A H 2015, ''The ability
+        of Parkinson''s disease patients to use dry powder inhalers during off periods'',
+        Movement Disorders, vol. 30, pp. 101. https://doi.org/10.1002/mds.26295",
+        "raw_type": "info:eu-repo/semantics/conferenceObject"}, {"id": "pmh:oai:pure.rug.nl:openaire_cris_publications/0ce7e1fc-faa5-4ba9-845f-8322f4f0aa00",
+        "doi": null, "is_oa": false, "landing_page_url": "https://research.rug.nl/en/publications/0ce7e1fc-faa5-4ba9-845f-8322f4f0aa00",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Brandsma, R, Lawerman, T F, Kuiper, M J, Geffen,
+        van, J, Lunsing, I J, Burger, H, de Koning, T J, de Vries, J J, de Koning-Tijssen,
+        M A J & Sival, D A 2015, ''Reliability and discriminant validity of ataxia
+        rating scales in early onset ataxia'', Movement Disorders, vol. 30, no. Supplement
+        1, 915, pp. S356-S356. https://doi.org/10.1002/mds.26295", "raw_type": "info:eu-repo/semantics/conferenceObject"},
+        {"id": "pmh:oai:repository.ubn.ru.nl:2066/218342", "doi": null, "is_oa": false,
+        "landing_page_url": "https://hdl.handle.net/2066/218342", "pdf_url": null,
+        "source": {"id": "https://openalex.org/S4306401067", "display_name": "Radboud
+        Repository (Radboud University)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I145872427", "host_organization_name": "Radboud University
+        Nijmegen", "host_organization_lineage": ["https://openalex.org/I145872427"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "", "raw_type": "Article / Letter to editor"}, {"id":
+        "pmh:rug:oai:pure.rug.nl:publications/0ce7e1fc-faa5-4ba9-845f-8322f4f0aa00",
+        "doi": null, "is_oa": false, "landing_page_url": "https://research.rug.nl/en/publications/0ce7e1fc-faa5-4ba9-845f-8322f4f0aa00",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30(Supplement 1):915, S356
+        - S356. Wiley", "raw_type": "info:eu-repo/semantics/article"}]}, {"doi": "https://doi.org/10.1002/mds.26295",
+        "ids": {"openalex": "https://openalex.org/W2477211393", "doi": "https://doi.org/10.1002/mds.26295",
+        "mag": "2477211393"}, "primary_location": {"id": "pmh:rug:oai:pure.rug.nl:publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.rug.nl/en/publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30. Wiley", "raw_type": "info:eu-repo/semantics/article"},
+        "locations": [{"id": "pmh:rug:oai:pure.rug.nl:publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "doi": "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url":
+        "https://research.rug.nl/en/publications/06da9899-1ac7-406b-9a08-74ec0cbb420d",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306400420", "display_name":
+        "University of Groningen research database (University of Groningen / Centre
+        for Information Technology)", "issn_l": null, "issn": null, "is_oa": false,
+        "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I169381384", "host_organization_name": "University of
+        Groningen", "host_organization_lineage": ["https://openalex.org/I169381384"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30. Wiley", "raw_type": "info:eu-repo/semantics/article"},
+        {"id": "mag:2477211393", "doi": null, "is_oa": false, "landing_page_url":
+        "https://research.rug.nl/en/publications/the-ability-of-parkinsons-disease-patients-to-use-dry-powder-inha",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S163027424", "display_name":
+        "Movement Disorders", "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"],
+        "is_oa": false, "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific",
+        "cwts-core", "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1",
+        "poland-140", "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": null, "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders", "raw_type": null}]}, {"doi":
+        "https://doi.org/10.1002/mds.26295", "ids": {"openalex": "https://openalex.org/W3025146656",
+        "doi": "https://doi.org/10.1002/mds.26295", "mag": "3025146656"}, "primary_location":
+        {"id": "pmh:ru:oai:repository.ubn.ru.nl:2066/218342", "doi": "https://doi.org/10.1002/mds.26295",
+        "is_oa": false, "landing_page_url": "http://hdl.handle.net/2066/218342", "pdf_url":
+        null, "source": {"id": "https://openalex.org/S4306401067", "display_name":
+        "Radboud Repository (Radboud University)", "issn_l": null, "issn": null, "is_oa":
+        false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I145872427", "host_organization_name": "Radboud University
+        Nijmegen", "host_organization_lineage": ["https://openalex.org/I145872427"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30, S4 - S5", "raw_type": "info:eu-repo/semantics/article"},
+        "locations": [{"id": "pmh:ru:oai:repository.ubn.ru.nl:2066/218342", "doi":
+        "https://doi.org/10.1002/mds.26295", "is_oa": false, "landing_page_url": "http://hdl.handle.net/2066/218342",
+        "pdf_url": null, "source": {"id": "https://openalex.org/S4306401067", "display_name":
+        "Radboud Repository (Radboud University)", "issn_l": null, "issn": null, "is_oa":
+        false, "is_in_doaj": false, "is_core": false, "listed_in": [], "host_organization":
+        "https://openalex.org/I145872427", "host_organization_name": "Radboud University
+        Nijmegen", "host_organization_lineage": ["https://openalex.org/I145872427"],
+        "host_organization_lineage_names": [], "type": "repository"}, "license": null,
+        "license_id": null, "version": "submittedVersion", "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders, 30, S4 - S5", "raw_type": "info:eu-repo/semantics/article"},
+        {"id": "mag:3025146656", "doi": null, "is_oa": false, "landing_page_url":
+        "https://repository.ubn.ru.nl/handle/2066/218342", "pdf_url": null, "source":
+        {"id": "https://openalex.org/S163027424", "display_name": "Movement Disorders",
+        "issn_l": "0885-3185", "issn": ["0885-3185", "1531-8257"], "is_oa": false,
+        "is_in_doaj": false, "is_core": true, "listed_in": ["anvur-scientific", "cwts-core",
+        "dongbi-b", "doyens", "jufo-3", "ki-jl-2", "medline", "norway-1", "poland-140",
+        "russia-white-list-1", "vabb-shw"], "host_organization": "https://openalex.org/P4310320595",
+        "host_organization_name": "Wiley", "host_organization_lineage": ["https://openalex.org/P4310320595"],
+        "host_organization_lineage_names": ["Wiley"], "type": "journal"}, "license":
+        null, "license_id": null, "version": null, "is_accepted": false, "is_published":
+        false, "raw_source_name": "Movement Disorders", "raw_type": null}]}], "group_by":
+        []}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55efeee8f63244e-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:36:45 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0.0001'
+      X-RateLimit-Credits-Used:
+      - '1'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '200'
+      X-RateLimit-Remaining-USD:
+      - '0.02'
+      X-RateLimit-Reset:
+      - '8595'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=TqRpihtEuZqCs3fOiHbRZF%2BMnaoFVPpLpPMSj%2BRstMM%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914605"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=TqRpihtEuZqCs3fOiHbRZF%2BMnaoFVPpLpPMSj%2BRstMM%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914605"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/sources/S163027424
+  response:
+    body:
+      string: '{"id":"https://openalex.org/S163027424","issn_l":"0885-3185","issn":["0885-3185","1531-8257"],"display_name":"Movement
+        Disorders","host_organization":"https://openalex.org/P4310320595","host_organization_name":"Wiley","host_organization_lineage":["https://openalex.org/P4310320595"],"works_count":13975,"oa_works_count":3872,"cited_by_count":695394,"summary_stats":{"2yr_mean_citedness":4.807058823529411,"h_index":280,"i10_index":8718},"is_oa":false,"is_in_doaj":false,"is_in_doaj_since_year":null,"is_high_oa_rate":false,"is_high_oa_rate_since_year":null,"is_in_scielo":false,"is_ojs":false,"is_preprint_repository":false,"is_core":true,"listed_in":["anvur-scientific","cwts-core","dongbi-b","doyens","jufo-3","ki-jl-2","medline","norway-1","poland-140","russia-white-list-1","vabb-shw"],"oa_flip_year":null,"first_publication_year":1954,"last_publication_year":2026,"ids":{"openalex":"https://openalex.org/S163027424","issn_l":"0885-3185","issn":["0885-3185","1531-8257"],"mag":"163027424","wikidata":null},"homepage_url":"http://www3.interscience.wiley.com/journal/76507419/home","apc_prices":[{"price":4480,"currency":"USD"},{"price":3750,"currency":"EUR"},{"price":3010,"currency":"GBP"}],"apc_usd":4480,"apc_usd_by_year":[{"year":2025,"price":4480},{"year":2024,"price":4270},{"year":2023,"price":4070},{"year":2022,"price":3950},{"year":2021,"price":3300},{"year":2020,"price":3300},{"year":2019,"price":3000}],"country_code":"US","societies":[],"alternate_titles":[],"type":"journal","topics":[{"id":"https://openalex.org/T10085","display_name":"Parkinson''s
+        Disease Mechanisms and Treatments","count":8058,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10919","display_name":"Deep Brain
+        Stimulation and Movement Disorders","count":7620,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13966","display_name":"Neurological
+        and metabolic disorders","count":2101,"subfield":{"id":"https://openalex.org/subfields/2712","display_name":"Endocrinology,
+        Diabetes and Metabolism"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10009","display_name":"Dementia and
+        Cognitive Impairment Research","count":1475,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11123","display_name":"Obsessive-Compulsive
+        Spectrum Disorders","count":1354,"subfield":{"id":"https://openalex.org/subfields/3203","display_name":"Clinical
+        Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10949","display_name":"Genetic Neurodegenerative
+        Diseases","count":1290,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13481","display_name":"Neurological
+        diseases and metabolism","count":1157,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11274","display_name":"Botulinum
+        Toxin and Related Neurological Disorders","count":1041,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13991","display_name":"Nuclear Receptors
+        and Signaling","count":917,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10982","display_name":"Motor Control
+        and Adaptation","count":774,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10114","display_name":"Balance, Gait,
+        and Falls Prevention","count":644,"subfield":{"id":"https://openalex.org/subfields/3612","display_name":"Physical
+        Therapy, Sports Therapy and Rehabilitation"},"field":{"id":"https://openalex.org/fields/36","display_name":"Health
+        Professions"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10614","display_name":"Transcranial
+        Magnetic Stimulation Studies","count":597,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T12331","display_name":"Hereditary
+        Neurological Disorders","count":449,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10056","display_name":"Neurotransmitter
+        Receptor Influence on Behavior","count":406,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T12569","display_name":"Restless Legs
+        Syndrome Research","count":370,"subfield":{"id":"https://openalex.org/subfields/2713","display_name":"Epidemiology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10945","display_name":"Lysosomal
+        Storage Disorders Research","count":354,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10086","display_name":"Alzheimer''s
+        disease research and treatments","count":348,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11027","display_name":"Metabolism
+        and Genetic Disorders","count":310,"subfield":{"id":"https://openalex.org/subfields/1308","display_name":"Clinical
+        Biochemistry"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10863","display_name":"Voice and
+        Speech Disorders","count":299,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11266","display_name":"Neuroinflammation
+        and Neurodegeneration Mechanisms","count":261,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10316","display_name":"Sleep and
+        related disorders","count":240,"subfield":{"id":"https://openalex.org/subfields/3205","display_name":"Experimental
+        and Cognitive Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10023","display_name":"Schizophrenia
+        research and treatment","count":221,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12854","display_name":"Neurology
+        and Historical Studies","count":219,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10261","display_name":"Genetic Associations
+        and Epidemiology","count":198,"subfield":{"id":"https://openalex.org/subfields/1311","display_name":"Genetics"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10094","display_name":"Epilepsy research
+        and treatment","count":196,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}}],"topic_share":[{"id":"https://openalex.org/T10919","display_name":"Deep
+        Brain Stimulation and Movement Disorders","value":0.0286262,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10085","display_name":"Parkinson''s
+        Disease Mechanisms and Treatments","value":0.026227,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T14286","display_name":"Parkinson''s
+        Disease and Spinal Disorders","value":0.0223881,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12569","display_name":"Restless Legs
+        Syndrome Research","value":0.0197018,"subfield":{"id":"https://openalex.org/subfields/2713","display_name":"Epidemiology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13966","display_name":"Neurological
+        and metabolic disorders","value":0.0194809,"subfield":{"id":"https://openalex.org/subfields/2712","display_name":"Endocrinology,
+        Diabetes and Metabolism"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13481","display_name":"Neurological
+        diseases and metabolism","value":0.0178911,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13991","display_name":"Nuclear Receptors
+        and Signaling","value":0.0150937,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11123","display_name":"Obsessive-Compulsive
+        Spectrum Disorders","value":0.0139388,"subfield":{"id":"https://openalex.org/subfields/3203","display_name":"Clinical
+        Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10949","display_name":"Genetic Neurodegenerative
+        Diseases","value":0.0127748,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11274","display_name":"Botulinum
+        Toxin and Related Neurological Disorders","value":0.0071925,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10614","display_name":"Transcranial
+        Magnetic Stimulation Studies","value":0.0042138,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T12331","display_name":"Hereditary
+        Neurological Disorders","value":0.0036547,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10982","display_name":"Motor Control
+        and Adaptation","value":0.0024264,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10945","display_name":"Lysosomal
+        Storage Disorders Research","value":0.0024258,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13834","display_name":"Whipple''s
+        Disease and Interleukins","value":0.0023068,"subfield":{"id":"https://openalex.org/subfields/2734","display_name":"Pathology
+        and Forensic Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10114","display_name":"Balance, Gait,
+        and Falls Prevention","value":0.0022871,"subfield":{"id":"https://openalex.org/subfields/3612","display_name":"Physical
+        Therapy, Sports Therapy and Rehabilitation"},"field":{"id":"https://openalex.org/fields/36","display_name":"Health
+        Professions"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10009","display_name":"Dementia and
+        Cognitive Impairment Research","value":0.0021027,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T13397","display_name":"Hallucinations
+        in medical conditions","value":0.002081,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11627","display_name":"Autoimmune
+        Neurological Disorders and Treatments","value":0.0019112,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12684","display_name":"Stuttering
+        Research and Treatment","value":0.001885,"subfield":{"id":"https://openalex.org/subfields/3203","display_name":"Clinical
+        Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T13012","display_name":"Coenzyme Q10
+        studies and effects","value":0.001869,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10855","display_name":"Amyotrophic
+        Lateral Sclerosis Research","value":0.0017187,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11335","display_name":"Prion Diseases
+        and Protein Misfolding","value":0.0015307,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T12604","display_name":"Glycogen Storage
+        Diseases and Myoclonus","value":0.001313,"subfield":{"id":"https://openalex.org/subfields/2745","display_name":"Rheumatology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T14034","display_name":"Musicians\u2019
+        Health and Performance","value":0.0011841,"subfield":{"id":"https://openalex.org/subfields/2742","display_name":"Rehabilitation"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}}],"counts_by_year":[{"year":2026,"works_count":433,"oa_works_count":295,"cited_by_count":34051},{"year":2025,"works_count":438,"oa_works_count":324,"cited_by_count":43466},{"year":2024,"works_count":405,"oa_works_count":315,"cited_by_count":42605},{"year":2023,"works_count":403,"oa_works_count":305,"cited_by_count":39869},{"year":2022,"works_count":400,"oa_works_count":223,"cited_by_count":44707},{"year":2021,"works_count":499,"oa_works_count":275,"cited_by_count":45194},{"year":2020,"works_count":495,"oa_works_count":287,"cited_by_count":43213},{"year":2019,"works_count":373,"oa_works_count":163,"cited_by_count":35199},{"year":2018,"works_count":393,"oa_works_count":162,"cited_by_count":32938},{"year":2017,"works_count":400,"oa_works_count":158,"cited_by_count":33016},{"year":2016,"works_count":437,"oa_works_count":146,"cited_by_count":31508},{"year":2015,"works_count":370,"oa_works_count":120,"cited_by_count":29432},{"year":2014,"works_count":361,"oa_works_count":97,"cited_by_count":29338},{"year":2013,"works_count":533,"oa_works_count":158,"cited_by_count":29485},{"year":2012,"works_count":444,"oa_works_count":109,"cited_by_count":25359},{"year":2011,"works_count":615,"oa_works_count":119,"cited_by_count":0},{"year":2010,"works_count":684,"oa_works_count":150,"cited_by_count":0},{"year":2009,"works_count":471,"oa_works_count":87,"cited_by_count":0},{"year":2008,"works_count":554,"oa_works_count":82,"cited_by_count":0},{"year":2007,"works_count":630,"oa_works_count":84,"cited_by_count":0},{"year":2006,"works_count":540,"oa_works_count":32,"cited_by_count":0},{"year":2005,"works_count":423,"oa_works_count":31,"cited_by_count":0},{"year":2004,"works_count":416,"oa_works_count":18,"cited_by_count":0},{"year":2003,"works_count":313,"oa_works_count":22,"cited_by_count":0},{"year":2002,"works_count":441,"oa_works_count":21,"cited_by_count":0},{"year":2001,"works_count":249,"oa_works_count":8,"cited_by_count":0},{"year":2000,"works_count":268,"oa_works_count":7,"cited_by_count":0},{"year":1999,"works_count":242,"oa_works_count":7,"cited_by_count":0},{"year":1998,"works_count":223,"oa_works_count":12,"cited_by_count":0},{"year":1997,"works_count":226,"oa_works_count":11,"cited_by_count":0},{"year":1996,"works_count":225,"oa_works_count":10,"cited_by_count":0},{"year":1995,"works_count":169,"oa_works_count":4,"cited_by_count":0},{"year":1994,"works_count":184,"oa_works_count":7,"cited_by_count":0},{"year":1993,"works_count":138,"oa_works_count":6,"cited_by_count":0},{"year":1992,"works_count":156,"oa_works_count":4,"cited_by_count":0},{"year":1991,"works_count":100,"oa_works_count":3,"cited_by_count":0},{"year":1990,"works_count":98,"oa_works_count":5,"cited_by_count":0},{"year":1989,"works_count":77,"oa_works_count":1,"cited_by_count":0},{"year":1988,"works_count":56,"oa_works_count":4,"cited_by_count":0},{"year":1987,"works_count":49,"oa_works_count":0,"cited_by_count":0},{"year":1986,"works_count":44,"oa_works_count":0,"cited_by_count":0}],"works_api_url":"https://api.openalex.org/works?filter=primary_location.source.id:S163027424","updated_date":"2026-11-05T14:08:14","created_date":"2016-06-24T00:00:00"}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55efeefc8e66878-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:36:46 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0'
+      X-RateLimit-Credits-Used:
+      - '0'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '200'
+      X-RateLimit-Remaining-USD:
+      - '0.02'
+      X-RateLimit-Reset:
+      - '8594'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=4BOnN6U%2FOVoY%2BtdDMxporq3dINhTlGx6EqDweEkxC3A%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914606"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=4BOnN6U%2FOVoY%2BtdDMxporq3dINhTlGx6EqDweEkxC3A%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914606"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=nlmcatalog&retmode=json&term=0885-3185%5Bissn%5D+AND+ncbijournals%5Bsb%5D
+  response:
+    body:
+      string: '{"header":{"type":"esearch","version":"0.3"},"esearchresult":{"count":"1","retmax":"1","retstart":"0","idlist":["8610688"],"translationset":[],"translationstack":[{"term":"0885-3185[issn]","field":"issn","count":"1","explode":"N"},{"term":"ncbijournals[sb]","field":"sb","count":"42914","explode":"N"},"AND"],"querytranslation":"0885-3185[issn]
+        AND ncbijournals[sb]"}}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 05 Nov 2026 21:36:45 GMT
+      Ncbi-Phid:
+      - 1D32E3FDAF7BF9D500002D4139C3B49F.1.1.m_1
+      Ncbi-Sid:
+      - B516CC828C085025_E087SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=B516CC828C085025_E087SID; domain=.nih.gov; path=/; expires=Fri, 05
+        Nov 2027 21:36:46 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '2'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=nlmcatalog&id=8610688&retmode=json
+  response:
+    body:
+      string: '{"header":{"type":"esummary","version":"0.3"},"result":{"uids":["8610688"],"8610688":{"uid":"8610688","host":"","nlmuniqueid":"8610688","daterevised":"2026-05-08","authorlist":[{"collectivename":"Movement
+        Disorder Society.","lastname":"","forename":"","namequalifier":"","otherinformation":"","titleassociatedwithname":"","aiid":""}],"publicationinfolist":[{"imprint":"<2001->:
+        New York, NY : Wiley-Liss","place":"New York, NY :","publisher":"Wiley-Liss","dateissued":"","edition":"","datesofserialpublication":"Vol.
+        1, no. 1-"}],"resourceinfolist":[{"typeofresource":"Serial","resourceunit":"Remote
+        electronic resource, Text"}],"titlemainlist":[{"sorttitle":"movement disorders
+        official journal of the movement disorder society","title":"Movement disorders
+        : official journal of the Movement Disorder Society.","aiid":""}],"titlemainsort":"movement
+        disorders official journal of the movement disorder society","titleotherlist":[{"titlealternate":"Movement
+        disorders","otherinformation":"","aiid":""},{"titlealternate":"MOV DISORD","otherinformation":"","aiid":""},{"titlealternate":"MOVEMENT
+        DIS","otherinformation":"","aiid":""},{"titlealternate":"MOVEMENT DISORD","otherinformation":"","aiid":""},{"titlealternate":"Movement
+        disorders clinical practice","otherinformation":"","aiid":""}],"issnlist":[{"issn":"0885-3185","validyn":"Y","issntype":"Print"},{"issn":"1531-8257","validyn":"Y","issntype":"Electronic"}],"isbn":"","country":"United
+        States","currentindexingstatus":"Y","medlineta":"Mov Disord","isoabbreviation":"","startyear":"1986","jrid":"5937","endyear":"9999","language":"eng","broadheading":["Neurology"],"continuationnotes":"Title
+        from cover.; Supplements accompany some vols.; Vols. accompanied by videocassette
+        supplements -    videocassettes : sd., col.. ; 1/2 in."}}}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 05 Nov 2026 21:36:45 GMT
+      Ncbi-Phid:
+      - 1D34A1BA8FDA828500005F542C61C8D7.1.1.m_1
+      Ncbi-Sid:
+      - B7E89D0E43E77ED6_2A63SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=B7E89D0E43E77ED6_2A63SID; domain=.nih.gov; path=/; expires=Fri, 05
+        Nov 2027 21:36:46 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '1'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1
