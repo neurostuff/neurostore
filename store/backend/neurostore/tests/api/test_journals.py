@@ -1,6 +1,6 @@
 import pytest
 
-from neurostore.models import BaseStudy, Journal, Study
+from neurostore.models import BaseStudy, Journal, Study, Studyset, StudysetStudy
 
 pytestmark = pytest.mark.anyio
 
@@ -33,10 +33,13 @@ def papers(session):
     session.add_all([in_hbm, preprint, unknown])
     session.commit()
     study = Study(name="in HBM", level="group", base_study=in_hbm, publication="HBM")
-    session.add(study)
+    studyset = Studyset(name="a studyset")
+    session.add_all([study, studyset])
+    session.commit()
+    session.add(StudysetStudy(studyset_id=studyset.id, study_id=study.id))
     session.commit()
     return {"hbm": hbm, "biorxiv": biorxiv, "in_hbm": in_hbm, "preprint": preprint,
-            "unknown": unknown, "study": study}
+            "unknown": unknown, "study": study, "studyset": studyset}
 
 
 async def test_journals_are_listed_searched_and_read(auth_client, papers):
@@ -69,6 +72,15 @@ async def test_a_paper_shows_its_journal_beside_the_name_as_printed(auth_client,
     assert (study["journal"], study["publication"]) == (summary, "HBM")
     nested = (await auth_client.get(f"/api/studies/{papers['study'].id}?nested=true")).json()
     assert nested["journal"] == summary
+
+
+async def test_a_studyset_s_studies_show_their_journal(auth_client, papers):
+    summary = {"id": papers["hbm"].id, "title": "Human Brain Mapping",
+               "abbreviation": "Hum Brain Mapp"}
+    url = f"/api/studysets/{papers['studyset'].id}"
+    for query in ("?summary=true", "?nested=true"):
+        (study,) = (await auth_client.get(url + query)).json()["studies"]
+        assert (study["journal"], study["publication"]) == (summary, "HBM"), query
 
 
 async def test_papers_are_filtered_by_journal(auth_client, papers):
