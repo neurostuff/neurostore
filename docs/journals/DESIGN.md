@@ -292,6 +292,41 @@ was never touched, so nothing is lost and the API's old field is unchanged throu
 
 ## Questions for James
 
+Answers, 2026-11-05:
+
+1. **Neurostore owns the journal; no user owns one.** `journals` has no `user_id` (like `Author` and
+   `University`) and no client write route. neurostore decides `journal_id`.
+2. **neurostore may have a second matcher** for the base studies ns-pond never sees.
+3. **Yes, preprints as recommended.** A published preprint takes its version of record's journal. A
+   preprint-only paper takes its server's repository source.
+4. **Open.** James asked why `venue` is needed or beneficial; the reasoning is under
+   [Does the upload need `venue`?](#does-the-upload-need-venue).
+5. **No frontend edits.**
+
+### Does the upload need `venue`?
+
+With answers 1 and 2, neurostore matches journals itself and owns the result. What `venue` would add over
+neurostore matching ns-pond's papers by their DOI:
+
+- **API cost saved: almost none.** neurostore resolving all 65k pipeline papers itself costs about 650
+  OpenAlex list calls once (about $0.07), or nothing with single-entity calls, plus one call per new paper.
+- **Accuracy gained: none measured.** Both sides would run the same tier 1 (OpenAlex by version-of-record
+  DOI or PMID). neurostore already holds the preprint server (`base_study_identifiers.server`), and PubMed
+  enrichment already reads the PubMed record that carries the ISSNs.
+- **What it costs:**
+  - a study_schema change and version bump;
+  - a three-repository rollout;
+  - a re-upload or a file load to deliver it;
+  - two matchers whose rules can drift, with neurostore free to overrule ns-pond (answer 1).
+- **Where ns-pond identification does pay:** inside ns-pond itself, if its catalog, reports or dedup
+  evidence (`catalog/evidence.py::_same_journal` compares journals by ISSN or name) should use journal ids.
+  That benefit doesn't need the upload to carry anything.
+
+Recommendation: no `venue` in study_schema. neurostore's matcher resolves every base study, ns-pond's
+included. ns-pond identifies journals only if it wants them for its own use.
+
+### The questions as asked
+
 1. **Who owns `journal_id` after creation?** The handoff gives the bibliography to neurostore once a base
    study exists. Recommendation: the venue follows every ns-pond upload, like the identifiers it is
    derived from, while `publication` stays neurostore's. Or should it be set only when `journal_id` is
