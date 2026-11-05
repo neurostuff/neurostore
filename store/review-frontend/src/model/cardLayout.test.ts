@@ -611,7 +611,6 @@ describe('a distribution', () => {
             {
                 ...item('Female', undefined, 53.6, 28),
                 count: notReported('not_in_text'),
-                category_normalized: ev('female'),
             },
             item('Male', 13, 46.4, 28)
         );
@@ -619,7 +618,7 @@ describe('a distribution', () => {
         const female = layout.places.get('slot:g:gender_distribution[#0].category')!.item!;
         expect(keys(female.folded)).toEqual(['[#0].count']);
         expect(keys(layout.folded)).toContain('[#0].count');
-        expect(keys(female.detailsOnly)).toEqual(['[#0].reporting_framework', '[#0].category_normalized']);
+        expect(keys(female.detailsOnly)).toEqual(['[#0].reporting_framework']);
     });
 
     it('marks an item whose count and percentage disagree with its denominator', () => {

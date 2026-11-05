@@ -46,8 +46,9 @@ dependencies = [
     # A link's registrable domain, from the public suffix list snapshot it ships.
     "tldextract~=5.4",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
-    # entity hashes read, pinned to neurostuff/study_schema#55 until it merges.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@488e1ee4eaf6221aba563a50f7d06c226cece75c",
+    # entity hashes read, pinned to the merge of neurostuff/study_schema#56 (the
+    # `normalized` sidecar on every extracted value).
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@b7efbdd6c465a00e2ef80d19b47acff6bb17471e",
 ]
 
 [tool.setuptools.packages.find]
