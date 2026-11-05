@@ -123,26 +123,24 @@ Known OpenAlex faults, each with a rule:
 
 ## Candidates
 
-**A. ns-pond identifies the venue and sends it in the upload; neurostore keeps a `journals` table and
-`base_studies.journal_id` (chosen).**
-- ns-pond: one function in the `metadata` stage turns the providers' answers into a venue.
-  study_schema's `Bibliography` carries it beside the raw `journal` string.
-- neurostore: the ingester upserts the journal by `openalex_id` and sets `journal_id`.
+**A. Both normalize (chosen).**
+- **ns-pond** decides the venue of each paper it uploads and sends it as `Bibliography.venue`, beside the
+  raw `journal` string.
+- **neurostore** runs the same rules for base studies that arrive through neurostore itself, upserts
+  `journals` by `openalex_id`, and sets `journal_id`.
 - Readers read `base_study.journal`.
 - Reserved names: study_schema `Bibliography.venue` and `Venue`; neurostore table `journals`, column
   `base_studies.journal_id`, API field `journal`.
 
-**B. neurostore identifies at ingest, through its metadata outbox.** neurostore already calls OpenAlex
-there. But that makes neurostore the matcher, which is what James ruled out, and the upload path doesn't
-enqueue the outbox.
+**B. neurostore alone normalizes.** It would need no study_schema change. But James wants ns-pond's own
+uploads normalized in ns-pond.
 
 **C. ns-pond sends only `openalex_source_id`; neurostore fetches the source record itself.** That puts a
-network call in neurostore's ingest for data ns-pond already holds, and a second OpenAlex client to keep
-up.
+network call in neurostore's ingest for data ns-pond already holds.
 
-A follows James's decision and keeps neurostore free of network calls at ingest.
+## Matching, in order, with measured rates
 
-## Matching in ns-pond, in order, with measured rates
+The same tiers run in ns-pond and in neurostore.
 
 The table gives the cascade over all 76,664 production base studies. Each paper takes the first tier that
 answers.
@@ -262,7 +260,8 @@ Readers that want the entity read `journal`.
   `journal_id`.
 - **Fuzzy matches.** These go to a review file in ns-pond's run directory, not into the upload, unless
   their score is at least 95.
-- **Base studies ns-pond never sees** (frontend and Sleuth imports, older ingests): see question 2.
+- **Base studies ns-pond never sees** (API writes, frontend and Sleuth imports, older ingests). neurostore's
+  metadata outbox matches them by the same tiers. Its eligibility gains `journal_id IS NULL`.
 
 ## Rollout
 
@@ -278,14 +277,15 @@ Readers that want the entity read `journal`.
    - the Alembic migration (create `journals`; add `base_studies.journal_id` and `journal_match`, nullable,
      with no backfill in the migration);
    - the ingester upsert, serializers and routes;
-   - `flask journals load <venues.jsonl>`, which reads ns-pond's identification of every base study by id
-     and sets `journal_id`;
+   - the matcher in the metadata outbox (tiers 1a–1c, 2 and 3; fuzzy matches below 95 to a review CSV);
+   - `flask journals match`, which runs the matcher over every active base study whose `journal_id` is
+     NULL, in batches of 100 DOIs per OpenAlex call;
    - `flask journals refresh`, which re-reads each journal's OpenAlex source (free single-entity calls)
      and follows merged ids.
-5. **Backfill:** ns-pond identifies all 76,664 base studies from a neurostore export of ids: about 773
-   OpenAlex list calls for papers it has not already fetched, fewer for those it has. neurostore loads the
-   file. This avoids re-uploading 65k papers to change one field.
-6. **Frontend PR:** filter and show by `journal`.
+5. **Backfill:** run `flask journals match` once on production: about 773 OpenAlex list calls, as
+   measured. ns-pond's later uploads then carry their own venue, so ns-pond's papers needn't be
+   re-uploaded.
+6. **Frontend PR:** show and filter by `journal`. No editing.
 
 Rollback: the downgrade drops `base_studies.journal_id`, `journal_match` and `journals`. `publication`
 was never touched, so nothing is lost and the API's old field is unchanged throughout.
@@ -299,31 +299,51 @@ Answers, 2026-11-05:
 2. **neurostore may have a second matcher** for the base studies ns-pond never sees.
 3. **Yes, preprints as recommended.** A published preprint takes its version of record's journal. A
    preprint-only paper takes its server's repository source.
-4. **Open.** James asked why `venue` is needed or beneficial; the reasoning is under
-   [Does the upload need `venue`?](#does-the-upload-need-venue).
+4. **Both normalize.** ns-pond normalizes the journal of the papers it uploads and sends it as `venue`.
+   neurostore's matcher normalizes base studies that arrive through neurostore itself (API, frontend and
+   Sleuth imports, older ingests). How `venue` relates to the other fields is under
+   [How the fields relate](#how-the-fields-relate).
 5. **No frontend edits.**
 
-### Does the upload need `venue`?
+### How the fields relate
 
-With answers 1 and 2, neurostore matches journals itself and owns the result. What `venue` would add over
-neurostore matching ns-pond's papers by their DOI:
+Example: Human Brain Mapping, which appears as `Human brain mapping` (1,695 base studies), `Human Brain
+Mapping` (803), `Hum Brain Mapp` (366) and `HUMAN BRAIN MAPPING` (2).
 
-- **API cost saved: almost none.** neurostore resolving all 65k pipeline papers itself costs about 650
-  OpenAlex list calls once (about $0.07), or nothing with single-entity calls, plus one call per new paper.
-- **Accuracy gained: none measured.** Both sides would run the same tier 1 (OpenAlex by version-of-record
-  DOI or PMID). neurostore already holds the preprint server (`base_study_identifiers.server`), and PubMed
-  enrichment already reads the PubMed record that carries the ISSNs.
-- **What it costs:**
-  - a study_schema change and version bump;
-  - a three-repository rollout;
-  - a re-upload or a file load to deliver it;
-  - two matchers whose rules can drift, with neurostore free to overrule ns-pond (answer 1).
-- **Where ns-pond identification does pay:** inside ns-pond itself, if its catalog, reports or dedup
-  evidence (`catalog/evidence.py::_same_journal` compares journals by ISSN or name) should use journal ids.
-  That benefit doesn't need the upload to carry anything.
+| Field | What it is | Example | Where it lives |
+|---|---|---|---|
+| study_schema `Bibliography.journal` | The name as one provider printed it. Unchanged | `Hum Brain Mapp` | becomes neurostore `publication` |
+| neurostore `publication` | The same raw string, kept as received | `Hum Brain Mapp` | `base_studies`, `studies` |
+| ISSN | The number of one medium version: print or online | `1065-9471` (print), `1097-0193` (online) | `venue.issns` → `journals.issns` |
+| ISSN-L | The one ISSN that links a title's print and online versions | `1065-9471` | `venue.issn_l` → `journals.issn_l` |
+| OpenAlex source id | One per ISSN-L, plus preprint servers and conference series, which mostly have no ISSN | `S121666818` (bioRxiv is `S4306402567`, with no ISSN-L) | `venue.openalex_id` → `journals.openalex_id` |
+| NLM Unique ID | PubMed's id for the title, which brings its abbreviation | `9419065`, `Hum Brain Mapp` | `venue.nlm_id`, `venue.abbreviation` |
+| study_schema `Bibliography.venue` | The identified journal: the ids above, its canonical title and how it was matched | `{openalex_id: S121666818, title: Human Brain Mapping, abbreviation: Hum Brain Mapp, issn_l: 1065-9471, issns: [1065-9471, 1097-0193], nlm_id: 9419065, wikidata_id: Q5936947, kind: journal, match: doi}` | becomes one `journals` row and `base_studies.journal_id` |
+| neurostore `journals` row | One row per OpenAlex source, shared by every paper in that journal | the four strings above all point at it | `journals` |
 
-Recommendation: no `venue` in study_schema. neurostore's matcher resolves every base study, ns-pond's
-included. ns-pond identifies journals only if it wants them for its own use.
+So a string says what a paper's metadata called the journal; `venue` says which journal that is.
+
+Why `venue` and not another `journal` field: `journal` already holds the string. Also, a venue can be a
+preprint server or a conference series as well as a journal. OpenAlex calls these sources and Semantic
+Scholar calls them venues.
+
+### Two matchers, one set of rules
+
+- **ns-pond** decides `venue` in its `metadata` stage. Tiers 1a–1c and 2 use data it already fetches.
+- **neurostore** runs the same tiers for every active base study whose `journal_id` is NULL and that no
+  upload has given a venue: API writes, Sleuth and frontend imports, and the backfill of older ingests.
+  neurostore's metadata outbox already calls OpenAlex. It gains the location rule and takes the venue from
+  the same work, and the outbox's eligibility gains `journal_id IS NULL`.
+- **An upload's `venue` sets `journal_id`.** neurostore upserts the `journals` row by `openalex_id`.
+  neurostore owns the row, and no user does.
+- **Keeping the two matchers in step.** The tier table and the location rule above are the single written
+  rule. A shared fixture of real cases runs in both test suites:
+  - a DOI per tier;
+  - a preprint-only paper;
+  - a repository-first OpenAlex work;
+  - the *Psychiatry Research: Neuroimaging* case;
+  - stale `bioRxiv` labels;
+  - an ambiguous string.
 
 ### The questions as asked
 
@@ -350,8 +370,11 @@ review; the backfill loads a file rather than re-uploading; `Study` and `Studyse
 
 ## Notes
 
-- **Dropped: neurostore identifies at ingest through its metadata outbox (candidate B).** James put
-  identification in ns-pond.
+- **Dropped: neurostore alone normalizes (candidate B).** James wants ns-pond's uploads normalized in
+  ns-pond. Dropping `venue` was weighed: neurostore matching ns-pond's papers itself would cost about $0.07
+  and lose no measured accuracy. It was set aside for that reason.
+- **Dropped: a file load of ns-pond's identifications for the backfill.** neurostore's own matcher covers
+  every NULL row.
 - **Dropped: Semantic Scholar venue ids as a cross-id.** Lowest coverage, wrong venue for published
   preprints, restrictive licence.
 - **Measurement scripts and raw responses** are in the session scratchpad, not the repo.
