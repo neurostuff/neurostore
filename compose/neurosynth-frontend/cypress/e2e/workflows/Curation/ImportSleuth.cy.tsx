@@ -2,12 +2,20 @@
 import { BaseStudy, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import baseStudiesSingleSleuthStudyResponse from '../../../fixtures/ImportSleuth/neurosynthResponses/baseStudiesSingleSleuthStudyResponse.json';
 
+// Match on the path, not a glob: the DOI in esearch's query has a "/", which a glob's ** does not cross.
+const esearchRoute = { method: 'GET', hostname: 'eutils.ncbi.nlm.nih.gov', pathname: '/entrez/eutils/esearch.fcgi' };
+const efetchRoute = { method: 'POST', hostname: 'eutils.ncbi.nlm.nih.gov', pathname: '/entrez/eutils/efetch.fcgi' };
+
 describe('ImportSleuthDialog', () => {
     const neurostoreAPIBaseURL = Cypress.env('neurostoreAPIBaseURL');
     console.log('neurostoreAPIBaseURL', neurostoreAPIBaseURL);
 
     beforeEach(() => {
         cy.clearLocalStorage();
+        // Registered first, so it only sees PubMed requests that no test's intercept answered
+        cy.intercept({ hostname: 'eutils.ncbi.nlm.nih.gov' }, (req) => {
+            throw new Error(`Unmocked request to PubMed: ${req.method} ${req.url}`);
+        });
         cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as('googleAnalyticsFixture');
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
         cy.intercept('GET', `**/api/projects/*`, {
@@ -192,11 +200,11 @@ describe('ImportSleuthDialog', () => {
 
     describe('ingest sleuth files for a single file uploaded', () => {
         beforeEach(() => {
-            cy.intercept('GET', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi**`, {
+            cy.intercept(esearchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/esearchSingleResponse.json',
                 delay: 500,
             }).as('doiToPubmedQuery');
-            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+            cy.intercept(efetchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
                 delay: 500,
             }).as('pmidsFetch');
@@ -264,11 +272,11 @@ describe('ImportSleuthDialog', () => {
 
     describe('edge cases', () => {
         it('should apply the pubmed details to the study if a matching pubmed study is found', () => {
-            cy.intercept('GET', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi**`, {
+            cy.intercept(esearchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/esearchSingleResponse.json',
             }).as('doiToPubmedQuery');
 
-            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+            cy.intercept(efetchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
 
@@ -305,11 +313,11 @@ describe('ImportSleuthDialog', () => {
         });
 
         it('should do a POST request to /studies if the user does not own the study', () => {
-            cy.intercept('GET', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi**`, {
+            cy.intercept(esearchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/esearchSingleResponse.json',
             }).as('doiToPubmedQuery');
 
-            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+            cy.intercept(efetchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
 
@@ -349,11 +357,11 @@ describe('ImportSleuthDialog', () => {
         });
 
         it('should not do a POST request to /studies if the user does own the study', () => {
-            cy.intercept('GET', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi**`, {
+            cy.intercept(esearchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/esearchSingleResponse.json',
             }).as('doiToPubmedQuery');
 
-            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+            cy.intercept(efetchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
 
@@ -380,11 +388,11 @@ describe('ImportSleuthDialog', () => {
         });
 
         it('should do a POST request to /studies with multiple analyses if the user does not own the study', () => {
-            cy.intercept('GET', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi**`, {
+            cy.intercept(esearchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/esearchSingleResponse.json',
             }).as('doiToPubmedQuery');
 
-            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+            cy.intercept(efetchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
 
@@ -424,11 +432,11 @@ describe('ImportSleuthDialog', () => {
         });
 
         it('should do a POST request to /analyses if the user does own the study', () => {
-            cy.intercept('GET', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi**`, {
+            cy.intercept(esearchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/esearchSingleResponse.json',
             }).as('doiToPubmedQuery');
 
-            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+            cy.intercept(efetchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
 
@@ -451,11 +459,11 @@ describe('ImportSleuthDialog', () => {
         });
 
         it('should consolidate into a single study if there are multiple sleuth experiments that have the same DOI or ID', () => {
-            cy.intercept('GET', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?**/**`, {
+            cy.intercept(esearchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/esearchSingleResponse.json',
             }).as('doiToPubmedQuery');
 
-            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+            cy.intercept(efetchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
 
@@ -482,10 +490,10 @@ describe('ImportSleuthDialog', () => {
 
     describe('ingest multiple sleuth files', () => {
         it('should successfully upload and ingest multiple files', () => {
-            cy.intercept('GET', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi**`, {
+            cy.intercept(esearchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/esearchSingleResponse.json',
             }).as('doiToPubmedQuery');
-            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+            cy.intercept(efetchRoute, {
                 fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
