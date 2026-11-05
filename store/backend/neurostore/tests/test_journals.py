@@ -92,7 +92,7 @@ def test_a_name_finds_the_journal_its_papers_were_matched_to(session, app):
     cases = {
         "HUMAN BRAIN MAPPING": journals.Match(HBM, "title"),
         "Hum. Brain Mapp.": journals.Match(HBM, "title"),
-        "Human Brain Maping": journals.Match(HBM, "fuzzy", 97.3),
+        "Humans Brain Mapping": journals.Match(HBM, "fuzzy", 97.4),
     }
     papers = {name: _base_study(session, name, publication=name) for name in
               [*cases, "Human Brain Mapping Journal", "Journal of Human Brain Mapping"]}
