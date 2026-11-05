@@ -19,6 +19,7 @@ from neurostore.authors import authors_string
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
 from neurostore.models import (
+    AnalysisFeature,
     BaseStudy,
     BaseStudyFlagOutbox,
     BaseStudyLink,
@@ -1195,6 +1196,7 @@ def merge_base_study(keeper, old):
         )
 
     db.session.flush()
+    _resync_analysis_features(keeper, old)
     connection = db.session.connection()
     for base_study in (keeper, old):
         refresh_fulltext_pointer(connection, base_study.id)
@@ -1211,6 +1213,18 @@ def merge_base_study(keeper, old):
             )
 
     return BaseStudyMerge(cache_ids=cache_ids, changes=changes)
+
+
+def _resync_analysis_features(keeper, old):
+    """Rewrite the keeper's analysis features from its latest record and current parse,
+    after the old's versions and records moved to it; the old has neither left."""
+    # Local: neurostore.ingest imports this module.
+    from neurostore.ingest.analysis_features import sync_analysis_features
+
+    db.session.execute(sa.delete(AnalysisFeature).where(AnalysisFeature.base_study_id == old.id))
+    current = Study.query.filter_by(base_study_id=keeper.id, source=STUDY_SOURCE).first()
+    if current is not None:
+        sync_analysis_features(keeper.id, current.id)
 
 
 def _merge_ids_in_place(target_identifiers, source_identifiers):

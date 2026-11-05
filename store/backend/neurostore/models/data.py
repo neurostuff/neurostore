@@ -1616,6 +1616,120 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
     )
 
 
+def _trigram_index(column):
+    return sa.Index(
+        f"ix_analysis_features__{column}_trgm",
+        column,
+        postgresql_using="gin",
+        postgresql_ops={column: "gin_trgm_ops"},
+    )
+
+
+class AnalysisFeature(db.Model):
+    """What the latest extraction record says about one current pipeline analysis.
+
+    The query surface over records (`neurostore.analysis_query`): the record's local-id
+    references (measure, groups, tasks, cells) resolved once, at ingest, into columns.
+    Written by `neurostore.ingest.analysis_features`; never by hand. NULL is silent: the
+    record has no extracted value for the column. Text columns are lower-cased, their
+    items joined by " | ".
+    """
+
+    __tablename__ = "analysis_features"
+    __table_args__ = (
+        sa.Index("ix_analysis_features__diagnosis_ids", "diagnosis_ids", postgresql_using="gin"),
+        sa.Index("ix_analysis_features__task_ids", "task_ids", postgresql_using="gin"),
+        sa.Index(
+            "ix_analysis_features__contrast_set_ids", "contrast_set_ids", postgresql_using="gin"
+        ),
+        sa.Index("ix_analysis_features__arm_kinds", "arm_kinds", postgresql_using="gin"),
+        sa.Index("ix_analysis_features__species", "species", postgresql_using="gin"),
+        *(
+            _trigram_index(column)
+            for column in (
+                "diagnosis_text",
+                "task_text",
+                "contrast_positive",
+                "contrast_negative",
+                "contrast_set_text",
+            )
+        ),
+    )
+
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), primary_key=True
+    )
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    #: The config of the record the row was read from.
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    spatial_scope = db.Column(db.Text, index=True)
+    coordinate_space = db.Column(db.Text)
+    measure_type = db.Column(db.Text, index=True)
+    measure_family = db.Column(db.Text, index=True)
+    effect_kind = db.Column(db.Text, index=True)
+    details_type = db.Column(db.Text, index=True)
+    group_count = db.Column(db.Integer)
+    #: The summed `AnalysisGroup.n` of the analysis's groups.
+    n = db.Column(db.Integer)
+
+    #: Lower-cased: study_schema's Species values, or the source's wording.
+    species = db.Column(ARRAY(db.Text))
+    #: Whether any group of the analysis is (not) healthy, from `Group.is_healthy`.
+    has_patients = db.Column(db.Boolean, index=True)
+    has_healthy = db.Column(db.Boolean, index=True)
+    #: Mapped MONDO and ONVOC terms of the groups' `medical_condition`, and their labels.
+    diagnosis_ids = db.Column(ARRAY(db.Text))
+    diagnosis_labels = db.Column(ARRAY(db.Text))
+    #: Those labels and the extracted wording, minus wording a normalizer read as an absence.
+    diagnosis_text = db.Column(db.Text)
+    #: Mapped terms on the tasks' names (canonical task, task family, ...).
+    task_ids = db.Column(ARRAY(db.Text))
+    task_text = db.Column(db.Text)
+    #: The names on each side of the contrast: the signed cells' labels or levels, and
+    #: the names of the conditions their factor levels stand for.
+    contrast_positive = db.Column(db.Text)
+    contrast_negative = db.Column(db.Text)
+    #: The contrast sets and keys a normalizer placed the analysis in, and their labels.
+    contrast_set_ids = db.Column(ARRAY(db.Text))
+    contrast_set_text = db.Column(db.Text)
+
+    allocation = db.Column(db.Text, index=True)
+    assignment_structure = db.Column(db.Text, index=True)
+    blinding = db.Column(db.Text, index=True)
+    arm_kinds = db.Column(ARRAY(db.Text))
+    #: Pre- and post-intervention timepoints both present.
+    longitudinal = db.Column(db.Boolean)
+    is_meta_analysis = db.Column(db.Boolean, index=True)
+
+    display_row = relationship("AnalysisFeatureDisplay", uselist=False, passive_deletes=True)
+
+
+class AnalysisFeatureDisplay(db.Model):
+    """An analysis's features in the record's own wording, for results and annotation
+    columns. Beside `AnalysisFeature` rather than in it, so a query's scans read only the
+    columns it filters on."""
+
+    __tablename__ = "analysis_feature_displays"
+
+    analysis_id = db.Column(
+        db.Text,
+        db.ForeignKey("analysis_features.analysis_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    display = db.Column(JSONB, nullable=False)
+
+
 #: Bump to change what an entity hash covers. Every entity row stores what its
 #: hash was computed from (`identity`, `parent_id`), so after a bump
 #: `neurostore.ingest.study_entities.rehash_entities` recomputes the hashes in

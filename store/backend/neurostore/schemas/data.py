@@ -1144,6 +1144,8 @@ class AnnotationSchema(BaseDataSchema):
     pipelines = fields.List(
         fields.Nested(AnnotationPipelineSchema), load_only=True, required=False
     )
+    # Validated by neurostore.analysis_query and the annotation view.
+    analysis_query = fields.Dict(load_only=True, required=False)
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):

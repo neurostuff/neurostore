@@ -3,10 +3,12 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from connexion import request
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
 from webargs import fields
 
+from neurostore.analysis_query import selected_analysis_ids
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import (
@@ -15,6 +17,8 @@ from neurostore.exceptions.utils.error_helpers import (
 )
 from neurostore.models import (
     Analysis,
+    AnalysisFeature,
+    AnalysisFeatureDisplay,
     Annotation,
     AnnotationAnalysis,
     Pipeline,
@@ -44,6 +48,32 @@ from neurostore.resources.mutation_core import (
 )
 from neurostore.resources.utils import get_current_user, view_maker
 from neurostore.schemas import PipelineStudyResultSchema
+
+ANALYSIS_QUERY_KEYS = {"query", "column", "feature_columns"}
+
+
+def _display(key, join=True):
+    """A feature column read from an analysis's display values."""
+
+    def read(row, display):
+        value = display.get(key)
+        if not join:
+            return value
+        return ", ".join(str(v) for v in value or []) or None
+
+    return read
+
+
+#: Feature column -> (note type, its value from an AnalysisFeature row and its display).
+FEATURE_COLUMNS = {
+    "diagnosis": ("string", _display("diagnosis")),
+    "task": ("string", _display("task")),
+    "contrast": ("string", _display("contrast", join=False)),
+    "contrast_set": ("string", _display("contrast_set")),
+    "spatial_scope": ("string", lambda row, display: row.spatial_scope),
+    "measure_type": ("string", lambda row, display: row.measure_type),
+    "n": ("number", lambda row, display: row.n),
+}
 
 
 class AnnotationMutationPolicy(DefaultMutationPolicy):
@@ -496,6 +526,7 @@ class AnnotationsView(ObjectView, ListView):
         )
 
         pipeline_payload = data.pop("pipelines", [])
+        analysis_query = data.pop("analysis_query", None)
         args = {}
         if set(self._o2m.keys()).intersection(set(data.keys())):
             args["nested"] = True
@@ -507,6 +538,8 @@ class AnnotationsView(ObjectView, ListView):
         if pipeline_payload:
             specs, column_counter = self._normalize_pipeline_specs(pipeline_payload)
             self._apply_pipeline_columns(input_record, data, specs, column_counter)
+        if analysis_query is not None:
+            self._apply_analysis_query(input_record, data, analysis_query)
 
         fast_note_update_candidate = mutation_policy.is_fast_note_update_candidate(data)
         bulk_note_update_candidate = (
@@ -870,6 +903,62 @@ class AnnotationsView(ObjectView, ListView):
             resolved_version or "latest",
             resolved_config_id or "latest",
         )
+
+    def _apply_analysis_query(self, annotation, data, payload):
+        """Write an analysis query's selection, and the selected features, into the notes.
+
+        ``column`` (boolean) is true for each analysis of the studyset the query selects,
+        false for every other; each of ``feature_columns`` carries the analysis's feature,
+        or None where its record says nothing.
+        """
+        if not isinstance(payload, dict) or set(payload) - ANALYSIS_QUERY_KEYS:
+            abort_validation(
+                "`analysis_query` takes query, column and feature_columns.",
+                [make_field_error("analysis_query", payload, sorted(ANALYSIS_QUERY_KEYS))],
+            )
+        column = payload.get("column", "included")
+        features = payload.get("feature_columns") or []
+        if not isinstance(column, str) or not column.strip():
+            abort_validation(
+                "`analysis_query.column` names a note column.",
+                [make_field_error("analysis_query.column", column)],
+            )
+        unknown = [f for f in features if f not in FEATURE_COLUMNS]
+        if not isinstance(features, list) or unknown or column in features:
+            abort_validation(
+                "Unknown or clashing feature column.",
+                [
+                    make_field_error(
+                        "analysis_query.feature_columns", features, sorted(FEATURE_COLUMNS)
+                    )
+                ],
+            )
+        note_map, analysis_context = self._build_note_map(
+            annotation, data.get("annotation_analyses") or []
+        )
+        study_ids = {ctx["study_id"] for ctx in analysis_context.values() if ctx.get("study_id")}
+        selected = selected_analysis_ids(payload.get("query"), study_ids)
+        rows = {}
+        if features:
+            rows = {
+                row.analysis_id: (row, display or {})
+                for row, display in db.session.execute(
+                    select(AnalysisFeature, AnalysisFeatureDisplay.display)
+                    .outerjoin(AnalysisFeature.display_row)
+                    .where(AnalysisFeature.analysis_id.in_(list(note_map)))
+                )
+            }
+        for analysis_id, note in note_map.items():
+            values = note.setdefault("note", {})
+            values[column] = analysis_id in selected
+            found = rows.get(analysis_id)
+            for feature in features:
+                values[feature] = FEATURE_COLUMNS[feature][1](*found) if found else None
+        data["note_keys"] = self._merge_note_keys(
+            annotation.note_keys if data.get("note_keys") is None else data["note_keys"],
+            {column: "boolean", **{f: FEATURE_COLUMNS[f][0] for f in features}},
+        )
+        data["annotation_analyses"] = list(note_map.values())
 
     def _apply_pipeline_columns(self, annotation, data, specs, column_counter):
         incoming_notes = data.get("annotation_analyses") or []

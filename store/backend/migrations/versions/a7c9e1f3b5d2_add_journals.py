@@ -1,7 +1,7 @@
 """add journals
 
 Revision ID: a7c9e1f3b5d2
-Revises: d4e6a8c0b2f1
+Revises: a7c9e1b3d5f6
 Create Date: 2026-11-05
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "a7c9e1f3b5d2"
-down_revision = "d4e6a8c0b2f1"
+down_revision = "a7c9e1b3d5f6"
 branch_labels = None
 depends_on = None
 
