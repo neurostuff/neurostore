@@ -23,6 +23,7 @@ from neurostore.services.base_study_metadata_enrichment import (
     merge_base_study,
 )
 from neurostore.services.has_media_flags import recompute_media_flags
+from neurostore.services.data_source_links import recompute_data_source_links
 
 
 class BaseStudyMergeError(ValueError):
@@ -134,6 +135,7 @@ def merge_base_studies(pairs, *, dry_run=True):
             merge = merge_base_study(keeper, old)
             db.session.flush()
             flagged = recompute_media_flags([keeper.id, old.id])
+            recompute_data_source_links([keeper.id, old.id])
         except (BaseStudyMergeError, BaseStudyMergeClash) as error:
             db.session.rollback()
             yield PairOutcome(keeper_id, old_id, REFUSED, refusal=str(error))

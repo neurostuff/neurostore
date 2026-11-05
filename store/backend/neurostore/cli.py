@@ -126,6 +126,67 @@ def ingest_neurosynth(max_rows):
     _run_with_runtime(_run)
 
 
+@main.group("data-sources")
+def data_sources_group():
+    """Data sources (studies, consortia, repositories) and their analysis links."""
+
+
+@data_sources_group.command("load")
+@click.argument("tsv", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--update", is_flag=True, help="overwrite data sources whose id already exists"
+)
+def load_data_sources_command(tsv, update):
+    """Create data sources from a dictionary TSV (scripts/data_sources/data_sources.tsv)."""
+
+    def _run(_app, db):
+        from neurostore.scripts.data_sources.ingest import load_data_sources
+
+        result = load_data_sources(tsv, update=update)
+        db.session.commit()
+        click.echo(
+            f"created {len(result.created)}, updated {len(result.updated)}, "
+            f"skipped {len(result.skipped)} existing"
+        )
+
+    _run_with_runtime(_run)
+
+
+@data_sources_group.command("link-matches")
+@click.argument("tsv", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--status",
+    "statuses",
+    multiple=True,
+    default=("used",),
+    show_default=True,
+    help="match statuses to link (repeatable)",
+)
+def link_data_source_matches_command(tsv, statuses):
+    """Link matcher results (paper_entities.tsv) to every analysis of each paper."""
+
+    def _run(_app, db):
+        from neurostore.cache_versioning import bump_cache_versions
+        from neurostore.scripts.data_sources.ingest import link_matches
+
+        result = link_matches(tsv, statuses=tuple(statuses))
+        db.session.commit()
+        bump_cache_versions(
+            {
+                "base-studies": result.base_studies,
+                "studies": result.studies,
+                "analyses": result.analyses,
+            }
+        )
+        click.echo(
+            f"{result.links} new analysis links across {len(result.base_studies)} "
+            f"base studies; {len(result.unmatched_papers)} papers not in neurostore; "
+            f"unknown data sources: {sorted(result.unknown_data_sources) or 'none'}"
+        )
+
+    _run_with_runtime(_run)
+
+
 @main.command("rehash-entities")
 @click.option(
     "--base-study-id",

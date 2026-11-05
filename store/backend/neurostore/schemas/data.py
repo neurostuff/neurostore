@@ -326,6 +326,61 @@ class ConditionSchema(BaseDataSchema):
     )
 
 
+DATA_SOURCE_KINDS = ("study", "consortium", "repository")
+
+
+class DataSourceSchema(BaseDataSchema):
+    name = fields.String(required=True)
+    description = fields.String(allow_none=True)
+    kinds = fields.List(fields.String(validate=validate.OneOf(DATA_SOURCE_KINDS)))
+    modalities = fields.List(fields.String())
+    part_of_id = fields.String(
+        data_key="part_of", allow_none=True, metadata={"id_field": True}
+    )
+    url = fields.String(allow_none=True)
+    url_kind = fields.String(allow_none=True)
+    rrids = fields.List(fields.String())
+    re3data_ids = fields.List(fields.String())
+
+    # the dictionary key (e.g. "ukb"), required on create
+    id = fields.String(
+        required=True,
+        validate=validate.Regexp(r"^[a-z0-9][a-z0-9_]*$"),
+        metadata={"info_field": True, "id_field": True, "preserve_on_clone": True},
+    )
+
+
+def dump_computed_data_sources(obj):
+    """A study's or base study's data sources, read from its computed link table.
+
+    Views that show them eager-load ``data_sources``; an object reached another way
+    (a base study's versions, a clone) is read with one query.
+    """
+    from sqlalchemy import inspect as sa_inspect
+
+    if "data_sources" not in sa_inspect(obj).unloaded:
+        data_sources = obj.data_sources
+    else:
+        from neurostore.services.data_source_links import data_sources_of
+
+        data_sources = data_sources_of(obj)
+    return [data_source_summary(ds) for ds in data_sources]
+
+
+def data_source_summary(data_source):
+    """The few fields a study, base study or analysis shows of each of its data sources."""
+    return {
+        "id": data_source.id,
+        "name": data_source.name,
+        "url": data_source.url,
+    }
+
+
+class AnalysisDataSourceSchema(BaseDataSchema):
+    data_source = StringOrNested(DataSourceSchema)
+    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
+
+
 class EntitySchema(BaseDataSchema):
     analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
 
@@ -530,6 +585,12 @@ class AnalysisSchema(BaseDataSchema):
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)
     weights = fields.List(fields.Float())
+    analysis_data_sources = fields.Nested(
+        AnalysisDataSourceSchema, many=True, load_only=True
+    )
+    data_sources = fields.Method(
+        "dump_data_sources", dump_only=True, metadata={"detail_field": "data_sources"}
+    )
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
@@ -541,6 +602,20 @@ class AnalysisSchema(BaseDataSchema):
         validate=validate.OneOf([o.value for o in AnalysisOutcome]),
     )
     from_prior_study = fields.Boolean(allow_none=True)
+
+    def dump_data_sources(self, obj):
+        from sqlalchemy import inspect as sa_inspect
+
+        if "analysis_data_sources" not in sa_inspect(obj).unloaded:
+            data_sources = sorted(
+                (link.data_source for link in obj.analysis_data_sources),
+                key=lambda ds: ds.name,
+            )
+        else:
+            from neurostore.services.data_source_links import data_sources_of
+
+            data_sources = data_sources_of(obj)
+        return [data_source_summary(ds) for ds in data_sources]
 
     @pre_load
     def load_values(self, data, **kwargs):
@@ -568,6 +643,21 @@ class AnalysisSchema(BaseDataSchema):
 
         data.pop("conditions", None)
         data.pop("weights", None)
+
+        # data sources are linked by id only; they are created through /data-sources/
+        if "analysis_data_sources" in data:
+            raise ValidationError(
+                "link data sources with data_sources (a list of ids)",
+                "analysis_data_sources",
+            )
+        if data.get("data_sources") is not None:
+            ids = data.pop("data_sources")
+            if not all(isinstance(i, str) for i in ids):
+                raise ValidationError(
+                    "data_sources takes data source ids", "data_sources"
+                )
+            data["analysis_data_sources"] = [{"data_source": i} for i in ids]
+        data.pop("data_sources", None)
 
         # Nested images carry no analysis to count against yet, so number them
         # by their position in the payload instead of defaulting every one of
@@ -686,8 +776,14 @@ class BaseStudySchema(BaseDataSchema, ArticleIdentifiersSchema):
     has_beta_and_variance_maps = fields.Bool(dump_only=True)
     versions = StringOrNested("StudySchema", many=True)
     features = fields.Method("get_features")
+    data_sources = fields.Method(
+        "dump_data_sources", dump_only=True, metadata={"detail_field": "data_sources"}
+    )
     ace_fulltext = fields.String(load_only=True, allow_none=True)
     pubget_fulltext = fields.String(load_only=True, allow_none=True)
+
+    def dump_data_sources(self, obj):
+        return dump_computed_data_sources(obj)
 
     def get_features(self, obj):
         from neurostore.schemas.pipeline import PipelineStudyResultSchema
@@ -784,6 +880,9 @@ class StudySchema(BaseDataSchema):
         dump_only=True, metadata={"info_field": True}
     )
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
+    data_sources = fields.Method(
+        "dump_data_sources", dump_only=True, metadata={"detail_field": "data_sources"}
+    )
 
     class Meta:
         # studysets can be very large and are hidden by default.
@@ -799,6 +898,9 @@ class StudySchema(BaseDataSchema):
             if val is not None and (val == "" or val.isspace()):
                 data[attr] = None
         return data
+
+    def dump_data_sources(self, obj):
+        return dump_computed_data_sources(obj)
 
     def get_table_ids(self, obj):
         if not getattr(obj, "tables", None):

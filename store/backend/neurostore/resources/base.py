@@ -49,6 +49,7 @@ from neurostore.resources.utils import (
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
 )
+from neurostore.services.data_source_links import recompute_data_source_links
 from neurostore.services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
@@ -110,6 +111,8 @@ class BaseView:
     mutation_policy_cls = DefaultMutationPolicy
     object_view_policy_cls = DefaultObjectViewPolicy
     request_body_validation_skip = ()
+    # whether a POST names the new record's id instead of having one generated
+    _client_id = False
     # _default_exclude = None
 
     @classmethod
@@ -258,6 +261,9 @@ class BaseView:
         base_studies = {id_ for id_ in base_studies if id_}
         if not base_studies:
             return
+
+        # kept synchronous: a write's response may list the data sources it changed
+        recompute_data_source_links(base_studies)
 
         config = request.state.settings
         if config.get("BASE_STUDY_FLAGS_ASYNC", True):
@@ -658,7 +664,7 @@ class ListView(BaseView):
         source = args.get("source") or "neurostore"
 
         unknown = self.__class__._schema.opts.unknown
-        schema = self.__class__._schema(exclude=("id",))
+        schema = self.__class__._schema(exclude=() if self._client_id else ("id",))
         data = load_schema_or_abort(schema, body, unknown=unknown)
 
         if source_id:
