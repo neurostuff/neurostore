@@ -592,17 +592,6 @@
             }
           ],
           "description": "The classification system the study used for these categories, in its own words, such as the OMB or NIH race and ethnicity categories, a named handedness inventory, or a self-report question's answer set."
-        },
-        "category_normalized": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "`category` folded onto the answer set for the distribution it belongs to, by `pondie.normalization.sex_distribution` or `.handedness_distribution`. Unset where no normalizer covers the distribution -- unset is not UNKNOWN, which says a normalizer read the wording and could not place it."
         }
       },
       "required": [
@@ -1576,6 +1565,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1626,6 +1625,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1679,6 +1688,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1732,6 +1751,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1785,6 +1814,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1838,6 +1877,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1891,6 +1940,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1937,6 +1996,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1986,6 +2055,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2036,6 +2115,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2089,6 +2178,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2142,6 +2241,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2195,6 +2304,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2248,6 +2367,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2301,6 +2430,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2354,6 +2493,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2404,6 +2553,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2454,6 +2613,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2504,6 +2673,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2557,6 +2736,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2610,6 +2799,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2656,6 +2855,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2705,6 +2914,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2758,6 +2977,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2811,6 +3040,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2864,6 +3103,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2917,6 +3166,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -2970,6 +3229,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3023,6 +3292,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3073,6 +3352,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3119,6 +3408,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3168,6 +3467,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3218,6 +3527,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3268,6 +3587,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3321,6 +3650,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3374,6 +3713,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3427,6 +3776,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3483,6 +3842,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3536,6 +3905,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3586,6 +3965,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3636,6 +4025,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3692,6 +4091,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3745,6 +4154,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3798,6 +4217,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3851,6 +4280,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3904,6 +4343,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -3960,6 +4409,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4006,6 +4465,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4055,6 +4524,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4108,6 +4587,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4161,6 +4650,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4211,6 +4710,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4264,6 +4773,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4306,6 +4825,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -4359,6 +4888,16 @@
         },
         "evidence": {
           "$ref": "#/$defs/Evidence"
+        },
+        "normalized": {
+          "description": "What normalizers made of the value: one entry per vocabulary, list item and head. Written by the normalization pass after the value and evidence passes, never extracted; the source's wording stays in `value`, so the comparable value and the words it was read from sit side by side and can be checked against each other. Unset where no normalizer covers the slot, which is not the same as an entry whose status is `unmapped`: that says a normalizer read the value and could not place it.",
+          "items": {
+            "$ref": "#/$defs/Normalization"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         }
       },
       "required": [
@@ -5073,17 +5612,6 @@
             }
           ],
           "description": "Whether this cohort is free of medical, neurological and psychiatric conditions. Derived from `medical_condition` by `pondie.normalization.is_healthy`, never extracted, so it cannot disagree with the field it summarises. Unset where `medical_condition` was never read: that is an unread cohort, not a healthy one."
-        },
-        "age_unit_normalized": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExtractedString"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "`age_unit` folded onto years / months / weeks / gestational_weeks / UNKNOWN by `pondie.normalization.age_unit`, never extracted. The source's own wording stays in `age_unit`."
         },
         "other_characteristics": {
           "anyOf": [
@@ -6023,6 +6551,113 @@
       ],
       "title": "ModelTerm",
       "type": "object"
+    },
+    "Normalization": {
+      "additionalProperties": false,
+      "description": "One normalizer's reading of an extracted value onto a vocabulary: an assertion about the value, kept beside it rather than written over it. The first two passes record what the source says and where; this records what that means in a shared vocabulary, and which code said so.",
+      "properties": {
+        "vocabulary": {
+          "description": "The answer set the value was placed on: an ontology (MONDO, ONVOC), a vocabulary this schema defines (AgeUnit), or a normalizer's own category set.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/NormalizationStatus"
+        },
+        "value": {
+          "description": "The term's identifier or permissible value, as the vocabulary spells it. Populate when status is mapped; omit otherwise.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "label": {
+          "description": "The term's preferred label in its vocabulary.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "item": {
+          "description": "Which item of a list-valued `value` this entry reads, counting from 0. Omitted for a scalar value. A list's items normalize independently -- one of a group's conditions maps and the next does not -- so an entry has to say which it is about.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "head": {
+          "description": "The part of the value this entry is about, when one value names several things: one diagnosis in a comorbidity list that arrived as a single string. Omitted when the entry reads the whole value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "qualifiers": {
+          "description": "Course or state words lifted off the value before lookup -- first-episode, remitted, treatment-resistant -- so the term stays the diagnosis and the qualification is not lost with the words it came from.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "rollup": {
+          "description": "True when the term was reached by dropping part of what the value said, so it is broader than the source. Omitted when nothing was dropped.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "method": {
+          "description": "How the normalizer reached the term, in its own words: a decisive rule, a lexical match, an exact label, an embedding neighbour, a cluster, a citation, a review.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "also_read": {
+          "description": "Other slots of the same object the normalizer read besides this one, such as a task's `description` and `conditions` when its `name` is placed on a canonical task. An entity-level normalization is recorded on the entity's name, and this is what keeps that from reading as a judgement on the name alone.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "mapping_tool": {
+          "description": "The normalizer that wrote this entry and its version, such as `pondie.normalization.age_unit 16a42d8`. SSSOM's `mapping_tool`. A rerun of a normalizer replaces the entries carrying its name and leaves other normalizers' entries alone.",
+          "type": "string"
+        },
+        "confidence": {
+          "description": "The normalizer's score for this entry, from 0 to 1, where its method produces one. SSSOM's `confidence`.",
+          "maximum": 1,
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "vocabulary",
+        "status",
+        "mapping_tool"
+      ],
+      "title": "Normalization",
+      "type": "object"
+    },
+    "NormalizationStatus": {
+      "description": "Outcome of one normalizer reading one value.",
+      "enum": [
+        "mapped",
+        "unmapped",
+        "ambiguous",
+        "absent"
+      ],
+      "title": "NormalizationStatus",
+      "type": "string"
     },
     "NotStructurableDetails": {
       "additionalProperties": false,
