@@ -77,7 +77,7 @@ async def test_a_pattern_needs_three_letters(auth_client, papers):
 async def test_invalid_queries_are_refused(auth_client, papers):
     # The spec refuses unknown fields; the server refuses unknown values.
     await _query(auth_client, {"diagnoses": "schizophrenia"}, status=400)
-    await _query(auth_client, {"contrast": {"postive": "2-back"}}, status=400)
+    await _query(auth_client, {"contrast": {"polarity": "2-back"}}, status=400)
     assert _codes(await _query(auth_client, {"spatial_scope": "whole brain"}, status=400)) == [
         "INVALID_VALUE"
     ]
