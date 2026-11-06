@@ -72,6 +72,24 @@ def _label(entry):
     return entry.get("label") or entry["value"]
 
 
+def _tools(entries):
+    return [entry["mapping_tool"] for entry in entries if entry.get("mapping_tool")]
+
+
+def _unmapped(spoke, ids):
+    """True when the slot was extracted and nothing in it mapped; None when silent."""
+    return not ids if spoke else None
+
+
+def _family(identifier):
+    """The task family an astra contrast set (`family#n`) or contrast key (`family|...`)
+    names, which is its one ancestor."""
+    for separator in ("#", "|"):
+        if separator in identifier:
+            return identifier.split(separator, 1)[0]
+    return None
+
+
 def _unique(items):
     """Items in order, without repeats; strings compare case-insensitively."""
     out, seen = [], set()
@@ -114,13 +132,17 @@ def _groups(groups):
         wording += [item for i, item in enumerate(_values(slot)) if i not in absent]
     labels = {entry["value"]: _label(entry) for entry in conditions}
     species = [item for group in groups for item in _values(group.get("species"))]
+    text = _text([*labels.values(), *wording]) if stated else None
     columns = {
         "species": _unique(str(item).strip().lower() for item in species) or None,
         "has_patients": (False in healthy) if healthy else None,
         "has_healthy": (True in healthy) if healthy else None,
         "medical_condition_ids": list(labels) or None,
+        "medical_condition_ancestor_ids": list(labels) or None,
         "medical_condition_labels": list(labels.values()) or None,
-        "medical_condition_text": _text([*labels.values(), *wording]) if stated else None,
+        "medical_condition_text": text,
+        "medical_condition_unmapped": _unmapped(text is not None, labels),
+        "mapping_tools": _tools(conditions),
     }
     return columns, {"medical_condition": list(labels.values()) or _unique(wording)}
 
@@ -137,25 +159,32 @@ def _tasks(tasks):
         *(_label(entry) for entry in entries),
     ]
     canonical = [_label(e) for e in entries if e.get("vocabulary") == CANONICAL_TASK]
+    # A task's family is its one ancestor, and ns-pond writes it as an entry of its own.
+    ids = _unique(entry["value"] for entry in entries) or None
     columns = {
-        "task_ids": _unique(entry["value"] for entry in entries) or None,
+        "task_ids": ids,
+        "task_ancestor_ids": ids,
         "task_text": _text(words) if names else None,
+        "task_unmapped": _unmapped(bool(names), ids),
+        "mapping_tools": _tools(entries),
     }
     return columns, {"task": _unique(canonical) or _unique(names)}
+
+
+def _is_contrast_set(entry):
+    vocabulary = entry.get("vocabulary") or ""
+    return vocabulary == CONTRAST_KEY or (
+        vocabulary.startswith(CONTRAST_SET) and not vocabulary.startswith(CONTRAST_ORIENTATION)
+    )
 
 
 def _contrast_sets(name):
     """The contrast sets and keys a normalizer placed an analysis in, from its name."""
     entries = _entries(name)
-    placed = [
-        e
-        for e in entries
-        if e.get("vocabulary") == CONTRAST_KEY
-        or (
-            (e.get("vocabulary") or "").startswith(CONTRAST_SET)
-            and not e["vocabulary"].startswith(CONTRAST_ORIENTATION)
-        )
-    ]
+    placed = [e for e in entries if _is_contrast_set(e)]
+    read = isinstance(name, dict) and any(
+        isinstance(e, dict) and _is_contrast_set(e) for e in name.get("normalized") or []
+    )
     orientation = next(
         (
             e["value"]
@@ -164,9 +193,18 @@ def _contrast_sets(name):
         ),
         None,
     )
+    labels = {}
+    for entry in placed:
+        labels.setdefault(entry["value"], entry.get("label"))
+    ids = list(labels) or None
+    families = [_family(identifier) for identifier in labels]
     columns = {
-        "contrast_set_ids": _unique(e["value"] for e in placed) or None,
-        "contrast_set_text": _text(e["label"] for e in placed if e.get("label")),
+        "contrast_set_ids": ids,
+        "contrast_set_ancestor_ids": _unique([*labels, *filter(None, families)]) or None,
+        # One per id, NULL for a contrast key, which has no label.
+        "contrast_set_labels": list(labels.values()) if any(labels.values()) else None,
+        "contrast_set_unmapped": _unmapped(read, ids),
+        "mapping_tools": _tools(placed),
     }
     display = {
         "contrast_set": _unique(_label(e) for e in placed),
@@ -281,14 +319,17 @@ class _Record:
             **self.design,
         }
         display = {"name": reported_value(analysis.get("name"))}
+        tools = []
         for columns, shown in (
             _groups([self.groups.get(link.get("group")) or {} for link in links]),
             _tasks([self.tasks.get(task_id) or {} for task_id in analysis.get("tasks") or []]),
             _contrast(*self._sides(effect)),
             _contrast_sets(analysis.get("name")),
         ):
+            tools += columns.pop("mapping_tools", [])
             row.update(columns)
             display.update(shown)
+        row["mapping_tools"] = sorted(set(tools)) or None
         row["display"] = display
         return row
 

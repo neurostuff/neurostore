@@ -9,6 +9,7 @@ from neurostore.database import db
 from neurostore.ingest.analysis_features import backfill_analysis_features, record_features
 from neurostore.ingest.study_schema import STUDY_SOURCE, ingest_upload
 from neurostore.models import AnalysisFeature, BaseStudy, Study
+from neurostore.models.data import NORMALIZED_FEATURES
 from neurostore.services.base_study_metadata_enrichment import merge_base_study
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests import analysis_fixtures as af
@@ -64,8 +65,48 @@ def test_measure_task_and_contrast_resolve_through_their_ids():
     assert row["contrast_positive"] == "schizophrenia | 2-back"
     assert row["contrast_negative"] == "control | 0-back"
     assert row["contrast_set_ids"] == ["working_memory_span|load:2|vs:load:0", "working_memory#1"]
-    assert row["contrast_set_text"] == "2-back > 0-back"
+    # One label per id; a contrast key has none.
+    assert row["contrast_set_labels"] == [None, "2-back > 0-back"]
     assert row["display"]["contrast_set_orientation"] == "reversed"
+
+
+def test_ancestors_add_the_family_a_contrast_set_or_key_belongs_to():
+    row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
+
+    assert row["contrast_set_ancestor_ids"] == [
+        "working_memory_span|load:2|vs:load:0",
+        "working_memory#1",
+        "working_memory_span",
+        "working_memory",
+    ]
+    # A task's family is an entry of its own, so its ids are already their closure.
+    assert row["task_ancestor_ids"] == row["task_ids"]
+    assert row["medical_condition_ancestor_ids"] == ["MONDO:0005090"]
+
+
+def test_unmapped_is_a_stated_feature_nothing_in_which_mapped():
+    mapped = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
+    unmapped = _by_name("6SKTGteXbbBs")["Immediate–delayed"]
+    document = af.record("6SKTGteXbbBs")
+    for analysis in document["analyses"]:
+        for entry in analysis["name"]["normalized"]:
+            entry.update(status="unmapped", value=None)
+    no_set = next(iter(record_features(document).values()))
+
+    assert mapped["medical_condition_unmapped"] is False
+    assert unmapped["medical_condition_unmapped"] is True
+    assert unmapped["task_unmapped"] is False
+    assert unmapped["contrast_set_unmapped"] is False
+    assert no_set["contrast_set_unmapped"] is True and no_set["contrast_set_ids"] is None
+
+
+def test_rows_name_the_normalizers_their_ids_came_from():
+    row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
+
+    assert row["mapping_tools"] == [
+        "fixture: hand-mapped",
+        "fixture: ns-pond build rows (astra_records.json)",
+    ]
 
 
 def test_design_and_scope_come_from_the_record():
@@ -92,6 +133,7 @@ def test_silence_is_null():
 
     assert row["species"] is None
     assert row["task_text"] is None and row["task_ids"] is None
+    assert row["task_unmapped"] is None
 
 
 def test_an_upload_writes_one_row_per_current_analysis(session):
@@ -265,7 +307,9 @@ def test_the_migrated_table_matches_the_model(db):
         assert compare_metadata(context, db.metadata) == []
 
 
-def test_the_medical_condition_migration_renames_the_columns_indexes_and_display_key(session):
+def test_the_normalized_search_migration_renames_and_adds_columns_and_its_downgrade_undoes_it(
+    session,
+):
     af.upload("ya2RC6UYbibC")
     session.commit()
     session.remove()
@@ -287,11 +331,21 @@ def test_the_medical_condition_migration_renames_the_columns_indexes_and_display
         )
 
     renamed = {f"medical_condition_{suffix}" for suffix in ("ids", "labels", "text")}
+    added = {
+        *(
+            f"{field}_{suffix}"
+            for field in NORMALIZED_FEATURES
+            for suffix in ("ancestor_ids", "unmapped")
+        ),
+        "contrast_set_labels",
+        "mapping_tools",
+    }
     try:
         service_migrations.downgrade("c3e5a7b9d1f2")
         columns, indexes, keys = state()
         assert {f"diagnosis_{suffix}" for suffix in ("ids", "labels", "text")} <= columns
-        assert not renamed & columns
+        assert not renamed & columns and not added & columns
+        assert "contrast_set_text" in columns
         assert {
             "ix_analysis_features__diagnosis_ids",
             "ix_analysis_features__diagnosis_text_trgm",
@@ -300,7 +354,8 @@ def test_the_medical_condition_migration_renames_the_columns_indexes_and_display
 
         service_migrations.upgrade("heads")
         columns, indexes, keys = state()
-        assert renamed <= columns
+        assert renamed <= columns and added <= columns
+        assert "contrast_set_text" not in columns
         assert not any(column.startswith("diagnosis") for column in columns)
         assert {
             "ix_analysis_features__medical_condition_ids",

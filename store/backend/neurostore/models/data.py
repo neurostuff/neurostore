@@ -1622,6 +1622,10 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
     )
 
 
+def _gin_index(column):
+    return sa.Index(f"ix_analysis_features__{column}", column, postgresql_using="gin")
+
+
 def _trigram_index(column):
     return sa.Index(
         f"ix_analysis_features__{column}_trgm",
@@ -1629,6 +1633,10 @@ def _trigram_index(column):
         postgresql_using="gin",
         postgresql_ops={column: "gin_trgm_ops"},
     )
+
+
+#: The features read from normalizer entries, by column prefix.
+NORMALIZED_FEATURES = ("medical_condition", "task", "contrast_set")
 
 
 class AnalysisFeature(db.Model):
@@ -1643,17 +1651,13 @@ class AnalysisFeature(db.Model):
 
     __tablename__ = "analysis_features"
     __table_args__ = (
-        sa.Index(
-            "ix_analysis_features__medical_condition_ids",
-            "medical_condition_ids",
-            postgresql_using="gin",
+        *(
+            _gin_index(f"{field}_{ids}")
+            for field in NORMALIZED_FEATURES
+            for ids in ("ids", "ancestor_ids")
         ),
-        sa.Index("ix_analysis_features__task_ids", "task_ids", postgresql_using="gin"),
-        sa.Index(
-            "ix_analysis_features__contrast_set_ids", "contrast_set_ids", postgresql_using="gin"
-        ),
-        sa.Index("ix_analysis_features__arm_kinds", "arm_kinds", postgresql_using="gin"),
-        sa.Index("ix_analysis_features__species", "species", postgresql_using="gin"),
+        _gin_index("arm_kinds"),
+        _gin_index("species"),
         *(
             _trigram_index(column)
             for column in (
@@ -1661,7 +1665,6 @@ class AnalysisFeature(db.Model):
                 "task_text",
                 "contrast_positive",
                 "contrast_negative",
-                "contrast_set_text",
             )
         ),
     )
@@ -1698,21 +1701,33 @@ class AnalysisFeature(db.Model):
     #: Whether any group of the analysis is (not) healthy, from `Group.is_healthy`.
     has_patients = db.Column(db.Boolean, index=True)
     has_healthy = db.Column(db.Boolean, index=True)
+    # Each normalized feature has `_ids`, its mapped terms; `_ancestor_ids`, those and all
+    # their ancestors; and `_unmapped`, true when the record states the feature and nothing
+    # in it mapped, NULL when the record is silent on it.
     #: Mapped MONDO and ONVOC terms of the groups' `medical_condition`, and their labels.
     medical_condition_ids = db.Column(ARRAY(db.Text))
+    medical_condition_ancestor_ids = db.Column(ARRAY(db.Text))
     medical_condition_labels = db.Column(ARRAY(db.Text))
     #: Those labels and the extracted wording, minus wording a normalizer read as an absence.
     medical_condition_text = db.Column(db.Text)
+    medical_condition_unmapped = db.Column(db.Boolean, index=True)
     #: Mapped terms on the tasks' names (canonical task, task family, ...).
     task_ids = db.Column(ARRAY(db.Text))
+    task_ancestor_ids = db.Column(ARRAY(db.Text))
     task_text = db.Column(db.Text)
+    task_unmapped = db.Column(db.Boolean, index=True)
     #: The names on each side of the contrast: the signed cells' labels or levels, and
     #: the names of the conditions their factor levels stand for.
     contrast_positive = db.Column(db.Text)
     contrast_negative = db.Column(db.Text)
     #: The contrast sets and keys a normalizer placed the analysis in, and their labels.
     contrast_set_ids = db.Column(ARRAY(db.Text))
-    contrast_set_text = db.Column(db.Text)
+    contrast_set_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_set_labels = db.Column(ARRAY(db.Text))
+    contrast_set_unmapped = db.Column(db.Boolean, index=True)
+    #: The `mapping_tool` (normalizer and its version or fit) of every entry the ids came
+    #: from, which names the rows a new fit leaves stale.
+    mapping_tools = db.Column(ARRAY(db.Text))
 
     allocation = db.Column(db.Text, index=True)
     assignment_structure = db.Column(db.Text, index=True)

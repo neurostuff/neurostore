@@ -7,9 +7,15 @@ does not match) or `include`. `or` takes a list of sub-queries, any of which may
 
 Text criteria match whole words, case-insensitively; `*` matches any run of characters and
 `?` one character, within one item, and a pattern needs three consecutive letters or
-digits so that the trigram index can serve it. A criterion with ids (medical_condition,
-task, contrast set) matches a value that is one of the analysis's ids exactly, or its text
-as a pattern.
+digits so that the trigram index can serve it.
+
+A normalized criterion (medical_condition, task, contrast.set) takes `ids`, the terms a
+normalizer mapped the record's wording to, and `text`, a pattern over that wording and the
+terms' labels; given both, either may match. An id matches its descendants unless
+`descendants` is false. `when_unmapped` decides the analyses whose record states the
+feature but maps none of it: `exclude`, `include`, or `text` (the default where the field
+has text), matching them by their wording alone. contrast.set has ids only. A bare value
+is `text`, or `ids` where the field has no text.
 
 `run_query` returns the canonical query, the counts, the first `limit` analyses and every
 selected analysis's study id; with `funnel`, also what each criterion dropped and how many
@@ -29,6 +35,7 @@ from neurostore.models import Analysis, AnalysisFeature, AnalysisFeatureDisplay
 AF = AnalysisFeature
 AFD = AnalysisFeatureDisplay
 SILENT_MODES = ["exclude", "include"]
+UNMAPPED_MODES = ["exclude", "include", "text"]
 DEFAULT_LIMIT = 100
 MAX_LIMIT = 1000
 #: The fewest consecutive letters or digits a text pattern needs.
@@ -39,18 +46,32 @@ MIN_LITERAL = 3
 class Field:
     """One criterion: its kind, the column it reads, and its ids column."""
 
-    kind: str  # text, text_or_id, value, array_value, groups, boolean, range
+    kind: str  # text, normalized, value, array_value, groups, boolean, range
     column: object
+    #: A normalized field's mapped ids, those and their ancestors, and its unmapped flag.
     ids: object = None
+    ancestors: object = None
+    unmapped: object = None
     #: Restricts a value criterion to these values.
     values: tuple = ()
 
     @property
     def silent(self):
         """The analyses whose record says nothing this criterion reads."""
-        if self.ids is None:
-            return self.column.is_(None)
-        return sa.and_(self.column.is_(None), self.ids.is_(None))
+        if self.unmapped is not None:
+            return self.unmapped.is_(None)
+        return self.column.is_(None)
+
+
+def _normalized(name, text=True):
+    """The normalized field whose columns are prefixed ``name``."""
+    return Field(
+        "normalized",
+        getattr(AF, f"{name}_text") if text else None,
+        ids=getattr(AF, f"{name}_ids"),
+        ancestors=getattr(AF, f"{name}_ancestor_ids"),
+        unmapped=getattr(AF, f"{name}_unmapped"),
+    )
 
 
 SPATIAL_SCOPES = ("whole_brain", "roi", "searchlight")
@@ -65,11 +86,11 @@ EFFECT_KINDS = (
 
 #: Every criterion, by its dotted name: `contrast.*` and `design.*` nest in the query.
 FIELDS = {
-    "medical_condition": Field("text_or_id", AF.medical_condition_text, AF.medical_condition_ids),
+    "medical_condition": _normalized("medical_condition"),
     "has_patients": Field("boolean", AF.has_patients),
     "has_healthy": Field("boolean", AF.has_healthy),
     "species": Field("array_value", AF.species),
-    "task": Field("text_or_id", AF.task_text, AF.task_ids),
+    "task": _normalized("task"),
     "spatial_scope": Field("value", AF.spatial_scope, values=SPATIAL_SCOPES),
     "coordinate_space": Field("text", AF.coordinate_space),
     "measure_type": Field("value", AF.measure_type),
@@ -81,7 +102,7 @@ FIELDS = {
     "role": Field("value", Analysis.role),
     "contrast.positive": Field("text", AF.contrast_positive),
     "contrast.negative": Field("text", AF.contrast_negative),
-    "contrast.set": Field("text_or_id", AF.contrast_set_text, AF.contrast_set_ids),
+    "contrast.set": _normalized("contrast_set", text=False),
     "contrast.kind": Field("value", AF.effect_kind, values=EFFECT_KINDS),
     "contrast.groups": Field("groups", AF.group_count, values=("between", "within")),
     "design.allocation": Field("value", AF.allocation),
@@ -103,13 +124,17 @@ class QueryError(Exception):
 @dataclass
 class Criterion:
     """A parsed criterion: its SQL condition, the analyses it is silent about (None for
-    `or`), and the canonical form echoed back."""
+    `or`), and the canonical form echoed back. A normalized criterion also has the
+    analyses it found unmapped and how a result matched it; `or` has its sub-queries."""
 
     name: str
     condition: object
     silent: object
     canonical: object
     joins: bool = False
+    unmapped: object = None
+    matched_by: object = None
+    subqueries: list = None
 
 
 # ---------------------------------------------------------------------------
@@ -127,11 +152,6 @@ def pattern_regex(pattern):
     start = r"\m" if re.match(r"\w", text) else ""
     end = r"\M" if re.search(r"\w$", text) else ""
     return f"{start}{body}{end}"
-
-
-def _is_id(value):
-    """Whether ``value`` could only be an id: it has no spaces and an id's punctuation."""
-    return " " not in value and bool(re.search(r"[:_#|]", value))
 
 
 # ---------------------------------------------------------------------------
@@ -212,18 +232,10 @@ def _range_form(path, raw, errors):
 def _text_matcher(field, path, errors):
     def match(value):
         regex = pattern_regex(value)
-        by_id = (
-            sa.and_(field.ids.is_not(None), field.ids.contains([value]))
-            if field.ids is not None
-            else None
-        )
         if regex is None:
-            if by_id is not None and _is_id(value):
-                return by_id
             errors.append(make_field_error(path, value, code="PATTERN_TOO_BROAD"))
             return sa.false()
-        by_text = sa.and_(field.column.is_not(None), field.column.op("~")(regex))
-        return sa.or_(by_id, by_text) if by_id is not None else by_text
+        return sa.and_(field.column.is_not(None), field.column.op("~")(regex))
 
     return match
 
@@ -236,7 +248,6 @@ def _groups_matcher(field, path, errors):
 #: on a silent record, so `none` is the complement of `any` among the records that speak.
 MATCHERS = {
     "text": _text_matcher,
-    "text_or_id": _text_matcher,
     "value": lambda field, path, errors: lambda value: field.column == value,
     "array_value": lambda field, path, errors: lambda value: field.column.contains(
         [value.lower()]
@@ -266,10 +277,149 @@ def _match(field, form, path, errors):
     return sa.and_(*parts)
 
 
+def _strings(path, raw, errors):
+    """``raw`` (a string or a list of them) as a list; None (with errors) when invalid."""
+    values = [raw] if isinstance(raw, str) else raw
+    valid = isinstance(values, list) and values
+    if valid and all(isinstance(v, str) and v.strip() for v in values):
+        return values
+    errors.append(make_field_error(path, raw))
+    return None
+
+
+def _terms_form(path, raw, keys, errors):
+    """``raw``'s ``keys`` (ids, text) as lists, or None (with errors)."""
+    form = {}
+    for key in keys:
+        if key in raw:
+            values = _strings(f"{path}{key}", raw[key], errors)
+            if values is None:
+                return None
+            form[key] = values
+    return form
+
+
+def _normalized_form(path, raw, field, errors):
+    """``raw`` as ``{ids, text, all, none, descendants, when_unmapped, when_silent}``."""
+    keys = ("ids", "text") if field.column is not None else ("ids",)
+    if isinstance(raw, (str, list)):
+        raw = {keys[-1]: raw}
+    if not isinstance(raw, dict):
+        errors.append(make_field_error(path, raw))
+        return None
+    allowed = (*keys, "all", "none", "descendants", "when_unmapped", "when_silent")
+    if _unknown(f"{path}.", raw, allowed, errors):
+        return None
+    form = _terms_form(f"{path}.", raw, keys, errors)
+    if form is None:
+        return None
+    for part in ("all", "none"):
+        if part not in raw:
+            continue
+        terms = raw[part]
+        if not isinstance(terms, dict):
+            errors.append(make_field_error(f"{path}.{part}", terms, list(keys)))
+            return None
+        if _unknown(f"{path}.{part}.", terms, keys, errors):
+            return None
+        terms = _terms_form(f"{path}.{part}.", terms, keys, errors)
+        if not terms:
+            errors.append(make_field_error(f"{path}.{part}", raw[part], code="MISSING_VALUE"))
+            return None
+        form[part] = terms
+    if not form:
+        errors.append(make_field_error(path, raw, code="MISSING_VALUE"))
+        return None
+    descendants = raw.get("descendants", True)
+    if not isinstance(descendants, bool):
+        errors.append(make_field_error(f"{path}.descendants", descendants))
+        return None
+    modes = UNMAPPED_MODES if field.column is not None else UNMAPPED_MODES[:2]
+    unmapped = raw.get("when_unmapped", modes[-1])
+    if unmapped not in modes:
+        errors.append(make_field_error(f"{path}.when_unmapped", unmapped, modes))
+        return None
+    silent = _silent_mode(path, raw, errors)
+    if silent is None:
+        return None
+    return {**form, "descendants": descendants, "when_unmapped": unmapped, "when_silent": silent}
+
+
+def _normalized_match(field, form, path, errors):
+    """``(matched, by_id, by_text)``: the condition ``form`` puts on ``field`` before
+    unmapped and silent analyses are decided, and the positive id and text parts of it."""
+    ids_column = field.ancestors if form["descendants"] else field.ids
+    text = _text_matcher(field, f"{path}.text", errors) if field.column is not None else None
+
+    def by_id(ids, every):
+        if every:
+            return sa.and_(*(ids_column.contains([value]) for value in ids))
+        return sa.and_(ids_column.is_not(None), ids_column.overlap(ids))
+
+    def by_text(patterns, every):
+        matches = [text(pattern) for pattern in patterns]
+        return sa.and_(*matches) if every else sa.or_(*matches)
+
+    def terms(part, every):
+        found = {}
+        if "ids" in part:
+            found["ids"] = sa.and_(ids_column.is_not(None), by_id(part["ids"], every))
+        if "text" in part:
+            found["text"] = by_text(part["text"], every)
+        return found
+
+    parts, positive = [], {"ids": [], "text": []}
+    for part, every in ((form, False), (form.get("all"), True)):
+        if not part:
+            continue
+        found = terms(part, every)
+        if found and not every:
+            parts.append(sa.or_(*found.values()))
+        else:
+            parts.extend(found.values())
+        for key, condition in found.items():
+            positive[key].append(condition)
+    if "none" in form:
+        parts.append(sa.not_(sa.or_(*terms(form["none"], False).values())))
+    matched = sa.and_(*parts)
+    mapped = field.unmapped.is_(False)
+    if form["when_unmapped"] == "exclude":
+        matched = sa.and_(matched, mapped)
+    elif form["when_unmapped"] == "include":
+        matched = sa.or_(sa.and_(matched, mapped), field.unmapped.is_(True))
+    return (
+        matched,
+        sa.and_(*positive["ids"]) if positive["ids"] else sa.false(),
+        sa.and_(*positive["text"]) if positive["text"] else sa.false(),
+    )
+
+
+def _normalized_criterion(name, path, field, raw, errors):
+    form = _normalized_form(path, raw, field, errors)
+    if form is None:
+        return None
+    matched, by_id, by_text = _normalized_match(field, form, path, errors)
+    matched = sa.and_(sa.not_(field.silent), matched)
+    condition = sa.or_(matched, field.silent) if form["when_silent"] == "include" else matched
+    unmapped = field.unmapped.is_(True)
+    # Only where the criterion holds: inside `or`, a result need not satisfy it.
+    matched_by = sa.case(
+        (sa.not_(condition), None),
+        (field.silent, "silent"),
+        (by_id, "id"),
+        (by_text, "text"),
+        (unmapped, "unmapped"),
+        else_=None,
+    )
+    return Criterion(name, condition, field.silent, form, unmapped=unmapped, matched_by=matched_by)
+
+
 FORMS = {"range": _range_form, "boolean": _boolean_form}
 
 
 def _criterion(name, path, field, raw, errors):
+    if field.kind == "normalized":
+        return _normalized_criterion(name, path, field, raw, errors)
     form = FORMS.get(field.kind, _values_form)(path, raw, errors)
     if form is None:
         return None
@@ -326,6 +476,7 @@ def _parse_or(subqueries, path, errors):
         None,
         [_canonical(sub) for sub in parsed],
         joins=any(c.joins for sub in parsed for c in sub),
+        subqueries=parsed,
     )
 
 
@@ -435,6 +586,11 @@ def _funnel(criteria, selected):
                     if c.silent is not None
                     else None
                 ),
+                "unmapped": (
+                    _count(criteria, _where(criteria[:i]), c.unmapped)
+                    if c.unmapped is not None
+                    else None
+                ),
             }
         )
         remaining = kept
@@ -461,14 +617,27 @@ RESULT_COLUMNS = (
 )
 
 
-def _result(row):
-    display = {k: v for k, v in (row.display or {}).items() if k != "contrast_sides"}
+def _matched_by(criteria, prefix=""):
+    """``{criterion path: how a result matched it}`` for the normalized criteria."""
+    out = {}
+    for c in criteria:
+        if c.matched_by is not None:
+            out[f"{prefix}{c.name}"] = c.matched_by
+        for i, sub in enumerate(c.subqueries or []):
+            out.update(_matched_by(sub, f"{prefix}or[{i}]."))
+    return out
+
+
+def _result(row, provenance):
+    display = {k: v for k, v in (row["display"] or {}).items() if k != "contrast_sides"}
+    matched_by = {name: row[f"matched_by_{i}"] for i, name in enumerate(provenance)}
     return {
-        "analysis": row.analysis_id,
-        "study": row.study_id,
-        "base_study": row.base_study_id,
+        "analysis": row["analysis_id"],
+        "study": row["study_id"],
+        "base_study": row["base_study_id"],
         "name": display.get("name"),
-        "features": {**display, **{name: getattr(row, name) for name in RESULT_COLUMNS}},
+        "matched_by": {name: how for name, how in matched_by.items() if how is not None},
+        "features": {**display, **{name: row[name] for name in RESULT_COLUMNS}},
     }
 
 
@@ -491,6 +660,7 @@ def run_query(body):
         "analyses": sum(n for _, _, n in per_study),
         "base_studies": len({base_study_id for _, base_study_id, _ in per_study}),
     }
+    provenance = _matched_by(criteria)
     rows = db.session.execute(
         selected.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
         .add_columns(
@@ -499,14 +669,15 @@ def run_query(body):
             AF.base_study_id,
             AFD.display,
             *(getattr(AF, name) for name in RESULT_COLUMNS),
+            *(how.label(f"matched_by_{i}") for i, how in enumerate(provenance.values())),
         )
         .order_by(AF.base_study_id, AF.analysis_id)
         .limit(limit)
-    ).all()
+    ).mappings().all()
     result = {
         "query": _canonical(criteria),
         "counts": {**counts, "studies": len(per_study)},
-        "results": [_result(row) for row in rows],
+        "results": [_result(row, provenance) for row in rows],
         "study_ids": sorted(study_id for study_id, _, _ in per_study),
     }
     if body.get("funnel"):
@@ -531,7 +702,10 @@ TERM_FIELDS = {
     "blinding": "design.blinding",
 }
 #: Labels for a field's ids, unnested beside them.
-TERM_LABELS = {"medical_condition": AF.medical_condition_labels}
+TERM_LABELS = {
+    "medical_condition": AF.medical_condition_labels,
+    "contrast_set": AF.contrast_set_labels,
+}
 
 
 def list_terms(field, search=None, limit=50):
@@ -549,7 +723,7 @@ def list_terms(field, search=None, limit=50):
         unnested = sa.func.unnest(*arrays).table_valued(*names).render_derived(name="t")
         source = sa.select().select_from(AF).join(unnested, sa.true())
         value = unnested.c.value
-        label = unnested.c.label if labels is not None else value
+        label = sa.func.coalesce(unnested.c.label, value) if labels is not None else value
     else:
         source = sa.select().select_from(AF).where(column.is_not(None))
         value = label = column
