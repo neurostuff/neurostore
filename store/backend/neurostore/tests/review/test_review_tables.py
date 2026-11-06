@@ -56,6 +56,7 @@ JOURNALS_REVISION = "a7c9e1f3b5d2"
 PUBLICATION_REVISION = "c3e5a7b9d1f2"
 MEDICAL_CONDITION_REVISION = "e1f3a5c7b9d2"
 CONCEPT_RELEASES_REVISION = "f2a4c6e8b0d3"
+PUBLIC_QUERY_REVISION = "e5b7d9f1a3c4"
 MIGRATIONS = Path(__file__).resolve().parents[3] / "migrations" / "versions"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
@@ -663,9 +664,12 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_concept_releases_migration_is_the_only_head():
+def test_the_public_query_migration_is_the_only_head():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [CONCEPT_RELEASES_REVISION]
+    assert script.get_heads() == [PUBLIC_QUERY_REVISION]
+    assert script.get_revision(PUBLIC_QUERY_REVISION).down_revision == (
+        CONCEPT_RELEASES_REVISION
+    )
     assert script.get_revision(CONCEPT_RELEASES_REVISION).down_revision == (
         MEDICAL_CONDITION_REVISION
     )

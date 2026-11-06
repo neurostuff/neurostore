@@ -369,6 +369,19 @@ def review_export_command(out, source_ids, base_study_ids, user_ids, states, inc
     click.echo(json.dumps(manifest, indent=2))
 
 
+@main.command("refresh-public-query")
+def refresh_public_query():
+    """Rebuild the public query's datasets from the current public rows."""
+
+    def _run(_app, _db):
+        from neurostore.public_query import refresh_datasets, refreshed_at
+
+        refresh_datasets()
+        click.echo(f"public query datasets refreshed at {refreshed_at().isoformat()}")
+
+    _run_with_runtime(_run)
+
+
 @main.command("backfill-analysis-features")
 @click.option(
     "--base-study-id",

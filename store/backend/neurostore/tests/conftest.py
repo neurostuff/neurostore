@@ -214,6 +214,7 @@ def real_app():
 
 def _reset_migrated_schema(db, migrations_dir):
     with db.engine.connect() as conn:
+        conn.execute(sa.text("DROP SCHEMA IF EXISTS public_query CASCADE"))
         conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE"))
         conn.execute(sa.text("CREATE SCHEMA public"))
         conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
