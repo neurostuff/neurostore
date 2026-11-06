@@ -1,10 +1,11 @@
-# Public aggregate queries: design (draft 1)
+# Public aggregate queries: design (draft 2)
 
 Branch `claude/public-query-design-b303cf`, at neurostuff/neurostore master 96b5cd94. Measured on
 2026-11-06 against a local restore of that day's production backup
 (`11-06-2026-at-00-00-01_neurostore.dump`, database `ns_1106`, in a throwaway pg17 container built
 from the store's image, 1 GB shared_buffers, 16 MB work_mem). No deployed database was read. Nothing is
-built. The questions for James are at the end; the decision below is my recommendation until he answers.
+built. James answered questions 2, 3, 5, 6 and 7 on 2026-11-06 (see [Questions for
+James](#questions-for-james)); 1 and 4 are open.
 
 ## The question
 
@@ -17,8 +18,8 @@ The six use cases, each measured below:
 2. articles per journal, most first;
 3. articles per author, ranked by the author's articles with coordinates or images;
 4. articles per institution, most first;
-5. the users with the most updated studies, by username only (a user's public studies that
-   were edited after creation: `updated_at` is set);
+5. the users with the most studies, by username only: the public studies each user owns (James,
+   2026-11-06);
 6. meta-analyses published over a time period.
 
 An **article** is a base study: a row of `base_studies` with `is_active` and `public`.
@@ -94,7 +95,7 @@ from their identity provider.
 **"Updated" is loose.** `updated_at` is set by any ORM write, including the app's own (flag and count
 listeners), not only a user's edit. Of 86,375 public studies with an owner, 72,803 have `updated_at`, and
 19,113 were updated more than a minute after creation. Outside the review app there is no per-user edit
-log, so use case 5 can count a user's public studies, or those with any later write (question 7).
+log, so use case 5 counts the public studies a user owns (question 7).
 
 **Visibility.** `studies`, `studysets`, `annotations` and `base_studies` carry `public`; the REST lists
 filter with `visibility_filters` (`resources/utils.py:94`: public, or the caller's own). A history study
@@ -188,7 +189,7 @@ Everything ran on the restore, in a role that can read only the datasets, with
 | 2. per journal (simulated entity) | 118 ms | 134 ms | 42 ms | **0.2 ms** |
 | 3. per author, by articles with data | 3,757 ms | 1,019 ms | 382 ms | **1.0 ms** |
 | 4. per institution | 5,515 ms | 3,887 ms | 121 ms | **0.2 ms** |
-| 5. users by updated studies | 79 ms | 74 ms | **49 ms** | — |
+| 5. users by studies (with an `updated_at` filter) | 79 ms | 74 ms | **49 ms** | — |
 | 6. Compose meta-analyses per month | — | 35 ms | **15 ms** | — |
 
 - **Live views** are what (a) or (b) would run with no precomputation. The two slow cases are joins of
@@ -358,9 +359,10 @@ Unencoded for reading; a client URL-encodes each value.
 4. Articles per institution, most first:
    `GET /api/query/institutions?$select=id, name, country, articles&$order=articles DESC`
    (with filters: `GET /api/query/affiliations?$select=institution_id, institution, count(*) AS articles&$where=country = 'DE'&$group=institution_id, institution&$order=articles DESC`)
-5. Users with the most updated studies (the measured form; question 7 asks whether to drop the
-   `updated_at` condition):
-   `GET /api/query/studies?$select=username, count(*) AS studies&$where=username IS NOT NULL AND updated_at IS NOT NULL&$group=username&$order=studies DESC`
+5. Users with the most studies they own:
+   `GET /api/query/studies?$select=username, count(*) AS studies&$where=username IS NOT NULL&$group=username&$order=studies DESC`
+   (measured with `AND updated_at IS NOT NULL` as well, 49 ms; without it the same 59 MB dataset is
+   scanned, not re-measured.)
 6. Meta-analyses run per month in a period:
    `GET /api/query/analyses?$select=date_trunc_ym(created_at) AS month, count(*) AS meta_analyses&$where=level = 'meta' AND source = 'neurosynth-compose' AND created_at BETWEEN '2024-01-01' AND '2024-12-31'&$group=month&$order=month`
    (this needs Compose's marker, "Needed first" item 3; until then the condition is `article_id IS NULL`,
@@ -463,13 +465,16 @@ In order:
    change. Authors with neither ORCID nor OpenAlex id (16,864) count one paper each, which slightly
    undercounts prolific authors without ids; that is the entity's rule, and the query inherits it.
 3. **The meta label.** `level = 'meta'` exists, but it also marks papers that are meta-analyses, and
-   it ignores the project's visibility. Two changes, both in Compose's
-   `create_or_update_neurostore_study`:
-   - mark the study as Compose's: `source = 'neurosynth-compose'`, `source_id = <project id>` (both
-     existing columns), and a one-off to set them on the 4,827 existing meta studies with no base
-     study, after checking each against Compose's `neurostore_studies` table;
-   - send the project's visibility (`public = project.public and not project.draft`), with the same
-     one-off. Until then, the datasets serve meta studies' counts but not their names.
+   it ignores the project's privacy. James, 2026-11-06: the neurostore study reflects the project's
+   privacy, kept in sync with it. Changes, all in Compose:
+   - `create_or_update_neurostore_study` sends `public = project.public`, and marks the study as
+     Compose's: `source = 'neurosynth-compose'`, `source_id = <project id>` (both existing columns).
+   - `PUT /projects/{id}` calls it whenever `public`, `name` or `description` changes. Today only
+     creation and cloning call it (`projects_view.py:701`, `project_cloning.py:127`), and the `put`
+     syncs `public` only to the project's own meta-analyses (`sync_meta_analyses_public`).
+   - A one-off sets all three on the 4,827 existing meta studies with no base study, after matching
+     each to Compose's `neurostore_studies` table.
+   - Until it ships, the datasets serve meta studies' counts but not their names.
    - No label on the analysis itself: "a meta-analysis was run" is an analysis in such a study, and its
      `created_at` dates the first uploaded result. A label on the analysis would duplicate the study's.
 4. **The query role and the `public_query` schema**, created by a migration (the role's password from
@@ -478,34 +483,28 @@ In order:
 
 ## Questions for James
 
-Each has my recommendation; the design above assumes it.
+James answered 2, 3, 5, 6 and 7 on 2026-11-06. 1 and 4 are open; the design assumes their
+recommendations.
 
 1. **Scope of the first release.** The datasets above (`articles`, `journals`, `authors`,
    `authorships`, `institutions`, `affiliations`, `studies`, `analyses`) and nothing more? Coordinates
    (`points`, 5.1M rows) and analysis features (analyses per condition or task) are the obvious next
    ones, each with its own cost check; public studysets and annotations after that.
    *Recommendation: these eight now; analysis features next.*
-2. **Which grammar to align with.** SoQL's `$` parameters (a subset); PostgREST's `select=year,count()`;
-   SQL text as in Datasette (SODA3 has also moved this way); or OData `$apply`.
-   *Recommendation: SoQL's `$` parameters.* They are the only one that covers UC3 (HAVING and ordering
-   by an aggregate) in a cacheable GET, and they are known to open-data users. SQL text would need the
-   defences of candidate (b).
+2. **Which grammar to align with.** *Answered:* SoQL's `$` parameters.
 3. **Auth for heavy queries.** Anonymous up to the cost gate (50,000) with per-IP rate limits, and an
    API key with `read` scope (already on master) raising the gate to 500,000 and giving its own rate
-   bucket? Or keys for every query?
-   *Recommendation: anonymous plus a key tier, and no tier without a gate or a timeout.*
+   bucket? *Answered:* yes.
 4. **Usernames.** Most `users.name` values are people's real names from their identity provider
    (1,859 of 2,342 contain a space); the REST API already serves them as `username`. Serve them as
-   REST does, with email-like names nulled? Or only for users who have opted in?
-   *Recommendation: as REST does, nulling any name with `@`.*
-5. **Freshness.** Datasets refreshed nightly, so answers are up to a day old?
-   *Recommendation: yes.*
-6. **The meta label.** Mark Compose's studies with `source = 'neurosynth-compose'` and send the project's
-   visibility from Compose, rather than a new flag in neurostore?
-   *Recommendation: yes, Compose's change.*
-7. **What "updated studies" counts.** A user's public studies (what curating in Compose produces), or
-   only those written after creation (`updated_at`, which the app's own listeners also set)?
-   *Recommendation: the user's public studies, with `updated_at` left as a filter a caller can add.*
+   REST does? One user's name is an email address (it contains `@`): their `username` would be null,
+   so their studies are counted but under no name, and use case 5 (`username IS NOT NULL`) leaves them
+   out. Or only serve names of users who have opted in?
+   *Recommendation: as REST does, with a name containing `@` served as null.*
+5. **Freshness.** Datasets refreshed nightly, so answers are up to a day old? *Answered:* yes.
+6. **The meta label.** *Answered:* the neurostore study reflects the project's privacy, as an
+   attribute of the project kept in sync (Needed first, item 3).
+7. **What "updated studies" counts.** *Answered:* the public studies a user owns.
 
 ## Rejected
 
