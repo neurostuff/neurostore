@@ -8,7 +8,7 @@ from neurostore import service_migrations
 from neurostore.database import db
 from neurostore.ingest.analysis_features import backfill_analysis_features, record_features
 from neurostore.ingest.study_schema import STUDY_SOURCE, ingest_upload
-from neurostore.models import AnalysisFeature, BaseStudy, Study
+from neurostore.models import AnalysisFeature, AnalysisTerm, BaseStudy, Study
 from neurostore.models.data import NORMALIZED_FEATURES
 from neurostore.services.base_study_metadata_enrichment import merge_base_study
 from neurostore.study_schema_tools import schema_errors
@@ -37,13 +37,37 @@ def test_groups_resolve_to_medical_conditions_species_and_health():
 
     assert versus_controls["medical_condition_ids"] == ["MONDO:0005090"]
     assert versus_controls["has_patients"] is True and versus_controls["has_healthy"] is True
-    # The controls' "Healthy controls" is read as an absence, so it is not medical condition text.
+    # The healthy controls' condition is silent.
     assert versus_controls["medical_condition_text"] == "schizophrenia"
     assert versus_bipolar["medical_condition_ids"] == ["MONDO:0005090", "MONDO:0004985"]
-    assert versus_bipolar["medical_condition_labels"] == ["schizophrenia", "bipolar disorder"]
+    assert versus_bipolar["medical_condition_text"] == "schizophrenia | bipolar disorder | " + (
+        "bipolar disorder with psychotic features"
+    )
     assert versus_bipolar["has_healthy"] is False
     assert versus_bipolar["species"] == ["human"]
     assert versus_bipolar["n"] == 22
+
+
+def test_a_healthy_group_or_an_absence_is_silent_not_unmapped():
+    document = af.record("ya2RC6UYbibC")
+    controls = next(g for g in document["groups"] if g["is_healthy"]["value"] is True)
+    controls["medical_condition"]["normalized"] = []
+    healthy_only = af.record("ya2RC6UYbibC")
+    for analysis in healthy_only["analyses"]:
+        analysis["groups"] = [
+            link
+            for link in analysis["groups"]
+            if link["group"] == controls["local_id"]
+        ]
+    rows = {
+        row["display"]["name"]: row for row in record_features(document).values()
+    }
+    alone = next(iter(record_features(healthy_only).values()))
+
+    # Without its absence entry, the controls' "Healthy controls" is still not wording.
+    assert rows["schizophrenia > control"]["medical_condition_text"] == "schizophrenia"
+    assert alone["medical_condition_unmapped"] is None
+    assert alone["medical_condition_text"] is None
 
 
 def test_an_unmapped_condition_is_text_without_ids():
@@ -59,29 +83,80 @@ def test_measure_task_and_contrast_resolve_through_their_ids():
     row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
 
     assert (row["measure_type"], row["measure_family"]) == ("bold_response", "functional_bold")
-    assert row["task_ids"] == ["hedtsk_n_back", "working_memory_span"]
+    assert row["task_ids"] == ["hedtsk_n_back"]
+    assert row["task_family_ids"] == ["working_memory_span"]
     assert "n-back task" in row["task_text"] and "working memory span" in row["task_text"]
     # Cells name their level; the level's conditions add their own names.
     assert row["contrast_positive"] == "schizophrenia | 2-back"
     assert row["contrast_negative"] == "control | 0-back"
-    assert row["contrast_set_ids"] == ["working_memory_span|load:2|vs:load:0", "working_memory#1"]
-    # One label per id; a contrast key has none.
-    assert row["contrast_set_labels"] == [None, "2-back > 0-back"]
-    assert row["display"]["contrast_set_orientation"] == "reversed"
+    assert row["contrast_key_ids"] == ["working_memory_span|load:2|vs:load:0"]
+    # The analysis states the set's contrast the other way round.
+    assert row["contrast_set_ids"] == ["working_memory#1:reversed"]
+    assert row["display"]["contrast_set"] == ["working_memory#1:reversed"]
 
 
-def test_ancestors_add_the_family_a_contrast_set_or_key_belongs_to():
+def test_ancestors_add_a_task_or_contrast_s_family():
     row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
 
-    assert row["contrast_set_ancestor_ids"] == [
+    assert row["task_ancestor_ids"] == ["hedtsk_n_back", "working_memory_span"]
+    assert row["contrast_key_ancestor_ids"] == [
         "working_memory_span|load:2|vs:load:0",
-        "working_memory#1",
         "working_memory_span",
-        "working_memory",
     ]
-    # A task's family is an entry of its own, so its ids are already their closure.
-    assert row["task_ancestor_ids"] == row["task_ids"]
+    assert row["contrast_set_ancestor_ids"] == ["working_memory#1:reversed", "working_memory"]
     assert row["medical_condition_ancestor_ids"] == ["MONDO:0005090"]
+
+
+def test_a_key_whose_sign_is_negative_is_the_reversed_term():
+    document = af.record("ya2RC6UYbibC")
+    for analysis in document["analyses"]:
+        for entry in analysis["name"]["normalized"]:
+            if entry["vocabulary"] == "astra contrast key":
+                entry["method"] = "reversed; sign -1"
+    row = next(iter(record_features(document).values()))
+
+    assert row["contrast_key_ids"] == ["working_memory_span|load:2|vs:load:0:reversed"]
+
+
+def test_roles_qualify_the_medical_condition_ids():
+    document = af.record("ya2RC6UYbibC")
+    roles = {"MONDO:0005090": "primary", "MONDO:0004985": "comorbid"}
+    for group in document["groups"]:
+        slot = group["medical_condition"]
+        for entry in list(slot["normalized"]):
+            if entry.get("value") in roles:
+                slot["normalized"].append(
+                    {
+                        "vocabulary": "astra medical role",
+                        "status": "mapped",
+                        "value": roles[entry["value"]],
+                        "item": entry["item"],
+                        "mapping_tool": "fixture",
+                    }
+                )
+    rows = {row["display"]["name"]: row for row in record_features(document).values()}
+
+    assert rows["schizophrenia > BDp"]["medical_condition_role_ids"] == [
+        "primary|MONDO:0005090",
+        "comorbid|MONDO:0004985",
+    ]
+    assert rows["schizophrenia > BDp"]["medical_condition_ids"] == [
+        "MONDO:0005090",
+        "MONDO:0004985",
+    ]
+
+
+def test_rows_list_their_terms_with_labels_and_parents():
+    row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
+
+    assert sorted(row["terms"]) == [
+        ("contrast_key", "working_memory_span|load:2|vs:load:0", None, "working_memory_span"),
+        ("contrast_set", "working_memory#1:reversed", "0-back > 2-back", "working_memory"),
+        ("medical_condition", "MONDO:0005090", "schizophrenia", None),
+        ("task", "hedtsk_n_back", "N-Back Task", "working_memory_span"),
+        ("task_family", "working_memory_span", "working_memory_span", None),
+    ]
+    assert row["name_text"] == "schizophrenia > control"
 
 
 def test_unmapped_is_a_stated_feature_nothing_in_which_mapped():
@@ -96,8 +171,10 @@ def test_unmapped_is_a_stated_feature_nothing_in_which_mapped():
     assert mapped["medical_condition_unmapped"] is False
     assert unmapped["medical_condition_unmapped"] is True
     assert unmapped["task_unmapped"] is False
-    assert unmapped["contrast_set_unmapped"] is False
-    assert no_set["contrast_set_unmapped"] is True and no_set["contrast_set_ids"] is None
+    assert unmapped["contrast_key_unmapped"] is False
+    # No set normalizer placed or failed to place it: silent.
+    assert unmapped["contrast_set_unmapped"] is None
+    assert no_set["contrast_key_unmapped"] is True and no_set["contrast_key_ids"] is None
 
 
 def test_rows_name_the_normalizers_their_ids_came_from():
@@ -246,8 +323,15 @@ def test_the_inverse_half_of_a_sign_split_takes_its_original_reversed(session):
         original.contrast_negative,
         original.contrast_positive,
     )
-    assert original.display_row.display["contrast_set_orientation"] == "reversed"
-    assert inverse.display_row.display["contrast_set_orientation"] == "same"
+    assert original.contrast_set_ids == ["working_memory#1:reversed"]
+    assert inverse.contrast_set_ids == ["working_memory#1"]
+    assert inverse.contrast_key_ids == ["working_memory_span|load:2|vs:load:0:reversed"]
+    assert inverse.contrast_key_ancestor_ids[-1] == "working_memory_span"
+    labels = {(t.term, t.label) for t in AnalysisTerm.query.filter_by(field="contrast_set")}
+    assert labels == {
+        ("working_memory#1", "2-back > 0-back"),
+        ("working_memory#1:reversed", "0-back > 2-back"),
+    }
 
 
 def test_an_inverse_half_the_record_describes_keeps_its_own_entry(session):
@@ -292,8 +376,8 @@ def test_the_backfill_rewrites_every_paper_from_its_stored_record(session):
 def test_the_migrated_table_matches_the_model(db):
     def in_scope(obj, name, type_, reflected, compare_to):
         if type_ == "table":
-            return name == "analysis_features"
-        return obj.table.name == "analysis_features"
+            return name in ("analysis_features", "analysis_terms")
+        return obj.table.name in ("analysis_features", "analysis_terms")
 
     with db.engine.connect() as conn:
         context = MigrationContext.configure(
@@ -330,14 +414,17 @@ def test_the_normalized_search_migration_renames_and_adds_columns_and_its_downgr
             keys,
         )
 
-    renamed = {f"medical_condition_{suffix}" for suffix in ("ids", "labels", "text")}
+    renamed = {f"medical_condition_{suffix}" for suffix in ("ids", "text")}
     added = {
         *(
             f"{field}_{suffix}"
             for field in NORMALIZED_FEATURES
             for suffix in ("ancestor_ids", "unmapped")
         ),
-        "contrast_set_labels",
+        "contrast_key_ids",
+        "task_family_ids",
+        "medical_condition_role_ids",
+        "name_text",
         "mapping_tools",
     }
     try:
@@ -346,6 +433,7 @@ def test_the_normalized_search_migration_renames_and_adds_columns_and_its_downgr
         assert {f"diagnosis_{suffix}" for suffix in ("ids", "labels", "text")} <= columns
         assert not renamed & columns and not added & columns
         assert "contrast_set_text" in columns
+        assert "analysis_terms" not in sa.inspect(session.bind).get_table_names()
         assert {
             "ix_analysis_features__diagnosis_ids",
             "ix_analysis_features__diagnosis_text_trgm",
@@ -362,6 +450,7 @@ def test_the_normalized_search_migration_renames_and_adds_columns_and_its_downgr
         assert carried == [(True, False), (True, False)]
         session.remove()
         assert "contrast_set_text" not in columns
+        assert "analysis_terms" in sa.inspect(session.bind).get_table_names()
         assert not any(column.startswith("diagnosis") for column in columns)
         assert {
             "ix_analysis_features__medical_condition_ids",
@@ -370,5 +459,5 @@ def test_the_normalized_search_migration_renames_and_adds_columns_and_its_downgr
         assert keys == {"medical_condition"}
     finally:
         service_migrations.upgrade("heads")
-    labels = {tuple(row.medical_condition_labels or ()) for row in AnalysisFeature.query}
-    assert labels == {("schizophrenia",), ("schizophrenia", "bipolar disorder")}
+    ids = {tuple(row.medical_condition_ids or ()) for row in AnalysisFeature.query}
+    assert ids == {("MONDO:0005090",), ("MONDO:0005090", "MONDO:0004985")}

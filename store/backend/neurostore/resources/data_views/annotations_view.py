@@ -1,5 +1,5 @@
 from collections import Counter, OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from connexion import request
@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
 from webargs import fields
 
-from neurostore.analysis_query import selected_analysis_ids
+from neurostore.analysis_query import select_analyses
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import (
@@ -69,6 +69,7 @@ FEATURE_COLUMNS = {
     "medical_condition": ("string", _display("medical_condition")),
     "task": ("string", _display("task")),
     "contrast": ("string", _display("contrast", join=False)),
+    "contrast_key": ("string", _display("contrast_key")),
     "contrast_set": ("string", _display("contrast_set")),
     "spatial_scope": ("string", lambda row, display: row.spatial_scope),
     "measure_type": ("string", lambda row, display: row.measure_type),
@@ -909,7 +910,9 @@ class AnnotationsView(ObjectView, ListView):
 
         ``column`` (boolean) is true for each analysis of the studyset the query selects,
         false for every other; each of ``feature_columns`` carries the analysis's feature,
-        or None where its record says nothing.
+        or None where its record says nothing. The annotation's metadata keeps the
+        selection frozen under `analysis_queries.<column>`: the canonical query, the
+        selected analysis ids and the normalizers and fits their features came from.
         """
         if not isinstance(payload, dict) or set(payload) - ANALYSIS_QUERY_KEYS:
             abort_validation(
@@ -937,7 +940,9 @@ class AnnotationsView(ObjectView, ListView):
             annotation, data.get("annotation_analyses") or []
         )
         study_ids = {ctx["study_id"] for ctx in analysis_context.values() if ctx.get("study_id")}
-        selected = selected_analysis_ids(payload.get("query"), study_ids)
+        frozen = select_analyses(payload.get("query"), study_ids)
+        selected = set(frozen["analysis_ids"]) & set(note_map)
+        frozen["analysis_ids"] = sorted(selected)
         rows = {}
         if features:
             rows = {
@@ -959,6 +964,15 @@ class AnnotationsView(ObjectView, ListView):
             {column: "boolean", **{f: FEATURE_COLUMNS[f][0] for f in features}},
         )
         data["annotation_analyses"] = list(note_map.values())
+        metadata = dict(
+            (data.get("metadata_") if data.get("metadata_") is not None else annotation.metadata_)
+            or {}
+        )
+        metadata["analysis_queries"] = {
+            **(metadata.get("analysis_queries") or {}),
+            column: {**frozen, "frozen_at": datetime.now(timezone.utc).isoformat()},
+        }
+        data["metadata_"] = metadata
 
     def _apply_pipeline_columns(self, annotation, data, specs, column_counter):
         incoming_notes = data.get("annotation_analyses") or []

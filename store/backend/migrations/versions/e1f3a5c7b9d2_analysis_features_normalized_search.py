@@ -1,12 +1,13 @@
-"""analysis_features: medical_condition_* columns, and ancestors and unmapped flags for
-search by normalized terms
+"""analysis_features: medical_condition_* columns; ancestors, unmapped flags, contrast keys,
+roles and the analysis name for search by normalized terms; analysis_terms
 
 Revision ID: e1f3a5c7b9d2
 Revises: c3e5a7b9d1f2
 Create Date: 2026-11-06
 
-Rows written before this migration have no ancestors or unmapped flags until
-`manage backfill-analysis-features` rewrites them.
+Existing rows keep their medical-condition and task ids as their ancestors, with unmapped
+flags read from their ids and text; contrast keys, directional sets, roles, names and terms
+need `manage backfill-analysis-features`.
 """
 
 from alembic import op
@@ -20,12 +21,42 @@ branch_labels = None
 depends_on = None
 
 TABLE = "analysis_features"
-NORMALIZED = ("medical_condition", "task", "contrast_set")
 TEXT_ARRAY = postgresql.ARRAY(sa.Text())
+ARRAYS = (
+    "medical_condition_ancestor_ids",
+    "medical_condition_role_ids",
+    "medical_condition_role_ancestor_ids",
+    "task_ancestor_ids",
+    "task_family_ids",
+    "contrast_key_ids",
+    "contrast_key_ancestor_ids",
+    "contrast_set_ancestor_ids",
+    "mapping_tools",
+)
+GIN = (
+    "medical_condition_ancestor_ids",
+    "medical_condition_role_ids",
+    "medical_condition_role_ancestor_ids",
+    "task_ancestor_ids",
+    "contrast_key_ids",
+    "contrast_key_ancestor_ids",
+    "contrast_set_ancestor_ids",
+)
+UNMAPPED = ("medical_condition", "task", "contrast_key", "contrast_set")
+
+
+def _trigram(column):
+    op.create_index(
+        f"ix_{TABLE}__{column}_trgm",
+        TABLE,
+        [column],
+        postgresql_using="gin",
+        postgresql_ops={column: "gin_trgm_ops"},
+    )
 
 
 def _rename(old, new):
-    for suffix in ("ids", "labels", "text"):
+    for suffix in ("ids", "text"):
         op.alter_column(TABLE, f"{old}_{suffix}", new_column_name=f"{new}_{suffix}")
     for suffix in ("ids", "text_trgm"):
         op.execute(f"ALTER INDEX ix_{TABLE}__{old}_{suffix} RENAME TO ix_{TABLE}__{new}_{suffix}")
@@ -38,36 +69,50 @@ def _rename(old, new):
 
 def upgrade():
     _rename("diagnosis", "medical_condition")
-    for field in NORMALIZED:
-        op.add_column(TABLE, sa.Column(f"{field}_ancestor_ids", TEXT_ARRAY, nullable=True))
-        op.add_column(TABLE, sa.Column(f"{field}_unmapped", sa.Boolean(), nullable=True))
-        op.create_index(
-            f"ix_{TABLE}__{field}_ancestor_ids",
-            TABLE,
-            [f"{field}_ancestor_ids"],
-            postgresql_using="gin",
-        )
-        op.create_index(op.f(f"ix_{TABLE}_{field}_unmapped"), TABLE, [f"{field}_unmapped"])
+    op.drop_column(TABLE, "diagnosis_labels")
     op.drop_index(f"ix_{TABLE}__contrast_set_text_trgm", table_name=TABLE)
     op.drop_column(TABLE, "contrast_set_text")
-    op.add_column(TABLE, sa.Column("contrast_set_labels", TEXT_ARRAY, nullable=True))
-    op.add_column(TABLE, sa.Column("mapping_tools", TEXT_ARRAY, nullable=True))
+    for column in ARRAYS:
+        op.add_column(TABLE, sa.Column(column, TEXT_ARRAY, nullable=True))
+    for field in UNMAPPED:
+        op.add_column(TABLE, sa.Column(f"{field}_unmapped", sa.Boolean(), nullable=True))
+        op.create_index(op.f(f"ix_{TABLE}_{field}_unmapped"), TABLE, [f"{field}_unmapped"])
+    op.add_column(TABLE, sa.Column("name_text", sa.Text(), nullable=True))
+    for column in GIN:
+        op.create_index(f"ix_{TABLE}__{column}", TABLE, [column], postgresql_using="gin")
+    _trigram("name_text")
+    op.execute(
+        f"UPDATE {TABLE} SET"
+        " medical_condition_ancestor_ids = medical_condition_ids,"
+        " medical_condition_unmapped = CASE WHEN medical_condition_text IS NOT NULL"
+        " OR medical_condition_ids IS NOT NULL THEN medical_condition_ids IS NULL END,"
+        " task_ancestor_ids = task_ids,"
+        " task_unmapped = CASE WHEN task_text IS NOT NULL OR task_ids IS NOT NULL"
+        " THEN task_ids IS NULL END"
+    )
+    op.create_table(
+        "analysis_terms",
+        sa.Column("field", sa.Text(), nullable=False),
+        sa.Column("term", sa.Text(), nullable=False),
+        sa.Column("label", sa.Text(), nullable=True),
+        sa.Column("parent", sa.Text(), nullable=True),
+        sa.PrimaryKeyConstraint("field", "term"),
+    )
+    op.create_index("ix_analysis_terms_field_parent", "analysis_terms", ["field", "parent"])
 
 
 def downgrade():
-    op.drop_column(TABLE, "mapping_tools")
-    op.drop_column(TABLE, "contrast_set_labels")
-    op.add_column(TABLE, sa.Column("contrast_set_text", sa.Text(), nullable=True))
-    op.create_index(
-        f"ix_{TABLE}__contrast_set_text_trgm",
-        TABLE,
-        ["contrast_set_text"],
-        postgresql_using="gin",
-        postgresql_ops={"contrast_set_text": "gin_trgm_ops"},
-    )
-    for field in NORMALIZED:
+    op.drop_table("analysis_terms")
+    op.drop_index(f"ix_{TABLE}__name_text_trgm", table_name=TABLE)
+    for column in GIN:
+        op.drop_index(f"ix_{TABLE}__{column}", table_name=TABLE)
+    op.drop_column(TABLE, "name_text")
+    for field in UNMAPPED:
         op.drop_index(op.f(f"ix_{TABLE}_{field}_unmapped"), table_name=TABLE)
-        op.drop_index(f"ix_{TABLE}__{field}_ancestor_ids", table_name=TABLE)
         op.drop_column(TABLE, f"{field}_unmapped")
-        op.drop_column(TABLE, f"{field}_ancestor_ids")
+    for column in ARRAYS:
+        op.drop_column(TABLE, column)
+    op.add_column(TABLE, sa.Column("contrast_set_text", sa.Text(), nullable=True))
+    _trigram("contrast_set_text")
+    op.add_column(TABLE, sa.Column("diagnosis_labels", TEXT_ARRAY, nullable=True))
     _rename("medical_condition", "diagnosis")

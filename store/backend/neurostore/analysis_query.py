@@ -9,13 +9,16 @@ Text criteria match whole words, case-insensitively; `*` matches any run of char
 `?` one character, within one item, and a pattern needs three consecutive letters or
 digits so that the trigram index can serve it.
 
-A normalized criterion (medical_condition, task, contrast.set) takes `ids`, the terms a
-normalizer mapped the record's wording to, and `text`, a pattern over that wording and the
-terms' labels; given both, either may match. An id matches its descendants unless
+A normalized criterion (medical_condition, task, contrast.key, contrast.set) takes `ids`,
+the terms a normalizer mapped the record's wording to, and `text`, a pattern over that
+wording and the terms' labels; given both, either may match. An id matches its
+descendants (a task family its tasks, a family its contrast keys and sets) unless
 `descendants` is false. `when_unmapped` decides the analyses whose record states the
-feature but maps none of it: `exclude`, `include`, or `text` (the default where the field
-has text), matching them by their wording alone. contrast.set has ids only. A bare value
-is `text`, or `ids` where the field has no text.
+feature but maps none of it: `exclude` (the default), `include`, or `text`, matching them
+by their wording alone. Contrast keys and sets have ids only, and are directional: a term
+with `:reversed` is the opposite direction. medical_condition's `role` (primary, comorbid,
+none) narrows its ids to the items with that role. A bare value is `text`, or `ids` where
+the field has no text.
 
 `run_query` returns the canonical query, the counts, the first `limit` analyses and every
 selected analysis's study id; with `funnel`, also what each criterion dropped and how many
@@ -30,7 +33,12 @@ import sqlalchemy as sa
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
-from neurostore.models import Analysis, AnalysisFeature, AnalysisFeatureDisplay
+from neurostore.models import (
+    Analysis,
+    AnalysisFeature,
+    AnalysisFeatureDisplay,
+    AnalysisTerm,
+)
 
 AF = AnalysisFeature
 AFD = AnalysisFeatureDisplay
@@ -48,10 +56,13 @@ class Field:
 
     kind: str  # text, normalized, value, array_value, groups, boolean, range
     column: object
-    #: A normalized field's mapped ids, those and their ancestors, and its unmapped flag.
+    #: A normalized field's mapped ids, those and their ancestors, and its unmapped flag;
+    #: the same ids as "role|id", where the field has roles.
     ids: object = None
     ancestors: object = None
     unmapped: object = None
+    role_ids: object = None
+    role_ancestors: object = None
     #: Restricts a value criterion to these values.
     values: tuple = ()
 
@@ -63,7 +74,7 @@ class Field:
         return self.column.is_(None)
 
 
-def _normalized(name, text=True):
+def _normalized(name, text=True, roles=False):
     """The normalized field whose columns are prefixed ``name``."""
     return Field(
         "normalized",
@@ -71,7 +82,13 @@ def _normalized(name, text=True):
         ids=getattr(AF, f"{name}_ids"),
         ancestors=getattr(AF, f"{name}_ancestor_ids"),
         unmapped=getattr(AF, f"{name}_unmapped"),
+        role_ids=getattr(AF, f"{name}_role_ids") if roles else None,
+        role_ancestors=getattr(AF, f"{name}_role_ancestor_ids") if roles else None,
     )
+
+
+#: The roles ns-pond gives a medical condition's items.
+MEDICAL_ROLES = ("primary", "comorbid", "none")
 
 
 SPATIAL_SCOPES = ("whole_brain", "roi", "searchlight")
@@ -86,7 +103,8 @@ EFFECT_KINDS = (
 
 #: Every criterion, by its dotted name: `contrast.*` and `design.*` nest in the query.
 FIELDS = {
-    "medical_condition": _normalized("medical_condition"),
+    "name": Field("text", AF.name_text),
+    "medical_condition": _normalized("medical_condition", roles=True),
     "has_patients": Field("boolean", AF.has_patients),
     "has_healthy": Field("boolean", AF.has_healthy),
     "species": Field("array_value", AF.species),
@@ -102,6 +120,7 @@ FIELDS = {
     "role": Field("value", Analysis.role),
     "contrast.positive": Field("text", AF.contrast_positive),
     "contrast.negative": Field("text", AF.contrast_negative),
+    "contrast.key": _normalized("contrast_key", text=False),
     "contrast.set": _normalized("contrast_set", text=False),
     "contrast.kind": Field("value", AF.effect_kind, values=EFFECT_KINDS),
     "contrast.groups": Field("groups", AF.group_count, values=("between", "within")),
@@ -308,6 +327,8 @@ def _normalized_form(path, raw, field, errors):
         errors.append(make_field_error(path, raw))
         return None
     allowed = (*keys, "all", "none", "descendants", "when_unmapped", "when_silent")
+    if field.role_ids is not None:
+        allowed = (*allowed, "role")
     if _unknown(f"{path}.", raw, allowed, errors):
         return None
     form = _terms_form(f"{path}.", raw, keys, errors)
@@ -337,29 +358,46 @@ def _normalized_form(path, raw, field, errors):
         errors.append(make_field_error(f"{path}.descendants", descendants))
         return None
     modes = UNMAPPED_MODES if field.column is not None else UNMAPPED_MODES[:2]
-    unmapped = raw.get("when_unmapped", "text" if field.column is not None else "exclude")
+    unmapped = raw.get("when_unmapped", "exclude")
     if unmapped not in modes:
         errors.append(make_field_error(f"{path}.when_unmapped", unmapped, modes))
         return None
     silent = _silent_mode(path, raw, errors)
     if silent is None:
         return None
-    return {**form, "descendants": descendants, "when_unmapped": unmapped, "when_silent": silent}
+    form = {**form, "descendants": descendants, "when_unmapped": unmapped, "when_silent": silent}
+    if "role" in raw:
+        roles = _strings(f"{path}.role", raw["role"], errors)
+        if roles is None:
+            return None
+        if set(roles) - set(MEDICAL_ROLES):
+            errors.append(make_field_error(f"{path}.role", roles, list(MEDICAL_ROLES)))
+            return None
+        parts = [form, form.get("all", {}), form.get("none", {})]
+        if any("text" in part for part in parts) or not any("ids" in part for part in parts):
+            errors.append(make_field_error(f"{path}.role", roles, code="ROLE_NEEDS_IDS_ONLY"))
+            return None
+        form["role"] = roles
+    return form
 
 
 def _normalized_match(field, form, path, errors):
     """``(matched, by_id, by_text)``: the condition ``form`` puts on ``field`` with its
     unmapped analyses decided, and whether an analysis matched a positive id or text part."""
     ids_column = field.ancestors if form["descendants"] else field.ids
+    roles = form.get("role")
+    if roles:
+        ids_column = field.role_ancestors if form["descendants"] else field.role_ids
 
     def terms(part, every, where):
         found = {}
         if "ids" in part:
-            ids = part["ids"]
+            # An id as the column holds it: under any of the roles, where a role is given.
+            variants = [[f"{r}|{i}" for r in roles] if roles else [i] for i in part["ids"]]
             held = (
-                sa.and_(*(ids_column.contains([value]) for value in ids))
+                sa.and_(*(ids_column.overlap(v) for v in variants))
                 if every
-                else ids_column.overlap(ids)
+                else ids_column.overlap([v for vs in variants for v in vs])
             )
             found["ids"] = sa.and_(ids_column.is_not(None), held)
         if "text" in part:
@@ -536,11 +574,22 @@ def _parse_or_abort(query):
         abort_validation("The analysis query is not valid.", error.errors)
 
 
-def selected_analysis_ids(query, study_ids):
-    """The ids of the analyses of studies ``study_ids`` that ``query`` selects."""
+def select_analyses(query, study_ids):
+    """What ``query`` selects among the analyses of studies ``study_ids``, frozen:
+    ``{query, analysis_ids, mapping_tools}``, the query canonical and the normalizers
+    and fits the selected analyses' ids came from."""
     criteria = _parse_or_abort(query)
-    statement = _from(criteria, study_ids).add_columns(AF.analysis_id).where(_where(criteria))
-    return set(db.session.scalars(statement))
+    statement = (
+        _from(criteria, study_ids)
+        .add_columns(AF.analysis_id, AF.mapping_tools)
+        .where(_where(criteria))
+    )
+    selected = db.session.execute(statement).all()
+    return {
+        "query": _canonical(criteria),
+        "analysis_ids": sorted(analysis_id for analysis_id, _ in selected),
+        "mapping_tools": sorted({tool for _, tools in selected for tool in tools or []}),
+    }
 
 
 def _count(criteria, *conditions):
@@ -611,6 +660,7 @@ RESULT_COLUMNS = (
     "has_healthy",
     "medical_condition_ids",
     "task_ids",
+    "contrast_key_ids",
     "contrast_set_ids",
     "allocation",
     "assignment_structure",
@@ -686,58 +736,100 @@ def run_query(body):
     return result
 
 
-#: Term listing field -> the criterion whose values it lists.
-TERM_FIELDS = {
+#: Term listing field -> the column whose values it lists.
+TERM_COLUMNS = {
+    "medical_condition": AF.medical_condition_ids,
+    "task": AF.task_ids,
+    "task_family": AF.task_family_ids,
+    "contrast_key": AF.contrast_key_ids,
+    "contrast_set": AF.contrast_set_ids,
+    "arm_kind": AF.arm_kinds,
+    "species": AF.species,
+    "spatial_scope": AF.spatial_scope,
+    "measure_type": AF.measure_type,
+    "measure_family": AF.measure_family,
+    "details_type": AF.details_type,
+    "effect_kind": AF.effect_kind,
+    "allocation": AF.allocation,
+    "assignment_structure": AF.assignment_structure,
+    "blinding": AF.blinding,
+}
+#: The fields whose terms `analysis_terms` labels and places under a parent, and the field
+#: each one's children are listed under.
+CHILD_FIELDS = {
     "medical_condition": "medical_condition",
     "task": "task",
-    "contrast_set": "contrast.set",
-    "arm_kind": "design.arm_kind",
-    "species": "species",
-    "spatial_scope": "spatial_scope",
-    "measure_type": "measure_type",
-    "measure_family": "measure_family",
-    "details_type": "details_type",
-    "effect_kind": "contrast.kind",
-    "allocation": "design.allocation",
-    "assignment_structure": "design.assignment_structure",
-    "blinding": "design.blinding",
-}
-#: Labels for a field's ids, unnested beside them.
-TERM_LABELS = {
-    "medical_condition": AF.medical_condition_labels,
-    "contrast_set": AF.contrast_set_labels,
+    "task_family": "task",
+    "contrast_key": "contrast_key",
+    "contrast_set": "contrast_set",
 }
 
 
-def list_terms(field, search=None, limit=50):
-    """The values ``field`` takes, with how many analyses and papers carry each."""
-    if field not in TERM_FIELDS:
+def list_terms(field, search=None, limit=50, parent=None):
+    """The values ``field`` takes, with how many analyses and papers carry each, and each
+    one's label, parent, children and synonyms."""
+    if field not in TERM_COLUMNS:
         abort_validation(
-            "Unknown term field.", [make_field_error("field", field, sorted(TERM_FIELDS))]
+            "Unknown term field.", [make_field_error("field", field, sorted(TERM_COLUMNS))]
         )
-    source_field = FIELDS[TERM_FIELDS[field]]
-    column = source_field.ids if source_field.ids is not None else source_field.column
-    labels = TERM_LABELS.get(field)
+    column = TERM_COLUMNS[field]
     if isinstance(column.type, sa.ARRAY):
-        arrays = (column, labels) if labels is not None else (column,)
-        names = ("value", "label") if labels is not None else ("value",)
-        unnested = sa.func.unnest(*arrays).table_valued(*names).render_derived(name="t")
+        unnested = sa.func.unnest(column).table_valued("value").render_derived(name="t")
         source = sa.select().select_from(AF).join(unnested, sa.true())
         value = unnested.c.value
-        label = sa.func.coalesce(unnested.c.label, value) if labels is not None else value
     else:
         source = sa.select().select_from(AF).where(column.is_not(None))
-        value = label = column
-    statement = source.add_columns(
-        value.label("value"),
-        sa.func.min(label).label("label"),
-        sa.func.count().label("analyses"),
-        sa.func.count(AF.base_study_id.distinct()).label("base_studies"),
-    ).group_by(value)
+        value = column
+    counts = (
+        source.add_columns(
+            value.label("value"),
+            sa.func.count().label("analyses"),
+            sa.func.count(AF.base_study_id.distinct()).label("base_studies"),
+        )
+        .group_by(value)
+        .subquery()
+    )
+    term = AnalysisTerm
+    statement = sa.select(counts.c.value, counts.c.analyses, counts.c.base_studies)
+    if field in CHILD_FIELDS:
+        label = sa.func.coalesce(term.label, counts.c.value)
+        statement = statement.add_columns(label.label("label"), term.parent).outerjoin(
+            term, sa.and_(term.field == field, term.term == counts.c.value)
+        )
+        if parent:
+            statement = statement.where(term.parent == parent)
+    else:
+        label = counts.c.value
+        statement = statement.add_columns(label.label("label"), sa.null().label("parent"))
+        if parent:
+            statement = statement.where(sa.false())
     if search:
         like = f"%{search.lower()}%"
         statement = statement.where(
-            sa.or_(sa.func.lower(value).like(like), sa.func.lower(label).like(like))
+            sa.or_(sa.func.lower(counts.c.value).like(like), sa.func.lower(label).like(like))
         )
-    statement = statement.order_by(sa.desc("analyses"), value).limit(limit)
-    return [row._asdict() for row in db.session.execute(statement)]
+    statement = statement.order_by(sa.desc(counts.c.analyses), counts.c.value).limit(limit)
+    rows = [row._asdict() for row in db.session.execute(statement)]
+    children = {}
+    if field in CHILD_FIELDS and rows:
+        for above, below in db.session.execute(
+            sa.select(term.parent, term.term)
+            .where(
+                term.field == CHILD_FIELDS[field],
+                term.parent.in_([row["value"] for row in rows]),
+            )
+            .order_by(term.term)
+        ):
+            children.setdefault(above, []).append(below)
+    return [
+        {
+            "value": row["value"],
+            "label": row["label"],
+            "parent": row["parent"],
+            "children": children.get(row["value"], []),
+            "synonyms": [],
+            "analyses": row["analyses"],
+            "base_studies": row["base_studies"],
+        }
+        for row in rows
+    ]
