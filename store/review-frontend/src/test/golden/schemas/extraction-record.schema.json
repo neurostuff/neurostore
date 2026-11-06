@@ -194,7 +194,7 @@
               "$ref": "#/$defs/NotStructurableDetails"
             }
           ],
-          "description": "The method that produced the map and its method-specific payload. The populated subclass identifies the method. A voxelwise, vertexwise, or ROI-wise GLM, mixed-effects model, ANOVA, ANCOVA, or robust regression takes MassUnivariateDetails; a method outside the first-class families takes OtherAnalysisDetails and names itself in method_label."
+          "description": "The method that produced the map and its method-specific payload. The populated subclass identifies the method. A voxelwise, vertexwise, or ROI-wise GLM, mixed-effects model, ANOVA, ANCOVA, robust regression, or brain-behaviour correlation takes MassUnivariateDetails, and a seed-based or ROI-to-ROI correlation takes ConnectivityDetails; a method outside the first-class families takes OtherAnalysisDetails and names itself in method_label."
         },
         "acquisitions": {
           "description": "Acquisition protocols supplying data to this analysis. Structural, diffusion, and other non-paradigm analyses are linked directly through this field.",
@@ -6141,7 +6141,7 @@
     },
     "MassUnivariateDetails": {
       "additionalProperties": false,
-      "description": "Payload for a voxelwise, vertexwise, or ROI-wise GLM, mixed-effects model, ANOVA, ANCOVA, or robust regression -- the default family. It adds no fields: what was tested is in Effect and how it was estimated is in ModelEstimation.\nA voxelwise **mediation** analysis is one of these. Each path it reports is estimated by regression, so the fit is mass-univariate and what makes the map a mediation is `Effect.mediation` -- the path tested, and the term it runs through. Reaching for OtherAnalysisDetails because the word \"mediation\" has no first-class payload leaves `Effect.mediation` empty, and an indirect-effect map with no path recorded is indistinguishable from a plain regression on the same predictor.",
+      "description": "Payload for a voxelwise, vertexwise, or ROI-wise GLM, mixed-effects model, ANOVA, ANCOVA, robust regression, or brain-behaviour correlation -- the default family. It adds no fields: what was tested is in Effect and how it was estimated is in ModelEstimation.\nA voxelwise **mediation** analysis is one of these. Each path it reports is estimated by regression, so the fit is mass-univariate and what makes the map a mediation is `Effect.mediation` -- the path tested, and the term it runs through. Reaching for OtherAnalysisDetails because the word \"mediation\" has no first-class payload leaves `Effect.mediation` empty, and an indirect-effect map with no path recorded is indistinguishable from a plain regression on the same predictor.",
       "properties": {
         "details_type": {
           "description": "The concrete details subclass carried by this payload. Populated from the class itself, not extracted.",
@@ -6433,7 +6433,8 @@
         "mixed_effects",
         "anova",
         "ancova",
-        "robust_regression"
+        "robust_regression",
+        "correlation"
       ],
       "title": "ModelFamily",
       "type": "string"
@@ -7255,6 +7256,7 @@
         "atlas_parcel",
         "network",
         "coordinate_sphere",
+        "voxel",
         "functional_cluster"
       ],
       "title": "RegionType",
