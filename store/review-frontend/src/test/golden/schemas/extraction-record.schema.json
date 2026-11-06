@@ -6558,7 +6558,7 @@
       "description": "One normalizer's reading of an extracted value onto a vocabulary: an assertion about the value, kept beside it rather than written over it. The first two passes record what the source says and where; this records what that means in a shared vocabulary, and which code said so.",
       "properties": {
         "vocabulary": {
-          "description": "The answer set the value was placed on: an ontology (MONDO, ONVOC), a vocabulary this schema defines (AgeUnit), or a normalizer's own category set.",
+          "description": "The answer set the value was placed on: a name from the package's vocabulary manifest (`study_schema.vocabularies`: mondo, onvoc, canonical_task, task_family, condition_atom, condition_phase, contrast_key, contrast_set, contrast_set_orientation, medical_role), whose ids resolve against the release the manifest pins, or an enum this schema defines (AgeUnit). Records written before the manifest carry the legacy strings it lists (MONDO, astra canonical task, ns-pond contrast set <fit_id>).",
           "type": "string"
         },
         "status": {

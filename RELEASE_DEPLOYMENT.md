@@ -232,6 +232,9 @@ docker compose run --rm --no-deps store_release_worker \
   manage build-neurostore-studyset-release --nightly --clear-cache
 docker compose up -d --no-build store_release_worker
 docker compose up -d --no-build store_nginx
+# Load the vocabulary releases study_schema's manifest pins; skipped while they are
+# loaded, and rewrites the analysis features when one was loaded or rows are unresolved.
+docker compose run --rm --no-deps neurostore manage sync-vocabulary-releases --backfill
 ```
 
 Start Compose in order:
