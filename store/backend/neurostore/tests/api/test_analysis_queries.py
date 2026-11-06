@@ -227,6 +227,8 @@ async def test_invalid_queries_are_refused(auth_client, papers):
     await _query(auth_client, {"task": {"when_unmapped": "text"}}, status=400)
     await _query(auth_client, {"task": {"text": "n-back", "when_unmapped": "x"}}, status=400)
     await _query(auth_client, {"species": "human"}, status=400, limit=1001)
+    await _query(auth_client, {"contrast": {"positive": {"bogus": True}}}, status=400)
+    await _query(auth_client, {"contrast": {"positive": {}}}, status=400)
 
 
 async def test_criteria_combine_with_and_and_any_all_none(auth_client, papers):
@@ -266,6 +268,143 @@ async def test_contrast_sides_and_sets(auth_client, papers):
     assert _names(by_key) == ["schizophrenia > BDp", "schizophrenia > control"]
     assert _papers(between, papers) == [NICOTINE, SCHIZOPHRENIA]
     assert _papers(within, papers) == [CONDUCT]
+
+
+DEPRESSION, SOCIAL_ANXIETY = "y6qgUVcjRYtn", "myhy8yAbQrAV"
+
+
+@pytest.fixture
+def side_papers(papers):
+    """`papers`, and the ns-pond records whose levels carry arms and timepoints."""
+    for name in af.NS_POND_RECORDS:
+        papers[name] = af.upload(name)["base_study_id"]
+    db.session.commit()
+    return papers
+
+
+async def test_a_side_s_groups_say_which_cohort_is_on_it(auth_client, side_papers):
+    patients_over_controls = {
+        "contrast": {
+            "positive": {"has_patients": True, "has_healthy": False},
+            "negative": {"has_healthy": True, "has_patients": False},
+        }
+    }
+    patients_first = await _query(auth_client, patients_over_controls, funnel=True)
+    controls_first = await _query(
+        auth_client,
+        {"contrast": {"positive": {"has_healthy": True}, "negative": {"has_patients": True}}},
+    )
+
+    assert _names(patients_first) == [
+        "Group difference: immediate–delayed",
+        "Group differences between MDD and HCs",
+        "schizophrenia > control",
+    ]
+    assert controls_first["results"] == []
+    assert patients_first["query"]["contrast"]["positive"] == {
+        "has_patients": {"is": True, "when_silent": "exclude"},
+        "has_healthy": {"is": False, "when_silent": "exclude"},
+    }
+    assert [step["criterion"] for step in patients_first["funnel"]] == [
+        "contrast.positive.has_patients",
+        "contrast.positive.has_healthy",
+        "contrast.negative.has_patients",
+        "contrast.negative.has_healthy",
+    ]
+    features = next(
+        r["features"]
+        for r in patients_first["results"]
+        if r["name"] == "Group differences between MDD and HCs"
+    )
+    assert features["contrast_positive_medical_condition_ids"] == [
+        "MONDO:0002009",
+        "ONVOC:0000207",
+    ]
+    assert features["contrast_negative_has_healthy"] is True
+
+
+async def test_a_side_s_medical_condition_matches_that_side_s_groups_only(
+    auth_client, side_papers
+):
+    versus_bipolar = await _query(
+        auth_client,
+        {
+            "contrast": {
+                "positive": {"medical_condition": {"ids": "MONDO:0005090"}},
+                "negative": {"medical_condition": "bipolar"},
+            }
+        },
+    )
+    bipolar_first = await _query(
+        auth_client, {"contrast": {"positive": {"medical_condition": "bipolar"}}}
+    )
+    # The whole analysis has bipolar disorder in it either way.
+    either = await _query(auth_client, {"medical_condition": "bipolar"})
+
+    assert _names(versus_bipolar) == ["schizophrenia > BDp"]
+    assert _matched_by(versus_bipolar, "contrast.positive.medical_condition") == ["id"]
+    assert _matched_by(versus_bipolar, "contrast.negative.medical_condition") == ["text"]
+    assert bipolar_first["results"] == []
+    assert _names(either) == ["schizophrenia > BDp"]
+
+
+async def test_a_side_s_timepoints_arms_and_facets(auth_client, side_papers):
+    treated_after = await _query(
+        auth_client,
+        {
+            "contrast": {
+                "positive": {
+                    "timepoint": "post_intervention",
+                    "arm_kind": "behavioural_intervention",
+                },
+                "negative": {"timepoint": "pre_intervention"},
+            }
+        },
+    )
+    after = await _query(
+        auth_client, {"contrast": {"positive": {"timepoint": "post_intervention"}}}
+    )
+    reappraisal = await _query(
+        auth_client, {"contrast": {"positive": {"facet": "regulation:reappraise"}}}
+    )
+    high_load = await _query(
+        auth_client,
+        {"contrast": {"positive": {"facet": "load:2"}, "negative": {"facet": "load:0"}}},
+    )
+    against_a_control_state = await _query(
+        auth_client, {"contrast": {"negative": {"facet": {"any": ["control_state", "rest"]}}}}
+    )
+
+    assert _names(treated_after) == ["Positive FC"]
+    assert _papers(after, side_papers) == sorted([DEPRESSION, SOCIAL_ANXIETY])
+    assert _names(reappraisal) == ["Inverse FC", "Positive FC"]
+    assert _papers(high_load, side_papers) == [SCHIZOPHRENIA]
+    assert _papers(against_a_control_state, side_papers) == [CONDUCT]
+
+
+async def test_a_side_s_text_is_shorthand_for_its_name(auth_client, papers):
+    shorthand = await _query(auth_client, {"contrast": {"positive": "2-back"}})
+    named = await _query(
+        auth_client,
+        {"contrast": {"positive": {"name": "2-back", "has_patients": True}}},
+    )
+
+    assert shorthand["query"] == {
+        "contrast": {"positive": {"name": {"any": ["2-back"], "when_silent": "exclude"}}}
+    }
+    assert _names(named) == _names(shorthand) == [
+        "schizophrenia > BDp",
+        "schizophrenia > control",
+    ]
+
+
+async def test_terms_list_each_side_s_facets(auth_client, papers):
+    resp = await auth_client.get("/api/analysis-terms/?field=contrast_negative_facet")
+
+    assert resp.status_code == 200, resp.json()
+    by_value = {row["value"]: row for row in resp.json()["results"]}
+    assert (by_value["load:0"]["analyses"], by_value["load:0"]["base_studies"]) == (2, 1)
+    assert by_value["control_state"]["base_studies"] == 1
 
 
 async def test_when_silent_decides_the_analyses_a_record_says_nothing_about(

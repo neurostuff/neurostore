@@ -11,9 +11,18 @@ normalization tests (ingestion_workflow/tests/normalization/data/astra_records.j
                   whole brain; its two record analyses share one key
 
 Their sidecars carry that file's build rows (canonical task, task family, contrast key,
-one contrast set) and hand-mapped MONDO terms for `medical_condition`. The records'
-keys name parses neurostore does not hold, so `upload` builds a parse for each and gives
-the record that parse's keys.
+one contrast set) and hand-mapped MONDO terms for `medical_condition`.
+
+`data/ns_pond_records.json` holds two ns-pond records as staging Neurostore stored them,
+whose factor levels carry arms and timepoints:
+
+    y6qgUVcjRYtn  major depressive disorder (escitalopram) and healthy controls, baseline
+                  and 12-week follow-up; MDD > HC and follow-up > baseline
+    myhy8yAbQrAV  social anxiety disorder, internet CBT and waitlist, baseline and post;
+                  CBT x post x reappraise > waitlist x baseline x react, and its inverse
+
+The records' keys name parses neurostore does not hold, so `upload` builds a parse for
+each and gives the record that parse's keys.
 """
 
 import copy
@@ -32,11 +41,20 @@ from neurostore.tests import study_schema_fixtures as fx
 RECORDS = json.loads(
     (Path(__file__).parent / "data" / "astra_records_normalized.json").read_text()
 )["records"]
-PMIDS = {"ya2RC6UYbibC": "20000001", "6SKTGteXbbBs": "20000002", "AhxosLhYA5YG": "20000003"}
+NS_POND_RECORDS = json.loads(
+    (Path(__file__).parent / "data" / "ns_pond_records.json").read_text()
+)["records"]
+PMIDS = {
+    "ya2RC6UYbibC": "20000001",
+    "6SKTGteXbbBs": "20000002",
+    "AhxosLhYA5YG": "20000003",
+    "y6qgUVcjRYtn": "20000004",
+    "myhy8yAbQrAV": "20000005",
+}
 
 
 def record(name):
-    return copy.deepcopy(RECORDS[name])
+    return copy.deepcopy(RECORDS.get(name) or NS_POND_RECORDS[name])
 
 
 def keys_of(document):

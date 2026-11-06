@@ -20,6 +20,11 @@ with `:reversed` is the opposite direction. medical_condition's `role` (primary,
 none) narrows its ids to the items with that role. A bare value is `text`, or `ids` where
 the field has no text.
 
+`contrast.positive` and `contrast.negative` take criteria on one side of the contrast: its
+names (`name`, the text of the side's cell levels and conditions), its groups' health and
+medical conditions, its timepoints' relation to the intervention, its arms' kinds, and its
+contrast keys' facets. A text criterion in their place is shorthand for its `name`.
+
 `run_query` returns the canonical query, the counts, the first `limit` analyses and every
 selected analysis's study id; with `funnel`, also what each criterion dropped and how many
 analyses it found silent, which costs a count per criterion.
@@ -103,7 +108,23 @@ EFFECT_KINDS = (
     "omnibus",
 )
 
-#: Every criterion, by its dotted name: `contrast.*` and `design.*` nest in the query.
+
+def _side_fields(side):
+    """The criteria on one side of the contrast, `contrast.<side>.*`."""
+    prefix = f"contrast_{side}"
+    return {
+        f"contrast.{side}.name": Field("text", getattr(AF, prefix)),
+        f"contrast.{side}.has_patients": Field("boolean", getattr(AF, f"{prefix}_has_patients")),
+        f"contrast.{side}.has_healthy": Field("boolean", getattr(AF, f"{prefix}_has_healthy")),
+        f"contrast.{side}.medical_condition": _normalized(f"{prefix}_medical_condition"),
+        f"contrast.{side}.timepoint": Field("array_value", getattr(AF, f"{prefix}_timepoints")),
+        f"contrast.{side}.arm_kind": Field("array_value", getattr(AF, f"{prefix}_arm_kinds")),
+        f"contrast.{side}.facet": Field("array_value", getattr(AF, f"{prefix}_facets")),
+    }
+
+
+#: Every criterion, by its dotted name: `contrast.*`, `contrast.<side>.*` and `design.*`
+#: nest in the query.
 FIELDS = {
     "name": Field("text", AF.name_text),
     "medical_condition": _normalized("medical_condition", roles=True),
@@ -120,19 +141,23 @@ FIELDS = {
     "n": Field("range", AF.n),
     "has_coordinates": Field("boolean", Analysis.has_coordinates),
     "role": Field("value", Analysis.role),
-    "contrast.positive": Field("text", AF.contrast_positive),
-    "contrast.negative": Field("text", AF.contrast_negative),
     "contrast.key": _normalized("contrast_key", text=False),
     "contrast.set": _normalized("contrast_set", text=False),
     "contrast.kind": Field("value", AF.effect_kind, values=EFFECT_KINDS),
     "contrast.groups": Field("groups", AF.group_count, values=("between", "within")),
+    **_side_fields("positive"),
+    **_side_fields("negative"),
     "design.allocation": Field("value", AF.allocation),
     "design.assignment_structure": Field("value", AF.assignment_structure),
     "design.blinding": Field("value", AF.blinding),
     "design.arm_kind": Field("array_value", AF.arm_kinds),
     "design.longitudinal": Field("boolean", AF.longitudinal),
 }
-GROUPS = ("contrast", "design")
+GROUPS = ("contrast", "contrast.positive", "contrast.negative", "design")
+#: The criterion a group takes a text criterion (a value, a list or any/all/none) in place
+#: of itself as.
+SHORTHAND = {"contrast.positive": "name", "contrast.negative": "name"}
+VALUES_KEYS = {"any", "all", "none", "when_silent"}
 #: Criteria on `analyses` columns, which add a join.
 JOINED = {"has_coordinates", "role"}
 
@@ -489,23 +514,45 @@ def _criterion(name, path, field, raw, errors):
     return Criterion(name, condition, field.silent, form, joins=name in JOINED)
 
 
-def _parse_fields(raw, group, path, errors):
-    """The criteria ``raw`` names among the fields of ``group`` ("" for the top level)."""
+def _members(group, names):
+    """``{key: dotted name}`` of the ``names`` directly in ``group`` ("" for the top)."""
     prefix = f"{group}." if group else ""
-    names = {}
-    for name in FIELDS:
+    members = {}
+    for name in names:
         rest = name.removeprefix(prefix)
         if name.startswith(prefix) and "." not in rest:
-            names[rest] = name
-    allowed = {*names, *(() if group else (*GROUPS, "or"))}
-    _unknown(path, raw, allowed, errors)
+            members[rest] = name
+    return members
+
+
+def _parse_fields(raw, group, path, errors):
+    """The criteria ``raw`` names among the fields of ``group`` ("" for the top level) and
+    the groups nested in it."""
+    names = _members(group, FIELDS)
+    groups = _members(group, GROUPS)
+    _unknown(path, raw, {*names, *groups, *(() if group else ("or",))}, errors)
     criteria = []
     for key, name in names.items():
         if key in raw:
             c = _criterion(name, f"{path}{key}", FIELDS[name], raw[key], errors)
             if c is not None:
                 criteria.append(c)
+    for key, name in groups.items():
+        if key in raw:
+            criteria += _parse_group(raw[key], name, f"{path}{key}", errors)
     return criteria
+
+
+def _parse_group(raw, group, path, errors):
+    shorthand = isinstance(raw, (str, list)) or (
+        isinstance(raw, dict) and raw and set(raw) <= VALUES_KEYS
+    )
+    if group in SHORTHAND and shorthand:
+        raw = {SHORTHAND[group]: raw}
+    if not isinstance(raw, dict) or not raw:
+        errors.append(make_field_error(path, raw))
+        return []
+    return _parse_fields(raw, group, f"{path}.", errors)
 
 
 def _parse_or(subqueries, path, errors):
@@ -541,13 +588,6 @@ def parse(query, path=""):
         raise QueryError([make_field_error(path or "query", query)])
     errors = []
     criteria = _parse_fields(query, "", path, errors)
-    for group in GROUPS:
-        if group not in query:
-            continue
-        if not isinstance(query[group], dict) or not query[group]:
-            errors.append(make_field_error(f"{path}{group}", query[group]))
-            continue
-        criteria += _parse_fields(query[group], group, f"{path}{group}.", errors)
     if "or" in query:
         alternatives = _parse_or(query["or"], f"{path}or", errors)
         if alternatives is not None:
@@ -560,8 +600,11 @@ def parse(query, path=""):
 def _canonical(criteria):
     out = {}
     for c in criteria:
-        group, _, name = c.name.rpartition(".")
-        (out.setdefault(group, {}) if group else out)[name] = c.canonical
+        *groups, name = c.name.split(".")
+        node = out
+        for group in groups:
+            node = node.setdefault(group, {})
+        node[name] = c.canonical
     return out
 
 
@@ -681,6 +724,11 @@ RESULT_COLUMNS = (
     "allocation",
     "assignment_structure",
     "blinding",
+    *(
+        f"contrast_{side}_{column}"
+        for side in ("positive", "negative")
+        for column in ("has_patients", "has_healthy", "medical_condition_ids", "facets")
+    ),
 )
 
 
@@ -759,6 +807,8 @@ TERM_FIELDS = {
     "contrast_key": "contrast.key",
     "contrast_set": "contrast.set",
     "arm_kind": "design.arm_kind",
+    "contrast_positive_facet": "contrast.positive.facet",
+    "contrast_negative_facet": "contrast.negative.facet",
     "species": "species",
     "spatial_scope": "spatial_scope",
     "measure_type": "measure_type",
