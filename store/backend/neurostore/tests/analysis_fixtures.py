@@ -41,6 +41,35 @@ def keys_of(document):
     )
 
 
+def with_roles(document, roles):
+    """``document`` with an `astra medical role` entry on the item of each mapped term
+    ``roles`` names (``{term: role}``), as ns-pond writes them."""
+    for group in document["groups"]:
+        slot = group["medical_condition"]
+        for entry in list(slot.get("normalized") or []):
+            if entry.get("value") in roles:
+                slot["normalized"].append(
+                    {
+                        "vocabulary": "astra medical role",
+                        "status": "mapped",
+                        "value": roles[entry["value"]],
+                        "item": entry["item"],
+                        "mapping_tool": "fixture",
+                    }
+                )
+    return document
+
+
+def unmap_names(document, analysis_name=None):
+    """``document`` with the normalizer entries on its analyses' names (only
+    ``analysis_name``'s, when given) turned unmapped."""
+    for analysis in document["analyses"]:
+        if analysis_name in (None, analysis["name"]["value"]):
+            for entry in analysis["name"]["normalized"]:
+                entry.update(status="unmapped", value=None)
+    return document
+
+
 def upload_body(name, document=None):
     """The upload of record ``name`` (or ``document``) with a parse holding its analyses:
     one text analysis per key, the i-th named "<name> analysis <i>"."""
