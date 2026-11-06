@@ -2,7 +2,7 @@
 and the studyset release."""
 
 
-def _shown(key):
+def _display(key):
     """A column read from the analysis's display values (the record's own wording)."""
 
     def read(row, display):
@@ -11,44 +11,47 @@ def _shown(key):
     return read
 
 
-def _row(name):
+def _column(name):
+    """A column read from the AnalysisFeature row."""
+
     def read(row, display):
-        return getattr(row, name)
+        value = getattr(row, name)
+        return None if value == [] else value
 
     return read
 
 
-#: Column -> (kind, its value from an AnalysisFeature row and its display). A "list"
-#: value is a list of strings. None where the record says nothing.
+#: Column -> (note type, its value from an AnalysisFeature row and its display). An
+#: "array" value is a list of strings. None where the record says nothing.
 FEATURE_COLUMNS = {
-    "medical_condition": ("list", _shown("medical_condition")),
-    "medical_condition_ids": ("list", _row("medical_condition_ids")),
-    "medical_condition_ancestor_ids": ("list", _row("medical_condition_ancestor_ids")),
-    "medical_condition_unmapped": ("boolean", _row("medical_condition_unmapped")),
-    "has_patients": ("boolean", _row("has_patients")),
-    "has_healthy": ("boolean", _row("has_healthy")),
-    "species": ("list", _row("species")),
-    "task": ("list", _shown("task")),
-    "task_ids": ("list", _row("task_ids")),
-    "task_family_ids": ("list", _row("task_family_ids")),
-    "task_unmapped": ("boolean", _row("task_unmapped")),
-    "contrast": ("string", _shown("contrast")),
-    "contrast_key": ("list", _shown("contrast_key")),
-    "contrast_key_unmapped": ("boolean", _row("contrast_key_unmapped")),
-    "contrast_set": ("list", _shown("contrast_set")),
-    "contrast_set_unmapped": ("boolean", _row("contrast_set_unmapped")),
-    "spatial_scope": ("string", _row("spatial_scope")),
-    "measure_type": ("string", _row("measure_type")),
-    "measure_family": ("string", _row("measure_family")),
-    "effect_kind": ("string", _row("effect_kind")),
-    "n": ("number", _row("n")),
-    "group_count": ("number", _row("group_count")),
-    "allocation": ("string", _row("allocation")),
-    "assignment_structure": ("string", _row("assignment_structure")),
-    "blinding": ("string", _row("blinding")),
-    "arm_kinds": ("list", _row("arm_kinds")),
-    "longitudinal": ("boolean", _row("longitudinal")),
-    "is_meta_analysis": ("boolean", _row("is_meta_analysis")),
+    "medical_condition": ("array", _display("medical_condition")),
+    "medical_condition_ids": ("array", _column("medical_condition_ids")),
+    "medical_condition_ancestor_ids": ("array", _column("medical_condition_ancestor_ids")),
+    "medical_condition_unmapped": ("boolean", _column("medical_condition_unmapped")),
+    "has_patients": ("boolean", _column("has_patients")),
+    "has_healthy": ("boolean", _column("has_healthy")),
+    "species": ("array", _column("species")),
+    "task": ("array", _display("task")),
+    "task_ids": ("array", _column("task_ids")),
+    "task_family_ids": ("array", _column("task_family_ids")),
+    "task_unmapped": ("boolean", _column("task_unmapped")),
+    "contrast": ("string", _display("contrast")),
+    "contrast_key": ("array", _display("contrast_key")),
+    "contrast_key_unmapped": ("boolean", _column("contrast_key_unmapped")),
+    "contrast_set": ("array", _display("contrast_set")),
+    "contrast_set_unmapped": ("boolean", _column("contrast_set_unmapped")),
+    "spatial_scope": ("string", _column("spatial_scope")),
+    "measure_type": ("string", _column("measure_type")),
+    "measure_family": ("string", _column("measure_family")),
+    "effect_kind": ("string", _column("effect_kind")),
+    "n": ("number", _column("n")),
+    "group_count": ("number", _column("group_count")),
+    "allocation": ("string", _column("allocation")),
+    "assignment_structure": ("string", _column("assignment_structure")),
+    "blinding": ("string", _column("blinding")),
+    "arm_kinds": ("array", _column("arm_kinds")),
+    "longitudinal": ("boolean", _column("longitudinal")),
+    "is_meta_analysis": ("boolean", _column("is_meta_analysis")),
 }
 
 #: One-hot columns: `<prefix>:<id>` is true for each id in the row's list column.
@@ -56,5 +59,5 @@ ONE_HOT_COLUMNS = {"task": "task_ids", "task_family": "task_family_ids"}
 
 
 def joined(value):
-    """A list column as one string, for annotations whose columns are scalars."""
+    """An array column as one string, for annotations whose columns are scalars."""
     return ", ".join(str(v) for v in value or []) or None

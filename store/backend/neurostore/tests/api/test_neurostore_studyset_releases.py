@@ -1,19 +1,23 @@
 import pytest
 
 import json
+import shutil
 import tarfile
 from io import BytesIO
 from datetime import datetime, timezone
 
 import pandas as pd
 import sqlalchemy as sa
+from study_schema.vocabularies import vocabularies
 
 from neurostore.analysis_feature_columns import FEATURE_COLUMNS
 from neurostore.ingest.study_schema import HISTORY_SOURCE, STUDY_SOURCE, ingest_upload
 from neurostore.models.data import RECORD_SCHEMA_NAME
 from neurostore.models import (
     Analysis,
+    AnalysisFeature,
     Annotation,
+    AnnotationAnalysis,
     BaseStudy,
     Pipeline,
     PipelineConfig,
@@ -209,9 +213,11 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
 def _release_folder(tmp_path):
     """The nightly archive, unpacked; its parquet folder."""
     archive = tmp_path / "neurostore-studyset-releases/nightly/neurostore-studyset-nightly.tar.gz"
+    unpacked = tmp_path / "unpacked"
+    shutil.rmtree(unpacked, ignore_errors=True)
     with tarfile.open(archive, mode="r:gz") as tar:
-        tar.extractall(tmp_path / "unpacked", filter="data")
-    return next((tmp_path / "unpacked").iterdir())
+        tar.extractall(unpacked, filter="data")
+    return next(unpacked.iterdir())
 
 
 def test_release_annotates_each_analysis_with_its_features(app, session, tmp_path):
@@ -267,10 +273,13 @@ def test_release_annotates_each_analysis_with_its_features(app, session, tmp_pat
         assert note["task_family:working_memory_span"] is None
 
     keys = annotation.note_keys
-    assert {k: keys[k]["type"] for k in ("medical_condition_ids", "contrast", "n")} == {
+    assert {
+        k: keys[k]["type"] for k in ("medical_condition_ids", "contrast", "n", "has_patients")
+    } == {
         "medical_condition_ids": "array",
         "contrast": "string",
         "n": "number",
+        "has_patients": "boolean",
     }
     ordered = sorted(keys, key=lambda k: keys[k]["order"])
     assert ordered[: len(FEATURE_COLUMNS)] == list(FEATURE_COLUMNS)
@@ -286,9 +295,10 @@ def test_release_annotates_each_analysis_with_its_features(app, session, tmp_pat
 
     stamps = manifest["analysis_features"]
     assert annotation.metadata_["analysis_features"] == stamps
-    assert stamps["pinned_releases"]["mondo"]
-    assert stamps["vocabulary_releases"]["mondo test"] > 0
-    assert set(stamps["mapping_tools"]) >= {"fixture: ns-pond build rows (astra_records.json)"}
+    assert stamps["pinned_releases"] == {v.name: v.release for v in vocabularies()}
+    # The two schizophrenia analyses carry MONDO ids.
+    assert stamps["vocabulary_releases"]["mondo test"] == 2
+    assert stamps["mapping_tools"]["fixture: ns-pond build rows (astra_records.json)"] == 5
 
     # NiMARE selects on a one-hot column directly, and on a list by membership.
     released = NimareStudyset.from_parquet(_release_folder(tmp_path))
@@ -299,10 +309,28 @@ def test_release_annotates_each_analysis_with_its_features(app, session, tmp_pat
     )
     assert n_back == set(frame.loc[in_schizophrenia, "id"])
     assert len(n_back) == 2
+    by_analysis = {note.analysis_id: note.note["n"] for note in annotation.annotation_analyses}
+    assert dict(zip(frame["contrast_id"], frame["n"])) == by_analysis
 
     # Unchanged features leave every study as it was.
     again = build_neurostore_studyset_release(settings=app.config, nightly=True)["written"][0]
     assert again["changed_base_study_ids"] == []
+
+    # A changed feature refreshes that study alone, in the database and the archive.
+    conduct_feature = AnalysisFeature.query.filter_by(
+        base_study_id=papers["AhxosLhYA5YG"]
+    ).one()
+    conduct_feature.n = 73
+    session.commit()
+    third = build_neurostore_studyset_release(settings=app.config, nightly=True)["written"][0]
+    assert third["changed_base_study_ids"] == [papers["AhxosLhYA5YG"]]
+    session.expire_all()
+    note = AnnotationAnalysis.query.filter_by(
+        annotation_id=annotation.id, analysis_id=conduct_feature.analysis_id
+    ).one()
+    assert note.note["n"] == 73
+    frame = NimareStudyset.from_parquet(_release_folder(tmp_path)).annotations_df
+    assert frame.set_index("contrast_id").loc[conduct_feature.analysis_id, "n"] == 73
 
 
 def test_release_build_harmonizes_mixed_metadata_types(app, session, tmp_path):

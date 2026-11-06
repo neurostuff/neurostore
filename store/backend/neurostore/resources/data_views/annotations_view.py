@@ -57,7 +57,7 @@ from neurostore.schemas import PipelineStudyResultSchema
 ANALYSIS_QUERY_KEYS = {"query", "column", "feature_columns"}
 
 
-#: The analysis query's feature columns; a list column is written joined into a string.
+#: The analysis query's feature columns; an array column is written joined into a string.
 QUERY_FEATURE_COLUMNS = (
     "medical_condition",
     "task",
@@ -70,12 +70,17 @@ QUERY_FEATURE_COLUMNS = (
 )
 
 
-def _query_feature(feature, found=None):
-    """A query feature column's note type, and its value from ``found`` (an AnalysisFeature
-    row and its display)."""
-    kind, read = FEATURE_COLUMNS[feature]
+def _query_note_type(feature):
+    note_type = FEATURE_COLUMNS[feature][0]
+    return "string" if note_type == "array" else note_type
+
+
+def _query_value(feature, found):
+    """A query feature column's value from ``found`` (an AnalysisFeature row and its
+    display), or None."""
+    note_type, read = FEATURE_COLUMNS[feature]
     value = read(*found) if found else None
-    return ("string", joined(value)) if kind == "list" else (kind, value)
+    return joined(value) if note_type == "array" else value
 
 
 class AnnotationMutationPolicy(DefaultMutationPolicy):
@@ -960,10 +965,10 @@ class AnnotationsView(ObjectView, ListView):
             values[column] = analysis_id in selected
             found = rows.get(analysis_id)
             for feature in features:
-                values[feature] = _query_feature(feature, found)[1]
+                values[feature] = _query_value(feature, found)
         data["note_keys"] = self._merge_note_keys(
             annotation.note_keys if data.get("note_keys") is None else data["note_keys"],
-            {column: "boolean", **{f: _query_feature(f)[0] for f in features}},
+            {column: "boolean", **{f: _query_note_type(f) for f in features}},
         )
         data["annotation_analyses"] = list(note_map.values())
         if data.get("metadata_") is not None:

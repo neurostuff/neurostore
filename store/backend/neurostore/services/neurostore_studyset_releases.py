@@ -57,8 +57,14 @@ LOCK_KEY = "neurostore-studyset-release-build"
 MONTHLY_VERSION_RE = re.compile(r"^\d{4}-\d{2}$")
 STUDY_SHARD_BATCH_SIZE = 500
 FEATURE_BATCH_SIZE = 5000
-#: Note type of each feature column kind.
-NOTE_TYPES = {"list": "array", "string": "string", "number": "number", "boolean": "boolean"}
+#: What a study's manifest entry compares to decide whether its shards are stale.
+MANIFEST_STATE_KEYS = (
+    "study_id",
+    "created_at",
+    "updated_at",
+    "study_freshness",
+    "features_checksum",
+)
 STUDY_METADATA_EXCLUDED_KEYS = frozenset(
     (
         "url",
@@ -449,9 +455,9 @@ def feature_note(row, display):
 
 
 def fetch_feature_notes(study_ids):
-    """``({study_id: {analysis_id: note}}, stamps)`` for the analyses of ``study_ids`` that
-    a record describes. The stamps are the vocabulary releases study_schema pins, and how
-    many of those analyses each release and normalizer stamped."""
+    """``({study_id: {analysis_id: note}}, counts)`` for the analyses of ``study_ids`` that
+    a record describes; the counts are how many of them each vocabulary release and each
+    normalizer stamped."""
     features = AnalysisFeature.__table__
     by_study = {}
     releases, tools = Counter(), Counter()
@@ -466,12 +472,11 @@ def fetch_feature_notes(study_ids):
             by_study.setdefault(row.study_id, {})[row.analysis_id] = note
             releases.update(row.vocabulary_releases or ())
             tools.update(row.mapping_tools or ())
-    stamps = {
-        "pinned_releases": {v.name: v.release for v in vocabularies()},
+    counts = {
         "vocabulary_releases": dict(sorted(releases.items())),
         "mapping_tools": dict(sorted(tools.items())),
     }
-    return by_study, stamps
+    return by_study, counts
 
 
 def build_note_keys(notes_by_study):
@@ -482,10 +487,10 @@ def build_note_keys(notes_by_study):
             for notes in notes_by_study.values()
             for note in notes.values()
             for key in note
-            if key not in FEATURE_COLUMNS
+            if key.partition(":")[0] in ONE_HOT_COLUMNS and ":" in key
         }
     )
-    types = [(column, NOTE_TYPES[kind]) for column, (kind, _) in FEATURE_COLUMNS.items()]
+    types = [(column, note_type) for column, (note_type, _) in FEATURE_COLUMNS.items()]
     types += [(key, "boolean") for key in one_hot]
     return OrderedDict(
         (key, {"type": note_type, "order": index}) for index, (key, note_type) in enumerate(types)
@@ -521,25 +526,9 @@ def fetch_analysis_rows(study_ids):
 def manifest_entry_changed(entry, notes_by_study, previous_entries):
     manifest_entry = build_manifest_entry(entry, notes_by_study)
     previous_entry = previous_entries.get(entry["base_study_id"])
-    state_changed = previous_entry is None or {
-        key: previous_entry.get(key)
-        for key in (
-            "study_id",
-            "created_at",
-            "updated_at",
-            "study_freshness",
-            "features_checksum",
-        )
-    } != {
-        key: manifest_entry.get(key)
-        for key in (
-            "study_id",
-            "created_at",
-            "updated_at",
-            "study_freshness",
-            "features_checksum",
-        )
-    }
+    state_changed = previous_entry is None or any(
+        previous_entry.get(key) != manifest_entry.get(key) for key in MANIFEST_STATE_KEYS
+    )
     return manifest_entry, state_changed
 
 
@@ -1277,9 +1266,11 @@ def build_neurostore_studyset_release(
         db.session.flush()
 
         previous_manifest = previous_nightly_manifest(root)
-        notes_by_study, feature_stamps = fetch_feature_notes(
-            [entry["study_id"] for entry in selected]
-        )
+        notes_by_study, counts = fetch_feature_notes([entry["study_id"] for entry in selected])
+        feature_stamps = {
+            "pinned_releases": {v.name: v.release for v in vocabularies()},
+            **counts,
+        }
         annotation.metadata_ = {**annotation.metadata_, "analysis_features": feature_stamps}
         note_keys, analysis_rows_by_study = sync_annotation(
             annotation,
