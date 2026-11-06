@@ -1457,7 +1457,8 @@
         "mixed_effects",
         "anova",
         "ancova",
-        "robust_regression"
+        "robust_regression",
+        "correlation"
       ],
       "title": "ModelFamily",
       "type": "string"
