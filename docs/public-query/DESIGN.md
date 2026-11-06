@@ -7,6 +7,16 @@ from the store's image, 1 GB shared_buffers, 16 MB work_mem). No deployed databa
 built. James answered questions 2, 3, 5, 6 and 7 on 2026-11-06 (see [Questions for
 James](#questions-for-james)); 1 and 4 are open.
 
+**Built in neurostuff/neurostore#1928** (ADR 0020), with these changes from this draft:
+- The dataset called `articles` here is `base-studies` (James), its references are `base_study_id`,
+  and the rollup counts are `base_studies` and `base_studies_with_data`.
+- The reader is a NOLOGIN role entered with `SET LOCAL ROLE`, not a second login with its own
+  password; the two-connection pool bounds concurrency.
+- Rate limits are per client in nginx only: an app bucket keyed on an API key is skipped by
+  sending a bad token. A key raises the cost limit.
+- `LIKE` has no three-character rule (the datasets have no trigram index); invalid queries are
+  400, over-cost ones 422.
+
 ## The question
 
 Through which grammar, compiled how, and over which allow-listed relations can anyone run aggregate
