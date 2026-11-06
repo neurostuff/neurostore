@@ -358,6 +358,7 @@ def test_the_keeper_takes_the_old_base_study_s_journal_when_it_has_none(session,
 
     keeper = session.get(BaseStudy, pair["keeper"])
     assert (keeper.journal_id, keeper.journal_match) == (journal.id, "doi")
+    assert keeper.publication == "Human Brain Mapping"
 
 
 def test_dry_run_prints_what_execute_does_and_writes_nothing(session, pair):

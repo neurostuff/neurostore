@@ -188,6 +188,10 @@ metadata_service.fetch_metadata_semantic_scholar = (
     }
 )
 metadata_service.fetch_metadata_pubmed = lambda *_args, **_kwargs: {}
+
+from neurostore.services import journals
+
+journals.match_base_studies = lambda base_studies, *, settings: ({}, [])
 """
 
     result = _run_cli_runner_command(

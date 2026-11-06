@@ -58,6 +58,7 @@ STUDY_METADATA_FIELDS = ("name", "description", "publication", "authors", "year"
 CONTENT_FIELDS = METADATA_FIELDS + (
     "ace_fulltext",
     "pubget_fulltext",
+    "publication_source",
     "journal_id",
     "journal_match",
 )

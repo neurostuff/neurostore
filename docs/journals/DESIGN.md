@@ -227,8 +227,11 @@ journals
   created_at, updated_at
 
 base_studies
-  journal_id        text NULL REFERENCES journals(id) ON DELETE SET NULL, indexed
-  journal_match     text NULL                       -- as Venue.match
+  journal_id           text NULL REFERENCES journals(id) ON DELETE SET NULL, indexed
+  journal_match        text NULL      -- as Venue.match
+  publication          the journal's title, else publication_source (kept by a trigger)
+  publication_source   text NULL      -- the journal's name as the source printed it
+  journal_abbreviation text NULL      -- the journal's, kept by the same trigger
 ```
 
 `Study` and `Studyset` get no column. A study reads its base study's journal, and a studyset's
@@ -236,12 +239,33 @@ base_studies
 
 ## Old strings
 
-`publication` stays as the raw string on all three models, never rewritten by matching:
-- it is what the source printed;
-- it is all that the 0.2% of unmatched papers have;
-- the API keeps serving it unchanged.
+James, 2026-11-06: "eventually, I do want a migration where the publication is the normalized
+journal name for the article", folded into neurostuff/neurostore#1921.
 
-Readers that want the entity read `journal`.
+- **Base studies:**
+  - `publication` is the matched journal's title, else the source's string.
+  - The source's string is kept in `publication_source`, and the migration copies today's
+    `publication` into it, so nothing is lost.
+  - A trigger keeps `publication` so (migration `c3e5a7b9d1f2`, see
+    [Cost of the journal summary](#cost-of-the-journal-summary-measured-2026-11-06)).
+  - On the production copy, the 4,225 distinct strings become 2,711 distinct publications.
+- **What a write to `publication` means.** Every writer already writes `publication` and needs no
+  change: the study_schema upload, PubMed enrichment, the older ingesters, `POST`/`PUT /base-studies`,
+  creating a base study from a study, and merges.
+  - **A writer's value is the source's string**, unless it is the matched journal's own title: a
+    client sending back what it read, or a journal's rename arriving.
+  - **On a matched base study, the journal wins.** A user's edit of `publication` is kept as
+    `publication_source`, and `publication` stays the journal's title. No user owns a journal (James's
+    answer 1), and the Compose frontend writes base studies only by `POST` (its import).
+  - **Clearing `journal_id`**, or deleting the journal, returns `publication` to `publication_source`.
+- **Studies (versions) keep their own `publication`.** Users edit a version's publication in Compose,
+  and making it follow the base study would either drop those edits or put trigger work on study
+  writes, which James ruled out. A study shows the normalized name as `journal`. A version created
+  from a base study copies the base study's `publication` when it is created.
+- **Studysets keep theirs.** A studyset's `publication` is its own citation, not a paper's journal.
+- **The API and response shape are unchanged.** `publication` carries the normalized name.
+  `publication_source` isn't served. `?publication=` on base studies matches normalized names (it is a
+  substring match on `publication`).
 
 ## API and spec (neurostore-spec PR)
 
@@ -402,14 +426,17 @@ The cost of the subquery is below what these endpoints can resolve.
 
 **Decision: (b), the copy on base studies** (James, 2026-11-06). Reads matter more than writes,
 provided study writes are not delayed; base-study writes may be.
-- **The copy:** `base_studies.journal_title` and `journal_abbreviation`. `journal_id` already holds
-  the id.
+- **The copy:** the journal's title lives in `base_studies.publication` itself (see
+  [Old strings](#old-strings)), and its abbreviation in `journal_abbreviation`. `journal_id` holds the
+  id.
 - **Kept current by two triggers (migration `c3e5a7b9d1f2`):**
-  - one fires when a base study's `journal_id`, or the copy itself, is written;
+  - one fires when a base study's `journal_id`, `publication`, `publication_source` or
+    `journal_abbreviation` is written;
   - one fires when a journal's title or abbreviation changes.
 
-  So every writer stays consistent with no Python change: `journals.attach`, merges, `refresh_journals`
-  and hand-written SQL.
+  So every writer stays consistent with no Python change: `journals.attach`, merges, `refresh_journals`,
+  the ingesters and hand-written SQL. After a flush, the session rereads what the trigger set on the
+  base studies it wrote, so a response never shows a pre-trigger value.
 - **Studies** get no column and no trigger. A study reads its base study's copy with one lookup
   instead of two.
 - **The response is unchanged:** byte-identical to (a) on every measured endpoint.
@@ -452,6 +479,24 @@ Other costs:
 - The migration's backfill of 76,503 rows took 20.8 s.
 - A consistency check (copies that disagree with their journal) finds 0 and takes 0.15 s.
 - Each base-study update also rewrites the row's pg_search full-text index entries.
+
+**With `publication` as the journal's title** (the same migration, after James folded it in). The
+read paths are unchanged: the summary's title comes from `publication` instead of `journal_title`, in
+the same row. Measured on the production copy:
+- **The migration** took 80.6 s with 99.8% of base studies matched, and 39.5 s to downgrade, which
+  restores the source's strings. Both include about 5 s of app startup. Production isn't matched yet,
+  so there the migration only copies `publication` into `publication_source`.
+- **Writes**, 1,000 rows, three runs each, on a noisier machine (the same study write took 1,084 to
+  3,274 ms):
+  - writing `publication` took 376–464 ms with the trigger and 471–543 ms without;
+  - writing `journal_id` took 439–515 ms with it and 418–577 ms without;
+  - writing `name` doesn't fire the trigger: 586–675 ms.
+
+  The trigger's cost is below the noise.
+- **Renaming** the journal with the most papers (6,852) took 3.1–3.6 s.
+- **Consistency:** no matched row's `publication` differs from its journal's title, and no unmatched
+  row's differs from its source string. 4,225 distinct source strings become 2,711 distinct
+  publications.
 
 **Not chosen:**
 - **(a):** it costs twice as much per base-study page, and 3.6× on scans.
