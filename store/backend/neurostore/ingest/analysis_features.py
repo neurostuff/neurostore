@@ -7,19 +7,34 @@ filter on columns instead of reading records. `sync_analysis_features` writes th
 one paper from its latest record, for the analyses of its current pipeline Study.
 
 A value counts only when its `extraction_status` is `extracted`; anything else is silent
-(NULL). Normalizer entries (`normalized`, study_schema#56) count only when `mapped`.
+(NULL). Normalizer entries (`normalized`, study_schema#56) count only when `mapped`, and
+are read by the vocabulary study_schema's manifest names, under its neutral name or a
+legacy one. Medical-condition ids take their ancestors, labels and synonyms from the
+manifest's releases loaded into `concept_ancestors` (`neurostore.ingest.concepts`).
+
+A contrast key or set is a directional term: the term itself where the analysis states the
+contrast the way the key or set does, and the term with `:reversed` where it states the
+opposite. Each row also lists the terms it uses, with their labels and parents, for
+`analysis_terms`.
 """
 
+import functools
 import re
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import distinct_on
+from study_schema.vocabularies import for_legacy
+from study_schema.vocabularies import vocabulary as manifest_vocabulary
 
 from neurostore.database import db
+from neurostore.ingest.concepts import concept_lineages
 from neurostore.models import (
     Analysis,
     AnalysisFeature,
     AnalysisFeatureDisplay,
+    AnalysisTerm,
+    BaseStudy,
     PipelineConfig,
     PipelineStudyResult,
     Study,
@@ -30,15 +45,22 @@ from neurostore.study_schema_tools import record_analysis_key, reported_value, s
 #: The separator between items of a text column, which no whole-word pattern crosses.
 SEPARATOR = " | "
 
-#: Vocabularies whose mapped entries on `Group.medical_condition` are diagnoses.
-DIAGNOSIS_VOCABULARIES = {"MONDO", "ONVOC"}
-#: The entry on `Task.name` that names the task's canonical paradigm.
-CANONICAL_TASK = "astra canonical task"
-#: Entries on `Analysis.name` placing the analysis's contrast. ns-pond suffixes the
-#: contrast-set vocabularies with the fit they came from.
-CONTRAST_KEY = "astra contrast key"
-CONTRAST_SET = "ns-pond contrast set "
-CONTRAST_ORIENTATION = "ns-pond contrast set orientation "
+#: Manifest vocabularies whose mapped entries on `Group.medical_condition` become its ids.
+MEDICAL_CONDITION_VOCABULARIES = {"mondo", "onvoc"}
+#: The suffix of a directional term stated against its key's or set's direction, and of
+#: a label flipped that cannot be read as "a > b".
+REVERSED = ":reversed"
+REVERSED_LABEL = " (reversed)"
+#: The directional fields, by the separator after their task family (the manifest's
+#: prefix hierarchy).
+DIRECTIONAL_FIELDS = {
+    field: manifest_vocabulary(field).hierarchy.separator
+    for field in ("contrast_key", "contrast_set")
+}
+#: The fit a contrast set reads against, in a legacy vocabulary string or a mapping tool.
+FIT = re.compile(r"\bfit-[0-9a-f]{12}\b")
+#: ns-pond writes a key's sign only in its entry's method: "target>baseline; sign -1".
+KEY_SIGN = re.compile(r"\bsign -1\b")
 
 #: A coordinate meta-analysis indexed as a paper (pondie.query.engine.META_ANALYSIS).
 META_ANALYSIS = re.compile(
@@ -46,6 +68,32 @@ META_ANALYSIS = re.compile(
     r"seed-based d mapping|\bSDM\b|coordinate-based",
     re.I,
 )
+
+
+@functools.lru_cache(maxsize=None)
+def _manifest_name(string):
+    """The manifest vocabulary a `Normalization.vocabulary` string names, as its neutral
+    name or a legacy one (`astra canonical task`); None for any other string."""
+    try:
+        return manifest_vocabulary(string).name
+    except KeyError:
+        found = for_legacy(string)
+        return found.name if found else None
+
+
+def _of(entry, *names):
+    """Whether ``entry`` reads onto one of the manifest vocabularies ``names``."""
+    vocabulary = entry.get("vocabulary")
+    return isinstance(vocabulary, str) and _manifest_name(vocabulary) in names
+
+
+def _fit(entry):
+    """The fit a contrast-set or orientation entry reads against, or None."""
+    for text in (entry.get("vocabulary"), entry.get("mapping_tool")):
+        found = FIT.search(text if isinstance(text, str) else "")
+        if found:
+            return found.group()
+    return None
 
 
 def _values(slot):
@@ -58,18 +106,65 @@ def _values(slot):
 
 
 def _entries(slot, status="mapped"):
-    """The slot's normalizer entries of ``status`` (a mapped one always has a value)."""
+    """The slot's normalizer entries of ``status``, or all of them for None (a mapped one
+    always has a value)."""
     entries = slot.get("normalized") if isinstance(slot, dict) else None
     return [
         entry
         for entry in entries or []
-        if entry.get("status") == status
+        if isinstance(entry, dict)
+        and (status is None or entry.get("status") == status)
         and (status != "mapped" or entry.get("value") is not None)
     ]
 
 
+def _stated(slot, readings):
+    """The slot's items, less those every one of ``readings`` takes as an absence."""
+    statuses = {}
+    for entry in readings:
+        statuses.setdefault(entry.get("item"), set()).add(entry.get("status"))
+    absent = {item for item, seen in statuses.items() if seen == {"absent"}}
+    scalar = not isinstance(reported_value(slot), list)
+    return [item for i, item in enumerate(_values(slot)) if (None if scalar else i) not in absent]
+
+
 def _label(entry):
     return entry.get("label") or entry["value"]
+
+
+def _tools(entries):
+    return [entry["mapping_tool"] for entry in entries if entry.get("mapping_tool")]
+
+
+def _unmapped(spoke, ids):
+    """True when the slot was extracted and nothing in it mapped; None when silent."""
+    return not ids if spoke else None
+
+
+def _ancestors(ids, parents):
+    return _unique([*(ids or []), *parents]) or None
+
+
+def _flip(term):
+    """A directional term for the other direction."""
+    return term[: -len(REVERSED)] if term.endswith(REVERSED) else term + REVERSED
+
+
+def _flip_label(label):
+    """A label stated the other way: "a > b" as "b > a"; else marked reversed."""
+    if not label:
+        return label
+    if label.endswith(REVERSED_LABEL):
+        return label[: -len(REVERSED_LABEL)]
+    sides = label.split(" > ")
+    return " > ".join(reversed(sides)) if len(sides) == 2 else label + REVERSED_LABEL
+
+
+def _family(term, field):
+    """The task family a contrast key (`family|...`) or set (`family#n`) names: its
+    parent."""
+    separator = DIRECTIONAL_FIELDS[field]
+    return term.split(separator, 1)[0] if separator in term else None
 
 
 def _unique(items):
@@ -94,85 +189,134 @@ def _by_id(items):
 
 
 def _groups(groups):
-    """Species, health and diagnoses of the groups an analysis ran on."""
-    healthy = [reported_value(group.get("is_healthy")) for group in groups]
-    healthy = [flag for flag in healthy if isinstance(flag, bool)]
-    stated = [
-        group.get("medical_condition")
-        for group in groups
-        if _values(group.get("medical_condition"))
-    ]
-    diagnoses = [
-        entry
-        for slot in stated
-        for entry in _entries(slot)
-        if entry.get("vocabulary") in DIAGNOSIS_VOCABULARIES
-    ]
-    wording = []
-    for slot in stated:
-        absent = {entry.get("item") for entry in _entries(slot, "absent")}
-        wording += [item for i, item in enumerate(_values(slot)) if i not in absent]
-    labels = {entry["value"]: _label(entry) for entry in diagnoses}
+    """Species, health and medical conditions of the groups an analysis ran on. A healthy
+    group's condition and an item a normalizer read only as an absence are silent."""
+    healthy, labels, roles, wording, used = [], {}, {}, [], []
+    for group in groups:
+        is_healthy = reported_value(group.get("is_healthy"))
+        if isinstance(is_healthy, bool):
+            healthy.append(is_healthy)
+        slot = group.get("medical_condition")
+        if is_healthy is True or not _values(slot):
+            continue
+        readings = [e for e in _entries(slot, None) if not _of(e, "medical_role")]
+        wording += _stated(slot, readings)
+        # ns-pond gives the role to the item, whichever head an entry names.
+        role = {
+            (e.get("item"), e.get("head")): e["value"]
+            for e in _entries(slot)
+            if _of(e, "medical_role")
+        }
+        for entry in _entries(slot):
+            if not _of(entry, *MEDICAL_CONDITION_VOCABULARIES):
+                continue
+            used.append(entry)
+            labels.setdefault(entry["value"], _label(entry))
+            item = entry.get("item")
+            given = role.get((item, entry.get("head")), role.get((item, None)))
+            if given:
+                roles.setdefault(entry["value"], set()).add(given)
+    ids = list(labels) or None
+    role_ids = [
+        AnalysisFeature.role_id(r, i) for i in labels for r in sorted(roles.get(i, ()))
+    ] or None
+    text = _text([*labels.values(), *wording]) if labels or wording else None
     species = [item for group in groups for item in _values(group.get("species"))]
     columns = {
         "species": _unique(str(item).strip().lower() for item in species) or None,
         "has_patients": (False in healthy) if healthy else None,
         "has_healthy": (True in healthy) if healthy else None,
-        "diagnosis_ids": list(labels) or None,
-        "diagnosis_labels": list(labels.values()) or None,
-        "diagnosis_text": _text([*labels.values(), *wording]) if stated else None,
+        # Their ancestors and synonyms come from the loaded releases, in `with_ancestors`.
+        "medical_condition_ids": ids,
+        "medical_condition_role_ids": role_ids,
+        "medical_condition_text": text,
+        "medical_condition_unmapped": _unmapped(text is not None, ids),
+        "mapping_tools": _tools(used),
+        "terms": [("medical_condition", i, label, None) for i, label in labels.items()],
     }
-    return columns, {"diagnosis": list(labels.values()) or _unique(wording)}
+    return columns, {"medical_condition": list(labels.values()) or _unique(wording)}
 
 
 def _tasks(tasks):
-    """Names, paradigms and normalized terms of the tasks an analysis used."""
-    names = [item for task in tasks for item in _values(task.get("name"))]
-    entries = [
-        entry for task in tasks if _values(task.get("name")) for entry in _entries(task["name"])
-    ]
-    words = [
-        *names,
-        *(item for task in tasks for item in _values(task.get("paradigm"))),
-        *(_label(entry) for entry in entries),
-    ]
-    canonical = [_label(e) for e in entries if e.get("vocabulary") == CANONICAL_TASK]
+    """Names, paradigms and normalized terms of the tasks an analysis used: each task's
+    canonical paradigm, under its family (a task placed only on a family is that)."""
+    names, words, ids, families, used, terms = [], [], [], [], [], []
+    for task in tasks:
+        task_names = _stated(task.get("name"), _entries(task.get("name"), None))
+        if not task_names:
+            continue
+        mapped = _entries(task["name"])
+        canonical = [e for e in mapped if _of(e, "canonical_task")]
+        family = [e for e in mapped if _of(e, "task_family")]
+        parent = family[0]["value"] if family else None
+        names += task_names
+        words += [*task_names, *_values(task.get("paradigm")), *map(_label, mapped)]
+        used += canonical + family
+        for entry in canonical:
+            ids.append(entry["value"])
+            terms.append(("task", entry["value"], _label(entry), parent))
+        for entry in family:
+            families.append(entry["value"])
+            terms.append(("task_family", entry["value"], _label(entry), None))
+            if not canonical:
+                ids.append(entry["value"])
+                terms.append(("task", entry["value"], _label(entry), None))
+    ids = _unique(ids) or None
     columns = {
-        "task_ids": _unique(entry["value"] for entry in entries) or None,
+        "task_ids": ids,
+        "task_ancestor_ids": _ancestors(ids, families),
+        "task_family_ids": _unique(families) or None,
         "task_text": _text(words) if names else None,
+        "task_unmapped": _unmapped(bool(names), ids),
+        "mapping_tools": _tools(used),
+        "terms": terms,
     }
-    return columns, {"task": _unique(canonical) or _unique(names)}
+    canonical_labels = [label for field, _, label, _ in terms if field == "task"]
+    return columns, {"task": _unique(canonical_labels) or _unique(names)}
 
 
-def _contrast_sets(name):
-    """The contrast sets and keys a normalizer placed an analysis in, from its name."""
-    entries = _entries(name)
-    placed = [
-        e
-        for e in entries
-        if e.get("vocabulary") == CONTRAST_KEY
-        or (
-            (e.get("vocabulary") or "").startswith(CONTRAST_SET)
-            and not e["vocabulary"].startswith(CONTRAST_ORIENTATION)
-        )
-    ]
-    orientation = next(
-        (
-            e["value"]
-            for e in entries
-            if (e.get("vocabulary") or "").startswith(CONTRAST_ORIENTATION)
-        ),
-        None,
+def _contrast_columns(field, ids, read):
+    return {
+        f"{field}_ids": ids or None,
+        f"{field}_ancestor_ids": _ancestors(ids, filter(None, (_family(t, field) for t in ids))),
+        f"{field}_unmapped": _unmapped(read, ids),
+    }
+
+
+def _contrast_terms(name):
+    """The directional contrast keys and sets a normalizer placed an analysis in: a set
+    member reversed against its set by its fit's orientation entry, a key by its sign."""
+    read = [e for e in _entries(name, None) if e.get("status") != "absent"]
+    mapped = _entries(name)
+    keys = [e for e in mapped if _of(e, "contrast_key")]
+    sets = [e for e in mapped if _of(e, "contrast_set")]
+    orientation = {_fit(e): e["value"] for e in mapped if _of(e, "contrast_set_orientation")}
+    key_ids = _unique(
+        _flip(e["value"]) if KEY_SIGN.search(e.get("method") or "") else e["value"]
+        for e in keys
     )
+    set_labels = {}
+    for entry in sets:
+        reversed_ = orientation.get(_fit(entry)) == "reversed"
+        term = _flip(entry["value"]) if reversed_ else entry["value"]
+        label = _flip_label(entry.get("label")) if reversed_ else entry.get("label")
+        set_labels.setdefault(term, label)
     columns = {
-        "contrast_set_ids": _unique(e["value"] for e in placed) or None,
-        "contrast_set_text": _text(e["label"] for e in placed if e.get("label")),
+        **_contrast_columns("contrast_key", key_ids, any(_of(e, "contrast_key") for e in read)),
+        **_contrast_columns(
+            "contrast_set", list(set_labels), any(_of(e, "contrast_set") for e in read)
+        ),
+        "mapping_tools": _tools(keys + sets),
+        "releases": [f"contrast_set {fit}" for fit in filter(None, map(_fit, sets))],
+        "terms": [
+            *(("contrast_key", k, None, _family(k, "contrast_key")) for k in key_ids),
+            *(
+                ("contrast_set", t, label, _family(t, "contrast_set"))
+                for t, label in set_labels.items()
+            ),
+        ],
     }
-    display = {
-        "contrast_set": _unique(_label(e) for e in placed),
-        "contrast_set_orientation": orientation,
-    }
-    return columns, display
+    return columns, {"contrast_key": key_ids, "contrast_set": list(set_labels)}
 
 
 def _contrast_label(positive, negative):
@@ -280,28 +424,45 @@ class _Record:
             "n": int(sum(counts)) if counts else None,
             **self.design,
         }
-        display = {"name": reported_value(analysis.get("name"))}
+        name = reported_value(analysis.get("name"))
+        row["name_text"] = _text([name]) if name else None
+        display = {"name": name}
+        tools, terms, releases = [], [], []
         for columns, shown in (
             _groups([self.groups.get(link.get("group")) or {} for link in links]),
             _tasks([self.tasks.get(task_id) or {} for task_id in analysis.get("tasks") or []]),
             _contrast(*self._sides(effect)),
-            _contrast_sets(analysis.get("name")),
+            _contrast_terms(analysis.get("name")),
         ):
+            tools += columns.pop("mapping_tools", [])
+            terms += columns.pop("terms", [])
+            releases += columns.pop("releases", [])
             row.update(columns)
             display.update(shown)
+        row["mapping_tools"] = sorted(set(tools)) or None
+        row["vocabulary_releases"] = sorted(set(releases)) or None
+        row["terms"] = terms
         row["display"] = display
         return row
 
 
 def _reversed(features):
-    """The features of the inverse half of a sign split: its contrast's sides swapped."""
+    """The features of the inverse half of a sign split: its contrast's sides swapped, and
+    its contrast keys and sets the other direction."""
     positive, negative = features["display"]["contrast_sides"]
     columns, display = _contrast(negative, positive)
-    orientation = {"same": "reversed", "reversed": "same"}
-    display["contrast_set_orientation"] = orientation.get(
-        features["display"]["contrast_set_orientation"]
-    )
-    return {**features, **columns, "display": {**features["display"], **display}}
+    for field in DIRECTIONAL_FIELDS:
+        flipped = [_flip(term) for term in features[f"{field}_ids"] or []]
+        read = features[f"{field}_unmapped"] is not None
+        columns.update(_contrast_columns(field, flipped, read))
+        display[field] = flipped
+    terms = [
+        (field, _flip(term), _flip_label(label), parent)
+        if field in DIRECTIONAL_FIELDS
+        else (field, term, label, parent)
+        for field, term, label, parent in features["terms"]
+    ]
+    return {**features, **columns, "terms": terms, "display": {**features["display"], **display}}
 
 
 def record_features(record):
@@ -346,6 +507,40 @@ def latest_records(base_study_ids):
     return {base_study_id: (config_id, record) for base_study_id, config_id, record in rows}
 
 
+def with_ancestors(by_key):
+    """``by_key``'s features with the loaded releases' reading of their medical-condition
+    ids: their ancestors (and the role ids' ancestors), their synonyms in the text, their
+    nearest parents in the terms, and the releases those came from. An id no loaded
+    release has is its own ancestry."""
+    lineages = concept_lineages(
+        {i for row in by_key.values() for i in row["medical_condition_ids"] or []}
+    )
+    for row in by_key.values():
+        ids = row["medical_condition_ids"] or []
+        found = [lineages[i] for i in ids if i in lineages]
+        ancestry = {i: lineages[i].ancestors if i in lineages else [i] for i in ids}
+        row["medical_condition_ancestor_ids"] = _ancestors(
+            ids, (a for i in ids for a in ancestry[i])
+        )
+        row["medical_condition_role_ancestor_ids"] = _unique(
+            AnalysisFeature.role_id(role, a)
+            for role, i in map(AnalysisFeature.role_of, row["medical_condition_role_ids"] or [])
+            for a in ancestry[i]
+        ) or None
+        if found:
+            synonyms = [synonym for lineage in found for synonym in lineage.synonyms]
+            row["medical_condition_text"] = _text([row["medical_condition_text"], *synonyms])
+        stamps = {*(row["vocabulary_releases"] or []), *(lineage.release for lineage in found)}
+        row["vocabulary_releases"] = sorted(stamps) or None
+        row["terms"] = [
+            (field, term, label, lineages[term].parent)
+            if field == "medical_condition" and term in lineages
+            else (field, term, label, parent)
+            for field, term, label, parent in row["terms"]
+        ]
+    return by_key
+
+
 def sync_analysis_features(base_study_id, study_id, latest=None):
     """Rewrite ``base_study_id``'s rows for the analyses of its current Study ``study_id``.
 
@@ -356,16 +551,20 @@ def sync_analysis_features(base_study_id, study_id, latest=None):
     ``latest`` is the paper's `latest_records` entry, when the caller has it. Returns the
     rows written.
     """
+    # One writer per paper at a time: a backfill and the outbox workers both rewrite rows.
+    db.session.execute(
+        sa.select(BaseStudy.id).where(BaseStudy.id == base_study_id).with_for_update()
+    )
     if latest is None:
         latest = latest_records([base_study_id]).get(base_study_id, (None, None))
     config_id, record = latest
-    by_key = record_features(record) if record else {}
+    by_key = with_ancestors(record_features(record)) if record else {}
     analyses = db.session.execute(
         sa.select(Analysis.id, Analysis.source_id, Analysis.metadata_).where(
             Analysis.study_id == study_id
         )
     ).all()
-    rows, displays = [], []
+    rows, displays, terms = [], [], {}
     for analysis_id, key, metadata in analyses:
         split = split_of(metadata)
         if key in by_key:
@@ -376,6 +575,14 @@ def sync_analysis_features(base_study_id, study_id, latest=None):
             continue
         features = dict(features)
         displays.append({"analysis_id": analysis_id, "display": features.pop("display")})
+        for field, term, label, parent in features.pop("terms"):
+            known = terms.get((field, term), {})
+            terms[(field, term)] = {
+                "field": field,
+                "term": term,
+                "label": label or known.get("label"),
+                "parent": parent or known.get("parent"),
+            }
         rows.append(
             {
                 "analysis_id": analysis_id,
@@ -391,6 +598,20 @@ def sync_analysis_features(base_study_id, study_id, latest=None):
     if rows:
         db.session.execute(sa.insert(AnalysisFeature), rows)
         db.session.execute(sa.insert(AnalysisFeatureDisplay), displays)
+    if terms:
+        insert = postgresql.insert(AnalysisTerm).values(list(terms.values()))
+        db.session.execute(
+            insert.on_conflict_do_update(
+                index_elements=["field", "term"],
+                # A record that does not say a term's label or parent keeps the known one.
+                set_={
+                    column: sa.func.coalesce(
+                        getattr(insert.excluded, column), getattr(AnalysisTerm, column)
+                    )
+                    for column in ("label", "parent")
+                },
+            )
+        )
     return len(rows)
 
 

@@ -50,9 +50,9 @@ dependencies = [
     # The public query's SoQL subset (public_query.py).
     "lark~=1.2",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
-    # entity hashes read, pinned to study_schema main at the merge of neurostuff/study_schema#59
-    # (after #57, Bibliography.venue, and #58, the correlation and voxel members).
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@2937ab19e3e0ddef49e4fb214164a461d05a6201",
+    # entity hashes read, and the vocabulary manifest the analysis features resolve against,
+    # pinned to study_schema main at the merge of neurostuff/study_schema#60.
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@9d438fd69e40aca2b65b136027fc594f26d152ab",
 ]
 
 [tool.setuptools.packages.find]

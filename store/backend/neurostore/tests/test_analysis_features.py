@@ -1,16 +1,30 @@
 """Resolving extraction records into analysis_features rows, at ingest."""
 
+import sqlalchemy as sa
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 
+from neurostore import service_migrations
 from neurostore.database import db
 from neurostore.ingest.analysis_features import backfill_analysis_features, record_features
 from neurostore.ingest.study_schema import STUDY_SOURCE, ingest_upload
-from neurostore.models import AnalysisFeature, BaseStudy, Study
+from neurostore.models import AnalysisFeature, AnalysisTerm, BaseStudy, Study
+from neurostore.models.data import NORMALIZED_FEATURES
 from neurostore.services.base_study_metadata_enrichment import merge_base_study
 from neurostore.study_schema_tools import schema_errors
 from neurostore.tests import analysis_fixtures as af
 from neurostore.tests import study_schema_fixtures as fx
+
+
+FEATURE_TABLES = (
+    "analysis_features",
+    "analysis_terms",
+    "concept_releases",
+    "concepts",
+    "concept_ancestors",
+)
+#: The head before the normalized-search migration.
+PUBLICATION_REVISION = "c3e5a7b9d1f2"
 
 
 def _by_name(name):
@@ -27,43 +41,234 @@ def test_the_fixture_records_are_valid_extraction_records():
         assert [e.message for e in schema_errors("extraction-record", af.record(name))] == []
 
 
-def test_groups_resolve_to_diagnoses_species_and_health():
+def test_groups_resolve_to_medical_conditions_species_and_health():
     rows = _by_name("ya2RC6UYbibC")
     versus_controls = rows["schizophrenia > control"]
     versus_bipolar = rows["schizophrenia > BDp"]
 
-    assert versus_controls["diagnosis_ids"] == ["MONDO:0005090"]
+    assert versus_controls["medical_condition_ids"] == ["MONDO:0005090"]
     assert versus_controls["has_patients"] is True and versus_controls["has_healthy"] is True
-    # The controls' "Healthy controls" is read as an absence, so it is not diagnosis text.
-    assert versus_controls["diagnosis_text"] == "schizophrenia"
-    assert versus_bipolar["diagnosis_ids"] == ["MONDO:0005090", "MONDO:0004985"]
-    assert versus_bipolar["diagnosis_labels"] == ["schizophrenia", "bipolar disorder"]
+    # The healthy controls' condition is silent.
+    assert versus_controls["medical_condition_text"] == "schizophrenia"
+    assert versus_bipolar["medical_condition_ids"] == ["MONDO:0005090", "MONDO:0004985"]
+    assert versus_bipolar["medical_condition_text"] == "schizophrenia | bipolar disorder | " + (
+        "bipolar disorder with psychotic features"
+    )
     assert versus_bipolar["has_healthy"] is False
     assert versus_bipolar["species"] == ["human"]
     assert versus_bipolar["n"] == 22
+
+
+def test_a_healthy_group_or_an_absence_is_silent_not_unmapped():
+    document = af.record("ya2RC6UYbibC")
+    controls = next(g for g in document["groups"] if g["is_healthy"]["value"] is True)
+    controls["medical_condition"]["normalized"] = []
+    healthy_only = af.record("ya2RC6UYbibC")
+    for analysis in healthy_only["analyses"]:
+        analysis["groups"] = [
+            link
+            for link in analysis["groups"]
+            if link["group"] == controls["local_id"]
+        ]
+    rows = {
+        row["display"]["name"]: row for row in record_features(document).values()
+    }
+    alone = next(iter(record_features(healthy_only).values()))
+
+    # Without its absence entry, the controls' "Healthy controls" is still not wording.
+    assert rows["schizophrenia > control"]["medical_condition_text"] == "schizophrenia"
+    assert alone["medical_condition_unmapped"] is None
+    assert alone["medical_condition_text"] is None
 
 
 def test_an_unmapped_condition_is_text_without_ids():
     rows = _by_name("6SKTGteXbbBs")
     row = rows["Immediate–delayed"]
 
-    assert row["diagnosis_ids"] is None
-    assert row["diagnosis_text"] == "nicotine dependence"
-    assert row["display"]["diagnosis"] == ["Nicotine dependence"]
+    assert row["medical_condition_ids"] is None
+    assert row["medical_condition_text"] == "nicotine dependence"
+    assert row["display"]["medical_condition"] == ["Nicotine dependence"]
 
 
 def test_measure_task_and_contrast_resolve_through_their_ids():
     row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
 
     assert (row["measure_type"], row["measure_family"]) == ("bold_response", "functional_bold")
-    assert row["task_ids"] == ["hedtsk_n_back", "working_memory_span"]
+    assert row["task_ids"] == ["hedtsk_n_back"]
+    assert row["task_family_ids"] == ["working_memory_span"]
     assert "n-back task" in row["task_text"] and "working memory span" in row["task_text"]
     # Cells name their level; the level's conditions add their own names.
     assert row["contrast_positive"] == "schizophrenia | 2-back"
     assert row["contrast_negative"] == "control | 0-back"
-    assert row["contrast_set_ids"] == ["working_memory_span|load:2|vs:load:0", "working_memory#1"]
-    assert row["contrast_set_text"] == "2-back > 0-back"
-    assert row["display"]["contrast_set_orientation"] == "reversed"
+    assert row["contrast_key_ids"] == ["working_memory_span|load:2|vs:load:0"]
+    # The analysis states the set's contrast the other way round.
+    assert row["contrast_set_ids"] == ["working_memory#1:reversed"]
+    assert row["display"]["contrast_set"] == ["working_memory#1:reversed"]
+
+
+def test_ancestors_add_a_task_or_contrast_s_family():
+    row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
+
+    assert row["task_ancestor_ids"] == ["hedtsk_n_back", "working_memory_span"]
+    assert row["contrast_key_ancestor_ids"] == [
+        "working_memory_span|load:2|vs:load:0",
+        "working_memory_span",
+    ]
+    assert row["contrast_set_ancestor_ids"] == ["working_memory#1:reversed", "working_memory"]
+
+
+def test_a_key_whose_sign_is_negative_is_the_reversed_term():
+    document = af.record("ya2RC6UYbibC")
+    for analysis in document["analyses"]:
+        for entry in analysis["name"]["normalized"]:
+            if entry["vocabulary"] == "astra contrast key":
+                entry["method"] = "reversed; sign -1"
+    row = next(iter(record_features(document).values()))
+
+    assert row["contrast_key_ids"] == ["working_memory_span|load:2|vs:load:0:reversed"]
+
+
+def test_roles_qualify_the_medical_condition_ids():
+    document = af.with_roles(
+        af.record("ya2RC6UYbibC"), {"MONDO:0005090": "primary", "MONDO:0004985": "comorbid"}
+    )
+    rows = {row["display"]["name"]: row for row in record_features(document).values()}
+
+    assert rows["schizophrenia > BDp"]["medical_condition_role_ids"] == [
+        "primary|MONDO:0005090",
+        "comorbid|MONDO:0004985",
+    ]
+    assert rows["schizophrenia > BDp"]["medical_condition_ids"] == [
+        "MONDO:0005090",
+        "MONDO:0004985",
+    ]
+
+
+def test_a_set_takes_the_orientation_of_its_own_fit():
+    document = af.record("ya2RC6UYbibC")
+    name = document["analyses"][0]["name"]
+    name["normalized"] += [
+        {
+            "vocabulary": "ns-pond contrast set fit-111111111111",
+            "status": "mapped",
+            "value": "working_memory#7",
+            "label": "2-back > 0-back",
+            "mapping_tool": "fixture",
+        },
+        {
+            "vocabulary": "ns-pond contrast set orientation fit-111111111111",
+            "status": "mapped",
+            "value": "same",
+            "mapping_tool": "fixture",
+        },
+    ]
+    row = record_features(document)[af.keys_of(document)[0]]
+
+    assert row["contrast_set_ids"] == ["working_memory#1:reversed", "working_memory#7"]
+
+
+def test_a_role_given_to_one_head_stays_with_that_head():
+    document = af.record("ya2RC6UYbibC")
+    group = next(
+        g for g in document["groups"] if g["medical_condition"]["value"] == ["schizophrenia"]
+    )
+    group["medical_condition"]["normalized"] = [
+        {"vocabulary": "MONDO", "status": "mapped", "value": "MONDO:1", "item": 0,
+         "head": "schizophrenia", "mapping_tool": "fixture"},
+        {"vocabulary": "MONDO", "status": "mapped", "value": "MONDO:2", "item": 0,
+         "head": "depression", "mapping_tool": "fixture"},
+        {"vocabulary": "astra medical role", "status": "mapped", "value": "primary",
+         "item": 0, "head": "schizophrenia", "mapping_tool": "fixture"},
+        {"vocabulary": "astra medical role", "status": "mapped", "value": "comorbid",
+         "item": 0, "mapping_tool": "fixture"},
+    ]
+    rows = {row["display"]["name"]: row for row in record_features(document).values()}
+
+    assert rows["schizophrenia > control"]["medical_condition_role_ids"] == [
+        "primary|MONDO:1",
+        "comorbid|MONDO:2",
+    ]
+
+
+def test_an_item_is_silent_only_when_every_reading_of_it_is_an_absence():
+    document = af.record("6SKTGteXbbBs")
+    smokers = next(g for g in document["groups"] if g["is_healthy"]["value"] is False)
+    smokers["medical_condition"]["normalized"] = [
+        {"vocabulary": "MONDO", "status": "unmapped", "item": 0, "head": "nicotine",
+         "mapping_tool": "fixture"},
+        {"vocabulary": "MONDO", "status": "absent", "item": 0, "head": "no history",
+         "mapping_tool": "fixture"},
+    ]
+    task = document["tasks"][0]
+    task["name"]["normalized"] = [
+        {"vocabulary": "astra canonical task", "status": "absent", "mapping_tool": "fixture"}
+    ]
+    row = record_features(document)[af.keys_of(document)[0]]
+
+    assert row["medical_condition_unmapped"] is True
+    assert row["medical_condition_text"] == "nicotine dependence"
+    # A task name read only as an absence is silent, not unmapped.
+    assert row["task_unmapped"] is None
+
+
+def test_a_contrast_key_s_family_is_what_comes_before_its_first_bar():
+    document = af.record("ya2RC6UYbibC")
+    for analysis in document["analyses"]:
+        for entry in analysis["name"]["normalized"]:
+            if entry["vocabulary"] == "astra contrast key":
+                entry["value"] = "working_memory_span|load:#2|vs:load:0"
+    row = record_features(document)[af.keys_of(document)[0]]
+
+    assert row["contrast_key_ancestor_ids"][-1] == "working_memory_span"
+
+
+def test_a_record_that_does_not_name_a_term_s_parent_keeps_the_known_one(session):
+    af.upload("ya2RC6UYbibC")
+    document = af.record("6SKTGteXbbBs")
+    document["tasks"][0]["name"]["normalized"] = [
+        {"vocabulary": "astra canonical task", "status": "mapped", "value": "hedtsk_n_back",
+         "label": "N-Back Task", "mapping_tool": "fixture"}
+    ]
+    af.upload("6SKTGteXbbBs", document)
+
+    term = AnalysisTerm.query.filter_by(field="task", term="hedtsk_n_back").one()
+    assert term.parent == "working_memory_span"
+
+
+def test_rows_list_their_terms_with_labels_and_parents():
+    row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
+
+    assert sorted(row["terms"]) == [
+        ("contrast_key", "working_memory_span|load:2|vs:load:0", None, "working_memory_span"),
+        ("contrast_set", "working_memory#1:reversed", "0-back > 2-back", "working_memory"),
+        ("medical_condition", "MONDO:0005090", "schizophrenia", None),
+        ("task", "hedtsk_n_back", "N-Back Task", "working_memory_span"),
+        ("task_family", "working_memory_span", "working_memory_span", None),
+    ]
+    assert row["name_text"] == "schizophrenia > control"
+
+
+def test_unmapped_is_a_stated_feature_nothing_in_which_mapped():
+    mapped = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
+    unmapped = _by_name("6SKTGteXbbBs")["Immediate–delayed"]
+    no_set = next(iter(record_features(af.unmap_names(af.record("6SKTGteXbbBs"))).values()))
+
+    assert mapped["medical_condition_unmapped"] is False
+    assert unmapped["medical_condition_unmapped"] is True
+    assert unmapped["task_unmapped"] is False
+    assert unmapped["contrast_key_unmapped"] is False
+    # No set normalizer placed or failed to place it: silent.
+    assert unmapped["contrast_set_unmapped"] is None
+    assert no_set["contrast_key_unmapped"] is True and no_set["contrast_key_ids"] is None
+
+
+def test_rows_name_the_normalizers_their_ids_came_from():
+    row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
+
+    assert row["mapping_tools"] == [
+        "fixture: hand-mapped",
+        "fixture: ns-pond build rows (astra_records.json)",
+    ]
 
 
 def test_design_and_scope_come_from_the_record():
@@ -90,6 +295,7 @@ def test_silence_is_null():
 
     assert row["species"] is None
     assert row["task_text"] is None and row["task_ids"] is None
+    assert row["task_unmapped"] is None
 
 
 def test_an_upload_writes_one_row_per_current_analysis(session):
@@ -202,8 +408,15 @@ def test_the_inverse_half_of_a_sign_split_takes_its_original_reversed(session):
         original.contrast_negative,
         original.contrast_positive,
     )
-    assert original.display_row.display["contrast_set_orientation"] == "reversed"
-    assert inverse.display_row.display["contrast_set_orientation"] == "same"
+    assert original.contrast_set_ids == ["working_memory#1:reversed"]
+    assert inverse.contrast_set_ids == ["working_memory#1"]
+    assert inverse.contrast_key_ids == ["working_memory_span|load:2|vs:load:0:reversed"]
+    assert inverse.contrast_key_ancestor_ids[-1] == "working_memory_span"
+    labels = {(t.term, t.label) for t in AnalysisTerm.query.filter_by(field="contrast_set")}
+    assert labels == {
+        ("working_memory#1", "2-back > 0-back"),
+        ("working_memory#1:reversed", "0-back > 2-back"),
+    }
 
 
 def test_an_inverse_half_the_record_describes_keeps_its_own_entry(session):
@@ -248,8 +461,8 @@ def test_the_backfill_rewrites_every_paper_from_its_stored_record(session):
 def test_the_migrated_table_matches_the_model(db):
     def in_scope(obj, name, type_, reflected, compare_to):
         if type_ == "table":
-            return name == "analysis_features"
-        return obj.table.name == "analysis_features"
+            return name in FEATURE_TABLES
+        return obj.table.name in FEATURE_TABLES
 
     with db.engine.connect() as conn:
         context = MigrationContext.configure(
@@ -261,3 +474,75 @@ def test_the_migrated_table_matches_the_model(db):
             },
         )
         assert compare_metadata(context, db.metadata) == []
+
+
+def test_the_normalized_search_migration_renames_and_adds_columns_and_its_downgrade_undoes_it(
+    session,
+):
+    af.upload("ya2RC6UYbibC")
+    session.commit()
+    session.remove()
+
+    def state():
+        inspector = sa.inspect(session.bind)
+        with session.bind.connect() as conn:
+            displays = conn.execute(
+                sa.text("SELECT display FROM analysis_feature_displays")
+            ).scalars()
+            keys = {key for display in displays for key in display} & {
+                "diagnosis",
+                "medical_condition",
+            }
+        return (
+            {c["name"] for c in inspector.get_columns("analysis_features") if "_" in c["name"]},
+            {i["name"] for i in inspector.get_indexes("analysis_features")},
+            keys,
+        )
+
+    renamed = {f"medical_condition_{suffix}" for suffix in ("ids", "text")}
+    added = {
+        *(
+            f"{field}_{suffix}"
+            for field in NORMALIZED_FEATURES
+            for suffix in ("ancestor_ids", "unmapped")
+        ),
+        "contrast_key_ids",
+        "task_family_ids",
+        "medical_condition_role_ids",
+        "name_text",
+        "mapping_tools",
+    }
+    try:
+        service_migrations.downgrade(PUBLICATION_REVISION)
+        columns, indexes, keys = state()
+        assert {f"diagnosis_{suffix}" for suffix in ("ids", "labels", "text")} <= columns
+        assert not renamed & columns and not added & columns
+        assert "contrast_set_text" in columns
+        assert "analysis_terms" not in sa.inspect(session.bind).get_table_names()
+        assert {
+            "ix_analysis_features__diagnosis_ids",
+            "ix_analysis_features__diagnosis_text_trgm",
+        } <= indexes
+        assert keys == {"diagnosis"}
+
+        service_migrations.upgrade("heads")
+        columns, indexes, keys = state()
+        assert renamed <= columns and added <= columns
+        carried = [
+            (row.medical_condition_ancestor_ids == row.medical_condition_ids, row.task_unmapped)
+            for row in AnalysisFeature.query
+        ]
+        assert carried == [(True, False), (True, False)]
+        session.remove()
+        assert "contrast_set_text" not in columns
+        assert "analysis_terms" in sa.inspect(session.bind).get_table_names()
+        assert not any(column.startswith("diagnosis") for column in columns)
+        assert {
+            "ix_analysis_features__medical_condition_ids",
+            "ix_analysis_features__medical_condition_text_trgm",
+        } <= indexes
+        assert keys == {"medical_condition"}
+    finally:
+        service_migrations.upgrade("heads")
+    ids = {tuple(row.medical_condition_ids or ()) for row in AnalysisFeature.query}
+    assert ids == {("MONDO:0005090",), ("MONDO:0005090", "MONDO:0004985")}

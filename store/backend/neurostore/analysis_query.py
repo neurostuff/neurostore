@@ -7,9 +7,18 @@ does not match) or `include`. `or` takes a list of sub-queries, any of which may
 
 Text criteria match whole words, case-insensitively; `*` matches any run of characters and
 `?` one character, within one item, and a pattern needs three consecutive letters or
-digits so that the trigram index can serve it. A criterion with ids (diagnosis, task,
-contrast set) matches a value that is one of the analysis's ids exactly, or its text as a
-pattern.
+digits so that the trigram index can serve it.
+
+A normalized criterion (medical_condition, task, contrast.key, contrast.set) takes `ids`,
+the terms a normalizer mapped the record's wording to, and `text`, a pattern over that
+wording and the terms' labels; given both, either may match. An id matches its
+descendants (a task family its tasks, a family its contrast keys and sets) unless
+`descendants` is false. `when_unmapped` decides the analyses whose record states the
+feature but maps none of it: `exclude` (the default), `include`, or `text`, matching them
+by their wording alone. Contrast keys and sets have ids only, and are directional: a term
+with `:reversed` is the opposite direction. medical_condition's `role` (primary, comorbid,
+none) narrows its ids to the items with that role. A bare value is `text`, or `ids` where
+the field has no text.
 
 `run_query` returns the canonical query, the counts, the first `limit` analyses and every
 selected analysis's study id; with `funnel`, also what each criterion dropped and how many
@@ -24,11 +33,21 @@ import sqlalchemy as sa
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
-from neurostore.models import Analysis, AnalysisFeature, AnalysisFeatureDisplay
+from neurostore.models import (
+    Analysis,
+    AnalysisFeature,
+    AnalysisFeatureDisplay,
+    AnalysisTerm,
+    Concept,
+)
 
 AF = AnalysisFeature
 AFD = AnalysisFeatureDisplay
+AT = AnalysisTerm
 SILENT_MODES = ["exclude", "include"]
+#: when_unmapped, for a field with text and for an ids-only one.
+UNMAPPED_MODES = ["exclude", "include", "text"]
+IDS_ONLY_UNMAPPED_MODES = ["exclude", "include"]
 DEFAULT_LIMIT = 100
 MAX_LIMIT = 1000
 #: The fewest consecutive letters or digits a text pattern needs.
@@ -39,21 +58,42 @@ MIN_LITERAL = 3
 class Field:
     """One criterion: its kind, the column it reads, and its ids column."""
 
-    kind: str  # text, text_or_id, value, array_value, groups, boolean, range
+    kind: str  # text, normalized, value, array_value, groups, boolean, range
     column: object
+    #: A normalized field's mapped ids, those and their ancestors, and its unmapped flag;
+    #: the same ids as "role|id", where the field has roles.
     ids: object = None
+    ancestors: object = None
+    unmapped: object = None
+    role_ids: object = None
+    role_ancestors: object = None
     #: Restricts a value criterion to these values.
     values: tuple = ()
 
     @property
     def silent(self):
         """The analyses whose record says nothing this criterion reads."""
-        if self.ids is None:
-            return self.column.is_(None)
-        return sa.and_(self.column.is_(None), self.ids.is_(None))
+        if self.unmapped is not None:
+            return self.unmapped.is_(None)
+        return self.column.is_(None)
+
+
+def _normalized(name, text=True, roles=False):
+    """The normalized field whose columns are prefixed ``name``."""
+    return Field(
+        "normalized",
+        getattr(AF, f"{name}_text") if text else None,
+        ids=getattr(AF, f"{name}_ids"),
+        ancestors=getattr(AF, f"{name}_ancestor_ids"),
+        unmapped=getattr(AF, f"{name}_unmapped"),
+        role_ids=getattr(AF, f"{name}_role_ids") if roles else None,
+        role_ancestors=getattr(AF, f"{name}_role_ancestor_ids") if roles else None,
+    )
 
 
 SPATIAL_SCOPES = ("whole_brain", "roi", "searchlight")
+#: The roles ns-pond gives a medical condition's items.
+MEDICAL_ROLES = ("primary", "comorbid", "none")
 EFFECT_KINDS = (
     "simple_effect",
     "contrast",
@@ -65,11 +105,12 @@ EFFECT_KINDS = (
 
 #: Every criterion, by its dotted name: `contrast.*` and `design.*` nest in the query.
 FIELDS = {
-    "diagnosis": Field("text_or_id", AF.diagnosis_text, AF.diagnosis_ids),
+    "name": Field("text", AF.name_text),
+    "medical_condition": _normalized("medical_condition", roles=True),
     "has_patients": Field("boolean", AF.has_patients),
     "has_healthy": Field("boolean", AF.has_healthy),
     "species": Field("array_value", AF.species),
-    "task": Field("text_or_id", AF.task_text, AF.task_ids),
+    "task": _normalized("task"),
     "spatial_scope": Field("value", AF.spatial_scope, values=SPATIAL_SCOPES),
     "coordinate_space": Field("text", AF.coordinate_space),
     "measure_type": Field("value", AF.measure_type),
@@ -81,7 +122,8 @@ FIELDS = {
     "role": Field("value", Analysis.role),
     "contrast.positive": Field("text", AF.contrast_positive),
     "contrast.negative": Field("text", AF.contrast_negative),
-    "contrast.set": Field("text_or_id", AF.contrast_set_text, AF.contrast_set_ids),
+    "contrast.key": _normalized("contrast_key", text=False),
+    "contrast.set": _normalized("contrast_set", text=False),
     "contrast.kind": Field("value", AF.effect_kind, values=EFFECT_KINDS),
     "contrast.groups": Field("groups", AF.group_count, values=("between", "within")),
     "design.allocation": Field("value", AF.allocation),
@@ -103,13 +145,17 @@ class QueryError(Exception):
 @dataclass
 class Criterion:
     """A parsed criterion: its SQL condition, the analyses it is silent about (None for
-    `or`), and the canonical form echoed back."""
+    `or`), and the canonical form echoed back. A normalized criterion also has the
+    analyses it found unmapped and how a result matched it; `or` has its sub-queries."""
 
     name: str
     condition: object
     silent: object
     canonical: object
     joins: bool = False
+    unmapped: object = None
+    matched_by: object = None
+    subqueries: list = None
 
 
 # ---------------------------------------------------------------------------
@@ -127,11 +173,6 @@ def pattern_regex(pattern):
     start = r"\m" if re.match(r"\w", text) else ""
     end = r"\M" if re.search(r"\w$", text) else ""
     return f"{start}{body}{end}"
-
-
-def _is_id(value):
-    """Whether ``value`` could only be an id: it has no spaces and an id's punctuation."""
-    return " " not in value and bool(re.search(r"[:_#|]", value))
 
 
 # ---------------------------------------------------------------------------
@@ -169,13 +210,8 @@ def _values_form(path, raw, errors):
     for part in ("any", "all", "none"):
         if part not in raw:
             continue
-        values = raw[part]
-        if not (
-            isinstance(values, list)
-            and values
-            and all(isinstance(v, str) and v.strip() for v in values)
-        ):
-            errors.append(make_field_error(f"{path}.{part}", values))
+        values = _strings(f"{path}.{part}", raw[part], errors)
+        if values is None:
             return None
         form[part] = values
     if len(form) == 1:
@@ -212,18 +248,10 @@ def _range_form(path, raw, errors):
 def _text_matcher(field, path, errors):
     def match(value):
         regex = pattern_regex(value)
-        by_id = (
-            sa.and_(field.ids.is_not(None), field.ids.contains([value]))
-            if field.ids is not None
-            else None
-        )
         if regex is None:
-            if by_id is not None and _is_id(value):
-                return by_id
             errors.append(make_field_error(path, value, code="PATTERN_TOO_BROAD"))
             return sa.false()
-        by_text = sa.and_(field.column.is_not(None), field.column.op("~")(regex))
-        return sa.or_(by_id, by_text) if by_id is not None else by_text
+        return sa.and_(field.column.is_not(None), field.column.op("~")(regex))
 
     return match
 
@@ -236,7 +264,6 @@ def _groups_matcher(field, path, errors):
 #: on a silent record, so `none` is the complement of `any` among the records that speak.
 MATCHERS = {
     "text": _text_matcher,
-    "text_or_id": _text_matcher,
     "value": lambda field, path, errors: lambda value: field.column == value,
     "array_value": lambda field, path, errors: lambda value: field.column.contains(
         [value.lower()]
@@ -266,10 +293,189 @@ def _match(field, form, path, errors):
     return sa.and_(*parts)
 
 
+def _silenced(field, matched, mode):
+    """``matched`` among the analyses that speak, and with ``include`` the silent ones."""
+    matched = sa.and_(sa.not_(field.silent), matched)
+    return sa.or_(matched, field.silent) if mode == "include" else matched
+
+
+def _strings(path, raw, errors):
+    """``raw`` (a string or a list of them) as a list; None (with errors) when invalid."""
+    values = [raw] if isinstance(raw, str) else raw
+    valid = isinstance(values, list) and values
+    if valid and all(isinstance(v, str) and v.strip() for v in values):
+        return values
+    errors.append(make_field_error(path, raw))
+    return None
+
+
+def _terms_form(path, raw, keys, errors):
+    """``raw``'s ``keys`` (ids, text) as lists, or None (with errors)."""
+    form = {}
+    for key in keys:
+        if key in raw:
+            values = _strings(f"{path}{key}", raw[key], errors)
+            if values is None:
+                return None
+            form[key] = values
+    return form
+
+
+def _terms_part(path, raw, part, keys, errors):
+    """``raw[part]`` (all, none) as ``{ids, text}`` lists, or None (with errors)."""
+    terms = raw[part]
+    if not isinstance(terms, dict):
+        errors.append(make_field_error(f"{path}.{part}", terms, list(keys)))
+        return None
+    if _unknown(f"{path}.{part}.", terms, keys, errors):
+        return None
+    terms = _terms_form(f"{path}.{part}.", terms, keys, errors)
+    if terms == {}:
+        errors.append(make_field_error(f"{path}.{part}", raw[part], code="MISSING_VALUE"))
+        return None
+    return terms
+
+
+def _role_form(path, raw, form, errors):
+    """``raw``'s roles, which narrow a criterion with ids and no text; None (with errors)
+    when invalid."""
+    roles = _strings(f"{path}.role", raw["role"], errors)
+    if roles is None:
+        return None
+    if set(roles) - set(MEDICAL_ROLES):
+        errors.append(make_field_error(f"{path}.role", roles, list(MEDICAL_ROLES)))
+        return None
+    parts = [form, form.get("all", {}), form.get("none", {})]
+    if any("text" in part for part in parts) or not any("ids" in part for part in parts):
+        errors.append(make_field_error(f"{path}.role", roles, code="ROLE_NEEDS_IDS_ONLY"))
+        return None
+    return roles
+
+
+def _normalized_form(path, raw, field, errors):
+    """``raw`` as ``{ids, text, all, none, descendants, when_unmapped, when_silent}`` and
+    ``role`` where the field has roles; None (with errors) when invalid."""
+    keys = ("ids", "text") if field.column is not None else ("ids",)
+    if isinstance(raw, (str, list)):
+        raw = {keys[-1]: raw}
+    if not isinstance(raw, dict):
+        errors.append(make_field_error(path, raw))
+        return None
+    allowed = (*keys, "all", "none", "descendants", "when_unmapped", "when_silent")
+    if field.role_ids is not None:
+        allowed = (*allowed, "role")
+    if _unknown(f"{path}.", raw, allowed, errors):
+        return None
+    form = _terms_form(f"{path}.", raw, keys, errors)
+    if form is None:
+        return None
+    for part in ("all", "none"):
+        if part in raw:
+            form[part] = _terms_part(path, raw, part, keys, errors)
+            if form[part] is None:
+                return None
+    if not form:
+        errors.append(make_field_error(path, raw, code="MISSING_VALUE"))
+        return None
+    descendants = raw.get("descendants", True)
+    if not isinstance(descendants, bool):
+        errors.append(make_field_error(f"{path}.descendants", descendants))
+        return None
+    modes = UNMAPPED_MODES if field.column is not None else IDS_ONLY_UNMAPPED_MODES
+    unmapped = raw.get("when_unmapped", "exclude")
+    if unmapped not in modes:
+        errors.append(make_field_error(f"{path}.when_unmapped", unmapped, modes))
+        return None
+    silent = _silent_mode(path, raw, errors)
+    if silent is None:
+        return None
+    form = {**form, "descendants": descendants, "when_unmapped": unmapped, "when_silent": silent}
+    if "role" in raw:
+        form["role"] = _role_form(path, raw, form, errors)
+        if form["role"] is None:
+            return None
+    return form
+
+
+def _normalized_match(field, form, path, errors):
+    """``(matched, by_id, by_text)``: the condition ``form`` puts on ``field`` with its
+    unmapped analyses decided, and whether an analysis matched a positive id or text part."""
+    ids_column = field.ancestors if form["descendants"] else field.ids
+    roles = form.get("role")
+    if roles:
+        ids_column = field.role_ancestors if form["descendants"] else field.role_ids
+
+    def terms(part, every, where):
+        found = {}
+        if "ids" in part:
+            # An id as the column holds it: under any of the roles, where a role is given.
+            variants = [
+                [AF.role_id(r, i) for r in roles] if roles else [i] for i in part["ids"]
+            ]
+            held = (
+                sa.and_(*(ids_column.overlap(v) for v in variants))
+                if every
+                else ids_column.overlap([v for vs in variants for v in vs])
+            )
+            found["ids"] = sa.and_(ids_column.is_not(None), held)
+        if "text" in part:
+            match = _text_matcher(field, f"{path}.{where}text", errors)
+            patterns = [match(pattern) for pattern in part["text"]]
+            found["text"] = sa.and_(*patterns) if every else sa.or_(*patterns)
+        return found
+
+    any_ = terms(form, False, "")
+    all_ = terms(form.get("all", {}), True, "all.")
+    none = terms(form.get("none", {}), False, "none.")
+    parts = [sa.or_(*any_.values())] if any_ else []
+    parts.extend(all_.values())
+    if none:
+        parts.append(sa.not_(sa.or_(*none.values())))
+    matched = sa.and_(*parts)
+    mode = form["when_unmapped"]
+    worded = any("text" in found for found in (any_, all_, none))
+    # Under `text` an unmapped analysis is judged by its wording alone, so a criterion with
+    # no text cannot match it.
+    if mode == "exclude" or (mode == "text" and not worded):
+        matched = sa.and_(matched, field.unmapped.is_(False))
+    elif mode == "include":
+        matched = sa.or_(sa.and_(matched, field.unmapped.is_(False)), field.unmapped.is_(True))
+
+    def either(key):
+        found = [part[key] for part in (any_, all_) if key in part]
+        return sa.or_(*found) if found else sa.false()
+
+    return matched, either("ids"), either("text")
+
+
+def _normalized_criterion(name, path, field, raw, errors):
+    form = _normalized_form(path, raw, field, errors)
+    if form is None:
+        return None
+    matched, by_id, by_text = _normalized_match(field, form, path, errors)
+    condition = _silenced(field, matched, form["when_silent"])
+    unmapped = field.unmapped.is_(True)
+    admitted = unmapped if form["when_unmapped"] == "include" else sa.false()
+    # Only where the criterion holds: inside `or`, a result need not satisfy it. Under
+    # `include` an unmapped analysis is in because it is unmapped, whatever its wording.
+    matched_by = sa.case(
+        (sa.not_(condition), None),
+        (field.silent, "silent"),
+        (by_id, "id"),
+        (admitted, "unmapped"),
+        (by_text, "text"),
+        (unmapped, "unmapped"),
+        else_=None,
+    )
+    return Criterion(name, condition, field.silent, form, unmapped=unmapped, matched_by=matched_by)
+
+
 FORMS = {"range": _range_form, "boolean": _boolean_form}
 
 
 def _criterion(name, path, field, raw, errors):
+    if field.kind == "normalized":
+        return _normalized_criterion(name, path, field, raw, errors)
     form = FORMS.get(field.kind, _values_form)(path, raw, errors)
     if form is None:
         return None
@@ -279,8 +485,7 @@ def _criterion(name, path, field, raw, errors):
         if bad:
             errors.append(make_field_error(path, bad, list(field.values)))
             return None
-    matched = sa.and_(sa.not_(field.silent), _match(field, form, path, errors))
-    condition = sa.or_(matched, field.silent) if form["when_silent"] == "include" else matched
+    condition = _silenced(field, _match(field, form, path, errors), form["when_silent"])
     return Criterion(name, condition, field.silent, form, joins=name in JOINED)
 
 
@@ -326,6 +531,7 @@ def _parse_or(subqueries, path, errors):
         None,
         [_canonical(sub) for sub in parsed],
         joins=any(c.joins for sub in parsed for c in sub),
+        subqueries=parsed,
     )
 
 
@@ -384,11 +590,22 @@ def _parse_or_abort(query):
         abort_validation("The analysis query is not valid.", error.errors)
 
 
-def selected_analysis_ids(query, study_ids):
-    """The ids of the analyses of studies ``study_ids`` that ``query`` selects."""
+def select_analyses(query, study_ids, analysis_ids):
+    """What ``query`` selects among ``analysis_ids`` (of studies ``study_ids``), frozen:
+    ``{query, analysis_ids, mapping_tools}``, the query canonical and the normalizers
+    and fits the selected analyses' ids came from."""
     criteria = _parse_or_abort(query)
-    statement = _from(criteria, study_ids).add_columns(AF.analysis_id).where(_where(criteria))
-    return set(db.session.scalars(statement))
+    statement = (
+        _from(criteria, study_ids)
+        .add_columns(AF.analysis_id, AF.mapping_tools)
+        .where(_where(criteria), AF.analysis_id.in_(list(analysis_ids)))
+    )
+    selected = db.session.execute(statement).all()
+    return {
+        "query": _canonical(criteria),
+        "analysis_ids": sorted(analysis_id for analysis_id, _ in selected),
+        "mapping_tools": sorted({tool for _, tools in selected for tool in tools or []}),
+    }
 
 
 def _count(criteria, *conditions):
@@ -435,6 +652,11 @@ def _funnel(criteria, selected):
                     if c.silent is not None
                     else None
                 ),
+                "unmapped": (
+                    _count(criteria, _where(criteria[:i]), c.unmapped)
+                    if c.unmapped is not None
+                    else None
+                ),
             }
         )
         remaining = kept
@@ -452,8 +674,9 @@ RESULT_COLUMNS = (
     "n",
     "has_patients",
     "has_healthy",
-    "diagnosis_ids",
+    "medical_condition_ids",
     "task_ids",
+    "contrast_key_ids",
     "contrast_set_ids",
     "allocation",
     "assignment_structure",
@@ -461,14 +684,27 @@ RESULT_COLUMNS = (
 )
 
 
-def _result(row):
-    display = {k: v for k, v in (row.display or {}).items() if k != "contrast_sides"}
+def _matched_by(criteria, prefix=""):
+    """``{criterion path: how a result matched it}`` for the normalized criteria."""
+    out = {}
+    for c in criteria:
+        if c.matched_by is not None:
+            out[f"{prefix}{c.name}"] = c.matched_by
+        for i, sub in enumerate(c.subqueries or []):
+            out.update(_matched_by(sub, f"{prefix}or[{i}]."))
+    return out
+
+
+def _result(row, provenance):
+    display = {k: v for k, v in (row["display"] or {}).items() if k != "contrast_sides"}
+    matched_by = {name: row[f"matched_by_{i}"] for i, name in enumerate(provenance)}
     return {
-        "analysis": row.analysis_id,
-        "study": row.study_id,
-        "base_study": row.base_study_id,
+        "analysis": row["analysis_id"],
+        "study": row["study_id"],
+        "base_study": row["base_study_id"],
         "name": display.get("name"),
-        "features": {**display, **{name: getattr(row, name) for name in RESULT_COLUMNS}},
+        "matched_by": {name: how for name, how in matched_by.items() if how is not None},
+        "features": {**display, **{name: row[name] for name in RESULT_COLUMNS}},
     }
 
 
@@ -491,6 +727,7 @@ def run_query(body):
         "analyses": sum(n for _, _, n in per_study),
         "base_studies": len({base_study_id for _, base_study_id, _ in per_study}),
     }
+    provenance = _matched_by(criteria)
     rows = db.session.execute(
         selected.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
         .add_columns(
@@ -499,14 +736,15 @@ def run_query(body):
             AF.base_study_id,
             AFD.display,
             *(getattr(AF, name) for name in RESULT_COLUMNS),
+            *(how.label(f"matched_by_{i}") for i, how in enumerate(provenance.values())),
         )
         .order_by(AF.base_study_id, AF.analysis_id)
         .limit(limit)
-    ).all()
+    ).mappings().all()
     result = {
         "query": _canonical(criteria),
         "counts": {**counts, "studies": len(per_study)},
-        "results": [_result(row) for row in rows],
+        "results": [_result(row, provenance) for row in rows],
         "study_ids": sorted(study_id for study_id, _, _ in per_study),
     }
     if body.get("funnel"):
@@ -516,8 +754,9 @@ def run_query(body):
 
 #: Term listing field -> the criterion whose values it lists.
 TERM_FIELDS = {
-    "diagnosis": "diagnosis",
+    "medical_condition": "medical_condition",
     "task": "task",
+    "contrast_key": "contrast.key",
     "contrast_set": "contrast.set",
     "arm_kind": "design.arm_kind",
     "species": "species",
@@ -530,39 +769,99 @@ TERM_FIELDS = {
     "assignment_structure": "design.assignment_structure",
     "blinding": "design.blinding",
 }
-#: Labels for a field's ids, unnested beside them.
-TERM_LABELS = {"diagnosis": AF.diagnosis_labels}
+#: The fields whose terms `analysis_terms` labels and places under a parent, and the field
+#: each one's children are listed under.
+CHILD_FIELDS = {
+    "medical_condition": "medical_condition",
+    "task": "task",
+    "task_family": "task",
+    "contrast_key": "contrast_key",
+    "contrast_set": "contrast_set",
+}
 
 
-def list_terms(field, search=None, limit=50):
-    """The values ``field`` takes, with how many analyses and papers carry each."""
-    if field not in TERM_FIELDS:
+def _term_column(field):
+    """The column whose values the terms field ``field`` lists."""
+    if field == "task_family":
+        return AF.task_family_ids
+    criterion = FIELDS[TERM_FIELDS[field]]
+    return criterion.ids if criterion.ids is not None else criterion.column
+
+
+def _children(field, values):
+    """``{term: [the terms directly under it]}`` for ``values`` of ``field``."""
+    children = {}
+    for parent, term in db.session.execute(
+        sa.select(AT.parent, AT.term)
+        .where(AT.field == CHILD_FIELDS[field], AT.parent.in_(values))
+        .order_by(AT.term)
+    ):
+        children.setdefault(parent, []).append(term)
+    return children
+
+
+def unnested(column, name):
+    """``column``'s array items as a table ``name`` with one column, ``value``."""
+    return sa.func.unnest(column).table_valued("value").render_derived(name=name)
+
+
+def list_terms(field, search=None, limit=50, parent=None):
+    """The values ``field`` takes, with how many analyses and papers carry each, and each
+    one's label, parent, children and synonyms (a loaded release's, for a medical
+    condition); ``search`` matches the value, label or a synonym."""
+    if field not in TERM_FIELDS and field != "task_family":
         abort_validation(
-            "Unknown term field.", [make_field_error("field", field, sorted(TERM_FIELDS))]
+            "Unknown term field.",
+            [make_field_error("field", field, sorted([*TERM_FIELDS, "task_family"]))],
         )
-    source_field = FIELDS[TERM_FIELDS[field]]
-    column = source_field.ids if source_field.ids is not None else source_field.column
-    labels = TERM_LABELS.get(field)
+    column = _term_column(field)
     if isinstance(column.type, sa.ARRAY):
-        arrays = (column, labels) if labels is not None else (column,)
-        names = ("value", "label") if labels is not None else ("value",)
-        unnested = sa.func.unnest(*arrays).table_valued(*names).render_derived(name="t")
-        source = sa.select().select_from(AF).join(unnested, sa.true())
-        value = unnested.c.value
-        label = unnested.c.label if labels is not None else value
+        items = unnested(column, "t")
+        source = sa.select().select_from(AF).join(items, sa.true())
+        value = items.c.value
     else:
         source = sa.select().select_from(AF).where(column.is_not(None))
-        value = label = column
-    statement = source.add_columns(
-        value.label("value"),
-        sa.func.min(label).label("label"),
-        sa.func.count().label("analyses"),
-        sa.func.count(AF.base_study_id.distinct()).label("base_studies"),
-    ).group_by(value)
+        value = column
+    counts = (
+        source.add_columns(
+            value.label("value"),
+            sa.func.count().label("analyses"),
+            sa.func.count(AF.base_study_id.distinct()).label("base_studies"),
+        )
+        .group_by(value)
+        .subquery()
+    )
+    statement = sa.select(counts.c.value, counts.c.analyses, counts.c.base_studies)
+    synonyms = sa.null()
+    # Medical conditions have a loaded release's labels and synonyms.
+    concepts = field == "medical_condition"
+    if field in CHILD_FIELDS:
+        label = sa.func.coalesce(AT.label, counts.c.value)
+        statement = statement.add_columns(AT.parent).outerjoin(
+            AT, sa.and_(AT.field == field, AT.term == counts.c.value)
+        )
+        if concepts:
+            label = sa.func.coalesce(AT.label, Concept.label, counts.c.value)
+            synonyms = Concept.synonyms
+            statement = statement.outerjoin(Concept, Concept.concept_id == counts.c.value)
+        if parent:
+            statement = statement.where(AT.parent == parent)
+    else:
+        label = counts.c.value
+        statement = statement.add_columns(sa.null().label("parent"))
+        if parent:
+            statement = statement.where(sa.false())
+    statement = statement.add_columns(label.label("label"), synonyms.label("synonyms"))
     if search:
         like = f"%{search.lower()}%"
-        statement = statement.where(
-            sa.or_(sa.func.lower(value).like(like), sa.func.lower(label).like(like))
-        )
-    statement = statement.order_by(sa.desc("analyses"), value).limit(limit)
-    return [row._asdict() for row in db.session.execute(statement)]
+        matches = [sa.func.lower(counts.c.value).like(like), sa.func.lower(label).like(like)]
+        if concepts:
+            matches.append(sa.func.lower(sa.func.array_to_string(synonyms, " | ")).like(like))
+        statement = statement.where(sa.or_(*matches))
+    statement = statement.order_by(sa.desc(counts.c.analyses), counts.c.value).limit(limit)
+    rows = [row._asdict() for row in db.session.execute(statement)]
+    children = _children(field, [r["value"] for r in rows]) if field in CHILD_FIELDS else {}
+    return [
+        {**row, "children": children.get(row["value"], []), "synonyms": row["synonyms"] or []}
+        for row in rows
+    ]

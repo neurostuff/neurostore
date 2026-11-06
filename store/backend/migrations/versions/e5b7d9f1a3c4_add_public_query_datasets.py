@@ -1,7 +1,7 @@
 """the public query's datasets: public records only, narrow, refreshed nightly
 
 Revision ID: e5b7d9f1a3c4
-Revises: c3e5a7b9d1f2
+Revises: f2a4c6e8b0d3
 Create Date: 2026-11-06
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "e5b7d9f1a3c4"
-down_revision = "c3e5a7b9d1f2"
+down_revision = "f2a4c6e8b0d3"
 branch_labels = None
 depends_on = None
 

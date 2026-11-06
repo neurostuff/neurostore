@@ -1622,6 +1622,10 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
     )
 
 
+def _gin_index(column):
+    return sa.Index(f"ix_analysis_features__{column}", column, postgresql_using="gin")
+
+
 def _trigram_index(column):
     return sa.Index(
         f"ix_analysis_features__{column}_trgm",
@@ -1629,6 +1633,10 @@ def _trigram_index(column):
         postgresql_using="gin",
         postgresql_ops={column: "gin_trgm_ops"},
     )
+
+
+#: The features read from normalizer entries, by column prefix.
+NORMALIZED_FEATURES = ("medical_condition", "task", "contrast_key", "contrast_set")
 
 
 class AnalysisFeature(db.Model):
@@ -1643,21 +1651,23 @@ class AnalysisFeature(db.Model):
 
     __tablename__ = "analysis_features"
     __table_args__ = (
-        sa.Index("ix_analysis_features__diagnosis_ids", "diagnosis_ids", postgresql_using="gin"),
-        sa.Index("ix_analysis_features__task_ids", "task_ids", postgresql_using="gin"),
-        sa.Index(
-            "ix_analysis_features__contrast_set_ids", "contrast_set_ids", postgresql_using="gin"
+        *(
+            _gin_index(f"{field}_{ids}")
+            for field in NORMALIZED_FEATURES
+            for ids in ("ids", "ancestor_ids")
         ),
-        sa.Index("ix_analysis_features__arm_kinds", "arm_kinds", postgresql_using="gin"),
-        sa.Index("ix_analysis_features__species", "species", postgresql_using="gin"),
+        _gin_index("medical_condition_role_ids"),
+        _gin_index("medical_condition_role_ancestor_ids"),
+        _gin_index("arm_kinds"),
+        _gin_index("species"),
         *(
             _trigram_index(column)
             for column in (
-                "diagnosis_text",
+                "medical_condition_text",
                 "task_text",
                 "contrast_positive",
                 "contrast_negative",
-                "contrast_set_text",
+                "name_text",
             )
         ),
     )
@@ -1694,21 +1704,46 @@ class AnalysisFeature(db.Model):
     #: Whether any group of the analysis is (not) healthy, from `Group.is_healthy`.
     has_patients = db.Column(db.Boolean, index=True)
     has_healthy = db.Column(db.Boolean, index=True)
-    #: Mapped MONDO and ONVOC terms of the groups' `medical_condition`, and their labels.
-    diagnosis_ids = db.Column(ARRAY(db.Text))
-    diagnosis_labels = db.Column(ARRAY(db.Text))
-    #: Those labels and the extracted wording, minus wording a normalizer read as an absence.
-    diagnosis_text = db.Column(db.Text)
-    #: Mapped terms on the tasks' names (canonical task, task family, ...).
+    # Each normalized feature has `_ids`, its mapped terms; `_ancestor_ids`, those and all
+    # their ancestors; and `_unmapped`, true when the record states the feature and nothing
+    # in it mapped, NULL when the record is silent on it (a healthy group's condition, or
+    # an item a normalizer read as an absence, is silent).
+    #: Mapped MONDO and ONVOC terms of the non-healthy groups' `medical_condition`.
+    medical_condition_ids = db.Column(ARRAY(db.Text))
+    medical_condition_ancestor_ids = db.Column(ARRAY(db.Text))
+    #: The same as "role|id", by the role ns-pond gave each term's item.
+    medical_condition_role_ids = db.Column(ARRAY(db.Text))
+    medical_condition_role_ancestor_ids = db.Column(ARRAY(db.Text))
+    #: Those terms' labels and the extracted wording.
+    medical_condition_text = db.Column(db.Text)
+    medical_condition_unmapped = db.Column(db.Boolean, index=True)
+    #: The tasks' canonical paradigms (a task placed only on a family, that family), and
+    #: the families above them.
     task_ids = db.Column(ARRAY(db.Text))
+    task_ancestor_ids = db.Column(ARRAY(db.Text))
+    task_family_ids = db.Column(ARRAY(db.Text))
     task_text = db.Column(db.Text)
+    task_unmapped = db.Column(db.Boolean, index=True)
     #: The names on each side of the contrast: the signed cells' labels or levels, and
     #: the names of the conditions their factor levels stand for.
     contrast_positive = db.Column(db.Text)
     contrast_negative = db.Column(db.Text)
-    #: The contrast sets and keys a normalizer placed the analysis in, and their labels.
+    #: The directional contrast keys and sets a normalizer placed the analysis in, under
+    #: their task family.
+    contrast_key_ids = db.Column(ARRAY(db.Text))
+    contrast_key_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_key_unmapped = db.Column(db.Boolean, index=True)
     contrast_set_ids = db.Column(ARRAY(db.Text))
-    contrast_set_text = db.Column(db.Text)
+    contrast_set_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_set_unmapped = db.Column(db.Boolean, index=True)
+    #: The analysis's name as the record gives it.
+    name_text = db.Column(db.Text)
+    #: The `mapping_tool` (normalizer and its version or fit) of every entry the ids came
+    #: from, which names the rows a new fit leaves stale.
+    mapping_tools = db.Column(ARRAY(db.Text))
+    #: The vocabulary releases its ids resolve against ("contrast_set fit-ed5ac7b08c20",
+    #: "mondo 2026-09-01"): its contrast sets' fit and its ancestors' loaded release.
+    vocabulary_releases = db.Column(ARRAY(db.Text))
 
     allocation = db.Column(db.Text, index=True)
     assignment_structure = db.Column(db.Text, index=True)
@@ -1719,6 +1754,81 @@ class AnalysisFeature(db.Model):
     is_meta_analysis = db.Column(db.Boolean, index=True)
 
     display_row = relationship("AnalysisFeatureDisplay", uselist=False, passive_deletes=True)
+
+    @staticmethod
+    def role_id(role, term):
+        """A medical-condition term as `medical_condition_role_ids` holds it."""
+        return f"{role}|{term}"
+
+    @staticmethod
+    def role_of(role_id):
+        """``(role, term)`` of a `role_id`."""
+        role, _, term = role_id.partition("|")
+        return role, term
+
+
+class ConceptRelease(db.Model):
+    """The release of a manifest vocabulary `concepts` and `concept_ancestors` hold, one per
+    vocabulary. Written by `neurostore.ingest.concepts`."""
+
+    __tablename__ = "concept_releases"
+
+    #: The vocabulary's name in study_schema's manifest (mondo, onvoc).
+    vocabulary = db.Column(db.Text, primary_key=True)
+    release = db.Column(db.Text, nullable=False)
+    #: Where it was read from, and the file's sha256, which matched the manifest's.
+    source = db.Column(db.Text, nullable=False)
+    sha256 = db.Column(db.Text, nullable=False)
+    concepts = db.Column(db.Integer, nullable=False)
+    loaded_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class Concept(db.Model):
+    """A concept of a loaded release, with its label and synonyms."""
+
+    __tablename__ = "concepts"
+
+    concept_id = db.Column(db.Text, primary_key=True)
+    vocabulary = db.Column(
+        db.Text,
+        db.ForeignKey("concept_releases.vocabulary", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    label = db.Column(db.Text)
+    synonyms = db.Column(ARRAY(db.Text))
+
+
+class ConceptAncestor(db.Model):
+    """A concept and one of its ancestors in its vocabulary's loaded release, the concept
+    itself at distance 0, so every concept of the release has a row."""
+
+    __tablename__ = "concept_ancestors"
+
+    concept_id = db.Column(db.Text, primary_key=True)
+    ancestor_id = db.Column(db.Text, primary_key=True)
+    vocabulary = db.Column(
+        db.Text,
+        db.ForeignKey("concept_releases.vocabulary", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    #: The fewest is_a (or skos:broader) steps from the concept to the ancestor.
+    distance = db.Column(db.Integer, nullable=False)
+
+
+class AnalysisTerm(db.Model):
+    """A term analysis features use, with its label and parent, as the latest record to use
+    it gave them. Written by `neurostore.ingest.analysis_features`."""
+
+    __tablename__ = "analysis_terms"
+    __table_args__ = (sa.Index("ix_analysis_terms_field_parent", "field", "parent"),)
+
+    #: The terms field it is listed under: medical_condition, task, task_family, ...
+    field = db.Column(db.Text, primary_key=True)
+    term = db.Column(db.Text, primary_key=True)
+    label = db.Column(db.Text)
+    parent = db.Column(db.Text)
 
 
 class AnalysisFeatureDisplay(db.Model):

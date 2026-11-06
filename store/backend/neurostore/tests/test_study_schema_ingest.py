@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import re
+from collections import Counter
 from datetime import datetime, timezone
 
 import pytest
@@ -37,6 +38,8 @@ from neurostore.models import (
     Condition,
     ExtractionEntityLink,
     FieldClaim,
+    FieldClaimEvidence,
+    FieldClaimRun,
     Fulltext,
     LinkDomain,
     PipelineAnalysisResult,
@@ -1455,6 +1458,95 @@ def test_replaying_a_run_id_returns_the_same_results_and_adds_none(session):
     with pytest.raises(NeuroStoreException) as error:
         ingest_upload({**body, "record": _record(GAIN, LOSS)})
     assert error.value.status_code == 422
+
+
+def _name_evidence(analysis, *sources):
+    """``analysis`` with its name supported by one evidence set per locator in ``sources``."""
+    analysis = copy.deepcopy(analysis)
+    analysis["name"]["evidence"] = {
+        "status": "present",
+        "sets": [
+            {"source": source, "spans": [{"text": "Gain", "start_char": 0, "end_char": 4}]}
+            for source in sources
+        ],
+    }
+    return analysis
+
+
+def _name_evidence_rows(base_study_id):
+    [claim] = [c for c in _claims(base_study_id, GAIN["key"]) if c.field_path == "name"]
+    return sorted(
+        (e.config_id, e.status, e.source)
+        for e in FieldClaimEvidence.query.filter_by(claim_id=claim.id)
+    )
+
+
+def test_a_rerun_replaces_its_runs_evidence_and_leaves_another_runs(session):
+    gain = fx.record_analysis("a0", GAIN["key"], GAIN["name"])
+    first = ingest_upload(
+        {
+            "coordinate_parse": ORIGINAL,
+            "record": fx.record([_name_evidence(gain, "model_quote", "retriever")]),
+            "run_id": "run-1",
+        }
+    )
+    base_study_id, config_id = first["base_study_id"], first["record"]["config_id"]
+    claims = FieldClaim.query.count()
+
+    rerun = ingest_upload(
+        {
+            "record": fx.record([_name_evidence(gain, "literal_match")]),
+            "parse_id": ORIGINAL["parse_id"],
+            "base_study_id": base_study_id,
+            "run_id": "run-2",
+        }
+    )
+    other = ingest_upload(
+        {
+            "record": fx.record([_name_evidence(gain, "retriever")]),
+            "parse_id": ORIGINAL["parse_id"],
+            "base_study_id": base_study_id,
+            "pipeline": {"name": "pondie", "version": "2.0.0"},
+        }
+    )
+
+    assert rerun["record"]["config_id"] == config_id
+    assert rerun["record"]["claims"]["created"] == 0
+    assert other["record"]["claims"]["created"] == 0
+    assert FieldClaim.query.count() == claims
+    assert _name_evidence_rows(base_study_id) == sorted(
+        [
+            (config_id, "present", "literal_match"),
+            (other["record"]["config_id"], "present", "retriever"),
+        ]
+    )
+    [claim] = [c for c in _claims(base_study_id, GAIN["key"]) if c.field_path == "name"]
+    assert {r.config_id for r in FieldClaimRun.query.filter_by(claim_id=claim.id)} == {
+        config_id,
+        other["record"]["config_id"],
+    }
+
+
+def test_a_record_writes_its_claims_a_statement_per_table(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    statements = []
+
+    def note(conn, cursor, statement, parameters, context, executemany):
+        statements.append(statement.split("(")[0].strip())
+
+    sa.event.listen(db.engine, "before_cursor_execute", note)
+    try:
+        summary = _upload_record(base_study_id, _record(GAIN, LOSS, RISK))
+    finally:
+        sa.event.remove(db.engine, "before_cursor_execute", note)
+
+    assert summary["record"]["claims"]["created"] > 3
+    writes = Counter(s for s in statements if "field_claim" in s and not s.startswith("SELECT"))
+    assert writes == {
+        "INSERT INTO field_claims": 1,
+        "INSERT INTO field_claim_runs": 1,
+        "INSERT INTO field_claim_evidence": 1,
+    }
 
 
 def test_a_concurrent_upload_taking_the_run_id_is_refused_as_reused(session, monkeypatch):

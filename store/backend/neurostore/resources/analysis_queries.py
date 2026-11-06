@@ -10,6 +10,6 @@ class AnalysisQueriesView:
 
 
 class AnalysisTermsView:
-    def search(self, field, search=None, limit=50):
+    def search(self, field, search=None, limit=50, parent=None):
         """The values one query field takes, with their counts."""
-        return {"results": list_terms(field, search, limit)}, 200
+        return {"results": list_terms(field, search, limit, parent)}, 200
