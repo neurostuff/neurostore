@@ -1,7 +1,11 @@
 """A record's owner as the API serves them: their Auth0 id goes only to themselves."""
 
+from contextlib import contextmanager
+
 from connexion.context import context
 from marshmallow import fields, missing
+
+_SEEN = "owners_seen"
 
 
 def owner_id(user_id):
@@ -11,9 +15,24 @@ def owner_id(user_id):
     """
     try:
         caller = context.get("user")
+        seen = context.get(_SEEN)
     except (LookupError, RuntimeError):
         return None
+    if seen is not None and user_id is not None:
+        seen.add(user_id)
     return user_id if user_id is not None and user_id == caller else None
+
+
+@contextmanager
+def collecting_owners():
+    """The owners `owner_id` is asked about inside the block: the users whose response
+    would differ from everyone else's."""
+    seen = set()
+    context[_SEEN] = seen
+    try:
+        yield seen
+    finally:
+        context.pop(_SEEN, None)
 
 
 class OwnerId(fields.String):
