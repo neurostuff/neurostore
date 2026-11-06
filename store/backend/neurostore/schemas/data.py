@@ -5,7 +5,6 @@ from marshmallow import (
     SchemaOpts,
     ValidationError,
     fields,
-    missing,
     post_dump,
     post_load,
     pre_dump,
@@ -325,16 +324,6 @@ class ConditionSchema(BaseDataSchema):
     id = fields.String(
         metadata={"info_field": True, "id_field": True, "preserve_on_clone": True}
     )
-
-
-def dump_loaded_journal(obj):
-    """The study's or base study's journal summary when the view loaded it; left out
-    otherwise, so a schema nested many times over does not query once per record."""
-    from sqlalchemy import inspect as sa_inspect
-
-    if "journal" in sa_inspect(obj).unloaded:
-        return missing
-    return obj.journal
 
 
 class JournalSchema(BaseSchema):
@@ -788,7 +777,7 @@ class BaseStudySchema(BaseDataSchema, ArticleIdentifiersSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
     publication = fields.String(allow_none=True)
-    journal = fields.Method("dump_journal", dump_only=True)
+    journal = fields.Raw(dump_only=True)
     doi = fields.String(allow_none=True)
     pmid = fields.String(allow_none=True)
     pmcid = fields.String(allow_none=True)
@@ -808,9 +797,6 @@ class BaseStudySchema(BaseDataSchema, ArticleIdentifiersSchema):
     )
     ace_fulltext = fields.String(load_only=True, allow_none=True)
     pubget_fulltext = fields.String(load_only=True, allow_none=True)
-
-    def dump_journal(self, obj):
-        return dump_loaded_journal(obj)
 
     def dump_data_sources(self, obj):
         return dump_computed_data_sources(obj)
@@ -882,7 +868,7 @@ class StudySchema(BaseDataSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
     publication = fields.String(allow_none=True)
-    journal = fields.Method("dump_journal", dump_only=True)
+    journal = fields.Raw(dump_only=True)
     doi = fields.String(allow_none=True)
     pmid = fields.String(allow_none=True)
     pmcid = fields.String(allow_none=True)
@@ -918,9 +904,6 @@ class StudySchema(BaseDataSchema):
     class Meta:
         # studysets can be very large and are hidden by default.
         exclude = ("studysets",)
-
-    def dump_journal(self, obj):
-        return dump_loaded_journal(obj)
 
     @pre_load
     def check_nulls(self, data, **kwargs):

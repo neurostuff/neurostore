@@ -1,4 +1,3 @@
-import sqlalchemy as sa
 from webargs import fields
 
 from neurostore.models import Journal
@@ -11,28 +10,17 @@ class JournalsView(ObjectView, ListView):
     """The journals neurostore identified papers as appearing in. Read only: neurostore
     owns them, and nothing writes one through the API."""
 
-    _view_fields = {"kind": fields.String(load_default=None)}
+    _view_fields = {
+        "kind": fields.String(load_default=None),
+        "issn": fields.String(load_default=None),
+    }
+    _search_fields = ("title", "abbreviation")
 
     def view_search(self, q, args):
         if args.get("kind"):
             q = q.filter(Journal.kind == args["kind"])
-        search = (args.get("search") or "").strip()
-        if search:
-            words = search.split()
-            q = q.filter(
-                sa.or_(
-                    Journal.issns.any(search.upper()),
-                    sa.and_(
-                        *(
-                            sa.or_(
-                                Journal.title.ilike(f"%{word}%"),
-                                Journal.abbreviation.ilike(f"%{word}%"),
-                            )
-                            for word in words
-                        )
-                    ),
-                )
-            )
+        if args.get("issn"):
+            q = q.filter(Journal.issns.any(args["issn"].strip().upper()))
         return q
 
     def join_tables(self, q, args):

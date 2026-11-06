@@ -1,6 +1,6 @@
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import select, update
-from sqlalchemy.orm import raiseload, selectinload, undefer
+from sqlalchemy.orm import raiseload, selectinload
 from study_schema.models.paper_parse import CoordinateRole
 from webargs import fields, validate
 
@@ -206,7 +206,6 @@ class StudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
-        q = q.options(undefer(Study.journal))
         if args.get("data_sources"):
             q = q.options(
                 selectinload(Study.data_sources).options(raiseload("*", sql_only=True))

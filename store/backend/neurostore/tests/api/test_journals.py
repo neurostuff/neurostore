@@ -47,9 +47,9 @@ async def test_journals_are_listed_searched_and_read(auth_client, papers):
 
     listed = (await auth_client.get("/api/journals/")).json()
     assert listed["metadata"]["total_count"] == 2
-    for search in ("brain mapp", "Hum Brain", "1097-0193"):
-        found = (await auth_client.get(f"/api/journals/?search={search}")).json()
-        assert [j["id"] for j in found["results"]] == [hbm_id], search
+    for query in ("title=brain mapp", "abbreviation=Hum Brain", "issn=1097-0193"):
+        found = (await auth_client.get(f"/api/journals/?{query}")).json()
+        assert [j["id"] for j in found["results"]] == [hbm_id], query
     repositories = (await auth_client.get("/api/journals/?kind=repository")).json()
     assert [j["id"] for j in repositories["results"]] == [papers["biorxiv"].id]
 

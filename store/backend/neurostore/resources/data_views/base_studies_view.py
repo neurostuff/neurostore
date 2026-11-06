@@ -142,9 +142,7 @@ class BaseStudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
-        q = self._eager_load_versions(q, args).options(
-            undefer(BaseStudy.identifiers), undefer(BaseStudy.journal)
-        )
+        q = self._eager_load_versions(q, args).options(undefer(BaseStudy.identifiers))
         if args.get("data_sources"):
             q = q.options(
                 selectinload(BaseStudy.data_sources).options(
