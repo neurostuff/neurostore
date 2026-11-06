@@ -533,3 +533,28 @@ async def test_the_annotation_column_is_rewritten_beside_pipeline_columns(
     assert again["note_keys"]["picked"]["type"] == "boolean"
     assert "extractor_model" in again["note_keys"]
     assert bad.status_code == 400
+
+
+async def test_a_medical_condition_id_matches_its_descendants_in_the_loaded_release(
+    auth_client, session, tmp_path
+):
+    from neurostore.tests.test_concepts import load
+
+    load(tmp_path)
+    for name in af.RECORDS:
+        af.upload(name)
+    db.session.commit()
+    psychotic = {"ids": ["MONDO:0005487"]}
+
+    below = await _query(auth_client, {"medical_condition": psychotic})
+    exact = await _query(auth_client, {"medical_condition": {**psychotic, "descendants": False}})
+    by_synonym = await _query(auth_client, {"medical_condition": "dementia praecox"})
+    terms = await auth_client.get("/api/analysis-terms/?field=medical_condition&search=praecox")
+
+    assert _names(below) == ["schizophrenia > BDp", "schizophrenia > control"]
+    assert _matched_by(below, "medical_condition") == ["id"]
+    assert exact["results"] == []
+    assert _names(by_synonym) == ["schizophrenia > BDp", "schizophrenia > control"]
+    assert [
+        (r["value"], r["label"], r["parent"], r["synonyms"]) for r in terms.json()["results"]
+    ] == [("MONDO:0005090", "schizophrenia", "MONDO:0005487", ["dementia praecox"])]

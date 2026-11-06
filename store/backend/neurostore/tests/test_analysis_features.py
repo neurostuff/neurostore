@@ -143,14 +143,14 @@ def test_a_set_takes_the_orientation_of_its_own_fit():
     name = document["analyses"][0]["name"]
     name["normalized"] += [
         {
-            "vocabulary": "ns-pond contrast set fit-1",
+            "vocabulary": "ns-pond contrast set fit-111111111111",
             "status": "mapped",
             "value": "working_memory#7",
             "label": "2-back > 0-back",
             "mapping_tool": "fixture",
         },
         {
-            "vocabulary": "ns-pond contrast set orientation fit-1",
+            "vocabulary": "ns-pond contrast set orientation fit-111111111111",
             "status": "mapped",
             "value": "same",
             "mapping_tool": "fixture",
@@ -452,11 +452,20 @@ def test_the_backfill_rewrites_every_paper_from_its_stored_record(session):
     assert {row.analysis_id: row.display_row.display for row in AnalysisFeature.query} == written
 
 
+TABLES = (
+    "analysis_features",
+    "analysis_terms",
+    "concept_releases",
+    "concepts",
+    "concept_ancestors",
+)
+
+
 def test_the_migrated_table_matches_the_model(db):
     def in_scope(obj, name, type_, reflected, compare_to):
         if type_ == "table":
-            return name in ("analysis_features", "analysis_terms")
-        return obj.table.name in ("analysis_features", "analysis_terms")
+            return name in TABLES
+        return obj.table.name in TABLES
 
     with db.engine.connect() as conn:
         context = MigrationContext.configure(

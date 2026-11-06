@@ -1741,6 +1741,9 @@ class AnalysisFeature(db.Model):
     #: The `mapping_tool` (normalizer and its version or fit) of every entry the ids came
     #: from, which names the rows a new fit leaves stale.
     mapping_tools = db.Column(ARRAY(db.Text))
+    #: The vocabulary releases its ids resolve against ("contrast_set fit-ed5ac7b08c20",
+    #: "mondo 2026-09-01"): its contrast sets' fit and its ancestors' loaded release.
+    vocabulary_releases = db.Column(ARRAY(db.Text))
 
     allocation = db.Column(db.Text, index=True)
     assignment_structure = db.Column(db.Text, index=True)
@@ -1756,6 +1759,56 @@ class AnalysisFeature(db.Model):
     def role_id(role, term):
         """A medical-condition term as `medical_condition_role_ids` holds it."""
         return f"{role}|{term}"
+
+
+class ConceptRelease(db.Model):
+    """The release of a manifest vocabulary `concepts` and `concept_ancestors` hold, one per
+    vocabulary. Written by `neurostore.ingest.concepts`."""
+
+    __tablename__ = "concept_releases"
+
+    #: The vocabulary's name in study_schema's manifest (mondo, onvoc).
+    vocabulary = db.Column(db.Text, primary_key=True)
+    release = db.Column(db.Text, nullable=False)
+    #: Where it was read from, and the file's sha256, which matched the manifest's.
+    source = db.Column(db.Text, nullable=False)
+    sha256 = db.Column(db.Text, nullable=False)
+    concepts = db.Column(db.Integer, nullable=False)
+    loaded_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class Concept(db.Model):
+    """A concept of a loaded release, with its label and synonyms."""
+
+    __tablename__ = "concepts"
+
+    concept_id = db.Column(db.Text, primary_key=True)
+    vocabulary = db.Column(
+        db.Text,
+        db.ForeignKey("concept_releases.vocabulary", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    label = db.Column(db.Text)
+    synonyms = db.Column(ARRAY(db.Text))
+
+
+class ConceptAncestor(db.Model):
+    """A concept and one of its ancestors in its vocabulary's loaded release, the concept
+    itself at distance 0, so every concept of the release has a row."""
+
+    __tablename__ = "concept_ancestors"
+
+    concept_id = db.Column(db.Text, primary_key=True)
+    ancestor_id = db.Column(db.Text, primary_key=True)
+    vocabulary = db.Column(
+        db.Text,
+        db.ForeignKey("concept_releases.vocabulary", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    #: The fewest is_a (or skos:broader) steps from the concept to the ancestor.
+    distance = db.Column(db.Integer, nullable=False)
 
 
 class AnalysisTerm(db.Model):

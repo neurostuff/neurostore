@@ -38,6 +38,7 @@ from neurostore.models import (
     AnalysisFeature,
     AnalysisFeatureDisplay,
     AnalysisTerm,
+    Concept,
 )
 
 AF = AnalysisFeature
@@ -801,8 +802,8 @@ def _children(field, values):
 
 def list_terms(field, search=None, limit=50, parent=None):
     """The values ``field`` takes, with how many analyses and papers carry each, and each
-    one's label, parent, children and synonyms (none until a vocabulary release gives
-    them)."""
+    one's label, parent, children and synonyms (a loaded release's, for a medical
+    condition); ``search`` matches the value, label or a synonym."""
     if field not in TERM_FIELDS and field != "task_family":
         abort_validation(
             "Unknown term field.",
@@ -826,26 +827,34 @@ def list_terms(field, search=None, limit=50, parent=None):
         .subquery()
     )
     statement = sa.select(counts.c.value, counts.c.analyses, counts.c.base_studies)
+    synonyms = sa.null()
     if field in CHILD_FIELDS:
         label = sa.func.coalesce(AT.label, counts.c.value)
-        statement = statement.add_columns(label.label("label"), AT.parent).outerjoin(
+        statement = statement.add_columns(AT.parent).outerjoin(
             AT, sa.and_(AT.field == field, AT.term == counts.c.value)
         )
+        if field == "medical_condition":
+            label = sa.func.coalesce(AT.label, Concept.label, counts.c.value)
+            synonyms = Concept.synonyms
+            statement = statement.outerjoin(Concept, Concept.concept_id == counts.c.value)
         if parent:
             statement = statement.where(AT.parent == parent)
     else:
         label = counts.c.value
-        statement = statement.add_columns(label.label("label"), sa.null().label("parent"))
+        statement = statement.add_columns(sa.null().label("parent"))
         if parent:
             statement = statement.where(sa.false())
+    statement = statement.add_columns(label.label("label"), synonyms.label("synonyms"))
     if search:
         like = f"%{search.lower()}%"
-        statement = statement.where(
-            sa.or_(sa.func.lower(counts.c.value).like(like), sa.func.lower(label).like(like))
-        )
+        matches = [sa.func.lower(counts.c.value).like(like), sa.func.lower(label).like(like)]
+        if field == "medical_condition":
+            matches.append(sa.func.lower(sa.func.array_to_string(synonyms, " | ")).like(like))
+        statement = statement.where(sa.or_(*matches))
     statement = statement.order_by(sa.desc(counts.c.analyses), counts.c.value).limit(limit)
     rows = [row._asdict() for row in db.session.execute(statement)]
     children = _children(field, [r["value"] for r in rows]) if field in CHILD_FIELDS else {}
     return [
-        {**row, "children": children.get(row["value"], []), "synonyms": []} for row in rows
+        {**row, "children": children.get(row["value"], []), "synonyms": row["synonyms"] or []}
+        for row in rows
     ]

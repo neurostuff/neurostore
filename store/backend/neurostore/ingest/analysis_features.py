@@ -7,7 +7,10 @@ filter on columns instead of reading records. `sync_analysis_features` writes th
 one paper from its latest record, for the analyses of its current pipeline Study.
 
 A value counts only when its `extraction_status` is `extracted`; anything else is silent
-(NULL). Normalizer entries (`normalized`, study_schema#56) count only when `mapped`.
+(NULL). Normalizer entries (`normalized`, study_schema#56) count only when `mapped`, and
+are read by the vocabulary study_schema's manifest names, under its neutral name or a
+legacy one. Medical-condition ids take their ancestors, labels and synonyms from the
+manifest's releases loaded into `concept_ancestors` (`neurostore.ingest.concepts`).
 
 A contrast key or set is a directional term: the term itself where the analysis states the
 contrast the way the key or set does, and the term with `:reversed` where it states the
@@ -15,13 +18,17 @@ opposite. Each row also lists the terms it uses, with their labels and parents, 
 `analysis_terms`.
 """
 
+import functools
 import re
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import distinct_on
+from study_schema.vocabularies import for_legacy
+from study_schema.vocabularies import vocabulary as manifest_vocabulary
 
 from neurostore.database import db
+from neurostore.ingest.concepts import ancestors_of
 from neurostore.models import (
     Analysis,
     AnalysisFeature,
@@ -37,24 +44,20 @@ from neurostore.study_schema_tools import record_analysis_key, reported_value, s
 #: The separator between items of a text column, which no whole-word pattern crosses.
 SEPARATOR = " | "
 
-#: Vocabularies whose mapped entries on `Group.medical_condition` become its ids.
-MEDICAL_CONDITION_VOCABULARIES = {"MONDO", "ONVOC"}
-#: The role an entry on `Group.medical_condition` gives its item: primary, comorbid, none.
-MEDICAL_ROLE = "astra medical role"
-#: The entries on `Task.name` naming the task's canonical paradigm and its family.
-CANONICAL_TASK = "astra canonical task"
-TASK_FAMILY = "astra task family"
-#: Entries on `Analysis.name` placing the analysis's contrast. ns-pond suffixes the
-#: contrast-set vocabularies with the fit they came from.
-CONTRAST_KEY = "astra contrast key"
-CONTRAST_SET = "ns-pond contrast set "
-CONTRAST_ORIENTATION = "ns-pond contrast set orientation "
+#: Manifest vocabularies whose mapped entries on `Group.medical_condition` become its ids.
+MEDICAL_CONDITION_VOCABULARIES = {"mondo", "onvoc"}
 #: The suffix of a directional term stated against its key's or set's direction, and of
 #: a label flipped that cannot be read as "a > b".
 REVERSED = ":reversed"
 REVERSED_LABEL = " (reversed)"
-#: The directional fields, by the separator after their task family.
-DIRECTIONAL_FIELDS = {"contrast_key": "|", "contrast_set": "#"}
+#: The directional fields, by the separator after their task family (the manifest's
+#: prefix hierarchy).
+DIRECTIONAL_FIELDS = {
+    field: manifest_vocabulary(field).hierarchy.separator
+    for field in ("contrast_key", "contrast_set")
+}
+#: The fit a contrast set reads against, in a legacy vocabulary string or a mapping tool.
+FIT = re.compile(r"fit-[0-9a-f]{12}")
 #: ns-pond writes a key's sign only in its entry's method: "target>baseline; sign -1".
 KEY_SIGN = re.compile(r"\bsign -1\b")
 
@@ -64,6 +67,31 @@ META_ANALYSIS = re.compile(
     r"seed-based d mapping|\bSDM\b|coordinate-based",
     re.I,
 )
+
+
+@functools.lru_cache(maxsize=None)
+def _manifest_name(string):
+    """The manifest vocabulary a `Normalization.vocabulary` string names, as its neutral
+    name or a legacy one (`astra canonical task`); None for any other string."""
+    try:
+        return manifest_vocabulary(string).name
+    except KeyError:
+        found = for_legacy(string)
+        return found.name if found else None
+
+
+def _of(entry, *names):
+    """Whether ``entry`` reads onto one of the manifest vocabularies ``names``."""
+    return _manifest_name(entry.get("vocabulary") or "") in names
+
+
+def _fit(entry):
+    """The fit a contrast-set or orientation entry reads against, or None."""
+    for text in (entry.get("vocabulary"), entry.get("mapping_tool")):
+        found = FIT.search(text or "")
+        if found:
+            return found.group()
+    return None
 
 
 def _values(slot):
@@ -169,16 +197,16 @@ def _groups(groups):
         slot = group.get("medical_condition")
         if is_healthy is True or not _values(slot):
             continue
-        readings = [e for e in _entries(slot, None) if e.get("vocabulary") != MEDICAL_ROLE]
+        readings = [e for e in _entries(slot, None) if not _of(e, "medical_role")]
         wording += _stated(slot, readings)
         # ns-pond gives the role to the item, whichever head an entry names.
         role = {
             (e.get("item"), e.get("head")): e["value"]
             for e in _entries(slot)
-            if e.get("vocabulary") == MEDICAL_ROLE
+            if _of(e, "medical_role")
         }
         for entry in _entries(slot):
-            if entry.get("vocabulary") not in MEDICAL_CONDITION_VOCABULARIES:
+            if not _of(entry, *MEDICAL_CONDITION_VOCABULARIES):
                 continue
             used.append(entry)
             labels.setdefault(entry["value"], _label(entry))
@@ -217,8 +245,8 @@ def _tasks(tasks):
         if not task_names:
             continue
         mapped = _entries(task["name"])
-        canonical = [e for e in mapped if e.get("vocabulary") == CANONICAL_TASK]
-        family = [e for e in mapped if e.get("vocabulary") == TASK_FAMILY]
+        canonical = [e for e in mapped if _of(e, "canonical_task")]
+        family = [e for e in mapped if _of(e, "task_family")]
         parent = family[0]["value"] if family else None
         names += task_names
         words += [*task_names, *_values(task.get("paradigm")), *map(_label, mapped)]
@@ -246,18 +274,6 @@ def _tasks(tasks):
     return columns, {"task": _unique(canonical_labels) or _unique(names)}
 
 
-def _is_key(entry):
-    return entry.get("vocabulary") == CONTRAST_KEY
-
-
-def _set_fit(entry):
-    """The fit a contrast-set entry came from; None for any other entry."""
-    vocabulary = entry.get("vocabulary") or ""
-    if vocabulary.startswith(CONTRAST_SET) and not vocabulary.startswith(CONTRAST_ORIENTATION):
-        return vocabulary[len(CONTRAST_SET):]
-    return None
-
-
 def _contrast_columns(field, ids, read):
     return {
         f"{field}_ids": ids or None,
@@ -271,27 +287,26 @@ def _contrast_terms(name):
     member reversed against its set by its fit's orientation entry, a key by its sign."""
     read = [e for e in _entries(name, None) if e.get("status") != "absent"]
     mapped = _entries(name)
-    keys = [e for e in mapped if _is_key(e)]
-    sets = [e for e in mapped if _set_fit(e) is not None]
-    orientation = {
-        e["vocabulary"][len(CONTRAST_ORIENTATION):]: e["value"]
-        for e in mapped
-        if (e.get("vocabulary") or "").startswith(CONTRAST_ORIENTATION)
-    }
+    keys = [e for e in mapped if _of(e, "contrast_key")]
+    sets = [e for e in mapped if _of(e, "contrast_set")]
+    orientation = {_fit(e): e["value"] for e in mapped if _of(e, "contrast_set_orientation")}
     key_ids = _unique(
         _flip(e["value"]) if KEY_SIGN.search(e.get("method") or "") else e["value"]
         for e in keys
     )
     set_labels = {}
     for entry in sets:
-        reversed_ = orientation.get(_set_fit(entry)) == "reversed"
+        reversed_ = orientation.get(_fit(entry)) == "reversed"
         term = _flip(entry["value"]) if reversed_ else entry["value"]
         label = _flip_label(entry.get("label")) if reversed_ else entry.get("label")
         set_labels.setdefault(term, label)
     columns = {
-        **_contrast_columns("contrast_key", key_ids, any(map(_is_key, read))),
-        **_contrast_columns("contrast_set", list(set_labels), any(map(_set_fit, read))),
+        **_contrast_columns("contrast_key", key_ids, any(_of(e, "contrast_key") for e in read)),
+        **_contrast_columns(
+            "contrast_set", list(set_labels), any(_of(e, "contrast_set") for e in read)
+        ),
         "mapping_tools": _tools(keys + sets),
+        "releases": [f"contrast_set {fit}" for fit in filter(None, map(_fit, sets))],
         "terms": [
             *(("contrast_key", k, None, _family(k, "contrast_key")) for k in key_ids),
             *(
@@ -411,7 +426,7 @@ class _Record:
         name = reported_value(analysis.get("name"))
         row["name_text"] = _text([name]) if name else None
         display = {"name": name}
-        tools, terms = [], []
+        tools, terms, releases = [], [], []
         for columns, shown in (
             _groups([self.groups.get(link.get("group")) or {} for link in links]),
             _tasks([self.tasks.get(task_id) or {} for task_id in analysis.get("tasks") or []]),
@@ -420,9 +435,11 @@ class _Record:
         ):
             tools += columns.pop("mapping_tools", [])
             terms += columns.pop("terms", [])
+            releases += columns.pop("releases", [])
             row.update(columns)
             display.update(shown)
         row["mapping_tools"] = sorted(set(tools)) or None
+        row["vocabulary_releases"] = sorted(set(releases)) or None
         row["terms"] = terms
         row["display"] = display
         return row
@@ -489,6 +506,39 @@ def latest_records(base_study_ids):
     return {base_study_id: (config_id, record) for base_study_id, config_id, record in rows}
 
 
+def with_ancestors(by_key):
+    """``by_key``'s features with the loaded releases' reading of their medical-condition
+    ids: their ancestors (and the role ids' ancestors), their synonyms in the text, their
+    nearest parents in the terms, and the releases those came from."""
+    closures = ancestors_of(
+        {i for row in by_key.values() for i in row["medical_condition_ids"] or []}
+    )
+    for row in by_key.values():
+        ids = row["medical_condition_ids"] or []
+        found = [closures[i] for i in ids if i in closures]
+        row["medical_condition_ancestor_ids"] = _ancestors(
+            ids, (a for i in ids for a in (closures[i].ancestors if i in closures else ()))
+        )
+        roles = [role_id.split("|", 1) for role_id in row["medical_condition_role_ids"] or []]
+        row["medical_condition_role_ancestor_ids"] = _unique(
+            AnalysisFeature.role_id(role, a)
+            for role, i in roles
+            for a in (closures[i].ancestors if i in closures else [i])
+        ) or None
+        if found:
+            synonyms = [synonym for closure in found for synonym in closure.synonyms]
+            row["medical_condition_text"] = _text([row["medical_condition_text"], *synonyms])
+        stamps = {*(row["vocabulary_releases"] or []), *(c.release for c in found)}
+        row["vocabulary_releases"] = sorted(stamps) or None
+        row["terms"] = [
+            (field, term, label, closures[term].parent)
+            if field == "medical_condition" and term in closures
+            else (field, term, label, parent)
+            for field, term, label, parent in row["terms"]
+        ]
+    return by_key
+
+
 def sync_analysis_features(base_study_id, study_id, latest=None):
     """Rewrite ``base_study_id``'s rows for the analyses of its current Study ``study_id``.
 
@@ -502,7 +552,7 @@ def sync_analysis_features(base_study_id, study_id, latest=None):
     if latest is None:
         latest = latest_records([base_study_id]).get(base_study_id, (None, None))
     config_id, record = latest
-    by_key = record_features(record) if record else {}
+    by_key = with_ancestors(record_features(record)) if record else {}
     analyses = db.session.execute(
         sa.select(Analysis.id, Analysis.source_id, Analysis.metadata_).where(
             Analysis.study_id == study_id

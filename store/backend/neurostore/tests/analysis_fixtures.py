@@ -70,6 +70,19 @@ def unmap_names(document, analysis_name=None):
     return document
 
 
+def normalized_slots(document):
+    """The slots of ``document`` normalizers write entries on."""
+    return [
+        slot
+        for slot in (
+            *(group.get("medical_condition") for group in document["groups"]),
+            *(task.get("name") for task in document["tasks"]),
+            *(analysis.get("name") for analysis in document["analyses"]),
+        )
+        if isinstance(slot, dict) and slot.get("normalized")
+    ]
+
+
 def upload_body(name, document=None):
     """The upload of record ``name`` (or ``document``) with a parse holding its analyses:
     one text analysis per key, the i-th named "<name> analysis <i>"."""

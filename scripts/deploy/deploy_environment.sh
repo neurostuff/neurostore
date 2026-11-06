@@ -507,6 +507,15 @@ build_review_frontend() {
     sh -c "npm ci --no-audit --no-fund && npm run build"
 }
 
+# Load the vocabulary releases study_schema's manifest pins, and rewrite the analysis
+# features when one was loaded; a release already loaded is skipped, so this is a no-op
+# until the pin moves.
+sync_vocabulary_releases() {
+  local service_root="$1"
+  local project="$2"
+  compose_for "${service_root}" "${project}" exec -T neurostore manage load-concept-ancestors --backfill
+}
+
 deploy_store_staging() {
   local service_root="${WORKTREE_DIR}/store"
   local project="neurostore-${TRACK}-store"
@@ -545,6 +554,7 @@ deploy_store_staging() {
     store-pghero \
     store-grafana
   compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
+  sync_vocabulary_releases "${service_root}" "${project}"
   compose_for "${service_root}" "${project}" exec -T store_redis redis-cli FLUSHDB >/dev/null
   build_review_frontend
   recreate_services_cleanly "${service_root}" "${project}" store_nginx
@@ -608,6 +618,7 @@ deploy_store_dev() {
     --with-vector-extension
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=0
   compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
+  sync_vocabulary_releases "${service_root}" "${project}"
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=1 store_release_worker
   build_review_frontend
 }
