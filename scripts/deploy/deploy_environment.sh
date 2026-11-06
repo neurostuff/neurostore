@@ -115,6 +115,8 @@ TRACK_PROXY_NETWORK="neurostore-${TRACK}-proxy"
 FRONTEND_MODE="staging"
 STORE_DB="neurostore"
 COMPOSE_DB="compose"
+# pg_restore jobs per database; staging restores both databases at once on a 20-core host.
+RESTORE_JOBS="${RESTORE_JOBS:-8}"
 
 if [ "${TRACK}" = "dev" ]; then
   FRONTEND_MODE="dev"
@@ -517,11 +519,44 @@ sync_vocabulary_releases() {
   compose_for "${service_root}" "${project}" exec -T neurostore manage sync-vocabulary-releases --backfill
 }
 
+# Restore the latest production backup through a pristine template per backup (see
+# restore_latest_backup.py --template): restored the first time a deploy sees that backup,
+# then copied into the database the services use.
+restore_staging_database() {
+  local service_root="$1"
+  local project="$2"
+  local bucket="$3"
+  local container="$4"
+  local database="$5"
+  local cache_name="$6"
+  shift 6
+
+  python3 "${REPO_ROOT}/scripts/deploy/restore_latest_backup.py" \
+    --compose-dir "${service_root}" \
+    --bucket "${bucket}" \
+    --project-name "${project}" \
+    --container "${container}" \
+    --database "${database}" \
+    --cache-dir "${STATE_ROOT}/${cache_name}" \
+    --jobs "${RESTORE_JOBS}" \
+    --template \
+    "$@"
+}
+
 deploy_store_staging() {
   local service_root="${WORKTREE_DIR}/store"
   local project="neurostore-${TRACK}-store"
+  local restore=(
+    "${service_root}" "${project}" "neurostore-backup" "store-pgsql17" "${STORE_DB}" "store-dumps"
+    --with-vector-extension
+  )
 
   build_store_images "${service_root}" "${project}"
+  compose_for "${service_root}" "${project}" up -d --no-build store-pgsql17 store_redis
+  wait_for_pg "${service_root}" "${project}" "store-pgsql17"
+  # A new backup's template restores while the site still serves the last deploy.
+  restore_staging_database "${restore[@]}" --refresh-latest --template-only
+
   stop_services_quietly \
     "${service_root}" \
     "${project}" \
@@ -532,18 +567,8 @@ deploy_store_staging() {
     store-pghero \
     store-grafana \
     store_nginx
-  compose_for "${service_root}" "${project}" up -d --no-build store-pgsql17 store_redis
-  wait_for_pg "${service_root}" "${project}" "store-pgsql17"
-
-  python3 "${REPO_ROOT}/scripts/deploy/restore_latest_backup.py" \
-    --compose-dir "${service_root}" \
-    --bucket "neurostore-backup" \
-    --project-name "${project}" \
-    --container "store-pgsql17" \
-    --database "${STORE_DB}" \
-    --cache-dir "${STATE_ROOT}/store-dumps" \
-    --refresh-latest \
-    --with-vector-extension
+  # Without --refresh-latest this reuses the backup the template step just chose.
+  restore_staging_database "${restore[@]}"
 
   recreate_services_cleanly \
     "${service_root}" \
@@ -564,8 +589,15 @@ deploy_store_staging() {
 deploy_compose_staging() {
   local service_root="${WORKTREE_DIR}/compose"
   local project="neurostore-${TRACK}-compose"
+  local restore=(
+    "${service_root}" "${project}" "neurosynth-backup" "compose-pgsql17" "${COMPOSE_DB}" "compose-dumps"
+  )
 
   build_compose_images "${service_root}" "${project}"
+  compose_for "${service_root}" "${project}" up -d --no-build compose-pgsql17 compose_redis
+  wait_for_pg "${service_root}" "${project}" "compose-pgsql17"
+  restore_staging_database "${restore[@]}" --refresh-latest --template-only
+
   stop_services_quietly \
     "${service_root}" \
     "${project}" \
@@ -574,17 +606,7 @@ deploy_compose_staging() {
     compose-pghero \
     compose-grafana \
     compose_nginx
-  compose_for "${service_root}" "${project}" up -d --no-build compose-pgsql17 compose_redis
-  wait_for_pg "${service_root}" "${project}" "compose-pgsql17"
-
-  python3 "${REPO_ROOT}/scripts/deploy/restore_latest_backup.py" \
-    --compose-dir "${service_root}" \
-    --bucket "neurosynth-backup" \
-    --project-name "${project}" \
-    --container "compose-pgsql17" \
-    --database "${COMPOSE_DB}" \
-    --cache-dir "${STATE_ROOT}/compose-dumps" \
-    --refresh-latest
+  restore_staging_database "${restore[@]}"
 
   recreate_services_cleanly \
     "${service_root}" \
@@ -709,8 +731,9 @@ PY
 supersede_running_deploy() {
   # The newest deploy of a track wins. Cancelling the earlier GitHub run only drops its ssh
   # session, so stop that deploy here, before touching the worktree or the databases: its
-  # process group first, then any pg_restore it left running inside postgres, which would
-  # otherwise restore a cut-off dump into the database this deploy is about to restore.
+  # process group first, then any pg_restore or restore_latest_backup.py statement it left
+  # running inside postgres, which would otherwise restore a cut-off dump or race this
+  # deploy's clone of the template.
   mkdir -p "${STATE_ROOT}"
   local pid_file="${STATE_ROOT}/deploy.pid"
   exec 9>"${STATE_ROOT}/deploy.lock"
@@ -737,7 +760,7 @@ supersede_running_deploy() {
         $(docker ps -q --filter "label=com.docker.compose.project=neurostore-${TRACK}-compose" \
           --filter "label=com.docker.compose.service=compose-pgsql17"); do
         count="$(docker exec "${container}" psql -U postgres -tAc \
-          "SELECT count(pg_terminate_backend(pid)) FROM pg_stat_activity WHERE application_name = 'pg_restore'" \
+          "SELECT count(pg_terminate_backend(pid)) FROM pg_stat_activity WHERE application_name IN ('pg_restore', 'restore_latest_backup')" \
           2>/dev/null || echo 0)"
         running=$((running + ${count:-0}))
       done
@@ -751,6 +774,25 @@ supersede_running_deploy() {
   exec 9>&-
 }
 
+# Run each function in the background with its output prefixed by its name, wait for all
+# of them, and fail if any failed. Call it as a plain command: under if, || or &&, bash
+# ignores set -e inside the functions, so a failed step would not stop them.
+run_in_parallel() {
+  local fn
+  local pid
+  local status=0
+  local pids=()
+
+  for fn in "$@"; do
+    { "${fn}" 2>&1 | sed -u "s/^/[${fn}] /"; } &
+    pids+=("$!")
+  done
+  for pid in "${pids[@]}"; do
+    wait "${pid}" || status=1
+  done
+  return "${status}"
+}
+
 main() {
   supersede_running_deploy
   docker network inspect "${TRACK_PROXY_NETWORK}" >/dev/null 2>&1 || docker network create "${TRACK_PROXY_NETWORK}" >/dev/null
@@ -758,8 +800,8 @@ main() {
   prepare_worktree
 
   if [ "${TRACK}" = "staging" ]; then
-    deploy_store_staging
-    deploy_compose_staging
+    # The two stacks share nothing until the smoke checks, so they deploy side by side.
+    run_in_parallel deploy_store_staging deploy_compose_staging
   else
     deploy_store_dev
     deploy_compose_dev

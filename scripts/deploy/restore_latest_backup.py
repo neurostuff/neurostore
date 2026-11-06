@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -130,6 +131,54 @@ def resolve_cached_dump(
     return key, dump_path
 
 
+# deploy_environment.sh stops a superseded deploy's sessions by this name and pg_restore's.
+APPLICATION_NAME = "restore_latest_backup"
+
+
+def psql(
+    compose_dir: Path,
+    project_name: str | None,
+    container: str,
+    database: str,
+    sql: str,
+    *,
+    capture_output: bool = False,
+) -> subprocess.CompletedProcess:
+    return run(
+        compose_exec_cmd(
+            project_name,
+            "exec",
+            "-T",
+            "-e",
+            f"PGAPPNAME={APPLICATION_NAME}",
+            container,
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            database,
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-Atc",
+            sql,
+        ),
+        compose_dir,
+        capture_output=capture_output,
+    )
+
+
+def drop_database(
+    compose_dir: Path, project_name: str | None, container: str, database: str
+) -> None:
+    psql(
+        compose_dir,
+        project_name,
+        container,
+        "postgres",
+        f"DROP DATABASE IF EXISTS {database} WITH (FORCE);",
+    )
+
+
 def recreate_database(
     compose_dir: Path,
     project_name: str | None,
@@ -138,56 +187,21 @@ def recreate_database(
     *,
     with_vector: bool,
 ) -> None:
-    drop_sql = f"DROP DATABASE IF EXISTS {database} WITH (FORCE);"
-    create_sql = f"CREATE DATABASE {database};"
-    run(
-        compose_exec_cmd(
-            project_name,
-            "exec",
-            "-T",
-            container,
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "postgres",
-            "-c",
-            drop_sql,
-        ),
+    drop_database(compose_dir, project_name, container, database)
+    psql(
         compose_dir,
-    )
-    run(
-        compose_exec_cmd(
-            project_name,
-            "exec",
-            "-T",
-            container,
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "postgres",
-            "-c",
-            create_sql,
-        ),
-        compose_dir,
+        project_name,
+        container,
+        "postgres",
+        f"CREATE DATABASE {database};",
     )
     if with_vector:
-        run(
-            compose_exec_cmd(
-                project_name,
-                "exec",
-                "-T",
-                container,
-                "psql",
-                "-U",
-                "postgres",
-                "-d",
-                database,
-                "-c",
-                "CREATE EXTENSION IF NOT EXISTS vector;",
-            ),
+        psql(
             compose_dir,
+            project_name,
+            container,
+            database,
+            "CREATE EXTENSION IF NOT EXISTS vector;",
         )
 
 
@@ -197,6 +211,8 @@ def restore_dump(
     container: str,
     database: str,
     dump_path: Path,
+    *,
+    jobs: int = 1,
 ) -> None:
     cmd = compose_exec_cmd(
         project_name,
@@ -207,13 +223,123 @@ def restore_dump(
         "-lc",
         (
             "cat >/tmp/restore.dump && "
-            f"pg_restore -U postgres -d {database} "
+            f"pg_restore -U postgres -d {database} --jobs {jobs} "
             "--no-owner --no-privileges --exit-on-error /tmp/restore.dump && "
             "rm -f /tmp/restore.dump"
         ),
     )
     with dump_path.open("rb") as handle:
         subprocess.run(cmd, cwd=compose_dir, stdin=handle, check=True)
+
+
+def template_name(database: str, key: str) -> str:
+    return f"{database}_tpl_{hashlib.sha256(key.encode()).hexdigest()[:12]}"
+
+
+def template_databases(
+    compose_dir: Path, project_name: str | None, container: str, database: str
+) -> dict[str, bool]:
+    """Map each of the database's templates to whether it is complete (frozen)."""
+    pattern = f"{database}_tpl_".replace("_", r"\_") + "%"
+    result = psql(
+        compose_dir,
+        project_name,
+        container,
+        "postgres",
+        "SELECT datname, datistemplate AND NOT datallowconn FROM pg_database "
+        f"WHERE datname LIKE '{pattern}';",
+        capture_output=True,
+    )
+    templates = {}
+    for line in result.stdout.splitlines():
+        name, complete = line.split("|")
+        templates[name] = complete == "t"
+    return templates
+
+
+def ensure_template(
+    compose_dir: Path,
+    project_name: str | None,
+    container: str,
+    database: str,
+    key: str,
+    dump_path: Path,
+    *,
+    with_vector: bool,
+    jobs: int,
+) -> str:
+    """Return the template holding a pristine restore of ``key``, restoring it if missing.
+
+    The restore goes into a scratch database that is frozen (IS_TEMPLATE, no
+    connections) and only then renamed, so a template under its final name is always a
+    complete restore that nothing has connected to since. Templates of other backups,
+    and a restore cut off partway, are dropped first.
+    """
+    final = template_name(database, key)
+    templates = template_databases(compose_dir, project_name, container, database)
+    if templates.get(final):
+        return final
+
+    for name in templates:
+        psql(
+            compose_dir,
+            project_name,
+            container,
+            "postgres",
+            f"ALTER DATABASE {name} WITH IS_TEMPLATE false;",
+        )
+        drop_database(compose_dir, project_name, container, name)
+
+    scratch = f"{database}_tpl_restoring"
+    recreate_database(
+        compose_dir, project_name, container, scratch, with_vector=with_vector
+    )
+    restore_dump(compose_dir, project_name, container, scratch, dump_path, jobs=jobs)
+    for sql in (
+        f"COMMENT ON DATABASE {scratch} IS 'Pristine restore of {key}; cloned by deploys, never used directly.';",
+        f"ALTER DATABASE {scratch} WITH IS_TEMPLATE true ALLOW_CONNECTIONS false;",
+        f"ALTER DATABASE {scratch} RENAME TO {final};",
+    ):
+        psql(compose_dir, project_name, container, "postgres", sql)
+    return final
+
+
+def clone_database(
+    compose_dir: Path,
+    project_name: str | None,
+    container: str,
+    database: str,
+    template: str,
+) -> None:
+    drop_database(compose_dir, project_name, container, database)
+    psql(
+        compose_dir,
+        project_name,
+        container,
+        "postgres",
+        f"CREATE DATABASE {database} TEMPLATE {template} STRATEGY FILE_COPY;",
+    )
+
+
+def restore_into_database(args: argparse.Namespace, compose_dir: Path, key: str, dump_path: Path) -> str | None:
+    """Restore ``dump_path`` into ``args.database``; return the template used, if any."""
+    target = (compose_dir, args.project_name, args.container)
+    if not args.template:
+        recreate_database(*target, args.database, with_vector=args.with_vector_extension)
+        restore_dump(*target, args.database, dump_path, jobs=args.jobs)
+        return None
+
+    template = ensure_template(
+        *target,
+        args.database,
+        key,
+        dump_path,
+        with_vector=args.with_vector_extension,
+        jobs=args.jobs,
+    )
+    if not args.template_only:
+        clone_database(*target, args.database, template)
+    return template
 
 
 def main() -> int:
@@ -228,27 +354,29 @@ def main() -> int:
     parser.add_argument("--cache-dir")
     parser.add_argument("--refresh-latest", action="store_true")
     parser.add_argument("--with-vector-extension", action="store_true")
+    parser.add_argument("--jobs", type=int, default=1, help="pg_restore --jobs")
+    parser.add_argument(
+        "--template",
+        action="store_true",
+        help="Keep a pristine template database per backup and clone --database from it.",
+    )
+    parser.add_argument(
+        "--template-only",
+        action="store_true",
+        help="With --template: make sure the template exists, but leave --database alone.",
+    )
     args = parser.parse_args()
+    if args.template_only and not args.template:
+        parser.error("--template-only requires --template")
+    if args.template and not (args.dump_path or args.cache_dir):
+        parser.error("--template requires --cache-dir or --dump-path")
 
     compose_dir = Path(args.compose_dir).resolve()
 
     if args.dump_path:
         key = f"local:{Path(args.dump_path).name}"
         dump_path = Path(args.dump_path).resolve()
-        recreate_database(
-            compose_dir,
-            args.project_name,
-            args.container,
-            args.database,
-            with_vector=args.with_vector_extension,
-        )
-        restore_dump(
-            compose_dir,
-            args.project_name,
-            args.container,
-            args.database,
-            dump_path,
-        )
+        template = restore_into_database(args, compose_dir, key, dump_path)
     elif args.cache_dir:
         if not args.bucket:
             raise RuntimeError("--bucket is required unless --dump-path is provided")
@@ -258,20 +386,7 @@ def main() -> int:
             args.prefix,
             refresh_latest=args.refresh_latest,
         )
-        recreate_database(
-            compose_dir,
-            args.project_name,
-            args.container,
-            args.database,
-            with_vector=args.with_vector_extension,
-        )
-        restore_dump(
-            compose_dir,
-            args.project_name,
-            args.container,
-            args.database,
-            dump_path,
-        )
+        template = restore_into_database(args, compose_dir, key, dump_path)
     else:
         if not args.bucket:
             raise RuntimeError("--bucket is required unless --dump-path is provided")
@@ -279,20 +394,7 @@ def main() -> int:
         with tempfile.TemporaryDirectory(prefix="deploy-backup-") as temp_dir:
             dump_path = Path(temp_dir) / Path(key).name
             download_dump(args.bucket, key, dump_path)
-            recreate_database(
-                compose_dir,
-                args.project_name,
-                args.container,
-                args.database,
-                with_vector=args.with_vector_extension,
-            )
-            restore_dump(
-                compose_dir,
-                args.project_name,
-                args.container,
-                args.database,
-                dump_path,
-            )
+            template = restore_into_database(args, compose_dir, key, dump_path)
 
     json.dump(
         {
@@ -305,6 +407,9 @@ def main() -> int:
             "project_name": args.project_name,
             "refresh_latest": args.refresh_latest,
             "with_vector_extension": args.with_vector_extension,
+            "jobs": args.jobs,
+            "template": template,
+            "template_only": args.template_only,
         },
         sys.stdout,
     )
