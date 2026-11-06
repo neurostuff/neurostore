@@ -355,6 +355,12 @@ def test_the_normalized_search_migration_renames_and_adds_columns_and_its_downgr
         service_migrations.upgrade("heads")
         columns, indexes, keys = state()
         assert renamed <= columns and added <= columns
+        carried = [
+            (row.medical_condition_ancestor_ids == row.medical_condition_ids, row.task_unmapped)
+            for row in AnalysisFeature.query
+        ]
+        assert carried == [(True, False), (True, False)]
+        session.remove()
         assert "contrast_set_text" not in columns
         assert not any(column.startswith("diagnosis") for column in columns)
         assert {

@@ -323,6 +323,8 @@ def _normalized_form(path, raw, field, errors):
         if _unknown(f"{path}.{part}.", terms, keys, errors):
             return None
         terms = _terms_form(f"{path}.{part}.", terms, keys, errors)
+        if terms is None:
+            return None
         if not terms:
             errors.append(make_field_error(f"{path}.{part}", raw[part], code="MISSING_VALUE"))
             return None
@@ -335,7 +337,7 @@ def _normalized_form(path, raw, field, errors):
         errors.append(make_field_error(f"{path}.descendants", descendants))
         return None
     modes = UNMAPPED_MODES if field.column is not None else UNMAPPED_MODES[:2]
-    unmapped = raw.get("when_unmapped", modes[-1])
+    unmapped = raw.get("when_unmapped", "text" if field.column is not None else "exclude")
     if unmapped not in modes:
         errors.append(make_field_error(f"{path}.when_unmapped", unmapped, modes))
         return None
@@ -346,52 +348,48 @@ def _normalized_form(path, raw, field, errors):
 
 
 def _normalized_match(field, form, path, errors):
-    """``(matched, by_id, by_text)``: the condition ``form`` puts on ``field`` before
-    unmapped and silent analyses are decided, and the positive id and text parts of it."""
+    """``(matched, by_id, by_text)``: the condition ``form`` puts on ``field`` with its
+    unmapped analyses decided, and whether an analysis matched a positive id or text part."""
     ids_column = field.ancestors if form["descendants"] else field.ids
-    text = _text_matcher(field, f"{path}.text", errors) if field.column is not None else None
 
-    def by_id(ids, every):
-        if every:
-            return sa.and_(*(ids_column.contains([value]) for value in ids))
-        return sa.and_(ids_column.is_not(None), ids_column.overlap(ids))
-
-    def by_text(patterns, every):
-        matches = [text(pattern) for pattern in patterns]
-        return sa.and_(*matches) if every else sa.or_(*matches)
-
-    def terms(part, every):
+    def terms(part, every, where):
         found = {}
         if "ids" in part:
-            found["ids"] = sa.and_(ids_column.is_not(None), by_id(part["ids"], every))
+            ids = part["ids"]
+            held = (
+                sa.and_(*(ids_column.contains([value]) for value in ids))
+                if every
+                else ids_column.overlap(ids)
+            )
+            found["ids"] = sa.and_(ids_column.is_not(None), held)
         if "text" in part:
-            found["text"] = by_text(part["text"], every)
+            match = _text_matcher(field, f"{path}.{where}text", errors)
+            patterns = [match(pattern) for pattern in part["text"]]
+            found["text"] = sa.and_(*patterns) if every else sa.or_(*patterns)
         return found
 
-    parts, positive = [], {"ids": [], "text": []}
-    for part, every in ((form, False), (form.get("all"), True)):
-        if not part:
-            continue
-        found = terms(part, every)
-        if found and not every:
-            parts.append(sa.or_(*found.values()))
-        else:
-            parts.extend(found.values())
-        for key, condition in found.items():
-            positive[key].append(condition)
-    if "none" in form:
-        parts.append(sa.not_(sa.or_(*terms(form["none"], False).values())))
+    any_ = terms(form, False, "")
+    all_ = terms(form.get("all", {}), True, "all.")
+    none = terms(form.get("none", {}), False, "none.")
+    parts = [sa.or_(*any_.values())] if any_ else []
+    parts.extend(all_.values())
+    if none:
+        parts.append(sa.not_(sa.or_(*none.values())))
     matched = sa.and_(*parts)
-    mapped = field.unmapped.is_(False)
-    if form["when_unmapped"] == "exclude":
-        matched = sa.and_(matched, mapped)
-    elif form["when_unmapped"] == "include":
-        matched = sa.or_(sa.and_(matched, mapped), field.unmapped.is_(True))
-    return (
-        matched,
-        sa.and_(*positive["ids"]) if positive["ids"] else sa.false(),
-        sa.and_(*positive["text"]) if positive["text"] else sa.false(),
-    )
+    mode = form["when_unmapped"]
+    worded = any("text" in found for found in (any_, all_, none))
+    # Under `text` an unmapped analysis is judged by its wording alone, so a criterion with
+    # no text cannot match it.
+    if mode == "exclude" or (mode == "text" and not worded):
+        matched = sa.and_(matched, field.unmapped.is_(False))
+    elif mode == "include":
+        matched = sa.or_(sa.and_(matched, field.unmapped.is_(False)), field.unmapped.is_(True))
+
+    def either(key):
+        found = [part[key] for part in (any_, all_) if key in part]
+        return sa.or_(*found) if found else sa.false()
+
+    return matched, either("ids"), either("text")
 
 
 def _normalized_criterion(name, path, field, raw, errors):
@@ -402,11 +400,14 @@ def _normalized_criterion(name, path, field, raw, errors):
     matched = sa.and_(sa.not_(field.silent), matched)
     condition = sa.or_(matched, field.silent) if form["when_silent"] == "include" else matched
     unmapped = field.unmapped.is_(True)
-    # Only where the criterion holds: inside `or`, a result need not satisfy it.
+    admitted = unmapped if form["when_unmapped"] == "include" else sa.false()
+    # Only where the criterion holds: inside `or`, a result need not satisfy it. Under
+    # `include` an unmapped analysis is in because it is unmapped, whatever its wording.
     matched_by = sa.case(
         (sa.not_(condition), None),
         (field.silent, "silent"),
         (by_id, "id"),
+        (admitted, "unmapped"),
         (by_text, "text"),
         (unmapped, "unmapped"),
         else_=None,

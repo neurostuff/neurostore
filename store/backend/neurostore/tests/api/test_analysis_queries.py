@@ -80,6 +80,42 @@ async def test_when_unmapped_decides_the_analyses_whose_wording_mapped_to_nothin
     assert unmapped_in["funnel"][0]["unmapped"] == 3
 
 
+async def test_an_unmapped_analysis_needs_text_to_match_under_when_unmapped_text(
+    auth_client, papers
+):
+    # Every schizophrenia analysis holds the id, and nothing judges the unmapped ones.
+    not_schizophrenia = {"none": {"ids": ["MONDO:0005090"]}}
+    by_ids = await _query(auth_client, {"medical_condition": not_schizophrenia})
+    included = await _query(
+        auth_client, {"medical_condition": {**not_schizophrenia, "when_unmapped": "include"}}
+    )
+
+    assert by_ids["results"] == []
+    assert _papers(included, papers) == [NICOTINE, CONDUCT]
+    assert _matched_by(included, "medical_condition") == ["unmapped"]
+
+
+async def test_an_unmapped_contrast_set_is_excluded_unless_included(auth_client, session):
+    document = af.record(SCHIZOPHRENIA)
+    for analysis in document["analyses"]:
+        if analysis["name"]["value"] == "schizophrenia > BDp":
+            for entry in analysis["name"]["normalized"]:
+                entry.update(status="unmapped", value=None)
+    af.upload(SCHIZOPHRENIA, document)
+    db.session.commit()
+
+    bare = await _query(auth_client, {"contrast": {"set": "working_memory_span"}})
+    included = await _query(
+        auth_client,
+        {"contrast": {"set": {"ids": "working_memory_span", "when_unmapped": "include"}}},
+    )
+
+    assert _names(bare) == ["schizophrenia > control"]
+    assert bare["query"]["contrast"]["set"]["when_unmapped"] == "exclude"
+    assert _names(included) == ["schizophrenia > BDp", "schizophrenia > control"]
+    assert _matched_by(included, "contrast.set") == ["id", "unmapped"]
+
+
 async def test_an_id_matches_its_descendants_unless_told_not_to(auth_client, papers):
     family = await _query(auth_client, {"contrast": {"set": "working_memory"}})
     exact = await _query(
