@@ -1,13 +1,12 @@
 from collections import OrderedDict
 
-ALLOWED_NOTE_KEY_TYPES = {"string", "number", "boolean"}
+#: "array" is a list of strings.
+ALLOWED_NOTE_KEY_TYPES = {"string", "number", "boolean", "array"}
 
 
 def implicit_note_key_default(key, note_type):
     if note_type == "boolean":
         return key == "included"
-    if note_type in {"string", "number"}:
-        return None
     return None
 
 
@@ -75,6 +74,10 @@ def canonicalize_note_keys(
                 ) or isinstance(default_value, bool)
             elif note_type == "string":
                 invalid_default = not isinstance(default_value, str)
+            elif note_type == "array":
+                invalid_default = not isinstance(default_value, list) or not all(
+                    isinstance(item, str) for item in default_value
+                )
             if invalid_default:
                 fail(invalid_default_message(key, note_type))
 

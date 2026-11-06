@@ -473,6 +473,11 @@ async def test_a_query_becomes_a_studyset_and_an_annotation_column(auth_client, 
     excluded = [note for note in notes.values() if not note["included"]]
     assert {note["task"] for note in excluded} == {"N-Back Task"}
     assert body["note_keys"]["included"]["type"] == "boolean"
+    # Lists are joined into one string for Compose.
+    assert {k: body["note_keys"][k]["type"] for k in ("medical_condition", "contrast_key")} == {
+        "medical_condition": "string",
+        "contrast_key": "string",
+    }
     assert body["note_keys"]["n"]["type"] == "number"
     frozen = body["metadata"]["analysis_queries"]["included"]
     assert frozen["analysis_ids"] == sorted(a for a, note in notes.items() if note["included"])
