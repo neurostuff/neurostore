@@ -4,7 +4,7 @@ import uuid
 
 import shortuuid
 import sqlalchemy as sa
-from sqlalchemy import ForeignKeyConstraint, exists, func, text
+from sqlalchemy import FetchedValue, ForeignKeyConstraint, exists, func, text
 from sqlalchemy.dialects.postgresql import ARRAY, aggregate_order_by
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from sqlalchemy.dialects.postgresql import JSONB
@@ -302,6 +302,14 @@ class BaseStudy(BaseMixin, db.Model):
     )
     #: How: study_schema's ``VenueMatch``.
     journal_match = db.Column(db.Text, nullable=True)
+    #: The journal's title and abbreviation, copied by triggers whenever journal_id or the
+    #: journal changes, so that reading a paper's journal costs no lookup.
+    journal_title = db.Column(
+        db.Text, nullable=True, server_default=FetchedValue(), server_onupdate=FetchedValue()
+    )
+    journal_abbreviation = db.Column(
+        db.Text, nullable=True, server_default=FetchedValue(), server_onupdate=FetchedValue()
+    )
     #: The paper's licence, which governs its abstract (study_schema's
     #: ``bibliography.license.license_id``); NULL until a pipeline upload sets it.
     license = db.Column(license_type("base_studies"), nullable=True)

@@ -1,6 +1,7 @@
 """The journals, preprint servers and conference series papers appear in
 (docs/journals/DESIGN.md). neurostore owns them: no user does, and nothing writes one
-through the API."""
+through the API. Each base study keeps a copy of its journal's title and abbreviation,
+which triggers keep current (migration c3e5a7b9d1f2)."""
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -45,27 +46,26 @@ class Journal(BaseMixin, db.Model):
     )
 
 
-def _summary(journal_id_column):
-    return (
-        sa.select(
-            sa.func.jsonb_build_object(
-                "id", Journal.id, "title", Journal.title, "abbreviation", Journal.abbreviation
-            )
-        )
-        .where(Journal.id == journal_id_column)
-        .correlate_except(Journal)
-        .scalar_subquery()
+def _summary(base_studies):
+    """The journal as a paper shows it, from a base study's copy of its title."""
+    return sa.case(
+        (base_studies.c.journal_id.is_(None), sa.null()),
+        else_=sa.func.jsonb_build_object(
+            "id",
+            base_studies.c.journal_id,
+            "title",
+            base_studies.c.journal_title,
+            "abbreviation",
+            base_studies.c.journal_abbreviation,
+        ),
     )
 
 
-# The journal as a study or base study shows it: one correlated lookup per row, in the
-# row's own query.
-BaseStudy.journal = sa.orm.column_property(_summary(BaseStudy.journal_id))
+# A base study's journal is read from its own row; a study's, from its base study's row.
+BaseStudy.journal = sa.orm.column_property(_summary(BaseStudy.__table__))
 Study.journal = sa.orm.column_property(
-    _summary(
-        sa.select(BaseStudy.journal_id)
-        .where(BaseStudy.id == Study.base_study_id)
-        .correlate_except(BaseStudy)
-        .scalar_subquery()
-    )
+    sa.select(_summary(BaseStudy.__table__))
+    .where(BaseStudy.id == Study.base_study_id)
+    .correlate_except(BaseStudy)
+    .scalar_subquery()
 )

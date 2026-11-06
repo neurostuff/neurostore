@@ -4,9 +4,16 @@ for real papers found in production (docs/journals/DESIGN.md)."""
 
 import pytest
 import requests
+import sqlalchemy as sa
 
 from neurostore.ingest.study_schema import ingest_upload
-from neurostore.models import BaseStudy, BaseStudyIdentifier, BaseStudyMetadataOutbox, Journal
+from neurostore.models import (
+    BaseStudy,
+    BaseStudyIdentifier,
+    BaseStudyMetadataOutbox,
+    Journal,
+    Study,
+)
 from neurostore.services import journals
 from neurostore.services.base_study_metadata_enrichment import _match_journals
 from neurostore.tests import study_schema_fixtures as fx
@@ -46,6 +53,41 @@ def _upload(pmid, venue):
     paper["bibliography"]["journal"] = "Hum Brain Mapp"
     paper["bibliography"]["venue"] = venue
     return {"coordinate_parse": fx.parse([ANALYSIS], pmid=pmid), "parsed_paper": paper}
+
+
+def test_a_base_study_keeps_its_journal_s_title_whatever_writes_it(session):
+    hbm = _hbm(session)
+    paper = _base_study(session, "paper", journal_id=hbm.id, journal_match="doi")
+    study = Study(name="a version", level="group", base_study=paper)
+    session.add(study)
+    session.commit()
+
+    def shown():
+        session.refresh(paper)
+        session.refresh(study)
+        return paper.journal, study.journal
+
+    summary = {"id": hbm.id, "title": "Human Brain Mapping", "abbreviation": "Hum Brain Mapp"}
+    assert shown() == (summary, summary)
+    assert (paper.journal_title, paper.journal_abbreviation) == ("Human Brain Mapping",
+                                                                 "Hum Brain Mapp")
+
+    hbm.title = "Human Brain Mapping (renamed)"
+    session.commit()
+    renamed = {**summary, "title": "Human Brain Mapping (renamed)"}
+    assert shown() == (renamed, renamed)
+
+    session.execute(
+        sa.update(BaseStudy).where(BaseStudy.id == paper.id).values(journal_title="written over")
+    )
+    session.commit()
+    assert shown() == (renamed, renamed)
+
+    session.delete(hbm)
+    session.commit()
+    assert shown() == (None, None)
+    assert (paper.journal_id, paper.journal_title, paper.journal_abbreviation) == (
+        None, None, None)
 
 
 @pytest.mark.vcr
