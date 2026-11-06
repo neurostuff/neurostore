@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
 from webargs import fields
 
+from neurostore.analysis_feature_columns import FEATURE_COLUMNS, joined
 from neurostore.analysis_query import select_analyses
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
@@ -29,7 +30,11 @@ from neurostore.models import (
     User,
 )
 from neurostore.models.data import StudysetStudy, _check_type
-from neurostore.note_keys import canonicalize_note_keys, ordered_note_key_names
+from neurostore.note_keys import (
+    ALLOWED_NOTE_KEY_TYPES,
+    canonicalize_note_keys,
+    ordered_note_key_names,
+)
 from neurostore.resources.base import (
     DefaultObjectViewPolicy,
     ListView,
@@ -52,29 +57,30 @@ from neurostore.schemas import PipelineStudyResultSchema
 ANALYSIS_QUERY_KEYS = {"query", "column", "feature_columns"}
 
 
-def _display(key, join=True):
-    """A feature column read from an analysis's display values."""
+#: The analysis query's feature columns; an array column is written joined into a string.
+QUERY_FEATURE_COLUMNS = (
+    "medical_condition",
+    "task",
+    "contrast",
+    "contrast_key",
+    "contrast_set",
+    "spatial_scope",
+    "measure_type",
+    "n",
+)
 
-    def read(row, display):
-        value = display.get(key)
-        if not join:
-            return value
-        return ", ".join(str(v) for v in value or []) or None
 
-    return read
+def _query_note_type(feature):
+    note_type = FEATURE_COLUMNS[feature][0]
+    return "string" if note_type == "array" else note_type
 
 
-#: Feature column -> (note type, its value from an AnalysisFeature row and its display).
-FEATURE_COLUMNS = {
-    "medical_condition": ("string", _display("medical_condition")),
-    "task": ("string", _display("task")),
-    "contrast": ("string", _display("contrast", join=False)),
-    "contrast_key": ("string", _display("contrast_key")),
-    "contrast_set": ("string", _display("contrast_set")),
-    "spatial_scope": ("string", lambda row, display: row.spatial_scope),
-    "measure_type": ("string", lambda row, display: row.measure_type),
-    "n": ("number", lambda row, display: row.n),
-}
+def _query_value(feature, found):
+    """A query feature column's value from ``found`` (an AnalysisFeature row and its
+    display), or None."""
+    note_type, read = FEATURE_COLUMNS[feature]
+    value = read(*found) if found else None
+    return joined(value) if note_type == "array" else value
 
 
 class AnnotationMutationPolicy(DefaultMutationPolicy):
@@ -392,7 +398,7 @@ class AnnotationsView(ObjectView, ListView):
             mapping_factory=OrderedDict,
             invalid_type_message=lambda key: (
                 "Invalid `type` for note_keys entry "
-                f"'{key}', choose from: ['boolean', 'number', 'string']."
+                f"'{key}', choose from: {sorted(ALLOWED_NOTE_KEY_TYPES)}."
             ),
             invalid_default_message=lambda key, note_type: (
                 f"Invalid default for note_keys entry '{key}'; "
@@ -926,13 +932,15 @@ class AnnotationsView(ObjectView, ListView):
                 "`analysis_query.column` names a note column.",
                 [make_field_error("analysis_query.column", column)],
             )
-        unknown = [f for f in features if f not in FEATURE_COLUMNS]
+        unknown = [f for f in features if f not in QUERY_FEATURE_COLUMNS]
         if not isinstance(features, list) or unknown or column in features:
             abort_validation(
                 "Unknown or clashing feature column.",
                 [
                     make_field_error(
-                        "analysis_query.feature_columns", features, sorted(FEATURE_COLUMNS)
+                        "analysis_query.feature_columns",
+                        features,
+                        sorted(QUERY_FEATURE_COLUMNS),
                     )
                 ],
             )
@@ -957,10 +965,10 @@ class AnnotationsView(ObjectView, ListView):
             values[column] = analysis_id in selected
             found = rows.get(analysis_id)
             for feature in features:
-                values[feature] = FEATURE_COLUMNS[feature][1](*found) if found else None
+                values[feature] = _query_value(feature, found)
         data["note_keys"] = self._merge_note_keys(
             annotation.note_keys if data.get("note_keys") is None else data["note_keys"],
-            {column: "boolean", **{f: FEATURE_COLUMNS[f][0] for f in features}},
+            {column: "boolean", **{f: _query_note_type(f) for f in features}},
         )
         data["annotation_analyses"] = list(note_map.values())
         if data.get("metadata_") is not None:

@@ -1,18 +1,23 @@
 import pytest
 
 import json
+import shutil
 import tarfile
 from io import BytesIO
 from datetime import datetime, timezone
 
 import pandas as pd
 import sqlalchemy as sa
+from study_schema.vocabularies import vocabularies
 
+from neurostore.analysis_feature_columns import FEATURE_COLUMNS
 from neurostore.ingest.study_schema import HISTORY_SOURCE, STUDY_SOURCE, ingest_upload
 from neurostore.models.data import RECORD_SCHEMA_NAME
 from neurostore.models import (
     Analysis,
+    AnalysisFeature,
     Annotation,
+    AnnotationAnalysis,
     BaseStudy,
     Pipeline,
     PipelineConfig,
@@ -30,6 +35,7 @@ from neurostore.services.neurostore_studyset_releases import (
     build_neurostore_studyset_release,
 )
 
+from neurostore.tests import analysis_fixtures as af
 from neurostore.tests import study_schema_fixtures as fx
 
 pytestmark = pytest.mark.anyio
@@ -124,87 +130,6 @@ def _seed_release_data(session):
         ]
     )
 
-    demo_pipeline = Pipeline(name="ParticipantDemographicsExtractor")
-    task_pipeline = Pipeline(name="TaskExtractor")
-    session.add_all([demo_pipeline, task_pipeline])
-    session.flush()
-    demo_config = PipelineConfig(
-        pipeline=demo_pipeline,
-        version="1.0.0",
-        config_hash="demo",
-        config_args={},
-    )
-    task_config = PipelineConfig(
-        pipeline=task_pipeline,
-        version="1.1.0",
-        config_hash="da73c01b87bf",
-        config_args={},
-    )
-    session.add_all([demo_config, task_config])
-    session.flush()
-    session.add_all(
-        [
-            PipelineStudyResult(
-                config=demo_config,
-                base_study_id=base.id,
-                date_executed=_dt(2024, 3, 1),
-                status="SUCCESS",
-                result_data={
-                    "groups": [
-                        {
-                            "count": 10,
-                            "diagnosis": "healthy",
-                            "age_mean": 25.5,
-                        }
-                    ]
-                },
-            ),
-            PipelineStudyResult(
-                config=task_config,
-                base_study_id=base.id,
-                date_executed=_dt(2024, 3, 2),
-                status="SUCCESS",
-                result_data={
-                    "Modality": ["fMRI-BOLD"],
-                    "StudyObjective": (
-                        "To explore the characteristics of resting state brain "
-                        "activity."
-                    ),
-                    "Exclude": None,
-                    "fMRITasks": [
-                        {
-                            "TaskName": "Resting-state fMRI",
-                            "TaskDescription": (
-                                "Participants were instructed to keep their eyes "
-                                "closed during resting state fMRI scans."
-                            ),
-                            "DesignDetails": (
-                                "A resting state fMRI scan was conducted using an "
-                                "EPI sequence."
-                            ),
-                            "Conditions": None,
-                            "TaskMetrics": [
-                                "Amplitude of low-frequency fluctuations (ALFF)"
-                            ],
-                            "Concepts": ["Intrinsic functional connectivity"],
-                            "Domain": ["Attention"],
-                            "RestingState": True,
-                            "RestingStateMetadata": {
-                                "Instructions": (
-                                    "Participants were instructed to keep their eyes "
-                                    "closed."
-                                ),
-                                "EyesOpenClosed": "Eyes closed",
-                            },
-                            "TaskDesign": ["Other"],
-                            "TaskDuration": "7 minutes",
-                        }
-                    ],
-                    "BehavioralTasks": None,
-                },
-            ),
-        ]
-    )
     session.commit()
     return base, old_study, newest_study, analysis
 
@@ -223,10 +148,6 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     )
 
     assert len(result["written"]) == 2
-    assert result["written"][0]["feature_pipelines"] == [
-        "ParticipantDemographicsExtractor",
-        "TaskExtractor",
-    ]
     studyset = Studyset.query.filter_by(source_id=STUDYSET_SOURCE_ID).one()
     annotation = Annotation.query.filter_by(source_id=ANNOTATION_SOURCE_ID).one()
     assert studyset.name == "neurostore-studyset"
@@ -279,14 +200,137 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
         annotations_df = pd.read_parquet(
             BytesIO(tar.extractfile(annotations_member).read())
         )
-    assert "TaskExtractor.fMRITasks[0].TaskName" in annotations_df.columns
+    assert list(annotations_df["id"]) == [f"{newest_study.id}-{analysis.id}"]
 
-    assert any(
-        note.analysis_id == analysis.id for note in annotation.annotation_analyses
-    )
+    # A study without an extraction record has every feature column, all null.
+    assert [note.analysis_id for note in annotation.annotation_analyses] == [analysis.id]
     note = annotation.annotation_analyses[0].note
-    assert note["ParticipantDemographicsExtractor.groups[0].count"] == 10
-    assert note["TaskExtractor.fMRITasks[0].TaskName"] == "Resting-state fMRI"
+    assert set(note) == set(FEATURE_COLUMNS)
+    assert set(note.values()) == {None}
+    assert annotation.note_keys["medical_condition_ids"]["type"] == "array"
+
+
+def _release_folder(tmp_path):
+    """The nightly archive, unpacked; its parquet folder."""
+    archive = tmp_path / "neurostore-studyset-releases/nightly/neurostore-studyset-nightly.tar.gz"
+    unpacked = tmp_path / "unpacked"
+    shutil.rmtree(unpacked, ignore_errors=True)
+    with tarfile.open(archive, mode="r:gz") as tar:
+        tar.extractall(unpacked, filter="data")
+    return next(unpacked.iterdir())
+
+
+def test_release_annotates_each_analysis_with_its_features(app, session, tmp_path):
+    """Each analysis's features: lists as arrays (directional contrast terms, condition
+    ancestors), a true column per canonical task and task family, and the stamps."""
+    from nimare.studyset import Studyset as NimareStudyset
+
+    app.config["FILE_DIR"] = tmp_path
+    af.load(tmp_path)
+    papers = {name: af.upload(name)["base_study_id"] for name in af.RECORDS}
+    session.commit()
+
+    manifest = build_neurostore_studyset_release(settings=app.config, nightly=True)[
+        "written"
+    ][0]
+
+    annotation = Annotation.query.filter_by(source_id=ANNOTATION_SOURCE_ID).one()
+    notes = {}
+    for note in annotation.annotation_analyses:
+        notes.setdefault(note.analysis.study.base_study_id, []).append(note.note)
+    # Patients against controls, and against bipolar patients (bipolar disorder is not in
+    # the loaded release, so it is its own only ancestor).
+    schizophrenia = {note["n"]: note for note in notes[papers["ya2RC6UYbibC"]]}
+    assert {n: note["medical_condition_ids"] for n, note in schizophrenia.items()} == {
+        29: ["MONDO:0005090"],
+        22: ["MONDO:0005090", "MONDO:0004985"],
+    }
+    assert schizophrenia[22]["medical_condition_ancestor_ids"] == [
+        "MONDO:0005090",
+        "MONDO:0004985",
+        "MONDO:0005487",
+        "MONDO:0002025",
+    ]
+    assert schizophrenia[22]["medical_condition"] == ["schizophrenia", "bipolar disorder"]
+    assert schizophrenia[29]["contrast_set"] == ["working_memory#1:reversed"]
+    assert schizophrenia[22]["contrast_set"] is None
+    for note in schizophrenia.values():
+        assert note["task_ids"] == ["hedtsk_n_back"]
+        assert note["task:hedtsk_n_back"] is True
+        assert note["task_family:working_memory_span"] is True
+        assert note["task:tct_self_ordered_search"] is None
+    # Nothing mapped: the wording, flagged unmapped.
+    (conduct,) = notes[papers["AhxosLhYA5YG"]]
+    assert conduct["medical_condition"] == [
+        "Conduct disorder in 12 participants: 7 mild and 5 moderate"
+    ]
+    assert (conduct["medical_condition_ids"], conduct["medical_condition_unmapped"]) == (
+        None,
+        True,
+    )
+    for note in notes[papers["6SKTGteXbbBs"]]:
+        assert note["task_family:reward_and_value_choice"] is True
+        assert note["task_family:working_memory_span"] is None
+
+    keys = annotation.note_keys
+    assert {
+        k: keys[k]["type"] for k in ("medical_condition_ids", "contrast", "n", "has_patients")
+    } == {
+        "medical_condition_ids": "array",
+        "contrast": "string",
+        "n": "number",
+        "has_patients": "boolean",
+    }
+    ordered = sorted(keys, key=lambda k: keys[k]["order"])
+    assert ordered[: len(FEATURE_COLUMNS)] == list(FEATURE_COLUMNS)
+    one_hot = ordered[len(FEATURE_COLUMNS):]
+    assert one_hot == [
+        "task:hedtsk_monetary_incentive_delay",
+        "task:hedtsk_n_back",
+        "task:tct_self_ordered_search",
+        "task_family:reward_and_value_choice",
+        "task_family:working_memory_span",
+    ]
+    assert all(keys[k]["type"] == "boolean" for k in one_hot)
+
+    stamps = manifest["analysis_features"]
+    assert annotation.metadata_["analysis_features"] == stamps
+    assert stamps["pinned_releases"] == {v.name: v.release for v in vocabularies()}
+    # The two schizophrenia analyses carry MONDO ids.
+    assert stamps["vocabulary_releases"]["mondo test"] == 2
+    assert stamps["mapping_tools"]["fixture: ns-pond build rows (astra_records.json)"] == 5
+
+    # NiMARE selects on a one-hot column directly, and on a list by membership.
+    released = NimareStudyset.from_parquet(_release_folder(tmp_path))
+    frame = released.annotations_df
+    n_back = set(released.filter_annotations(["task:hedtsk_n_back"]).ids)
+    in_schizophrenia = frame["medical_condition_ancestor_ids"].map(
+        lambda ids: ids is not None and "MONDO:0005487" in list(ids)
+    )
+    assert n_back == set(frame.loc[in_schizophrenia, "id"])
+    assert len(n_back) == 2
+    by_analysis = {note.analysis_id: note.note["n"] for note in annotation.annotation_analyses}
+    assert dict(zip(frame["contrast_id"], frame["n"])) == by_analysis
+
+    # Unchanged features leave every study as it was.
+    again = build_neurostore_studyset_release(settings=app.config, nightly=True)["written"][0]
+    assert again["changed_base_study_ids"] == []
+
+    # A changed feature refreshes that study alone, in the database and the archive.
+    conduct_feature = AnalysisFeature.query.filter_by(
+        base_study_id=papers["AhxosLhYA5YG"]
+    ).one()
+    conduct_feature.n = 73
+    session.commit()
+    third = build_neurostore_studyset_release(settings=app.config, nightly=True)["written"][0]
+    assert third["changed_base_study_ids"] == [papers["AhxosLhYA5YG"]]
+    session.expire_all()
+    note = AnnotationAnalysis.query.filter_by(
+        annotation_id=annotation.id, analysis_id=conduct_feature.analysis_id
+    ).one()
+    assert note.note["n"] == 73
+    frame = NimareStudyset.from_parquet(_release_folder(tmp_path)).annotations_df
+    assert frame.set_index("contrast_id").loc[conduct_feature.analysis_id, "n"] == 73
 
 
 def test_release_build_harmonizes_mixed_metadata_types(app, session, tmp_path):
