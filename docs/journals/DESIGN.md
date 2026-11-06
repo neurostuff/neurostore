@@ -294,6 +294,120 @@ Readers that want the entity read `journal`.
 Rollback: the downgrade drops `base_studies.journal_id`, `journal_match` and `journals`. `publication`
 was never touched, so nothing is lost and the API's old field is unchanged throughout.
 
+## Cost of the journal summary (measured 2026-11-06)
+
+**Question.** Since neurostuff/neurostore#1918, `BaseStudy.journal` and `Study.journal` are correlated
+scalar subqueries loaded with every row:
+- a base study reads `journal_id → journals`;
+- a study reads `base_study → journal_id → journals`.
+
+What does that cost, and is there a costless way to keep the journal name on `base_studies`?
+
+**Input.**
+- **Data:** the production backup of 2026-11-06, restored to a scratch database and migrated to head:
+  76,664 base studies, 221,886 studies, 1,914 studysets. Journals were filled offline from this design's
+  matching results: 2,691 journals, assigned to 76,503 base studies (99.8%).
+- **Skipped data:** pipeline, full-text, claim and review tables, which these endpoints don't read.
+- **Harness:** the ASGI app in process, with no response cache, so every request reaches Postgres.
+  Each endpoint got one cold run, then five warm runs (median reported).
+- **What was recorded:** wall time, SQL time (SQLAlchemy cursor events), query count, peak Python
+  memory (tracemalloc) and a digest of the response.
+- **Machine:** the laptop, under its normal load (load average about 4). Absolute times are noisy;
+  everything was compared on the same data and machine.
+
+**Candidates.**
+- **pre:** master before #1918 (eb454cd5): deferred, left out where not loaded.
+- **(a):** #1918 (be9f8e97): loaded with the row.
+- **(b):** a denormalized `base_studies.journal_summary` JSONB copy; a study reads its base study's
+  copy (one level).
+- **(c):** a `BaseStudy.journal_record` relationship, loaded by `selectinload`: one `IN` query per page.
+  The hand-built studyset responses use a `LEFT JOIN`.
+- **(d):** deferred again, with `undefer` in the views and write paths. Its read SQL is that of
+  **pre**, so pre's numbers stand for it.
+
+**Endpoints.** Warm median of wall time and SQL time, in ms.
+
+| Endpoint | pre | (a) | (b) | (c) |
+|---|---|---|---|---|
+| `GET /base-studies/?page_size=10` | 162 / 137 | 135 / 122 | 135 / 121 | 122 / 108 |
+| `GET /base-studies/?page_size=100` | 152 / 118 | 164 / 117 | 166 / 132 | 146 / 118 |
+| `GET /base-studies/?page_size=1000` | 526 / 223 | 415 / 198 | 462 / 212 | 397 / 182 |
+| `GET /base-studies/?page_size=10&nested=true` | 180 / 132 | 149 / 106 | 182 / 133 | 158 / 113 |
+| `GET /base-studies/?page_size=100&nested=true` | 736 / 231 | 643 / 203 | 797 / 231 | 663 / 217 |
+| `GET /base-studies/?page_size=1000&nested=true` | 8,195 / 1,361 | 7,179 / 1,150 | 6,470 / 1,080 | 6,367 / 1,151 |
+| `GET /studies/?page_size=10` | 79 / 64 | 80 / 64 | 64 / 51 | 82 / 63 |
+| `GET /studies/?page_size=100` | 134 / 78 | 179 / 111 | 103 / 67 | 146 / 88 |
+| `GET /studies/?page_size=1000` | 935 / 263 | 904 / 271 | 800 / 219 | 901 / 242 |
+| `GET /studysets/{id}?nested=true` (5,672 studies) | 3,881 / 1,918 | 4,051 / 1,947 | 3,953 / 2,005 | 4,139 / 1,991 |
+| `GET /annotations/{id}` (that studyset's annotation) | 1,721 / 177 | 1,991 / 204 | 1,828 / 180 | 2,228 / 242 |
+
+- **Peak memory is equal across candidates**, within 5%. It is 19 MB for a page of 1,000 base studies,
+  258 MB for 1,000 nested base studies and 266 MB for the 5,672-study studyset.
+- **Query counts:** (c) adds 1 query per page for base studies and 2–3 for studies. The others are equal.
+- **Response digests are identical for (a), (b) and (c)** on every endpoint. They differ from pre only
+  where pre left `journal` out: the versions nested in base studies.
+- **Growth is linear in the page size.** At 10, 100 and 1,000 rows, all candidates scale the same way.
+
+**Endpoint timings can't tell the candidates apart.** The spread between candidates is no larger than
+the run-to-run spread. Pre, whose SQL lacks the subquery where it leaves `journal` out, is not the
+fastest anywhere. The cost of the subquery is below what these endpoints can resolve.
+
+**The subquery itself.** `EXPLAIN (ANALYZE, BUFFERS)` on the list queries, execution time in ms:
+
+| Query (page of 1,000, by `created_at`) | Without summary | (a) subquery | (b) copy |
+|---|---|---|---|
+| base studies | 1.3 | 13.0 | 1.4 |
+| studies | 1.3 | 21.1 | 5.9 (one level) |
+
+| Every study (221,886 rows) | ms |
+|---|---|
+| no summary | 48 |
+| (a) correlated subquery | 2,991 |
+| `LEFT JOIN` (c's form) | 811 |
+
+- **Per row,** the subquery costs about 12 µs for a base study (one index lookup on `journals`) and
+  20 µs for a study (two lookups). On a page of 1,000 that is 12 ms and 20 ms. Those pages' endpoints
+  take 400–900 ms wall, so the subquery is 2–3% of them.
+- **The whole-table figure** matters only if a path loads every study as ORM objects. None of the
+  measured paths does: studyset and annotation responses select their columns explicitly.
+
+**What each candidate costs to write, and what can go stale.**
+- **(a)** writes nothing extra and nothing can go stale. The journal is read from `journals` every time.
+- **(b)** costs nothing extra when a journal is first attached: `journals.attach` already writes the
+  base study's row. But every path that sets `journal_id` or changes a journal must also write the copy:
+  - `journals.attach`, from the upload and the matcher;
+  - the merge, which copies `journal_id` (`CONTENT_FIELDS`);
+  - `refresh_journals`, which changes titles and abbreviations and repoints merged sources;
+  - the migration's backfill;
+  - any hand-written SQL.
+
+  A missed path leaves the copy stale. Measured on the scratch copy, in a rolled-back transaction:
+  - the backfill of 76,503 rows took 20.8 s;
+  - renaming the journal with the most papers (6,852 base studies) took 2.7 s;
+  - a consistency check (copies that disagree with their journal) took 0.33 s.
+
+  Each update rewrites the row, so its pg_search full-text index entries are rewritten too.
+- **(c)** writes nothing extra and nothing can go stale. It adds 1–3 queries per page, and a join in
+  each hand-built response. Every view and write path has to load the relationship, or it falls back
+  to one query per row.
+- **(d)** writes nothing extra and nothing can go stale. Every path that serves `journal` has to
+  `undefer` it, including POST, PUT and clone, the gap #1918 fixed. A path that forgets omits
+  `journal` from its response: the bug that broke `test_source_id`.
+
+**Recommendation: keep (a).**
+- **Its cost doesn't show at endpoint level.** The subquery adds 12 ms (base studies) and 20 ms
+  (studies) of SQL per page of 1,000 rows, under the endpoints' run-to-run variation.
+- **It has one path and nothing to keep in step.**
+- **(b)** is the only near-costless read for base studies (13.0 → 1.4 ms per 1,000 rows), but it
+  isn't costless overall. It adds a second copy that five write paths must keep current, a 20.8 s
+  backfill, and a pg_search reindex of every row it touches. Its endpoint timings don't beat (a)'s
+  beyond noise.
+- **(c) and (d)** gain nothing measurable and add paths that can forget to load the journal.
+
+If a future path ever loads every study as ORM objects, the subquery costs about 3 s per pass over
+221,886 studies. That path should select explicit columns with a `LEFT JOIN`, as the studyset
+responses do.
+
 ## Questions for James
 
 James, 2026-11-05: agreed to `Venue` as long as no information is held twice. `Venue` is therefore cut to
