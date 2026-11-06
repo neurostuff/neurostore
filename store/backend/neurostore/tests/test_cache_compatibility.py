@@ -2,7 +2,7 @@ import pytest
 
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.extensions import cache
-from neurostore.models import Study
+from neurostore.models import Study, User
 from neurostore.resources import base as base_resource
 
 pytestmark = pytest.mark.anyio
@@ -60,9 +60,10 @@ async def test_object_cache_serves_warm_value_with_flask_compatible_key(
     auth_client, mock_add_users, user_data, session, monkeypatch
 ):
     study = session.query(Study).filter_by(public=True).first()
-    # Detail GET is anonymous in the OpenAPI contract, so Connexion does not
-    # invoke optional Bearer authentication and Flask used an empty user slot.
-    cache_key = f"/api/studies/{study.id}_()__v=0"
+    # Detail GET reads an optional bearer token, so the key's user slot is the
+    # caller's: a response that serves the owner's own id is never shared.
+    caller = session.query(User).filter_by(external_id=auth_client.username).one()
+    cache_key = f"/api/studies/{study.id}_()_{caller.id}_v=0"
     written_keys = []
     original_set = cache.cache.set
 
