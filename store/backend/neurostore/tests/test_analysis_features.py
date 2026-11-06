@@ -25,6 +25,8 @@ FEATURE_TABLES = (
 )
 #: The head before the normalized-search migration.
 PUBLICATION_REVISION = "c3e5a7b9d1f2"
+#: The head before the contrast-sides migration.
+PUBLIC_QUERY_REVISION = "e5b7d9f1a3c4"
 
 
 def _by_name(name):
@@ -37,7 +39,7 @@ def _by_name(name):
 
 
 def test_the_fixture_records_are_valid_extraction_records():
-    for name in af.RECORDS:
+    for name in [*af.RECORDS, *af.NS_POND_RECORDS]:
         assert [e.message for e in schema_errors("extraction-record", af.record(name))] == []
 
 
@@ -235,6 +237,128 @@ def test_a_record_that_does_not_name_a_term_s_parent_keeps_the_known_one(session
     assert term.parent == "working_memory_span"
 
 
+def _sides(row, *columns):
+    """``row``'s ``contrast_<side>_<column>`` values, as {column: (positive, negative)}."""
+    return {c: (row[f"contrast_positive_{c}"], row[f"contrast_negative_{c}"]) for c in columns}
+
+
+def test_each_side_has_its_cells_groups_health_and_medical_conditions():
+    rows = _by_name("ya2RC6UYbibC")
+    columns = ("has_patients", "has_healthy", "medical_condition_ids", "medical_condition_text")
+
+    assert _sides(rows["schizophrenia > control"], *columns) == {
+        "has_patients": (True, False),
+        "has_healthy": (False, True),
+        # The controls' condition is silent.
+        "medical_condition_ids": (["MONDO:0005090"], None),
+        "medical_condition_text": ("schizophrenia", None),
+    }
+    assert _sides(rows["schizophrenia > BDp"], "has_healthy", "medical_condition_ids") == {
+        "has_healthy": (False, False),
+        "medical_condition_ids": (["MONDO:0005090"], ["MONDO:0004985"]),
+    }
+    assert _sides(rows["schizophrenia > control"], "medical_condition_unmapped") == {
+        "medical_condition_unmapped": (False, None)
+    }
+
+
+def test_a_side_whose_levels_carry_no_groups_is_silent_on_them():
+    rows = _by_name("y6qgUVcjRYtn")
+    over_time = rows["Time differences between follow-up and baseline"]
+
+    # The analysis ran on both cohorts; its sides are occasions, not cohorts.
+    assert (over_time["has_patients"], over_time["has_healthy"]) == (True, True)
+    assert _sides(over_time, "has_patients", "medical_condition_ids", "timepoints") == {
+        "has_patients": (None, None),
+        "medical_condition_ids": (None, None),
+        "timepoints": (["post_intervention"], ["pre_intervention"]),
+    }
+
+
+def test_each_side_has_its_levels_arms_and_timepoints():
+    patients = _by_name("y6qgUVcjRYtn")["Group differences between MDD and HCs"]
+    rows = _by_name("myhy8yAbQrAV")
+
+    assert _sides(patients, "has_patients", "has_healthy", "medical_condition_ids") == {
+        "has_patients": (True, False),
+        "has_healthy": (False, True),
+        "medical_condition_ids": (["MONDO:0002009", "ONVOC:0000207"], None),
+    }
+    assert _sides(patients, "arm_kinds", "timepoints") == {
+        "arm_kinds": (["pharmacological"], ["no_intervention"]),
+        "timepoints": (None, None),
+    }
+    # CBT x post x reappraise against waitlist x baseline x react, and the inverse: the
+    # cohort term swaps sides, the occasion and condition terms do not.
+    assert _sides(rows["Positive FC"], "arm_kinds", "timepoints") == {
+        "arm_kinds": (["behavioural_intervention"], ["no_intervention"]),
+        "timepoints": (["post_intervention"], ["pre_intervention"]),
+    }
+    assert _sides(rows["Inverse FC"], "arm_kinds", "timepoints") == {
+        "arm_kinds": (["no_intervention"], ["behavioural_intervention"]),
+        "timepoints": (["post_intervention"], ["pre_intervention"]),
+    }
+
+
+def test_each_side_has_its_contrast_keys_facets():
+    rows = _by_name("ya2RC6UYbibC")
+    conduct = _by_name("AhxosLhYA5YG")
+    regulation = _by_name("myhy8yAbQrAV")["Positive FC"]
+
+    assert _sides(rows["schizophrenia > control"], "facets") == {
+        "facets": (["load:2"], ["load:0"])
+    }
+    assert _sides(regulation, "facets") == {
+        "facets": (["regulation:reappraise"], ["referent:self"])
+    }
+    # A baseline of kinds is its kinds.
+    assert [_sides(row, "facets")["facets"] for row in conduct.values()] == [
+        (["concreteness:abstract"], ["control_state"])
+    ] * len(conduct)
+
+
+def test_a_key_s_facets_are_its_atoms_or_its_wording_and_a_reversed_key_swaps_them():
+    def sides(*keys):
+        document = af.record("ya2RC6UYbibC")
+        for analysis in document["analyses"]:
+            name = analysis["name"]
+            name["normalized"] = [
+                e for e in name["normalized"] if e["vocabulary"] != "astra contrast key"
+            ] + [
+                {"vocabulary": "astra contrast key", "status": "mapped", "value": key,
+                 "method": method, "mapping_tool": "fixture"}
+                for key, method in keys
+            ]
+        return _sides(next(iter(record_features(document).values())), "facets")["facets"]
+
+    # Keys as ns-pond wrote them on staging's records.
+    assert sides(
+        (
+            "oddball_and_vigilance|memory_outcome:remembered;stimulus:music,valence:positive"
+            "|vs:memory_outcome:forgotten;stimulus:music",
+            "neither; sign +1",
+        )
+    ) == (
+        ["memory_outcome:remembered", "stimulus:music", "valence:positive"],
+        ["memory_outcome:forgotten", "stimulus:music"],
+    )
+    assert sides(("motor_performance|~lip licking|fixation", "target>baseline; sign +1")) == (
+        ["~lip licking"],
+        ["fixation"],
+    )
+    assert sides(("motor_performance|~prediction|-", "one_sided; sign +1")) == (
+        ["~prediction"],
+        None,
+    )
+    assert sides(
+        ("perceptual_judgment|engagement:active|vs:engagement:passive", "reversed; sign -1")
+    ) == (["engagement:passive"], ["engagement:active"])
+    assert sides(
+        ("language|stimulus:words|fixation+rest", "target>baseline; sign +1"),
+        ("language|~reading|?", "target>baseline; sign +1"),
+    ) == (["stimulus:words", "~reading"], ["fixation", "rest"])
+
+
 def test_rows_list_their_terms_with_labels_and_parents():
     row = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
 
@@ -410,6 +534,16 @@ def test_the_inverse_half_of_a_sign_split_takes_its_original_reversed(session):
     )
     assert original.contrast_set_ids == ["working_memory#1:reversed"]
     assert inverse.contrast_set_ids == ["working_memory#1"]
+    assert (inverse.contrast_positive_has_healthy, inverse.contrast_negative_has_patients) == (
+        True,
+        True,
+    )
+    assert inverse.contrast_positive_medical_condition_ids is None
+    assert inverse.contrast_negative_medical_condition_ids == ["MONDO:0005090"]
+    assert (inverse.contrast_positive_facets, inverse.contrast_negative_facets) == (
+        ["load:0"],
+        ["load:2"],
+    )
     assert inverse.contrast_key_ids == ["working_memory_span|load:2|vs:load:0:reversed"]
     assert inverse.contrast_key_ancestor_ids[-1] == "working_memory_span"
     labels = {(t.term, t.label) for t in AnalysisTerm.query.filter_by(field="contrast_set")}
@@ -456,6 +590,32 @@ def test_the_backfill_rewrites_every_paper_from_its_stored_record(session):
 
     assert summary == {"papers": 3, "analyses": 5}
     assert {row.analysis_id: row.display_row.display for row in AnalysisFeature.query} == written
+
+
+def test_the_contrast_sides_migration_adds_the_side_columns_and_its_downgrade_drops_them(
+    session,
+):
+    af.upload("ya2RC6UYbibC")
+    session.commit()
+    session.remove()
+
+    def side_columns():
+        return {
+            c["name"]
+            for c in sa.inspect(session.bind).get_columns("analysis_features")
+            if c["name"].startswith(("contrast_positive_", "contrast_negative_"))
+        }
+
+    try:
+        service_migrations.downgrade(PUBLIC_QUERY_REVISION)
+        assert side_columns() == set()
+        service_migrations.upgrade("heads")
+        assert len(side_columns()) == 18
+        # Rows written before it are silent on the sides until the backfill.
+        assert {row.contrast_positive_has_patients for row in AnalysisFeature.query} == {None}
+        session.remove()
+    finally:
+        service_migrations.upgrade("heads")
 
 
 def test_the_migrated_table_matches_the_model(db):

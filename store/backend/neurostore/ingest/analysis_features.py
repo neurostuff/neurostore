@@ -16,6 +16,11 @@ A contrast key or set is a directional term: the term itself where the analysis 
 contrast the way the key or set does, and the term with `:reversed` where it states the
 opposite. Each row also lists the terms it uses, with their labels and parents, for
 `analysis_terms`.
+
+Each side of the contrast (`contrast_positive_*`, `contrast_negative_*`) has what its signed
+cells' factor levels carry: the health and medical conditions of their groups, the
+`relation_to_intervention` of their timepoints and the `arm_kind` of their arms, and the
+facets its contrast keys put on that side.
 """
 
 import functools
@@ -61,6 +66,11 @@ DIRECTIONAL_FIELDS = {
 FIT = re.compile(r"\bfit-[0-9a-f]{12}\b")
 #: ns-pond writes a key's sign only in its entry's method: "target>baseline; sign -1".
 KEY_SIGN = re.compile(r"\bsign -1\b")
+#: The sides of a contrast, by the `Cell.direction` that puts a cell on it.
+SIDES = ("positive", "negative")
+#: A key's baseline with no facets of its own; kinds are joined by "+".
+NO_BASELINE = "-"
+UNKNOWN_KIND = "?"
 
 #: A coordinate meta-analysis indexed as a paper (pondie.query.engine.META_ANALYSIS).
 META_ANALYSIS = re.compile(
@@ -167,6 +177,50 @@ def _family(term, field):
     return term.split(separator, 1)[0] if separator in term else None
 
 
+def _key_facets(tokens):
+    """The facets of a contrast key's side: each token's `name:value` atoms (joined by
+    ","), or a `~wording` token whole."""
+    if tokens == NO_BASELINE:
+        return []
+    return [
+        facet
+        for token in tokens.split(";")
+        for facet in ([token] if token.startswith("~") else token.split(","))
+        if facet
+    ]
+
+
+def _key_sides(term):
+    """The facets a directional contrast key (`family|target|baseline`, study_schema's
+    `contrast_key` id form) puts on the analysis's positive and negative sides: its target's
+    and its baseline's, swapped for a `:reversed` key. A baseline of kinds (`fixation+rest`)
+    is its kinds; `-` is none."""
+    key = term[: -len(REVERSED)] if term.endswith(REVERSED) else term
+    parts = key.split(DIRECTIONAL_FIELDS["contrast_key"])
+    if len(parts) < 3:
+        return [], []
+    target, baseline = DIRECTIONAL_FIELDS["contrast_key"].join(parts[1:-1]), parts[-1]
+    if baseline.startswith("vs:"):
+        against = _key_facets(baseline.removeprefix("vs:"))
+    else:
+        against = [k for k in baseline.split("+") if k not in (NO_BASELINE, UNKNOWN_KIND)]
+    sides = (_key_facets(target), against)
+    return sides[::-1] if term.endswith(REVERSED) else sides
+
+
+def _side_facets(key_ids):
+    """``{contrast_<side>_facets: ...}``: the facets the keys ``key_ids`` put on each side,
+    lower-cased."""
+    found = {side: [] for side in SIDES}
+    for term in key_ids or []:
+        for side, facets in zip(SIDES, _key_sides(term)):
+            found[side] += facets
+    return {
+        f"contrast_{side}_facets": _unique(f.lower() for f in facets) or None
+        for side, facets in found.items()
+    }
+
+
 def _unique(items):
     """Items in order, without repeats; strings compare case-insensitively."""
     out, seen = [], set()
@@ -235,6 +289,32 @@ def _groups(groups):
         "terms": [("medical_condition", i, label, None) for i, label in labels.items()],
     }
     return columns, {"medical_condition": list(labels.values()) or _unique(wording)}
+
+
+def _side(side, groups, timepoints, arms):
+    """The columns of one side of a contrast from what its cells' factor levels carry: the
+    groups' health and medical conditions, as `_groups` reads them for the analysis, and
+    the timepoints' relations to the intervention and the arms' kinds."""
+    columns, _ = _groups(groups) if groups else ({}, None)
+    prefix = f"contrast_{side}"
+    relations = (reported_value(t.get("relation_to_intervention")) for t in timepoints)
+    kinds = (kind for arm in arms for kind in _values(arm.get("arm_kind")))
+    return {
+        **{
+            f"{prefix}_{name}": columns.get(name)
+            for name in (
+                "has_patients",
+                "has_healthy",
+                "medical_condition_ids",
+                "medical_condition_text",
+                "medical_condition_unmapped",
+            )
+        },
+        f"{prefix}_timepoints": _unique(str(r).lower() for r in relations if r) or None,
+        f"{prefix}_arm_kinds": _unique(str(k).lower() for k in kinds) or None,
+        "mapping_tools": columns.get("mapping_tools", []),
+        "terms": columns.get("terms", []),
+    }
 
 
 def _tasks(tasks):
@@ -355,7 +435,10 @@ class _Record:
                 for level in (term or {}).get("levels") or []:
                     key = (term.get("local_id"), reported_value((level or {}).get("level")))
                     self.levels[key] = level
-        self.design = self._design(record.get("design") or {})
+        design = record.get("design") or {}
+        self.timepoints = _by_id(design.get("timepoints"))
+        self.arms = _by_id(design.get("arms"))
+        self.design = self._design(design)
 
     def _design(self, design):
         relations = {
@@ -390,20 +473,44 @@ class _Record:
             "is_meta_analysis": bool(META_ANALYSIS.search(blob)) if blob else None,
         }
 
-    def _sides(self, effect):
-        """The names on each side of the contrast: each signed cell's label or level, and
-        the conditions its factor level stands for."""
-        sides = {"positive": [], "negative": []}
+    def _factor_levels(self, effect):
+        """``{side: [(cell, its factor level)]}`` for the signed cells of ``effect``; a
+        level the model does not list is ``{}``."""
+        sides = {side: [] for side in SIDES}
         for cell in effect.get("cells") or []:
             side = sides.get(reported_value((cell or {}).get("direction")))
-            if side is None:
-                continue
-            level = reported_value(cell.get("level"))
-            side.append(reported_value(cell.get("label")) or level)
-            factor_level = self.levels.get((cell.get("term"), level)) or {}
-            for condition_id in factor_level.get("conditions") or []:
-                side.append(reported_value((self.conditions.get(condition_id) or {}).get("name")))
-        return [n for n in sides["positive"] if n], [n for n in sides["negative"] if n]
+            if side is not None:
+                level = reported_value(cell.get("level"))
+                side.append((cell, self.levels.get((cell.get("term"), level)) or {}))
+        return sides
+
+    def _sides(self, sides):
+        """The names on each side of the contrast: each signed cell's label or level, and
+        the conditions its factor level stands for."""
+        names = {side: [] for side in SIDES}
+        for side, cells in sides.items():
+            for cell, factor_level in cells:
+                names[side].append(
+                    reported_value(cell.get("label")) or reported_value(cell.get("level"))
+                )
+                for condition_id in factor_level.get("conditions") or []:
+                    condition = self.conditions.get(condition_id) or {}
+                    names[side].append(reported_value(condition.get("name")))
+        return [n for n in names["positive"] if n], [n for n in names["negative"] if n]
+
+    def _carried(self, side, cells):
+        """``side``'s columns from the groups, timepoints and arms its factor levels carry."""
+
+        def linked(slot, by_id):
+            ids = _unique(i for _, level in cells for i in level.get(slot) or [])
+            return [by_id[i] for i in ids if i in by_id]
+
+        return _side(
+            side,
+            linked("groups", self.groups),
+            linked("timepoints", self.timepoints),
+            linked("arms", self.arms),
+        )
 
     def features(self, analysis):
         measure = self.measures.get(analysis.get("measure")) or {}
@@ -428,20 +535,24 @@ class _Record:
         row["name_text"] = _text([name]) if name else None
         display = {"name": name}
         tools, terms, releases = [], [], []
+        levels = self._factor_levels(effect)
         for columns, shown in (
             _groups([self.groups.get(link.get("group")) or {} for link in links]),
             _tasks([self.tasks.get(task_id) or {} for task_id in analysis.get("tasks") or []]),
-            _contrast(*self._sides(effect)),
+            _contrast(*self._sides(levels)),
             _contrast_terms(analysis.get("name")),
+            *((self._carried(side, levels[side]), {}) for side in SIDES),
         ):
             tools += columns.pop("mapping_tools", [])
             terms += columns.pop("terms", [])
             releases += columns.pop("releases", [])
             row.update(columns)
             display.update(shown)
+        row.update(_side_facets(row["contrast_key_ids"]))
         row["mapping_tools"] = sorted(set(tools)) or None
         row["vocabulary_releases"] = sorted(set(releases)) or None
-        row["terms"] = terms
+        # A side's groups' terms are mostly the analysis's groups' too.
+        row["terms"] = _unique(terms)
         row["display"] = display
         return row
 
@@ -451,6 +562,10 @@ def _reversed(features):
     its contrast keys and sets the other direction."""
     positive, negative = features["display"]["contrast_sides"]
     columns, display = _contrast(negative, positive)
+    for name in features:
+        if name.startswith("contrast_positive_"):
+            other = "contrast_negative_" + name.removeprefix("contrast_positive_")
+            columns[name], columns[other] = features[other], features[name]
     for field in DIRECTIONAL_FIELDS:
         flipped = [_flip(term) for term in features[f"{field}_ids"] or []]
         read = features[f"{field}_unmapped"] is not None
@@ -507,30 +622,46 @@ def latest_records(base_study_ids):
     return {base_study_id: (config_id, record) for base_study_id, config_id, record in rows}
 
 
+#: The prefixes of the medical-condition columns: the analysis's groups', and each side's.
+MEDICAL_CONDITION_PREFIXES = ("", *(f"contrast_{side}_" for side in SIDES))
+
+
 def with_ancestors(by_key):
     """``by_key``'s features with the loaded releases' reading of their medical-condition
-    ids: their ancestors (and the role ids' ancestors), their synonyms in the text, their
-    nearest parents in the terms, and the releases those came from. An id no loaded
-    release has is its own ancestry."""
+    ids (the analysis's and each side's): their ancestors (and the role ids' ancestors),
+    their synonyms in the text, their nearest parents in the terms, and the releases those
+    came from. An id no loaded release has is its own ancestry."""
     lineages = concept_lineages(
-        {i for row in by_key.values() for i in row["medical_condition_ids"] or []}
+        {
+            i
+            for row in by_key.values()
+            for prefix in MEDICAL_CONDITION_PREFIXES
+            for i in row[f"{prefix}medical_condition_ids"] or []
+        }
     )
+
+    def ancestry(i):
+        return lineages[i].ancestors if i in lineages else [i]
+
     for row in by_key.values():
-        ids = row["medical_condition_ids"] or []
-        found = [lineages[i] for i in ids if i in lineages]
-        ancestry = {i: lineages[i].ancestors if i in lineages else [i] for i in ids}
-        row["medical_condition_ancestor_ids"] = _ancestors(
-            ids, (a for i in ids for a in ancestry[i])
-        )
+        releases = set()
+        for prefix in MEDICAL_CONDITION_PREFIXES:
+            ids = row[f"{prefix}medical_condition_ids"] or []
+            row[f"{prefix}medical_condition_ancestor_ids"] = _ancestors(
+                ids, (a for i in ids for a in ancestry(i))
+            )
+            known = [lineages[i] for i in ids if i in lineages]
+            releases.update(lineage.release for lineage in known)
+            if known:
+                synonyms = [synonym for lineage in known for synonym in lineage.synonyms]
+                text = f"{prefix}medical_condition_text"
+                row[text] = _text([row[text], *synonyms])
         row["medical_condition_role_ancestor_ids"] = _unique(
             AnalysisFeature.role_id(role, a)
             for role, i in map(AnalysisFeature.role_of, row["medical_condition_role_ids"] or [])
-            for a in ancestry[i]
+            for a in ancestry(i)
         ) or None
-        if found:
-            synonyms = [synonym for lineage in found for synonym in lineage.synonyms]
-            row["medical_condition_text"] = _text([row["medical_condition_text"], *synonyms])
-        stamps = {*(row["vocabulary_releases"] or []), *(lineage.release for lineage in found)}
+        stamps = {*(row["vocabulary_releases"] or []), *releases}
         row["vocabulary_releases"] = sorted(stamps) or None
         row["terms"] = [
             (field, term, label, lineages[term].parent)
