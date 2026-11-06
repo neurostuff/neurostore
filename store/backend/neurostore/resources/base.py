@@ -3,11 +3,13 @@ Base Classes/functions for constructing views
 """
 
 import json
+from functools import wraps
 import re
 from copy import deepcopy
 
 import sqlalchemy as sa
 from connexion import request
+from connexion.context import context as connexion_context
 from marshmallow import ValidationError
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
@@ -32,6 +34,7 @@ from neurostore.models import (
     User,
 )
 from neurostore.note_keys import build_default_note
+from neurostore.owners import collecting_owners
 from neurostore.resources import data as viewdata
 from neurostore.resources.common import merge_unique_ids
 from neurostore.resources.mutation_core import (
@@ -338,12 +341,16 @@ def clear_cache(unique_ids):
 
 
 def cache_key_creator(*args, **kwargs):
+    user = get_current_user().id if get_current_user() else ""
+    return _cache_key(user, **kwargs)
+
+
+def _cache_key(user, **kwargs):
     # relevant pieces of information
     # 1. the query arguments (including extra_args if present)
     # 2. the path
     # 3. the user
     path = request.url.path
-    user = get_current_user().id if get_current_user() else ""
 
     # Get query args from request
     query_items = list(request.query_params.multi_items())
@@ -367,10 +374,45 @@ def cache_key_creator(*args, **kwargs):
     return cache_key
 
 
+def cached_for_owners(timeout):
+    """Cache a response that differs by caller only where the caller owns a record in it.
+
+    One shared entry holds the response and the owners it names (`owner_id`); a caller
+    who is none of them is served it, and an owner gets an entry of their own. Shared
+    keys end in ``_owners``, so entries cached before owners were hidden are never read.
+    """
+
+    def decorator(function):
+        @wraps(function)
+        def decorated(*args, **kwargs):
+            backend = cache.cache
+            caller = connexion_context.get("user")
+            shared_key = _cache_key("", **kwargs) + "_owners"
+            shared = backend.get(shared_key)
+            if shared is not None:
+                value, owners = shared
+                if caller not in owners:
+                    return value
+            if caller is not None:
+                own_key = cache_key_creator(**kwargs)
+                value = backend.get(own_key)
+                if value is not None:
+                    return value
+            with collecting_owners() as owners:
+                value = function(*args, **kwargs)
+            if caller in owners:
+                backend.set(own_key, value, timeout=timeout)
+            else:
+                backend.set(shared_key, (value, frozenset(owners)), timeout=timeout)
+            return value
+
+        return decorated
+
+    return decorator
+
+
 class ObjectView(BaseView):
-    @cache.cached(
-        60 * 60, query_string=True, make_cache_key=cache_key_creator, key_prefix=None
-    )
+    @cached_for_owners(60 * 60)
     def get(self, id):
         object_view_policy = self.build_object_view_policy()
         args = parse_query_parameters(self._view_fields, request)

@@ -22,6 +22,7 @@ from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Image, Point
 from neurostore.services.image_value_summary import serialize_image_value_summary
+from neurostore.owners import OwnerId, owner_id
 from neurostore.note_keys import (
     ALLOWED_NOTE_KEY_TYPES,
     canonicalize_note_keys,
@@ -303,9 +304,7 @@ class BaseSchema(Schema):
 
 
 class BaseDataSchema(BaseSchema):
-    user = fields.String(
-        attribute="user_id", dump_only=True, metadata={"info_field": True}
-    )
+    user = OwnerId(attribute="user_id", dump_only=True, metadata={"info_field": True})
     username = fields.String(
         attribute="user.name",
         dump_only=True,
@@ -1202,7 +1201,7 @@ class ImageSnapshot(BaseSnapshot):
     def dump(self, i):
         return {
             "id": i.id,
-            "user": i.user_id,
+            "user": owner_id(i.user_id),
             "study": i.study_id,
             "url": i.url,
             "space": i.space,
@@ -1238,7 +1237,7 @@ class ConditionSnapshot(BaseSnapshot):
     def dump(self, ac):
         return {
             "id": ac.condition_id,
-            "user": ac.condition.user_id,
+            "user": owner_id(ac.condition.user_id),
             "name": ac.condition.name,
             "description": ac.condition.description,
         }
@@ -1251,7 +1250,7 @@ class AnalysisSnapshot(BaseSnapshot):
         i_schema = ImageSnapshot()
         return {
             "id": a.id,
-            "user": a.user_id,
+            "user": owner_id(a.user_id),
             "name": a.name,
             "metadata": a.metadata_,
             "description": a.description,
@@ -1269,7 +1268,7 @@ class StudySnapshot(BaseSnapshot):
             "id": s.id,
             "created_at": self._serialize_dt(s.created_at),
             "updated_at": self._serialize_dt(s.updated_at),
-            "user": s.user_id,
+            "user": owner_id(s.user_id),
             "name": s.name,
             "description": s.description,
             "publication": s.publication,
@@ -1291,7 +1290,7 @@ class StudysetSnapshot(BaseSnapshot):
         return {
             "id": studyset.id,
             "name": studyset.name,
-            "user": studyset.user_id,
+            "user": owner_id(studyset.user_id),
             "description": studyset.description,
             "publication": studyset.publication,
             "doi": studyset.doi,
