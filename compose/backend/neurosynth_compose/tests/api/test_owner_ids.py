@@ -69,4 +69,3 @@ def test_a_refused_delete_does_not_name_the_owner(auth_clients, user_data, sessi
     resp = other.delete(f"/api/projects/{project.id}")
     assert resp.status_code == 403
     assert OWNER not in resp.text
-
