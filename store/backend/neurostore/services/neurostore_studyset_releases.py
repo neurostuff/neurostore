@@ -6,7 +6,7 @@ import re
 import shutil
 import tarfile
 import tempfile
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,18 +14,21 @@ import orjson
 import sqlalchemy as sa
 from sqlalchemy.orm import load_only, selectinload
 from study_schema.models.paper_parse import AnalysisOutcome
+from study_schema.vocabularies import vocabularies
 
+from neurostore.analysis_feature_columns import FEATURE_COLUMNS, ONE_HOT_COLUMNS
 from neurostore.database import db
 from neurostore.map_types import map_type_label
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
+    AnalysisFeature,
+    AnalysisFeatureDisplay,
     Annotation,
     AnnotationAnalysis,
     BaseStudy,
     Condition,
     Image,
-    Pipeline,
     PipelineConfig,
     PipelineStudyResult,
     Point,
@@ -41,7 +44,6 @@ from neurostore.models.data import (
     is_result_analysis,
     result_analysis_clause,
 )
-from neurostore.schemas.pipeline import PipelineStudyResultSchema
 
 # Only results are analyses in a studyset; an anchor (ROI, seed) defines one.
 IS_STUDYSET_ANALYSIS = result_analysis_clause()
@@ -51,10 +53,12 @@ ANNOTATION_SOURCE_ID = "neurostore-annotation"
 RELEASE_DIRNAME = "neurostore-studyset-releases"
 NIGHTLY_VERSION = "nightly"
 LATEST_VERSION = "latest"
-FEATURE_PIPELINES = ("ParticipantDemographicsExtractor", "TaskExtractor")
 LOCK_KEY = "neurostore-studyset-release-build"
 MONTHLY_VERSION_RE = re.compile(r"^\d{4}-\d{2}$")
 STUDY_SHARD_BATCH_SIZE = 500
+FEATURE_BATCH_SIZE = 5000
+#: Note type of each feature column kind.
+NOTE_TYPES = {"list": "array", "string": "string", "number": "number", "boolean": "boolean"}
 STUDY_METADATA_EXCLUDED_KEYS = frozenset(
     (
         "url",
@@ -215,31 +219,6 @@ def atomic_write_json(path, payload):
         tmp.write(data)
         tmp_path = Path(tmp.name)
     os.replace(tmp_path, path)
-
-
-def detect_note_type(value):
-    if isinstance(value, bool):
-        return "boolean"
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
-        return "number"
-    return "string"
-
-
-def normalize_feature_value(value):
-    if value is None or isinstance(value, (bool, int, float, str)):
-        return value
-    return orjson.dumps(value, option=orjson.OPT_SORT_KEYS).decode("utf-8")
-
-
-def flatten_features(pipeline_name, result_data):
-    if not isinstance(result_data, dict):
-        return {}
-
-    flattened = PipelineStudyResultSchema.flatten_dict(result_data)
-    normalized = OrderedDict()
-    for key in sorted(flattened):
-        normalized[f"{pipeline_name}.{key}"] = normalize_feature_value(flattened[key])
-    return normalized
 
 
 def acquire_build_lock():
@@ -415,13 +394,12 @@ def ensure_canonical_records(built_at):
     annotation.public = True
     annotation.studyset = studyset
     annotation.description = (
-        "Database-wide NeuroStore annotation generated from demographic and task "
-        "feature extraction results."
+        "Database-wide NeuroStore annotation of each analysis's features, as its "
+        "extraction record states them and the normalizers mapped them."
     )
     annotation.metadata_ = {
         "release": ANNOTATION_SOURCE_ID,
         "built_at": serialize_dt(built_at),
-        "feature_pipelines": list(FEATURE_PIPELINES),
     }
     db.session.flush()
     return studyset, annotation
@@ -456,89 +434,62 @@ def sync_studyset_membership(studyset, selected):
         )
 
 
-def fetch_latest_feature_payloads(base_study_ids):
-    if not base_study_ids:
-        return {}
-
-    result_ts = sa.func.coalesce(
-        PipelineStudyResult.date_executed,
-        PipelineStudyResult.created_at,
-    )
-    ranked = (
-        sa.select(
-            PipelineStudyResult.id.label("result_id"),
-            PipelineStudyResult.base_study_id,
-            PipelineStudyResult.result_data,
-            result_ts.label("result_timestamp"),
-            Pipeline.name.label("pipeline_name"),
-            PipelineConfig.version.label("pipeline_version"),
-            sa.func.row_number()
-            .over(
-                partition_by=(
-                    PipelineStudyResult.base_study_id,
-                    Pipeline.name,
-                ),
-                order_by=(result_ts.desc(), PipelineStudyResult.id.desc()),
-            )
-            .label("rank"),
-        )
-        .select_from(PipelineStudyResult)
-        .join(PipelineConfig, PipelineStudyResult.config_id == PipelineConfig.id)
-        .join(Pipeline, PipelineConfig.pipeline_id == Pipeline.id)
-        .where(PipelineStudyResult.base_study_id.in_(base_study_ids))
-        .where(Pipeline.name.in_(FEATURE_PIPELINES))
-        .where(PipelineStudyResult.status == "SUCCESS")
-        .subquery()
-    )
-
-    rows = db.session.execute(sa.select(ranked).where(ranked.c.rank == 1)).all()
-    by_base = {}
-    for row in rows:
-        result = row._mapping
-        base_id = result["base_study_id"]
-        pipeline_name = result["pipeline_name"]
-        result_data = result["result_data"] or {}
-        by_base.setdefault(base_id, {})[pipeline_name] = {
-            "result_id": result["result_id"],
-            "result_timestamp": serialize_dt(result["result_timestamp"]),
-            "pipeline_version": result["pipeline_version"],
-            "features": flatten_features(pipeline_name, result_data),
-            "checksum": checksum_payload(result_data),
-        }
-    return by_base
-
-
-def build_note_keys(features_by_base):
-    types_by_key = OrderedDict()
-    for base_id in sorted(features_by_base):
-        for pipeline_name in FEATURE_PIPELINES:
-            entry = features_by_base.get(base_id, {}).get(pipeline_name)
-            if not entry:
-                continue
-            for key, value in entry["features"].items():
-                detected = detect_note_type(value)
-                existing = types_by_key.get(key)
-                if existing is None:
-                    types_by_key[key] = detected
-                elif existing != detected:
-                    types_by_key[key] = "string"
-
-    return OrderedDict(
-        (
-            key,
-            {"type": types_by_key[key], "order": index},
-        )
-        for index, key in enumerate(types_by_key)
-    )
-
-
-def note_for_base(base_id, features_by_base, note_keys):
-    note = OrderedDict((key, None) for key in note_keys)
-    for pipeline_name in FEATURE_PIPELINES:
-        entry = features_by_base.get(base_id, {}).get(pipeline_name)
-        if entry:
-            note.update(entry["features"])
+def feature_note(row, display):
+    """An analysis's note: each feature column its record states (a list as an array), and
+    a true `<prefix>:<id>` for each id of the one-hot columns."""
+    note = {}
+    for column, (_kind, read) in FEATURE_COLUMNS.items():
+        value = read(row, display)
+        if value is not None:
+            note[column] = value
+    for prefix, column in ONE_HOT_COLUMNS.items():
+        for term in getattr(row, column) or ():
+            note[f"{prefix}:{term}"] = True
     return note
+
+
+def fetch_feature_notes(study_ids):
+    """``({study_id: {analysis_id: note}}, stamps)`` for the analyses of ``study_ids`` that
+    a record describes. The stamps are the vocabulary releases study_schema pins, and how
+    many of those analyses each release and normalizer stamped."""
+    features = AnalysisFeature.__table__
+    by_study = {}
+    releases, tools = Counter(), Counter()
+    for batch in chunked(sorted(study_ids), FEATURE_BATCH_SIZE):
+        rows = db.session.execute(
+            sa.select(features, AnalysisFeatureDisplay.display)
+            .select_from(features.outerjoin(AnalysisFeatureDisplay))
+            .where(features.c.study_id.in_(batch))
+        )
+        for row in rows:
+            note = feature_note(row, row.display or {})
+            by_study.setdefault(row.study_id, {})[row.analysis_id] = note
+            releases.update(row.vocabulary_releases or ())
+            tools.update(row.mapping_tools or ())
+    stamps = {
+        "pinned_releases": {v.name: v.release for v in vocabularies()},
+        "vocabulary_releases": dict(sorted(releases.items())),
+        "mapping_tools": dict(sorted(tools.items())),
+    }
+    return by_study, stamps
+
+
+def build_note_keys(notes_by_study):
+    """Every feature column, then the one-hot columns some analysis has, in order."""
+    one_hot = sorted(
+        {
+            key
+            for notes in notes_by_study.values()
+            for note in notes.values()
+            for key in note
+            if key not in FEATURE_COLUMNS
+        }
+    )
+    types = [(column, NOTE_TYPES[kind]) for column, (kind, _) in FEATURE_COLUMNS.items()]
+    types += [(key, "boolean") for key in one_hot]
+    return OrderedDict(
+        (key, {"type": note_type, "order": index}) for index, (key, note_type) in enumerate(types)
+    )
 
 
 def fetch_analysis_rows(study_ids):
@@ -567,8 +518,8 @@ def fetch_analysis_rows(study_ids):
     return by_study
 
 
-def manifest_entry_changed(entry, features_by_base, previous_entries):
-    manifest_entry = build_manifest_entry(entry, features_by_base)
+def manifest_entry_changed(entry, notes_by_study, previous_entries):
+    manifest_entry = build_manifest_entry(entry, notes_by_study)
     previous_entry = previous_entries.get(entry["base_study_id"])
     state_changed = previous_entry is None or {
         key: previous_entry.get(key)
@@ -577,7 +528,7 @@ def manifest_entry_changed(entry, features_by_base, previous_entries):
             "created_at",
             "updated_at",
             "study_freshness",
-            "features",
+            "features_checksum",
         )
     } != {
         key: manifest_entry.get(key)
@@ -586,14 +537,14 @@ def manifest_entry_changed(entry, features_by_base, previous_entries):
             "created_at",
             "updated_at",
             "study_freshness",
-            "features",
+            "features_checksum",
         )
     }
     return manifest_entry, state_changed
 
 
-def sync_annotation(annotation, selected, features_by_base, previous_manifest):
-    note_keys = build_note_keys(features_by_base)
+def sync_annotation(annotation, selected, notes_by_study, previous_manifest):
+    note_keys = build_note_keys(notes_by_study)
     annotation.note_keys = note_keys
 
     study_to_base = {entry["study_id"]: entry["base_study_id"] for entry in selected}
@@ -626,7 +577,7 @@ def sync_annotation(annotation, selected, features_by_base, previous_manifest):
     for entry in selected:
         _manifest_entry, state_changed = manifest_entry_changed(
             entry,
-            features_by_base,
+            notes_by_study,
             previous_entries,
         )
         if note_keys_changed or state_changed:
@@ -636,12 +587,14 @@ def sync_annotation(annotation, selected, features_by_base, previous_manifest):
     mappings_to_update = []
     for study_id, rows in analysis_rows_by_study.items():
         base_id = study_to_base[study_id]
-        note = note_for_base(base_id, features_by_base, note_keys)
+        notes = notes_by_study.get(study_id, {})
         for row in rows:
             analysis_id = row["analysis_id"]
             row_exists = analysis_id in existing
             if row_exists and base_id not in affected_base_ids:
                 continue
+            note = OrderedDict((key, None) for key in note_keys)
+            note.update(notes.get(analysis_id, {}))
             mapping = {
                 "annotation_id": annotation.id,
                 "analysis_id": analysis_id,
@@ -930,37 +883,24 @@ def serialize_study_shards(study_ids, batch_size=STUDY_SHARD_BATCH_SIZE):
     return payloads
 
 
-def build_note_shard(
-    annotation_id, study_id, base_id, rows, features_by_base, note_keys
-):
-    note = note_for_base(base_id, features_by_base, ())
-    notes = []
-    for row in rows:
-        notes.append(
-            {
-                "id": f"{annotation_id}_{row['analysis_id']}",
-                "analysis": row["analysis_id"],
-                "note": note,
-            }
-        )
-    return notes
+def build_note_shard(annotation_id, rows, notes):
+    """The notes of a study's analyses, each holding only its own values."""
+    return [
+        {
+            "id": f"{annotation_id}_{row['analysis_id']}",
+            "analysis": row["analysis_id"],
+            "note": notes.get(row["analysis_id"], {}),
+        }
+        for row in rows
+    ]
 
 
-def build_note_shards(
-    annotation_id,
-    entries,
-    analysis_rows_by_study,
-    features_by_base,
-    note_keys,
-):
+def build_note_shards(annotation_id, entries, analysis_rows_by_study, notes_by_study):
     return {
         entry["base_study_id"]: build_note_shard(
             annotation_id,
-            entry["study_id"],
-            entry["base_study_id"],
             analysis_rows_by_study.get(entry["study_id"], []),
-            features_by_base,
-            note_keys,
+            notes_by_study.get(entry["study_id"], {}),
         )
         for entry in entries
     }
@@ -970,34 +910,23 @@ def previous_nightly_manifest(root):
     return read_json(root / NIGHTLY_VERSION / "manifest.json", default={}) or {}
 
 
-def build_manifest_entry(entry, features_by_base):
-    base_id = entry["base_study_id"]
-    feature_entries = {}
-    for pipeline_name in FEATURE_PIPELINES:
-        feature = features_by_base.get(base_id, {}).get(pipeline_name)
-        if not feature:
-            continue
-        feature_entries[pipeline_name] = {
-            "result_id": feature["result_id"],
-            "result_timestamp": feature["result_timestamp"],
-            "pipeline_version": feature["pipeline_version"],
-            "checksum": feature["checksum"],
-        }
+def build_manifest_entry(entry, notes_by_study):
+    notes = notes_by_study.get(entry["study_id"])
     return {
         "id": entry["study_id"],
-        "base_study_id": base_id,
+        "base_study_id": entry["base_study_id"],
         "study_id": entry["study_id"],
         "created_at": entry["created_at"],
         "updated_at": entry["updated_at"],
         "study_freshness": entry["freshness"],
-        "features": feature_entries,
+        "features_checksum": checksum_payload(notes) if notes else None,
     }
 
 
 def refresh_shards(
     root,
     selected,
-    features_by_base,
+    notes_by_study,
     annotation,
     note_keys,
     analysis_rows_by_study,
@@ -1032,7 +961,7 @@ def refresh_shards(
         study_id = entry["study_id"]
         manifest_entry, state_changed = manifest_entry_changed(
             entry,
-            features_by_base,
+            notes_by_study,
             previous_entries,
         )
         previous_entry = previous_entries.get(base_id)
@@ -1080,8 +1009,7 @@ def refresh_shards(
             annotation.id,
             note_entries_to_refresh,
             analysis_rows_by_study,
-            features_by_base,
-            note_keys,
+            notes_by_study,
         )
         for entry in note_entries_to_refresh:
             base_id = entry["base_study_id"]
@@ -1274,6 +1202,7 @@ def base_manifest(
     removed,
     note_keys,
     note_keys_checksum,
+    feature_stamps,
 ):
     return {
         "built_at": serialize_dt(built_at),
@@ -1291,7 +1220,7 @@ def base_manifest(
             "name": annotation.name,
             "source_id": annotation.source_id,
         },
-        "feature_pipelines": list(FEATURE_PIPELINES),
+        "analysis_features": feature_stamps,
         "study_count": len(manifest_studies),
         "note_count": sum(
             len(
@@ -1348,12 +1277,14 @@ def build_neurostore_studyset_release(
         db.session.flush()
 
         previous_manifest = previous_nightly_manifest(root)
-        base_ids = [entry["base_study_id"] for entry in selected]
-        features_by_base = fetch_latest_feature_payloads(base_ids)
+        notes_by_study, feature_stamps = fetch_feature_notes(
+            [entry["study_id"] for entry in selected]
+        )
+        annotation.metadata_ = {**annotation.metadata_, "analysis_features": feature_stamps}
         note_keys, analysis_rows_by_study = sync_annotation(
             annotation,
             selected,
-            features_by_base,
+            notes_by_study,
             previous_manifest,
         )
         db.session.flush()
@@ -1361,7 +1292,7 @@ def build_neurostore_studyset_release(
         manifest_studies, changed, removed, note_keys_checksum = refresh_shards(
             root,
             selected,
-            features_by_base,
+            notes_by_study,
             annotation,
             note_keys,
             analysis_rows_by_study,
@@ -1377,6 +1308,7 @@ def build_neurostore_studyset_release(
             removed,
             note_keys,
             note_keys_checksum,
+            feature_stamps,
         )
         manifest["include_retracted"] = include_retracted
 

@@ -219,6 +219,33 @@ async def test_blank_annotation_populates_note_fields_with_defaults(
         assert note["note"]["score"] == 1.5
 
 
+async def test_an_array_note_key_holds_a_list_of_strings(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+
+    def post(default):
+        return auth_client.post(
+            "/api/annotations/",
+            data={
+                "studyset": dset.id,
+                "note_keys": {"tasks": {"type": "array", "order": 0, "default": default}},
+                "name": "arrays",
+            },
+        )
+
+    resp = await post(["n-back"])
+    assert resp.status_code == 200
+    assert resp.json()["note_keys"]["tasks"] == {
+        "type": "array",
+        "order": 0,
+        "default": ["n-back"],
+    }
+    assert {tuple(note["note"]["tasks"]) for note in resp.json()["notes"]} == {("n-back",)}
+    assert (await post(["n-back", 2])).status_code == 422
+    assert (await post("n-back")).status_code == 422
+
+
 async def test_put_annotation_assigns_missing_note_key_defaults(
     auth_client, ingest_neurosynth, session
 ):
