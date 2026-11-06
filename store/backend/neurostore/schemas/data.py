@@ -875,6 +875,8 @@ class StudySchema(BaseDataSchema):
     authors = fields.String(allow_none=True)
     year = fields.Integer(allow_none=True)
     level = fields.String(allow_none=True)
+    #: Whether the study is listed; Compose sets it on a project's meta study.
+    public = fields.Boolean(load_only=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
     tables = fields.Method("get_table_ids", dump_only=True)
     source = fields.String(
