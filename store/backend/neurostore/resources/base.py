@@ -7,10 +7,8 @@ import re
 from copy import deepcopy
 
 import sqlalchemy as sa
-import sqlalchemy.sql.expression as sae
 from connexion import request
 from marshmallow import ValidationError
-from psycopg2 import errors
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import raiseload, selectinload
@@ -41,16 +39,17 @@ from neurostore.resources.mutation_core import (
     MutationContext,
     MutationExecutor,
 )
+from neurostore.resources.text_search import apply_search_predicate, tsvector_search
 from neurostore.resources.utils import (
     get_current_user,
     is_user_admin,
-    pubmed_to_tsquery,
-    tsquery_has_positive_term,
-    validate_search_query,
+    sortable_columns,
+    visibility_filters,
 )
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
 )
+from neurostore.services.data_source_links import recompute_data_source_links
 from neurostore.services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
@@ -112,6 +111,8 @@ class BaseView:
     mutation_policy_cls = DefaultMutationPolicy
     object_view_policy_cls = DefaultObjectViewPolicy
     request_body_validation_skip = ()
+    # whether a POST names the new record's id instead of having one generated
+    _client_id = False
     # _default_exclude = None
 
     @classmethod
@@ -248,6 +249,11 @@ class BaseView:
             AnnotationAnalysis.analysis_id.in_(origin_analysis_ids),
         )
 
+    def pmid_match(self, model, search):
+        """The clause a pmid ``search`` must satisfy, or None for a model with no pmid."""
+        pmid = getattr(model, "pmid", None)
+        return None if pmid is None else pmid == search
+
     def update_base_studies(self, base_studies):
         if not base_studies:
             return
@@ -255,6 +261,9 @@ class BaseView:
         base_studies = {id_ for id_ in base_studies if id_}
         if not base_studies:
             return
+
+        # kept synchronous: a write's response may list the data sources it changed
+        recompute_data_source_links(base_studies)
 
         config = request.state.settings
         if config.get("BASE_STUDY_FLAGS_ASYNC", True):
@@ -502,6 +511,10 @@ class ListView(BaseView):
             **LIST_USER_ARGS,
             **self._view_fields,
         }
+        # Not declared for a model without the column: the parameter is then an
+        # unknown one, dropped like any other.
+        if not hasattr(self._model, "user_id"):
+            del self._user_args["user_id"]
         if self._fulltext_fields:
             self._user_args.update({f: fields.Str() for f in self._fulltext_fields})
 
@@ -510,6 +523,9 @@ class ListView(BaseView):
 
     def view_search(self, q, args):
         return q
+
+    def text_search(self, args):
+        return tsvector_search(self._model._ts_vector)
 
     def join_tables(self, q, args):
         if self._model is User:
@@ -557,44 +573,21 @@ class ListView(BaseView):
 
         # query items that are public and/or you own them
         if hasattr(m, "public"):
-            current_user = get_current_user()
-            is_admin = is_user_admin(current_user)
-            # Admins can see all records, others see public or their own
-            if not is_admin:
-                q = q.filter(
-                    sae.or_(m.public == True, m.user == current_user)  # noqa E712
-                )
+            q = q.filter(*visibility_filters(m))
 
-        # Search
-        s = args["search"]
-        rank_col = None
-
-        # For multi-column search, default to using search fields
-        # temporary fix for pmid search
-        if s is not None and s.isdigit():
-            q = q.filter_by(pmid=s)
-        elif s is not None and self._fulltext_fields:
-            try:
-                validate_search_query(s)
-            except errors.SyntaxError as e:
-                abort_validation(e.args[0])
-            tsquery_string = pubmed_to_tsquery(s)
-            if not tsquery_has_positive_term(tsquery_string):
-                # Postgres cannot narrow a GIN index on a negation, so this
-                # would be a sequential scan returning nearly the whole corpus.
-                abort_validation(
-                    "A search must include at least one term to match; a query "
-                    "of only negations matches nearly every record."
-                )
-            tsquery = func.to_tsquery("english", tsquery_string)
-            rank_col = func.ts_rank(m._ts_vector, tsquery).label("rank")
-            q = q.filter(m._ts_vector.op("@@")(tsquery))
-
-        # Alternatively (or in addition), search on individual fields.
-        for field in self._search_fields:
-            s = args.get(field, None)
-            if s is not None:
-                q = q.filter(getattr(m, field).ilike(f"%{s}%"))
+        # Columns are resolved only for the arguments given: some views list
+        # a field or full-text field their model does not have.
+        field_filters = {
+            getattr(m, f): args[f] for f in self._search_fields if args.get(f) is not None
+        }
+        use_fulltext = args["search"] is not None and self._fulltext_fields
+        q, text_match = apply_search_predicate(
+            q,
+            args["search"],
+            field_filters,
+            text_search=self.text_search(args) if use_fulltext else None,
+            pmid_match=self.pmid_match(m, args["search"]),
+        )
 
         q = self.view_search(q, args)
 
@@ -602,24 +595,34 @@ class ListView(BaseView):
         desc = args["desc"]
         desc = {False: "asc", True: "desc"}[desc]
 
-        # If no sort specified, use ts_rank for search queries, otherwise created_at
+        # If no sort specified, use relevance for search queries, otherwise created_at
         sort_col = args["sort"]
+        paged = None
         if sort_col is None:
-            if rank_col is not None:
-                rank_sort = rank_col.desc() if desc == "desc" else rank_col.asc()
-                q = q.order_by(rank_sort, m.id.desc())
+            if text_match is not None and text_match.paged is not None:
+                paged = text_match.paged
+            elif text_match is not None:
+                ranks = (getattr(rank, desc)() for rank in text_match.ranks)
+                q = q.order_by(*ranks, text_match.tiebreak.desc())
             else:
                 # Default to created_at when no search
                 q = q.order_by(m.created_at.desc(), m.id.desc())
         else:
             # Use user-specified sort column.
             # lower() is text-only; integers, booleans, and timestamps sort as-is.
+            if sort_col not in sortable_columns(m):
+                abort_validation(f"Cannot sort by {sort_col!r}: not a field of this resource")
             attr = getattr(m, sort_col)
             if isinstance(getattr(attr, "type", None), sa.String):
                 attr = func.lower(attr)
             q = q.order_by(getattr(attr, desc)(), m.id.desc())
 
-        if args["paginate"]:
+        if paged is not None:
+            if args["paginate"]:
+                records, total = paged(q, desc, args["page"], args["page_size"])
+            else:
+                records, total = paged(q, desc, None, None)
+        elif args["paginate"]:
             pagination_query = q.paginate(
                 page=args["page"],
                 per_page=args["page_size"],
@@ -661,7 +664,7 @@ class ListView(BaseView):
         source = args.get("source") or "neurostore"
 
         unknown = self.__class__._schema.opts.unknown
-        schema = self.__class__._schema(exclude=("id",))
+        schema = self.__class__._schema(exclude=() if self._client_id else ("id",))
         data = load_schema_or_abort(schema, body, unknown=unknown)
 
         if source_id:

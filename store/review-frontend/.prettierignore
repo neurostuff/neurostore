@@ -1,0 +1,4 @@
+dist
+fixtures
+src/contract/generated
+src/test/golden/*.json

@@ -1,15 +1,25 @@
+import hashlib
 import json
+import time
 from collections.abc import Mapping
 from urllib.request import urlopen
 
 import anyio
-from connexion.exceptions import OAuthProblem
+import requests
+from connexion.exceptions import OAuthProblem, OAuthScopeProblem, ProblemException
 from connexion.lifecycle import ConnexionResponse
 from connexion.security import NO_VALUE
 from jose import jwt
 from sqlalchemy import select
 
 from neurosynth_compose.database import db
+
+# Neurostore issues and stores API keys; Compose asks it about each one.
+API_KEY_PREFIX = "nsk_"
+READ_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+# how long a revoked key may keep working here
+INTROSPECTION_TTL_SECONDS = 60
+_introspected: dict[str, tuple[float, dict]] = {}
 
 
 def _oauth_problem(detail):
@@ -73,6 +83,67 @@ def _decode_token(token, settings: Mapping[str, object]):
     raise _oauth_problem("Unable to find appropriate key")
 
 
+def required_scope(method):
+    return "read" if method.upper() in READ_METHODS else "write"
+
+
+def scopes_allow(scopes, method):
+    """A key may make a request when it holds the method's scope; write includes read."""
+    scope = required_scope(method)
+    return scope in scopes or (scope == "read" and "write" in scopes)
+
+
+def _fetch_introspection(key, settings):
+    """Ask Neurostore who owns ``key``; returns (status code, JSON body or None)."""
+    try:
+        response = requests.get(
+            str(settings["NEUROSTORE_API_URL"]).rstrip("/") + "/api-keys/introspect",
+            headers={"Authorization": f"Bearer {key}"},
+            timeout=10,
+        )
+    except requests.RequestException:
+        return None, None
+    body = response.json() if response.ok else None
+    return response.status_code, body
+
+
+def _introspect_api_key(key, settings):
+    digest = hashlib.sha256(key.encode()).hexdigest()
+    now = time.monotonic()
+    cached = _introspected.get(digest)
+    if cached is not None and cached[0] > now:
+        return cached[1]
+
+    status, body = _fetch_introspection(key, settings)
+    if status in (401, 403):
+        raise _oauth_problem("Invalid or revoked API key.")
+    if status != 200:
+        raise ProblemException(
+            status=503, title="Service Unavailable", detail="Could not verify API key."
+        )
+
+    payload = {
+        "sub": body["user"],
+        "name": body.get("name"),
+        "scopes": body["scopes"],
+        "api_key": True,
+    }
+    for stale in [d for d, (expires, _) in _introspected.items() if expires <= now]:
+        del _introspected[stale]
+    _introspected[digest] = (now + INTROSPECTION_TTL_SECONDS, payload)
+    return payload
+
+
+async def verify_api_key(key, method, settings):
+    """Resolve an API key to its owner, refusing a method its scopes don't allow."""
+    payload = await anyio.to_thread.run_sync(_introspect_api_key, key, settings)
+    if not scopes_allow(payload["scopes"], method):
+        raise OAuthScopeProblem(
+            token_scopes=payload["scopes"], required_scopes=[required_scope(method)]
+        )
+    return payload
+
+
 async def decode_token(
     token, request=None, *, settings: Mapping[str, object] | None = None
 ):
@@ -81,6 +152,10 @@ async def decode_token(
         if request is None:
             raise RuntimeError("decode_token requires a request or settings")
         settings = request.state.settings
+    if token.startswith(API_KEY_PREFIX):
+        if request is None:
+            raise RuntimeError("API keys are checked against a request's method")
+        return await verify_api_key(token, request.method, settings)
     return await anyio.to_thread.run_sync(_decode_token, token, settings)
 
 

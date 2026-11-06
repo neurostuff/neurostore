@@ -10,6 +10,7 @@ from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import ListView, ObjectView
 from neurostore.resources.data_views.common import (
     IMAGE_DETAIL_ARGS,
+    filter_by_analysis_name,
     image_detail_options,
 )
 from neurostore.resources.mutation_core import DefaultMutationPolicy
@@ -51,13 +52,15 @@ class ImagesView(ObjectView, ListView):
     mutation_policy_cls = ImageMutationPolicy
     _view_fields = {
         "study": fields.String(load_default=None),
+        "analysis_name": fields.String(load_default=None),
         **IMAGE_DETAIL_ARGS,
     }
     _m2o = {"analysis": "AnalysesView", "study": "StudiesView"}
     _parent = {"analysis": "AnalysesView", "study": "StudiesView"}
-    _search_fields = ("filename", "space", "value_type", "analysis_name")
+    _search_fields = ("filename", "space", "value_type")
 
     def view_search(self, q, args):
+        q = filter_by_analysis_name(q, Image, args.get("analysis_name"))
         study_id = args.get("study")
         if study_id:
             q = q.filter(Image.study_id == study_id)

@@ -1,3 +1,5 @@
+import re
+
 import httpx
 import pytest
 
@@ -101,6 +103,24 @@ async def test_admin_user_edit_form_offers_only_roles_among_relationships(
     # Each of these is a select of every row in its table: millions on a real database.
     for relationship in ("studies", "analyses", "points", "point_values", "base_studies"):
         assert f'name="{relationship}"' not in edit.text
+
+
+async def test_admin_user_edit_form_names_each_role_it_offers(monkeypatch, session):
+    from neurostore.models import Role, User
+
+    admin, reviewer = Role(name="admin"), Role(name="admin-reviewer")
+    user = User(name="James Kent", external_id="github|1", roles=[reviewer])
+    session.add_all([admin, reviewer, user])
+    session.commit()
+    user_id = user.id
+
+    async with _client(_admin_app(monkeypatch)) as client:
+        await _log_in(client)
+        edit = await client.get(f"/admin/user/edit/{user_id}")
+
+    assert re.search(r"<option[^>]*>\s*admin\s*</option>", edit.text)
+    assert re.search(r"<option[^>]*selected[^>]*>\s*admin-reviewer\s*</option>", edit.text)
+    assert "Role object at" not in edit.text
 
 
 async def test_admin_user_edit_form_grants_a_role(monkeypatch, session):

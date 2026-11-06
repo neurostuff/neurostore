@@ -106,6 +106,8 @@ class Config(object):
     PUBMED_TOOL = "neurostore"
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+    # A Fernet key (`Fernet.generate_key()`); corresponding author emails are kept under it.
+    CONTACT_EMAIL_KEY = os.environ.get("CONTACT_EMAIL_KEY")
     BEARERINFO_FUNC = os.environ.get(
         "BEARERINFO_FUNC", "neurostore.resources.auth.decode_token"
     )
@@ -217,6 +219,8 @@ class TestingConfig(Config):
     )
     BASE_STUDY_FLAGS_ASYNC = False
     BASE_STUDY_METADATA_ASYNC = False
+    # A fixed key, so tests need no secret; never this one anywhere else.
+    CONTACT_EMAIL_KEY = "dGVzdC1rZXktZm9yLWNvbnRhY3QtZW1haWxzLW9ubHk="
 
 
 class DockerTestConfig(TestingConfig):

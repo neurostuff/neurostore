@@ -68,6 +68,7 @@ class AsyncClient:
     get = partialmethod(_make_request, "get")
     post = partialmethod(_make_request, "post")
     put = partialmethod(_make_request, "put")
+    patch = partialmethod(_make_request, "patch")
     delete = partialmethod(_make_request, "delete")
 
 

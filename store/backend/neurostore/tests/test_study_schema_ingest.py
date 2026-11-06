@@ -1,11 +1,14 @@
 """The study_schema ingester: a parse, a parse with a record, a record, a revision."""
 
 import copy
+import hashlib
+import re
 from datetime import datetime, timezone
 
 import pytest
 import sqlalchemy as sa
 
+from neurostore.database import db
 from neurostore.exceptions.base import NeuroStoreException
 from neurostore.ingest.study_schema import (
     BOTH_DIRECTIONS,
@@ -30,18 +33,26 @@ from neurostore.models import (
     Analysis,
     AnalysisConditions,
     BaseStudy,
+    BaseStudyLink,
     Condition,
+    ExtractionEntityLink,
     FieldClaim,
+    Fulltext,
+    LinkDomain,
     PipelineAnalysisResult,
     PipelineConfig,
     PipelineStudyResult,
     Study,
     StudyEntity,
+    User,
 )
-from neurostore.database import db
 from neurostore.models.data import is_result_analysis, study_entity_hash
+from neurostore.review.core.ops import ReviewState, apply_batch
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests import study_schema_fixtures as fx
+from neurostore.tests.review import records
+
+PREPRINT_DOI = {"doi": "10.1101/2025.01.01.000001", "server": "biorxiv"}
 
 # Table 1 of one paper: rows 0-3 are one contrast with both signs, rows 4-7 two more.
 GAIN = fx.table_analysis(
@@ -145,6 +156,57 @@ def test_parse_alone_stores_skeleton_keyed_by_content(session):
     again = ingest_upload({"coordinate_parse": ORIGINAL})
     assert again["skeleton"]["created"] == 0
     assert again["skeleton"]["updated"] == 4
+
+
+def test_a_parse_whose_header_names_a_base_study_is_stored_on_it(session):
+    named = BaseStudy(name="Named", level="group")
+    session.add(named)
+    session.commit()
+    parse = copy.deepcopy(ORIGINAL)
+    parse["header"]["neurostore_base_study_id"] = named.id
+
+    summary = ingest_upload({"coordinate_parse": parse})
+
+    assert summary["base_study_id"] == named.id
+
+
+def test_a_parse_with_paper_parse_0_6_0_identifiers_is_refused(session):
+    old = copy.deepcopy(ORIGINAL)
+    old["header"]["schema_version"] = "0.6.0"
+    old["header"]["identifiers"] = {
+        "pmid": "12345678",
+        "pmcid": None,
+        "doi": None,
+        "neurostore_base_study_id": None,
+    }
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": old})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA", "coordinate-parse/header/identifiers")
+    }
+
+
+def test_a_parse_whose_header_is_not_the_pinned_version_is_refused(session):
+    old = copy.deepcopy(ORIGINAL)
+    old["header"]["schema_version"] = "0.6.0"
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": old})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA_VERSION", "coordinate-parse/header/schema_version")
+    }
+
+
+def test_a_parsed_paper_whose_header_is_not_the_pinned_version_is_refused(session):
+    paper = fx.parsed_paper()
+    paper["header"]["schema_version"] = "0.6.0"
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": copy.deepcopy(ORIGINAL), "parsed_paper": paper})
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == {
+        ("SCHEMA_VERSION", "parsed-paper/header/schema_version")
+    }
 
 
 def test_parse_with_a_wrong_key_is_refused(session):
@@ -293,6 +355,243 @@ def test_upload_reports_the_provenance_of_each_run(session):
     )
     assert again["provenance"]["record"]["config_id"] != record["config_id"]
     assert "parse" not in again["provenance"]
+
+
+# The runs behind one offloaded record, as ns-pond's runs table holds them: the 27B
+# record run on Vista, ev1's evidence on LS6, and the normalization fit on beast.
+RECORD_RUN = {
+    "run_id": "ns-27b-e-20261031",
+    "kind": "model",
+    "stage": "record",
+    "source": "ns-27b",
+    "model": "Qwen/Qwen3.8-27B",
+    "adapter": "jdkent/qwen3.8-27b-ns-record@dbfd846bd3e1259039eb2f3117dc12bd733c640a",
+    "prompt_version": "astra-record-v3",
+    "schema_version": "1.6.0",
+    "code_commit": "4b51872",
+    "machine": "vista",
+    "created_at": "2026-10-31T13:43:00+00:00",
+}
+EVIDENCE_RUN = {
+    "run_id": "ns-ev1-20261102",
+    "stage": "evidence",
+    "source": "ns-27b",
+    "model": "numind/NuExtract3",
+    "adapter": "jdkent/nuextract3-ns-evidence@ea9be65e535cec75ba9a03dc637352b96d07e9b6",
+    "prompt_version": "ev1",
+    "schema_version": "1.6.0",
+    "code_commit": "4b51872",
+    "machine": "ls6",
+    "created_at": "2026-11-02T08:10:00+00:00",
+}
+NORMALIZE_RUN = {
+    "run_id": "astra-norm-out_all2-20261101",
+    "stage": "normalize",
+    "source": "ns-27b",
+    "model": "SapBERT + MONDO",
+    "fit": "fit-3f9c2a17d0b4e865",
+    "created_at": "2026-11-01T22:05:00Z",
+}
+
+
+def _offloaded(base_study_id, runs, record=None):
+    """A record alone, uploaded with the runs that made it."""
+    record = record or _record(GAIN)
+    record["extraction_metadata"] = {
+        "extractor_model": "Qwen/Qwen3.8-27B",
+        "extractor_version": "ns-27b-e-20261031",
+    }
+    return {
+        "record": record,
+        "parse_id": ORIGINAL["parse_id"],
+        "base_study_id": base_study_id,
+        "pipeline": {"name": "ns-pond", "version": "ns-27b-e-20261031", "runs": runs},
+    }
+
+
+def test_a_record_config_names_the_runs_that_made_it(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+
+    # Sent in any order, the runs are stored in stage order, every field present.
+    summary = ingest_upload(
+        _offloaded(base_study_id, [NORMALIZE_RUN, RECORD_RUN, EVIDENCE_RUN])
+    )
+
+    runs = summary["provenance"]["record"]["runs"]
+    assert [run["stage"] for run in runs] == ["record", "evidence", "normalize"]
+    assert runs[0] == {**dict.fromkeys(runs[0]), **RECORD_RUN}
+    assert len(runs[0]) == 14
+    assert runs[2]["adapter"] is None and runs[2]["fit"] == NORMALIZE_RUN["fit"]
+    assert runs[1]["kind"] is None
+    assert db_config(summary["record"]["config_id"]).config_args["runs"] == runs
+
+
+def test_uploads_by_the_same_runs_share_a_config(session):
+    first = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    other = fx.parse([LOSS], pmid="87654321")
+    second = ingest_upload({"coordinate_parse": other})["base_study_id"]
+    runs = [RECORD_RUN, EVIDENCE_RUN]
+
+    one = ingest_upload(_offloaded(first, runs))
+    two = ingest_upload(
+        {**_offloaded(second, list(reversed(runs)), _record(LOSS)), "parse_id": other["parse_id"]}
+    )
+    # A run named with its optional fields left out is the run with them null.
+    sparse = {k: v for k, v in NORMALIZE_RUN.items() if v is not None}
+    with_normalize = ingest_upload(_offloaded(first, runs + [sparse]))
+    again = ingest_upload(_offloaded(first, runs + [{**sparse, "machine": None}]))
+
+    assert one["record"]["config_id"] == two["record"]["config_id"]
+    assert with_normalize["record"]["config_id"] != one["record"]["config_id"]
+    assert again["record"]["config_id"] == with_normalize["record"]["config_id"]
+
+
+def test_a_rerun_with_another_model_gets_another_config(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    rerun = {
+        **RECORD_RUN,
+        "run_id": "ns-27b-e-20261105",
+        "adapter": "jdkent/qwen3.8-27b-ns-record@0123456789abcdef0123456789abcdef01234567",
+    }
+
+    old = ingest_upload(_offloaded(base_study_id, [RECORD_RUN]))
+    new = ingest_upload(_offloaded(base_study_id, [rerun]))
+
+    assert new["record"]["config_id"] != old["record"]["config_id"]
+    # Each record stays under the runs that made it.
+    assert PipelineStudyResult.query.filter_by(base_study_id=base_study_id).count() == 3
+
+
+def test_a_rerun_of_the_same_model_joins_its_run(session):
+    # ns-pond mints run_id from what made the output, so a rerun of missing records with
+    # the same model and inputs sends the same run, and its record lands in that config.
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    first = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, NORMALIZE_RUN]))
+    rerun = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, NORMALIZE_RUN]))
+    refit = {**NORMALIZE_RUN, "run_id": "astra-norm-20261110", "fit": "fit-0a1b2c3d4e5f6789"}
+    refitted = ingest_upload(_offloaded(base_study_id, [RECORD_RUN, refit]))
+
+    assert rerun["record"]["config_id"] == first["record"]["config_id"]
+    # A refit is a new run, so the record it normalized is under another config.
+    assert refitted["record"]["config_id"] != first["record"]["config_id"]
+
+
+def test_an_upload_without_runs_keeps_its_config(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    body = _offloaded(base_study_id, None)
+    body["pipeline"].pop("runs")
+
+    summary = ingest_upload(body)
+
+    config = db_config(summary["record"]["config_id"])
+    assert "runs" not in config.config_args
+    assert summary["provenance"]["record"]["runs"] is None
+    assert ingest_upload(body)["record"]["config_id"] == config.id
+
+
+@pytest.mark.parametrize(
+    "runs, errors",
+    [
+        ([], {("SCHEMA", "pipeline/runs")}),
+        ({"run_id": "x"}, {("SCHEMA", "pipeline/runs")}),
+        (["ns-27b-e-20261031"], {("SCHEMA", "pipeline/runs/0")}),
+        (
+            [{k: v for k, v in RECORD_RUN.items() if k not in ("run_id", "created_at")}],
+            {("SCHEMA", "pipeline/runs/0/run_id"), ("SCHEMA", "pipeline/runs/0/created_at")},
+        ),
+        ([{**RECORD_RUN, "stage": "extraction"}], {("SCHEMA", "pipeline/runs/0/stage")}),
+        (
+            [{**RECORD_RUN, "created_at": "31 Oct 2026"}],
+            {("SCHEMA", "pipeline/runs/0/created_at")},
+        ),
+        ([{**RECORD_RUN, "model": 27}], {("SCHEMA", "pipeline/runs/0/model")}),
+        ([{**RECORD_RUN, "bundle_id": "b1"}], {("SCHEMA", "pipeline/runs/0/bundle_id")}),
+        ([{**RECORD_RUN, "kind": "rerun"}], {("SCHEMA", "pipeline/runs/0/kind")}),
+        ([EVIDENCE_RUN, NORMALIZE_RUN], {("SCHEMA", "pipeline/runs")}),
+        (
+            [RECORD_RUN, {**RECORD_RUN, "run_id": "ns-27b-e-20261105"}],
+            {("DUPLICATE_STAGE", "pipeline/runs/1/stage")},
+        ),
+        (
+            [RECORD_RUN, {**EVIDENCE_RUN, "run_id": RECORD_RUN["run_id"]}],
+            {("DUPLICATE_RUN_ID", "pipeline/runs/1/run_id")},
+        ),
+    ],
+)
+def test_a_malformed_run_is_refused(session, runs, errors):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(_offloaded(base_study_id, runs))
+
+    assert error.value.status_code == 422
+    assert {(e.code, e.field) for e in error.value.errors} == errors
+    assert not PipelineConfig.query.filter_by(version="ns-27b-e-20261031").count()
+
+
+@pytest.mark.anyio
+async def test_upload_endpoint_takes_runs(admin_client, session):
+    url = "/api/study-schema-uploads/"
+    parse = await admin_client.post(url, data={"coordinate_parse": ORIGINAL})
+    base_study_id = parse.json()["base_study_id"]
+
+    response = await admin_client.post(
+        url, data=_offloaded(base_study_id, [RECORD_RUN, EVIDENCE_RUN, NORMALIZE_RUN])
+    )
+    assert response.status_code == 200, response.text
+    runs = response.json()["provenance"]["record"]["runs"]
+    assert [run["run_id"] for run in runs] == [
+        RECORD_RUN["run_id"],
+        EVIDENCE_RUN["run_id"],
+        NORMALIZE_RUN["run_id"],
+    ]
+
+    response = await admin_client.post(
+        url, data=_offloaded(base_study_id, [{**RECORD_RUN, "bundle_id": "b1"}])
+    )
+    assert response.status_code == 422, response.text
+
+
+def test_a_run_id_names_one_run(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    ingest_upload(_offloaded(base_study_id, [RECORD_RUN]))
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(_offloaded(base_study_id, [{**RECORD_RUN, "machine": "ls6"}]))
+
+    assert error.value.status_code == 422
+    assert [(e.code, e.field) for e in error.value.errors] == [
+        ("RUN_CONFLICT", "pipeline/runs/0")
+    ]
+
+
+def test_a_record_keeps_its_normalized_sidecars(session):
+    # A normalizer's reading sits beside the value it read (study_schema#56).
+    record = _record(GAIN)
+    record["description"] = {
+        "extraction_status": "extracted",
+        "value": "Probable Alzheimer's disease; healthy older adults",
+        "value_source": "reported",
+        "evidence": {"status": "not_found"},
+        "normalized": [
+            {
+                "vocabulary": "MONDO",
+                "status": "mapped",
+                "value": "MONDO:0004975",
+                "label": "Alzheimer disease",
+                "item": 0,
+                "method": "lexical",
+                "mapping_tool": "pondie.normalization.medical_condition 16a42d8",
+                "confidence": 1.0,
+            },
+            {"vocabulary": "MONDO", "status": "absent", "item": 1, "mapping_tool": "m"},
+        ],
+    }
+
+    summary = ingest_upload({"coordinate_parse": ORIGINAL, "record": record})
+
+    stored = PipelineStudyResult.query.get(summary["provenance"]["record"]["result_id"])
+    assert stored.result_data["description"]["normalized"] == record["description"]["normalized"]
 
 
 def test_record_attaches_later_to_the_stored_parse(session):
@@ -629,6 +928,64 @@ def test_revision_versions_analyses_and_carries_claims(session):
     assert again["record"]["analyses"]["resolved"] == 3
 
 
+def _coordinate(action, payload, key=None):
+    target = (
+        {"kind": "coordinate_parse"}
+        if key is None
+        else {"kind": "coordinate_analysis", "analysis_key": key}
+    )
+    return {"client_op_id": f"ingest-{action}", "type": "coordinate", "target": target,
+            "action": action, "payload": payload}
+
+
+def test_a_revision_the_review_core_writes_is_ingested_with_its_claims_carried(session):
+    record = _record(GAIN, LOSS, RISK)
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL, "record": record})[
+        "base_study_id"
+    ]
+    added = {k: v for k, v in RISK.items() if k != "key"}
+    added.update(name="Risk > Loss", cells=fx.cells(8), points=[fx.point((7, 8, 9))])
+    reviewed, _ = apply_batch(
+        ReviewState(record=record, coordinate_parse=ORIGINAL),
+        {"ops": [
+            _coordinate("split", {"parts": [{"indices": [0, 1]}, {"indices": [2, 3]}]},
+                        GAIN["key"]),
+            _coordinate("merge", {"with": [RISK["key"]]}, LOSS["key"]),
+            _coordinate("add", {"analysis": added}),
+            _coordinate("edit_points", {"points": [fx.point((9, 9, 9))]}, SEED["key"]),
+        ]},
+        text="",
+        user_id="reviewer",
+        at="2026-10-15T12:00:00Z",
+        stable_ids=records.minting(),
+    )
+    revision = reviewed.coordinate_revision
+
+    summary = ingest_upload({"coordinate_parse": revision})
+
+    assert summary["kind"] == "revision"
+    assert summary["skeleton"]["orphaned_claims"] == []
+    assert {a.source_id for a in _current(base_study_id).analyses} == {
+        a["key"] for a in revision["analyses"]
+    }
+    verdicts = {v["key"]: v for v in revision["verdicts"]}
+    assert [v["verdict"] for v in revision["verdicts"]] == [
+        "split", "merge", "merge", "edit", "add",
+    ]
+    gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
+    assert gain_claims
+    for key in verdicts[GAIN["key"]]["replaced_by"]:
+        assert {c.carried_from for c in _claims(base_study_id, key)} == gain_claims
+    [merged] = verdicts[LOSS["key"]]["replaced_by"]
+    assert {c.carried_from for c in _claims(base_study_id, merged)} == {
+        c.id for c in _claims(base_study_id, LOSS["key"])
+    } | {c.id for c in _claims(base_study_id, RISK["key"])} - _shared_duplicates(base_study_id)
+
+    # The record the review core re-pointed reads the revision's analyses.
+    again = ingest_upload({"coordinate_parse": revision, "record": reviewed.record})
+    assert again["record"]["analyses"]["resolved"] == len(reviewed.record["analyses"]) == 4
+
+
 def test_a_revision_that_omits_an_analysis_reports_its_claims_as_not_carried(session):
     base_study_id = _ingested(ORIGINAL, GAIN)["base_study_id"]
     claims = _claims(base_study_id, GAIN["key"])
@@ -654,6 +1011,63 @@ def test_a_revision_that_omits_an_analysis_reports_its_claims_as_not_carried(ses
             "reason": NOT_CARRIED,
         }
     ]
+
+
+def _edited_gain(*verdicts):
+    """A revision whose verdicts give Gain an edited first point; Loss, Risk and Seed kept."""
+    edited = fx.table_analysis(
+        "tbl1", [0, 1, 2, 3], "Gain > Neutral", [fx.point((11, 20, 30)), *GAIN["points"][1:]]
+    )
+    revision = fx.parse(
+        [edited, LOSS, RISK, SEED],
+        revision_of=ORIGINAL["parse_id"],
+        verdicts=[
+            *verdicts,
+            fx.verdict(LOSS["key"], "accept", [LOSS["key"]]),
+            fx.verdict(RISK["key"], "accept", [RISK["key"]]),
+            fx.verdict(SEED["key"], "accept", [SEED["key"]]),
+        ],
+    )
+    return revision, edited
+
+
+def test_an_edit_verdict_carries_the_claims_to_its_replacement(session):
+    base_study_id = _ingested(ORIGINAL, GAIN)["base_study_id"]
+    gain_claims = {c.id for c in _claims(base_study_id, GAIN["key"])}
+    edited = _edited_gain()[1]
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit", [edited["key"]]))
+
+    summary = ingest_upload({"coordinate_parse": revision})
+
+    assert summary["skeleton"]["orphaned_claims"] == []
+    assert gain_claims
+    assert {c.carried_from for c in _claims(base_study_id, edited["key"])} == gain_claims
+    assert summary["carried"]["claims"] == len(gain_claims)
+
+
+def test_a_record_of_the_parse_an_edit_revised_names_the_replacement(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    edited = _edited_gain()[1]
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit", [edited["key"]]))
+    ingest_upload({"coordinate_parse": revision})
+
+    summary = ingest_upload(
+        {"record": _record(GAIN), "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id}
+    )
+
+    [superseded] = summary["record"]["analyses"]["superseded"]
+    assert (superseded["key"], superseded["replaced_by"]) == (GAIN["key"], [edited["key"]])
+
+
+def test_an_edit_verdict_without_its_replacement_is_refused(session):
+    ingest_upload({"coordinate_parse": ORIGINAL})
+    revision, _ = _edited_gain(fx.verdict(GAIN["key"], "edit"))
+
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": revision})
+
+    assert error.value.status_code == 422
+    assert "coordinate_parse/verdicts/0/replaced_by" in str(error.value.errors)
 
 
 def test_orphaned_claim_reasons_are_codes():
@@ -783,6 +1197,79 @@ def test_replaying_a_superseded_parse_is_refused(session):
     assert gains.count() == 1
 
 
+def _read_from(revised, *read, relabel=False):
+    """A revision of ``revised``: the pipeline's revision with Seed omitted, or relabelled, its
+    header inputs naming ``read`` as the parses it was read from (ADR 0013)."""
+    pipeline, *_ = _revision()
+    analyses = [a for a in pipeline["analyses"] if a["key"] != SEED["key"]]
+    verdicts = [v for v in pipeline["verdicts"] if v["key"] != SEED["key"]]
+    if relabel:
+        analyses.append({**SEED, "role": "localization"})
+        verdicts.append({**fx.verdict(SEED["key"], "relabel", [SEED["key"]]),
+                         "role": "localization"})
+    else:
+        verdicts.append(fx.verdict(SEED["key"], "omit"))
+    revision = fx.parse(analyses, revision_of=revised["parse_id"], verdicts=verdicts)
+    revision["header"]["inputs"] = [
+        {"artifact_kind": "parsed_paper", "fingerprint": revision["text_sha256"]},
+        *({"artifact_kind": "coordinate_parse", "fingerprint": p["parse_id"]} for p in read),
+    ]
+    return revision
+
+
+def _refused_not_current(body):
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(body)
+    assert error.value.status_code == 422
+    assert "NOT_CURRENT" in str(error.value.to_payload())
+
+
+def test_a_revision_of_the_original_read_from_the_current_parse_is_the_new_current(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+    reviewed = _read_from(ORIGINAL, ORIGINAL, pipeline)
+
+    summary = ingest_upload({"coordinate_parse": reviewed})
+
+    assert (summary["kind"], summary["parse_id"]) == ("revision", reviewed["parse_id"])
+    current = _current(base_study_id)
+    assert current.source_id == reviewed["parse_id"]
+    assert current.metadata_["coordinate_parse"]["revision_of"] == ORIGINAL["parse_id"]
+    assert {a.source_id for a in current.analyses} == {a["key"] for a in reviewed["analyses"]}
+
+
+def test_a_revision_read_from_a_parse_that_is_no_longer_current_is_refused(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+    ingest_upload({"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, pipeline)})
+    current = _current(base_study_id).source_id
+
+    _refused_not_current(
+        {"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, pipeline, relabel=True)}
+    )
+    assert _current(base_study_id).source_id == current
+
+
+def test_a_revision_that_names_no_parse_read_must_revise_the_current_one(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    pipeline, *_ = _revision()
+    ingest_upload({"coordinate_parse": pipeline})
+
+    _refused_not_current({"coordinate_parse": _read_from(ORIGINAL)})
+    assert _current(base_study_id).source_id == pipeline["parse_id"]
+
+
+def test_a_revision_read_from_the_current_parse_must_revise_a_parse_it_came_from(session):
+    base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
+    reparse = fx.parse([GAIN, LOSS, RISK])
+    ingest_upload({"coordinate_parse": reparse})
+
+    _refused_not_current({"coordinate_parse": _read_from(ORIGINAL, ORIGINAL, reparse)})
+    assert _current(base_study_id).source_id == reparse["parse_id"]
+
+
 def test_record_of_a_revised_parse_is_superseded_and_carried(session):
     base_study_id = ingest_upload({"coordinate_parse": ORIGINAL})["base_study_id"]
     revision, original, inverse, _ = _revision()
@@ -818,6 +1305,45 @@ def test_base_study_lookup_holds_an_advisory_lock(session):
     ).scalar()
     # The parse names a pmid only: one lock, held until the upload's transaction ends.
     assert locks == 1
+
+
+def preprint_parse(**ids):
+    parse = copy.deepcopy(ORIGINAL)
+    parse["header"]["identifiers"] = fx.identifiers(**ids)
+    return parse
+
+
+def test_a_parse_naming_no_identifier_at_all_is_refused(session):
+    parse = preprint_parse()
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload({"coordinate_parse": parse})
+    assert "names no identifier to create its base study from" in str(error.value.detail)
+    assert session.scalar(sa.select(sa.func.count()).select_from(BaseStudy)) == 0
+
+
+def test_a_parse_with_only_preprint_dois_finds_the_base_study_of_that_doi(session):
+    first_seen = BaseStudy(name="Preprint", doi=PREPRINT_DOI["doi"], level="group")
+    session.add(first_seen)
+    session.commit()
+
+    summary = ingest_upload({"coordinate_parse": preprint_parse(preprint_dois=[PREPRINT_DOI])})
+
+    assert summary["base_study_id"] == first_seen.id
+
+
+def test_the_base_study_lookup_locks_every_identifier_of_the_paper(session):
+    ingest_upload(
+        {"coordinate_parse": preprint_parse(pmid="12345678", preprint_pmids=["40000001"])}
+    )
+    locks = session.execute(
+        sa.text(
+            "SELECT count(*) FROM pg_locks "
+            "WHERE locktype = 'advisory' AND pid = pg_backend_pid()"
+        )
+    ).scalar()
+    # Every identifier is locked, whatever its kind (two ids may share one of the buckets),
+    # until the upload's transaction ends.
+    assert locks in (1, 2)
 
 
 def _contrast(parsed, local_id="a0", **levels):
@@ -1899,3 +2425,686 @@ def test_a_revision_that_splits_a_relabelled_set_reports_the_relabel(session):
             "reason": RELABEL_REVISED_REASON,
         }
     ]
+
+
+# stable entity ids (ADR 0009)
+
+STABLE_ID = "5d1c7b0e-2f4a-4c8e-9b6d-3a5f7e9c1b20"
+
+
+def _group(local_id, name):
+    group = fx.minimal(fx.defs["Group"])
+    group.update(local_id=local_id, name=fx.extracted(name))
+    return group
+
+
+def _task(local_id, name, *conditions):
+    task = fx.minimal(fx.defs["Task"])
+    task.update(local_id=local_id, name=fx.extracted(name), conditions=list(conditions))
+    return task
+
+
+def _condition(local_id, name):
+    condition = fx.minimal(fx.defs["Condition"])
+    condition.update(local_id=local_id, name=fx.extracted(name))
+    return condition
+
+
+def _with(record, **lists):
+    return {**copy.deepcopy(record), **copy.deepcopy(lists)}
+
+
+def _upload_record(base_study_id, record):
+    return ingest_upload(
+        {"record": record, "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id}
+    )
+
+
+def _entities(base_study_id, entity_class):
+    """The base study's entities of ``entity_class``, by the name their identity holds."""
+    return sorted(
+        StudyEntity.query.filter_by(base_study_id=base_study_id, entity_class=entity_class),
+        key=lambda entity: entity.identity[0],
+    )
+
+
+def _links(config_id, base_study_id):
+    """``{local_id: entity id}`` of the config's ExtractionEntityLinks for the base study."""
+    prefix = f"{base_study_id}:"
+    return {
+        link.local_id.removeprefix(prefix): link.entity_id
+        for link in ExtractionEntityLink.query.filter_by(config_id=config_id)
+        if link.local_id.startswith(prefix)
+    }
+
+
+def _claim_rows(entity_ids, field_path=None):
+    """Sorted ``(entity id, field path, value)`` of the claims on ``entity_ids``."""
+    query = FieldClaim.query.filter(FieldClaim.entity_id.in_(entity_ids))
+    if field_path is not None:
+        query = query.filter_by(field_path=field_path)
+    return sorted((c.entity_id, c.field_path, _sortable(c.value)) for c in query)
+
+
+def _sortable(value):
+    return value if isinstance(value, str) else repr(value)
+
+
+def _first_upload(**lists):
+    summary = ingest_upload(
+        {"coordinate_parse": ORIGINAL, "record": _with(_record(GAIN), **lists)}
+    )
+    return summary["base_study_id"], summary["record"]["config_id"]
+
+
+def test_a_renamed_group_carrying_its_stable_id_keeps_its_entity_and_claims(session):
+    base_study_id, config_id = _first_upload(
+        groups=[_group("g1", "patients"), _group("g2", "controls")]
+    )
+    controls, patients = _entities(base_study_id, "Group")
+    assert [g.identity for g in (controls, patients)] == [["controls", 0], ["patients", 0]]
+    before = _claim_rows([patients.id])
+    assert (patients.id, "name", "patients") in before
+    renamed = _group("g1", "MDD patients")
+    renamed["stable_id"] = patients.stable_id
+
+    summary = _upload_record(
+        base_study_id, _with(_record(GAIN), groups=[renamed, _group("g2", "controls")])
+    )
+
+    assert summary["record"]["config_id"] == config_id
+    assert [e.id for e in _entities(base_study_id, "Group")] == [controls.id, patients.id]
+    assert _links(config_id, base_study_id)["g1"] == patients.id
+    assert _links(config_id, base_study_id)["g2"] == controls.id
+    assert _claim_rows([patients.id], "name") == [
+        (patients.id, "name", "MDD patients"),
+        (patients.id, "name", "patients"),
+    ]
+    assert set(before) <= set(_claim_rows([patients.id]))
+    assert summary["record"]["claims"]["entities"] == {"created": 0, "matched": 4}
+    assert summary["record"]["claims"]["rename_candidates"] == []
+    session.refresh(patients)
+    assert (patients.identity, patients.stable_id) == (["patients", 0], renamed["stable_id"])
+
+
+def test_a_renamed_group_without_a_stable_id_is_still_a_new_entity(session):
+    base_study_id, config_id = _first_upload(groups=[_group("g1", "patients")])
+    [patients] = _entities(base_study_id, "Group")
+
+    _upload_record(base_study_id, _with(_record(GAIN), groups=[_group("g1", "MDD patients")]))
+
+    renamed, _ = groups = _entities(base_study_id, "Group")
+    assert [g.identity for g in groups] == [["mddpatients", 0], ["patients", 0]]
+    assert renamed.id != patients.id
+    assert _links(config_id, base_study_id)["g1"] == renamed.id
+    assert _claim_rows([patients.id], "name") == [(patients.id, "name", "patients")]
+
+
+def test_a_stable_id_no_entity_has_becomes_the_new_entitys(session):
+    base_study_id, config_id = _first_upload()
+    group = _group("g1", "patients")
+    group["stable_id"] = STABLE_ID
+
+    _upload_record(base_study_id, _with(_record(GAIN), groups=[group]))
+
+    [entity] = _entities(base_study_id, "Group")
+    assert (entity.identity, entity.stable_id) == (["patients", 0], STABLE_ID)
+    assert _links(config_id, base_study_id)["g1"] == entity.id
+
+
+def test_a_stable_id_no_entity_has_on_an_item_its_hash_finds_keeps_the_found_entity(session):
+    base_study_id, config_id = _first_upload(groups=[_group("g1", "patients")])
+    [patients] = _entities(base_study_id, "Group")
+    group = _group("g1", "patients")
+    group["stable_id"] = STABLE_ID
+
+    _upload_record(base_study_id, _with(_record(GAIN), groups=[group]))
+
+    assert [(g.id, g.stable_id) for g in _entities(base_study_id, "Group")] == [
+        (patients.id, patients.stable_id)
+    ]
+    assert patients.stable_id != STABLE_ID
+    assert _links(config_id, base_study_id)["g1"] == patients.id
+
+
+def test_the_unnamed_children_of_a_renamed_task_keep_their_entities(session):
+    base_study_id, config_id = _first_upload(
+        tasks=[_task("t1", "Stroop", _condition("c1", "congruent"))]
+    )
+    [task] = _entities(base_study_id, "Task")
+    [condition] = _entities(base_study_id, "Condition")
+    renamed = _task("t1", "Colour Stroop", _condition("c1", "congruent"))
+    renamed["stable_id"] = task.stable_id
+
+    _upload_record(base_study_id, _with(_record(GAIN), tasks=[renamed]))
+
+    assert [e.id for e in _entities(base_study_id, "Task")] == [task.id]
+    assert [e.id for e in _entities(base_study_id, "Condition")] == [condition.id]
+    assert _links(config_id, base_study_id)["c1"] == condition.id
+    assert condition.parent_id == task.id
+
+
+def test_an_analysis_carrying_another_analysis_stable_id_is_found_by_its_key(session):
+    summary = ingest_upload({"coordinate_parse": ORIGINAL, "record": _record(GAIN, LOSS)})
+    base_study_id, config_id = summary["base_study_id"], summary["record"]["config_id"]
+    gain, loss = _entity(base_study_id, GAIN["key"]), _entity(base_study_id, LOSS["key"])
+    record = _record(GAIN, LOSS)
+    record["analyses"][1]["stable_id"] = gain.stable_id
+
+    _upload_record(base_study_id, record)
+
+    links = _links(config_id, base_study_id)
+    assert (links["a0"], links["a1"]) == (gain.id, loss.id)
+
+
+def test_a_group_named_by_a_renamed_groups_old_name_is_held_as_a_duplicate(session):
+    base_study_id, config_id = _first_upload(groups=[_group("g1", "patients")])
+    [patients] = _entities(base_study_id, "Group")
+    renamed = _group("g1", "MDD patients")
+    renamed["stable_id"] = patients.stable_id
+    created = _group("g9", "patients")
+    created["stable_id"] = STABLE_ID
+
+    summary = _upload_record(base_study_id, _with(_record(GAIN), groups=[renamed, created]))
+
+    assert [g.id for g in _entities(base_study_id, "Group")] == [patients.id]
+    assert summary["record"]["claims"]["duplicates"] == ["groups[1]"]
+    assert _links(config_id, base_study_id)["g1"] == patients.id
+    assert "g9" not in _links(config_id, base_study_id)
+    assert _claim_rows([patients.id], "name") == [
+        (patients.id, "name", "MDD patients"),
+        (patients.id, "name", "patients"),
+    ]
+
+
+def _refused(body):
+    claims = FieldClaim.query.count()
+    with pytest.raises(NeuroStoreException) as error, db.session.begin_nested():
+        ingest_upload(body)
+    assert error.value.status_code == 422
+    assert FieldClaim.query.count() == claims
+    return [(e.field, e.code, e.message) for e in error.value.errors]
+
+
+def test_a_stable_id_of_another_papers_entity_refuses_the_record(session):
+    other_id, _ = _first_upload(groups=[_group("g1", "patients")])
+    [theirs] = _entities(other_id, "Group")
+    parse = fx.parse([GAIN], pmid="87654321")
+    group = _group("g1", "patients")
+    group["stable_id"] = theirs.stable_id
+
+    errors = _refused({"coordinate_parse": parse, "record": _with(_record(GAIN), groups=[group])})
+
+    assert errors == [(
+        "record/groups[0]/stable_id",
+        "STABLE_ID_MISMATCH",
+        f"groups[0] is a Group, but its stable_id {theirs.stable_id} names a Group of "
+        f"base study {other_id}",
+    )]
+
+
+def test_a_stable_id_of_an_entity_of_another_class_refuses_the_record(session):
+    base_study_id, _ = _first_upload(groups=[_group("g1", "patients")])
+    [patients] = _entities(base_study_id, "Group")
+    task = _task("t1", "Stroop")
+    task["stable_id"] = patients.stable_id
+
+    errors = _refused({
+        "record": _with(_record(GAIN), groups=[_group("g1", "patients")], tasks=[task]),
+        "parse_id": ORIGINAL["parse_id"],
+        "base_study_id": base_study_id,
+    })
+
+    assert errors == [(
+        "record/tasks[0]/stable_id",
+        "STABLE_ID_MISMATCH",
+        f"tasks[0] is a Task, but its stable_id {patients.stable_id} names a Group of "
+        f"base study {base_study_id}",
+    )]
+
+
+def test_a_stable_id_on_two_entities_refuses_the_record(session):
+    base_study_id, _ = _first_upload()
+    first, second = _group("g1", "patients"), _group("g2", "controls")
+    first["stable_id"] = second["stable_id"] = STABLE_ID
+
+    errors = _refused({
+        "record": _with(_record(GAIN), groups=[first, second]),
+        "parse_id": ORIGINAL["parse_id"],
+        "base_study_id": base_study_id,
+    })
+
+    assert errors == [(
+        "record/groups[1]/stable_id",
+        "STABLE_ID_REPEATED",
+        f"groups[1] carries the stable_id {STABLE_ID} that groups[0] carries",
+    )]
+
+
+def test_a_new_analysis_carrying_a_known_entitys_stable_id_gets_one_of_its_own(session):
+    base_study_id, config_id = _first_upload()
+    gain = _entity(base_study_id, GAIN["key"])
+    record = _record(GAIN, LOSS)
+    record["analyses"][1]["stable_id"] = gain.stable_id
+
+    summary = _upload_record(base_study_id, record)
+
+    loss = _entity(base_study_id, LOSS["key"])
+    assert loss.id != gain.id
+    assert re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+                        loss.stable_id)
+    assert loss.stable_id != gain.stable_id
+    session.refresh(gain)
+    assert gain.stable_id == record["analyses"][1]["stable_id"]
+    links = _links(config_id, base_study_id)
+    assert (links["a0"], links["a1"]) == (gain.id, loss.id)
+    assert summary["record"]["claims"]["entities"] == {"created": 1, "matched": 2}
+
+
+def test_the_children_of_a_task_held_as_a_duplicate_are_held_too(session):
+    base_study_id, config_id = _first_upload(
+        tasks=[_task("t1", "Stroop", _condition("c1", "congruent"))]
+    )
+    [task] = _entities(base_study_id, "Task")
+    [condition] = _entities(base_study_id, "Condition")
+    renamed = _task("t1", "Colour Stroop", _condition("c1", "congruent"))
+    renamed["stable_id"] = task.stable_id
+    named_as_before = _task("t9", "Stroop", _condition("c9", "incongruent"))
+
+    summary = _upload_record(
+        base_study_id, _with(_record(GAIN), tasks=[renamed, named_as_before])
+    )
+
+    assert summary["record"]["claims"]["duplicates"] == ["tasks[1]", "tasks[1].conditions[0]"]
+    assert [e.id for e in _entities(base_study_id, "Task")] == [task.id]
+    assert [e.id for e in _entities(base_study_id, "Condition")] == [condition.id]
+    links = _links(config_id, base_study_id)
+    assert (links["t1"], links["c1"]) == (task.id, condition.id)
+    assert "t9" not in links and "c9" not in links
+
+
+def _study_entity(base_study_id):
+    return StudyEntity.query.filter_by(base_study_id=base_study_id, entity_class="Study").one()
+
+
+def test_a_study_stable_id_naming_another_papers_study_refuses_the_record(session):
+    other_id, _ = _first_upload()
+    theirs = _study_entity(other_id)
+    record = _record(GAIN)
+    record["stable_id"] = theirs.stable_id
+
+    errors = _refused(
+        {"coordinate_parse": fx.parse([GAIN], pmid="87654321"), "record": record}
+    )
+
+    assert errors == [(
+        "record/stable_id",
+        "STABLE_ID_MISMATCH",
+        f"the study is a Study, but its stable_id {theirs.stable_id} names a Study of "
+        f"base study {other_id}",
+    )]
+
+
+def test_a_group_carrying_the_studys_stable_id_refuses_the_record(session):
+    base_study_id, _ = _first_upload()
+    group = _group("g1", "patients")
+    group["stable_id"] = STABLE_ID
+    record = _with(_record(GAIN), groups=[group])
+    record["stable_id"] = STABLE_ID
+
+    errors = _refused({
+        "record": record, "parse_id": ORIGINAL["parse_id"], "base_study_id": base_study_id,
+    })
+
+    assert errors == [(
+        "record/groups[0]/stable_id",
+        "STABLE_ID_REPEATED",
+        f"groups[0] carries the stable_id {STABLE_ID} that the study carries",
+    )]
+
+
+# The text, licences, owner and links an upload carries
+
+
+TEXT = "A paper's text."
+
+
+def _paper_of(text=TEXT, source="pmc", paper=None):
+    """A parsed paper of ``text``, read from ``source``."""
+    paper = paper or fx.parsed_paper()
+    paper["text_sha256"] = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    paper["source"] = source
+    return paper
+
+
+def _refusal(body):
+    with pytest.raises(NeuroStoreException) as error:
+        ingest_upload(body)
+    assert error.value.status_code == 422
+    return {(e.code, e.field) for e in error.value.errors}
+
+
+def test_an_upload_stores_its_text_with_the_copys_source_and_licence(session):
+    paper = _paper_of()
+    summary = ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper})
+    assert Fulltext.query.count() == 0
+
+    ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper, "text": TEXT})
+
+    fulltext = Fulltext.query.filter_by(base_study_id=summary["base_study_id"]).one()
+    assert (fulltext.text, fulltext.source, fulltext.text_copy, fulltext.license) == (
+        TEXT,
+        "pmc",
+        paper["text_copy"],
+        "cc_by",
+    )
+    session.expire_all()
+    assert session.get(BaseStudy, summary["base_study_id"]).fulltext_id == fulltext.id
+
+
+def test_each_upload_overwrites_the_papers_and_its_texts_licences(session):
+    first = _paper_of()
+    summary = ingest_upload(
+        {"coordinate_parse": fx.parse([LOSS]), "parsed_paper": first, "text": TEXT}
+    )
+    base = session.get(BaseStudy, summary["base_study_id"])
+    assert base.license == "all_rights_reserved"
+
+    again = _paper_of()
+    again["bibliography"]["license"] = fx.CC_BY
+    again["text_copy"] = fx.text_copy(license=fx.ALL_RIGHTS_RESERVED)
+    ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": again, "text": TEXT})
+    session.expire_all()
+
+    assert base.license == "cc_by"
+    fulltext = Fulltext.query.one()
+    assert (fulltext.license, fulltext.text_copy) == ("all_rights_reserved", again["text_copy"])
+
+
+@pytest.mark.parametrize("with_paper", [False, True], ids=["no-parsed-paper", "other-text"])
+def test_a_text_that_is_not_the_parsed_papers_is_refused(session, with_paper):
+    body = {"coordinate_parse": fx.parse([LOSS]), "text": "Another text."}
+    if with_paper:
+        body["parsed_paper"] = _paper_of()
+
+    assert _refusal(body) == {("TEXT_MISMATCH", "text")}
+    assert (BaseStudy.query.count(), Fulltext.query.count()) == (0, 0)
+
+
+def test_a_text_of_any_source_is_stored_and_ranks_after_pdf(session):
+    pdf = "The text read from the PDF."
+    summary = ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": _paper_of(pdf, "pdf"),
+            "text": pdf,
+        }
+    )
+    # Newer, with the same copy version: only its source can rank it after the pdf.
+    ingest_upload(
+        {
+            "coordinate_parse": fx.parse([LOSS]),
+            "parsed_paper": _paper_of(TEXT, "wiley"),
+            "text": TEXT,
+        }
+    )
+    session.expire_all()
+
+    texts = {f.source: f for f in Fulltext.query.filter_by(base_study_id=summary["base_study_id"])}
+    assert set(texts) == {"pdf", "wiley"}
+    assert session.get(BaseStudy, summary["base_study_id"]).fulltext_id == texts["pdf"].id
+
+
+def test_a_text_uploaded_again_from_another_source_is_ranked_by_it(session):
+    pdf = "The text read from the PDF."
+
+    def upload(text, source):
+        return ingest_upload(
+            {
+                "coordinate_parse": fx.parse([LOSS]),
+                "parsed_paper": _paper_of(text, source),
+                "text": text,
+            }
+        )
+
+    summary = upload(TEXT, "pmc")
+    upload(pdf, "pdf")
+    session.expire_all()
+    base = session.get(BaseStudy, summary["base_study_id"])
+    assert session.get(Fulltext, base.fulltext_id).source == "pmc"
+
+    upload(TEXT, "wiley")
+    session.expire_all()
+
+    assert {f.source for f in Fulltext.query} == {"wiley", "pdf"}
+    assert session.get(Fulltext, base.fulltext_id).source == "pdf"
+
+
+def test_an_upload_takes_the_base_study_from_its_owner_and_makes_it_public(session):
+    owner = User(name="Owner", external_id="auth0|owner")
+    base = BaseStudy(name="Owned", level="group", user=owner, public=False)
+    mine = Study(name="Mine", level="group", base_study=base, user=owner, public=False)
+    session.add_all([owner, base, mine])
+    session.commit()
+    session.add(Fulltext(base_study_id=base.id, source="pmc", text="The owner's text."))
+    session.commit()
+    # The preferred full text holds the search's copy of the owner and visibility.
+    preferred = Fulltext.query.one()
+    assert (preferred.user_id, preferred.public) == ("auth0|owner", False)
+    parse = fx.parse([LOSS])
+    parse["header"]["neurostore_base_study_id"] = base.id
+
+    summary = ingest_upload({"coordinate_parse": parse})
+    session.flush()
+    session.expire_all()
+
+    assert summary["took_ownership_from"] == "auth0|owner"
+    assert (base.user_id, base.public) == (None, True)
+    assert (mine.user_id, mine.public) == ("auth0|owner", False)
+    assert (preferred.user_id, preferred.public) == (None, True)
+    assert "took_ownership_from" not in ingest_upload({"coordinate_parse": parse})
+
+
+@pytest.mark.parametrize("named_in", ["header", "body"])
+def test_an_upload_naming_a_merged_base_study_reports_each_one_it_followed(session, named_in):
+    keeper = BaseStudy(name="Keeper", level="group")
+    middle = BaseStudy(name="Middle", level="group", is_active=False)
+    named = BaseStudy(name="Named", level="group", is_active=False)
+    session.add_all([keeper, middle, named])
+    session.commit()
+    middle.superseded_by, named.superseded_by = keeper.id, middle.id
+    session.commit()
+
+    def upload(base_study_id):
+        parse = fx.parse([LOSS])
+        if named_in == "header":
+            parse["header"]["neurostore_base_study_id"] = base_study_id
+            return ingest_upload({"coordinate_parse": parse})
+        return ingest_upload({"coordinate_parse": parse, "base_study_id": base_study_id})
+
+    summary = upload(named.id)
+
+    assert summary["base_study_id"] == keeper.id
+    assert summary["merged_from"] == [named.id, middle.id]
+    assert "merged_from" not in upload(keeper.id)
+
+
+OSF = "https://files.osf.io/v1/resources/abcde"
+OPENNEURO_DOI = "https://doi.org/10.18112/openneuro.ds000001.v1.0.0"
+NEUROVAULT = "https://neurovault.org/collections/123"
+ZENODO_DOI = "https://doi.org/10.5281/zenodo.123"
+NOT_ZENODO_DOI = "https://doi.org/10.52810/abc"
+GITHUB = "https://github.com/lab/code"
+UNSORTED = "https://data.example.co.uk/study"
+
+
+def _upload_links(*links):
+    paper = fx.parsed_paper()
+    if links != (None,):
+        paper["links"] = list(links)
+    return ingest_upload({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper})
+
+
+def _stored_links(base_study_id):
+    return {
+        link.url: (link.host, link.registrable_domain, link.has_nifti, link.source)
+        for link in BaseStudyLink.query.filter_by(base_study_id=base_study_id)
+    }
+
+
+def test_an_upload_stores_the_papers_links_with_their_host_and_domain(session):
+    summary = _upload_links(
+        fx.link(OSF, has_nifti=True),
+        fx.link(OPENNEURO_DOI, has_nifti=None),
+        fx.link(UNSORTED),
+    )
+
+    assert _stored_links(summary["base_study_id"]) == {
+        OSF: ("files.osf.io", "osf.io", True, "pipeline"),
+        OPENNEURO_DOI: ("doi.org", "doi.org", None, "pipeline"),
+        # By the public suffix list: co.uk is a suffix, so the domain keeps three labels.
+        UNSORTED: ("data.example.co.uk", "example.co.uk", None, "pipeline"),
+    }
+
+
+def test_a_listing_replaces_the_pipeline_links_and_no_listing_keeps_them(session):
+    summary = _upload_links(fx.link(OSF), fx.link(NEUROVAULT))
+    base_study_id = summary["base_study_id"]
+    session.add(BaseStudyLink.of(base_study_id, GITHUB, "user"))
+    session.commit()
+
+    _upload_links(fx.link(OSF, has_nifti=False), fx.link(GITHUB, has_nifti=True))
+    kept = {
+        OSF: ("files.osf.io", "osf.io", False, "pipeline"),
+        # A link a user gave stays theirs; the pipeline says whether it holds NIfTI.
+        GITHUB: ("github.com", "github.com", True, "user"),
+    }
+    assert _stored_links(base_study_id) == kept
+
+    _upload_links(None)
+    assert _stored_links(base_study_id) == kept
+
+    _upload_links()
+    assert _stored_links(base_study_id) == {GITHUB: kept[GITHUB]}
+
+
+def test_a_link_that_is_not_an_http_url_is_refused(session):
+    paper = fx.parsed_paper()
+    paper["links"] = [fx.link(OSF), fx.link("mailto:author@example.org")]
+
+    assert _refusal({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper}) == {
+        ("SCHEMA", "parsed-paper/links/1/url")
+    }
+
+
+def test_a_links_occurrences_are_accepted_and_not_stored(session):
+    summary = _upload_links(
+        fx.link(
+            OSF,
+            {"found_by": "text", "start_char": 3, "end_char": 41},
+            fx.IN_MARKUP,
+            {"found_by": "reference", "reference_id": "ref-7"},
+            has_nifti=True,
+        )
+    )
+    stored = {OSF: ("files.osf.io", "osf.io", True, "pipeline")}
+    assert _stored_links(summary["base_study_id"]) == stored
+
+    # The same link given somewhere else is the same row.
+    _upload_links(
+        fx.link(OSF, {"found_by": "supplement", "start_char": 90, "end_char": 128}, has_nifti=True)
+    )
+    assert _stored_links(summary["base_study_id"]) == stored
+    assert {column.name for column in BaseStudyLink.__table__.columns} == {
+        "id", "created_at", "updated_at",
+        "base_study_id", "url", "host", "registrable_domain", "has_nifti", "source",
+    }
+
+
+@pytest.mark.parametrize(
+    "occurrences, field",
+    [(None, "parsed-paper/links/0"), ([], "parsed-paper/links/0/occurrences")],
+    ids=["absent", "empty"],
+)
+def test_a_link_that_says_nowhere_the_paper_gives_it_is_refused(session, occurrences, field):
+    link = {"url": OSF}
+    if occurrences is not None:
+        link["occurrences"] = occurrences
+    paper = fx.parsed_paper()
+    paper["links"] = [link]
+
+    assert _refusal({"coordinate_parse": fx.parse([LOSS]), "parsed_paper": paper}) == {
+        ("SCHEMA", field)
+    }
+    assert BaseStudyLink.query.count() == 0
+
+
+def test_a_links_repository_comes_from_the_seeded_link_domains(session):
+    assert {(d.pattern, d.repository, d.kind) for d in LinkDomain.query} == {
+        ("osf.io", "OSF", "data_repository"),
+        ("10.17605/osf.io", "OSF", "data_repository"),
+        ("openneuro.org", "OpenNeuro", "data_repository"),
+        ("10.18112/openneuro", "OpenNeuro", "data_repository"),
+        ("neurovault.org", "NeuroVault", "data_repository"),
+        ("github.com", "GitHub", "code"),
+        ("gitlab.com", "GitLab", "code"),
+        ("zenodo.org", "Zenodo", "data_repository"),
+        ("10.5281", "Zenodo", "data_repository"),
+        ("figshare.com", "figshare", "data_repository"),
+        ("10.6084", "figshare", "data_repository"),
+        ("doi.org", "DOI", "doi_prefix"),
+    }
+    urls = (OSF, OPENNEURO_DOI, NEUROVAULT, ZENODO_DOI, NOT_ZENODO_DOI, GITHUB, UNSORTED)
+    _upload_links(*(fx.link(url) for url in urls))
+
+    found = {}
+    for url, repository, kind in session.execute(
+        sa.select(BaseStudyLink.url, LinkDomain.repository, LinkDomain.kind).join(
+            LinkDomain, LinkDomain.matches()
+        )
+    ):
+        found.setdefault(url, set()).add((repository, kind))
+
+    doi = ("DOI", "doi_prefix")
+    assert found == {
+        OSF: {("OSF", "data_repository")},
+        OPENNEURO_DOI: {doi, ("OpenNeuro", "data_repository")},
+        NEUROVAULT: {("NeuroVault", "data_repository")},
+        ZENODO_DOI: {doi, ("Zenodo", "data_repository")},
+        # 10.5281 is Zenodo's prefix, not 10.52810's.
+        NOT_ZENODO_DOI: {doi},
+        GITHUB: {("GitHub", "code")},
+    }
+
+
+@pytest.mark.anyio
+async def test_the_endpoint_takes_a_text_and_reports_merges_and_ownership(
+    admin_client, session
+):
+    owner = User(name="Owner", external_id="auth0|owner")
+    keeper = BaseStudy(name="Keeper", level="group", user=owner, public=False)
+    named = BaseStudy(name="Named", level="group", is_active=False)
+    session.add_all([owner, keeper, named])
+    session.commit()
+    named.superseded_by = keeper.id
+    session.commit()
+    parse = fx.parse([LOSS])
+    parse["header"]["neurostore_base_study_id"] = named.id
+    url = "/api/study-schema-uploads/"
+
+    response = await admin_client.post(
+        url, data={"coordinate_parse": parse, "parsed_paper": _paper_of(), "text": TEXT}
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert (body["base_study_id"], body["merged_from"], body["took_ownership_from"]) == (
+        keeper.id,
+        [named.id],
+        "auth0|owner",
+    )
+    assert Fulltext.query.one().text == TEXT
+
+    response = await admin_client.post(url, data={"coordinate_parse": parse, "text": TEXT})
+    assert response.status_code == 422, response.text
+    assert "TEXT_MISMATCH" in response.text

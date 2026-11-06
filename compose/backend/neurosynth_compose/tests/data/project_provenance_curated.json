@@ -1,0 +1,229 @@
+{
+  "curationMetadata": {
+    "columns": [
+      {
+        "id": "59e557fd-360a-4296-b45f-8b1898a7e353",
+        "name": "not included",
+        "stubStudies": [
+          {
+            "id": "692bcfa2-a656-4736-a8a6-271f7a44f884",
+            "doi": "10.1038/s41526-024-00367-7",
+            "pmid": "38472244",
+            "tags": [
+              {
+                "id": "10fad876-3223-485d-894f-b4598e0471d4",
+                "label": "integration (datatype=all)",
+                "isAssignable": true,
+                "isExclusionTag": false
+              }
+            ],
+            "pmcid": "10933323",
+            "title": "Daily artificial gravity partially mitigates vestibular processing changes associated with head-down tilt bedrest",
+            "authors": "Tays, G. D.; Hupfeld, K. E.; McGregor, H. R.; Beltran, N. E.; De Dios, Y. E.; Mulder, E.; Bloomberg, J. J.; Mulavara, A. P.; Wood, S. J.; Seidler, R. D.",
+            "journal": "NPJ Microgravity",
+            "keywords": "",
+            "searchTerm": "?genericSearchStr=integration&dataType=all&source=all&sortBy=relevance&descOrder=true",
+            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/38472244",
+            "articleYear": "2024",
+            "abstractText": " \nMicrogravity alters vestibular signaling and reduces body loading, driving sensory reweighting. The unloading effects can be modelled using head-down tilt bedrest (HDT). Artificial gravity (AG) has been hypothesized to serve as an integrated countermeasure for the declines associated with HDT and spaceflight. Here, we examined the efficacy of 30\u2009min of daily AG to counteract brain and behavior changes from 60 days of HDT. Two groups received 30\u2009min of AG delivered via short-arm centrifuge daily (  n  \u2009=\u20098 per condition), either in one continuous bout, or in 6 bouts of 5\u2009min. To improve statistical power, we combined these groups (AG;   n  \u2009=\u200916). Another group served as controls in HDT with no AG (CTRL;   n  \u2009=\u20098). We examined how HDT and AG affect vestibular processing by collecting fMRI scans during vestibular stimulation. We collected these data prior to, during, and post-HDT. We assessed brain activation initially in 12 regions of interest (ROIs) and then conducted an exploratory whole brain analysis. The AG group showed no changes in activation during vestibular stimulation in a cerebellar ROI, whereas the CTRL group showed decreased activation specific to HDT. Those that received AG and showed little pre- to post-HDT changes in left vestibular cortex activation had better post-HDT balance performance. Whole brain analyses identified increased pre- to during-HDT activation in CTRLs in the right precentral gyrus and right inferior frontal gyrus, whereas AG maintained pre-HDT activation levels. These results indicate that AG could mitigate activation changes in vestibular processing that is associated with better balance performance. \n ",
+            "exclusionTag": "neurosynth_duplicate_exclusion",
+            "neurostoreId": "aiguBUrdpiZ4",
+            "identificationSource": {
+              "id": "neurosynth_neurostore_id_source",
+              "label": "Neurostore"
+            }
+          }
+        ]
+      },
+      {
+        "id": "29cc942a-436e-4658-87aa-195850a59cff",
+        "name": "included",
+        "stubStudies": [
+          {
+            "id": "9b40f12b-1ba4-4eab-a2b1-7d55d3b73e02",
+            "doi": "10.1111/psyp.12969",
+            "pmid": "28836282",
+            "tags": [
+              {
+                "id": "10fad876-3223-485d-894f-b4598e0471d4",
+                "label": "integration (datatype=all)",
+                "isAssignable": true,
+                "isExclusionTag": false
+              }
+            ],
+            "pmcid": "",
+            "title": "White matter fiber integrity of the saccadic eye movement network differs between schizophrenia and healthy groups.",
+            "authors": "Schaeffer, David J;Rodrigue, Amanda L;Burton, Courtney R;Pierce, Jordan E;Murphy, Megan N;Clementz, Brett A;McDowell, Jennifer E",
+            "journal": "Psychophysiology",
+            "keywords": "",
+            "searchTerm": "?genericSearchStr=integration&dataType=all&source=all&sortBy=relevance&descOrder=true",
+            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/28836282",
+            "articleYear": "2017",
+            "abstractText": "Recent diffusion tensor imaging (DTI) studies suggest that altered white matter fiber integrity is a pathophysiological feature of schizophrenia. Lower white matter integrity is associated with poor c",
+            "exclusionTag": null,
+            "neurostoreId": "7xKzE2rfw8dM",
+            "identificationSource": {
+              "id": "neurosynth_neurostore_id_source",
+              "label": "Neurostore"
+            }
+          },
+          {
+            "id": "6208510e-5883-4976-90d3-a37e5cdf0d91",
+            "doi": "10.1016/j.neuroimage.2004.12.034",
+            "pmid": "15850749",
+            "tags": [
+              {
+                "id": "10fad876-3223-485d-894f-b4598e0471d4",
+                "label": "integration (datatype=all)",
+                "isAssignable": true,
+                "isExclusionTag": false
+              }
+            ],
+            "pmcid": "",
+            "title": "A new SPM toolbox for combining probabilistic cytoarchitectonic maps and functional imaging data.",
+            "authors": "Eickhoff SB, Stephan KE, Mohlberg H, Grefkes C, Fink GR, Amunts K, Zilles K",
+            "journal": "NeuroImage",
+            "keywords": "",
+            "searchTerm": "?genericSearchStr=integration&dataType=all&source=all&sortBy=relevance&descOrder=true",
+            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15850749",
+            "articleYear": "2005",
+            "abstractText": "Correlating the activation foci identified in functional imaging studies of the human brain with structural (e.g., cytoarchitectonic) information on the activated areas is a major methodological chall",
+            "exclusionTag": null,
+            "neurostoreId": "dVE7SbbDthMm",
+            "identificationSource": {
+              "id": "neurosynth_neurostore_id_source",
+              "label": "Neurostore"
+            }
+          },
+          {
+            "id": "ca65b85d-7a77-40d9-baec-f10f5429a771",
+            "doi": "10.1093/scan/nsw090",
+            "pmid": "",
+            "tags": [
+              {
+                "id": "10fad876-3223-485d-894f-b4598e0471d4",
+                "label": "integration (datatype=all)",
+                "isAssignable": true,
+                "isExclusionTag": false
+              }
+            ],
+            "pmcid": "",
+            "title": "Network integrity of the parental brain in infancy supports the development of children's social competencies",
+            "authors": "undefined Abraham E",
+            "journal": "",
+            "keywords": "",
+            "searchTerm": "?genericSearchStr=integration&dataType=all&source=all&sortBy=relevance&descOrder=true",
+            "articleLink": "",
+            "articleYear": "0",
+            "abstractText": "",
+            "exclusionTag": null,
+            "neurostoreId": "dbhYnwnsSztb",
+            "identificationSource": {
+              "id": "neurosynth_neurostore_id_source",
+              "label": "Neurostore"
+            }
+          }
+        ]
+      }
+    ],
+    "infoTags": [
+      {
+        "id": "neurosynth_untagged_tag",
+        "label": "Untagged studies",
+        "isAssignable": false,
+        "isExclusionTag": false
+      },
+      {
+        "id": "neurosynth_uncategorized_tag",
+        "label": "Uncategorized Studies",
+        "isAssignable": false,
+        "isExclusionTag": false
+      },
+      {
+        "id": "neurosynth_needs_review_tag",
+        "label": "Needs Review",
+        "isAssignable": false,
+        "isExclusionTag": false
+      },
+      {
+        "id": "10fad876-3223-485d-894f-b4598e0471d4",
+        "label": "integration (datatype=all)",
+        "isAssignable": true,
+        "isExclusionTag": false
+      }
+    ],
+    "prismaConfig": {
+      "isPrisma": false,
+      "screening": {
+        "exclusionTags": []
+      },
+      "eligibility": {
+        "exclusionTags": []
+      },
+      "identification": {
+        "exclusionTags": []
+      }
+    },
+    "exclusionTags": [
+      {
+        "id": "neurosynth_exclude_exclusion",
+        "label": "Exclude",
+        "isAssignable": true,
+        "isExclusionTag": true
+      },
+      {
+        "id": "neurosynth_duplicate_exclusion",
+        "label": "Duplicate",
+        "isAssignable": true,
+        "isExclusionTag": true
+      }
+    ],
+    "identificationSources": [
+      {
+        "id": "neurosynth_neurostore_id_source",
+        "label": "Neurostore"
+      },
+      {
+        "id": "neurosynth_pubmed_id_source",
+        "label": "PubMed"
+      },
+      {
+        "id": "neurosynth_scopus_id_source",
+        "label": "Scopus"
+      },
+      {
+        "id": "neurosynth_web_of_science_id_source",
+        "label": "Web of Science"
+      },
+      {
+        "id": "neurosynth_psycinfo_id_source",
+        "label": "PsycInfo"
+      },
+      {
+        "id": "neurosynth_sleuth_id_source",
+        "label": "Sleuth"
+      }
+    ]
+  },
+  "extractionMetadata": {
+    "studysetId": "FTqms9KnnZFD",
+    "annotationId": "DzUxUP6oyYpP",
+    "studyStatusList": [
+      {
+        "id": "22gYeMb5k4JH",
+        "status": "completed"
+      },
+      {
+        "id": "24iGFXPixJ26",
+        "status": "completed"
+      },
+      {
+        "id": "7ymWwVv5Ywpx",
+        "status": "completed"
+      }
+    ]
+  },
+  "metaAnalysisMetadata": {
+    "canEditMetaAnalyses": true
+  }
+}

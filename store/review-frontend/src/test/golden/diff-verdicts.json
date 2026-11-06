@@ -1,0 +1,21 @@
+[
+  {
+    "key": "analysis#12d544dad3a9b2df",
+    "verdict": "accept",
+    "reason": "not judged by the reviewer"
+  },
+  {
+    "key": "analysis#e0bab4775f2f5228",
+    "verdict": "split",
+    "reason": "reviewer split",
+    "replaced_by": [
+      "analysis#bf4a9cbe3d00605b",
+      "analysis#0eb71f11d49e2701"
+    ]
+  },
+  {
+    "key": "analysis#25dc160a851819c3",
+    "verdict": "omit",
+    "reason": "reviewer reject (not_in_text)"
+  }
+]

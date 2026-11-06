@@ -69,7 +69,9 @@ def test_get_embedding_uses_modern_openai_client(monkeypatch):
     ) as mock_openai_cls:
         result = get_embedding("hello world")
 
-    mock_openai_cls.assert_called_once_with(api_key="test-key")
+    mock_openai_cls.assert_called_once_with(
+        api_key="test-key", max_retries=0
+    )
     mock_client.embeddings.create.assert_called_once_with(
         model="text-embedding-3-small", input="hello world"
     )
@@ -95,6 +97,7 @@ def test_get_embedding_uses_openai_api_gateway(monkeypatch):
 
     mock_openai_cls.assert_called_once_with(
         api_key="test-key",
+        max_retries=0,
         base_url="https://api.portkey.ai/v1",
         default_headers={"x-portkey-api-key": "test-key"},
     )
@@ -124,7 +127,9 @@ def test_get_embedding_uses_configured_embedding_model(monkeypatch):
     ) as mock_openai_cls:
         result = get_embedding("hello world")
 
-    mock_openai_cls.assert_called_once_with(api_key="test-key")
+    mock_openai_cls.assert_called_once_with(
+        api_key="test-key", max_retries=0
+    )
     mock_client.embeddings.create.assert_called_once_with(
         model="@psyc-aid338-ope-333f18/text-embedding-3-small",
         input="hello world",

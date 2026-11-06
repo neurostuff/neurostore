@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from neurostore.exceptions.base import ConflictError
 from neurostore.exceptions.factories import (
     create_authentication_error,
     create_internal_server_error,
@@ -39,6 +40,13 @@ def abort_auth(detail: Optional[str] = None) -> None:
     401 error helper.
     """
     raise create_authentication_error(detail)
+
+
+def abort_conflict(detail: str, **extra) -> None:
+    """
+    409 error helper; the extra keyword arguments become top-level keys of the payload.
+    """
+    raise ConflictError(detail, **extra)
 
 
 def abort_unprocessable(

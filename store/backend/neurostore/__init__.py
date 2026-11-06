@@ -9,7 +9,6 @@ import anyio
 import connexion
 from connexion.exceptions import OAuthProblem, ProblemException
 from connexion.jsonifier import Jsonifier
-from connexion.resolver import MethodResolver
 from connexion.validators import VALIDATOR_MAP
 from connexion.validators.json import JSONRequestBodyValidator
 from starlette.applications import Starlette
@@ -23,6 +22,7 @@ from neurostore.exceptions.handlers import (
     http_exception_handler,
     neurostore_exception_handler,
     problem_exception_handler,
+    review_exception_handler,
 )
 from neurostore.extensions import cache
 from neurostore.observability.logging_config import configure_logging
@@ -31,8 +31,12 @@ from neurostore.observability.request_id import (
     RequestIdMiddleware,
 )
 from neurostore.observability.sentry import configure_sentry
+from neurostore.paths import API_BASE_PATH
+from neurostore.resolver import ReviewResolver
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler
+from neurostore.resources.body_limit import ReviewBodyLimitMiddleware
+from neurostore.review.errors import ReviewError
 from neurostore.settings import load_settings
 
 
@@ -225,6 +229,7 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         expose_headers=[REQUEST_ID_HEADER_NAME],
     )
     connexion_app.add_error_handler(NeuroStoreException, neurostore_exception_handler)
+    connexion_app.add_error_handler(ReviewError, review_exception_handler)
     connexion_app.add_error_handler(OAuthProblem, asgi_oauth_problem_handler)
     connexion_app.add_error_handler(ProblemException, problem_exception_handler)
     connexion_app.add_error_handler(StarletteHTTPException, http_exception_handler)
@@ -246,10 +251,10 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
 
     connexion_app.add_api(
         "neurostore-openapi.yml",
-        base_path="/api",
+        base_path=API_BASE_PATH,
         options={"swagger_ui": True},
         arguments={"title": "NeuroStore API"},
-        resolver=MethodResolver("neurostore.resources"),
+        resolver=ReviewResolver("neurostore.resources"),
         jsonifier=Jsonifier(_OrjsonModule),
         strict_validation=strict_validation,
         validate_responses=validate_responses,
@@ -259,7 +264,9 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
     app = _SettingsMiddleware(
-        _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs)),
+        _DatabaseSessionMiddleware(
+            CORSMiddleware(ReviewBodyLimitMiddleware(app), **cors_kwargs)
+        ),
         settings,
         _logger,
     )

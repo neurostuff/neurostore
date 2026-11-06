@@ -1,0 +1,355 @@
+{
+  "source": {
+    "id": "P2",
+    "base_study_id": "P2",
+    "label": "Grey matter in social anxiety",
+    "origin": "upload",
+    "text_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "schema_versions": {
+      "paper_parse": "0.8.0",
+      "extraction": "test"
+    }
+  },
+  "text": "We scanned 251 SAD-patients and 213 HC-participants. SAD-patients (n = 174) had larger putamen volume than HC-participants. Mean age was 31.2 years.",
+  "parsed_paper": {
+    "bibliography": {
+      "title": "A paper"
+    }
+  },
+  "coordinate_parse": {
+    "analyses": []
+  },
+  "record": {
+    "local_id": "P1",
+    "groups": [
+      {
+        "local_id": "grp_sad",
+        "name": {
+          "extraction_status": "extracted",
+          "value": "SAD-patients",
+          "value_source": "reported",
+          "evidence": {
+            "status": "present",
+            "sets": [
+              {
+                "spans": [
+                  {
+                    "start_char": 11,
+                    "end_char": 27
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "acquired_count": {
+          "extraction_status": "extracted",
+          "value": 251,
+          "value_source": "reported",
+          "evidence": {
+            "status": "present",
+            "sets": [
+              {
+                "spans": [
+                  {
+                    "start_char": 11,
+                    "end_char": 14
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "age_mean": {
+          "extraction_status": "extracted",
+          "value": 31.2,
+          "value_source": "generated",
+          "evidence": {
+            "status": "present",
+            "sets": [
+              {
+                "spans": [
+                  {
+                    "start_char": 137,
+                    "end_char": 147
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "local_id": "grp_hc",
+        "name": {
+          "extraction_status": "extracted",
+          "value": "HC-participants",
+          "value_source": "reported",
+          "evidence": {
+            "status": "present",
+            "sets": [
+              {
+                "spans": [
+                  {
+                    "start_char": 32,
+                    "end_char": 51
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "analyses": [
+      {
+        "local_id": "ana_1",
+        "name": {
+          "extraction_status": "extracted",
+          "value": "SAD > HC",
+          "value_source": "reported",
+          "evidence": {
+            "status": "present",
+            "sets": [
+              {
+                "spans": [
+                  {
+                    "start_char": 80,
+                    "end_char": 101
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "groups": [
+          {
+            "group": "grp_sad",
+            "n": {
+              "extraction_status": "extracted",
+              "value": 174,
+              "value_source": "reported",
+              "evidence": {
+                "status": "present",
+                "sets": [
+                  {
+                    "spans": [
+                      {
+                        "start_char": 67,
+                        "end_char": 74
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "coordinate_revision": null,
+  "review": null,
+  "ops": [],
+  "entities": [
+    {
+      "local_id": "study",
+      "entity_class": "Study",
+      "schema_class": "Study",
+      "parent": null,
+      "list_path": null
+    },
+    {
+      "local_id": "grp_sad",
+      "entity_class": "Group",
+      "schema_class": "Group",
+      "parent": "study",
+      "list_path": "groups"
+    },
+    {
+      "local_id": "grp_hc",
+      "entity_class": "Group",
+      "schema_class": "Group",
+      "parent": "study",
+      "list_path": "groups"
+    },
+    {
+      "local_id": "ana_1",
+      "entity_class": "Analysis",
+      "schema_class": "Analysis",
+      "parent": "study",
+      "list_path": "analyses"
+    }
+  ],
+  "hidden": {
+    "analyses": [],
+    "entities": []
+  },
+  "reviewers": [],
+  "original": {
+    "record": {
+      "local_id": "P1",
+      "groups": [
+        {
+          "local_id": "grp_sad",
+          "name": {
+            "extraction_status": "extracted",
+            "value": "SAD-patients",
+            "value_source": "reported",
+            "evidence": {
+              "status": "present",
+              "sets": [
+                {
+                  "spans": [
+                    {
+                      "start_char": 11,
+                      "end_char": 27
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "acquired_count": {
+            "extraction_status": "extracted",
+            "value": 251,
+            "value_source": "reported",
+            "evidence": {
+              "status": "present",
+              "sets": [
+                {
+                  "spans": [
+                    {
+                      "start_char": 11,
+                      "end_char": 14
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "age_mean": {
+            "extraction_status": "extracted",
+            "value": 31.2,
+            "value_source": "generated",
+            "evidence": {
+              "status": "present",
+              "sets": [
+                {
+                  "spans": [
+                    {
+                      "start_char": 137,
+                      "end_char": 147
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "local_id": "grp_hc",
+          "name": {
+            "extraction_status": "extracted",
+            "value": "HC-participants",
+            "value_source": "reported",
+            "evidence": {
+              "status": "present",
+              "sets": [
+                {
+                  "spans": [
+                    {
+                      "start_char": 32,
+                      "end_char": 51
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "analyses": [
+        {
+          "local_id": "ana_1",
+          "name": {
+            "extraction_status": "extracted",
+            "value": "SAD > HC",
+            "value_source": "reported",
+            "evidence": {
+              "status": "present",
+              "sets": [
+                {
+                  "spans": [
+                    {
+                      "start_char": 80,
+                      "end_char": 101
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "groups": [
+            {
+              "group": "grp_sad",
+              "n": {
+                "extraction_status": "extracted",
+                "value": 174,
+                "value_source": "reported",
+                "evidence": {
+                  "status": "present",
+                  "sets": [
+                    {
+                      "spans": [
+                        {
+                          "start_char": 67,
+                          "end_char": 74
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "coordinate_revision": null,
+    "entities": [
+      {
+        "local_id": "study",
+        "entity_class": "Study",
+        "schema_class": "Study",
+        "parent": null,
+        "list_path": null
+      },
+      {
+        "local_id": "grp_sad",
+        "entity_class": "Group",
+        "schema_class": "Group",
+        "parent": "study",
+        "list_path": "groups"
+      },
+      {
+        "local_id": "grp_hc",
+        "entity_class": "Group",
+        "schema_class": "Group",
+        "parent": "study",
+        "list_path": "groups"
+      },
+      {
+        "local_id": "ana_1",
+        "entity_class": "Analysis",
+        "schema_class": "Analysis",
+        "parent": "study",
+        "list_path": "analyses"
+      }
+    ],
+    "hidden": {
+      "analyses": [],
+      "entities": []
+    }
+  }
+}

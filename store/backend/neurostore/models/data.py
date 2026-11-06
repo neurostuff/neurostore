@@ -1,10 +1,11 @@
 import hashlib
 import json
+import uuid
 
 import shortuuid
 import sqlalchemy as sa
 from sqlalchemy import ForeignKeyConstraint, exists, func, text
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, aggregate_order_by
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -12,9 +13,12 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
 from study_schema.keys import normalize_name
+from study_schema.models.paper_parse import LicenseId
 
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
+from neurostore import encryption
+from neurostore.encryption import EncryptedText
 from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
 from neurostore.models.migration_types import TSVector, VectorType
 from neurostore.utils import build_jsonpath, parse_json_filter
@@ -28,6 +32,19 @@ STATUS_ENUM = PGEnum(
     name="status_enum",
     create_type=True,
 )
+
+
+def license_type(table):
+    """study_schema's licence categories (``LicenseId``, whose values are its member
+    names, such as ``cc_by``), as text with a CHECK named for ``table``."""
+    return sa.Enum(
+        LicenseId,
+        name=f"ck_{table}_license",
+        native_enum=False,
+        create_constraint=True,
+        length=32,
+    )
+
 
 IMAGE_VALUE_TYPE_CHECK_SQL = "value_type IS NULL OR value_type IN ({})".format(
     ", ".join(f"'{code}'" for code in MAP_TYPE_CODES)
@@ -50,6 +67,10 @@ def _check_type(x):
 
 def generate_id():
     return shortuuid.ShortUUID().random(length=12)
+
+
+def generate_stable_id():
+    return str(uuid.uuid4())
 
 
 class BaseMixin(object):
@@ -194,6 +215,41 @@ class AnnotationAnalysis(db.Model):
         return cls.annotation_id + "_" + cls.analysis_id
 
 
+def _identifiers_of(kind, scheme):
+    """The base study's ``kind`` ids of ``scheme``, as the API lists them, from
+    ``identifiers`` (which the views load with the base studies they list)."""
+
+    def read(self):
+        rows = [r for r in self.identifiers if (r["kind"], r["scheme"]) == (kind, scheme)]
+        if (kind, scheme) == ("preprint", "doi"):
+            return [{"doi": r["value"], "server": r["server"]} for r in rows]
+        return [r["value"] for r in rows]
+
+    return property(read)
+
+
+#: The fields of ``ix_base_study_search``, as written in its migration. Text is
+#: split on every non-alphanumeric character and stemmed (English Snowball); the
+#: filter strings are kept whole. ``id_order``, a 64-bit hash of the id, breaks
+#: ties between equal scores: the index sorts on a number far faster than on a
+#: string.
+SEARCH_INDEX_FIELDS = (
+    "id",
+    "name::pdb.simple('stemmer=english')",
+    "description::pdb.simple('stemmer=english')",
+    "is_active",
+    "public",
+    "user_id::pdb.literal",
+    "level::pdb.literal",
+    "has_coordinates",
+    "has_images",
+    "is_oa",
+    "year",
+    "fulltext_id::pdb.literal",
+    "hashtextextended(id, 0)::pdb.alias('id_order')",
+)
+
+
 class BaseStudy(BaseMixin, db.Model):
     __tablename__ = "base_studies"
     name = db.Column(db.String)
@@ -214,39 +270,41 @@ class BaseStudy(BaseMixin, db.Model):
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    #: Legacy; fulltexts holds the reviewed text (docs/adr/0005-fulltexts-table.md).
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
+    # One of its own full texts: see fk_base_studies_fulltext_id below.
+    fulltext_id = db.Column(db.Text, nullable=True, index=True)
+    fulltext = relationship(
+        "Fulltext",
+        primaryjoin="BaseStudy.fulltext_id == Fulltext.id",
+        foreign_keys=[fulltext_id],
+        lazy="raise",
+        viewonly=True,
+    )
     is_active = db.Column(
         db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
     )
     superseded_by = db.Column(db.Text, db.ForeignKey("base_studies.id"), nullable=True)
+    #: study_schema's ``ArticleIdentifiers.publication_status``: preprint until a
+    #: version of record is known. Null where no producer stated it.
+    publication_status = db.Column(db.Text, nullable=True)
     # From the parsed paper's bibliography.corrections; null until a parsed paper with
     # corrections looked up is ingested. A retracted paper is kept, and releases leave
     # it out unless asked. Not indexed: the release filters on IS NOT TRUE, nearly every
     # row, so a scan is what the planner uses.
     is_retracted = db.Column(db.Boolean, nullable=True)
     retraction_notice = db.Column(JSONB, nullable=True)
-    _ts_vector = db.Column(
-        "__ts_vector__",
-        TSVector(),
-        db.Computed(
-            """
-            setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
-            setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-            setweight(to_tsvector('english',
-                coalesce(
-                    CASE
-                        WHEN pubget_fulltext IS NOT NULL THEN pubget_fulltext
-                        ELSE ace_fulltext
-                    END,
-                    ''
-                )
-            ), 'C')
-            """,
-            persisted=True,
-        ),
+    #: The journal neurostore identified (models/journals.py); ``publication`` keeps the
+    #: name as the source printed it.
+    journal_id = db.Column(
+        db.Text, db.ForeignKey("journals.id", ondelete="SET NULL"), nullable=True, index=True
     )
-
+    #: How: study_schema's ``VenueMatch``.
+    journal_match = db.Column(db.Text, nullable=True)
+    #: The paper's licence, which governs its abstract (study_schema's
+    #: ``bibliography.license.license_id``); NULL until a pipeline upload sets it.
+    license = db.Column(license_type("base_studies"), nullable=True)
     user = relationship("User", backref=backref("base_studies", passive_deletes=True))
     # retrieve versions of same study
     versions = relationship(
@@ -262,21 +320,70 @@ class BaseStudy(BaseMixin, db.Model):
         foreign_keys=[superseded_by],
         backref=backref("supersedes", passive_deletes=True),
     )
+    # Never loaded by accident: reading them is a query that names them.
+    corresponding_author_emails = relationship(
+        "CorrespondingAuthorEmail", lazy="raise", passive_deletes=True
+    )
+    # Its authors in published order; `universities`, which their affiliations name, is
+    # defined after the affiliation model.
+    authors_listed = relationship(
+        "BaseStudyAuthor",
+        order_by="BaseStudyAuthor.position",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
+    identifier_rows = relationship(
+        "BaseStudyIdentifier",
+        passive_deletes=True,
+        order_by="BaseStudyIdentifier.value",
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        sa.Index(
-            "uq_base_studies_doi_pmid_active",
-            "doi",
-            "pmid",
-            unique=True,
-            postgresql_where=sa.text("is_active = true"),
+        db.CheckConstraint(
+            "publication_status IN ('preprint', 'published')",
+            name="ck_base_studies_publication_status",
+        ),
+        db.CheckConstraint(
+            "journal_match IN ('doi', 'pmid', 'preprint_server', 'issn', 'title', 'fuzzy')",
+            name="ck_base_studies_journal_match",
         ),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
-        sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
+        # The preferred full text is one of the base study's own. Deferred, so a
+        # full text can move to another base study and both be re-pointed in
+        # one transaction; a delete clears only fulltext_id.
+        sa.ForeignKeyConstraint(
+            ["fulltext_id", "id"],
+            ["fulltexts.id", "fulltexts.base_study_id"],
+            name="fk_base_studies_fulltext_id",
+            ondelete="SET NULL (fulltext_id)",
+            deferrable=True,
+            initially="DEFERRED",
+            use_alter=True,
+        ),
+        # Text search (ParadeDB's BM25 index). The scalar fields are the list's
+        # filters, so they are applied inside the index scan.
+        sa.Index(
+            "ix_base_study_search",
+            *(sa.text(f"({field})") for field in SEARCH_INDEX_FIELDS),
+            postgresql_using="paradedb",
+            postgresql_with={
+                "target_segment_count": 1,
+                "mutable_segment_rows": 0,
+                "background_layer_sizes": "'16kB, 64kB, 256kB, 1MB, 4MB, 16MB, 64MB, 256MB, 1GB'",
+            },
+        ),
     )
+
+    preprint_dois = _identifiers_of("preprint", "doi")
+    preprint_pmids = _identifiers_of("preprint", "pmid")
+    preprint_pmcids = _identifiers_of("preprint", "pmcid")
+    alternative_dois = _identifiers_of("alternative", "doi")
+    alternative_pmids = _identifiers_of("alternative", "pmid")
+    alternative_pmcids = _identifiers_of("alternative", "pmcid")
 
     @hybrid_property
     def images_exist(self):
@@ -456,6 +563,116 @@ class BaseStudy(BaseMixin, db.Model):
         return features
 
 
+class BaseStudyIdentifier(db.Model):
+    """One article identifier an active base study holds, in one of study_schema's three
+    buckets: its version of record's ids, a preprint's, or any other version's.
+
+    ``(scheme, value)`` is the key, so no two base studies hold one id. The version of
+    record's rows follow base_studies.doi, pmid and pmcid through the trigger created by
+    the migration; a base study that stops being active gives its rows to the one that
+    supersedes it, or drops them.
+    """
+
+    __tablename__ = "base_study_identifiers"
+    scheme = db.Column(db.Text, primary_key=True)
+    #: Normalized: DOIs case-folded, PMIDs digits, PMCIDs ``PMC`` and digits.
+    value = db.Column(db.Text, primary_key=True)
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    kind = db.Column(db.Text, nullable=False)
+    #: The preprint server a preprint DOI was registered by.
+    server = db.Column(db.Text, nullable=True)
+
+    __table_args__ = (
+        db.CheckConstraint("scheme IN ('doi', 'pmid', 'pmcid')", name="ck_identifier_scheme"),
+        db.CheckConstraint(
+            "kind IN ('vor', 'preprint', 'alternative')", name="ck_identifier_kind"
+        ),
+        db.CheckConstraint(
+            "server IS NULL OR (kind = 'preprint' AND scheme = 'doi')",
+            name="ck_identifier_server",
+        ),
+        sa.Index(
+            "uq_base_study_identifiers_vor",
+            "base_study_id",
+            "scheme",
+            unique=True,
+            postgresql_where=sa.text("kind = 'vor'"),
+        ),
+    )
+
+
+# Every id of the base study as JSON, loaded with it: listing a page of base studies with
+# their ids costs one correlated lookup per row, where a relationship costs a query and an
+# object per id. Deferred, so only the views that serve the ids load it.
+BaseStudy.identifiers = sa.orm.column_property(
+    sa.select(
+        sa.func.coalesce(
+            sa.func.jsonb_agg(
+                aggregate_order_by(
+                    sa.func.jsonb_build_object(
+                        "kind",
+                        BaseStudyIdentifier.kind,
+                        "scheme",
+                        BaseStudyIdentifier.scheme,
+                        "value",
+                        BaseStudyIdentifier.value,
+                        "server",
+                        BaseStudyIdentifier.server,
+                    ),
+                    BaseStudyIdentifier.value,
+                )
+            ),
+            sa.text("'[]'::jsonb"),
+        )
+    )
+    .where(BaseStudyIdentifier.base_study_id == BaseStudy.id)
+    .correlate_except(BaseStudyIdentifier)
+    .scalar_subquery(),
+    deferred=True,
+)
+
+
+class BaseStudyMergeCandidate(BaseMixin, db.Model):
+    """Two active base studies a write found to name one paper. ``manage
+    plan-base-study-merges`` writes the open ones as a plan for ``manage
+    merge-base-studies``, and a merge of the pair closes the row.
+
+    ``matched`` lists the identifiers that tied them, as ``{scheme, value, kind}``;
+    ``source`` is the write that found them (``post``, ``put``, ``ingest``, ``enrichment``,
+    ``trigger`` or ``migration``). The pair is stored with the smaller id first, once.
+    """
+
+    __tablename__ = "base_study_merge_candidates"
+    first_base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), nullable=False
+    )
+    second_base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    matched = db.Column(JSONB, nullable=False)
+    source = db.Column(db.Text, nullable=False)
+
+    __table_args__ = (
+        db.CheckConstraint(
+            'first_base_study_id COLLATE "C" < second_base_study_id COLLATE "C"',
+            name="ck_merge_candidate_order",
+        ),
+        sa.UniqueConstraint(
+            "first_base_study_id",
+            "second_base_study_id",
+            name="uq_base_study_merge_candidates_pair",
+        ),
+    )
+
+
 class BaseStudyFlagOutbox(db.Model):
     __tablename__ = "base_study_flag_outbox"
 
@@ -503,6 +720,148 @@ class BaseStudyMetadataOutbox(db.Model):
     )
 
 
+class Author(BaseMixin, db.Model):
+    """A person who wrote papers. One row per ORCID iD, else per OpenAlex author id; an
+    author with neither is a row of their own for each paper. Where they worked is not
+    theirs but each paper's (`BaseStudyAuthorAffiliation`), since authors move."""
+
+    __tablename__ = "authors"
+    name = db.Column(db.Text, nullable=False)
+    orcid = db.Column(db.Text, nullable=True, unique=True)
+    openalex_id = db.Column(db.Text, nullable=True, unique=True)
+
+    papers = relationship("BaseStudyAuthor", back_populates="author", lazy="raise")
+
+
+class University(BaseMixin, db.Model):
+    """An organization in the Research Organization Registry: a university, and also a
+    hospital or an institute when a paper names one."""
+
+    __tablename__ = "universities"
+    ror = db.Column(db.Text, nullable=False, unique=True)
+    name = db.Column(db.Text, nullable=True)
+    country = db.Column(db.Text, nullable=True)
+
+
+class BaseStudyAuthor(BaseMixin, db.Model):
+    """An author as one paper lists them: their place, the name it gives, and whether
+    they are a corresponding author of this paper."""
+
+    __tablename__ = "base_study_authors"
+    base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    author_id = db.Column(
+        db.Text, db.ForeignKey("authors.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    position = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.Text, nullable=False)
+    corresponding = db.Column(db.Boolean, nullable=True)
+
+    author = relationship("Author", back_populates="papers", lazy="raise")
+    affiliations = relationship(
+        "BaseStudyAuthorAffiliation",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="BaseStudyAuthorAffiliation.position",
+        lazy="raise",
+    )
+
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "base_study_id", "position", name="uq_base_study_authors_base_study_id_position"
+        ),
+    )
+
+
+class BaseStudyAuthorAffiliation(BaseMixin, db.Model):
+    """One affiliation an author gives on one paper: its text as printed, and the
+    university it names when the registry holds it. A text naming two organizations is
+    two rows of the same text."""
+
+    __tablename__ = "base_study_author_affiliations"
+    base_study_author_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_study_authors.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    position = db.Column(db.Integer, nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    university_id = db.Column(
+        db.Text, db.ForeignKey("universities.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    university = relationship("University", lazy="raise")
+
+
+_AFFILIATED = sa.join(
+    BaseStudyAuthor.__table__,
+    BaseStudyAuthorAffiliation.__table__,
+    BaseStudyAuthor.id == BaseStudyAuthorAffiliation.base_study_author_id,
+)
+# The universities a paper's authors give on it, and those an author gave on any paper:
+# an author is tied to a university only through a paper, since authors move.
+BaseStudy.universities = relationship(
+    University,
+    secondary=_AFFILIATED,
+    primaryjoin=BaseStudy.id == BaseStudyAuthor.base_study_id,
+    secondaryjoin=University.id == BaseStudyAuthorAffiliation.university_id,
+    viewonly=True,
+    lazy="raise",
+)
+Author.universities = relationship(
+    University,
+    secondary=_AFFILIATED,
+    primaryjoin=Author.id == BaseStudyAuthor.author_id,
+    secondaryjoin=University.id == BaseStudyAuthorAffiliation.university_id,
+    viewonly=True,
+    lazy="raise",
+)
+
+
+class CorrespondingAuthorEmail(BaseMixin, db.Model):
+    """An email a paper prints for one of its corresponding authors, and whether we have
+    written to them, heard back, and been sent their data.
+
+    Never served: no schema or endpoint names this table, and the address is stored
+    encrypted (`neurostore.encryption`), found by its keyed hash `email_index`.
+    """
+
+    __tablename__ = "corresponding_author_emails"
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # The author on this paper the address is theirs; None for one paired with no author.
+    base_study_author_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_study_authors.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    email = db.Column(EncryptedText, nullable=False)
+    email_index = db.Column(db.Text, nullable=False)
+    contacted = db.Column(db.Boolean, nullable=False, default=False, server_default=sa.false())
+    responded = db.Column(db.Boolean, nullable=False, default=False, server_default=sa.false())
+    shared = db.Column(db.Boolean, nullable=False, default=False, server_default=sa.false())
+
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "base_study_id",
+            "email_index",
+            name="uq_corresponding_author_emails_base_study_id_email_index",
+        ),
+    )
+
+    @validates("email")
+    def _index(self, key, value):
+        self.email_index = encryption.email_index(value)
+        return value.strip()
+
+
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
 
@@ -522,6 +881,10 @@ class Study(BaseMixin, db.Model):
     source_id = db.Column(db.String, index=True)
     source_updated_at = db.Column(db.DateTime(timezone=True))
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    #: The base study this version was merged in from; the release ranks such versions
+    #: after the paper's own. No foreign key: a second one to base_studies would make the
+    #: Study-BaseStudy joins ambiguous.
+    merged_from = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
@@ -756,6 +1119,119 @@ class AnalysisConditions(db.Model):
         index=True,
         primary_key=True,
     )
+
+
+class DataSource(BaseMixin, db.Model):
+    """A named study (cohort), consortium or repository a paper's data can come from."""
+
+    __tablename__ = "data_sources"
+
+    # the dictionary key (e.g. "ukb"), given on create: records made before upload name it
+    id = db.Column(db.Text, primary_key=True, index=True)
+    name = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text)
+    kinds = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    modalities = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    # the repository hosting it or the consortium it belongs to
+    part_of_id = db.Column(
+        db.Text, db.ForeignKey("data_sources.id", ondelete="SET NULL"), index=True
+    )
+    url = db.Column(db.Text)
+    url_kind = db.Column(db.Text)
+    rrids = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    re3data_ids = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    user = relationship(
+        "User",
+        backref=backref("data_sources", cascade_backrefs=False, passive_deletes=True),
+        cascade_backrefs=False,
+    )
+    part_of = relationship("DataSource", remote_side="DataSource.id", lazy="raise")
+    analysis_data_sources = relationship(
+        "AnalysisDataSource",
+        backref=backref("data_source", cascade_backrefs=False),
+        passive_deletes=True,
+        cascade="all, delete-orphan",
+        cascade_backrefs=False,
+    )
+
+
+class AnalysisDataSource(db.Model):
+    __tablename__ = "analysis_data_sources"
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    analysis_id = db.Column(
+        db.Text,
+        db.ForeignKey("analyses.id", ondelete="CASCADE"),
+        index=True,
+        primary_key=True,
+    )
+    data_source_id = db.Column(
+        db.Text,
+        db.ForeignKey("data_sources.id", ondelete="CASCADE"),
+        index=True,
+        primary_key=True,
+    )
+
+
+# The data sources of a study's analyses and of all a base study's versions, rebuilt on write
+# by services.data_source_links.recompute_data_source_links.
+StudyDataSource = db.Table(
+    "study_data_sources",
+    db.Model.metadata,
+    db.Column(
+        "study_id",
+        db.Text,
+        db.ForeignKey("studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    db.Column(
+        "data_source_id",
+        db.Text,
+        db.ForeignKey("data_sources.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+BaseStudyDataSource = db.Table(
+    "base_study_data_sources",
+    db.Model.metadata,
+    db.Column(
+        "base_study_id",
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    db.Column(
+        "data_source_id",
+        db.Text,
+        db.ForeignKey("data_sources.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+Analysis.analysis_data_sources = relationship(
+    AnalysisDataSource,
+    backref=backref("analysis"),
+    passive_deletes=True,
+    cascade="all, delete-orphan",
+    cascade_backrefs=False,
+)
+Study.data_sources = relationship(
+    DataSource,
+    secondary=StudyDataSource,
+    viewonly=True,
+    lazy="raise",
+    order_by=DataSource.name,
+)
+BaseStudy.data_sources = relationship(
+    DataSource,
+    secondary=BaseStudyDataSource,
+    viewonly=True,
+    lazy="raise",
+    order_by=DataSource.name,
+)
 
 
 PointEntityMap = db.Table(
@@ -1140,6 +1616,120 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
     )
 
 
+def _trigram_index(column):
+    return sa.Index(
+        f"ix_analysis_features__{column}_trgm",
+        column,
+        postgresql_using="gin",
+        postgresql_ops={column: "gin_trgm_ops"},
+    )
+
+
+class AnalysisFeature(db.Model):
+    """What the latest extraction record says about one current pipeline analysis.
+
+    The query surface over records (`neurostore.analysis_query`): the record's local-id
+    references (measure, groups, tasks, cells) resolved once, at ingest, into columns.
+    Written by `neurostore.ingest.analysis_features`; never by hand. NULL is silent: the
+    record has no extracted value for the column. Text columns are lower-cased, their
+    items joined by " | ".
+    """
+
+    __tablename__ = "analysis_features"
+    __table_args__ = (
+        sa.Index("ix_analysis_features__diagnosis_ids", "diagnosis_ids", postgresql_using="gin"),
+        sa.Index("ix_analysis_features__task_ids", "task_ids", postgresql_using="gin"),
+        sa.Index(
+            "ix_analysis_features__contrast_set_ids", "contrast_set_ids", postgresql_using="gin"
+        ),
+        sa.Index("ix_analysis_features__arm_kinds", "arm_kinds", postgresql_using="gin"),
+        sa.Index("ix_analysis_features__species", "species", postgresql_using="gin"),
+        *(
+            _trigram_index(column)
+            for column in (
+                "diagnosis_text",
+                "task_text",
+                "contrast_positive",
+                "contrast_negative",
+                "contrast_set_text",
+            )
+        ),
+    )
+
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), primary_key=True
+    )
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    #: The config of the record the row was read from.
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    spatial_scope = db.Column(db.Text, index=True)
+    coordinate_space = db.Column(db.Text)
+    measure_type = db.Column(db.Text, index=True)
+    measure_family = db.Column(db.Text, index=True)
+    effect_kind = db.Column(db.Text, index=True)
+    details_type = db.Column(db.Text, index=True)
+    group_count = db.Column(db.Integer)
+    #: The summed `AnalysisGroup.n` of the analysis's groups.
+    n = db.Column(db.Integer)
+
+    #: Lower-cased: study_schema's Species values, or the source's wording.
+    species = db.Column(ARRAY(db.Text))
+    #: Whether any group of the analysis is (not) healthy, from `Group.is_healthy`.
+    has_patients = db.Column(db.Boolean, index=True)
+    has_healthy = db.Column(db.Boolean, index=True)
+    #: Mapped MONDO and ONVOC terms of the groups' `medical_condition`, and their labels.
+    diagnosis_ids = db.Column(ARRAY(db.Text))
+    diagnosis_labels = db.Column(ARRAY(db.Text))
+    #: Those labels and the extracted wording, minus wording a normalizer read as an absence.
+    diagnosis_text = db.Column(db.Text)
+    #: Mapped terms on the tasks' names (canonical task, task family, ...).
+    task_ids = db.Column(ARRAY(db.Text))
+    task_text = db.Column(db.Text)
+    #: The names on each side of the contrast: the signed cells' labels or levels, and
+    #: the names of the conditions their factor levels stand for.
+    contrast_positive = db.Column(db.Text)
+    contrast_negative = db.Column(db.Text)
+    #: The contrast sets and keys a normalizer placed the analysis in, and their labels.
+    contrast_set_ids = db.Column(ARRAY(db.Text))
+    contrast_set_text = db.Column(db.Text)
+
+    allocation = db.Column(db.Text, index=True)
+    assignment_structure = db.Column(db.Text, index=True)
+    blinding = db.Column(db.Text, index=True)
+    arm_kinds = db.Column(ARRAY(db.Text))
+    #: Pre- and post-intervention timepoints both present.
+    longitudinal = db.Column(db.Boolean)
+    is_meta_analysis = db.Column(db.Boolean, index=True)
+
+    display_row = relationship("AnalysisFeatureDisplay", uselist=False, passive_deletes=True)
+
+
+class AnalysisFeatureDisplay(db.Model):
+    """An analysis's features in the record's own wording, for results and annotation
+    columns. Beside `AnalysisFeature` rather than in it, so a query's scans read only the
+    columns it filters on."""
+
+    __tablename__ = "analysis_feature_displays"
+
+    analysis_id = db.Column(
+        db.Text,
+        db.ForeignKey("analysis_features.analysis_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    display = db.Column(JSONB, nullable=False)
+
+
 #: Bump to change what an entity hash covers. Every entity row stores what its
 #: hash was computed from (`identity`, `parent_id`), so after a bump
 #: `neurostore.ingest.study_entities.rehash_entities` recomputes the hashes in
@@ -1211,7 +1801,11 @@ class StudyEntity(BaseMixin, db.Model):
     __tablename__ = "study_entities"
     __table_args__ = (
         sa.UniqueConstraint("entity_hash", name="uq_study_entity__hash"),
+        sa.UniqueConstraint("stable_id", name="uq_study_entity__stable_id"),
     )
+
+    #: The id a record's entity carries as study_schema's ``stable_id``.
+    stable_id = db.Column(db.Text, nullable=False, default=generate_stable_id)
 
     base_study_id = db.Column(
         db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True
@@ -1403,6 +1997,8 @@ HISTORY_SOURCE = "study_schema:superseded"
 PIPELINE_STUDY_SOURCES = (STUDY_SOURCE, HISTORY_SOURCE)
 # The PipelineConfig schema name of a pondie extraction record (study_schema's record).
 RECORD_SCHEMA_NAME = "neuroimaging-study-extraction"
+# The pipeline whose PipelineStudyResults are the coordinate parses the ingester stored whole.
+PARSE_PIPELINE = "coordinate-parse"
 RESULT_ROLE = "result"
 
 
@@ -1448,8 +2044,10 @@ def analysis_role_clause(role):
     return Analysis.role == role
 
 
+from neurostore.models import fulltext_listeners  # noqa E402
 from neurostore.models import image_count_listeners  # noqa E402
 from neurostore.models import point_count_listeners  # noqa E402
 
+del fulltext_listeners
 del image_count_listeners
 del point_count_listeners

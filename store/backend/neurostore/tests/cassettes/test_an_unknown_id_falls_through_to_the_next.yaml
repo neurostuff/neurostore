@@ -1,0 +1,119 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?format=json&ids=12667850&versions=no
+  response:
+    body:
+      string: '{"status":"ok","response-date":"2026-10-24 02:12:53","request":{"warnings":[],"versions":"no","format":"json","ids":["12667850"],"email":"SCRUBBED","tool":"neurostore","echo":"ids=12667850&format=json&versions=no&tool=neurostore&email=SCRUBBED&api_key=SCRUBBED","showaiid":"no","idtype":"pmid"},"records":[{"pmid":12667850,"requested-id":"12667850","status":"error","errmsg":"Identifier
+        not found in PMC"}]}'
+    headers:
+      Alt-Svc:
+      - clear
+      Date:
+      - Sat, 24 Oct 2026 06:12:53 GMT
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-UA-Compatible:
+      - IE=Edge
+      X-XSS-Protection:
+      - 1; mode=block
+      allow:
+      - GET, HEAD, OPTIONS
+      content-length:
+      - '407'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      referrer-policy:
+      - same-origin
+      set-cookie:
+      - ncbi_sid=7684DA07ADC4AB83_2158SID; Domain=.nih.gov; expires=Sun, 24 Oct 2027
+        06:12:53 GMT; Max-Age=31536000; Path=/
+      vary:
+      - Accept,Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '6'
+      x-frame-options:
+      - DENY
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?format=json&ids=10.1073%2Fpnas.1417392112&versions=no
+  response:
+    body:
+      string: '{"status":"ok","response-date":"2026-10-24 02:12:53","request":{"warnings":[],"versions":"no","format":"json","ids":["10.1073/pnas.1417392112"],"email":"SCRUBBED","tool":"neurostore","echo":"ids=10.1073%2Fpnas.1417392112&format=json&versions=no&tool=neurostore&email=SCRUBBED&api_key=SCRUBBED","showaiid":"no","idtype":"doi"},"records":[{"doi":"10.1073/pnas.1417392112","pmcid":"PMC4378394","pmid":25775530,"requested-id":"10.1073/pnas.1417392112"}]}'
+    headers:
+      Alt-Svc:
+      - clear
+      Date:
+      - Sat, 24 Oct 2026 06:12:53 GMT
+      Server:
+      - istio-envoy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-UA-Compatible:
+      - IE=Edge
+      X-XSS-Protection:
+      - 1; mode=block
+      allow:
+      - GET, HEAD, OPTIONS
+      content-length:
+      - '450'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      referrer-policy:
+      - same-origin
+      set-cookie:
+      - ncbi_sid=7684D9CAADC498E3_2329SID; Domain=.nih.gov; expires=Sun, 24 Oct 2027
+        06:12:53 GMT; Max-Age=31536000; Path=/
+      vary:
+      - Accept,Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '6'
+      x-frame-options:
+      - DENY
+    status:
+      code: 200
+      message: OK
+version: 1
