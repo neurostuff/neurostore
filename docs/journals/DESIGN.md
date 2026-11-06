@@ -349,8 +349,12 @@ What does that cost, and is there a costless way to keep the journal name on `ba
 - **Growth is linear in the page size.** At 10, 100 and 1,000 rows, all candidates scale the same way.
 
 **Endpoint timings can't tell the candidates apart.** The spread between candidates is no larger than
-the run-to-run spread. Pre, whose SQL lacks the subquery where it leaves `journal` out, is not the
-fastest anywhere. The cost of the subquery is below what these endpoints can resolve.
+the run-to-run spread.
+- On the studyset and annotation responses, pre runs exactly the same journal SQL as (a), yet the two
+  differ by 4–14%.
+- On the nested base studies, pre's SQL lacks the subquery for the versions, yet pre is the slowest.
+
+The cost of the subquery is below what these endpoints can resolve.
 
 **The subquery itself.** `EXPLAIN (ANALYZE, BUFFERS)` on the list queries, execution time in ms:
 
