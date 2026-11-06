@@ -351,8 +351,9 @@ What does that cost, and is there a costless way to keep the journal name on `ba
 **Endpoint timings can't tell the candidates apart.** The spread between candidates is no larger than
 the run-to-run spread.
 - On the studyset and annotation responses, pre runs exactly the same journal SQL as (a), yet the two
-  differ by 4–14%.
-- On the nested base studies, pre's SQL lacks the subquery for the versions, yet pre is the slowest.
+  differ by 4% and 16%.
+- On the nested base studies, pre's SQL lacks the subquery for the versions, yet at a page of 1,000
+  pre is the slowest.
 
 The cost of the subquery is below what these endpoints can resolve.
 
