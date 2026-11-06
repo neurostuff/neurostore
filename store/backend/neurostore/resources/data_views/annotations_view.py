@@ -66,7 +66,7 @@ def _display(key, join=True):
 
 #: Feature column -> (note type, its value from an AnalysisFeature row and its display).
 FEATURE_COLUMNS = {
-    "diagnosis": ("string", _display("diagnosis")),
+    "medical_condition": ("string", _display("medical_condition")),
     "task": ("string", _display("task")),
     "contrast": ("string", _display("contrast", join=False)),
     "contrast_set": ("string", _display("contrast_set")),

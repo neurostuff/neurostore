@@ -34,9 +34,9 @@ def _papers(result, papers):
     return sorted({by_id[r["base_study"]] for r in result["results"]})
 
 
-async def test_diagnosis_matches_a_label_or_an_id(auth_client, papers):
-    by_label = await _query(auth_client, {"diagnosis": "schizophrenia"}, funnel=True)
-    by_id = await _query(auth_client, {"diagnosis": "MONDO:0004985"})
+async def test_medical_condition_matches_a_label_or_an_id(auth_client, papers):
+    by_label = await _query(auth_client, {"medical_condition": "schizophrenia"}, funnel=True)
+    by_id = await _query(auth_client, {"medical_condition": "MONDO:0004985"})
 
     assert _names(by_label) == ["schizophrenia > BDp", "schizophrenia > control"]
     assert _names(by_id) == ["schizophrenia > BDp"]
@@ -46,18 +46,20 @@ async def test_diagnosis_matches_a_label_or_an_id(auth_client, papers):
 
 
 async def test_whole_words_and_wildcards(auth_client, papers):
-    assert (await _query(auth_client, {"diagnosis": "nicot"}))["results"] == []
-    assert _papers(await _query(auth_client, {"diagnosis": "nicot*"}), papers) == [NICOTINE]
+    assert (await _query(auth_client, {"medical_condition": "nicot"}))["results"] == []
+    nicotine = await _query(auth_client, {"medical_condition": "nicot*"})
+    assert _papers(nicotine, papers) == [NICOTINE]
     assert _papers(await _query(auth_client, {"task": "n?back"}), papers) == [SCHIZOPHRENIA]
 
 
 async def test_text_is_case_insensitive_and_stays_within_one_item(auth_client, papers):
-    assert _names(await _query(auth_client, {"diagnosis": "Schizophrenia"})) == _names(
-        await _query(auth_client, {"diagnosis": "schizophrenia"})
+    assert _names(await _query(auth_client, {"medical_condition": "Schizophrenia"})) == _names(
+        await _query(auth_client, {"medical_condition": "schizophrenia"})
     )
     assert _papers(await _query(auth_client, {"task": "N?BACK"}), papers) == [SCHIZOPHRENIA]
     # "schizophrenia | bipolar disorder" holds both, but no match crosses the separator.
-    assert (await _query(auth_client, {"diagnosis": "schizophrenia*bipolar"}))["results"] == []
+    across_items = await _query(auth_client, {"medical_condition": "schizophrenia*bipolar"})
+    assert across_items["results"] == []
 
 
 def _codes(body):
@@ -65,18 +67,19 @@ def _codes(body):
 
 
 async def test_a_pattern_needs_three_letters(auth_client, papers):
-    assert _codes(await _query(auth_client, {"diagnosis": "s*z"}, status=400)) == [
+    assert _codes(await _query(auth_client, {"medical_condition": "s*z"}, status=400)) == [
         "PATTERN_TOO_BROAD"
     ]
-    assert _codes(await _query(auth_client, {"diagnosis": "bi*"}, status=400)) == [
+    assert _codes(await _query(auth_client, {"medical_condition": "bi*"}, status=400)) == [
         "PATTERN_TOO_BROAD"
     ]
-    assert _papers(await _query(auth_client, {"diagnosis": "bip*"}), papers) == [SCHIZOPHRENIA]
+    bipolar = await _query(auth_client, {"medical_condition": "bip*"})
+    assert _papers(bipolar, papers) == [SCHIZOPHRENIA]
 
 
 async def test_invalid_queries_are_refused(auth_client, papers):
     # The spec refuses unknown fields; the server refuses unknown values.
-    await _query(auth_client, {"diagnoses": "schizophrenia"}, status=400)
+    await _query(auth_client, {"medical_conditions": "schizophrenia"}, status=400)
     await _query(auth_client, {"contrast": {"polarity": "2-back"}}, status=400)
     assert _codes(await _query(auth_client, {"spatial_scope": "whole brain"}, status=400)) == [
         "INVALID_VALUE"
@@ -84,7 +87,7 @@ async def test_invalid_queries_are_refused(auth_client, papers):
     assert _codes(await _query(auth_client, {"contrast": {"kind": "bogus"}}, status=400)) == [
         "INVALID_VALUE"
     ]
-    await _query(auth_client, {"or": [{"diagnosis": "schizophrenia"}]}, status=400)
+    await _query(auth_client, {"or": [{"medical_condition": "schizophrenia"}]}, status=400)
     await _query(auth_client, {"species": "human"}, status=400, limit=1001)
 
 
@@ -92,8 +95,10 @@ async def test_criteria_combine_with_and_and_any_all_none(auth_client, papers):
     whole_brain_wm = await _query(
         auth_client, {"task": "working memory", "spatial_scope": "whole_brain"}
     )
-    not_schizophrenia = await _query(auth_client, {"diagnosis": {"none": ["schizophrenia"]}})
-    both = await _query(auth_client, {"diagnosis": {"all": ["schizophrenia", "bipolar"]}})
+    not_schizophrenia = await _query(
+        auth_client, {"medical_condition": {"none": ["schizophrenia"]}}
+    )
+    both = await _query(auth_client, {"medical_condition": {"all": ["schizophrenia", "bipolar"]}})
 
     assert _papers(whole_brain_wm, papers) == [CONDUCT]
     assert _papers(not_schizophrenia, papers) == [NICOTINE, CONDUCT]
@@ -145,11 +150,11 @@ async def test_when_silent_decides_the_analyses_a_record_says_nothing_about(
 async def test_or_takes_sub_queries(auth_client, papers):
     result = await _query(
         auth_client,
-        {"or": [{"diagnosis": "schizophrenia"}, {"task": "monetary incentive delay"}]},
+        {"or": [{"medical_condition": "schizophrenia"}, {"task": "monetary incentive delay"}]},
     )
 
     assert _papers(result, papers) == [NICOTINE, SCHIZOPHRENIA]
-    assert result["query"]["or"][0]["diagnosis"] == {
+    assert result["query"]["or"][0]["medical_condition"] == {
         "any": ["schizophrenia"],
         "when_silent": "exclude",
     }
@@ -196,9 +201,11 @@ async def test_none_excludes_a_silent_record_unless_it_says_include(auth_client,
     af.upload(SCHIZOPHRENIA)
     db.session.commit()
 
-    strict = await _query(auth_client, {"diagnosis": {"none": ["schizophrenia"]}}, funnel=True)
+    strict = await _query(
+        auth_client, {"medical_condition": {"none": ["schizophrenia"]}}, funnel=True
+    )
     lenient = await _query(
-        auth_client, {"diagnosis": {"none": ["schizophrenia"], "when_silent": "include"}}
+        auth_client, {"medical_condition": {"none": ["schizophrenia"], "when_silent": "include"}}
     )
 
     assert strict["results"] == []
@@ -215,7 +222,7 @@ async def test_limit_caps_the_results_not_the_counts(auth_client, papers):
 
 
 async def test_terms_list_values_with_counts(auth_client, papers):
-    resp = await auth_client.get("/api/analysis-terms/?field=diagnosis")
+    resp = await auth_client.get("/api/analysis-terms/?field=medical_condition")
     found = await auth_client.get("/api/analysis-terms/?field=task&search=n_back")
 
     assert resp.status_code == 200
@@ -224,7 +231,7 @@ async def test_terms_list_values_with_counts(auth_client, papers):
         {"value": "MONDO:0004985", "label": "bipolar disorder", "analyses": 1, "base_studies": 1},
     ]
     assert [r["value"] for r in found.json()["results"]] == ["hedtsk_n_back"]
-    by_label = await auth_client.get("/api/analysis-terms/?field=diagnosis&search=bipolar")
+    by_label = await auth_client.get("/api/analysis-terms/?field=medical_condition&search=bipolar")
     scopes = await auth_client.get("/api/analysis-terms/?field=spatial_scope")
     assert [r["value"] for r in by_label.json()["results"]] == ["MONDO:0004985"]
     assert [(r["value"], r["analyses"]) for r in scopes.json()["results"]] == [
@@ -254,7 +261,7 @@ async def test_a_query_becomes_a_studyset_and_an_annotation_column(auth_client, 
         data={
             "analysis_query": {
                 "query": {**query, "spatial_scope": "whole_brain"},
-                "feature_columns": ["diagnosis", "task", "contrast", "n"],
+                "feature_columns": ["medical_condition", "task", "contrast", "n"],
             }
         },
     )
@@ -269,7 +276,7 @@ async def test_a_query_becomes_a_studyset_and_an_annotation_column(auth_client, 
     assert included == [
         {
             "included": True,
-            "diagnosis": "Conduct disorder in 12 participants: 7 mild and 5 moderate",
+            "medical_condition": "Conduct disorder in 12 participants: 7 mild and 5 moderate",
             "task": "Self-Ordered Spatial Search (CANTAB SWM)",
             "contrast": "vigilance > SWM",
             "n": 72,
@@ -306,10 +313,10 @@ async def test_the_annotation_column_is_rewritten_beside_pipeline_columns(
             },
         )
 
-    first = (await put({"diagnosis": "schizophrenia"})).json()
+    first = (await put({"medical_condition": "schizophrenia"})).json()
     again = (
         await put(
-            {"diagnosis": "nicotine"},
+            {"medical_condition": "nicotine"},
             pipelines=[{"name": "pondie", "columns": ["extractor_model"]}],
         )
     ).json()

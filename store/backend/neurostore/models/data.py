@@ -1643,7 +1643,11 @@ class AnalysisFeature(db.Model):
 
     __tablename__ = "analysis_features"
     __table_args__ = (
-        sa.Index("ix_analysis_features__diagnosis_ids", "diagnosis_ids", postgresql_using="gin"),
+        sa.Index(
+            "ix_analysis_features__medical_condition_ids",
+            "medical_condition_ids",
+            postgresql_using="gin",
+        ),
         sa.Index("ix_analysis_features__task_ids", "task_ids", postgresql_using="gin"),
         sa.Index(
             "ix_analysis_features__contrast_set_ids", "contrast_set_ids", postgresql_using="gin"
@@ -1653,7 +1657,7 @@ class AnalysisFeature(db.Model):
         *(
             _trigram_index(column)
             for column in (
-                "diagnosis_text",
+                "medical_condition_text",
                 "task_text",
                 "contrast_positive",
                 "contrast_negative",
@@ -1695,10 +1699,10 @@ class AnalysisFeature(db.Model):
     has_patients = db.Column(db.Boolean, index=True)
     has_healthy = db.Column(db.Boolean, index=True)
     #: Mapped MONDO and ONVOC terms of the groups' `medical_condition`, and their labels.
-    diagnosis_ids = db.Column(ARRAY(db.Text))
-    diagnosis_labels = db.Column(ARRAY(db.Text))
+    medical_condition_ids = db.Column(ARRAY(db.Text))
+    medical_condition_labels = db.Column(ARRAY(db.Text))
     #: Those labels and the extracted wording, minus wording a normalizer read as an absence.
-    diagnosis_text = db.Column(db.Text)
+    medical_condition_text = db.Column(db.Text)
     #: Mapped terms on the tasks' names (canonical task, task family, ...).
     task_ids = db.Column(ARRAY(db.Text))
     task_text = db.Column(db.Text)

@@ -1,8 +1,10 @@
 """Resolving extraction records into analysis_features rows, at ingest."""
 
+import sqlalchemy as sa
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 
+from neurostore import service_migrations
 from neurostore.database import db
 from neurostore.ingest.analysis_features import backfill_analysis_features, record_features
 from neurostore.ingest.study_schema import STUDY_SOURCE, ingest_upload
@@ -27,17 +29,17 @@ def test_the_fixture_records_are_valid_extraction_records():
         assert [e.message for e in schema_errors("extraction-record", af.record(name))] == []
 
 
-def test_groups_resolve_to_diagnoses_species_and_health():
+def test_groups_resolve_to_medical_conditions_species_and_health():
     rows = _by_name("ya2RC6UYbibC")
     versus_controls = rows["schizophrenia > control"]
     versus_bipolar = rows["schizophrenia > BDp"]
 
-    assert versus_controls["diagnosis_ids"] == ["MONDO:0005090"]
+    assert versus_controls["medical_condition_ids"] == ["MONDO:0005090"]
     assert versus_controls["has_patients"] is True and versus_controls["has_healthy"] is True
-    # The controls' "Healthy controls" is read as an absence, so it is not diagnosis text.
-    assert versus_controls["diagnosis_text"] == "schizophrenia"
-    assert versus_bipolar["diagnosis_ids"] == ["MONDO:0005090", "MONDO:0004985"]
-    assert versus_bipolar["diagnosis_labels"] == ["schizophrenia", "bipolar disorder"]
+    # The controls' "Healthy controls" is read as an absence, so it is not medical condition text.
+    assert versus_controls["medical_condition_text"] == "schizophrenia"
+    assert versus_bipolar["medical_condition_ids"] == ["MONDO:0005090", "MONDO:0004985"]
+    assert versus_bipolar["medical_condition_labels"] == ["schizophrenia", "bipolar disorder"]
     assert versus_bipolar["has_healthy"] is False
     assert versus_bipolar["species"] == ["human"]
     assert versus_bipolar["n"] == 22
@@ -47,9 +49,9 @@ def test_an_unmapped_condition_is_text_without_ids():
     rows = _by_name("6SKTGteXbbBs")
     row = rows["Immediate–delayed"]
 
-    assert row["diagnosis_ids"] is None
-    assert row["diagnosis_text"] == "nicotine dependence"
-    assert row["display"]["diagnosis"] == ["Nicotine dependence"]
+    assert row["medical_condition_ids"] is None
+    assert row["medical_condition_text"] == "nicotine dependence"
+    assert row["display"]["medical_condition"] == ["Nicotine dependence"]
 
 
 def test_measure_task_and_contrast_resolve_through_their_ids():
@@ -261,3 +263,51 @@ def test_the_migrated_table_matches_the_model(db):
             },
         )
         assert compare_metadata(context, db.metadata) == []
+
+
+def test_the_medical_condition_migration_renames_the_columns_indexes_and_display_key(session):
+    af.upload("ya2RC6UYbibC")
+    session.commit()
+    session.remove()
+
+    def state():
+        inspector = sa.inspect(session.bind)
+        with session.bind.connect() as conn:
+            displays = conn.execute(
+                sa.text("SELECT display FROM analysis_feature_displays")
+            ).scalars()
+            keys = {key for display in displays for key in display} & {
+                "diagnosis",
+                "medical_condition",
+            }
+        return (
+            {c["name"] for c in inspector.get_columns("analysis_features") if "_" in c["name"]},
+            {i["name"] for i in inspector.get_indexes("analysis_features")},
+            keys,
+        )
+
+    renamed = {f"medical_condition_{suffix}" for suffix in ("ids", "labels", "text")}
+    try:
+        service_migrations.downgrade("c3e5a7b9d1f2")
+        columns, indexes, keys = state()
+        assert {f"diagnosis_{suffix}" for suffix in ("ids", "labels", "text")} <= columns
+        assert not renamed & columns
+        assert {
+            "ix_analysis_features__diagnosis_ids",
+            "ix_analysis_features__diagnosis_text_trgm",
+        } <= indexes
+        assert keys == {"diagnosis"}
+
+        service_migrations.upgrade("heads")
+        columns, indexes, keys = state()
+        assert renamed <= columns
+        assert not any(column.startswith("diagnosis") for column in columns)
+        assert {
+            "ix_analysis_features__medical_condition_ids",
+            "ix_analysis_features__medical_condition_text_trgm",
+        } <= indexes
+        assert keys == {"medical_condition"}
+    finally:
+        service_migrations.upgrade("heads")
+    labels = {tuple(row.medical_condition_labels or ()) for row in AnalysisFeature.query}
+    assert labels == {("schizophrenia",), ("schizophrenia", "bipolar disorder")}

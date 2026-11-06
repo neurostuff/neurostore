@@ -4,7 +4,7 @@ Status: accepted, built
 
 ## Context
 
-A meta-analysis pools analyses, chosen by what their papers' extraction records say: the diagnosis of the groups, the task, the two sides of the contrast, whole brain or not, the study design. A record analysis names those things by local id (`measure: "mea_bold"`, `groups[].group`, `tasks[]`, cells through the model's factor levels to conditions), so no single row answers them. `feature_filter` runs a jsonpath over the whole stored record per filter: it cannot follow the ids, two `analyses[]` filters need not match the same analysis, and it returns studies. Measured on 100 local records (88 KB compressed, 370 KB raw each), one jsonpath took 168 ms, about 100 s at the corpus's 61k records; fetching and decoding the records for a query in Python would take about 13 minutes. Queries have to answer in under a second.
+A meta-analysis pools analyses, chosen by what their papers' extraction records say: the groups' medical condition, the task, the two sides of the contrast, whole brain or not, the study design. A record analysis names those things by local id (`measure: "mea_bold"`, `groups[].group`, `tasks[]`, cells through the model's factor levels to conditions), so no single row answers them. `feature_filter` runs a jsonpath over the whole stored record per filter: it cannot follow the ids, two `analyses[]` filters need not match the same analysis, and it returns studies. Measured on 100 local records (88 KB compressed, 370 KB raw each), one jsonpath took 168 ms, about 100 s at the corpus's 61k records; fetching and decoding the records for a query in Python would take about 13 minutes. Queries have to answer in under a second.
 
 ## Decision
 
@@ -14,7 +14,7 @@ The ingester resolves each record analysis once, at upload, into a row of `analy
 
 ## Consequences
 
-- Measured on 950k rows (the resolver's output for 100 real records, copied at random, with zipf-distributed MONDO and task ids), local pg17 with 128 MB shared_buffers, warm: diagnosis, task, contrast, design, silent-inclusive, `none`/`all` and `or` queries in 5–196 ms, a broad one (whole brain, BOLD, human: 275k analyses) in 648 ms. With the funnel, 340–685 ms, except where an early criterion keeps most of the table (2.3 s for the broad query, 2.9 s for `none` over diagnoses), since each step counts what it keeps.
+- Measured on 950k rows (the resolver's output for 100 real records, copied at random, with zipf-distributed MONDO and task ids), local pg17 with 128 MB shared_buffers, warm: medical condition, task, contrast, design, silent-inclusive, `none`/`all` and `or` queries in 5–196 ms, a broad one (whole brain, BOLD, human: 275k analyses) in 648 ms. With the funnel, 340–685 ms, except where an early criterion keeps most of the table (2.3 s for the broad query, 2.9 s for `none` over medical conditions), since each step counts what it keeps.
 - A resolver change needs the backfill; the rows are derived, never edited.
 - Features come from the latest record only. Curators' field claims are not read yet.
 - `analysis_features` is served, unlike the truth layer it is read from (`tests/test_truth_layer.py`).

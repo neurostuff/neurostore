@@ -7,9 +7,9 @@ does not match) or `include`. `or` takes a list of sub-queries, any of which may
 
 Text criteria match whole words, case-insensitively; `*` matches any run of characters and
 `?` one character, within one item, and a pattern needs three consecutive letters or
-digits so that the trigram index can serve it. A criterion with ids (diagnosis, task,
-contrast set) matches a value that is one of the analysis's ids exactly, or its text as a
-pattern.
+digits so that the trigram index can serve it. A criterion with ids (medical_condition,
+task, contrast set) matches a value that is one of the analysis's ids exactly, or its text
+as a pattern.
 
 `run_query` returns the canonical query, the counts, the first `limit` analyses and every
 selected analysis's study id; with `funnel`, also what each criterion dropped and how many
@@ -65,7 +65,7 @@ EFFECT_KINDS = (
 
 #: Every criterion, by its dotted name: `contrast.*` and `design.*` nest in the query.
 FIELDS = {
-    "diagnosis": Field("text_or_id", AF.diagnosis_text, AF.diagnosis_ids),
+    "medical_condition": Field("text_or_id", AF.medical_condition_text, AF.medical_condition_ids),
     "has_patients": Field("boolean", AF.has_patients),
     "has_healthy": Field("boolean", AF.has_healthy),
     "species": Field("array_value", AF.species),
@@ -452,7 +452,7 @@ RESULT_COLUMNS = (
     "n",
     "has_patients",
     "has_healthy",
-    "diagnosis_ids",
+    "medical_condition_ids",
     "task_ids",
     "contrast_set_ids",
     "allocation",
@@ -516,7 +516,7 @@ def run_query(body):
 
 #: Term listing field -> the criterion whose values it lists.
 TERM_FIELDS = {
-    "diagnosis": "diagnosis",
+    "medical_condition": "medical_condition",
     "task": "task",
     "contrast_set": "contrast.set",
     "arm_kind": "design.arm_kind",
@@ -531,7 +531,7 @@ TERM_FIELDS = {
     "blinding": "design.blinding",
 }
 #: Labels for a field's ids, unnested beside them.
-TERM_LABELS = {"diagnosis": AF.diagnosis_labels}
+TERM_LABELS = {"medical_condition": AF.medical_condition_labels}
 
 
 def list_terms(field, search=None, limit=50):

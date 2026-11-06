@@ -30,8 +30,8 @@ from neurostore.study_schema_tools import record_analysis_key, reported_value, s
 #: The separator between items of a text column, which no whole-word pattern crosses.
 SEPARATOR = " | "
 
-#: Vocabularies whose mapped entries on `Group.medical_condition` are diagnoses.
-DIAGNOSIS_VOCABULARIES = {"MONDO", "ONVOC"}
+#: Vocabularies whose mapped entries on `Group.medical_condition` become its ids.
+MEDICAL_CONDITION_VOCABULARIES = {"MONDO", "ONVOC"}
 #: The entry on `Task.name` that names the task's canonical paradigm.
 CANONICAL_TASK = "astra canonical task"
 #: Entries on `Analysis.name` placing the analysis's contrast. ns-pond suffixes the
@@ -94,7 +94,7 @@ def _by_id(items):
 
 
 def _groups(groups):
-    """Species, health and diagnoses of the groups an analysis ran on."""
+    """Species, health and medical conditions of the groups an analysis ran on."""
     healthy = [reported_value(group.get("is_healthy")) for group in groups]
     healthy = [flag for flag in healthy if isinstance(flag, bool)]
     stated = [
@@ -102,27 +102,27 @@ def _groups(groups):
         for group in groups
         if _values(group.get("medical_condition"))
     ]
-    diagnoses = [
+    conditions = [
         entry
         for slot in stated
         for entry in _entries(slot)
-        if entry.get("vocabulary") in DIAGNOSIS_VOCABULARIES
+        if entry.get("vocabulary") in MEDICAL_CONDITION_VOCABULARIES
     ]
     wording = []
     for slot in stated:
         absent = {entry.get("item") for entry in _entries(slot, "absent")}
         wording += [item for i, item in enumerate(_values(slot)) if i not in absent]
-    labels = {entry["value"]: _label(entry) for entry in diagnoses}
+    labels = {entry["value"]: _label(entry) for entry in conditions}
     species = [item for group in groups for item in _values(group.get("species"))]
     columns = {
         "species": _unique(str(item).strip().lower() for item in species) or None,
         "has_patients": (False in healthy) if healthy else None,
         "has_healthy": (True in healthy) if healthy else None,
-        "diagnosis_ids": list(labels) or None,
-        "diagnosis_labels": list(labels.values()) or None,
-        "diagnosis_text": _text([*labels.values(), *wording]) if stated else None,
+        "medical_condition_ids": list(labels) or None,
+        "medical_condition_labels": list(labels.values()) or None,
+        "medical_condition_text": _text([*labels.values(), *wording]) if stated else None,
     }
-    return columns, {"diagnosis": list(labels.values()) or _unique(wording)}
+    return columns, {"medical_condition": list(labels.values()) or _unique(wording)}
 
 
 def _tasks(tasks):
