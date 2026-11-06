@@ -302,6 +302,12 @@ class BaseStudy(BaseMixin, db.Model):
     )
     #: How: study_schema's ``VenueMatch``.
     journal_match = db.Column(db.Text, nullable=True)
+    #: The journal's name as the source printed it. ``publication`` is the matched
+    #: journal's title, else this; a trigger derives it, and takes a written
+    #: ``publication`` as this (models/journals.py).
+    publication_source = db.Column(db.String, nullable=True)
+    #: The matched journal's abbreviation, kept by the same trigger.
+    journal_abbreviation = db.Column(db.Text, nullable=True)
     #: The paper's licence, which governs its abstract (study_schema's
     #: ``bibliography.license.license_id``); NULL until a pipeline upload sets it.
     license = db.Column(license_type("base_studies"), nullable=True)

@@ -174,11 +174,11 @@ class TitleIndex:
                 if name:
                     papers[normalize_title(name)][source] += 1
         rows = db.session.execute(
-            sa.select(Journal.openalex_id, BaseStudy.publication, sa.func.count())
+            sa.select(Journal.openalex_id, BaseStudy.publication_source, sa.func.count())
             .join(Journal, Journal.id == BaseStudy.journal_id)
-            .where(BaseStudy.publication.isnot(None))
+            .where(BaseStudy.publication_source.isnot(None))
             .where(BaseStudy.journal_match.in_(("doi", "pmid", "preprint_server", "issn")))
-            .group_by(Journal.openalex_id, BaseStudy.publication)
+            .group_by(Journal.openalex_id, BaseStudy.publication_source)
         )
         for source, publication, count in rows:
             papers[normalize_title(publication)][source] += count
@@ -214,6 +214,11 @@ class TitleIndex:
         if score >= FUZZY_ACCEPT:
             return Match(source, "fuzzy", score), None
         return None, (source, score)
+
+
+def _printed(base_study):
+    """The journal's name as the source printed it."""
+    return base_study.publication_source or base_study.publication
 
 
 def match_base_studies(base_studies, *, settings):
@@ -263,17 +268,17 @@ def match_base_studies(base_studies, *, settings):
         if len(sources) == 1:
             matches[bs.id] = Match(sources.pop(), "issn")
 
-    left = [bs for bs in base_studies if bs.id not in matches and bs.publication]
+    left = [bs for bs in base_studies if bs.id not in matches and _printed(bs)]
     if left:
         index = TitleIndex()
         for bs in left:
-            match, review = index.match(bs.publication)
+            match, review = index.match(_printed(bs))
             if match:
                 matches[bs.id] = match
             elif review:
                 source, score = review
                 reviews.append(
-                    Review(bs.id, bs.publication, source, index.titles.get(source, ""), score)
+                    Review(bs.id, _printed(bs), source, index.titles.get(source, ""), score)
                 )
     return matches, reviews
 

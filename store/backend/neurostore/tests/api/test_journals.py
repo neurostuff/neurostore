@@ -64,9 +64,10 @@ async def test_a_paper_shows_its_journal_beside_the_name_as_printed(auth_client,
                "abbreviation": "Hum Brain Mapp"}
 
     base_study = (await auth_client.get(f"/api/base-studies/{papers['in_hbm'].id}")).json()
-    assert (base_study["journal"], base_study["publication"]) == (summary, "Hum Brain Mapp")
+    assert (base_study["journal"], base_study["publication"]) == (summary, "Human Brain Mapping")
+    assert "publication_source" not in base_study
     unknown = (await auth_client.get(f"/api/base-studies/{papers['unknown'].id}")).json()
-    assert unknown["journal"] is None
+    assert (unknown["journal"], unknown["publication"]) == (None, "Proceedings of the …")
 
     study = (await auth_client.get(f"/api/studies/{papers['study'].id}")).json()
     assert (study["journal"], study["publication"]) == (summary, "HBM")
@@ -85,6 +86,9 @@ async def test_a_studyset_s_studies_show_their_journal(auth_client, papers):
 
 async def test_papers_are_filtered_by_journal(auth_client, papers):
     hbm_id = papers["hbm"].id
+
+    by_name = (await auth_client.get("/api/base-studies/?publication=human brain")).json()
+    assert [bs["id"] for bs in by_name["results"]] == [papers["in_hbm"].id]
 
     base_studies = (await auth_client.get(f"/api/base-studies/?journal_id={hbm_id}")).json()
     assert [bs["id"] for bs in base_studies["results"]] == [papers["in_hbm"].id]
