@@ -1089,6 +1089,45 @@ def build_neurostore_studyset_release(
     _run_with_runtime(_run)
 
 
+@main.command("grant-admin-clients")
+@click.option(
+    "--client-id",
+    "client_ids",
+    multiple=True,
+    envvar="ADMIN_CLIENT_IDS",
+    help="an Auth0 machine-to-machine client id; ADMIN_CLIENT_IDS lists them, space-separated",
+)
+def grant_admin_clients(client_ids):
+    """Give each client's user (`<client_id>@clients`) the admin role, creating the user
+    when the database has none, as the API would on the client's first request. Prints
+    counts, not the ids."""
+
+    def _run(_app, db):
+        from neurostore.models import Role, User
+
+        admin = Role.query.filter_by(name="admin").one_or_none()
+        if admin is None:
+            raise click.ClickException("no admin role: run `manage db upgrade` first")
+        created = granted = 0
+        for client_id in client_ids:
+            external_id = f"{client_id}@clients"
+            user = User.query.filter_by(external_id=external_id).one_or_none()
+            if user is None:
+                user = User(external_id=external_id, name=client_id, active=True)
+                db.session.add(user)
+                created += 1
+            if admin not in user.roles:
+                user.roles.append(admin)
+                granted += 1
+        db.session.commit()
+        click.echo(
+            f"admin clients: {len(client_ids)}; {created} user(s) created, "
+            f"{granted} granted admin"
+        )
+
+    _run_with_runtime(_run)
+
+
 @main.command("transfer-user-ownership")
 @click.argument("source_user_id")
 @click.argument("destination_user_id")

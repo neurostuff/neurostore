@@ -1622,13 +1622,20 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
     )
 
 
+def _index_name(column):
+    """An index's name: a contrast side's column without `contrast_`, to fit Postgres's 63
+    characters."""
+    side = column.startswith(tuple(f"contrast_{side}_" for side in CONTRAST_SIDES))
+    return "ix_analysis_features__" + (column.removeprefix("contrast_") if side else column)
+
+
 def _gin_index(column):
-    return sa.Index(f"ix_analysis_features__{column}", column, postgresql_using="gin")
+    return sa.Index(_index_name(column), column, postgresql_using="gin")
 
 
 def _trigram_index(column):
     return sa.Index(
-        f"ix_analysis_features__{column}_trgm",
+        f"{_index_name(column)}_trgm",
         column,
         postgresql_using="gin",
         postgresql_ops={column: "gin_trgm_ops"},
@@ -1637,6 +1644,15 @@ def _trigram_index(column):
 
 #: The features read from normalizer entries, by column prefix.
 NORMALIZED_FEATURES = ("medical_condition", "task", "contrast_key", "contrast_set")
+#: The array columns each side of a contrast has, `contrast_<side>_<column>`, all GIN-indexed.
+CONTRAST_SIDE_ARRAYS = (
+    "medical_condition_ids",
+    "medical_condition_ancestor_ids",
+    "timepoints",
+    "arm_kinds",
+    "facets",
+)
+CONTRAST_SIDES = ("positive", "negative")
 
 
 class AnalysisFeature(db.Model):
@@ -1661,6 +1677,11 @@ class AnalysisFeature(db.Model):
         _gin_index("arm_kinds"),
         _gin_index("species"),
         *(
+            _gin_index(f"contrast_{side}_{column}")
+            for side in CONTRAST_SIDES
+            for column in CONTRAST_SIDE_ARRAYS
+        ),
+        *(
             _trigram_index(column)
             for column in (
                 "medical_condition_text",
@@ -1668,6 +1689,7 @@ class AnalysisFeature(db.Model):
                 "contrast_positive",
                 "contrast_negative",
                 "name_text",
+                *(f"contrast_{side}_medical_condition_text" for side in CONTRAST_SIDES),
             )
         ),
     )
@@ -1728,6 +1750,31 @@ class AnalysisFeature(db.Model):
     #: the names of the conditions their factor levels stand for.
     contrast_positive = db.Column(db.Text)
     contrast_negative = db.Column(db.Text)
+    # Each side, from the groups, timepoints and arms its cells' factor levels carry, and
+    # the facets its contrast keys put on it: the analysis-wide columns of the same names,
+    # over that side's groups.
+    contrast_positive_has_patients = db.Column(db.Boolean)
+    contrast_positive_has_healthy = db.Column(db.Boolean)
+    contrast_positive_medical_condition_ids = db.Column(ARRAY(db.Text))
+    contrast_positive_medical_condition_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_positive_medical_condition_text = db.Column(db.Text)
+    contrast_positive_medical_condition_unmapped = db.Column(db.Boolean)
+    #: The timepoints' `relation_to_intervention`, lower-cased.
+    contrast_positive_timepoints = db.Column(ARRAY(db.Text))
+    #: The arms' `arm_kind`, lower-cased.
+    contrast_positive_arm_kinds = db.Column(ARRAY(db.Text))
+    #: Lower-cased: the keys' `name:value` atoms and `~wording` tokens on this side, and a
+    #: baseline's kinds (`fixation`).
+    contrast_positive_facets = db.Column(ARRAY(db.Text))
+    contrast_negative_has_patients = db.Column(db.Boolean)
+    contrast_negative_has_healthy = db.Column(db.Boolean)
+    contrast_negative_medical_condition_ids = db.Column(ARRAY(db.Text))
+    contrast_negative_medical_condition_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_negative_medical_condition_text = db.Column(db.Text)
+    contrast_negative_medical_condition_unmapped = db.Column(db.Boolean)
+    contrast_negative_timepoints = db.Column(ARRAY(db.Text))
+    contrast_negative_arm_kinds = db.Column(ARRAY(db.Text))
+    contrast_negative_facets = db.Column(ARRAY(db.Text))
     #: The directional contrast keys and sets a normalizer placed the analysis in, under
     #: their task family.
     contrast_key_ids = db.Column(ARRAY(db.Text))

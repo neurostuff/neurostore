@@ -157,6 +157,14 @@ def test_rows_written_after_a_load_hold_ancestors_synonyms_and_the_release(sessi
     ]
     term = AnalysisTerm.query.filter_by(field="medical_condition", term="MONDO:0005090").one()
     assert term.parent == "MONDO:0005487"
+    # Each side's ids take theirs too: the patients' side, not the controls'.
+    assert versus_controls.contrast_positive_medical_condition_ancestor_ids == [
+        "MONDO:0005090",
+        "MONDO:0005487",
+        "MONDO:0002025",
+    ]
+    assert "dementia praecox" in versus_controls.contrast_positive_medical_condition_text
+    assert versus_controls.contrast_negative_medical_condition_ancestor_ids is None
 
 
 def test_drift_names_missing_ids_stale_releases_and_other_fits(session, tmp_path):

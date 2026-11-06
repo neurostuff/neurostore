@@ -1,7 +1,7 @@
 """the public query's data sources, and which public base studies use each
 
 Revision ID: b8d0f2a4c6e9
-Revises: e5b7d9f1a3c4
+Revises: b4d6f8a0c2e4
 Create Date: 2026-11-06
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "b8d0f2a4c6e9"
-down_revision = "e5b7d9f1a3c4"
+down_revision = "b4d6f8a0c2e4"
 branch_labels = None
 depends_on = None
 
