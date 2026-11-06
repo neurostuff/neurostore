@@ -17,6 +17,10 @@ James](#questions-for-james)); 1 and 4 are open.
 - `LIKE` has no three-character rule (the datasets have no trigram index); invalid queries are
   400, over-cost ones 422.
 
+**Data sources added in neurostuff/neurostore#1934** (James, 2026-11-06: which data sources are
+used the most across all base studies): use case 7, the `data-sources` and `data-source-uses`
+datasets, and [experiment 4](#4-data-sources-use-case-7).
+
 ## The question
 
 Through which grammar, compiled how, and over which allow-listed relations can anyone run aggregate
@@ -30,7 +34,8 @@ The six use cases, each measured below:
 4. articles per institution, most first;
 5. the users with the most studies, by username only: the public studies each user owns (James,
    2026-11-06);
-6. meta-analyses published over a time period.
+6. meta-analyses published over a time period;
+7. base studies per data source, most first (added after the build, #1934).
 
 An **article** is a base study: a row of `base_studies` with `is_active` and `public`.
 
@@ -46,6 +51,7 @@ An **article** is a base study: a row of `base_studies` with `is_active` and `pu
 | 4. per institution | `base_study_author_affiliations.university_id` → `universities` | yes: entities |
 | 5. per user | `studies.user_id` → `users.external_id`, shown as `users.name` | yes; "username" is `users.name` |
 | 6. meta-analyses | `studies.level = 'meta'`, and their `analyses` | a label on the study, not the analysis (below) |
+| 7. per data source | `analysis_data_sources` → `data_sources`, rebuilt per study as `study_data_sources` and per base study as `base_study_data_sources` | yes: entities (400 seeded); no links in production yet |
 
 **Authors and institutions are already entities**, not only strings (`models/data.py:729-827`):
 - `authors`: one row per ORCID iD, else per OpenAlex author id, else one per paper.
@@ -219,6 +225,32 @@ Everything ran on the restore, in a role that can read only the datasets, with
 - **`$q`** composes: `working memory` through the existing BM25 index (14,722 articles), then counted
   per year over materialized `articles`, took 81 ms.
 
+### 4. Data sources (use case 7)
+
+Measured after the build, on a fresh restore of the same 11-06 backup migrated to #1934's head
+(`b8d0f2a4c6e9`), with the 400 seeded data sources (`manage data-sources load`). Production has
+no data-source links yet, so links were generated two ways, each through `public_query.run` (the
+reader role, the settings and the cost gate); times are the warm endpoint runs.
+
+- **real:** each source's `used` paper count from ns-pond's 2026-11-04 matcher run, on random
+  public base studies: 5,502 base-study uses, 15,661 study links.
+- **dense:** every public base study given three sources (Zipf-weighted): 220,346 uses, 626,719
+  study links.
+
+| Query | real: cost / ms | dense: cost / ms |
+|---|---:|---:|
+| `data-sources`, most first (`$order=base_studies DESC`, `$limit=20`) | 22 / 3.4 | 29 / 3.7 |
+| `data-source-uses`, sources since 2015, most first | 161 / 4.7 | 5,721 / 57–66 |
+| `data-source-uses`, HCP per year | 90 / 3.5 | 520 / 3.3 |
+| `data-source-uses`, UK Biobank per journal | 73 / 3.2 | 523 / 3.5 |
+| `data-source-uses`, every source × year | 184 / 5.7 | 7,418 / 85–102 |
+
+- The two views refreshed in 0.2 s each at real scale, 1.6 s and 6.1 s dense.
+- A base study uses a source when one of its *public* versions does. `base_study_data_sources`
+  also counts private versions, so the views read `study_data_sources` joined to public studies.
+- At real scale the top three were HCP (763), ADNI (457) and ABIDE (202). `journal_id` is null on
+  the restore because production has not run `manage journals match`.
+
 ### 2. What raw SQL lets an anonymous caller do (candidate b)
 
 As a role with `SELECT` on the views only, `default_transaction_read_only`, and a 5 s
@@ -378,6 +410,11 @@ Unencoded for reading; a client URL-encodes each value.
    (this needs Compose's marker, "Needed first" item 3; until then the condition is `article_id IS NULL`,
    a heuristic.)
 
+7. Base studies per data source, most first (as built, #1934):
+   `GET /api/query/data-sources?$select=name, base_studies&$order=base_studies DESC`
+   (with filters: `GET /api/query/data-source-uses?$select=data_source, count(*) AS n&$where=year >= 2015&$group=data_source&$order=n DESC`;
+   per year for one source: `$select=year, count(*) AS n&$where=data_source_id = 'hcp'&$group=year`)
+
 Full text: `GET /api/query/articles?$select=year, count(*)&$q=working memory&$group=year&$order=year`.
 
 ## The public allow-list
@@ -396,6 +433,8 @@ grammar bug can name a column outside them. Columns not listed are out, and a ne
 | `authors` | authors with at least one authorship | `id`, `name`, `orcid`, `openalex_id`, `articles`, `articles_with_data` (counts) | `id` |
 | `institutions` | universities named by at least one affiliation | `id`, `ror`, `name`, `country`, `articles` (count) | `id` |
 | `studies` | `studies` with `public` | `id`, `article_id` (`base_study_id`), `name`, `year`, `level`, `source`, `username` (`users.name`), `created_at`, `updated_at`, `has_coordinates`, `has_images` | `id` |
+| `data-sources` (#1934) | `data_sources` | `id`, `name`, `kinds`, `modalities`, `rrids` (arrays as comma-separated text), `part_of_id`, `url`, `base_studies`, `base_studies_with_data` (counts); not `user_id` | `id` |
+| `data-source-uses` (#1934) | distinct (base study, data source) pairs through public versions of public base studies | `base_study_id`, `data_source_id`, `data_source` (name), and the base study's `year`, `journal_id`, `has_coordinates`, `has_images` | `base_study_id, data_source_id` |
 | `analyses` | `analyses` of public studies | `id`, `study_id`, `article_id`, `name`, `level` and `source` (the study's), `point_count`, `image_count`, `has_coordinates`, `has_images`, `role`, `outcome`, `created_at`, `updated_at` | `id` |
 
 Left out, column by column, and why:
