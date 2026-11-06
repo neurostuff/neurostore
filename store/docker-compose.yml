@@ -104,7 +104,8 @@ services:
       if
       manage process-base-study-flag-outbox --no-loop &&
       manage process-base-study-metadata-outbox --no-loop &&
-      manage build-neurostore-studyset-release --nightly --monthly-if-due;
+      manage build-neurostore-studyset-release --nightly --monthly-if-due &&
+      manage refresh-public-query;
       then
       sleep "$${NEUROSTORE_STUDYSET_RELEASE_INTERVAL_SECONDS:-86400}";
       else

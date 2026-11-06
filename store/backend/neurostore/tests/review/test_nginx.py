@@ -62,3 +62,16 @@ def test_nginx_sees_the_review_build_through_the_neurostore_mount():
 
     assert "neurostore" in services["store_nginx"]["volumes_from"]
     assert "./:/store" in services["neurostore"]["volumes"]
+
+
+@pytest.mark.parametrize("name", ["nginx.conf", "nginx.dev.conf"])
+def test_public_queries_are_proxied_as_the_api_is_and_rate_limited_per_client(name):
+    conf = (NGINX_DIR / name).read_text()
+    query = location(conf, "/api/query/")
+
+    assert [d for d in query if not d.startswith("limit_")] == location(conf, "/api")
+    assert "limit_req zone=public_query burst=20 nodelay" in query
+    assert "limit_conn public_query_conn 2" in query
+    assert "limit_req_zone $public_query_client zone=public_query:10m rate=1r/s" in " ".join(
+        conf.split()
+    )
