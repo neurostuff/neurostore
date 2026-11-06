@@ -1752,6 +1752,11 @@ class AnalysisFeature(db.Model):
 
     display_row = relationship("AnalysisFeatureDisplay", uselist=False, passive_deletes=True)
 
+    @staticmethod
+    def role_id(role, term):
+        """A medical-condition term as `medical_condition_role_ids` holds it."""
+        return f"{role}|{term}"
+
 
 class AnalysisTerm(db.Model):
     """A term analysis features use, with its label and parent, as the latest record to use

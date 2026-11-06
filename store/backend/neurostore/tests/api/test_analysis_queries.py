@@ -103,12 +103,7 @@ async def test_an_unmapped_analysis_needs_text_to_match_under_when_unmapped_text
 
 
 async def test_an_unmapped_contrast_key_is_excluded_unless_included(auth_client, session):
-    document = af.record(SCHIZOPHRENIA)
-    for analysis in document["analyses"]:
-        if analysis["name"]["value"] == "schizophrenia > BDp":
-            for entry in analysis["name"]["normalized"]:
-                entry.update(status="unmapped", value=None)
-    af.upload(SCHIZOPHRENIA, document)
+    af.upload(SCHIZOPHRENIA, af.unmap_names(af.record(SCHIZOPHRENIA), "schizophrenia > BDp"))
     db.session.commit()
 
     bare = await _query(auth_client, {"contrast": {"key": "working_memory_span"}})
@@ -161,21 +156,9 @@ async def test_the_analysis_name_is_text(auth_client, papers):
 
 
 async def test_role_narrows_medical_condition_ids(auth_client, session):
-    document = af.record(SCHIZOPHRENIA)
-    roles = {"MONDO:0005090": "primary", "MONDO:0004985": "comorbid"}
-    for group in document["groups"]:
-        slot = group["medical_condition"]
-        for entry in list(slot["normalized"]):
-            if entry.get("value") in roles:
-                slot["normalized"].append(
-                    {
-                        "vocabulary": "astra medical role",
-                        "status": "mapped",
-                        "value": roles[entry["value"]],
-                        "item": entry["item"],
-                        "mapping_tool": "fixture",
-                    }
-                )
+    document = af.with_roles(
+        af.record(SCHIZOPHRENIA), {"MONDO:0005090": "primary", "MONDO:0004985": "comorbid"}
+    )
     af.upload(SCHIZOPHRENIA, document)
     db.session.commit()
     bipolar = {"ids": ["MONDO:0004985"]}

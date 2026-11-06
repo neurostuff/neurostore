@@ -16,6 +16,10 @@ from neurostore.tests import analysis_fixtures as af
 from neurostore.tests import study_schema_fixtures as fx
 
 
+#: The head before the normalized-search migration.
+PUBLICATION_REVISION = "c3e5a7b9d1f2"
+
+
 def _by_name(name):
     document = af.record(name)
     features = record_features(document)
@@ -119,21 +123,9 @@ def test_a_key_whose_sign_is_negative_is_the_reversed_term():
 
 
 def test_roles_qualify_the_medical_condition_ids():
-    document = af.record("ya2RC6UYbibC")
-    roles = {"MONDO:0005090": "primary", "MONDO:0004985": "comorbid"}
-    for group in document["groups"]:
-        slot = group["medical_condition"]
-        for entry in list(slot["normalized"]):
-            if entry.get("value") in roles:
-                slot["normalized"].append(
-                    {
-                        "vocabulary": "astra medical role",
-                        "status": "mapped",
-                        "value": roles[entry["value"]],
-                        "item": entry["item"],
-                        "mapping_tool": "fixture",
-                    }
-                )
+    document = af.with_roles(
+        af.record("ya2RC6UYbibC"), {"MONDO:0005090": "primary", "MONDO:0004985": "comorbid"}
+    )
     rows = {row["display"]["name"]: row for row in record_features(document).values()}
 
     assert rows["schizophrenia > BDp"]["medical_condition_role_ids"] == [
@@ -144,6 +136,97 @@ def test_roles_qualify_the_medical_condition_ids():
         "MONDO:0005090",
         "MONDO:0004985",
     ]
+
+
+def test_a_set_takes_the_orientation_of_its_own_fit():
+    document = af.record("ya2RC6UYbibC")
+    name = document["analyses"][0]["name"]
+    name["normalized"] += [
+        {
+            "vocabulary": "ns-pond contrast set fit-1",
+            "status": "mapped",
+            "value": "working_memory#7",
+            "label": "2-back > 0-back",
+            "mapping_tool": "fixture",
+        },
+        {
+            "vocabulary": "ns-pond contrast set orientation fit-1",
+            "status": "mapped",
+            "value": "same",
+            "mapping_tool": "fixture",
+        },
+    ]
+    row = record_features(document)[af.keys_of(document)[0]]
+
+    assert row["contrast_set_ids"] == ["working_memory#1:reversed", "working_memory#7"]
+
+
+def test_a_role_given_to_one_head_stays_with_that_head():
+    document = af.record("ya2RC6UYbibC")
+    group = next(
+        g for g in document["groups"] if g["medical_condition"]["value"] == ["schizophrenia"]
+    )
+    group["medical_condition"]["normalized"] = [
+        {"vocabulary": "MONDO", "status": "mapped", "value": "MONDO:1", "item": 0,
+         "head": "schizophrenia", "mapping_tool": "fixture"},
+        {"vocabulary": "MONDO", "status": "mapped", "value": "MONDO:2", "item": 0,
+         "head": "depression", "mapping_tool": "fixture"},
+        {"vocabulary": "astra medical role", "status": "mapped", "value": "primary",
+         "item": 0, "head": "schizophrenia", "mapping_tool": "fixture"},
+        {"vocabulary": "astra medical role", "status": "mapped", "value": "comorbid",
+         "item": 0, "mapping_tool": "fixture"},
+    ]
+    rows = {row["display"]["name"]: row for row in record_features(document).values()}
+
+    assert rows["schizophrenia > control"]["medical_condition_role_ids"] == [
+        "primary|MONDO:1",
+        "comorbid|MONDO:2",
+    ]
+
+
+def test_an_item_is_silent_only_when_every_reading_of_it_is_an_absence():
+    document = af.record("6SKTGteXbbBs")
+    smokers = next(g for g in document["groups"] if g["is_healthy"]["value"] is False)
+    smokers["medical_condition"]["normalized"] = [
+        {"vocabulary": "MONDO", "status": "unmapped", "item": 0, "head": "nicotine",
+         "mapping_tool": "fixture"},
+        {"vocabulary": "MONDO", "status": "absent", "item": 0, "head": "no history",
+         "mapping_tool": "fixture"},
+    ]
+    task = document["tasks"][0]
+    task["name"]["normalized"] = [
+        {"vocabulary": "astra canonical task", "status": "absent", "mapping_tool": "fixture"}
+    ]
+    row = record_features(document)[af.keys_of(document)[0]]
+
+    assert row["medical_condition_unmapped"] is True
+    assert row["medical_condition_text"] == "nicotine dependence"
+    # A task name read only as an absence is silent, not unmapped.
+    assert row["task_unmapped"] is None
+
+
+def test_a_contrast_key_s_family_is_what_comes_before_its_first_bar():
+    document = af.record("ya2RC6UYbibC")
+    for analysis in document["analyses"]:
+        for entry in analysis["name"]["normalized"]:
+            if entry["vocabulary"] == "astra contrast key":
+                entry["value"] = "working_memory_span|load:#2|vs:load:0"
+    row = record_features(document)[af.keys_of(document)[0]]
+
+    assert row["contrast_key_ancestor_ids"][-1] == "working_memory_span"
+
+
+def test_a_record_that_does_not_name_a_term_s_parent_keeps_the_known_one(session):
+    af.upload("ya2RC6UYbibC")
+    document = af.record("6SKTGteXbbBs")
+    document["tasks"][0]["name"]["normalized"] = [
+        {"vocabulary": "astra canonical task", "status": "mapped", "value": "hedtsk_n_back",
+         "label": "N-Back Task", "mapping_tool": "fixture"}
+    ]
+    af.upload("6SKTGteXbbBs", document)
+
+    term = AnalysisTerm.query.filter_by(field="task", term="hedtsk_n_back").one()
+    assert term.parent == "working_memory_span"
 
 
 def test_rows_list_their_terms_with_labels_and_parents():
@@ -162,11 +245,7 @@ def test_rows_list_their_terms_with_labels_and_parents():
 def test_unmapped_is_a_stated_feature_nothing_in_which_mapped():
     mapped = _by_name("ya2RC6UYbibC")["schizophrenia > control"]
     unmapped = _by_name("6SKTGteXbbBs")["Immediate–delayed"]
-    document = af.record("6SKTGteXbbBs")
-    for analysis in document["analyses"]:
-        for entry in analysis["name"]["normalized"]:
-            entry.update(status="unmapped", value=None)
-    no_set = next(iter(record_features(document).values()))
+    no_set = next(iter(record_features(af.unmap_names(af.record("6SKTGteXbbBs"))).values()))
 
     assert mapped["medical_condition_unmapped"] is False
     assert unmapped["medical_condition_unmapped"] is True
@@ -428,7 +507,7 @@ def test_the_normalized_search_migration_renames_and_adds_columns_and_its_downgr
         "mapping_tools",
     }
     try:
-        service_migrations.downgrade("c3e5a7b9d1f2")
+        service_migrations.downgrade(PUBLICATION_REVISION)
         columns, indexes, keys = state()
         assert {f"diagnosis_{suffix}" for suffix in ("ids", "labels", "text")} <= columns
         assert not renamed & columns and not added & columns

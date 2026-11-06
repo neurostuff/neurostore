@@ -940,9 +940,8 @@ class AnnotationsView(ObjectView, ListView):
             annotation, data.get("annotation_analyses") or []
         )
         study_ids = {ctx["study_id"] for ctx in analysis_context.values() if ctx.get("study_id")}
-        frozen = select_analyses(payload.get("query"), study_ids)
-        selected = set(frozen["analysis_ids"]) & set(note_map)
-        frozen["analysis_ids"] = sorted(selected)
+        frozen = select_analyses(payload.get("query"), study_ids, note_map)
+        selected = set(frozen["analysis_ids"])
         rows = {}
         if features:
             rows = {
@@ -964,10 +963,10 @@ class AnnotationsView(ObjectView, ListView):
             {column: "boolean", **{f: FEATURE_COLUMNS[f][0] for f in features}},
         )
         data["annotation_analyses"] = list(note_map.values())
-        metadata = dict(
-            (data.get("metadata_") if data.get("metadata_") is not None else annotation.metadata_)
-            or {}
-        )
+        if data.get("metadata_") is not None:
+            metadata = dict(data["metadata_"])
+        else:
+            metadata = dict(annotation.metadata_ or {})
         metadata["analysis_queries"] = {
             **(metadata.get("analysis_queries") or {}),
             column: {**frozen, "frozen_at": datetime.now(timezone.utc).isoformat()},
