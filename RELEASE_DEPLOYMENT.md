@@ -221,9 +221,6 @@ cd store
 docker compose stop store_nginx neurostore store_outbox_worker store_metadata_outbox_worker store_release_worker store-pghero store-grafana || true
 docker compose up -d store-pgsql17 store_redis
 docker compose run --rm --no-deps neurostore manage db upgrade --revision heads
-# Load the vocabulary releases study_schema's manifest pins; skipped while they are
-# loaded, and rewrites the analysis features when one was.
-docker compose run --rm --no-deps neurostore manage load-concept-ancestors --backfill
 # One time, when deploying f1a3c5e7b9d2: set roles before workers recompute flags or
 # a release builds (see "Studyset Release Contents" below).
 docker compose run --rm --no-deps neurostore manage backfill-analysis-roles
@@ -235,6 +232,9 @@ docker compose run --rm --no-deps store_release_worker \
   manage build-neurostore-studyset-release --nightly --clear-cache
 docker compose up -d --no-build store_release_worker
 docker compose up -d --no-build store_nginx
+# Load the vocabulary releases study_schema's manifest pins; skipped while they are
+# loaded, and rewrites the analysis features when one was loaded or rows are unresolved.
+docker compose run --rm --no-deps neurostore manage sync-vocabulary-releases --backfill
 ```
 
 Start Compose in order:

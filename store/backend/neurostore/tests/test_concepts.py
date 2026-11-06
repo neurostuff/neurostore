@@ -1,68 +1,20 @@
 """Loading the vocabulary releases study_schema's manifest pins, and reading them at ingest."""
 
-import json
-
 import pytest
 from study_schema.vocabularies import vocabulary
 
-from neurostore.ingest.analysis_features import record_features
+from neurostore.ingest.analysis_features import backfill_analysis_features, record_features
 from neurostore.ingest.concepts import (
-    Release,
-    closure,
+    ancestor_rows,
     drift,
     pinned_releases,
     read_obographs,
     read_skos_turtle,
-    sha256_of,
-    sync_releases,
+    sync_vocabulary_releases,
 )
 from neurostore.models import AnalysisFeature, AnalysisTerm, Concept, ConceptRelease
 from neurostore.tests import analysis_fixtures as af
-
-OBO = "http://purl.obolibrary.org/obo/"
-#: Schizophrenia under psychotic disorder under psychiatric disorder; bipolar disorder
-#: with psychotic features left out.
-MONDO = {
-    "MONDO:0002025": ("psychiatric disorder", [], []),
-    "MONDO:0005487": ("psychotic disorder", ["MONDO:0002025"], []),
-    "MONDO:0005090": ("schizophrenia", ["MONDO:0005487"], ["dementia praecox"]),
-}
-
-
-def _iri(curie):
-    return OBO + curie.replace(":", "_")
-
-
-def mondo_release(tmp_path, terms=MONDO, version="test"):
-    """A test MONDO release in OBO Graphs JSON, with one deprecated class, and its pin."""
-    nodes = [
-        {
-            "id": _iri(c),
-            "type": "CLASS",
-            "lbl": label,
-            "meta": {"synonyms": [{"pred": "hasExactSynonym", "val": s} for s in synonyms]},
-        }
-        for c, (label, _, synonyms) in terms.items()
-    ]
-    nodes.append(
-        {"id": _iri("MONDO:0000001"), "type": "CLASS", "lbl": "old", "meta": {"deprecated": True}}
-    )
-    edges = [
-        {"sub": _iri(c), "pred": "is_a", "obj": _iri(p)}
-        for c, (_, parents, _) in terms.items()
-        for p in parents
-    ]
-    edges.append({"sub": _iri("MONDO:0005090"), "pred": "is_a", "obj": _iri("MONDO:0000001")})
-    path = tmp_path / f"mondo-{version}.json"
-    path.write_text(json.dumps({"graphs": [{"nodes": nodes, "edges": edges}]}))
-    release = Release("mondo", version, None, sha256_of(path), read_obographs, "MONDO")
-    return release, path
-
-
-def load(tmp_path, **kwargs):
-    release, path = mondo_release(tmp_path, **kwargs)
-    return sync_releases({"mondo": path}, releases={"mondo": release})
-
+from neurostore.tests.analysis_fixtures import MONDO, load, mondo_release
 
 ONVOC = """@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix ONVOC: <https://w3id.org/onvoc/ONVOC_> .
@@ -122,7 +74,7 @@ def test_skos_edges_are_read_from_either_end(tmp_path):
 def test_the_closure_holds_each_concept_and_every_ancestor_at_its_distance():
     parents = {"a": set(), "b": {"a"}, "c": {"b", "a"}}
 
-    assert sorted(closure(parents)) == [
+    assert sorted(ancestor_rows(parents)) == [
         ("a", "a", 0),
         ("b", "a", 1),
         ("b", "b", 0),
@@ -151,7 +103,7 @@ def test_a_file_that_is_not_the_pinned_release_is_refused(session, tmp_path):
     path.write_text(path.read_text() + " ")
 
     with pytest.raises(ValueError, match="sha256"):
-        sync_releases({"mondo": path}, releases={"mondo": release})
+        sync_vocabulary_releases({"mondo": path}, releases={"mondo": release})
     assert ConceptRelease.query.count() == 0
 
 
@@ -159,7 +111,7 @@ def test_a_release_already_loaded_is_skipped_unless_forced(session, tmp_path):
     first = load(tmp_path)
     again = load(tmp_path)
     release, path = mondo_release(tmp_path)
-    forced = sync_releases({"mondo": path}, force=True, releases={"mondo": release})
+    forced = sync_vocabulary_releases({"mondo": path}, force=True, releases={"mondo": release})
 
     assert first[0]["loaded"] and first[0]["concepts"] == 3 and first[0]["rows"] == 6
     assert again == [{"vocabulary": "mondo", "release": "test", "loaded": False}]
@@ -214,6 +166,8 @@ def test_drift_names_missing_ids_stale_releases_and_other_fits(session, tmp_path
 
     report = drift()
 
+    # Both schizophrenia analyses were read against the first release, not this one.
+    assert report["unresolved"] == 2
     # The fixture's bipolar term is in neither release: one analysis holds it.
     assert report["missing"] == {"MONDO:0004985": 1}
     # The fixture's contrast set comes from a fit other than the manifest's.
@@ -244,3 +198,13 @@ def test_entries_under_the_manifest_s_neutral_names_read_as_the_legacy_ones():
         return [{k: v for k, v in row.items() if k != "mapping_tools"} for row in rows]
 
     assert features(neutral) == features(legacy)
+
+
+def test_rows_written_before_a_load_are_unresolved_until_a_backfill(session, tmp_path):
+    af.upload("ya2RC6UYbibC")
+    load(tmp_path)
+
+    before = drift()["unresolved"]
+    backfill_analysis_features()
+
+    assert (before, drift()["unresolved"]) == (2, 0)

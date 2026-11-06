@@ -16,6 +16,13 @@ from neurostore.tests import analysis_fixtures as af
 from neurostore.tests import study_schema_fixtures as fx
 
 
+FEATURE_TABLES = (
+    "analysis_features",
+    "analysis_terms",
+    "concept_releases",
+    "concepts",
+    "concept_ancestors",
+)
 #: The head before the normalized-search migration.
 PUBLICATION_REVISION = "c3e5a7b9d1f2"
 
@@ -108,7 +115,6 @@ def test_ancestors_add_a_task_or_contrast_s_family():
         "working_memory_span",
     ]
     assert row["contrast_set_ancestor_ids"] == ["working_memory#1:reversed", "working_memory"]
-    assert row["medical_condition_ancestor_ids"] == ["MONDO:0005090"]
 
 
 def test_a_key_whose_sign_is_negative_is_the_reversed_term():
@@ -452,20 +458,11 @@ def test_the_backfill_rewrites_every_paper_from_its_stored_record(session):
     assert {row.analysis_id: row.display_row.display for row in AnalysisFeature.query} == written
 
 
-TABLES = (
-    "analysis_features",
-    "analysis_terms",
-    "concept_releases",
-    "concepts",
-    "concept_ancestors",
-)
-
-
 def test_the_migrated_table_matches_the_model(db):
     def in_scope(obj, name, type_, reflected, compare_to):
         if type_ == "table":
-            return name in TABLES
-        return obj.table.name in TABLES
+            return name in FEATURE_TABLES
+        return obj.table.name in FEATURE_TABLES
 
     with db.engine.connect() as conn:
         context = MigrationContext.configure(

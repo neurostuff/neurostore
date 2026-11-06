@@ -28,12 +28,13 @@ from study_schema.vocabularies import for_legacy
 from study_schema.vocabularies import vocabulary as manifest_vocabulary
 
 from neurostore.database import db
-from neurostore.ingest.concepts import ancestors_of
+from neurostore.ingest.concepts import concept_lineages
 from neurostore.models import (
     Analysis,
     AnalysisFeature,
     AnalysisFeatureDisplay,
     AnalysisTerm,
+    BaseStudy,
     PipelineConfig,
     PipelineStudyResult,
     Study,
@@ -57,7 +58,7 @@ DIRECTIONAL_FIELDS = {
     for field in ("contrast_key", "contrast_set")
 }
 #: The fit a contrast set reads against, in a legacy vocabulary string or a mapping tool.
-FIT = re.compile(r"fit-[0-9a-f]{12}")
+FIT = re.compile(r"\bfit-[0-9a-f]{12}\b")
 #: ns-pond writes a key's sign only in its entry's method: "target>baseline; sign -1".
 KEY_SIGN = re.compile(r"\bsign -1\b")
 
@@ -82,13 +83,14 @@ def _manifest_name(string):
 
 def _of(entry, *names):
     """Whether ``entry`` reads onto one of the manifest vocabularies ``names``."""
-    return _manifest_name(entry.get("vocabulary") or "") in names
+    vocabulary = entry.get("vocabulary")
+    return isinstance(vocabulary, str) and _manifest_name(vocabulary) in names
 
 
 def _fit(entry):
     """The fit a contrast-set or orientation entry reads against, or None."""
     for text in (entry.get("vocabulary"), entry.get("mapping_tool")):
-        found = FIT.search(text or "")
+        found = FIT.search(text if isinstance(text, str) else "")
         if found:
             return found.group()
     return None
@@ -224,10 +226,9 @@ def _groups(groups):
         "species": _unique(str(item).strip().lower() for item in species) or None,
         "has_patients": (False in healthy) if healthy else None,
         "has_healthy": (True in healthy) if healthy else None,
+        # Their ancestors and synonyms come from the loaded releases, in `with_ancestors`.
         "medical_condition_ids": ids,
-        "medical_condition_ancestor_ids": ids,
         "medical_condition_role_ids": role_ids,
-        "medical_condition_role_ancestor_ids": role_ids,
         "medical_condition_text": text,
         "medical_condition_unmapped": _unmapped(text is not None, ids),
         "mapping_tools": _tools(used),
@@ -509,30 +510,31 @@ def latest_records(base_study_ids):
 def with_ancestors(by_key):
     """``by_key``'s features with the loaded releases' reading of their medical-condition
     ids: their ancestors (and the role ids' ancestors), their synonyms in the text, their
-    nearest parents in the terms, and the releases those came from."""
-    closures = ancestors_of(
+    nearest parents in the terms, and the releases those came from. An id no loaded
+    release has is its own ancestry."""
+    lineages = concept_lineages(
         {i for row in by_key.values() for i in row["medical_condition_ids"] or []}
     )
     for row in by_key.values():
         ids = row["medical_condition_ids"] or []
-        found = [closures[i] for i in ids if i in closures]
+        found = [lineages[i] for i in ids if i in lineages]
+        ancestry = {i: lineages[i].ancestors if i in lineages else [i] for i in ids}
         row["medical_condition_ancestor_ids"] = _ancestors(
-            ids, (a for i in ids for a in (closures[i].ancestors if i in closures else ()))
+            ids, (a for i in ids for a in ancestry[i])
         )
-        roles = [role_id.split("|", 1) for role_id in row["medical_condition_role_ids"] or []]
         row["medical_condition_role_ancestor_ids"] = _unique(
             AnalysisFeature.role_id(role, a)
-            for role, i in roles
-            for a in (closures[i].ancestors if i in closures else [i])
+            for role, i in map(AnalysisFeature.role_of, row["medical_condition_role_ids"] or [])
+            for a in ancestry[i]
         ) or None
         if found:
-            synonyms = [synonym for closure in found for synonym in closure.synonyms]
+            synonyms = [synonym for lineage in found for synonym in lineage.synonyms]
             row["medical_condition_text"] = _text([row["medical_condition_text"], *synonyms])
-        stamps = {*(row["vocabulary_releases"] or []), *(c.release for c in found)}
+        stamps = {*(row["vocabulary_releases"] or []), *(lineage.release for lineage in found)}
         row["vocabulary_releases"] = sorted(stamps) or None
         row["terms"] = [
-            (field, term, label, closures[term].parent)
-            if field == "medical_condition" and term in closures
+            (field, term, label, lineages[term].parent)
+            if field == "medical_condition" and term in lineages
             else (field, term, label, parent)
             for field, term, label, parent in row["terms"]
         ]
@@ -549,6 +551,10 @@ def sync_analysis_features(base_study_id, study_id, latest=None):
     ``latest`` is the paper's `latest_records` entry, when the caller has it. Returns the
     rows written.
     """
+    # One writer per paper at a time: a backfill and the outbox workers both rewrite rows.
+    db.session.execute(
+        sa.select(BaseStudy.id).where(BaseStudy.id == base_study_id).with_for_update()
+    )
     if latest is None:
         latest = latest_records([base_study_id]).get(base_study_id, (None, None))
     config_id, record = latest

@@ -4,7 +4,7 @@ Revision ID: f2a4c6e8b0d3
 Revises: e1f3a5c7b9d2
 Create Date: 2026-11-06
 
-Empty until `manage load-concept-ancestors` loads the releases study_schema's manifest
+Empty until `manage sync-vocabulary-releases` loads the releases study_schema's manifest
 pins; feature rows take their medical-condition ancestors from them at the next backfill.
 """
 

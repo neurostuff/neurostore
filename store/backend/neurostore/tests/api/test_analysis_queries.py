@@ -538,9 +538,7 @@ async def test_the_annotation_column_is_rewritten_beside_pipeline_columns(
 async def test_a_medical_condition_id_matches_its_descendants_in_the_loaded_release(
     auth_client, session, tmp_path
 ):
-    from neurostore.tests.test_concepts import load
-
-    load(tmp_path)
+    af.load(tmp_path)
     for name in af.RECORDS:
         af.upload(name)
     db.session.commit()

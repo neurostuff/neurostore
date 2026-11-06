@@ -800,6 +800,11 @@ def _children(field, values):
     return children
 
 
+def unnested(column, name):
+    """``column``'s array items as a table ``name`` with one column, ``value``."""
+    return sa.func.unnest(column).table_valued("value").render_derived(name=name)
+
+
 def list_terms(field, search=None, limit=50, parent=None):
     """The values ``field`` takes, with how many analyses and papers carry each, and each
     one's label, parent, children and synonyms (a loaded release's, for a medical
@@ -811,9 +816,9 @@ def list_terms(field, search=None, limit=50, parent=None):
         )
     column = _term_column(field)
     if isinstance(column.type, sa.ARRAY):
-        unnested = sa.func.unnest(column).table_valued("value").render_derived(name="t")
-        source = sa.select().select_from(AF).join(unnested, sa.true())
-        value = unnested.c.value
+        items = unnested(column, "t")
+        source = sa.select().select_from(AF).join(items, sa.true())
+        value = items.c.value
     else:
         source = sa.select().select_from(AF).where(column.is_not(None))
         value = column
@@ -828,12 +833,14 @@ def list_terms(field, search=None, limit=50, parent=None):
     )
     statement = sa.select(counts.c.value, counts.c.analyses, counts.c.base_studies)
     synonyms = sa.null()
+    # Medical conditions have a loaded release's labels and synonyms.
+    concepts = field == "medical_condition"
     if field in CHILD_FIELDS:
         label = sa.func.coalesce(AT.label, counts.c.value)
         statement = statement.add_columns(AT.parent).outerjoin(
             AT, sa.and_(AT.field == field, AT.term == counts.c.value)
         )
-        if field == "medical_condition":
+        if concepts:
             label = sa.func.coalesce(AT.label, Concept.label, counts.c.value)
             synonyms = Concept.synonyms
             statement = statement.outerjoin(Concept, Concept.concept_id == counts.c.value)
@@ -848,7 +855,7 @@ def list_terms(field, search=None, limit=50, parent=None):
     if search:
         like = f"%{search.lower()}%"
         matches = [sa.func.lower(counts.c.value).like(like), sa.func.lower(label).like(like)]
-        if field == "medical_condition":
+        if concepts:
             matches.append(sa.func.lower(sa.func.array_to_string(synonyms, " | ")).like(like))
         statement = statement.where(sa.or_(*matches))
     statement = statement.order_by(sa.desc(counts.c.analyses), counts.c.value).limit(limit)

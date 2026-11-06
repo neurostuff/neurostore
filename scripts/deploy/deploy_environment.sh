@@ -509,11 +509,12 @@ build_review_frontend() {
 
 # Load the vocabulary releases study_schema's manifest pins, and rewrite the analysis
 # features when one was loaded; a release already loaded is skipped, so this is a no-op
-# until the pin moves.
+# until the pin moves. It runs last, with the services up, so a failed download fails
+# the deploy without taking the site down.
 sync_vocabulary_releases() {
   local service_root="$1"
   local project="$2"
-  compose_for "${service_root}" "${project}" exec -T neurostore manage load-concept-ancestors --backfill
+  compose_for "${service_root}" "${project}" exec -T neurostore manage sync-vocabulary-releases --backfill
 }
 
 deploy_store_staging() {
@@ -554,10 +555,10 @@ deploy_store_staging() {
     store-pghero \
     store-grafana
   compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
-  sync_vocabulary_releases "${service_root}" "${project}"
   compose_for "${service_root}" "${project}" exec -T store_redis redis-cli FLUSHDB >/dev/null
   build_review_frontend
   recreate_services_cleanly "${service_root}" "${project}" store_nginx
+  sync_vocabulary_releases "${service_root}" "${project}"
 }
 
 deploy_compose_staging() {
@@ -618,9 +619,9 @@ deploy_store_dev() {
     --with-vector-extension
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=0
   compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
-  sync_vocabulary_releases "${service_root}" "${project}"
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=1 store_release_worker
   build_review_frontend
+  sync_vocabulary_releases "${service_root}" "${project}"
 }
 
 deploy_compose_dev() {

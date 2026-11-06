@@ -1,33 +1,37 @@
 """The releases of the vocabularies normalized ids come from, for search by descendants.
 
 study_schema's vocabulary manifest pins, for each vocabulary a record's `normalized` ids
-come from, the release the normalizer mapped against. `sync_releases` loads each pinned
-release that publishes a file (MONDO, ONVOC) into `concepts` (labels and synonyms) and
-`concept_ancestors` (every concept and each of its ancestors), verifying the file's
+come from, the release the normalizer mapped against. `sync_vocabulary_releases` loads each
+pinned release that publishes a file (MONDO, ONVOC) into `concepts` (labels and synonyms)
+and `concept_ancestors` (every concept and each of its ancestors), verifying the file's
 sha256, and records it in `concept_releases`; it reloads a vocabulary only when the pin
-has moved. Feature rows take their ancestors from these tables at ingest (`ancestors_of`),
-so a new release is a load and a backfill. `drift` reports what in the feature rows the
-loaded releases do not account for.
+has moved (or a reader changed: `force`). Feature rows take their ancestors from these
+tables at ingest (`concept_lineages`), so a new release is a load and a backfill. `drift`
+reports what in the feature rows the loaded releases do not account for.
 """
 
 import hashlib
+import itertools
 import json
 import re
-import shutil
 import tempfile
-import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+import requests
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 from study_schema.vocabularies import vocabularies
 
+from neurostore.analysis_query import unnested
 from neurostore.database import db
 from neurostore.models import AnalysisFeature, Concept, ConceptAncestor, ConceptRelease
 
 AF = AnalysisFeature
 INSERT_BATCH = 10_000
+#: Seconds to wait for a release's server before giving up.
+FETCH_TIMEOUT = 60
 
 
 @dataclass
@@ -41,8 +45,9 @@ class Term:
 
 def read_obographs(path, prefix):
     """``{concept: Term}`` of an OBO Graphs JSON release: its live, labelled classes named
-    ``prefix``, by CURIE, with their exact synonyms and the is_a edges between them."""
-    graph = json.loads(Path(path).read_text())["graphs"][0]
+    ``prefix``, by CURIE, with their exact synonyms and the is_a edges between them (the
+    classes pondie.vocabularies.mondo.load_mondo maps to)."""
+    graph = json.loads(Path(path).read_text(encoding="utf-8"))["graphs"][0]
 
     def curie(iri):
         return iri.rsplit("/", 1)[-1].replace("_", ":", 1)
@@ -142,7 +147,7 @@ def pinned_releases():
     }
 
 
-def closure(parents):
+def ancestor_rows(parents):
     """``(concept, ancestor, distance)`` for every concept and each of its ancestors,
     breadth-first so the distance is the fewest steps; the concept itself at 0."""
     for concept in parents:
@@ -159,7 +164,7 @@ def closure(parents):
             frontier = reached
 
 
-def sha256_of(path):
+def file_sha256(path):
     digest = hashlib.sha256()
     with open(path, "rb") as handle:
         while chunk := handle.read(1 << 20):
@@ -167,23 +172,36 @@ def sha256_of(path):
     return digest.hexdigest()
 
 
-def _fetch(release, directory):
-    path = Path(directory) / Path(release.url).name
-    with urllib.request.urlopen(release.url) as response, open(path, "wb") as out:  # noqa: S310
-        shutil.copyfileobj(response, out)
-    return path
+def _read_verified(release, path):
+    """``(source, sha256, terms)`` of ``release``, read from ``path`` or else fetched from
+    its URL; raises ValueError for a file that is not the pinned one."""
+
+    def read(path):
+        digest = file_sha256(path)
+        if digest != release.sha256:
+            raise ValueError(
+                f"{path} is not {release.vocabulary} {release.version}: its sha256 is "
+                f"{digest}, the pin's {release.sha256}"
+            )
+        return digest, release.read(path, release.prefix)
+
+    if path:
+        return (str(path), *read(path))
+    with tempfile.TemporaryDirectory() as scratch:
+        fetched = Path(scratch) / Path(release.url).name
+        with requests.get(release.url, stream=True, timeout=FETCH_TIMEOUT) as response:
+            response.raise_for_status()
+            with open(fetched, "wb") as out:
+                for chunk in response.iter_content(1 << 20):
+                    out.write(chunk)
+        return (release.url, *read(fetched))
 
 
 def _insert(model, rows):
     """Insert ``rows`` (dicts) in batches; how many."""
-    count, batch = 0, []
-    for row in rows:
-        batch.append(row)
-        if len(batch) == INSERT_BATCH:
-            db.session.execute(sa.insert(model), batch)
-            count, batch = count + len(batch), []
-    if batch:
-        db.session.execute(sa.insert(model), batch)
+    count = 0
+    for batch in itertools.batched(rows, INSERT_BATCH):
+        db.session.execute(sa.insert(model), list(batch))
         count += len(batch)
     return count
 
@@ -219,7 +237,7 @@ def _replace(release, source, digest, terms):
         ConceptAncestor,
         (
             {"concept_id": c, "ancestor_id": a, "vocabulary": name, "distance": d}
-            for c, a, d in closure(parents)
+            for c, a, d in ancestor_rows(parents)
         ),
     )
 
@@ -228,16 +246,7 @@ def load_release(release, path=None):
     """Replace ``release.vocabulary``'s rows with ``release``, read from ``path`` (else
     fetched from its URL), and commit. Refuses a file whose sha256 is not the pin's.
     Returns ``{vocabulary, release, concepts, rows}``."""
-    with tempfile.TemporaryDirectory() as scratch:
-        source = str(path) if path else release.url
-        path = Path(path) if path else _fetch(release, scratch)
-        digest = sha256_of(path)
-        if digest != release.sha256:
-            raise ValueError(
-                f"{path} is not {release.vocabulary} {release.version}: its sha256 is "
-                f"{digest}, the pin's {release.sha256}"
-            )
-        terms = release.read(path, release.prefix)
+    source, digest, terms = _read_verified(release, path)
     try:
         rows = _replace(release, source, digest, terms)
         db.session.commit()
@@ -252,7 +261,7 @@ def load_release(release, path=None):
     }
 
 
-def sync_releases(paths=None, force=False, releases=None):
+def sync_vocabulary_releases(paths=None, force=False, releases=None):
     """Load each pinned release (or each of ``releases``) whose vocabulary does not hold it
     already, by release and sha256, or every one with ``force``. ``paths`` maps a
     vocabulary to its file; else the file is fetched. Returns
@@ -267,60 +276,69 @@ def sync_releases(paths=None, force=False, releases=None):
     return out
 
 
-def _unnested(column, name):
-    return sa.func.unnest(column).table_valued("value").render_derived(name)
-
-
 def drift():
     """What the feature rows hold that the loaded releases do not account for:
     ``missing``, ``{id: analyses}`` for each medical-condition id of a loaded vocabulary
-    that its release does not have, and ``stale``, ``{"vocabulary release": analyses}``
-    for rows read against a release other than the loaded one (the manifest's, for a
-    vocabulary without a file, such as a contrast-set fit)."""
+    that its release does not have; ``unresolved``, how many rows hold an id of a loaded
+    release without having been read against it (written before the load, so a backfill
+    resolves them); and ``stale``, ``{"vocabulary release": analyses}`` for rows read
+    against a release other than the loaded one (the manifest's, for a vocabulary without
+    a file, such as a contrast-set fit)."""
     loaded = {r.vocabulary: r.release for r in ConceptRelease.query}
+    ids = unnested(AF.medical_condition_ids, "i")
     prefixes = [r.prefix + ":" for name, r in pinned_releases().items() if name in loaded]
-    ids = _unnested(AF.medical_condition_ids, "i")
-    missing = (
-        sa.select(ids.c.value, sa.func.count())
+    missing = {}
+    if prefixes:
+        missing = dict(
+            db.session.execute(
+                sa.select(ids.c.value, sa.func.count())
+                .select_from(AF)
+                .join(ids, sa.true())
+                .where(
+                    sa.or_(*(ids.c.value.startswith(p) for p in prefixes)),
+                    ~sa.exists().where(Concept.concept_id == ids.c.value),
+                )
+                .group_by(ids.c.value)
+                .order_by(sa.func.count().desc(), ids.c.value)
+            ).all()
+        )
+    stamp = ConceptRelease.vocabulary + " " + ConceptRelease.release
+    unresolved = db.session.scalar(
+        sa.select(sa.func.count(AF.analysis_id.distinct()))
         .select_from(AF)
         .join(ids, sa.true())
+        .join(Concept, Concept.concept_id == ids.c.value)
+        .join(ConceptRelease, ConceptRelease.vocabulary == Concept.vocabulary)
         .where(
-            sa.or_(sa.false(), *(ids.c.value.startswith(p) for p in prefixes)),
-            ~sa.exists().where(Concept.concept_id == ids.c.value),
+            ~sa.func.coalesce(AF.vocabulary_releases.contains(postgresql.array([stamp])), False)
         )
-        .group_by(ids.c.value)
-        .order_by(sa.func.count().desc(), ids.c.value)
     )
     expected = [f"{v.name} {loaded.get(v.name, v.release)}" for v in vocabularies()]
-    stamps = _unnested(AF.vocabulary_releases, "r")
-    stale = (
+    stamps = unnested(AF.vocabulary_releases, "r")
+    stale = db.session.execute(
         sa.select(stamps.c.value, sa.func.count())
         .select_from(AF)
         .join(stamps, sa.true())
         .where(stamps.c.value.not_in(expected))
         .group_by(stamps.c.value)
         .order_by(stamps.c.value)
-    )
-    return {
-        "missing": dict(db.session.execute(missing).all()),
-        "stale": dict(db.session.execute(stale).all()),
-    }
+    ).all()
+    return {"missing": missing, "unresolved": unresolved, "stale": dict(stale)}
 
 
 @dataclass
-class Closure:
-    """A loaded concept: itself and its ancestors, nearest first; its nearest parent; its
-    label and synonyms; and the release ("mondo 2026-09-01") it was read from."""
+class Lineage:
+    """A loaded concept: itself and its ancestors, nearest first; its nearest parent (the
+    lowest id of its parents); its synonyms; and the release ("mondo 2026-09-01")."""
 
     ancestors: list
     parent: str
-    label: str
     synonyms: list
     release: str
 
 
-def ancestors_of(ids):
-    """``{id: Closure}`` for the ``ids`` a loaded release has."""
+def concept_lineages(ids):
+    """``{id: Lineage}`` for the ``ids`` a loaded release has."""
     if not ids:
         return {}
     rows = db.session.execute(
@@ -328,7 +346,6 @@ def ancestors_of(ids):
             ConceptAncestor.concept_id,
             ConceptAncestor.ancestor_id,
             ConceptAncestor.distance,
-            Concept.label,
             Concept.synonyms,
             ConceptRelease.vocabulary,
             ConceptRelease.release,
@@ -340,12 +357,12 @@ def ancestors_of(ids):
             ConceptAncestor.concept_id, ConceptAncestor.distance, ConceptAncestor.ancestor_id
         )
     ).all()
-    closures = {}
-    for concept, ancestor, distance, label, synonyms, name, release in rows:
-        found = closures.setdefault(
-            concept, Closure([], None, label, list(synonyms or []), f"{name} {release}")
+    lineages = {}
+    for concept, ancestor, distance, synonyms, name, release in rows:
+        found = lineages.setdefault(
+            concept, Lineage([], None, list(synonyms or []), f"{name} {release}")
         )
         found.ancestors.append(ancestor)
         if distance == 1 and found.parent is None:
             found.parent = ancestor
-    return closures
+    return lineages

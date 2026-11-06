@@ -392,13 +392,12 @@ def backfill_analysis_features(base_study_id, batch_size):
     def _run(_app, db):
         from neurostore.ingest.analysis_features import backfill_analysis_features as backfill
 
-        summary = backfill(base_study_id=base_study_id, batch_size=batch_size)
-        click.echo(f"{summary['analyses']} analysis feature rows over {summary['papers']} papers")
+        _echo_backfill(backfill(base_study_id=base_study_id, batch_size=batch_size))
 
     _run_with_runtime(_run)
 
 
-@main.command("load-concept-ancestors")
+@main.command("sync-vocabulary-releases")
 @click.option(
     "--file",
     "files",
@@ -406,18 +405,23 @@ def backfill_analysis_features(base_study_id, batch_size):
     metavar="VOCABULARY=PATH",
     help="read a vocabulary's pinned release from this file instead of its URL",
 )
-@click.option("--force", is_flag=True, help="reload releases already loaded")
+@click.option(
+    "--force",
+    is_flag=True,
+    help="reload releases already loaded (after a change to how releases are read)",
+)
 @click.option(
     "--backfill",
     is_flag=True,
-    help="rewrite the analysis features when a release was loaded",
+    help="rewrite the analysis features when a release was loaded or rows are unresolved",
 )
-def load_concept_ancestors(files, force, backfill):
+def sync_vocabulary_releases(files, force, backfill):
     """Load the vocabulary releases study_schema's manifest pins into concept_ancestors.
 
     A vocabulary is reloaded only when its loaded release or sha256 differs from the pin.
     Feature rows take their ancestors at ingest, so a load needs a backfill: --backfill
-    runs it when anything was loaded. Prints the drift report after.
+    runs it when anything was loaded or the drift report finds rows written before a
+    load. Prints the drift report after.
     """
     paths = {}
     for spec in files:
@@ -428,10 +432,11 @@ def load_concept_ancestors(files, force, backfill):
 
     def _run(_app, db):
         from neurostore.ingest.analysis_features import backfill_analysis_features
-        from neurostore.ingest.concepts import sync_releases
+        from neurostore.ingest.concepts import drift
+        from neurostore.ingest.concepts import sync_vocabulary_releases as sync
 
         try:
-            loads = sync_releases(paths, force=force)
+            loads = sync(paths, force=force)
         except ValueError as error:
             raise click.UsageError(str(error)) from error
         for load in loads:
@@ -442,11 +447,8 @@ def load_concept_ancestors(files, force, backfill):
                 )
             else:
                 click.echo(f"{load['vocabulary']} {load['release']}: already loaded")
-        if backfill and any(load["loaded"] for load in loads):
-            summary = backfill_analysis_features()
-            click.echo(
-                f"{summary['analyses']} analysis feature rows over {summary['papers']} papers"
-            )
+        if backfill and (any(load["loaded"] for load in loads) or drift()["unresolved"]):
+            _echo_backfill(backfill_analysis_features())
         _echo_drift()
 
     _run_with_runtime(_run)
@@ -455,14 +457,20 @@ def load_concept_ancestors(files, force, backfill):
 @main.command("vocabulary-drift")
 def vocabulary_drift():
     """Report what the analysis features hold that the loaded vocabulary releases do not
-    account for: ids missing from a release, and rows read against another release."""
+    account for: ids missing from a release, rows written before a load, and rows read
+    against another release."""
     _run_with_runtime(lambda _app, db: _echo_drift())
+
+
+def _echo_backfill(summary):
+    click.echo(f"{summary['analyses']} analysis feature rows over {summary['papers']} papers")
 
 
 def _echo_drift():
     from neurostore.ingest.concepts import drift
 
     report = drift()
+    click.echo(f"{report['unresolved']} analyses written before their release was loaded")
     labels = {
         "missing": "medical-condition ids not in the loaded release",
         "stale": "releases other than the loaded or pinned one that analysis features read",

@@ -1760,6 +1760,12 @@ class AnalysisFeature(db.Model):
         """A medical-condition term as `medical_condition_role_ids` holds it."""
         return f"{role}|{term}"
 
+    @staticmethod
+    def role_of(role_id):
+        """``(role, term)`` of a `role_id`."""
+        role, _, term = role_id.partition("|")
+        return role, term
+
 
 class ConceptRelease(db.Model):
     """The release of a manifest vocabulary `concepts` and `concept_ancestors` hold, one per
