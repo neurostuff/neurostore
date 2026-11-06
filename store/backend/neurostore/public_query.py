@@ -468,8 +468,6 @@ FUNCTIONS = {
     "starts_with": (2, _starts_with),
 }
 
-_SQL_TYPES = {INTEGER: sa.Integer, NUMERIC: sa.Numeric, TEXT: sa.Text, BOOLEAN: sa.Boolean}
-
 
 @v_args(inline=True)
 class _Compile(Transformer):
