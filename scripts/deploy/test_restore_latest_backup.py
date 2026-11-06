@@ -153,3 +153,35 @@ def test_template_only_leaves_the_database_alone(tmp_path: Path) -> None:
     _, statements, _ = run_template_restore(tmp_path, {}, "--template-only")
 
     assert not any("DATABASE neurostore " in sql for sql in statements)
+
+
+def test_prune_keeps_only_the_dumps_a_key_record_names(tmp_path: Path) -> None:
+    for name in (
+        "11-05-2026-at-00-00-01_neurostore.dump",
+        "11-06-2026-at-00-00-01_neurostore.dump",
+        "05-12-2026-at-00-00-01_neurostore_dev-reduced.dump",
+        "05-13-2026-at-00-00-01_neurostore_dev-reduced.dump",
+    ):
+        (tmp_path / name).write_bytes(b"dump")
+    (tmp_path / "notes.txt").write_text("not a dump")
+    (tmp_path / "selected-key-dev-reduced.txt").write_text(
+        "dev-reduced/05-13-2026-at-00-00-01_neurostore_dev-reduced.dump"
+    )
+
+    with patch.object(
+        restore_latest_backup,
+        "latest_s3_key",
+        return_value="11-06-2026-at-00-00-01_neurostore.dump",
+    ):
+        key, dump_path = restore_latest_backup.resolve_cached_dump(
+            "neurostore-backup", tmp_path, refresh_latest=True, prune=True
+        )
+
+    assert dump_path.name == "11-06-2026-at-00-00-01_neurostore.dump"
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "05-13-2026-at-00-00-01_neurostore_dev-reduced.dump",
+        "11-06-2026-at-00-00-01_neurostore.dump",
+        "notes.txt",
+        "selected-key-dev-reduced.txt",
+        "selected-key.txt",
+    ]

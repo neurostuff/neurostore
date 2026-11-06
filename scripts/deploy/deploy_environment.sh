@@ -20,6 +20,9 @@ Options:
   --build-source <local|ghcr>  Image source to deploy (default: local).
   --ghcr-owner <owner>         GitHub Container Registry owner/namespace for ghcr builds.
   --image-tag <tag>            Image tag to pull in ghcr mode (default: same as track).
+  --templates-only             Staging only: restore a new backup into the database templates
+                               the next deploy clones, and change nothing else. Skips when a
+                               deploy is running; a deploy that starts stops it.
 
 Notes:
   Existing repo env files on the deployment host are copied into the deploy worktree.
@@ -35,6 +38,7 @@ SYNC_WORKING_TREE="0"
 BUILD_SOURCE="local"
 GHCR_OWNER=""
 IMAGE_TAG=""
+TEMPLATES_ONLY="0"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -52,6 +56,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --sync-working-tree)
       SYNC_WORKING_TREE="1"
+      shift
+      ;;
+    --templates-only)
+      TEMPLATES_ONLY="1"
       shift
       ;;
     --build-source)
@@ -86,6 +94,11 @@ case "${TRACK}" in
     exit 1
     ;;
 esac
+
+if [ "${TEMPLATES_ONLY}" = "1" ] && [ "${TRACK}" != "staging" ]; then
+  echo "--templates-only is for the staging track." >&2
+  exit 1
+fi
 
 case "${BUILD_SOURCE}" in
   local|ghcr)
@@ -540,22 +553,36 @@ restore_staging_database() {
     --cache-dir "${STATE_ROOT}/${cache_name}" \
     --jobs "${RESTORE_JOBS}" \
     --template \
+    --prune-cache \
     "$@"
+}
+
+STORE_RESTORE=(
+  "${WORKTREE_DIR}/store" "neurostore-${TRACK}-store" "neurostore-backup" "store-pgsql17" "${STORE_DB}" "store-dumps"
+  --with-vector-extension
+)
+COMPOSE_RESTORE=(
+  "${WORKTREE_DIR}/compose" "neurostore-${TRACK}-compose" "neurosynth-backup" "compose-pgsql17" "${COMPOSE_DB}" "compose-dumps"
+)
+
+# Restore a new backup into its template; a no-op when the template exists.
+prepare_store_template() {
+  restore_staging_database "${STORE_RESTORE[@]}" --refresh-latest --template-only
+}
+
+prepare_compose_template() {
+  restore_staging_database "${COMPOSE_RESTORE[@]}" --refresh-latest --template-only
 }
 
 deploy_store_staging() {
   local service_root="${WORKTREE_DIR}/store"
   local project="neurostore-${TRACK}-store"
-  local restore=(
-    "${service_root}" "${project}" "neurostore-backup" "store-pgsql17" "${STORE_DB}" "store-dumps"
-    --with-vector-extension
-  )
 
   build_store_images "${service_root}" "${project}"
   compose_for "${service_root}" "${project}" up -d --no-build store-pgsql17 store_redis
   wait_for_pg "${service_root}" "${project}" "store-pgsql17"
   # A new backup's template restores while the site still serves the last deploy.
-  restore_staging_database "${restore[@]}" --refresh-latest --template-only
+  prepare_store_template
 
   stop_services_quietly \
     "${service_root}" \
@@ -568,7 +595,7 @@ deploy_store_staging() {
     store-grafana \
     store_nginx
   # Without --refresh-latest this reuses the backup the template step just chose.
-  restore_staging_database "${restore[@]}"
+  restore_staging_database "${STORE_RESTORE[@]}"
 
   recreate_services_cleanly \
     "${service_root}" \
@@ -589,14 +616,11 @@ deploy_store_staging() {
 deploy_compose_staging() {
   local service_root="${WORKTREE_DIR}/compose"
   local project="neurostore-${TRACK}-compose"
-  local restore=(
-    "${service_root}" "${project}" "neurosynth-backup" "compose-pgsql17" "${COMPOSE_DB}" "compose-dumps"
-  )
 
   build_compose_images "${service_root}" "${project}"
   compose_for "${service_root}" "${project}" up -d --no-build compose-pgsql17 compose_redis
   wait_for_pg "${service_root}" "${project}" "compose-pgsql17"
-  restore_staging_database "${restore[@]}" --refresh-latest --template-only
+  prepare_compose_template
 
   stop_services_quietly \
     "${service_root}" \
@@ -606,7 +630,7 @@ deploy_compose_staging() {
     compose-pghero \
     compose-grafana \
     compose_nginx
-  restore_staging_database "${restore[@]}"
+  restore_staging_database "${COMPOSE_RESTORE[@]}"
 
   recreate_services_cleanly \
     "${service_root}" \
@@ -743,6 +767,10 @@ supersede_running_deploy() {
   old="$(cat "${pid_file}" 2>/dev/null || true)"
   if [ -n "${old}" ] && [ "${old}" != "$$" ] && kill -0 "${old}" 2>/dev/null \
     && tr '\0' ' ' <"/proc/${old}/cmdline" 2>/dev/null | grep -q "deploy_environment.sh.*--track ${TRACK}"; then
+    if [ "${TEMPLATES_ONLY}" = "1" ]; then
+      echo "A ${TRACK} deploy is running (process group ${old}) and prepares the templates itself." >&2
+      exit 0
+    fi
     echo "Stopping the earlier ${TRACK} deploy (process group ${old}) for this one." >&2
     kill -TERM -- "-${old}" 2>/dev/null || true
     for _ in $(seq 1 30); do
@@ -795,6 +823,13 @@ run_in_parallel() {
 
 main() {
   supersede_running_deploy
+
+  if [ "${TEMPLATES_ONLY}" = "1" ]; then
+    # Only the templates: the services keep running from the last deploy's worktree.
+    run_in_parallel prepare_store_template prepare_compose_template
+    return
+  fi
+
   docker network inspect "${TRACK_PROXY_NETWORK}" >/dev/null 2>&1 || docker network create "${TRACK_PROXY_NETWORK}" >/dev/null
   docker_login_if_configured
   prepare_worktree

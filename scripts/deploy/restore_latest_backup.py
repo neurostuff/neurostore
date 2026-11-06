@@ -107,12 +107,24 @@ def download_dump(bucket: str, key: str, destination: Path) -> None:
     )
 
 
+def prune_cached_dumps(cache_dir: Path) -> None:
+    """Delete the cached dumps that no selected-key record names."""
+    kept = {
+        Path(record.read_text().strip()).name
+        for record in cache_dir.glob("selected-key*.txt")
+    }
+    for dump in cache_dir.glob("*.dump"):
+        if dump.name not in kept:
+            dump.unlink()
+
+
 def resolve_cached_dump(
     bucket: str,
     cache_dir: Path,
     prefix: str | None = None,
     *,
     refresh_latest: bool = False,
+    prune: bool = False,
 ) -> tuple[str, Path]:
     cache_dir.mkdir(parents=True, exist_ok=True)
     key_record_path = cache_dir / cache_record_name(prefix)
@@ -128,6 +140,8 @@ def resolve_cached_dump(
     if not dump_path.exists():
         download_dump(bucket, key, dump_path)
     key_record_path.write_text(key)
+    if prune:
+        prune_cached_dumps(cache_dir)
     return key, dump_path
 
 
@@ -353,6 +367,11 @@ def main() -> int:
     parser.add_argument("--project-name")
     parser.add_argument("--cache-dir")
     parser.add_argument("--refresh-latest", action="store_true")
+    parser.add_argument(
+        "--prune-cache",
+        action="store_true",
+        help="With --cache-dir: delete cached dumps other than the selected ones.",
+    )
     parser.add_argument("--with-vector-extension", action="store_true")
     parser.add_argument("--jobs", type=int, default=1, help="pg_restore --jobs")
     parser.add_argument(
@@ -370,6 +389,8 @@ def main() -> int:
         parser.error("--template-only requires --template")
     if args.template and not (args.dump_path or args.cache_dir):
         parser.error("--template requires --cache-dir or --dump-path")
+    if args.prune_cache and not args.cache_dir:
+        parser.error("--prune-cache requires --cache-dir")
 
     compose_dir = Path(args.compose_dir).resolve()
 
@@ -385,6 +406,7 @@ def main() -> int:
             Path(args.cache_dir).resolve(),
             args.prefix,
             refresh_latest=args.refresh_latest,
+            prune=args.prune_cache,
         )
         template = restore_into_database(args, compose_dir, key, dump_path)
     else:
