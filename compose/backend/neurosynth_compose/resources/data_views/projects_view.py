@@ -15,6 +15,7 @@ from neurosynth_compose.asgi_requests import (
     read_json,
 )
 from neurosynth_compose.database import commit_session, db
+from neurosynth_compose.owners import owner_id
 from neurosynth_compose.models.analysis import (
     MetaAnalysis,
     NeurostoreAnnotation,
@@ -386,7 +387,7 @@ def serialize_project(
         "id": record.id,
         "created_at": _serialize_datetime(getattr(record, "created_at", None)),
         "updated_at": _serialize_datetime(getattr(record, "updated_at", None)),
-        "user": getattr(record, "user_id", None),
+        "user": owner_id(getattr(record, "user_id", None)),
         "username": getattr(getattr(record, "user", None), "name", None),
         "name": getattr(record, "name", None),
         "description": getattr(record, "description", None),
