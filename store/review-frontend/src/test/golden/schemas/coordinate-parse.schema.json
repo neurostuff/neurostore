@@ -418,10 +418,22 @@
           ]
         },
         "journal": {
+          "description": "The journal's name as the metadata source printed it.",
           "type": [
             "string",
             "null"
           ]
+        },
+        "venue": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Venue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Which journal, preprint server or conference series the paper appeared in, as identified from its ids or from `journal`. Absent when it could not be identified."
         },
         "publication_year": {
           "description": "Year in which the study was first published or made publicly available.",
@@ -3033,6 +3045,85 @@
         "mixed"
       ],
       "title": "VariationLevel",
+      "type": "string"
+    },
+    "Venue": {
+      "additionalProperties": false,
+      "description": "The OpenAlex source a paper appeared in, and how it was identified. Only the paper's own facts: the source's title, ISSNs and other ids belong to the source, and the consumer holds them once.",
+      "else": {
+        "properties": {
+          "score": {
+            "not": {
+              "anyOf": [
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "match": {
+            "const": "fuzzy"
+          }
+        },
+        "required": [
+          "match"
+        ]
+      },
+      "properties": {
+        "openalex_id": {
+          "description": "OpenAlex's source id, bare (`S121666818`).",
+          "pattern": "^S\\d+$",
+          "type": "string"
+        },
+        "match": {
+          "$ref": "#/$defs/VenueMatch"
+        },
+        "score": {
+          "description": "How close `journal` was to the source's name, 0 to 100.",
+          "maximum": 100,
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "openalex_id",
+        "match"
+      ],
+      "then": {
+        "properties": {
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "required": [
+          "score"
+        ]
+      },
+      "title": "Venue",
+      "type": "object"
+    },
+    "VenueMatch": {
+      "description": "How a paper's venue was identified, from the strongest evidence to the weakest.",
+      "enum": [
+        "doi",
+        "pmid",
+        "preprint_server",
+        "issn",
+        "title",
+        "fuzzy"
+      ],
+      "title": "VenueMatch",
       "type": "string"
     }
   },

@@ -58,15 +58,14 @@ def _summary(journal_id_column):
     )
 
 
-# The journal as a study or base study shows it, one correlated lookup per row. Deferred,
-# so only the views that serve it load it.
-BaseStudy.journal = sa.orm.column_property(_summary(BaseStudy.journal_id), deferred=True)
+# The journal as a study or base study shows it: one correlated lookup per row, in the
+# row's own query.
+BaseStudy.journal = sa.orm.column_property(_summary(BaseStudy.journal_id))
 Study.journal = sa.orm.column_property(
     _summary(
         sa.select(BaseStudy.journal_id)
         .where(BaseStudy.id == Study.base_study_id)
         .correlate_except(BaseStudy)
         .scalar_subquery()
-    ),
-    deferred=True,
+    )
 )
