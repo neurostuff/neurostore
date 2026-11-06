@@ -555,6 +555,9 @@ deploy_store_staging() {
     store-pghero \
     store-grafana
   compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
+  # The restore replaced staging's users with production's: give the upload clients in
+  # store/.env's ADMIN_CLIENT_IDS their admin user back.
+  compose_for "${service_root}" "${project}" exec -T neurostore manage grant-admin-clients
   compose_for "${service_root}" "${project}" exec -T store_redis redis-cli FLUSHDB >/dev/null
   build_review_frontend
   recreate_services_cleanly "${service_root}" "${project}" store_nginx
