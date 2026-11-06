@@ -37,6 +37,7 @@ from neurostore.resources.data_views.cloning import (
     load_study_clone_source,
 )
 from neurostore.resources.data_views.common import (
+    DATA_SOURCE_DETAIL_ARGS,
     IMAGE_DETAIL_ARGS,
     LIST_CLONE_ARGS,
     LIST_NESTED_ARGS,
@@ -133,12 +134,14 @@ class StudiesView(ObjectView, ListView):
         ),
         "map_type": fields.String(load_default=None),
         "studyset_owner": fields.String(load_default=None),
+        "journal_id": fields.String(load_default=None),
         "level": fields.String(dump_default="group", load_default="group"),
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
         **IMAGE_DETAIL_ARGS,
+        **DATA_SOURCE_DETAIL_ARGS,
     }
     _multi_search = ("name", "description")
     _m2o = {"base_study": "BaseStudiesView"}
@@ -203,6 +206,10 @@ class StudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        if args.get("data_sources"):
+            q = q.options(
+                selectinload(Study.data_sources).options(raiseload("*", sql_only=True))
+            )
         if args.get("nested"):
             return q.options(
                 selectinload(Study.user)
@@ -276,6 +283,12 @@ class StudiesView(ObjectView, ListView):
                 .where(Analysis.study_id == self._model.id)
                 .where(analysis_role_clause(args["role"]))
                 .exists()
+            )
+        if args.get("journal_id"):
+            q = q.filter(
+                self._model.base_study_id.in_(
+                    select(BaseStudy.id).where(BaseStudy.journal_id == args["journal_id"])
+                )
             )
         q = apply_map_type_filter(q, self._model, args.get("map_type"))
         q = q.filter(self._model.level == args.get("level"))

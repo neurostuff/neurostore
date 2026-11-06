@@ -1,0 +1,364 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/sources/S121666818
+  response:
+    body:
+      string: '{"id":"https://openalex.org/S121666818","issn_l":"1065-9471","issn":["1065-9471","1097-0193"],"display_name":"Human
+        Brain Mapping","host_organization":"https://openalex.org/P4310320595","host_organization_name":"Wiley","host_organization_lineage":["https://openalex.org/P4310320595"],"works_count":7763,"oa_works_count":7343,"cited_by_count":521660,"summary_stats":{"2yr_mean_citedness":5.300399201596806,"h_index":270,"i10_index":5787},"is_oa":true,"is_in_doaj":true,"is_in_doaj_since_year":2020,"is_high_oa_rate":false,"is_high_oa_rate_since_year":null,"is_in_scielo":false,"is_ojs":false,"is_preprint_repository":false,"is_core":true,"listed_in":["cwts-core","doaj","dongbi-b","doyens","erih-plus","jufo-2","ki-jl-2","medline","norway-2","oarl","poland-100","russia-white-list-1","vabb-shw"],"oa_flip_year":2019,"first_publication_year":1910,"last_publication_year":2026,"ids":{"openalex":"https://openalex.org/S121666818","issn_l":"1065-9471","issn":["1065-9471","1097-0193"],"mag":"121666818","wikidata":"https://www.wikidata.org/entity/Q5936947"},"homepage_url":"http://onlinelibrary.wiley.com/journal/10.1002/(ISSN)1097-0193","apc_prices":[{"price":3520,"currency":"USD"},{"price":3220,"currency":"EUR"},{"price":2870,"currency":"GBP"}],"apc_usd":3520,"apc_usd_by_year":[{"year":2025,"price":3520},{"year":2024,"price":3200},{"year":2023,"price":3850},{"year":2022,"price":3500},{"year":2021,"price":3300},{"year":2020,"price":3200},{"year":2019,"price":4250}],"country_code":"US","societies":[],"alternate_titles":[],"type":"journal","topics":[{"id":"https://openalex.org/T10241","display_name":"Functional
+        Brain Connectivity Studies","count":3072,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11304","display_name":"Advanced Neuroimaging
+        Techniques and Applications","count":1926,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10042","display_name":"Neural and
+        Behavioral Psychology Studies","count":1493,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10378","display_name":"Advanced MRI
+        Techniques and Applications","count":1362,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10465","display_name":"Neurobiology
+        of Language and Bilingualism","count":795,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10581","display_name":"Neural dynamics
+        and brain function","count":716,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10009","display_name":"Dementia and
+        Cognitive Impairment Research","count":620,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10427","display_name":"Visual perception
+        and processing mechanisms","count":427,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10982","display_name":"Motor Control
+        and Adaptation","count":422,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10056","display_name":"Neurotransmitter
+        Receptor Influence on Behavior","count":383,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10429","display_name":"EEG and Brain-Computer
+        Interfaces","count":355,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10052","display_name":"Medical Image
+        Segmentation Techniques","count":353,"subfield":{"id":"https://openalex.org/subfields/1707","display_name":"Computer
+        Vision and Pattern Recognition"},"field":{"id":"https://openalex.org/fields/17","display_name":"Computer
+        Science"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T10614","display_name":"Transcranial
+        Magnetic Stimulation Studies","count":323,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10788","display_name":"Neuroscience
+        and Music Perception","count":323,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11094","display_name":"Face Recognition
+        and Perception","count":318,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10023","display_name":"Schizophrenia
+        research and treatment","count":293,"subfield":{"id":"https://openalex.org/subfields/2738","display_name":"Psychiatry
+        and Mental health"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10448","display_name":"Memory and
+        Neural Mechanisms","count":284,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10914","display_name":"Tactile and
+        Sensory Interactions","count":283,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11431","display_name":"Action Observation
+        and Synchronization","count":269,"subfield":{"id":"https://openalex.org/subfields/3207","display_name":"Social
+        Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10103","display_name":"Reading and
+        Literacy Development","count":261,"subfield":{"id":"https://openalex.org/subfields/3204","display_name":"Developmental
+        and Educational Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10919","display_name":"Deep Brain
+        Stimulation and Movement Disorders","count":243,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11577","display_name":"Cognitive
+        Abilities and Testing","count":234,"subfield":{"id":"https://openalex.org/subfields/3205","display_name":"Experimental
+        and Cognitive Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10918","display_name":"Memory Processes
+        and Influences","count":192,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13283","display_name":"Mental Health
+        Research Topics","count":190,"subfield":{"id":"https://openalex.org/subfields/3205","display_name":"Experimental
+        and Cognitive Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T12032","display_name":"Multisensory
+        perception and integration","count":185,"subfield":{"id":"https://openalex.org/subfields/3205","display_name":"Experimental
+        and Cognitive Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}}],"topic_share":[{"id":"https://openalex.org/T10241","display_name":"Functional
+        Brain Connectivity Studies","value":0.0195782,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11304","display_name":"Advanced Neuroimaging
+        Techniques and Applications","value":0.0131984,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10042","display_name":"Neural and
+        Behavioral Psychology Studies","value":0.0039156,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11431","display_name":"Action Observation
+        and Synchronization","value":0.0038656,"subfield":{"id":"https://openalex.org/subfields/3207","display_name":"Social
+        Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10378","display_name":"Advanced MRI
+        Techniques and Applications","value":0.0034214,"subfield":{"id":"https://openalex.org/subfields/2741","display_name":"Radiology,
+        Nuclear Medicine and Imaging"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10465","display_name":"Neurobiology
+        of Language and Bilingualism","value":0.00277,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13648","display_name":"Cerebrovascular
+        and genetic disorders","value":0.0026028,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12621","display_name":"Hemispheric
+        Asymmetry in Neuroscience","value":0.0024721,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13219","display_name":"Mind wandering
+        and attention","value":0.0024126,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T13283","display_name":"Mental Health
+        Research Topics","value":0.0024064,"subfield":{"id":"https://openalex.org/subfields/3205","display_name":"Experimental
+        and Cognitive Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10614","display_name":"Transcranial
+        Magnetic Stimulation Studies","value":0.0022798,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10581","display_name":"Neural dynamics
+        and brain function","value":0.002073,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11094","display_name":"Face Recognition
+        and Perception","value":0.0019801,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11447","display_name":"Blind Source
+        Separation Techniques","value":0.0018072,"subfield":{"id":"https://openalex.org/subfields/1711","display_name":"Signal
+        Processing"},"field":{"id":"https://openalex.org/fields/17","display_name":"Computer
+        Science"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T10788","display_name":"Neuroscience
+        and Music Perception","value":0.0017239,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T12032","display_name":"Multisensory
+        perception and integration","value":0.0016184,"subfield":{"id":"https://openalex.org/subfields/3205","display_name":"Experimental
+        and Cognitive Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T10914","display_name":"Tactile and
+        Sensory Interactions","value":0.0015213,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10429","display_name":"EEG and Brain-Computer
+        Interfaces","value":0.0014133,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10982","display_name":"Motor Control
+        and Adaptation","value":0.0013229,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11577","display_name":"Cognitive
+        Abilities and Testing","value":0.0012906,"subfield":{"id":"https://openalex.org/subfields/3205","display_name":"Experimental
+        and Cognitive Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T12608","display_name":"Spatial Neglect
+        and Hemispheric Dysfunction","value":0.001241,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11123","display_name":"Obsessive-Compulsive
+        Spectrum Disorders","value":0.0010603,"subfield":{"id":"https://openalex.org/subfields/3203","display_name":"Clinical
+        Psychology"},"field":{"id":"https://openalex.org/fields/32","display_name":"Psychology"},"domain":{"id":"https://openalex.org/domains/2","display_name":"Social
+        Sciences"}},{"id":"https://openalex.org/T12035","display_name":"Pain Management
+        and Placebo Effect","value":0.0009392,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10427","display_name":"Visual perception
+        and processing mechanisms","value":0.0009141,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10919","display_name":"Deep Brain
+        Stimulation and Movement Disorders","value":0.0009129,"subfield":{"id":"https://openalex.org/subfields/2728","display_name":"Clinical
+        Neurology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}}],"counts_by_year":[{"year":2026,"works_count":233,"oa_works_count":233,"cited_by_count":29633},{"year":2025,"works_count":376,"oa_works_count":376,"cited_by_count":36532},{"year":2024,"works_count":393,"oa_works_count":393,"cited_by_count":34381},{"year":2023,"works_count":375,"oa_works_count":375,"cited_by_count":33534},{"year":2022,"works_count":460,"oa_works_count":460,"cited_by_count":35049},{"year":2021,"works_count":429,"oa_works_count":429,"cited_by_count":35912},{"year":2020,"works_count":434,"oa_works_count":434,"cited_by_count":33827},{"year":2019,"works_count":425,"oa_works_count":406,"cited_by_count":29835},{"year":2018,"works_count":453,"oa_works_count":440,"cited_by_count":27168},{"year":2017,"works_count":447,"oa_works_count":437,"cited_by_count":25580},{"year":2016,"works_count":403,"oa_works_count":393,"cited_by_count":23400},{"year":2015,"works_count":358,"oa_works_count":346,"cited_by_count":23481},{"year":2014,"works_count":307,"oa_works_count":295,"cited_by_count":21740},{"year":2013,"works_count":224,"oa_works_count":210,"cited_by_count":20978},{"year":2012,"works_count":276,"oa_works_count":264,"cited_by_count":18221},{"year":2011,"works_count":335,"oa_works_count":322,"cited_by_count":0},{"year":2010,"works_count":250,"oa_works_count":238,"cited_by_count":0},{"year":2009,"works_count":234,"oa_works_count":221,"cited_by_count":0},{"year":2008,"works_count":190,"oa_works_count":175,"cited_by_count":0},{"year":2007,"works_count":210,"oa_works_count":196,"cited_by_count":0},{"year":2006,"works_count":126,"oa_works_count":111,"cited_by_count":0},{"year":2005,"works_count":139,"oa_works_count":127,"cited_by_count":0},{"year":2004,"works_count":98,"oa_works_count":85,"cited_by_count":0},{"year":2003,"works_count":86,"oa_works_count":73,"cited_by_count":0},{"year":2002,"works_count":82,"oa_works_count":67,"cited_by_count":0},{"year":2001,"works_count":72,"oa_works_count":63,"cited_by_count":0},{"year":2000,"works_count":70,"oa_works_count":67,"cited_by_count":0},{"year":1999,"works_count":54,"oa_works_count":50,"cited_by_count":0},{"year":1998,"works_count":40,"oa_works_count":36,"cited_by_count":0},{"year":1997,"works_count":54,"oa_works_count":11,"cited_by_count":0},{"year":1996,"works_count":23,"oa_works_count":0,"cited_by_count":0},{"year":1995,"works_count":46,"oa_works_count":3,"cited_by_count":0},{"year":1994,"works_count":52,"oa_works_count":6,"cited_by_count":0},{"year":1993,"works_count":9,"oa_works_count":1,"cited_by_count":0}],"works_api_url":"https://api.openalex.org/works?filter=primary_location.source.id:S121666818","updated_date":"2026-11-05T14:08:14","created_date":"2016-06-24T00:00:00"}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55f00942f2569bd-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:37:53 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0'
+      X-RateLimit-Credits-Used:
+      - '0'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '198'
+      X-RateLimit-Remaining-USD:
+      - '0.0198'
+      X-RateLimit-Reset:
+      - '8527'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=HrCBMIXGTGh7XjoOqUkqS7p3%2B3d3%2B3TFvM6pbBBnAoU%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914673"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=HrCBMIXGTGh7XjoOqUkqS7p3%2B3d3%2B3TFvM6pbBBnAoU%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914673"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=nlmcatalog&retmode=json&term=1065-9471%5Bissn%5D+AND+ncbijournals%5Bsb%5D
+  response:
+    body:
+      string: '{"header":{"type":"esearch","version":"0.3"},"esearchresult":{"count":"1","retmax":"1","retstart":"0","idlist":["9419065"],"translationset":[],"translationstack":[{"term":"1065-9471[issn]","field":"issn","count":"1","explode":"N"},{"term":"ncbijournals[sb]","field":"sb","count":"42914","explode":"N"},"AND"],"querytranslation":"1065-9471[issn]
+        AND ncbijournals[sb]"}}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 05 Nov 2026 21:37:53 GMT
+      Ncbi-Phid:
+      - 1D338DC87AA6A5A500004E4F8CF1CBDB.1.1.m_1
+      Ncbi-Sid:
+      - 3A307E6BFB0B6F38_9B3FSID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=3A307E6BFB0B6F38_9B3FSID; domain=.nih.gov; path=/; expires=Fri, 05
+        Nov 2027 21:37:53 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '2'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=nlmcatalog&id=9419065&retmode=json
+  response:
+    body:
+      string: '{"header":{"type":"esummary","version":"0.3"},"result":{"uids":["9419065"],"9419065":{"uid":"9419065","host":"","nlmuniqueid":"9419065","daterevised":"2026-05-08","authorlist":[],"publicationinfolist":[{"imprint":"New
+        York : Wiley","place":"New York :","publisher":"Wiley","dateissued":"","edition":"","datesofserialpublication":"Vol.
+        1, no. 1-"}],"resourceinfolist":[{"typeofresource":"Serial","resourceunit":"Remote
+        electronic resource, Text"}],"titlemainlist":[{"sorttitle":"human brain mapping","title":"Human
+        brain mapping.","aiid":""}],"titlemainsort":"human brain mapping","titleotherlist":[{"titlealternate":"Human
+        brain mapping","otherinformation":"","aiid":""}],"issnlist":[{"issn":"1065-9471","validyn":"Y","issntype":"Print"},{"issn":"1097-0193","validyn":"Y","issntype":"Electronic"}],"isbn":"","country":"United
+        States","currentindexingstatus":"Y","medlineta":"Hum Brain Mapp","isoabbreviation":"","startyear":"1993","jrid":"21028","endyear":"9999","language":"eng","broadheading":["Brain"],"continuationnotes":"Title
+        from cover."}}}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 05 Nov 2026 21:37:53 GMT
+      Ncbi-Phid:
+      - 1D338DC87AA6A5A50000474F8DD24BEE.1.1.m_1
+      Ncbi-Sid:
+      - 3CDF8D5A4BF618DB_5728SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=3CDF8D5A4BF618DB_5728SID; domain=.nih.gov; path=/; expires=Fri, 05
+        Nov 2027 21:37:53 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '1'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1

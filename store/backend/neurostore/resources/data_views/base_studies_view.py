@@ -48,6 +48,7 @@ from neurostore.resources.data_views.base_studies_bulk_post import (
 )
 from neurostore.resources.data_views.base_studies_search import BaseStudySearchService
 from neurostore.resources.data_views.common import (
+    DATA_SOURCE_DETAIL_ARGS,
     LIST_NESTED_ARGS,
     apply_map_type_filter,
 )
@@ -104,6 +105,7 @@ class BaseStudiesView(ObjectView, ListView):
         "data_type": fields.String(load_default=None),
         "map_type": fields.String(load_default=None),
         "is_oa": fields.Boolean(load_default=None, allow_none=True),
+        "journal_id": fields.String(load_default=None),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "pipeline_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
@@ -117,6 +119,7 @@ class BaseStudiesView(ObjectView, ListView):
         "neurovault_id": fields.String(load_default=None),
         "search_full_text": fields.Boolean(load_default=False),
         **LIST_NESTED_ARGS,
+        **DATA_SOURCE_DETAIL_ARGS,
     }
     _multi_search = ("name", "description")
     _search_fields = (
@@ -138,9 +141,15 @@ class BaseStudiesView(ObjectView, ListView):
         return {"base-studies": set(ids)}
 
     def eager_load(self, q, args=None):
-        return self._eager_load_versions(q, args or {}).options(
-            undefer(BaseStudy.identifiers)
-        )
+        args = args or {}
+        q = self._eager_load_versions(q, args).options(undefer(BaseStudy.identifiers))
+        if args.get("data_sources"):
+            q = q.options(
+                selectinload(BaseStudy.data_sources).options(
+                    raiseload("*", sql_only=True)
+                )
+            )
+        return q
 
     def _eager_load_versions(self, q, args):
         if args.get("feature_filter"):
@@ -233,6 +242,8 @@ class BaseStudiesView(ObjectView, ListView):
         )
 
     def view_search(self, q, args):
+        if args.get("journal_id"):
+            q = q.filter(BaseStudy.journal_id == args["journal_id"])
         return self.search_service.apply(q, args)
 
     def text_search(self, args):

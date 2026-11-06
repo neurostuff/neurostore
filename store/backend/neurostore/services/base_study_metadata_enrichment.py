@@ -19,6 +19,7 @@ from neurostore.authors import authors_string
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
 from neurostore.models import (
+    AnalysisFeature,
     BaseStudy,
     BaseStudyFlagOutbox,
     BaseStudyLink,
@@ -54,7 +55,12 @@ logger = logging.getLogger(__name__)
 ID_FIELDS = ("pmid", "doi", "pmcid")
 METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_oa")
 STUDY_METADATA_FIELDS = ("name", "description", "publication", "authors", "year")
-CONTENT_FIELDS = METADATA_FIELDS + ("ace_fulltext", "pubget_fulltext")
+CONTENT_FIELDS = METADATA_FIELDS + (
+    "ace_fulltext",
+    "pubget_fulltext",
+    "journal_id",
+    "journal_match",
+)
 TRANSIENT_HTTP_STATUS = {408, 409, 425, 429, 500, 502, 503, 504}
 SEMANTIC_SCHOLAR_DEFAULT_RPS = 1.0
 PUBMED_DEFAULT_RPS_WITH_KEY = 10.0
@@ -1190,6 +1196,7 @@ def merge_base_study(keeper, old):
         )
 
     db.session.flush()
+    _resync_analysis_features(keeper, old)
     connection = db.session.connection()
     for base_study in (keeper, old):
         refresh_fulltext_pointer(connection, base_study.id)
@@ -1206,6 +1213,18 @@ def merge_base_study(keeper, old):
             )
 
     return BaseStudyMerge(cache_ids=cache_ids, changes=changes)
+
+
+def _resync_analysis_features(keeper, old):
+    """Rewrite the keeper's analysis features from its latest record and current parse,
+    after the old's versions and records moved to it; the old has neither left."""
+    # Local: neurostore.ingest imports this module.
+    from neurostore.ingest.analysis_features import sync_analysis_features
+
+    db.session.execute(sa.delete(AnalysisFeature).where(AnalysisFeature.base_study_id == old.id))
+    current = Study.query.filter_by(base_study_id=keeper.id, source=STUDY_SOURCE).first()
+    if current is not None:
+        sync_analysis_features(keeper.id, current.id)
 
 
 def _merge_ids_in_place(target_identifiers, source_identifiers):
@@ -1550,6 +1569,7 @@ def enqueue_base_study_metadata_updates(base_study_ids, reason="api-write"):
         _missing_text_sql(BaseStudy.authors),
         sa.or_(BaseStudy.year.is_(None), BaseStudy.year <= 0),
         BaseStudy.is_oa.is_(None),
+        BaseStudy.journal_id.is_(None),
     )
 
     eligible_ids = list(
@@ -1616,6 +1636,27 @@ def _enqueue_base_study_flag_updates_post_commit(
 
 
 _GATHER_FAILED = object()
+
+
+def _match_journals(base_study_ids, *, settings, logger):
+    """Point each of these base studies that has no journal at the one neurostore's
+    matcher finds (services/journals.py); returns the ids it matched."""
+    from neurostore.services import journals
+
+    unmatched = (
+        BaseStudy.query.filter(BaseStudy.id.in_(base_study_ids))
+        .filter(BaseStudy.journal_id.is_(None), BaseStudy.is_active.is_(True))
+        .all()
+    )
+    if not unmatched:
+        return set()
+    try:
+        with db.session.begin_nested():
+            journals.match_and_attach(unmatched, settings=settings, logger=logger)
+    except Exception as exc:  # noqa: BLE001 - the rest of the enrichment stands
+        logger.warning("journal matching failed for %s base studies: %s", len(unmatched), exc)
+        return set()
+    return {bs.id for bs in unmatched if bs.journal_id is not None}
 
 
 def process_base_study_metadata_outbox_batch(batch_size=50, *, settings, logger):
@@ -1697,6 +1738,11 @@ def process_base_study_metadata_outbox_batch(batch_size=50, *, settings, logger)
                 .where(BaseStudyMetadataOutbox.base_study_id == base_study_id)
                 .values(updated_at=retry_at)
             )
+
+    cache_ids = merge_unique_ids(
+        cache_ids,
+        {"base-studies": _match_journals(successful_ids, settings=settings, logger=logger)},
+    )
 
     if successful_ids:
         db.session.execute(

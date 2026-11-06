@@ -31,6 +31,7 @@ from neurostore.cache_versioning import get_cache_version
 from neurostore.ingest.extracted_features import ensure_partition_for_config_local
 from neurostore.ingest.study_schema import ingest_upload
 from neurostore.models import (
+    Journal,
     Analysis,
     Annotation,
     AnnotationAnalysis,
@@ -343,6 +344,20 @@ def test_the_fixture_has_what_a_merge_moves(session, pair):
     for model in (Study, PipelineStudyResult, StudyEntity, Fulltext, PipelineAnalysisResult):
         assert session.query(model).filter_by(base_study_id=pair["old"]).count(), model
     assert FieldClaim.query.count() > 0
+
+
+def test_the_keeper_takes_the_old_base_study_s_journal_when_it_has_none(session, pair):
+    journal = Journal(openalex_id="S121666818", kind="journal", title="Human Brain Mapping")
+    session.add(journal)
+    session.flush()
+    old = session.get(BaseStudy, pair["old"])
+    old.journal_id, old.journal_match = journal.id, "doi"
+    session.commit()
+
+    _merge(pair)
+
+    keeper = session.get(BaseStudy, pair["keeper"])
+    assert (keeper.journal_id, keeper.journal_match) == (journal.id, "doi")
 
 
 def test_dry_run_prints_what_execute_does_and_writes_nothing(session, pair):
