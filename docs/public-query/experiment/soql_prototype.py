@@ -262,7 +262,7 @@ if __name__ == "__main__":
         t0 = time.perf_counter()
         for _ in range(200):
             stmt = compile_query(ds, params)
-            sql = str(stmt.compile(dialect=postgresql.dialect()))
+            str(stmt.compile(dialect=postgresql.dialect()))  # timed, not used
         dt = (time.perf_counter() - t0) / 200 * 1000
         literal = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         print(f"-- {key}: parse+compile {dt:.2f} ms")
