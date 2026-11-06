@@ -225,32 +225,6 @@ Everything ran on the restore, in a role that can read only the datasets, with
 - **`$q`** composes: `working memory` through the existing BM25 index (14,722 articles), then counted
   per year over materialized `articles`, took 81 ms.
 
-### 4. Data sources (use case 7)
-
-Measured after the build, on a fresh restore of the same 11-06 backup migrated to #1934's head
-(`b8d0f2a4c6e9`), with the 400 seeded data sources (`manage data-sources load`). Production has
-no data-source links yet, so links were generated two ways, each through `public_query.run` (the
-reader role, the settings and the cost gate); times are the warm endpoint runs.
-
-- **real:** each source's `used` paper count from ns-pond's 2026-11-04 matcher run, on random
-  public base studies: 5,502 base-study uses, 15,661 study links.
-- **dense:** every public base study given three sources (Zipf-weighted): 220,346 uses, 626,719
-  study links.
-
-| Query | real: cost / ms | dense: cost / ms |
-|---|---:|---:|
-| `data-sources`, most first (`$order=base_studies DESC`, `$limit=20`) | 22 / 3.4 | 29 / 3.7 |
-| `data-source-uses`, sources since 2015, most first | 161 / 4.7 | 5,721 / 57–66 |
-| `data-source-uses`, HCP per year | 90 / 3.5 | 520 / 3.3 |
-| `data-source-uses`, UK Biobank per journal | 73 / 3.2 | 523 / 3.5 |
-| `data-source-uses`, every source × year | 184 / 5.7 | 7,418 / 85–102 |
-
-- The two views refreshed in 0.2 s each at real scale, 1.6 s and 6.1 s dense.
-- A base study uses a source when one of its *public* versions does. `base_study_data_sources`
-  also counts private versions, so the views read `study_data_sources` joined to public studies.
-- At real scale the top three were HCP (763), ADNI (457) and ABIDE (202). `journal_id` is null on
-  the restore because production has not run `manage journals match`.
-
 ### 2. What raw SQL lets an anonymous caller do (candidate b)
 
 As a role with `SELECT` on the views only, `default_transaction_read_only`, and a 5 s
@@ -309,6 +283,32 @@ point it is (a) with a much larger grammar to secure.
   Every query under 50,000 ran in at most 371 ms; every one over took at least 1.2 s. Planning
   cost 0.3–3 ms. The estimates are off by up to 10x either way (UC6 is overestimated, the
   `count(distinct)` cases under), which is why the gate sits on top of the timeout, not in its place.
+
+### 4. Data sources (use case 7)
+
+Measured after the build, on a fresh restore of the same 11-06 backup migrated to #1934's head
+(`b8d0f2a4c6e9`), with the 400 seeded data sources (`manage data-sources load`). Production has
+no data-source links yet, so links were generated two ways, each through `public_query.run` (the
+reader role, the settings and the cost gate); times are the warm endpoint runs.
+
+- **real:** each source's `used` paper count from ns-pond's 2026-11-04 matcher run, on random
+  public base studies: 5,502 base-study uses, 15,661 study links.
+- **dense:** every public base study given three sources (Zipf-weighted): 220,346 uses, 626,719
+  study links.
+
+| Query | real: cost / ms | dense: cost / ms |
+|---|---:|---:|
+| `data-sources`, most first (`$order=base_studies DESC`, `$limit=20`) | 22 / 3.4 | 29 / 3.7 |
+| `data-source-uses`, sources since 2015, most first | 161 / 4.7 | 5,721 / 57–66 |
+| `data-source-uses`, HCP per year | 90 / 3.5 | 520 / 3.3 |
+| `data-source-uses`, UK Biobank per journal | 73 / 3.2 | 523 / 3.5 |
+| `data-source-uses`, every source × year | 184 / 5.7 | 7,418 / 85–102 |
+
+- The two views refreshed in 0.2 s each at real scale, 1.6 s and 6.1 s dense.
+- A base study uses a source when one of its *public* versions does. `base_study_data_sources`
+  also counts private versions, so the views read `study_data_sources` joined to public studies.
+- At real scale the top three were HCP (763), ADNI (457) and ABIDE (202). `journal_id` is null on
+  the restore because production has not run `manage journals match`.
 
 ## Decision
 
