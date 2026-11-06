@@ -9,6 +9,12 @@ permissions:
   contents: read
   packages: read
 
+# The newest push wins: it cancels a deploy still running for an earlier one.
+# deploy_environment.sh stops that deploy's work on the host, which the cancel alone doesn't.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

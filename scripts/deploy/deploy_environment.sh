@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Lead a process group of our own, so a newer deploy can stop this one and everything it
+# started (see supersede_running_deploy).
+if [ "$(ps -o pgid= -p $$ | tr -d ' ')" != "$$" ]; then
+  exec setsid -w /bin/bash "$0" "$@"
+fi
+
 usage() {
   cat <<'EOF'
 Usage:
@@ -688,7 +694,53 @@ else:
 PY
 }
 
+supersede_running_deploy() {
+  # The newest deploy of a track wins. Cancelling the earlier GitHub run only drops its ssh
+  # session, so stop that deploy here, before touching the worktree or the databases: its
+  # process group first, then any pg_restore it left running inside postgres, which would
+  # otherwise restore a cut-off dump into the database this deploy is about to restore.
+  mkdir -p "${STATE_ROOT}"
+  local pid_file="${STATE_ROOT}/deploy.pid"
+  exec 9>"${STATE_ROOT}/deploy.lock"
+  flock 9
+
+  local old
+  old="$(cat "${pid_file}" 2>/dev/null || true)"
+  if [ -n "${old}" ] && [ "${old}" != "$$" ] && kill -0 "${old}" 2>/dev/null \
+    && tr '\0' ' ' <"/proc/${old}/cmdline" 2>/dev/null | grep -q "deploy_environment.sh.*--track ${TRACK}"; then
+    echo "Stopping the earlier ${TRACK} deploy (process group ${old}) for this one." >&2
+    kill -TERM -- "-${old}" 2>/dev/null || true
+    for _ in $(seq 1 30); do
+      kill -0 "${old}" 2>/dev/null || break
+      sleep 1
+    done
+    kill -KILL -- "-${old}" 2>/dev/null || true
+
+    local container count running
+    for _ in $(seq 1 10); do
+      running=0
+      for container in \
+        $(docker ps -q --filter "label=com.docker.compose.project=neurostore-${TRACK}-store" \
+          --filter "label=com.docker.compose.service=store-pgsql17") \
+        $(docker ps -q --filter "label=com.docker.compose.project=neurostore-${TRACK}-compose" \
+          --filter "label=com.docker.compose.service=compose-pgsql17"); do
+        count="$(docker exec "${container}" psql -U postgres -tAc \
+          "SELECT count(pg_terminate_backend(pid)) FROM pg_stat_activity WHERE application_name = 'pg_restore'" \
+          2>/dev/null || echo 0)"
+        running=$((running + ${count:-0}))
+      done
+      [ "${running}" -eq 0 ] && break
+      sleep 2
+    done
+  fi
+
+  echo "$$" >"${pid_file}"
+  flock -u 9
+  exec 9>&-
+}
+
 main() {
+  supersede_running_deploy
   docker network inspect "${TRACK_PROXY_NETWORK}" >/dev/null 2>&1 || docker network create "${TRACK_PROXY_NETWORK}" >/dev/null
   docker_login_if_configured
   prepare_worktree
