@@ -102,6 +102,7 @@ from neurostore.models.data import (
     PARSE_PIPELINE,
     PIPELINE_STUDY_SOURCES,
     STUDY_SOURCE,
+    generate_id,
     study_entity_hash,
 )
 from neurostore.models import (
@@ -1941,6 +1942,21 @@ def _ingest_claims(base_study, record, config, schema_version):
         },
     }
     def_names = {}
+    # extraction_entity_links is keyed by (config, local_id) and local_ids repeat across
+    # papers, so the base study prefixes them.
+    local_ids = {
+        f"{base_study.id}:{e.item['local_id']}"
+        for e in synced["entities"]
+        if e.item.get("local_id")
+    }
+    links = {
+        link.local_id: link
+        for link in ExtractionEntityLink.query.filter(
+            ExtractionEntityLink.config_id == config.id,
+            ExtractionEntityLink.local_id.in_(local_ids),
+        )
+    }
+    claimed = []
     for record_entity in synced["entities"]:
         entity, item = record_entity.entity, record_entity.item
         def_name = _def_name(defs, def_names, record_entity)
@@ -1950,19 +1966,13 @@ def _ingest_claims(base_study, record, config, schema_version):
             analysis = _analysis_for_key(base_study, key)
             entity.analysis_id = analysis.id if analysis is not None else None
         if item.get("local_id"):
-            link = db.session.get(
-                ExtractionEntityLink, (config.id, f"{base_study.id}:{item['local_id']}")
-            )
+            local_id = f"{base_study.id}:{item['local_id']}"
+            link = links.get(local_id)
             if link is None:
-                db.session.add(
-                    ExtractionEntityLink(
-                        config_id=config.id,
-                        # extraction_entity_links is keyed by (config, local_id) and
-                        # local_ids repeat across papers, so the base study prefixes them.
-                        local_id=f"{base_study.id}:{item['local_id']}",
-                        entity_id=entity.id,
-                    )
+                link = links[local_id] = ExtractionEntityLink(
+                    config_id=config.id, local_id=local_id, entity_id=entity.id
                 )
+                db.session.add(link)
             else:
                 link.entity_id = entity.id
 
@@ -1974,7 +1984,8 @@ def _ingest_claims(base_study, record, config, schema_version):
         counts["rejected_paths"].extend(
             f"{record_entity.entity_class}[{record_entity.path}].{path}" for path in rejected
         )
-        _upsert_claims(entity, leaves, config, schema_version, counts)
+        claimed.append((entity, leaves))
+    _upsert_claims(claimed, config, schema_version, counts)
     return counts
 
 
@@ -2061,55 +2072,87 @@ def _walk(defs, name, obj, prefix, names, leaves, rejected, skip=()):
                 _walk(defs, cls, item, f"{path}[{predicate}].", names, leaves, rejected)
 
 
-def _upsert_claims(entity, leaves, config, schema_version, counts):
+def _upsert_claims(claimed, config, schema_version, counts):
+    """Write the claims of ``claimed``, (entity, leaves) pairs, and this run's evidence.
+
+    A record holds hundreds of claims, so they are read and written a statement per table
+    rather than a row at a time.
+    """
+    entity_ids = list({entity.id for entity, _ in claimed})
     existing = {
-        (c.field_path, c.value_hash): c
-        for c in FieldClaim.query.filter_by(entity_id=entity.id)
+        (entity_id, path, value_hash): claim_id
+        for claim_id, entity_id, path, value_hash in db.session.execute(
+            sa.select(
+                FieldClaim.id, FieldClaim.entity_id, FieldClaim.field_path, FieldClaim.value_hash
+            ).where(FieldClaim.entity_id.in_(entity_ids))
+        )
     }
-    runs = {
-        claim_id
-        for (claim_id,) in db.session.query(FieldClaimRun.claim_id)
-        .join(FieldClaim, FieldClaim.id == FieldClaimRun.claim_id)
-        .filter(FieldClaim.entity_id == entity.id, FieldClaimRun.config_id == config.id)
-    }
-    for path, leaf in leaves:
-        value = leaf.get("value")
-        value_hash = sha256_of(value)
-        claim = existing.get((path, value_hash))
-        if claim is None:
-            claim = FieldClaim(
-                entity_id=entity.id,
-                field_path=path,
-                schema_version=schema_version,
-                value=value,
-                extraction_status=leaf["extraction_status"],
-                value_source=leaf.get("value_source"),
-                value_hash=value_hash,
-                origin="extraction",
-            )
-            db.session.add(claim)
-            db.session.flush()
-            existing[(path, value_hash)] = claim
-            counts["created"] += 1
-        else:
-            counts["matched"] += 1
-        if claim.id not in runs:
-            db.session.add(FieldClaimRun(claim_id=claim.id, config_id=config.id))
-            runs.add(claim.id)
-        # One run's evidence for a claim is replaced, not appended, on re-upload.
-        FieldClaimEvidence.query.filter_by(claim_id=claim.id, config_id=config.id).delete()
-        evidence = leaf["evidence"]
-        for evidence_set in evidence.get("sets") or [None]:
-            db.session.add(
-                FieldClaimEvidence(
-                    claim_id=claim.id,
-                    status=evidence["status"],
-                    source=(evidence_set or {}).get("source"),
-                    spans=(evidence_set or {}).get("spans"),
-                    origin="extraction",
-                    config_id=config.id,
+    stored = set(existing.values())
+    runs = set(
+        db.session.scalars(
+            sa.select(FieldClaimRun.claim_id)
+            .join(FieldClaim, FieldClaim.id == FieldClaimRun.claim_id)
+            .where(FieldClaim.entity_id.in_(entity_ids), FieldClaimRun.config_id == config.id)
+        )
+    )
+    new_claims, new_runs, evidence_of = [], [], {}
+    for entity, leaves in claimed:
+        for path, leaf in leaves:
+            value = leaf.get("value")
+            value_hash = sha256_of(value)
+            claim_id = existing.get((entity.id, path, value_hash))
+            if claim_id is None:
+                claim_id = existing[(entity.id, path, value_hash)] = generate_id()
+                new_claims.append(
+                    {
+                        "id": claim_id,
+                        "entity_id": entity.id,
+                        "field_path": path,
+                        "schema_version": schema_version,
+                        "value": value,
+                        "extraction_status": leaf["extraction_status"],
+                        "value_source": leaf.get("value_source"),
+                        "value_hash": value_hash,
+                        "origin": "extraction",
+                    }
                 )
+                counts["created"] += 1
+            else:
+                counts["matched"] += 1
+            if claim_id not in runs:
+                new_runs.append({"claim_id": claim_id, "config_id": config.id})
+                runs.add(claim_id)
+            # One run's evidence for a claim is replaced, not appended, on re-upload; a
+            # claim two leaves reach keeps the last one's.
+            evidence = leaf["evidence"]
+            evidence_of[claim_id] = [
+                {
+                    "id": generate_id(),
+                    "claim_id": claim_id,
+                    "status": evidence["status"],
+                    "source": (evidence_set or {}).get("source"),
+                    "spans": (evidence_set or {}).get("spans"),
+                    "origin": "extraction",
+                    "config_id": config.id,
+                }
+                for evidence_set in evidence.get("sets") or [None]
+            ]
+    replaced = [claim_id for claim_id in evidence_of if claim_id in stored]
+    if replaced:
+        db.session.execute(
+            sa.delete(FieldClaimEvidence).where(
+                FieldClaimEvidence.config_id == config.id,
+                FieldClaimEvidence.claim_id.in_(replaced),
             )
+        )
+    for model, rows in (
+        (FieldClaim, new_claims),
+        (FieldClaimRun, new_runs),
+        (FieldClaimEvidence, [row for rows in evidence_of.values() for row in rows]),
+    ):
+        if rows:
+            # render_nulls: rows whose None columns differ stay in one batch.
+            db.session.execute(sa.insert(model).execution_options(render_nulls=True), rows)
 
 
 NO_STORED_PARSE_REASON = "no stored coordinate parse of the paper holds the analysis's key"
