@@ -302,6 +302,7 @@ scalar subqueries loaded with every row:
 - a study reads `base_study → journal_id → journals`.
 
 What does that cost, and is there a costless way to keep the journal name on `base_studies`?
+The answer, below: a copy on `base_studies` kept by triggers.
 
 **Input.**
 - **Data:** the production backup of 2026-11-06, restored to a scratch database and migrated to head:
@@ -399,19 +400,66 @@ The cost of the subquery is below what these endpoints can resolve.
   `undefer` it, including POST, PUT and clone, the gap #1918 fixed. A path that forgets omits
   `journal` from its response: the bug that broke `test_source_id`.
 
-**Recommendation: keep (a).**
-- **Its cost doesn't show at endpoint level.** The subquery adds 12 ms (base studies) and 20 ms
-  (studies) of SQL per page of 1,000 rows, under the endpoints' run-to-run variation.
-- **It has one path and nothing to keep in step.**
-- **(b)** is the only near-costless read for base studies (13.0 → 1.4 ms per 1,000 rows), but it
-  isn't costless overall. It adds a second copy that five write paths must keep current, a 20.8 s
-  backfill, and a pg_search reindex of every row it touches. Its endpoint timings don't beat (a)'s
-  beyond noise.
-- **(c) and (d)** gain nothing measurable and add paths that can forget to load the journal.
+**Decision: (b), the copy on base studies** (James, 2026-11-06). Reads matter more than writes,
+provided study writes are not delayed; base-study writes may be.
+- **The copy:** `base_studies.journal_title` and `journal_abbreviation`. `journal_id` already holds
+  the id.
+- **Kept current by two triggers (migration `c3e5a7b9d1f2`):**
+  - one fires when a base study's `journal_id`, or the copy itself, is written;
+  - one fires when a journal's title or abbreviation changes.
 
-If a future path ever loads every study as ORM objects, the subquery costs about 3 s per pass over
-221,886 studies. That path should select explicit columns with a `LEFT JOIN`, as the studyset
-responses do.
+  So every writer stays consistent with no Python change: `journals.attach`, merges, `refresh_journals`
+  and hand-written SQL.
+- **Studies** get no column and no trigger. A study reads its base study's copy with one lookup
+  instead of two.
+- **The response is unchanged:** byte-identical to (a) on every measured endpoint.
+
+Measured on the same production copy, after the migration. Read queries were repeated 8 times,
+alternating, first pass discarded; medians in ms:
+
+| Query | No summary | (a) | Copy |
+|---|---|---|---|
+| base studies, page of 1,000 | 3.0 | 9.0 | 6.0 |
+| studies, page of 1,000 | 2.5 | 16.5 | 15.1 |
+| every base study (76,664) | 16 | 841 | 248 |
+| every study (221,886) | 62 | 3,215 | 2,387 |
+
+- **Base studies:** the copy halves the summary's cost on a page (6.0 → 3.0 ms over no summary), and
+  cuts it 3.6× on a full scan.
+- **Studies:** the gain is small, about 10% of the summary's cost, because the cost is the lookup of
+  the study's base-study row. Only a copy on `studies` would remove that, and it would put trigger
+  work on study writes.
+
+**Endpoints, (a) against the copy.** Two interleaved rounds each (a, copy, a, copy), on the laptop
+under load. Most differences are within run-to-run noise: the copy's base-study page of 1,000 took
+910 ms in one round and 455 ms in the other. The one consistent difference is
+`GET /studysets/{id}?nested=true` for 5,672 studies:
+- wall time 4,996 and 4,765 ms for (a), against 4,297 and 4,141 for the copy;
+- 13% less SQL time.
+
+**Writes**, 1,000 rows, each run three times in a rolled-back transaction:
+
+| Write | ms |
+|---|---|
+| studies: set `name` (no trigger on studies; unchanged) | 739–1,063 |
+| base studies: set `name` (the copy trigger doesn't fire) | 345–430 |
+| base studies: set `journal_id`, with the copy trigger | 295–323 |
+| base studies: set `journal_id`, trigger disabled (as (a)) | 233–269 |
+| rename the journal with the most papers (6,852), propagated | 2,102–2,452 |
+| same rename, propagation disabled (as (a)) | < 1 |
+
+Other costs:
+- The migration's backfill of 76,503 rows took 20.8 s.
+- A consistency check (copies that disagree with their journal) finds 0 and takes 0.15 s.
+- Each base-study update also rewrites the row's pg_search full-text index entries.
+
+**Not chosen:**
+- **(a):** it costs twice as much per base-study page, and 3.6× on scans.
+- **(c):** it adds 1–3 queries per page and a join in hand-built responses, and every path must load
+  the relationship.
+- **(d):** every path must remember to `undefer`.
+- **A copy on studies too:** each study insert would run a trigger lookup, and a rename would
+  rewrite the journal's studies as well. That puts work on study writes, which James ruled out.
 
 ## Questions for James
 
