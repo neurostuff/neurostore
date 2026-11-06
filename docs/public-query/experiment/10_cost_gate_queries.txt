@@ -1,0 +1,16 @@
+uc1|select year, count(*) from public_mat.articles group by year order by year limit 100
+uc2|select journal_id, journal, count(*) as n from public_mat.articles where journal_id is not null group by journal_id, journal order by n desc limit 100
+uc3flat|select author_id, author_name, orcid, count(*) filter (where has_coordinates or has_images) w, count(*) n from public_mat.authorships group by author_id, author_name, orcid order by w desc, n desc limit 100
+uc3roll|select id, name, articles_with_data from public_mat.authors order by articles_with_data desc, articles desc limit 100
+uc4flat|select institution_id, institution, count(*) n from public_mat.affiliations group by institution_id, institution order by n desc limit 100
+uc5|select username, count(*) n from public_api.studies where username is not null and updated_at is not null group by username order by n desc limit 100
+uc6|select date_trunc('month', created_at) m, count(*) from public_api.studies where level = 'meta' and article_id is null group by 1 order by 1 limit 100
+h1 group by title|select title, count(*) n from public_mat.articles group by title order by n desc limit 100
+h2 distinct printed names|select count(distinct printed_name) from public_mat.authorships
+h3 group by printed name|select printed_name, count(*) n from public_mat.authorships group by printed_name order by n desc limit 100
+h4 deep page|select article_id, position, author_name from public_mat.authorships order by author_name, article_id, position limit 1000 offset 10000
+h5 like|select count(*) from public_mat.articles where lower(title) like '%memory%'
+h6 analyses by name|select name, count(*) n from public_api.analyses group by name order by n desc limit 100
+h7 studies by name|select name, count(*) n from public_api.studies group by name order by n desc limit 100
+h8 distinct analyses per study|select study_id, count(distinct name) n from public_api.analyses group by study_id order by n desc limit 100
+h9 avg points|select article_id, avg(point_count), max(point_count) from public_api.analyses a join public_api.studies s on s.id=a.study_id group by article_id order by 2 desc limit 100
