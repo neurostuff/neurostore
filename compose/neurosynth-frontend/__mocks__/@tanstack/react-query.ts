@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 
 const useQueryClient = vi.fn().mockReturnValue({
     invalidateQueries: vi.fn(),
+    refetchQueries: vi.fn(),
     removeQueries: vi.fn(),
     getQueryCache: vi.fn(),
     getQueryData: vi.fn(),

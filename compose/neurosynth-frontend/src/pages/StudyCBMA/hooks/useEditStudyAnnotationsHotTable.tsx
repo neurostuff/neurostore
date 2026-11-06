@@ -1,100 +1,90 @@
-import { createColWidths } from 'components/HotTables/HotTables.utils';
-import { useEffect, useMemo, useState } from 'react';
-import { useAnnotationNoteKeys, useUpdateAnnotationNoteDetails } from 'stores/annotation/AnnotationStore.actions';
-import { useAnnotationNotes } from 'stores/annotation/AnnotationStore.getters';
-import { createStudyAnnotationColumns } from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.helpers';
+import { NoteKeyType } from 'components/HotTables/HotTables.types';
+import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
+import { useGetAnnotationById } from 'hooks';
+import { useEffect, useState } from 'react';
+import { createStudyAnnotationColumnSettings } from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.helpers';
 import {
     EditStudyAnnotationsNoteCollectionReturn,
     IEditStudyAnnotationsDataRef,
 } from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.types';
-import { createColumnHeader } from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
-import { useDebouncedStudyAnalyses, useStudyId } from 'stores/study/StudyStore';
+import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
+import { useStudyAnalyses, useStudyId } from 'stores/study/StudyStore';
 
+export type EditStudyAnnotationsHotSnapshot = IEditStudyAnnotationsDataRef & {
+    annotationId: string;
+    hotData: EditStudyAnnotationsNoteCollectionReturn[];
+    noteKeys: NoteKeyType[];
+    hiddenRows: number[];
+};
+
+/**
+ * Builds the initial table data once per annotation id from the saved annotation, lined up with the study store's
+ * analyses. Later refetches do not replace the snapshot, because Handsontable owns the edits until Save.
+ */
 const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
     const studyId = useStudyId();
-    const debouncedAnalyses = useDebouncedStudyAnalyses();
-    const noteKeys = useAnnotationNoteKeys();
-    const notes = useAnnotationNotes();
-    const updateAnnotationNoteName = useUpdateAnnotationNoteDetails();
-
-    const [data, setData] = useState<EditStudyAnnotationsNoteCollectionReturn[]>();
+    const analyses = useStudyAnalyses();
+    const annotationId = useProjectExtractionAnnotationId();
+    const { data: annotation, isFetching } = useGetAnnotationById(annotationId);
+    const [snapshot, setSnapshot] = useState<EditStudyAnnotationsHotSnapshot>();
 
     useEffect(() => {
-        if (!notes) return;
-        setData((prev) => {
-            if (!prev || prev.length === 0) return [...notes];
+        // a refetch still in flight after a save would seed stale values into other studies' rows,
+        // and a later PUT would write those back
+        if (!annotationId || !studyId || !annotation || isFetching) return;
 
-            // Create a hashmap for faster performance with large datasets (we could potentially have thousands of analyses)
-            const prevMap = new Map(prev.map((n) => [n.analysis, n]));
+        setSnapshot((prev) => {
+            if (prev?.annotationId === annotationId) return prev;
 
-            // Merge store notes with existing local state to preserve derived values like analysisDescription
-            return notes.map((storeNote) => {
-                const existingNote = prevMap.get(storeNote.analysis);
-                if (!existingNote) return storeNote;
+            const noteKeys = noteKeyObjToArr(annotation.note_keys);
+            const analysisIdtoAnalysis = new Map(analyses.map((analysis) => [analysis.id, analysis]));
+            const analysisIdsWithNotes = new Set<string>();
+            const hotData: EditStudyAnnotationsNoteCollectionReturn[] = [];
 
-                return {
-                    ...storeNote,
-                    analysisDescription: existingNote.analysisDescription || undefined,
-                } as EditStudyAnnotationsNoteCollectionReturn;
-            });
-        });
-    }, [notes]);
+            (annotation.notes ?? []).forEach((note) => {
+                if (!note.analysis || !note.study) return;
+                // Handsontable edits these row objects in place, so they must not be react-query's objects
+                const hotRow: EditStudyAnnotationsNoteCollectionReturn = JSON.parse(JSON.stringify(note));
 
-    /**
-     * this hook runs everytime (AND ONLY WHEN) the analyses change (i.e. when someone is updating the analysis name or description).
-     * From an annotation perspective, the analysis name and description is purely decorative so we debounce the updates here
-     */
-    useEffect(() => {
-        debouncedAnalyses.forEach((analysis) => {
-            updateAnnotationNoteName({
-                analysis: analysis.id,
-                analysis_name: analysis.name,
-            });
-        });
+                if (note.study === studyId) {
+                    const analysis = analysisIdtoAnalysis.get(note.analysis);
+                    // deleted in the study store but not saved yet
+                    if (!analysis) return;
+                    analysisIdsWithNotes.add(note.analysis);
+                    hotRow.analysis_name = analysis.name || '';
+                    hotRow.analysisDescription = analysis.description || '';
+                }
 
-        setData((prev) => {
-            if (!prev) return prev;
-            const update = [...prev];
-            debouncedAnalyses.forEach((analysis) => {
-                const foundNoteIndex = update.findIndex((updateNote) => updateNote.analysis === analysis.id);
-                if (foundNoteIndex < 0) return;
-
-                update[foundNoteIndex] = {
-                    ...update[foundNoteIndex],
-                    analysisDescription: analysis.description || undefined,
-                };
+                hotData.push(hotRow);
             });
 
-            return update;
+            // analyses with no note yet, such as ones added in the study store but not saved
+            analyses.forEach((analysis) => {
+                if (!analysis.id || analysisIdsWithNotes.has(analysis.id)) return;
+                hotData.push({
+                    analysis: analysis.id,
+                    study: studyId,
+                    analysis_name: analysis.name || '',
+                    analysisDescription: analysis.description || '',
+                    note: Object.fromEntries(noteKeys.map((noteKey) => [noteKey.key, noteKey.default ?? null])),
+                    isNew: !!analysis.isNew,
+                });
+            });
+
+            return {
+                annotationId,
+                hotData,
+                noteKeys,
+                // hide the rows for analyses in other studies
+                hiddenRows: hotData
+                    .map((hotRow, index) => (hotRow.study !== studyId ? index : null))
+                    .filter((index) => index !== null) as number[],
+                ...createStudyAnnotationColumnSettings(noteKeys, !!readonly),
+            };
         });
-    }, [debouncedAnalyses, updateAnnotationNoteName]);
+    }, [annotationId, annotation, isFetching, analyses, studyId, readonly]);
 
-    // return the indices for rows that we want to hide
-    const hiddenRows = useMemo(() => {
-        return (notes || [])
-            .map((x, index) => (x.study !== studyId ? index : null))
-            .filter((y) => y !== null) as number[];
-    }, [notes, studyId]);
-
-    const { columns, colHeaders, colWidths } = useMemo<IEditStudyAnnotationsDataRef>(() => {
-        return {
-            columns: createStudyAnnotationColumns(noteKeys || [], !!readonly),
-            colHeaders: [
-                'Analysis Name',
-                'Analysis Description',
-                ...(noteKeys ?? []).map((x) => createColumnHeader(x.key, x.type, x.key !== 'included')),
-            ],
-            colWidths: createColWidths(noteKeys || [], 150, 150, 150),
-        };
-    }, [noteKeys, readonly]);
-
-    return {
-        hiddenRows,
-        columns,
-        colHeaders,
-        colWidths,
-        data: data || [],
-    };
+    return snapshot;
 };
 
 export default useEditStudyAnnotationsHotTable;

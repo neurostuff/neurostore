@@ -1,4 +1,7 @@
-const MockRelegateExtractionStudyDialog = ({  isOpen, onCloseDialog  }: {
+const MockRelegateExtractionStudyDialog = ({
+    isOpen,
+    onCloseDialog,
+}: {
     isOpen: boolean;
     onCloseDialog: (confirm: boolean) => void;
 }) => (

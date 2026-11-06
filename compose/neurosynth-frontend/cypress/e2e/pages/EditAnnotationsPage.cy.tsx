@@ -109,7 +109,7 @@ describe(PAGE_NAME, () => {
                 'postAnnotationAnalyses'
             );
 
-            cy.get('[data-testid="CancelIcon"]').eq(1).click({ force: true });
+            cy.get('[data-testid="RemoveCircleIcon"]').eq(1).parent().click({ force: true });
             cy.contains('button', 'save').click();
 
             cy.get('@putAnnotations')

@@ -25,7 +25,32 @@ const useStudyAnalysisPoints = vi.fn().mockReturnValue([]);
 
 const useUpdateStudyInDB = vi.fn().mockReturnValue(vi.fn());
 
+const useGetStudyIsLoading = vi.fn().mockReturnValue(false);
+
+const useStudyStore = Object.assign(vi.fn(), {
+    getState: vi.fn(() => ({
+        study: {
+            ...useStudy(),
+            analyses: useStudyAnalyses(),
+        },
+    })),
+});
+
 const useStudyAnalysisPointStatistic = vi.fn().mockReturnValue(null);
+
+const useMarkStudyEdited = vi.fn().mockReturnValue(vi.fn());
+
+const useReplaceAnalysisPoints = vi.fn().mockReturnValue(vi.fn());
+
+const useStudyAnalysisWarnings = vi.fn().mockReturnValue({
+    hasDuplicateName: false,
+    hasNoName: false,
+    hasEmptyPoints: false,
+    hasNonMNICoordinates: false,
+    hasInvalidEntries: false,
+});
+
+const useSetAnalysisPointWarnings = vi.fn().mockReturnValue(vi.fn());
 
 export {
     useStudyId,
@@ -40,5 +65,11 @@ export {
     useStudyAnalyses,
     useStudyAnalysisPoints,
     useUpdateStudyInDB,
+    useGetStudyIsLoading,
+    useStudyStore,
     useStudyAnalysisPointStatistic,
+    useMarkStudyEdited,
+    useReplaceAnalysisPoints,
+    useStudyAnalysisWarnings,
+    useSetAnalysisPointWarnings,
 };

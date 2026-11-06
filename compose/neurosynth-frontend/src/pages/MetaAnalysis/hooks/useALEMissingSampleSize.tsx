@@ -1,7 +1,7 @@
 import { useGetAnnotationById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useMemo } from 'react';
-import { AnnotationNoteType } from 'stores/annotation/AnnotationStore.types';
+import { AnnotationNoteType } from 'components/HotTables/HotTables.types';
 import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { isALE } from '../components/MetaAnalysisDynamicForm';
 import { useQuery } from '@tanstack/react-query';

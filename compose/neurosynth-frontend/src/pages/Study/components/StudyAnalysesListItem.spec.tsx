@@ -2,9 +2,9 @@ import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import StudyAnalysesListItem from 'pages/Study/components/StudyAnalysesListItem';
 import userEvent from '@testing-library/user-event';
-import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
+import { useStudyAnalysisWarnings } from 'stores/study/StudyStore';
 
-vi.mock('pages/Study/hooks/useDisplayWarnings.tsx');
+vi.mock('stores/study/StudyStore');
 describe('StudyAnalysesListItem Component', () => {
     it('should render', async () => {
         render(<StudyAnalysesListItem analysis={{}} selected={false} onSelectAnalysis={() => {}} />);
@@ -75,10 +75,18 @@ describe('StudyAnalysesListItem Component', () => {
 
     describe('warnings', () => {
         beforeEach(() => {
-            useDisplayWarnings().hasDuplicateName = false;
-            useDisplayWarnings().hasNoName = false;
-            useDisplayWarnings().hasNoPoints = false;
-            useDisplayWarnings().hasNonMNICoordinates = false;
+            useStudyAnalysisWarnings().hasDuplicateName = false;
+            useStudyAnalysisWarnings().hasNoName = false;
+            useStudyAnalysisWarnings().hasEmptyCoordinates = false;
+            useStudyAnalysisWarnings().hasNonMNICoordinates = false;
+            useStudyAnalysisWarnings().hasInvalidEntries = false;
+        });
+
+        it('shows a warning if there are invalid entries', async () => {
+            useStudyAnalysisWarnings().hasInvalidEntries = true;
+            render(<StudyAnalysesListItem analysis={{ name: 'test-name' }} selected onSelectAnalysis={() => {}} />);
+
+            expect(screen.getByTestId('ErrorOutlineIcon')).toBeInTheDocument();
         });
 
         it('does not show a warning by default', async () => {
@@ -96,7 +104,7 @@ describe('StudyAnalysesListItem Component', () => {
         });
 
         it('shows a warning if there is a duplicate name', async () => {
-            useDisplayWarnings().hasDuplicateName = true;
+            useStudyAnalysisWarnings().hasDuplicateName = true;
             render(
                 <StudyAnalysesListItem
                     analysis={{
@@ -112,7 +120,7 @@ describe('StudyAnalysesListItem Component', () => {
         });
 
         it('shows a warning if there is no name', async () => {
-            useDisplayWarnings().hasDuplicateName = true;
+            useStudyAnalysisWarnings().hasDuplicateName = true;
             render(
                 <StudyAnalysesListItem
                     analysis={{
@@ -127,7 +135,7 @@ describe('StudyAnalysesListItem Component', () => {
             expect(screen.getByTestId('ErrorOutlineIcon')).toBeInTheDocument();
         });
         it('shows a warning if there are no points', async () => {
-            useDisplayWarnings().hasDuplicateName = true;
+            useStudyAnalysisWarnings().hasDuplicateName = true;
             render(
                 <StudyAnalysesListItem
                     analysis={{
@@ -142,7 +150,7 @@ describe('StudyAnalysesListItem Component', () => {
             expect(screen.getByTestId('ErrorOutlineIcon')).toBeInTheDocument();
         });
         it('shows a warning if the coordinates are not MNI', async () => {
-            useDisplayWarnings().hasDuplicateName = true;
+            useStudyAnalysisWarnings().hasDuplicateName = true;
             render(
                 <StudyAnalysesListItem
                     analysis={{

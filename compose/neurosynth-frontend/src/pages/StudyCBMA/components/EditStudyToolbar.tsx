@@ -38,7 +38,7 @@ import {
 import { useStudyId } from 'stores/study/StudyStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useSaveStudy from 'pages/StudyCBMA/hooks/useSaveStudy';
+import { useStudyCBMAContext } from 'pages/StudyCBMA/context/StudyCBMAContext';
 import EditStudySwapVersionButton from 'pages/StudyCBMA/components/EditStudySwapVersionButton';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 
@@ -50,7 +50,7 @@ const EditStudyToolbar = () => {
         isOpen: false,
         action: undefined,
     });
-    const { isLoading: saveStudyIsLoading, hasEdits, handleSave } = useSaveStudy();
+    const { isLoading: saveStudyIsLoading, hasEdits, handleSave } = useStudyCBMAContext().saveStudy;
     const navigate = useNavigate();
 
     const projectId = useProjectId();

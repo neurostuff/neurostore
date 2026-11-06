@@ -1,12 +1,16 @@
 import { HotTableProps } from '@handsontable/react-wrapper';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
-import { EditStudyAnnotationsNoteCollectionReturn } from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.types';
+import {
+    EditStudyAnnotationsNoteCollectionReturn,
+    IEditStudyAnnotationsDataRef,
+} from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.types';
 import styles from 'components/HotTables/HotTables.module.css';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { ColumnSettings } from 'handsontable/settings';
 import { numericValidator } from 'handsontable/validators';
 import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
-import { booleanValidator } from 'components/HotTables/HotTables.utils';
+import { booleanValidator, createColWidths } from 'components/HotTables/HotTables.utils';
+import { createColumnHeader } from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
 
 export const HotSettings: HotTableProps = {
     theme: 'ht-theme-classic',
@@ -61,6 +65,22 @@ export const createStudyAnnotationColumns = (noteKeys: NoteKeyType[], readonly: 
             } as ColumnSettings;
         }),
     ] as ColumnSettings[];
+
+export const createStudyAnnotationColumnSettings = (
+    noteKeys: NoteKeyType[],
+    readonly: boolean
+): IEditStudyAnnotationsDataRef => ({
+    columns: createStudyAnnotationColumns(noteKeys, readonly),
+    colHeaders: [
+        'Analysis Name',
+        'Analysis Description',
+        ...noteKeys.map((x) => createColumnHeader(x.key, x.type, x.key !== 'included')),
+    ],
+    colWidths: createColWidths(noteKeys, 150, 150, 150),
+});
+
+/** Source for changes the app writes into the table (analysis details, new rows and columns), so afterChange skips them. */
+export const STUDY_ANNOTATIONS_SYNC_SOURCE = 'studyAnnotationsSync';
 
 export const sortAndReplaceNotesDataWithAnalyses = (
     notes: EditStudyAnnotationsNoteCollectionReturn[],

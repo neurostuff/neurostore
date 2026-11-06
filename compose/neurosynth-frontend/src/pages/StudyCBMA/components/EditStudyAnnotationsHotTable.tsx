@@ -1,163 +1,68 @@
 import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
-import { Box } from '@mui/material';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
-import { EPropertyType, getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
-import { getDefaultForNoteKey, sanitizePaste } from 'components/HotTables/HotTables.utils';
-import { CellCoords, CellChange } from 'handsontable';
-import { useUserCanEdit } from 'hooks';
-import { useProjectUser } from 'stores/projects/ProjectStore';
-import { HotSettings } from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.helpers';
-import useEditStudyAnnotationsHotTable from 'pages/StudyCBMA/hooks/useEditStudyAnnotationsHotTable';
-import { useMemo, useRef, useState } from 'react';
+import { sanitizePaste } from 'components/HotTables/HotTables.utils';
+import { CellChange, CellCoords, ChangeSource } from 'handsontable';
+import { PendingAnnotationEdits } from 'pages/Annotations/components/EditAnnotationsHotTable';
+import { isRemoveColumnButton } from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
 import {
-    useAnnotationNoteKeys,
-    useCreateAnnotationColumn,
-    useRemoveAnnotationColumn,
-    useUpdateAnnotationNotes,
-} from 'stores/annotation/AnnotationStore.actions';
+    HotSettings,
+    STUDY_ANNOTATIONS_SYNC_SOURCE,
+} from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.helpers';
+import { EditStudyAnnotationsHotSnapshot } from 'pages/StudyCBMA/hooks/useEditStudyAnnotationsHotTable';
+import React from 'react';
 
-const EditStudyAnnotationsHotTable = ({  readonly = false  }: { readonly?: boolean }) => {
-    const hotTableRef = useRef<HotTableRef>(null);
-    const noteKeys = useAnnotationNoteKeys();
-    const updateNotes = useUpdateAnnotationNotes();
-    const createAnnotationColumn = useCreateAnnotationColumn();
-    const removeAnnotationColumn = useRemoveAnnotationColumn();
-    const { colWidths, colHeaders, columns, hiddenRows, data } = useEditStudyAnnotationsHotTable(readonly);
-    const projectUser = useProjectUser();
-    const canEdit = useUserCanEdit(projectUser || undefined);
-    const [confirmationDialogState, setConfirmationDialogState] = useState({
-        isOpen: false,
-        colKey: '',
-    });
+/**
+ * The react wrapper calls updateSettings (including data) on every render, so this component must not re-render
+ * after mount: every prop is stable and handlers only read refs.
+ */
+const EditStudyAnnotationsHotTable = React.memo(
+    (props: {
+        initialState: EditStudyAnnotationsHotSnapshot;
+        hotTableRef: React.RefObject<HotTableRef | null>;
+        pendingEditsRef: React.RefObject<PendingAnnotationEdits>;
+        onHasEdits: (hasEdits: boolean) => void;
+        onRemoveColumnClick: (colKey: string) => void;
+    }) => {
+        const { initialState: snapshot, hotTableRef, pendingEditsRef, onHasEdits, onRemoveColumnClick } = props;
 
-    const handleAfterChange = (changes: CellChange[] | null) => {
-        if (!data || !noteKeys || !changes) return;
+        const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
+            if (!changes || (source as string) === STUDY_ANNOTATIONS_SYNC_SOURCE) return;
 
-        const updatedNotes = [...data];
-        changes.forEach((change) => {
-            if (!change) return;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const [row, colName, _prev, next] = change;
-            let newVal = next;
-            if (newVal === null || newVal === '') {
-                newVal = undefined;
+            changes.forEach(([row]) => pendingEditsRef.current.dirtyRowIndexes.add(row));
+            onHasEdits(true);
+        };
+
+        const handleBeforePaste = (pastedData: unknown[][]) => {
+            sanitizePaste(pastedData);
+            return true;
+        };
+
+        const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement) => {
+            if (coords.row != null && coords.row < 0 && isRemoveColumnButton(event.target)) {
+                onRemoveColumnClick(TD.innerText);
             }
-            updatedNotes[row] = {
-                ...updatedNotes[row],
-                note: {
-                    ...updatedNotes[row].note,
-                    [(colName as string).split('.')[1]]: newVal, // col names are given to us in the form "note.key"
-                },
-                isEdited: true,
-            };
-        });
-        updateNotes(updatedNotes);
-    };
+        };
 
-    const handleBeforePaste = (pastedData: unknown[][]) => {
-        if (!data) return false;
-        sanitizePaste(pastedData);
-        return true;
-    };
-
-    const handleAddHotColumn = (row: IMetadataRowModel) => {
-        if (!noteKeys) return false;
-        const trimmedKey = row.metadataKey.trim();
-        if (noteKeys.find((x) => x.key === trimmedKey)) return false;
-
-        const columnType = getType(row.metadataValue);
-        const defaultValue = getDefaultForNoteKey(trimmedKey, columnType);
-
-        createAnnotationColumn({
-            key: trimmedKey,
-            type: columnType,
-            default: defaultValue ?? null,
-        });
-
-        return true;
-    };
-
-    const handleConfirmationDialogClose = (confirm: boolean | undefined) => {
-        if (confirm) {
-            removeAnnotationColumn(confirmationDialogState.colKey);
-        }
-        setConfirmationDialogState({
-            isOpen: false,
-            colKey: '',
-        });
-    };
-
-    const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement) => {
-        const target = event.target as HTMLButtonElement;
-        if (coords.row != null && coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
-            setConfirmationDialogState({
-                isOpen: true,
-                colKey: TD.innerText,
-            });
-        }
-    };
-
-    const memoizedData = useMemo(() => {
-        return JSON.parse(JSON.stringify(data || []));
-    }, [data]);
-
-    return (
-        <Box>
-            {canEdit && !readonly && (
-                <Box
-                    sx={{
-                        mb: 3,
-                        width: {
-                            xs: '100%',
-                            md: '80%',
-                            lg: '70%',
-                        },
-                        display: 'grid',
-                        gridTemplateColumns: 'auto 1fr auto',
-                        gap: 4,
-                    }}
-                >
-                    <AddMetadataRow
-                        keyPlaceholderText="New Column"
-                        onAddMetadataRow={handleAddHotColumn}
-                        defaultType={EPropertyType.BOOLEAN}
-                        showMetadataValueInput={false}
-                        allowNone={false}
-                        errorMessage="can't add column (key already exists)"
-                    />
-                </Box>
-            )}
-            <Box sx={{ width: '100%', height: '100%' }}>
-                <ConfirmationDialog
-                    isOpen={confirmationDialogState.isOpen}
-                    onCloseDialog={handleConfirmationDialogClose}
-                    dialogTitle="Are you sure you want to remove this column?"
-                    dialogMessage={`This will remove annotation data in all other studies for ${confirmationDialogState.colKey}`}
-                    confirmText="Remove"
-                    rejectText="Cancel"
-                />
-                <HotTable
-                    {...HotSettings}
-                    afterChange={handleAfterChange}
-                    beforePaste={handleBeforePaste}
-                    width="100%"
-                    height="auto"
-                    stretchH="all"
-                    hiddenRows={{
-                        rows: hiddenRows,
-                        indicators: false,
-                    }}
-                    afterOnCellMouseUp={handleCellMouseUp}
-                    colWidths={colWidths}
-                    columns={columns}
-                    colHeaders={colHeaders}
-                    data={memoizedData}
-                    ref={hotTableRef}
-                />
-            </Box>
-        </Box>
-    );
-};
+        return (
+            <HotTable
+                {...HotSettings}
+                ref={hotTableRef}
+                afterChange={handleAfterChange}
+                beforePaste={handleBeforePaste}
+                width="100%"
+                height="auto"
+                stretchH="all"
+                hiddenRows={{
+                    rows: snapshot.hiddenRows,
+                    indicators: false,
+                }}
+                afterOnCellMouseUp={handleCellMouseUp}
+                colWidths={snapshot.colWidths}
+                columns={snapshot.columns}
+                colHeaders={snapshot.colHeaders}
+                data={snapshot.hotData}
+            />
+        );
+    }
+);
 
 export default EditStudyAnnotationsHotTable;
