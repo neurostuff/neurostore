@@ -239,3 +239,28 @@ def test_refresh_moves_papers_off_a_source_openalex_merged(session, app):
     assert (refreshed, moved) == (0, 1)
     assert (survivor.openalex_id, survivor.issn_l) == ("S4210232992", "0001-6772")
     assert session.get(BaseStudy, paper.id).journal_id == survivor.id
+
+
+def test_ncbi_requests_carry_the_pubmed_key_and_openalex_requests_do_not(monkeypatch):
+    sent = []
+
+    class Answer:
+        status_code = 200
+
+        def json(self):
+            return {}
+
+    def request(method, url, **kwargs):
+        sent.append((url, kwargs["params"]))
+        return Answer()
+
+    monkeypatch.setattr(requests, "request", request)
+    settings = {"PUBMED_TOOL_API_KEY": "ncbi-key"}
+    journals._pubmed_issns(settings, ["30000000"])
+    journals._nlm_record(settings, ["1065-9471"])
+    journals._works(settings, "pmid", ["30000000"])
+
+    assert [params.get("api_key") for url, params in sent if journals.EUTILS in url] == [
+        "ncbi-key"
+    ] * 2
+    assert all("api_key" not in params for url, params in sent if journals.EUTILS not in url)

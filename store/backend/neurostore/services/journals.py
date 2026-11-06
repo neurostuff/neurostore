@@ -100,6 +100,8 @@ def _get(settings, path, params):
     params = dict(params)
     if settings.get("EMAIL"):
         params["mailto"] = settings.get("EMAIL")
+    if path.startswith(EUTILS) and settings.get("PUBMED_TOOL_API_KEY"):
+        params["api_key"] = settings.get("PUBMED_TOOL_API_KEY")
     return _request_with_retry(
         settings, "GET", path, params=params, timeout=_request_timeout(settings)
     ).json()
