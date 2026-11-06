@@ -73,3 +73,115 @@ def test_local_dump_path_bypasses_s3_lookup(tmp_path: Path) -> None:
     latest.assert_not_called()
     recreate.assert_called_once()
     restore.assert_called_once()
+
+
+def run_template_restore(tmp_path: Path, templates: dict[str, bool], *extra: str):
+    dump_path = tmp_path / "11-06-2026-at-00-00-01_neurostore.dump"
+    dump_path.write_bytes(b"dump")
+    statements: list[tuple[str, str]] = []
+
+    def record(compose_dir, project_name, container, database, sql, **kwargs):
+        statements.append((database, sql))
+
+    with patch.object(restore_latest_backup, "psql", side_effect=record), patch.object(
+        restore_latest_backup, "template_databases", return_value=templates
+    ), patch.object(restore_latest_backup, "restore_dump") as restore, patch(
+        "sys.argv",
+        [
+            "restore_latest_backup.py",
+            "--compose-dir",
+            ".",
+            "--dump-path",
+            str(dump_path),
+            "--container",
+            "pgsql",
+            "--database",
+            "neurostore",
+            "--template",
+            *extra,
+        ],
+    ):
+        assert restore_latest_backup.main() == 0
+
+    final = restore_latest_backup.template_name("neurostore", f"local:{dump_path.name}")
+    return final, [sql for _, sql in statements], restore
+
+
+def test_complete_template_is_cloned_without_restoring(tmp_path: Path) -> None:
+    final = restore_latest_backup.template_name(
+        "neurostore", "local:11-06-2026-at-00-00-01_neurostore.dump"
+    )
+    _, statements, restore = run_template_restore(tmp_path, {final: True})
+
+    restore.assert_not_called()
+    assert statements == [
+        "DROP DATABASE IF EXISTS neurostore WITH (FORCE);",
+        f"CREATE DATABASE neurostore TEMPLATE {final} STRATEGY FILE_COPY;",
+    ]
+
+
+def test_new_backup_replaces_other_templates_and_renames_last(tmp_path: Path) -> None:
+    stale = {"neurostore_tpl_0123456789ab": True, "neurostore_tpl_restoring": True}
+    final, statements, restore = run_template_restore(tmp_path, stale)
+
+    for name in stale:
+        drop = statements.index(f"DROP DATABASE IF EXISTS {name} WITH (FORCE);")
+        assert statements[drop - 1] == f"ALTER DATABASE {name} WITH IS_TEMPLATE false;"
+    assert restore.call_args.args[3] == "neurostore_tpl_restoring"
+    freeze = statements.index(
+        "ALTER DATABASE neurostore_tpl_restoring WITH IS_TEMPLATE true ALLOW_CONNECTIONS false;"
+    )
+    rename = statements.index(f"ALTER DATABASE neurostore_tpl_restoring RENAME TO {final};")
+    assert freeze < rename
+    assert statements[rename + 1 :] == [
+        "DROP DATABASE IF EXISTS neurostore WITH (FORCE);",
+        f"CREATE DATABASE neurostore TEMPLATE {final} STRATEGY FILE_COPY;",
+    ]
+
+
+def test_incomplete_template_under_final_name_is_restored_again(tmp_path: Path) -> None:
+    final = restore_latest_backup.template_name(
+        "neurostore", "local:11-06-2026-at-00-00-01_neurostore.dump"
+    )
+    _, statements, restore = run_template_restore(tmp_path, {final: False})
+
+    restore.assert_called_once()
+    assert f"DROP DATABASE IF EXISTS {final} WITH (FORCE);" in statements
+
+
+def test_template_only_leaves_the_database_alone(tmp_path: Path) -> None:
+    _, statements, _ = run_template_restore(tmp_path, {}, "--template-only")
+
+    assert not any("DATABASE neurostore " in sql for sql in statements)
+
+
+def test_prune_keeps_only_the_dumps_a_key_record_names(tmp_path: Path) -> None:
+    for name in (
+        "11-05-2026-at-00-00-01_neurostore.dump",
+        "11-06-2026-at-00-00-01_neurostore.dump",
+        "05-12-2026-at-00-00-01_neurostore_dev-reduced.dump",
+        "05-13-2026-at-00-00-01_neurostore_dev-reduced.dump",
+    ):
+        (tmp_path / name).write_bytes(b"dump")
+    (tmp_path / "notes.txt").write_text("not a dump")
+    (tmp_path / "selected-key-dev-reduced.txt").write_text(
+        "dev-reduced/05-13-2026-at-00-00-01_neurostore_dev-reduced.dump"
+    )
+
+    with patch.object(
+        restore_latest_backup,
+        "latest_s3_key",
+        return_value="11-06-2026-at-00-00-01_neurostore.dump",
+    ):
+        key, dump_path = restore_latest_backup.resolve_cached_dump(
+            "neurostore-backup", tmp_path, refresh_latest=True, prune=True
+        )
+
+    assert dump_path.name == "11-06-2026-at-00-00-01_neurostore.dump"
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "05-13-2026-at-00-00-01_neurostore_dev-reduced.dump",
+        "11-06-2026-at-00-00-01_neurostore.dump",
+        "notes.txt",
+        "selected-key-dev-reduced.txt",
+        "selected-key.txt",
+    ]
