@@ -161,6 +161,27 @@ def test_parse_alone_stores_skeleton_keyed_by_content(session):
     assert again["skeleton"]["updated"] == 4
 
 
+@pytest.mark.parametrize(
+    "title, level",
+    [
+        ("Fear conditioning: an activation likelihood estimation meta-analysis", "meta"),
+        ("Meta-analytic connectivity modeling of the human superior temporal sulcus", "meta"),
+        ("Neural correlates of itch: a systematic review", "meta"),
+        ("Fear conditioning in adolescents: an fMRI study", "group"),
+    ],
+)
+def test_a_paper_titled_as_a_meta_analysis_is_a_meta_level_base_study(session, title, level):
+    paper = fx.parsed_paper(pmid="34567890")
+    paper["bibliography"]["title"] = title
+
+    summary = ingest_upload(
+        {"coordinate_parse": fx.parse([GAIN], pmid="34567890"), "parsed_paper": paper}
+    )
+
+    assert session.get(BaseStudy, summary["base_study_id"]).level == level
+    assert _current(summary["base_study_id"]).level == level
+
+
 def test_a_parse_whose_header_names_a_base_study_is_stored_on_it(session):
     named = BaseStudy(name="Named", level="group")
     session.add(named)

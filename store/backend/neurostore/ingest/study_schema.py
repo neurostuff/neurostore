@@ -91,6 +91,7 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
 )
 from neurostore.exceptions.utils.errors import ErrorDetail
+from neurostore.ingest import base_study_level
 from neurostore.ingest.analysis_features import latest_records, sync_analysis_features
 from neurostore.ingest.study_entities import (
     CONTENT_KEYED_CLASSES,
@@ -728,7 +729,8 @@ def _resolve_base_study(body, parse, parsed_paper, create):
                 "The parse names no identifier to create its base study from.",
                 [make_field_error("coordinate_parse/header/identifiers", header_identifiers)],
             )
-        base_study = BaseStudy(level="group", **_bibliography(parsed_paper))
+        fields = _bibliography(parsed_paper)
+        base_study = BaseStudy(level=base_study_level(fields.get("name")), **fields)
         db.session.add(base_study)
 
     attach_identifiers(db.session, base_study, identifiers, held, source="ingest")
@@ -804,7 +806,7 @@ def _create_study(base_study, parsed_paper, user):
         doi=base_study.doi,
         pmid=base_study.pmid,
         pmcid=base_study.pmcid,
-        level="group",
+        level=base_study.level,
         public=True,
         source=STUDY_SOURCE,
         user=user,
