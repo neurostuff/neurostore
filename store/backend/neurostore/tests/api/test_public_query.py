@@ -200,21 +200,23 @@ async def test_compose_meta_analyses_per_month(anonymous, corpus):
 
 @pytest.fixture
 def data_sources(session, corpus):
-    """UK Biobank used by two public base studies (one of them through an analysis of a
-    private version too), HCP by one public one, by a private version of another and
-    by the private base study; OpenNeuro by none."""
+    """UK Biobank used by two public base studies; HCP by one public base study, by a
+    private version of another and by the private base study; OpenNeuro only by a
+    public version of the inactive base study."""
     ukb = DataSource(id="ukb", name="UK Biobank", kinds=["study"], modalities=["MRI"])
     hcp = DataSource(id="hcp", name="Human Connectome Project", kinds=["study", "consortium"])
     openneuro = DataSource(id="openneuro", name="OpenNeuro", kinds=["repository"])
     session.add_all([ukb, hcp, openneuro])
     by_name = {study.name: study for study in session.query(Study)}
     hidden = Study(name="hidden version", base_study_id=corpus["hidden"])
-    session.add(hidden)
+    retired = Study(name="retired version", base_study_id=corpus["retired"])
+    session.add_all([hidden, retired])
     for study, sources in [
         (by_name["alice 1"], [ukb, hcp]),
         (by_name["alice 2"], [ukb]),
         (by_name["alice private"], [hcp]),
         (hidden, [hcp]),
+        (retired, [openneuro]),
     ]:
         session.add(
             Analysis(
@@ -224,7 +226,9 @@ def data_sources(session, corpus):
             )
         )
     session.flush()
-    recompute_data_source_links([s.base_study_id for s in by_name.values()] + [corpus["hidden"]])
+    recompute_data_source_links(
+        [s.base_study_id for s in by_name.values()] + [corpus["hidden"], corpus["retired"]]
+    )
     session.commit()
     public_query.refresh_datasets()
 
