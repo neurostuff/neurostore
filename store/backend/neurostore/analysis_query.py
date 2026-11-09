@@ -25,15 +25,17 @@ names (`name`, the text of the side's cell levels and conditions), its groups' h
 medical conditions, its timepoints' relation to the intervention, its arms' kinds, and its
 contrast keys' facets. A text criterion in their place is shorthand for its `name`.
 
-`run_query` returns the canonical query, the counts, `limit` analyses from `offset` and every
-selected analysis's study id; with `funnel`, also what each criterion dropped and how many
-analyses it found silent, which costs a count per criterion. `base_study_ids` and
-`study_ids` restrict all of it to those papers or studies, so an empty query with them
-returns their analyses' features.
+`run_query` returns the canonical query, how many studies and analyses it selects, and a
+page of the selected studies (all of them when `paginate` is false), each with its selected
+analyses and their features, or less as `detail` says; with `funnel`, also what each
+criterion dropped and how many analyses it found silent, which costs a count per
+criterion. `base_study_ids` and `study_ids` restrict all of it to those papers or studies,
+so an empty query with them returns their analyses' features.
 """
 
 import re
 from dataclasses import dataclass
+from itertools import groupby
 
 import sqlalchemy as sa
 
@@ -55,10 +57,10 @@ SILENT_MODES = ["exclude", "include"]
 #: when_unmapped, for a field with text and for an ids-only one.
 UNMAPPED_MODES = ["exclude", "include", "text"]
 IDS_ONLY_UNMAPPED_MODES = ["exclude", "include"]
-DEFAULT_LIMIT = 100
-MAX_LIMIT = 1000
-#: The most papers or studies a query may be restricted to.
-MAX_SCOPE_IDS = 1000
+#: How much each listed study carries: itself, its selected analyses, and their features.
+DETAILS = ("studies", "analyses", "features")
+#: Studies a page lists unless `page_size` says otherwise, as on the list endpoints.
+DEFAULT_PAGE_SIZE = 20
 #: The body keys that restrict a query to papers or to pipeline studies.
 SCOPE_KEYS = ("base_study_ids", "study_ids")
 #: The fewest consecutive letters or digits a text pattern needs.
@@ -648,31 +650,21 @@ def _scope_or_abort(body):
         if key not in body:
             continue
         ids = body[key]
-        if (
-            not isinstance(ids, list)
-            or len(ids) > MAX_SCOPE_IDS
-            or not all(isinstance(i, str) and i for i in ids)
-        ):
+        if not isinstance(ids, list) or not all(isinstance(i, str) and i for i in ids):
             errors.append(make_field_error(key, ids))
             continue
         scope[key] = sorted(set(ids))
     if errors:
-        abort_validation(
-            f"{' and '.join(SCOPE_KEYS)} are lists of at most {MAX_SCOPE_IDS} ids.", errors
-        )
+        abort_validation(f"{' and '.join(SCOPE_KEYS)} are lists of ids.", errors)
     return scope
 
 
-def _whole_number_or_abort(body, key, default, maximum=None):
+def _whole_number_or_abort(body, key, default, minimum):
     value = body.get(key, default)
-    if (
-        not isinstance(value, int)
-        or isinstance(value, bool)
-        or value < 0
-        or (maximum is not None and value > maximum)
-    ):
-        bound = f" from 0 to {maximum}" if maximum is not None else " of at least 0"
-        abort_validation(f"{key} is a whole number{bound}.", [make_field_error(key, value)])
+    if key in body and (not isinstance(value, int) or isinstance(value, bool) or value < minimum):
+        abort_validation(
+            f"{key} is a whole number of at least {minimum}.", [make_field_error(key, value)]
+        )
     return value
 
 
@@ -719,23 +711,18 @@ def _count_papers(criteria, *conditions, scope=None):
     return {"analyses": int(analyses), "base_studies": papers}
 
 
-def _funnel(criteria, selected, scope=None):
+def _funnel(criteria, scope=None):
     """Every analysis with features (within ``scope``), and what each criterion in turn
     leaves.
 
-    A statement a step, each served by the indexes; ``selected`` is the last step, which
-    the caller has counted. One pass with a FILTER per step would run every pattern on
-    every row. Steps that keep most of the table are the expensive ones.
+    A statement a step, each served by the indexes. One pass with a FILTER per step would
+    run every pattern on every row. Steps that keep most of the table are the expensive
+    ones.
     """
     searched = _count_papers([], scope=scope)
     steps, remaining = [], searched
     for i, c in enumerate(criteria):
-        last = i == len(criteria) - 1
-        kept = (
-            selected
-            if last
-            else _count_papers(criteria, _where(criteria[: i + 1]), scope=scope)
-        )
+        kept = _count_papers(criteria, _where(criteria[: i + 1]), scope=scope)
         steps.append(
             {
                 "criterion": c.name,
@@ -794,63 +781,108 @@ def _matched_by(criteria, prefix=""):
     return out
 
 
-def _result(row, provenance):
-    display = {k: v for k, v in (row["display"] or {}).items() if k != "contrast_sides"}
+def _analysis(row, provenance, features):
+    """One listed analysis: its id, name and matches, and with ``features`` its features."""
     matched_by = {name: row[f"matched_by_{i}"] for i, name in enumerate(provenance)}
-    return {
-        "analysis": row["analysis_id"],
-        "study": row["study_id"],
-        "base_study": row["base_study_id"],
+    display = (row["display"] or {}) if features else {"name": row["name"]}
+    result = {
+        "id": row["analysis_id"],
         "name": display.get("name"),
         "matched_by": {name: how for name, how in matched_by.items() if how is not None},
-        "features": {**display, **{name: row[name] for name in RESULT_COLUMNS}},
     }
+    if features:
+        display = {k: v for k, v in display.items() if k != "contrast_sides"}
+        result["features"] = {**display, **{name: row[name] for name in RESULT_COLUMNS}}
+    return result
+
+
+def _bool_or_abort(body, key, default):
+    value = body.get(key, default)
+    if not isinstance(value, bool):
+        abort_validation(f"{key} is true or false.", [make_field_error(key, value)])
+    return value
 
 
 def run_query(body):
-    """Run an analysis query body: ``{"query": {...}, "limit": n, "offset": n, "funnel":
-    bool, "base_study_ids": [...], "study_ids": [...]}``."""
-    limit = _whole_number_or_abort(body, "limit", DEFAULT_LIMIT, MAX_LIMIT)
-    offset = _whole_number_or_abort(body, "offset", 0)
+    """Run an analysis query body: ``{"query": {...}, "page": n, "page_size": n,
+    "paginate": bool, "detail": "studies" | "analyses" | "features", "funnel": bool,
+    "base_study_ids": [...], "study_ids": [...]}``.
+
+    The results are the studies with a selected analysis, a page of them unless
+    `paginate` is false, each with as much as `detail` asks for.
+    """
+    page = _whole_number_or_abort(body, "page", 1, 1)
+    page_size = _whole_number_or_abort(body, "page_size", DEFAULT_PAGE_SIZE, 0)
+    paginate = _bool_or_abort(body, "paginate", True)
+    detail = body.get("detail", "features")
+    if detail not in DETAILS:
+        abort_validation(
+            f"detail is one of {', '.join(DETAILS)}.",
+            [make_field_error("detail", detail, list(DETAILS))],
+        )
     scope = _scope_or_abort(body)
     criteria = _parse_or_abort(body.get("query", {}))
     selected = _from(criteria, **scope).where(_where(criteria))
-    per_study = db.session.execute(
-        selected.add_columns(AF.study_id, AF.base_study_id, sa.func.count()).group_by(
-            AF.study_id, AF.base_study_id
-        )
-    ).all()
-    counts = {
-        "analyses": sum(n for _, _, n in per_study),
-        "base_studies": len({base_study_id for _, base_study_id, _ in per_study}),
+    studies, analyses = db.session.execute(
+        selected.add_columns(sa.func.count(AF.study_id.distinct()), sa.func.count())
+    ).one()
+    result = {
+        "metadata": {"total_count": studies, "analysis_count": analyses},
+        "query": _canonical(criteria),
+        "results": _studies(selected, criteria, page, page_size, paginate, detail),
     }
+    if body.get("funnel"):
+        result["searched"], result["funnel"] = _funnel(criteria, scope)
+    return result
+
+
+def _studies(selected, criteria, page, page_size, paginate, detail):
+    """The page of selected studies, by paper, each with as much as ``detail`` asks for."""
+    if paginate and page_size == 0:
+        return []
+    studies = (
+        selected.add_columns(AF.base_study_id, AF.study_id)
+        .group_by(AF.base_study_id, AF.study_id)
+        .order_by(AF.base_study_id, AF.study_id)
+    )
+    if paginate:
+        studies = studies.offset((page - 1) * page_size).limit(page_size)
+    if detail == "studies":
+        return [
+            {"study": study, "base_study": base_study}
+            for base_study, study in db.session.execute(studies)
+        ]
+    listing = selected
+    if paginate:
+        on_page = studies.subquery()
+        listing = listing.where(AF.study_id.in_(sa.select(on_page.c.study_id)))
+    features = detail == "features"
     provenance = _matched_by(criteria)
     rows = db.session.execute(
-        selected.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
+        listing.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
         .add_columns(
             AF.analysis_id,
             AF.study_id,
             AF.base_study_id,
-            AFD.display,
-            *(getattr(AF, name) for name in RESULT_COLUMNS),
+            *(
+                (AFD.display, *(getattr(AF, name) for name in RESULT_COLUMNS))
+                if features
+                else (AFD.display["name"].astext.label("name"),)
+            ),
             *(how.label(f"matched_by_{i}") for i, how in enumerate(provenance.values())),
         )
-        .order_by(AF.base_study_id, AF.analysis_id)
-        .offset(offset)
-        .limit(limit)
-    ).mappings().all()
-    result = {
-        "query": _canonical(criteria),
-        "counts": {**counts, "studies": len(per_study)},
-        "results": [_result(row, provenance) for row in rows],
-        "study_ids": sorted(study_id for study_id, _, _ in per_study),
-        "next_offset": (
-            offset + limit if limit and offset + limit < counts["analyses"] else None
-        ),
-    }
-    if body.get("funnel"):
-        result["searched"], result["funnel"] = _funnel(criteria, counts, scope)
-    return result
+        .order_by(AF.base_study_id, AF.study_id, AF.analysis_id)
+    ).mappings()
+    return [
+        {
+            "study": study,
+            "base_study": base_study,
+            "analyses": [_analysis(row, provenance, features) for row in group],
+        }
+        for (base_study, study), group in groupby(
+            rows, key=lambda row: (row["base_study_id"], row["study_id"])
+        )
+    ]
 
 
 #: Term listing field -> the criterion whose values it lists.
