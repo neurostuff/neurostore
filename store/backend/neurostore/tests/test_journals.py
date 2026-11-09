@@ -2,6 +2,8 @@
 upload names, and refreshing journals from OpenAlex. Recorded OpenAlex and NCBI answers
 for real papers found in production (docs/journals/DESIGN.md)."""
 
+import traceback
+
 import pytest
 import requests
 import sqlalchemy as sa
@@ -241,7 +243,7 @@ def test_refresh_moves_papers_off_a_source_openalex_merged(session, app):
     assert session.get(BaseStudy, paper.id).journal_id == survivor.id
 
 
-def test_ncbi_requests_carry_the_pubmed_key_and_openalex_requests_do_not(monkeypatch):
+def test_ncbi_requests_carry_ncbi_contact_and_key_and_openalex_only_mailto(monkeypatch):
     sent = []
 
     class Answer:
@@ -255,12 +257,33 @@ def test_ncbi_requests_carry_the_pubmed_key_and_openalex_requests_do_not(monkeyp
         return Answer()
 
     monkeypatch.setattr(requests, "request", request)
-    settings = {"PUBMED_TOOL_API_KEY": "ncbi-key"}
+    settings = {
+        "PUBMED_TOOL_API_KEY": "ncbi-key", "PUBMED_TOOL": "neurostore", "EMAIL": "me@x.org"
+    }
     journals._pubmed_issns(settings, ["30000000"])
     journals._nlm_record(settings, ["1065-9471"])
     journals._works(settings, "pmid", ["30000000"])
 
-    assert [params.get("api_key") for url, params in sent if journals.EUTILS in url] == [
-        "ncbi-key"
+    ncbi = [params for url, params in sent if journals.EUTILS in url]
+    openalex = [params for url, params in sent if journals.EUTILS not in url]
+    contact = ("api_key", "tool", "email", "mailto")
+    assert [tuple(p.get(k) for k in contact) for p in ncbi] == [
+        ("ncbi-key", "neurostore", "me@x.org", None)
     ] * 2
-    assert all("api_key" not in params for url, params in sent if journals.EUTILS not in url)
+    assert [tuple(p.get(k) for k in contact) for p in openalex] == [
+        (None, None, None, "me@x.org")
+    ]
+
+
+def test_a_failed_connection_does_not_put_the_key_or_email_in_the_error():
+    # Nothing listens on the discard port, so requests raises urllib3's error, whose
+    # message carries the whole URL.
+    params = {"db": "pubmed", "api_key": "ncbi-key", "email": "me@x.org", "mailto": "me@x.org"}
+    with pytest.raises(requests.ConnectionError) as caught:
+        journals._request_with_retry(
+            {}, "GET", "http://127.0.0.1:9/entrez/eutils/esummary.fcgi", params=params, timeout=1
+        )
+
+    shown = "".join(traceback.format_exception(caught.value))
+    assert "esummary.fcgi" in shown
+    assert "ncbi-key" not in shown and "me%40x.org" not in shown and "me@x.org" not in shown
