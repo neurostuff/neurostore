@@ -91,7 +91,6 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
 )
 from neurostore.exceptions.utils.errors import ErrorDetail
-from neurostore.ingest import base_study_level
 from neurostore.ingest.analysis_features import latest_records, sync_analysis_features
 from neurostore.ingest.study_entities import (
     CONTENT_KEYED_CLASSES,
@@ -729,8 +728,10 @@ def _resolve_base_study(body, parse, parsed_paper, create):
                 "The parse names no identifier to create its base study from.",
                 [make_field_error("coordinate_parse/header/identifiers", header_identifiers)],
             )
-        fields = _bibliography(parsed_paper)
-        base_study = BaseStudy(level=base_study_level(fields.get("name")), **fields)
+        # The pipeline decides whether the paper is a meta-analysis (PubMed's publication
+        # types first, then its title); neurostore reads that verdict.
+        meta = parsed_paper is not None and parsed_paper["is_meta_analysis"]
+        base_study = BaseStudy(level="meta" if meta else "group", **_bibliography(parsed_paper))
         db.session.add(base_study)
 
     attach_identifiers(db.session, base_study, identifiers, held, source="ingest")

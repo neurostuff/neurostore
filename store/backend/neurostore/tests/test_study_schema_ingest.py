@@ -162,17 +162,22 @@ def test_parse_alone_stores_skeleton_keyed_by_content(session):
 
 
 @pytest.mark.parametrize(
-    "title, level",
+    "title, is_meta_analysis, level",
     [
-        ("Fear conditioning: an activation likelihood estimation meta-analysis", "meta"),
-        ("Meta-analytic connectivity modeling of the human superior temporal sulcus", "meta"),
-        ("Neural correlates of itch: a systematic review", "meta"),
-        ("Fear conditioning in adolescents: an fMRI study", "group"),
+        ("Fear conditioning: an activation likelihood estimation meta-analysis", True, "meta"),
+        # PubMed's publication type, with a title that never says so.
+        ("Neural correlates of fear conditioning in humans", True, "meta"),
+        # The pipeline's verdict, not neurostore's reading of the title.
+        ("Regulating a meta-analytically defined target network", False, "group"),
+        ("Fear conditioning in adolescents: an fMRI study", False, "group"),
     ],
 )
-def test_a_paper_titled_as_a_meta_analysis_is_a_meta_level_base_study(session, title, level):
+def test_a_paper_the_pipeline_calls_a_meta_analysis_is_a_meta_level_base_study(
+    session, title, is_meta_analysis, level
+):
     paper = fx.parsed_paper(pmid="34567890")
     paper["bibliography"]["title"] = title
+    paper["is_meta_analysis"] = is_meta_analysis
 
     summary = ingest_upload(
         {"coordinate_parse": fx.parse([GAIN], pmid="34567890"), "parsed_paper": paper}
