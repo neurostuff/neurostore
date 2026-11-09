@@ -37,6 +37,7 @@ import re
 from dataclasses import dataclass
 from itertools import groupby
 
+import orjson
 import sqlalchemy as sa
 
 from neurostore.database import db
@@ -781,10 +782,17 @@ def _matched_by(criteria, prefix=""):
     return out
 
 
+def _raw(column):
+    """``column`` as psycopg2 returns it, with no SQLAlchemy result processing."""
+    if isinstance(column.type, sa.ARRAY):
+        column = sa.cast(column, sa.ARRAY(sa.Text))
+    return sa.type_coerce(column, sa.types.NullType())
+
+
 def _analysis(row, provenance, features):
     """One listed analysis: its id, name and matches, and with ``features`` its features."""
     matched_by = {name: row[f"matched_by_{i}"] for i, name in enumerate(provenance)}
-    display = (row["display"] or {}) if features else {"name": row["name"]}
+    display = orjson.loads(row["display"] or "{}") if features else {"name": row["name"]}
     result = {
         "id": row["analysis_id"],
         "name": display.get("name"),
@@ -858,14 +866,20 @@ def _studies(selected, criteria, page, page_size, paginate, detail):
         listing = listing.where(AF.study_id.in_(sa.select(on_page.c.study_id)))
     features = detail == "features"
     provenance = _matched_by(criteria)
-    rows = db.session.execute(
+    # Core, not the ORM, the display as text for orjson, and arrays as text[] that
+    # psycopg2 parses itself: on the whole corpus the ORM's rows, json.loads and
+    # SQLAlchemy's per-item array processing were 40% of the time.
+    rows = db.session.connection().execute(
         listing.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
         .add_columns(
             AF.analysis_id,
             AF.study_id,
             AF.base_study_id,
             *(
-                (AFD.display, *(getattr(AF, name) for name in RESULT_COLUMNS))
+                (
+                    sa.cast(AFD.display, sa.Text).label("display"),
+                    *(_raw(getattr(AF, name)).label(name) for name in RESULT_COLUMNS),
+                )
                 if features
                 else (AFD.display["name"].astext.label("name"),)
             ),
