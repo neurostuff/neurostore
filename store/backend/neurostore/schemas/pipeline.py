@@ -60,7 +60,9 @@ class PipelineStudyResultSchema(BaseSchema):
     result_data = fields.Dict(
         allow_none=True, metadata={"description": "Pipeline execution results"}
     )
-    file_inputs = fields.Dict(
+    # Older pipelines store a mapping; study_schema uploads store a list of
+    # {artifact_kind, fingerprint, ...} entries. Pass the stored JSON through.
+    file_inputs = fields.Raw(
         allow_none=True,
         metadata={"description": "Files used as input for the pipeline"},
     )
@@ -137,7 +139,9 @@ class PipelineEmbeddingSchema(BaseSchema):
     )
 
     # Result and input data
-    file_inputs = fields.Dict(
+    # Older pipelines store a mapping; study_schema uploads store a list of
+    # {artifact_kind, fingerprint, ...} entries. Pass the stored JSON through.
+    file_inputs = fields.Raw(
         allow_none=True,
         metadata={"description": "Files used as input for the pipeline"},
     )
