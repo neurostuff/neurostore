@@ -510,6 +510,80 @@ async def test_limit_caps_the_results_not_the_counts(auth_client, papers):
     assert len(result["study_ids"]) == 3
 
 
+async def test_base_study_ids_restrict_the_selection_the_counts_and_the_funnel(
+    auth_client, papers
+):
+    every = await _query(auth_client, {}, limit=1000)
+    per_paper = {}
+    for r in every["results"]:
+        per_paper.setdefault(r["base_study"], []).append(r["analysis"])
+    smokers = papers[NICOTINE]
+
+    theirs = await _query(auth_client, {}, base_study_ids=[smokers], funnel=True)
+    whole_brain = await _query(
+        auth_client,
+        {"spatial_scope": "whole_brain"},
+        base_study_ids=[smokers, papers[SCHIZOPHRENIA]],
+        funnel=True,
+    )
+    everywhere = await _query(auth_client, {"spatial_scope": "whole_brain"})
+
+    # An empty query lists every analysis the paper has features for, with them.
+    assert sorted(r["analysis"] for r in theirs["results"]) == sorted(per_paper[smokers])
+    assert all(r["features"] for r in theirs["results"])
+    assert theirs["counts"]["base_studies"] == 1
+    assert theirs["searched"] == {"analyses": len(per_paper[smokers]), "base_studies": 1}
+    # The two whole-brain smokers, not the conduct paper's whole-brain analysis.
+    assert _papers(whole_brain, papers) == [NICOTINE]
+    assert whole_brain["counts"]["analyses"] == everywhere["counts"]["analyses"] - 1
+    assert whole_brain["searched"]["base_studies"] == 2
+    assert whole_brain["funnel"][0]["dropped"] == (
+        len(per_paper[smokers]) + len(per_paper[papers[SCHIZOPHRENIA]])
+        - whole_brain["counts"]["analyses"]
+    )
+
+
+async def test_study_ids_restrict_too_and_combine_with_base_study_ids(auth_client, papers):
+    theirs = await _query(auth_client, {}, base_study_ids=[papers[CONDUCT]])
+    (study,) = theirs["study_ids"]
+
+    by_study = await _query(auth_client, {}, study_ids=[study])
+    both = await _query(auth_client, {}, study_ids=[study], base_study_ids=[papers[CONDUCT]])
+    disjoint = await _query(
+        auth_client, {}, study_ids=[study], base_study_ids=[papers[NICOTINE]]
+    )
+    unknown = await _query(auth_client, {}, base_study_ids=["noSuchPaper1"])
+
+    assert by_study["results"] == both["results"] == theirs["results"]
+    assert disjoint["results"] == [] and disjoint["counts"]["analyses"] == 0
+    assert unknown["study_ids"] == [] and unknown["next_offset"] is None
+
+
+async def test_offset_pages_through_the_listing(auth_client, papers):
+    every = await _query(auth_client, {}, limit=1000)
+    pages, offset = [], 0
+    while offset is not None:
+        page = await _query(auth_client, {}, limit=2, offset=offset)
+        assert page["counts"] == every["counts"]
+        pages.append([r["analysis"] for r in page["results"]])
+        offset = page["next_offset"]
+
+    assert [len(p) for p in pages] == [2, 2, 1]
+    assert [a for p in pages for a in p] == [r["analysis"] for r in every["results"]]
+    assert every["next_offset"] is None
+    # A count-only query has no next page.
+    assert (await _query(auth_client, {}, limit=0))["next_offset"] is None
+
+
+async def test_invalid_scopes_and_offsets_are_refused(auth_client, papers):
+    await _query(auth_client, {}, status=400, base_study_ids=papers[CONDUCT])
+    await _query(auth_client, {}, status=400, study_ids=[f"s{i:05d}" for i in range(1001)])
+    await _query(auth_client, {}, status=400, offset=-1)
+    assert _codes(await _query(auth_client, {}, status=400, base_study_ids=[""])) == [
+        "INVALID_VALUE"
+    ]
+
+
 async def test_terms_list_values_with_counts(auth_client, papers):
     resp = await auth_client.get("/api/analysis-terms/?field=medical_condition")
     found = await auth_client.get("/api/analysis-terms/?field=task&search=n_back")

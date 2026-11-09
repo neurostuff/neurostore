@@ -25,9 +25,11 @@ names (`name`, the text of the side's cell levels and conditions), its groups' h
 medical conditions, its timepoints' relation to the intervention, its arms' kinds, and its
 contrast keys' facets. A text criterion in their place is shorthand for its `name`.
 
-`run_query` returns the canonical query, the counts, the first `limit` analyses and every
+`run_query` returns the canonical query, the counts, `limit` analyses from `offset` and every
 selected analysis's study id; with `funnel`, also what each criterion dropped and how many
-analyses it found silent, which costs a count per criterion.
+analyses it found silent, which costs a count per criterion. `base_study_ids` and
+`study_ids` restrict all of it to those papers or studies, so an empty query with them
+returns their analyses' features.
 """
 
 import re
@@ -55,6 +57,10 @@ UNMAPPED_MODES = ["exclude", "include", "text"]
 IDS_ONLY_UNMAPPED_MODES = ["exclude", "include"]
 DEFAULT_LIMIT = 100
 MAX_LIMIT = 1000
+#: The most papers or studies a query may be restricted to.
+MAX_SCOPE_IDS = 1000
+#: The body keys that restrict a query to papers or to pipeline studies.
+SCOPE_KEYS = ("base_study_ids", "study_ids")
 #: The fewest consecutive letters or digits a text pattern needs.
 MIN_LITERAL = 3
 
@@ -613,12 +619,14 @@ def _canonical(criteria):
 # ---------------------------------------------------------------------------
 
 
-def _from(criteria, study_ids=None):
+def _from(criteria, study_ids=None, base_study_ids=None):
     source = sa.select().select_from(AF)
     if any(c.joins for c in criteria):
         source = source.join(Analysis, Analysis.id == AF.analysis_id)
     if study_ids is not None:
         source = source.where(AF.study_id.in_(study_ids))
+    if base_study_ids is not None:
+        source = source.where(AF.base_study_id.in_(base_study_ids))
     return source
 
 
@@ -631,6 +639,41 @@ def _parse_or_abort(query):
         return parse(query)
     except QueryError as error:
         abort_validation("The analysis query is not valid.", error.errors)
+
+
+def _scope_or_abort(body):
+    """The papers and studies ``body`` restricts the query to, as `_from` keywords."""
+    scope, errors = {}, []
+    for key in SCOPE_KEYS:
+        if key not in body:
+            continue
+        ids = body[key]
+        if (
+            not isinstance(ids, list)
+            or len(ids) > MAX_SCOPE_IDS
+            or not all(isinstance(i, str) and i for i in ids)
+        ):
+            errors.append(make_field_error(key, ids))
+            continue
+        scope[key] = sorted(set(ids))
+    if errors:
+        abort_validation(
+            f"{' and '.join(SCOPE_KEYS)} are lists of at most {MAX_SCOPE_IDS} ids.", errors
+        )
+    return scope
+
+
+def _whole_number_or_abort(body, key, default, maximum=None):
+    value = body.get(key, default)
+    if (
+        not isinstance(value, int)
+        or isinstance(value, bool)
+        or value < 0
+        or (maximum is not None and value > maximum)
+    ):
+        bound = f" from 0 to {maximum}" if maximum is not None else " of at least 0"
+        abort_validation(f"{key} is a whole number{bound}.", [make_field_error(key, value)])
+    return value
 
 
 def select_analyses(query, study_ids, analysis_ids):
@@ -651,15 +694,18 @@ def select_analyses(query, study_ids, analysis_ids):
     }
 
 
-def _count(criteria, *conditions):
-    """How many analyses match ``conditions``."""
-    return db.session.scalar(_from(criteria).where(*conditions).add_columns(sa.func.count()))
+def _count(criteria, *conditions, scope=None):
+    """How many analyses match ``conditions`` within ``scope``."""
+    return db.session.scalar(
+        _from(criteria, **(scope or {})).where(*conditions).add_columns(sa.func.count())
+    )
 
 
-def _count_papers(criteria, *conditions):
-    """``{analyses, base_studies}`` matching ``conditions``; papers counted by hashing."""
+def _count_papers(criteria, *conditions, scope=None):
+    """``{analyses, base_studies}`` matching ``conditions`` within ``scope``; papers counted
+    by hashing."""
     per_paper = (
-        _from(criteria)
+        _from(criteria, **(scope or {}))
         .where(*conditions)
         .add_columns(AF.base_study_id, sa.func.count().label("n"))
         .group_by(AF.base_study_id)
@@ -673,30 +719,35 @@ def _count_papers(criteria, *conditions):
     return {"analyses": int(analyses), "base_studies": papers}
 
 
-def _funnel(criteria, selected):
-    """Every analysis with features, and what each criterion in turn leaves.
+def _funnel(criteria, selected, scope=None):
+    """Every analysis with features (within ``scope``), and what each criterion in turn
+    leaves.
 
     A statement a step, each served by the indexes; ``selected`` is the last step, which
     the caller has counted. One pass with a FILTER per step would run every pattern on
     every row. Steps that keep most of the table are the expensive ones.
     """
-    searched = _count_papers([])
+    searched = _count_papers([], scope=scope)
     steps, remaining = [], searched
     for i, c in enumerate(criteria):
         last = i == len(criteria) - 1
-        kept = selected if last else _count_papers(criteria, _where(criteria[: i + 1]))
+        kept = (
+            selected
+            if last
+            else _count_papers(criteria, _where(criteria[: i + 1]), scope=scope)
+        )
         steps.append(
             {
                 "criterion": c.name,
                 **kept,
                 "dropped": remaining["analyses"] - kept["analyses"],
                 "silent": (
-                    _count(criteria, _where(criteria[:i]), c.silent)
+                    _count(criteria, _where(criteria[:i]), c.silent, scope=scope)
                     if c.silent is not None
                     else None
                 ),
                 "unmapped": (
-                    _count(criteria, _where(criteria[:i]), c.unmapped)
+                    _count(criteria, _where(criteria[:i]), c.unmapped, scope=scope)
                     if c.unmapped is not None
                     else None
                 ),
@@ -757,15 +808,13 @@ def _result(row, provenance):
 
 
 def run_query(body):
-    """Run an analysis query body: ``{"query": {...}, "limit": n, "funnel": bool}``."""
-    limit = body.get("limit", DEFAULT_LIMIT)
-    if not isinstance(limit, int) or isinstance(limit, bool) or not 0 <= limit <= MAX_LIMIT:
-        abort_validation(
-            f"limit is a whole number from 0 to {MAX_LIMIT}.",
-            [make_field_error("limit", limit)],
-        )
+    """Run an analysis query body: ``{"query": {...}, "limit": n, "offset": n, "funnel":
+    bool, "base_study_ids": [...], "study_ids": [...]}``."""
+    limit = _whole_number_or_abort(body, "limit", DEFAULT_LIMIT, MAX_LIMIT)
+    offset = _whole_number_or_abort(body, "offset", 0)
+    scope = _scope_or_abort(body)
     criteria = _parse_or_abort(body.get("query", {}))
-    selected = _from(criteria).where(_where(criteria))
+    selected = _from(criteria, **scope).where(_where(criteria))
     per_study = db.session.execute(
         selected.add_columns(AF.study_id, AF.base_study_id, sa.func.count()).group_by(
             AF.study_id, AF.base_study_id
@@ -787,6 +836,7 @@ def run_query(body):
             *(how.label(f"matched_by_{i}") for i, how in enumerate(provenance.values())),
         )
         .order_by(AF.base_study_id, AF.analysis_id)
+        .offset(offset)
         .limit(limit)
     ).mappings().all()
     result = {
@@ -794,9 +844,12 @@ def run_query(body):
         "counts": {**counts, "studies": len(per_study)},
         "results": [_result(row, provenance) for row in rows],
         "study_ids": sorted(study_id for study_id, _, _ in per_study),
+        "next_offset": (
+            offset + limit if limit and offset + limit < counts["analyses"] else None
+        ),
     }
     if body.get("funnel"):
-        result["searched"], result["funnel"] = _funnel(criteria, counts)
+        result["searched"], result["funnel"] = _funnel(criteria, counts, scope)
     return result
 
 

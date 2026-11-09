@@ -18,6 +18,7 @@ A normalized feature (medical condition, task, contrast key, contrast set) is se
 
 - Measured on 950k rows (the resolver's output for 100 real records, copied at random, with zipf-distributed MONDO and task ids), local pg17 with 128 MB shared_buffers, warm: medical condition, task, contrast, design, silent-inclusive, `none`/`all` and `or` queries in 5–196 ms, a broad one (whole brain, BOLD, human: 275k analyses) in 648 ms. With the funnel, 340–685 ms, except where an early criterion keeps most of the table (2.3 s for the broad query, 2.9 s for `none` over medical conditions), since each step counts what it keeps.
 - A resolver change needs the backfill; the rows are derived, never edited.
+- A query can be restricted to papers (`base_study_ids`) or pipeline studies (`study_ids`), up to 1000 of each; the counts, `study_ids` and the funnel then cover the restricted set, so an empty query with `base_study_ids` returns those papers' features. `offset` and `next_offset` page the listing past the 1000-analysis cap. Added for clients that judge a known candidate set, such as autonima's screening.
 - Features come from the latest record only. Curators' field claims are not read yet.
 - `analysis_features` is served, unlike the truth layer it is read from (`tests/test_truth_layer.py`).
 
