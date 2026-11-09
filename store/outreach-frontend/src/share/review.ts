@@ -15,6 +15,8 @@ export interface Prompt {
     analysisKey?: string;
     tone: Tone;
     text: string;
+    /** Only says the map has no analysis yet, which the pool already shows. */
+    unplaced?: boolean;
 }
 
 /** Which uploads each analysis has. */
@@ -94,7 +96,8 @@ export function prompts(view: ShareView): Prompt[] {
             found.push({
                 uploadId: upload.id,
                 tone: 'info',
-                text: 'Which analysis is this map? Pick one, or describe it if the paper does not table it.',
+                unplaced: true,
+                text: 'Which analysis is this map? Move it to one, or describe it if the paper does not table it.',
             });
     }
     for (const [key, uploads] of coverage(view))
@@ -141,6 +144,11 @@ export function commonFolder(paths: (string | null)[]): string {
 export const inFolder = (path: string, folder: string) =>
     folder && path.startsWith(`${folder}/`) ? path.slice(folder.length + 1) : path;
 
+/** A file's path inside the folder all the uploads share: enough to tell
+ * cope1.feat/stats/zstat1 from cope2's, without repeating the folder on every row. */
+export const shownPath = (upload: ShareUpload, folder: string) =>
+    upload.path ? inFolder(upload.path, folder) : upload.filename;
+
 /** The uploads in reading order: each statistic map, then the maps that go with it. */
 export function ordered(view: ShareView): ShareUpload[] {
     const ids = new Set(view.uploads.map((upload) => upload.id));
@@ -156,3 +164,7 @@ export const TYPE_LABELS: Record<string, string> = {
     variance: 'variance map',
     other: 'other',
 };
+
+/** What the folder picker calls the maps that sit directly in the folder the author chose. */
+export const CHOSEN_FOLDER = 'In the chosen folder';
+export const FOLDER_COLOUR = 'grey.700';

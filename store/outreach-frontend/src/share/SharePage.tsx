@@ -5,9 +5,6 @@ import {
     Alert,
     Box,
     Button,
-    Chip,
-    Grid,
-    IconButton,
     Link,
     MenuItem,
     Paper,
@@ -19,15 +16,14 @@ import {
 import { useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { paperLinks } from '../links';
 import type { ShareApi } from './api';
+import { GroupingBoard } from './GroupingBoard';
 import { defaultSoftware, INSTRUCTIONS } from './instructions';
 import {
     commonFolder,
-    formatBytes,
-    FITS,
-    inFolder,
     ordered,
     prompts,
     refusal,
+    shownPath,
     TYPE_LABELS,
     usableFiles,
     type Tone,
@@ -35,7 +31,7 @@ import {
 import { HelpDialog, IssueDialog, ReplyDialog } from './ShareDialogs';
 import { droppedEntries, filesUnder, pickMaps, withPaths, type Candidate } from './tree';
 import { TreePicker } from './TreePicker';
-import { ISSUE_REASONS, MAP_TYPES, type IssueReason, type MapType, type ShareUpload, type ShareView } from './types';
+import type { ShareView } from './types';
 
 const NOT_STARTED = ['draft', 'checked', 'contacted'];
 const COLLECTION_FIELDS: [string, string][] = [
@@ -58,189 +54,6 @@ function Section({ step, title, children }: { step?: number; title: string; chil
                 {title}
             </Typography>
             {children}
-        </Paper>
-    );
-}
-
-/** A file's path inside the folder all the uploads share: enough to tell
- * cope1.feat/stats/zstat1 from cope2's, without repeating the folder on every row. */
-const shownPath = (upload: ShareUpload, folder: string) => (upload.path ? inFolder(upload.path, folder) : upload.filename);
-
-const PAIRED_BY: Record<string, string> = {
-    name: 'by its name',
-    'name+correlation': 'by its name and values',
-    correlation: 'by its values',
-    author: 'by you',
-};
-
-function FileRow({
-    upload,
-    view,
-    folder,
-    disabled,
-    onChange,
-    onRemove,
-}: {
-    upload: ShareUpload;
-    view: ShareView;
-    /** The folder every upload sits in, left off each row's path. */
-    folder: string;
-    disabled: boolean;
-    onChange: (change: Parameters<ShareApi['assign']>[1]) => void;
-    onRemove: () => void;
-}) {
-    const [label, setLabel] = useState(upload.label ?? '');
-    const notes = prompts(view).filter((prompt) => prompt.uploadId === upload.id);
-    const partner = view.uploads.find((other) => other.id === upload.partner_id);
-    const member = upload.kind === 'effect' || upload.kind === 'variance';
-    const statistics = view.uploads.filter((other) => other.kind === 'statistic' && other.check_status === 'ok');
-    const names = (keys: string[]) => keys.map((key) => view.analyses.find((a) => a.key === key)?.name).join(', ');
-    return (
-        <Paper
-            variant="outlined"
-            // Stack resets its children's margins, so the indent of a set's maps is inline.
-            style={partner ? { marginLeft: 24 } : undefined}
-            sx={{ p: 1.5, ...(partner ? { borderLeft: 3, borderLeftColor: 'primary.light' } : {}) }}
-        >
-            <Stack spacing={1}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="subtitle2" sx={{ flexGrow: 1, overflowWrap: 'anywhere' }}>
-                        {shownPath(upload, folder)}{' '}
-                        <Typography component="span" variant="caption" color="text.secondary">
-                            {formatBytes(upload.size_bytes)}
-                        </Typography>
-                    </Typography>
-                    <IconButton size="small" aria-label={`remove ${upload.filename}`} disabled={disabled} onClick={onRemove}>
-                        ✕
-                    </IconButton>
-                </Stack>
-                {upload.check_status === 'ok' && (
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                        <TextField
-                            select
-                            size="small"
-                            label="Kind of map"
-                            disabled={disabled}
-                            value={upload.map_type ?? 'other'}
-                            onChange={(event) => onChange({ map_type: event.target.value as MapType })}
-                            sx={{ minWidth: 150 }}
-                            helperText={upload.map_type_by === 'header' ? 'read from the file' : undefined}
-                        >
-                            {MAP_TYPES.map((type) => (
-                                <MenuItem key={type} value={type}>
-                                    {TYPE_LABELS[type]}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                        {member && (
-                            <TextField
-                                select
-                                size="small"
-                                label="Goes with"
-                                disabled={disabled}
-                                value={upload.partner_id ?? ''}
-                                onChange={(event) => onChange({ partner_id: event.target.value || null })}
-                                SelectProps={{
-                                    displayEmpty: true,
-                                    renderValue: (value) => {
-                                        const chosen = statistics.find((other) => other.id === value);
-                                        return chosen ? shownPath(chosen, folder) : 'no t/z map';
-                                    },
-                                }}
-                                InputLabelProps={{ shrink: true }}
-                                sx={{ flexGrow: 1 }}
-                                helperText={
-                                    partner && upload.partner_by ? `paired ${PAIRED_BY[upload.partner_by]}` : undefined
-                                }
-                            >
-                                <MenuItem value="">no t/z map</MenuItem>
-                                {statistics.map((other) => (
-                                    <MenuItem key={other.id} value={other.id}>
-                                        {shownPath(other, folder)}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
-                        )}
-                    </Stack>
-                )}
-                {upload.check_status === 'ok' && partner && upload.assigned_by !== 'author' && (
-                    <Typography variant="body2" color="text.secondary">
-                        {upload.analysis_keys.length > 0
-                            ? `Goes with ${names(upload.analysis_keys)}, as its t/z map does.`
-                            : partner.label
-                              ? `Goes with “${partner.label}”, as its t/z map does.`
-                              : 'Takes the analysis of its t/z map once that has one.'}
-                    </Typography>
-                )}
-                {upload.check_status === 'ok' && !(partner && upload.assigned_by !== 'author') && (
-                    <TextField
-                        select
-                        size="small"
-                        label="This map is for"
-                        disabled={disabled}
-                        SelectProps={{
-                            multiple: true,
-                            renderValue: (keys) =>
-                                (keys as string[]).length === 0 ? 'None of these analyses' : names(keys as string[]),
-                            displayEmpty: true,
-                        }}
-                        InputLabelProps={{ shrink: true }}
-                        value={upload.analysis_keys}
-                        onChange={(event) => onChange({ analysis_keys: event.target.value as unknown as string[] })}
-                    >
-                        {view.analyses.map((analysis) => {
-                            const fit = upload.fits[analysis.key];
-                            return (
-                                <MenuItem key={analysis.key} value={analysis.key}>
-                                    <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
-                                        <span style={{ flexGrow: 1 }}>{analysis.name}</span>
-                                        {fit && upload.kind !== 'variance' && (
-                                            <Chip size="small" color={FITS[fit.outcome].tone} variant="outlined" label={FITS[fit.outcome].label} />
-                                        )}
-                                    </Stack>
-                                </MenuItem>
-                            );
-                        })}
-                    </TextField>
-                )}
-                {/* Variance maps match nothing by design, and a paired map's analysis comes
-                    from its t/z map, not from a fit of its own. */}
-                {upload.check_status === 'ok' &&
-                    upload.kind !== 'variance' &&
-                    !(partner && upload.assigned_by !== 'author') &&
-                    upload.analysis_keys.length > 0 && (
-                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                        {upload.analysis_keys.map((key) => {
-                            const fit = upload.fits[key];
-                            return (
-                                <Chip
-                                    key={key}
-                                    size="small"
-                                    color={fit ? FITS[fit.outcome].tone : 'default'}
-                                    label={`${names([key])}: ${fit ? FITS[fit.outcome].label : 'not checked'}${
-                                        upload.assigned_by === 'suggestion' ? ' (suggested)' : ''
-                                    }`}
-                                />
-                            );
-                        })}
-                    </Stack>
-                )}
-                {upload.check_status === 'ok' && upload.analysis_keys.length === 0 && !partner && (
-                    <TextField
-                        size="small"
-                        label="What is this map? (for maps the paper does not table)"
-                        value={label}
-                        disabled={disabled}
-                        onChange={(event) => setLabel(event.target.value)}
-                        onBlur={() => label !== (upload.label ?? '') && onChange({ label })}
-                    />
-                )}
-                {notes.map((note) => (
-                    <Alert key={note.text} severity={note.tone} sx={{ py: 0 }}>
-                        {note.text}
-                    </Alert>
-                ))}
-            </Stack>
         </Paper>
     );
 }
@@ -316,6 +129,16 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
         } finally {
             setBusy(false);
         }
+    }
+
+    /** Moves from the board: a group's maps are set one after another, so the page shows
+     * the result of the last. */
+    function assign(changes: { id: string; keys: string[] }[]) {
+        return run(async () => {
+            let latest = view;
+            for (const { id, keys } of changes) latest = await api.assign(id, { analysis_keys: keys });
+            return latest;
+        });
     }
 
     /** A message from one of the dialogs: say plainly whether it went through, wherever
@@ -534,85 +357,26 @@ export function SharePage({ api, initial }: { api: ShareApi; initial: ShareView 
 
                     <Section step={2} title="Check which map goes with which analysis">
                         <Typography variant="body2" color="text.secondary" paragraph>
-                            We compared each t/z map with the coordinates the paper reports and suggested a match; effect
-                            and variance maps go with their t/z map. Change any that are wrong. If an analysis below is
-                            wrong or missing, tell us; you don't need to fix it.
+                            We compared each t/z map with the coordinates the paper reports and placed the ones we were sure
+                            of on their analysis. The rest wait under "Unassigned maps": move each to its analysis, or leave
+                            it out. Effect and variance maps go with their t/z map. Change any that are wrong. If an
+                            analysis below is wrong or missing, tell us; you don't need to fix it.
                         </Typography>
                         {shared && (
                             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, overflowWrap: 'anywhere' }}>
                                 Files from {shared}/
                             </Typography>
                         )}
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} md={7}>
-                                <Stack spacing={1.5}>
-                                    {view.uploads.length === 0 && (
-                                        <Typography variant="body2">No files yet.</Typography>
-                                    )}
-                                    {ordered(view).map((upload) => (
-                                        <FileRow
-                                            key={`${upload.id}-${upload.label ?? ''}`}
-                                            upload={upload}
-                                            view={view}
-                                            folder={shared}
-                                            disabled={!editable || busy}
-                                            onChange={(change) => void run(() => api.assign(upload.id, change))}
-                                            onRemove={() => void run(() => api.remove(upload.id))}
-                                        />
-                                    ))}
-                                </Stack>
-                            </Grid>
-                            <Grid item xs={12} md={5}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Analyses we found
-                                </Typography>
-                                <Stack spacing={1}>
-                                    {view.analyses.map((analysis) => (
-                                        <Box key={analysis.key}>
-                                            {/* A div, not a p: the "no file" chip is a div. */}
-                                            <Typography variant="body2" component="div">
-                                                {analysis.name}
-                                                {unassigned.includes(analysis) && (
-                                                    <Chip size="small" label="no file" sx={{ ml: 1 }} />
-                                                )}
-                                            </Typography>
-                                            {view.issues
-                                                .filter((issue) => issue.analysis_key === analysis.key)
-                                                .map((issue, index) => (
-                                                    <Typography key={index} variant="caption" color="warning.main" display="block">
-                                                        You told us: {ISSUE_REASONS[issue.reason as IssueReason] ?? issue.reason}
-                                                    </Typography>
-                                                ))}
-                                            <Typography variant="caption" color="text.secondary">
-                                                {analysis.points} coordinates ·{' '}
-                                                <Link
-                                                    component="button"
-                                                    variant="caption"
-                                                    disabled={view.preview}
-                                                    onClick={() => setDialog({ issue: analysis.key })}
-                                                >
-                                                    something's wrong with this one
-                                                </Link>
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                    {view.issues.some((issue) => issue.reason === 'missing_analysis') && (
-                                        <Typography variant="caption" color="warning.main">
-                                            You told us an analysis is missing. Thank you.
-                                        </Typography>
-                                    )}
-                                    <Link
-                                        component="button"
-                                        variant="body2"
-                                        sx={{ textAlign: 'left' }}
-                                        disabled={view.preview}
-                                        onClick={() => setDialog({ issue: null })}
-                                    >
-                                        An analysis is missing
-                                    </Link>
-                                </Stack>
-                            </Grid>
-                        </Grid>
+                        <GroupingBoard
+                            view={view}
+                            folder={shared}
+                            disabled={!editable}
+                            busy={busy}
+                            onAssign={(changes) => void assign(changes)}
+                            onChange={(id, change) => void run(() => api.assign(id, change))}
+                            onRemoveFile={(id) => void run(() => api.remove(id))}
+                            onIssue={(issue) => setDialog({ issue })}
+                        />
                     </Section>
 
                     <Accordion variant="outlined" disableGutters>

@@ -1,5 +1,15 @@
 import { defaultSoftware } from './instructions';
-import { filesUnder, guessKind, pickMaps, setKey } from './tree';
+import {
+    filesUnder,
+    filterCandidates,
+    groupByFolder,
+    guessKind,
+    hasSimilarMap,
+    pickMaps,
+    setKey,
+    similarMaps,
+    swapMaps,
+} from './tree';
 
 const at = (path: string, size = 1000) => ({ file: new File([new Uint8Array(size)], path.split('/').pop()!), path });
 
@@ -84,11 +94,129 @@ test('renamed maps pair by their shared stem', () => {
 test('files left unticked say why in plain words', () => {
     const picked = pickMaps([at('x/thresh_zstat1.nii.gz'), at('x/spmF_0002.nii'), at('x/Rob.3dMVM.nii.gz')], 10);
     expect(picked.map((c) => c.note)).toEqual([
-        'not recognised; tick it if it is a group map',
-        'tick it if an analysis is an F test',
+        'not recognised; select it if it is a group map',
+        'select it if an analysis is an F test',
         'thresholded copy',
     ]);
     expect(picked.some((c) => c.selected)).toBe(false);
+});
+
+const names = (maps: { path: string }[]) => maps.map((map) => map.path.split('/').slice(-2).join('/'));
+const feat = (n: number) => [`g.gfeat/cope${n}.feat/stats/zstat1.nii.gz`, `g.gfeat/cope${n}.feat/stats/cope1.nii.gz`];
+const folderPick = (count: number, limit: number) =>
+    pickMaps(
+        Array.from({ length: count }, (_, i) => feat(i + 1))
+            .flat()
+            .map((path) => at(path)),
+        limit
+    );
+const selectedOf = (maps: { selected: boolean; path: string }[]) =>
+    new Set(maps.filter((m) => m.selected).map((m) => m.path));
+
+test('the filter keeps maps whose path holds every word, in any case', () => {
+    const picked = folderPick(3, 10);
+    expect(filterCandidates(picked, '')).toHaveLength(picked.length);
+    expect(names(filterCandidates(picked, 'COPE2 zstat'))).toEqual(['stats/zstat1.nii.gz']);
+    expect(filterCandidates(picked, 'cope2').every((map) => map.path.includes('cope2'))).toBe(true);
+    expect(filterCandidates(picked, 'nothing')).toEqual([]);
+});
+
+test('maps are grouped by the folder they sit in, in order, named relative to the chosen folder', () => {
+    const picked = folderPick(2, 10);
+    const groups = groupByFolder(picked, 'g.gfeat');
+    expect(groups.map((group) => group.folder)).toEqual(['cope1.feat/stats', 'cope2.feat/stats']);
+    expect(names(groups[1].maps)).toEqual(['stats/cope1.nii.gz', 'stats/zstat1.nii.gz']);
+    expect(groupByFolder(pickMaps([at('x.nii.gz')], 1), '')[0].folder).toBe('');
+});
+
+test('similar maps are the unticked ones of the same kind, nearest in the folder tree first', () => {
+    const picked = [...folderPick(4, 1), ...pickMaps([at('other/zstat9.nii.gz'), at('other/mask.nii.gz')], 0)];
+    const ticked = picked.find((map) => map.selected)!;
+    const similar = similarMaps(ticked, picked, selectedOf(picked));
+    expect(names(similar)).toEqual([
+        'stats/zstat1.nii.gz',
+        'stats/zstat1.nii.gz',
+        'stats/zstat1.nii.gz',
+        'other/zstat9.nii.gz',
+    ]);
+    expect(similar.slice(0, 3).every((map) => map.path.startsWith('g.gfeat/'))).toBe(true);
+    expect(similar.every((map) => map.kind === 'z')).toBe(true);
+});
+
+test('similar maps leave out thresholded copies, files that are not group maps and ticked maps', () => {
+    const picked = pickMaps(
+        ['a/zstat1', 'a/zstat2', 'a/thresh_zstat3', 'a/mask_zstat4'].map((name) => at(`${name}.nii.gz`)),
+        1
+    );
+    const ticked = picked.find((map) => map.selected)!;
+    expect(ticked.path).toBe('a/zstat1.nii.gz');
+    expect(names(similarMaps(ticked, picked, selectedOf(picked)))).toEqual(['a/zstat2.nii.gz']);
+});
+
+test('hasSimilarMap says whether similarMaps would find anything', () => {
+    const some = pickMaps(
+        ['a/zstat1', 'a/zstat2', 'a/thresh_zstat3'].map((n) => at(`${n}.nii.gz`)),
+        1
+    );
+    const ticked = some.find((map) => map.selected)!;
+    expect(hasSimilarMap(ticked, some, selectedOf(some))).toBe(true);
+    // Nothing left to offer once the only other candidate is ticked.
+    const alone = pickMaps(
+        ['a/zstat1', 'a/thresh_zstat3', 'a/mask_zstat4'].map((n) => at(`${n}.nii.gz`)),
+        1
+    );
+    const only = alone.find((map) => map.selected)!;
+    expect(similarMaps(only, alone, selectedOf(alone))).toEqual([]);
+    expect(hasSimilarMap(only, alone, selectedOf(alone))).toBe(false);
+});
+
+test('a t map and a z map count as alike, an effect map only looks for effect maps', () => {
+    const picked = pickMaps(
+        ['a/spmT_0001', 'a/spmT_0002', 'a/con_0001', 'a/con_0002'].map((n) => at(`${n}.nii`)),
+        2
+    );
+    const [con1, t1] = ['con_0001', 'spmT_0001'].map((n) => picked.find((map) => map.path.includes(n))!);
+    expect(names(similarMaps(t1, picked, selectedOf(picked)))).toEqual(['a/spmT_0002.nii']);
+    expect(names(similarMaps(con1, picked, selectedOf(picked)))).toEqual(['a/con_0002.nii']);
+});
+
+test('swapping a t/z map swaps the effect map that goes with it, and only the kinds the old set had', () => {
+    const picked = folderPick(3, 2);
+    const selected = selectedOf(picked);
+    const from = picked.find((map) => map.path === 'g.gfeat/cope1.feat/stats/zstat1.nii.gz')!;
+    const to = picked.find((map) => map.path === 'g.gfeat/cope3.feat/stats/zstat1.nii.gz')!;
+    const { removed, added } = swapMaps(from, to, picked, selected);
+    expect(removed.map((map) => map.path)).toEqual([
+        'g.gfeat/cope1.feat/stats/zstat1.nii.gz',
+        'g.gfeat/cope1.feat/stats/cope1.nii.gz',
+    ]);
+    expect(added.map((map) => map.path)).toEqual([
+        'g.gfeat/cope3.feat/stats/zstat1.nii.gz',
+        'g.gfeat/cope3.feat/stats/cope1.nii.gz',
+    ]);
+});
+
+test("swapping a set with no variance map does not bring in the other set's variance map", () => {
+    const picked = pickMaps(
+        ['a/cope1', 'a/zstat1', 'b/cope1', 'b/varcope1', 'b/zstat1'].map((n) => at(`${n}.nii.gz`)),
+        2
+    );
+    const from = picked.find((map) => map.path === 'a/zstat1.nii.gz')!;
+    const to = picked.find((map) => map.path === 'b/zstat1.nii.gz')!;
+    const { added } = swapMaps(from, to, picked, selectedOf(picked));
+    expect(added.map((map) => map.path)).toEqual(['b/zstat1.nii.gz', 'b/cope1.nii.gz']);
+});
+
+test('swapping a lone effect map swaps just that map', () => {
+    const picked = pickMaps(
+        ['a', 'b', 'c'].map((folder) => at(`${folder}/cope1.nii.gz`)),
+        1
+    );
+    const from = picked.find((map) => map.selected)!;
+    expect(from.kind).toBe('effect');
+    const to = picked.find((map) => map.path === 'b/cope1.nii.gz')!;
+    const { removed, added } = swapMaps(from, to, picked, selectedOf(picked));
+    expect([removed, added].map((maps) => maps.length)).toEqual([1, 1]);
 });
 
 const fileEntry = (path: string) =>

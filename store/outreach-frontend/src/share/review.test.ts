@@ -82,7 +82,7 @@ test('analyses with no file, unlabelled leftovers and unusable files are listed'
         ])
     );
     expect(found).toEqual([
-        'Which analysis is this map? Pick one, or describe it if the paper does not table it.',
+        'Which analysis is this map? Move it to one, or describe it if the paper does not table it.',
         'This map holds no numbers.',
         "No file for “Houses > Faces” yet. Pick one, or leave it if you don't have it.",
     ]);
