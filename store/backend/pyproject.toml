@@ -66,7 +66,7 @@ dev = [
     "wheel~=0.48",
     "pytest~=9.2",
     "vcrpy~=8.3",
-    "pytest-recording~=0.14.0",
+    "pytest-recording~=0.14.1",
     # study_schema.layouts (check_revision) imports pyarty.
     "pyarty @ git+https://github.com/jdkent/pyarty.git@d63f77274856500ccd7da125bdc5543adadeb77e",
 ]
