@@ -1,7 +1,9 @@
 """POST /analysis-queries/, GET /analysis-terms/, and the annotation's analysis_query."""
 
+import orjson
 import pytest
 
+from neurostore import analysis_query
 from neurostore.database import db
 from neurostore.tests import analysis_fixtures as af
 from neurostore.tests.utils import ordered_note_keys
@@ -638,6 +640,39 @@ async def test_detail_says_how_much_each_study_carries(auth_client, papers):
         auth_client, {"species": "human"}, paginate=True, page=2, page_size=1, detail="studies"
     )
     assert page["results"] == bare["results"][1:2]
+
+
+async def test_the_response_streams_in_chunks_that_join_to_it(
+    auth_client, papers, monkeypatch
+):
+    body = {"query": {}, "paginate": False, "funnel": True}
+    whole = await _query(auth_client, {}, funnel=True)
+    monkeypatch.setattr(analysis_query, "CHUNK_BYTES", 1)
+    monkeypatch.setattr(analysis_query, "BATCH_ROWS", 2)
+
+    chunks = list(analysis_query.run_query(body))
+
+    # The head, one chunk a study, the close.
+    assert len(chunks) == 2 + whole["metadata"]["total_count"]
+    assert orjson.loads(b"".join(chunks)) == whole
+    assert orjson.loads(b"".join(analysis_query.run_query({"query": {}, "page_size": 0}))) == {
+        **{k: v for k, v in whole.items() if k not in ("searched", "funnel")},
+        "results": [],
+    }
+
+
+async def test_a_stream_left_unread_gives_its_connection_back(papers, monkeypatch):
+    monkeypatch.setattr(analysis_query, "CHUNK_BYTES", 1)
+    pool = db.engine.pool
+    stream = analysis_query.run_query({"query": {}, "paginate": False})
+    before = pool.checkedout()  # the counts are taken; the listing has not started
+    next(stream)
+    next(stream)  # the first study: the cursor is open
+    assert pool.checkedout() == before + 1
+
+    stream.close()  # as when the client goes away
+
+    assert pool.checkedout() == before
 
 
 async def test_invalid_scopes_pages_and_flags_are_refused(auth_client, papers):

@@ -1,12 +1,14 @@
 """Analysis queries: select analyses by what their extraction records say."""
 
+from starlette.responses import StreamingResponse
+
 from neurostore.analysis_query import list_terms, run_query
 
 
 class AnalysisQueriesView:
     def post(self, body):
-        """Run an analysis query; nothing is stored."""
-        return run_query(body), 200
+        """Run an analysis query; nothing is stored. The response is streamed."""
+        return StreamingResponse(run_query(body), media_type="application/json")
 
 
 class AnalysisTermsView:

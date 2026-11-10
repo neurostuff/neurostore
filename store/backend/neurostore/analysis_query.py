@@ -60,6 +60,9 @@ UNMAPPED_MODES = ["exclude", "include", "text"]
 IDS_ONLY_UNMAPPED_MODES = ["exclude", "include"]
 #: How much each listed study carries: itself, its selected analyses, and their features.
 DETAILS = ("studies", "analyses", "features")
+#: Rows a listing reads from its cursor at a time, and the response bytes sent at a time.
+BATCH_ROWS = 2000
+CHUNK_BYTES = 256 * 1024
 #: Studies a page lists unless `page_size` says otherwise, as on the list endpoints.
 DEFAULT_PAGE_SIZE = 20
 #: The body keys that restrict a query to papers or to pipeline studies.
@@ -816,8 +819,11 @@ def run_query(body):
     "paginate": bool, "detail": "studies" | "analyses" | "features", "funnel": bool,
     "base_study_ids": [...], "study_ids": [...]}``.
 
-    The results are the studies with a selected analysis, a page of them unless
-    `paginate` is false, each with as much as `detail` asks for.
+    Returns the response's JSON text in chunks. The results are the studies with a
+    selected analysis, a page of them unless `paginate` is false, each with as much as
+    `detail` asks for; they come last, read and written a batch at a time, so a listing
+    of the whole corpus never sits in memory. The body is checked and the counts taken
+    first, so a refused query is answered before anything is sent.
     """
     page = _whole_number_or_abort(body, "page", 1, 1)
     page_size = _whole_number_or_abort(body, "page_size", DEFAULT_PAGE_SIZE, 0)
@@ -834,20 +840,20 @@ def run_query(body):
     studies, analyses = db.session.execute(
         selected.add_columns(sa.func.count(AF.study_id.distinct()), sa.func.count())
     ).one()
-    result = {
+    head = {
         "metadata": {"total_count": studies, "analysis_count": analyses},
         "query": _canonical(criteria),
-        "results": _studies(selected, criteria, page, page_size, paginate, detail),
     }
     if body.get("funnel"):
-        result["searched"], result["funnel"] = _funnel(criteria, scope)
-    return result
+        head["searched"], head["funnel"] = _funnel(criteria, scope)
+    listing = None
+    if not (paginate and page_size == 0):
+        listing = _listing(selected, criteria, page, page_size, paginate, detail)
+    return _chunks(head, listing, criteria, detail)
 
 
-def _studies(selected, criteria, page, page_size, paginate, detail):
-    """The page of selected studies, by paper, each with as much as ``detail`` asks for."""
-    if paginate and page_size == 0:
-        return []
+def _listing(selected, criteria, page, page_size, paginate, detail):
+    """The statement listing the page's studies, by paper, with what ``detail`` asks for."""
     studies = (
         selected.add_columns(AF.base_study_id, AF.study_id)
         .group_by(AF.base_study_id, AF.study_id)
@@ -856,20 +862,16 @@ def _studies(selected, criteria, page, page_size, paginate, detail):
     if paginate:
         studies = studies.offset((page - 1) * page_size).limit(page_size)
     if detail == "studies":
-        return [
-            {"study": study, "base_study": base_study}
-            for base_study, study in db.session.execute(studies)
-        ]
+        return studies
     listing = selected
     if paginate:
         on_page = studies.subquery()
         listing = listing.where(AF.study_id.in_(sa.select(on_page.c.study_id)))
-    features = detail == "features"
     provenance = _matched_by(criteria)
-    # Core, not the ORM, the display as text for orjson, and arrays as text[] that
-    # psycopg2 parses itself: on the whole corpus the ORM's rows, json.loads and
-    # SQLAlchemy's per-item array processing were 40% of the time.
-    rows = db.session.connection().execute(
+    # The display as text for orjson, and arrays as text[] that psycopg2 parses itself: on
+    # the whole corpus json.loads and SQLAlchemy's per-item array processing, with the
+    # ORM's row handling, were 40% of the time.
+    return (
         listing.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
         .add_columns(
             AF.analysis_id,
@@ -880,23 +882,53 @@ def _studies(selected, criteria, page, page_size, paginate, detail):
                     sa.cast(AFD.display, sa.Text).label("display"),
                     *(_raw(getattr(AF, name)).label(name) for name in RESULT_COLUMNS),
                 )
-                if features
+                if detail == "features"
                 else (AFD.display["name"].astext.label("name"),)
             ),
             *(how.label(f"matched_by_{i}") for i, how in enumerate(provenance.values())),
         )
         .order_by(AF.base_study_id, AF.study_id, AF.analysis_id)
-    ).mappings()
-    return [
-        {
-            "study": study,
-            "base_study": base_study,
-            "analyses": [_analysis(row, provenance, features) for row in group],
-        }
+    )
+
+
+def _chunks(head, listing, criteria, detail):
+    """``head`` and then its results as JSON text, about CHUNK_BYTES at a time."""
+    yield orjson.dumps(head)[:-1] + b',"results":['
+    if listing is not None:
+        buffer, first = bytearray(), True
+        for study in _studies(listing, criteria, detail):
+            buffer += (b"" if first else b",") + orjson.dumps(study)
+            first = False
+            if len(buffer) >= CHUNK_BYTES:
+                yield bytes(buffer)
+                buffer.clear()
+        if buffer:
+            yield bytes(buffer)
+    yield b"]}"
+
+
+def _studies(listing, criteria, detail):
+    """Each listed study, read through a server-side cursor on a connection of its own:
+    the response outlives the request's session."""
+    provenance = _matched_by(criteria)
+    features = detail == "features"
+    with db.engine.connect() as connection:
+        # A cursor is planned for its first tenth by default; this one is read to the end.
+        connection.exec_driver_sql("SET LOCAL cursor_tuple_fraction = 1")
+        rows = connection.execution_options(stream_results=True, yield_per=BATCH_ROWS)
+        rows = rows.execute(listing).mappings()
+        if detail == "studies":
+            for row in rows:
+                yield {"study": row["study_id"], "base_study": row["base_study_id"]}
+            return
         for (base_study, study), group in groupby(
             rows, key=lambda row: (row["base_study_id"], row["study_id"])
-        )
-    ]
+        ):
+            yield {
+                "study": study,
+                "base_study": base_study,
+                "analyses": [_analysis(row, provenance, features) for row in group],
+            }
 
 
 #: Term listing field -> the criterion whose values it lists.
