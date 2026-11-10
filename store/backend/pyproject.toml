@@ -30,7 +30,7 @@ dependencies = [
     "redis",
     "shortuuid~=1.0",
     "starlette>=1.10.0,<2",
-    "sqlalchemy[asyncio]~=2.1.4",
+    "sqlalchemy[asyncio]~=2.1.8",
     "sqladmin~=0.32",
     "sqltap",
     "webargs~=8.7",
