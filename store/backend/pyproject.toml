@@ -46,7 +46,7 @@ dependencies = [
     # A link's registrable domain, from the public suffix list snapshot it ships.
     "tldextract~=5.4",
     # A journal's name close to a known one (services/journals.py).
-    "rapidfuzz~=3.9",
+    "rapidfuzz~=3.14",
     # The public query's SoQL subset (public_query.py).
     "lark~=1.2",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
