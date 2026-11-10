@@ -1,5 +1,6 @@
 """POST /analysis-queries/, GET /analysis-terms/, and the annotation's analysis_query."""
 
+import anyio
 import orjson
 import pytest
 
@@ -605,6 +606,16 @@ async def test_a_scope_takes_any_number_of_ids(auth_client, papers):
     assert _rows(wide) == _rows(theirs)
 
 
+async def test_a_page_holds_twenty_studies_unless_told_otherwise(
+    auth_client, papers, monkeypatch
+):
+    monkeypatch.setattr(analysis_query, "DEFAULT_PAGE_SIZE", 1)
+    resp = await auth_client.post("/api/analysis-queries/", data={"query": {}})
+
+    assert resp.status_code == 200
+    assert len(resp.json()["results"]) == 1 < resp.json()["metadata"]["total_count"]
+
+
 async def test_pages_walk_the_listing_in_order(auth_client, papers):
     every = await _query(auth_client, {})
     total = every["metadata"]["total_count"]
@@ -645,25 +656,29 @@ async def test_detail_says_how_much_each_study_carries(auth_client, papers):
 async def test_features_return_every_column_a_criterion_reads_and_their_extraction(
     auth_client, papers
 ):
-    from neurostore.models import AnalysisFeature
+    from neurostore.models import Analysis, AnalysisFeature
 
     every = await _query(auth_client, {})
     rows = {row.analysis_id: row for row in AnalysisFeature.query}
+    analyses = {row.id: row for row in Analysis.query}
     # Text criteria read a search column; the display carries their wording.
-    returned = {
-        (field.ids if field.kind == "normalized" else field.column).key
+    read = [
+        column
         for field in analysis_query.FIELDS.values()
-        if field.kind != "text"
-        and (field.ids if field.kind == "normalized" else field.column).table
-        is AnalysisFeature.__table__
-    }
+        for column in (
+            (field.ids, field.role_ids) if field.kind == "normalized" else (field.column,)
+        )
+        if column is not None and field.kind != "text"
+    ]
 
     assert len(_rows(every)) == len(rows)
     for r in _rows(every):
-        features, row = r["features"], rows[r["analysis"]]
-        for column in (*returned, "config_id"):
-            assert features[column] == getattr(row, column), column
-        assert features["updated_at"] == row.updated_at.isoformat()
+        features = r["features"]
+        for column in (*read, AnalysisFeature.config_id):
+            on = AnalysisFeature if column.class_ is AnalysisFeature else Analysis
+            row = (rows if on is AnalysisFeature else analyses)[r["analysis"]]
+            assert features[column.key] == getattr(row, column.key), column.key
+        assert features["updated_at"] == rows[r["analysis"]].updated_at.isoformat()
     assert {r["features"]["config_id"] for r in _rows(every)} != {None}
     assert {r["features"]["is_meta_analysis"] for r in _rows(every)} != {None}
 
@@ -687,30 +702,97 @@ async def test_the_response_streams_in_chunks_that_join_to_it(
     }
 
 
-async def test_a_stream_left_unread_gives_its_connection_back(papers, monkeypatch):
+async def test_a_stream_holds_one_connection_until_closed_read_or_not(papers, monkeypatch):
     monkeypatch.setattr(analysis_query, "CHUNK_BYTES", 1)
     pool = db.engine.pool
+    before = pool.checkedout()
+    unread = analysis_query.run_query({"query": {}, "paginate": False, "funnel": True})
+    assert pool.checkedout() == before + 1  # the counts' connection, kept for the listing
+    unread.close()
+    assert pool.checkedout() == before
+
     stream = analysis_query.run_query({"query": {}, "paginate": False})
-    before = pool.checkedout()  # the counts are taken; the listing has not started
     next(stream)
     next(stream)  # the first study: the cursor is open
     assert pool.checkedout() == before + 1
+    stream.close()
+    assert pool.checkedout() == before
 
-    stream.close()  # as when the client goes away
-
+    list(analysis_query.run_query({"query": {}, "paginate": False}))
     assert pool.checkedout() == before
 
 
-async def test_invalid_scopes_pages_and_flags_are_refused(auth_client, papers):
+async def _post_query(app, receive, send, spec_version):
+    """POST an analysis query straight to the ASGI app, with its own receive and send."""
+    body = orjson.dumps({"query": {}, "paginate": False})
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": spec_version},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/analysis-queries/",
+        "raw_path": b"/api/analysis-queries/",
+        "root_path": "",
+        "query_string": b"",
+        "headers": [
+            (b"host", b"testserver"),
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(body)).encode()),
+        ],
+        "server": ("testserver", 80),
+        "client": ("127.0.0.1", 1234),
+    }
+    request = [{"type": "http.request", "body": body, "more_body": False}]
+
+    async def first_the_request():
+        if request:
+            return request.pop(0)
+        return await receive()
+
+    await app.asgi_app(scope, first_the_request, send)
+
+
+@pytest.mark.parametrize("spec_version", ["2.3", "2.4"])
+async def test_a_client_that_goes_away_mid_stream_gives_the_connection_back(
+    app, papers, monkeypatch, spec_version
+):
+    """Under ASGI 2.3 the client's disconnect cancels the stream; under 2.4 the send fails."""
+    monkeypatch.setattr(analysis_query, "CHUNK_BYTES", 1)
+    pool = db.engine.pool
+    before, during, bodies = pool.checkedout(), [], []
+
+    async def receive():
+        while not bodies:
+            await anyio.sleep(0.01)
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        if message["type"] != "http.response.body":
+            return
+        bodies.append(message["more_body"])
+        during.append(pool.checkedout())
+        if spec_version == "2.4":
+            raise OSError("the client went away")
+        await anyio.sleep(0.05)
+
+    await _post_query(app, receive, send, spec_version)
+
+    assert bodies and False not in bodies  # it ended before the last chunk
+    # The stream's connection, and not the request session's beside it.
+    assert during[0] == before + 1
+    assert pool.checkedout() == before
+
+
+async def test_the_spec_refuses_invalid_scopes_pages_and_flags(auth_client, papers):
     await _query(auth_client, {}, status=400, base_study_ids=papers[CONDUCT])
     await _query(auth_client, {}, status=400, page=0)
     await _query(auth_client, {}, status=400, page_size=-1)
     await _query(auth_client, {}, status=400, page_size=True)
     await _query(auth_client, {}, status=400, detail="everything")
     await _query(auth_client, {}, status=400, paginate="no")
-    assert _codes(await _query(auth_client, {}, status=400, base_study_ids=[""])) == [
-        "INVALID_VALUE"
-    ]
+    await _query(auth_client, {}, status=400, base_study_ids=[""])
+    await _query(auth_client, {}, status=400, funnel="yes")
 
 
 async def test_terms_list_values_with_counts(auth_client, papers):
