@@ -642,6 +642,32 @@ async def test_detail_says_how_much_each_study_carries(auth_client, papers):
     assert page["results"] == bare["results"][1:2]
 
 
+async def test_features_return_every_column_a_criterion_reads_and_their_extraction(
+    auth_client, papers
+):
+    from neurostore.models import AnalysisFeature
+
+    every = await _query(auth_client, {})
+    rows = {row.analysis_id: row for row in AnalysisFeature.query}
+    # Text criteria read a search column; the display carries their wording.
+    returned = {
+        (field.ids if field.kind == "normalized" else field.column).key
+        for field in analysis_query.FIELDS.values()
+        if field.kind != "text"
+        and (field.ids if field.kind == "normalized" else field.column).table
+        is AnalysisFeature.__table__
+    }
+
+    assert len(_rows(every)) == len(rows)
+    for r in _rows(every):
+        features, row = r["features"], rows[r["analysis"]]
+        for column in (*returned, "config_id"):
+            assert features[column] == getattr(row, column), column
+        assert features["updated_at"] == row.updated_at.isoformat()
+    assert {r["features"]["config_id"] for r in _rows(every)} != {None}
+    assert {r["features"]["is_meta_analysis"] for r in _rows(every)} != {None}
+
+
 async def test_the_response_streams_in_chunks_that_join_to_it(
     auth_client, papers, monkeypatch
 ):

@@ -750,6 +750,12 @@ def _funnel(criteria, scope=None):
 
 #: Columns each result lists beside its display values.
 RESULT_COLUMNS = (
+    # Which extraction the row was read from, and when it was written.
+    "config_id",
+    "updated_at",
+    "is_meta_analysis",
+    "details_type",
+    "species",
     "spatial_scope",
     "coordinate_space",
     "measure_type",
@@ -761,15 +767,25 @@ RESULT_COLUMNS = (
     "has_healthy",
     "medical_condition_ids",
     "task_ids",
+    "task_family_ids",
     "contrast_key_ids",
     "contrast_set_ids",
     "allocation",
     "assignment_structure",
     "blinding",
+    "arm_kinds",
+    "longitudinal",
     *(
         f"contrast_{side}_{column}"
         for side in ("positive", "negative")
-        for column in ("has_patients", "has_healthy", "medical_condition_ids", "facets")
+        for column in (
+            "has_patients",
+            "has_healthy",
+            "medical_condition_ids",
+            "timepoints",
+            "arm_kinds",
+            "facets",
+        )
     ),
 )
 
