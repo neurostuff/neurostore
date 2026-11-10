@@ -21,6 +21,18 @@ Each side of the contrast (`contrast_positive_*`, `contrast_negative_*`) has wha
 cells' factor levels carry: the health and medical conditions of their groups, the
 `relation_to_intervention` of their timepoints and the `arm_kind` of their arms, and the
 facets its contrast keys put on that side.
+
+`RecordDetails` reads what an analysis links to beyond its groups' conditions, its tasks'
+paradigms and its contrast: its sample, inference settings, acquisitions, preprocessing,
+model, statistic, connectivity, regions, coordinate sets and task details.
+
+An analysis names its groups, acquisitions, tasks, inference settings, model estimation and
+regions by local id; its model's preprocessing and the models it takes inputs from are read
+too, so a group model inherits the software, HRF and smoothing of its first level.
+Coordinate sets name their analysis. Numbers read from several items (one per group, per
+acquisition) are arrays a range criterion matches when any of them is in range; ages are in
+years. Text columns are lower-cased and joined as `analysis_features` text columns are, and
+the display carries their wording.
 """
 
 import functools
@@ -417,6 +429,348 @@ def _contrast(positive, negative):
     return columns, display
 
 
+#: Age units, in years each; an age with no unit is in years, one in any other unit is
+#: silent.
+AGE_UNITS = {
+    None: 1.0,
+    "year": 1.0,
+    "years": 1.0,
+    "y": 1.0,
+    "yr": 1.0,
+    "yrs": 1.0,
+    "month": 1 / 12,
+    "months": 1 / 12,
+    "week": 7 / 365.25,
+    "weeks": 7 / 365.25,
+    "day": 1 / 365.25,
+    "days": 1 / 365.25,
+}
+AGE_COLUMNS = {
+    "age_mean": "age_means",
+    "age_standard_deviation": "age_sds",
+    "age_minimum": "age_minimums",
+    "age_maximum": "age_maximums",
+    "age_median": "age_medians",
+}
+FEMALE = {"female", "females", "f", "woman", "women", "girl", "girls"}
+MALE = {"male", "males", "m", "man", "men", "boy", "boys"}
+
+#: Text columns, by the display key that carries their wording.
+TEXT_COLUMNS = {
+    "diagnostic_instrument": "diagnostic_instrument_text",
+    "diagnostic_system": "diagnostic_system_text",
+    "clinical_characteristics": "clinical_text",
+    "education": "education_text",
+    "inference_level": "inference_level_text",
+    "height_threshold_type": "height_threshold_type_text",
+    "correction": "correction_text",
+    "scanner": "scanner_text",
+    "preprocessing_software": "preprocessing_software_text",
+    "preprocessing_steps": "preprocessing_steps_text",
+    "model_family": "model_family_text",
+    "model_type": "model_type_text",
+    "model_software": "model_software_text",
+    "hrf_model": "hrf_model_text",
+    "estimator": "estimator_text",
+    "model_terms": "model_term_text",
+    "statistic_family": "statistic_family_text",
+    "seed_regions": "seed_region_text",
+    "target_regions": "target_region_text",
+    "regions": "region_text",
+    "atlases": "region_atlas_text",
+    "stimuli": "stimulus_text",
+    "instructions": "instructions_text",
+    "performance_measures": "performance_text",
+}
+
+
+def _number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _numbers(slots):
+    """Every extracted number in ``slots`` (each a value or a list of them)."""
+    return [float(v) for slot in slots for v in _values(slot) if _number(v)]
+
+
+def _strings(slots):
+    """Every extracted string in ``slots``, stripped, without repeats."""
+    return _unique(str(v).strip() for slot in slots for v in _values(slot) if str(v).strip())
+
+
+def _lower(items):
+    return _unique(str(item).lower() for item in items) or None
+
+
+def _array(numbers):
+    return numbers or None
+
+
+def _total(values):
+    return int(sum(values)) if values else None
+
+
+def _linked(ids, by_id):
+    return [by_id[i] for i in _unique(ids or []) if isinstance(i, str) and i in by_id]
+
+
+class RecordDetails:
+    """One record's lookups for `features`, built once for all its analyses."""
+
+    def __init__(self, record):
+        self.groups = _by_id(record.get("groups"))
+        self.tasks = _by_id(record.get("tasks"))
+        self.assessments = _by_id(record.get("assessments"))
+        self.inference = _by_id(record.get("inference_settings"))
+        self.acquisitions = _by_id(record.get("acquisitions"))
+        self.devices = _by_id(record.get("devices"))
+        self.preprocessings = _by_id(record.get("preprocessings"))
+        self.models = _by_id(record.get("model_estimations"))
+        self.regions = _by_id(record.get("regions"))
+        self.coordinate_sets = {}
+        for coordinate_set in record.get("coordinate_sets") or []:
+            if isinstance(coordinate_set, dict) and coordinate_set.get("analysis"):
+                self.coordinate_sets.setdefault(coordinate_set["analysis"], []).append(
+                    coordinate_set
+                )
+
+    def features(self, analysis):
+        """``(columns, display)`` of ``analysis``."""
+        links = [link for link in analysis.get("groups") or [] if isinstance(link, dict)]
+        groups = [self.groups[link["group"]] for link in links if link.get("group") in self.groups]
+        details = analysis.get("details") if isinstance(analysis.get("details"), dict) else {}
+        models = self._models(analysis.get("model_estimation"))
+        coordinate_sets = self.coordinate_sets.get(analysis.get("local_id"), [])
+        wording = {
+            **self._sample(groups),
+            **self._inference(self.inference.get(analysis.get("inference_settings")) or {}),
+            **self._acquisitions(_linked(analysis.get("acquisitions"), self.acquisitions)),
+            **self._models_and_preprocessing(models),
+            **self._statistic((analysis.get("effect") or {}).get("statistic") or {}),
+            **self._connectivity(details),
+            **self._regions(analysis, details, coordinate_sets),
+            **self._coordinate_sets(coordinate_sets),
+            **self._task_details(_linked(analysis.get("tasks"), self.tasks)),
+        }
+        columns = {k: v for k, v in wording.items() if k not in TEXT_COLUMNS}
+        display = {}
+        for key, column in TEXT_COLUMNS.items():
+            items = wording.get(key) or []
+            columns[column] = _text(items)
+            if items:
+                display[key] = items
+        return columns, display
+
+    def _sample(self, groups):
+        ages = {column: [] for column in AGE_COLUMNS.values()}
+        female, male, counted, handedness = [], [], [], []
+        for group in groups:
+            unit = reported_value(group.get("age_unit"))
+            per_year = AGE_UNITS.get(unit.strip().lower() if isinstance(unit, str) else unit)
+            if per_year is not None:
+                for slot, column in AGE_COLUMNS.items():
+                    ages[column] += [v * per_year for v in _numbers([group.get(slot)])]
+            sexes = _distribution(group.get("sex_distribution"))
+            f = sum(n for category, n in sexes if category in FEMALE)
+            m = sum(n for category, n in sexes if category in MALE)
+            if any(c in FEMALE | MALE for c, _ in sexes):
+                female.append(f)
+                male.append(m)
+                counted.append(sum(n for _, n in sexes))
+            handedness += [c for c, _ in _distribution(group.get("handedness_distribution"))]
+            handedness += [c for c in _categories(group.get("handedness_distribution"))]
+        instruments = [
+            reported_value((self.assessments.get(i) or {}).get("name")) or i
+            for group in groups
+            for i in group.get("diagnostic_instrument") or []
+            if isinstance(i, str)
+        ]
+        return {
+            **{column: _array(values) for column, values in ages.items()},
+            "female_count": _total(female),
+            "male_count": _total(male),
+            "female_percent": (
+                100 * sum(female) / sum(counted) if counted and sum(counted) else None
+            ),
+            "handedness": _lower(handedness),
+            **{
+                f"{slot}": _total(_numbers([g.get(slot) for g in groups]))
+                for slot in ("enrolled_count", "acquired_count", "excluded_count")
+            },
+            "diagnostic_instrument": _unique(instruments),
+            "diagnostic_system": _strings(g.get("diagnostic_system") for g in groups),
+            "clinical_characteristics": _strings(
+                g.get("clinical_characteristics") for g in groups
+            ),
+            "education": _strings(g.get("education_summary") for g in groups),
+        }
+
+    def _inference(self, settings):
+        def number(slot):
+            value = reported_value(settings.get(slot))
+            return float(value) if _number(value) else None
+
+        def whole(slot):
+            value = reported_value(settings.get(slot))
+            return int(value) if _number(value) else None
+
+        tfce = reported_value(settings.get("tfce_used"))
+        scope = reported_value(settings.get("correction_scope"))
+        return {
+            "height_threshold": number("height_threshold_value"),
+            "cluster_extent": whole("cluster_extent_threshold"),
+            "cluster_threshold": number("clusterwise_threshold_value"),
+            "alpha": number("alpha_level"),
+            "permutations": whole("permutation_count"),
+            "tfce": tfce if isinstance(tfce, bool) else None,
+            "correction_scope": str(scope).lower() if scope else None,
+            "inference_level": _strings([settings.get("inference_level")]),
+            "height_threshold_type": _strings([settings.get("height_threshold_type")]),
+            "correction": _strings([settings.get("multiple_comparison_method")]),
+        }
+
+    def _acquisitions(self, acquisitions):
+        voxels = []
+        for acquisition in acquisitions:
+            sizes = _numbers([acquisition.get("acquisition_voxel_size_mm")])
+            if sizes:
+                voxels.append(max(sizes))
+        devices = _linked([a.get("device") for a in acquisitions], self.devices)
+        return {
+            "modalities": _lower(_strings(a.get("modality") for a in acquisitions)),
+            "field_strengths": _array(
+                _numbers(a.get("magnetic_field_strength_tesla") for a in acquisitions)
+            ),
+            "repetition_times": _array(
+                _numbers(a.get("repetition_time_seconds") for a in acquisitions)
+            ),
+            "echo_times": _array(_numbers(a.get("echo_time_seconds") for a in acquisitions)),
+            "voxel_sizes": _array(voxels),
+            "scanner": _unique(
+                name
+                for d in devices
+                if (name := " ".join(_strings([d.get("manufacturer"), d.get("model")])))
+            ),
+        }
+
+    def _models(self, model_id):
+        """The analysis's model and every model it takes inputs from, nearest first."""
+        found, queue = [], [model_id]
+        while queue:
+            model = self.models.get(queue.pop(0))
+            if model is None or any(model is m for m in found):
+                continue
+            found.append(model)
+            queue += [i for i in model.get("inputs_from") or [] if isinstance(i, str)]
+        return found
+
+    def _models_and_preprocessing(self, models):
+        preprocessings = _linked(
+            [i for model in models for i in model.get("preprocessing") or []],
+            self.preprocessings,
+        )
+        terms = [term for model in models for term in model.get("terms") or []]
+        terms = [term for term in terms if isinstance(term, dict)]
+        return {
+            "smoothing_fwhms": _array(
+                _numbers(p.get("smoothing_fwhm_mm") for p in preprocessings)
+            ),
+            "preprocessing_software": _strings(p.get("software") for p in preprocessings),
+            "preprocessing_steps": _strings(p.get("steps") for p in preprocessings),
+            "model_family": _strings(m.get("model_family") for m in models),
+            "model_type": _strings(m.get("model_type") for m in models),
+            "model_software": _strings(m.get("software") for m in models),
+            "hrf_model": _strings(m.get("hrf_model") for m in models),
+            "estimator": _strings(m.get("estimator") for m in models),
+            "model_terms": _strings(t.get("name") for t in terms),
+            "model_term_types": _lower(_strings(t.get("type") for t in terms)),
+        }
+
+    def _statistic(self, statistic):
+        def number(slot):
+            value = reported_value(statistic.get(slot))
+            return float(value) if _number(value) else None
+
+        return {
+            "statistic_family": _strings([statistic.get("family")]),
+            "df_numerator": number("degrees_of_freedom_numerator"),
+            "df_denominator": number("degrees_of_freedom_denominator"),
+        }
+
+    def _connectivity(self, details):
+        method = reported_value(details.get("connectivity_method"))
+        target = reported_value(details.get("inference_target"))
+        return {
+            "connectivity_method": str(method).lower() if method else None,
+            "connectivity_inference_target": str(target).lower() if target else None,
+            "seed_regions": self._region_names(details.get("seed_regions")),
+            "target_regions": self._region_names(details.get("target_regions")),
+        }
+
+    def _region_names(self, ids):
+        return _strings(region.get("name") for region in _linked(ids, self.regions))
+
+    def _regions(self, analysis, details, coordinate_sets):
+        ids = [
+            *(analysis.get("regions") or []),
+            *(details.get("seed_regions") or []),
+            *(details.get("target_regions") or []),
+            *(i for s in coordinate_sets for i in s.get("regions") or []),
+        ]
+        regions = _linked(ids, self.regions)
+        return {
+            "regions": _strings(r.get("name") for r in regions),
+            "atlases": _strings(r.get("atlas") for r in regions),
+            "region_types": _lower(_strings(r.get("region_type") for r in regions)),
+            "region_definitions": _lower(_strings(r.get("definition_method") for r in regions)),
+        }
+
+    def _coordinate_sets(self, coordinate_sets):
+        def kinds(slot):
+            return _lower(_strings(s.get(slot) for s in coordinate_sets))
+
+        return {
+            "coordinate_roles": kinds("role"),
+            "result_kinds": kinds("result_kind"),
+            "anchor_kinds": kinds("anchor_kind"),
+        }
+
+    def _task_details(self, tasks):
+        return {
+            "stimuli": _strings(
+                slot for t in tasks for slot in (t.get("stimuli"), t.get("stimulus_content"))
+            ),
+            "stimulus_modalities": _lower(_strings(t.get("stimulus_modality") for t in tasks)),
+            "response_modalities": _lower(_strings(t.get("response_modality") for t in tasks)),
+            "design_types": _lower(_strings(t.get("design_type") for t in tasks)),
+            "instructions": _strings(t.get("instructions") for t in tasks),
+            "performance_measures": _strings(t.get("performance_measures") for t in tasks),
+        }
+
+
+def _distribution(distribution):
+    """``[(category, count)]`` of a category distribution's items that report both."""
+    out = []
+    for item in distribution or []:
+        if not isinstance(item, dict):
+            continue
+        category, count = reported_value(item.get("category")), reported_value(item.get("count"))
+        if isinstance(category, str) and _number(count):
+            out.append((category.strip().lower(), count))
+    return out
+
+
+def _categories(distribution):
+    """The categories of a distribution's items that report no count."""
+    return [
+        category.strip().lower()
+        for item in distribution or []
+        if isinstance(item, dict)
+        and isinstance(category := reported_value(item.get("category")), str)
+        and not _number(reported_value(item.get("count")))
+    ]
+
+
 class _Record:
     """One record's lookups, built once for all its analyses."""
 
@@ -441,6 +795,7 @@ class _Record:
         self.timepoints = _by_id(design.get("timepoints"))
         self.arms = _by_id(design.get("arms"))
         self.design = self._design(design)
+        self.details = RecordDetails(record)
 
     def _design(self, design):
         relations = {
@@ -550,6 +905,9 @@ class _Record:
             releases += columns.pop("releases", [])
             row.update(columns)
             display.update(shown)
+        columns, shown = self.details.features(analysis)
+        row.update(columns)
+        display.update(shown)
         row.update(_side_facets(row["contrast_key_ids"]))
         row["mapping_tools"] = sorted(set(tools)) or None
         row["vocabulary_releases"] = sorted(set(releases)) or None

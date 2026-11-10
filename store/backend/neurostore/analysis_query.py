@@ -73,7 +73,7 @@ MIN_LITERAL = 3
 class Field:
     """One criterion: its kind, the column it reads, and its ids column."""
 
-    kind: str  # text, normalized, value, array_value, groups, boolean, range
+    kind: str  # text, normalized, value, array_value, groups, boolean, range, number_array
     column: object
     #: A normalized field's mapped ids, those and their ancestors, and its unmapped flag;
     #: the same ids as "role|id", where the field has roles.
@@ -162,8 +162,89 @@ FIELDS = {
     "design.blinding": Field("value", AF.blinding),
     "design.arm_kind": Field("array_value", AF.arm_kinds),
     "design.longitudinal": Field("boolean", AF.longitudinal),
+    "sample.age_mean": Field("number_array", AF.age_means),
+    "sample.age_sd": Field("number_array", AF.age_sds),
+    "sample.age_min": Field("number_array", AF.age_minimums),
+    "sample.age_max": Field("number_array", AF.age_maximums),
+    "sample.age_median": Field("number_array", AF.age_medians),
+    "sample.female_count": Field("range", AF.female_count),
+    "sample.male_count": Field("range", AF.male_count),
+    "sample.female_percent": Field("range", AF.female_percent),
+    "sample.handedness": Field("array_value", AF.handedness),
+    "sample.enrolled_count": Field("range", AF.enrolled_count),
+    "sample.acquired_count": Field("range", AF.acquired_count),
+    "sample.excluded_count": Field("range", AF.excluded_count),
+    "sample.diagnostic_instrument": Field("text", AF.diagnostic_instrument_text),
+    "sample.diagnostic_system": Field("text", AF.diagnostic_system_text),
+    "sample.clinical_characteristics": Field("text", AF.clinical_text),
+    "sample.education": Field("text", AF.education_text),
+    "inference.level": Field("text", AF.inference_level_text),
+    "inference.height_threshold": Field("range", AF.height_threshold),
+    "inference.height_threshold_type": Field("text", AF.height_threshold_type_text),
+    "inference.cluster_extent": Field("range", AF.cluster_extent),
+    "inference.cluster_threshold": Field("range", AF.cluster_threshold),
+    "inference.correction": Field("text", AF.correction_text),
+    "inference.correction_scope": Field("value", AF.correction_scope),
+    "inference.alpha": Field("range", AF.alpha),
+    "inference.tfce": Field("boolean", AF.tfce),
+    "inference.permutations": Field("range", AF.permutations),
+    "acquisition.modality": Field("array_value", AF.modalities),
+    "acquisition.field_strength": Field("number_array", AF.field_strengths),
+    "acquisition.repetition_time": Field("number_array", AF.repetition_times),
+    "acquisition.echo_time": Field("number_array", AF.echo_times),
+    "acquisition.voxel_size": Field("number_array", AF.voxel_sizes),
+    "acquisition.scanner": Field("text", AF.scanner_text),
+    "preprocessing.smoothing_fwhm": Field("number_array", AF.smoothing_fwhms),
+    "preprocessing.software": Field("text", AF.preprocessing_software_text),
+    "preprocessing.steps": Field("text", AF.preprocessing_steps_text),
+    "model.family": Field("text", AF.model_family_text),
+    "model.type": Field("text", AF.model_type_text),
+    "model.software": Field("text", AF.model_software_text),
+    "model.hrf": Field("text", AF.hrf_model_text),
+    "model.estimator": Field("text", AF.estimator_text),
+    "model.term": Field("text", AF.model_term_text),
+    "model.term_type": Field("array_value", AF.model_term_types),
+    "statistic.family": Field("text", AF.statistic_family_text),
+    "statistic.df_numerator": Field("range", AF.df_numerator),
+    "statistic.df_denominator": Field("range", AF.df_denominator),
+    "connectivity.method": Field("value", AF.connectivity_method),
+    "connectivity.inference_target": Field("value", AF.connectivity_inference_target),
+    "connectivity.seed": Field("text", AF.seed_region_text),
+    "connectivity.target": Field("text", AF.target_region_text),
+    "region.name": Field("text", AF.region_text),
+    "region.atlas": Field("text", AF.region_atlas_text),
+    "region.type": Field("array_value", AF.region_types),
+    "region.definition": Field("array_value", AF.region_definitions),
+    "coordinates.role": Field("array_value", AF.coordinate_roles),
+    "coordinates.result_kind": Field("array_value", AF.result_kinds),
+    "coordinates.anchor_kind": Field("array_value", AF.anchor_kinds),
+    "task_details.stimuli": Field("text", AF.stimulus_text),
+    "task_details.stimulus_modality": Field("array_value", AF.stimulus_modalities),
+    "task_details.response_modality": Field("array_value", AF.response_modalities),
+    "task_details.design_type": Field("array_value", AF.design_types),
+    "task_details.instructions": Field("text", AF.instructions_text),
+    "task_details.performance": Field("text", AF.performance_text),
 }
-GROUPS = ("contrast", "contrast.positive", "contrast.negative", "design")
+#: The groups of `RecordDetails`'s criteria.
+DETAIL_GROUPS = (
+    "sample",
+    "inference",
+    "acquisition",
+    "preprocessing",
+    "model",
+    "statistic",
+    "connectivity",
+    "region",
+    "coordinates",
+    "task_details",
+)
+GROUPS = (
+    "contrast",
+    "contrast.positive",
+    "contrast.negative",
+    "design",
+    *DETAIL_GROUPS,
+)
 #: The criterion a group takes a text criterion (a value, a list or any/all/none) in place
 #: of itself as.
 SHORTHAND = {"contrast.positive": "name", "contrast.negative": "name"}
@@ -307,15 +388,23 @@ MATCHERS = {
 }
 
 
+def _bounds(column, form):
+    bounds = []
+    if "min" in form:
+        bounds.append(column >= form["min"])
+    if "max" in form:
+        bounds.append(column <= form["max"])
+    return sa.and_(*bounds)
+
+
 def _match(field, form, path, errors):
     """The condition ``form`` puts on ``field``, before silence is decided."""
     if field.kind == "range":
-        bounds = []
-        if "min" in form:
-            bounds.append(field.column >= form["min"])
-        if "max" in form:
-            bounds.append(field.column <= form["max"])
-        return sa.and_(*bounds)
+        return _bounds(field.column, form)
+    if field.kind == "number_array":
+        # Any one item in range: a group's age, an acquisition's TR.
+        item = sa.func.unnest(field.column).column_valued("item")
+        return sa.select(item).where(_bounds(item, form)).exists()
     if field.kind == "boolean":
         return field.column.is_(form["is"])
     match = MATCHERS[field.kind](field, path, errors)
@@ -505,7 +594,7 @@ def _normalized_criterion(name, path, field, raw, errors):
     return Criterion(name, condition, field.silent, form, unmapped=unmapped, matched_by=matched_by)
 
 
-FORMS = {"range": _range_form, "boolean": _boolean_form}
+FORMS = {"range": _range_form, "number_array": _range_form, "boolean": _boolean_form}
 
 
 def _criterion(name, path, field, raw, errors):
@@ -769,6 +858,13 @@ RESULT_COLUMNS = (
             "facets",
         )
     ),
+    # What the analysis links to beyond its conditions, tasks and contrast; the display
+    # has their text.
+    *(
+        field.column.key
+        for name, field in FIELDS.items()
+        if name.split(".")[0] in DETAIL_GROUPS and field.kind != "text"
+    ),
 )
 #: Columns of `analyses` each result lists too, which criteria read.
 ANALYSIS_COLUMNS = ("role", "has_coordinates")
@@ -787,7 +883,7 @@ def _matched_by(criteria, prefix=""):
 
 def _raw(column):
     """``column`` as psycopg2 returns it, with no SQLAlchemy result processing."""
-    if isinstance(column.type, sa.ARRAY):
+    if isinstance(column.type, sa.ARRAY) and not isinstance(column.type.item_type, sa.Float):
         column = sa.cast(column, sa.ARRAY(sa.Text))
     return sa.type_coerce(column, sa.types.NullType())
 

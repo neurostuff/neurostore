@@ -404,6 +404,56 @@ async def test_a_side_s_timepoints_arms_and_facets(auth_client, side_papers):
     assert _papers(against_a_control_state, side_papers) == [CONDUCT]
 
 
+async def test_what_an_analysis_links_to_is_queryable(auth_client, side_papers):
+    ns_pond = [side_papers[DEPRESSION], side_papers[SOCIAL_ANXIETY]]
+
+    async def papers_of(query):
+        result = await _query(auth_client, query, base_study_ids=ns_pond)
+        return _papers(result, side_papers)
+
+    both = sorted([DEPRESSION, SOCIAL_ANXIETY])
+    assert await papers_of({"sample": {"age_mean": {"min": 27}}}) == [DEPRESSION]
+    # Any group in range: 26.41 is under 26.5 and 27.09 over 27.
+    assert await papers_of({"sample": {"age_mean": {"min": 26.5, "max": 27}}}) == []
+    assert await papers_of({"sample": {"female_percent": {"min": 70}}}) == [DEPRESSION]
+    assert await papers_of({"sample": {"handedness": "right-handed"}}) == [SOCIAL_ANXIETY]
+    assert await papers_of({"sample": {"diagnostic_instrument": "adis*"}}) == [SOCIAL_ANXIETY]
+    assert await papers_of({"inference": {"height_threshold": {"max": 0.01}}}) == [
+        SOCIAL_ANXIETY
+    ]
+    assert await papers_of({"inference": {"correction": "bayesian"}}) == [DEPRESSION]
+    assert await papers_of({"inference": {"tfce": False}}) == []
+    assert await papers_of({"inference": {"tfce": {"is": False, "when_silent": "include"}}}) == (
+        both
+    )
+    assert await papers_of({"acquisition": {"repetition_time": {"min": 1.8}}}) == [DEPRESSION]
+    assert await papers_of({"acquisition": {"modality": "fmri"}}) == both
+    assert await papers_of({"acquisition": {"scanner": "siemens"}}) == [DEPRESSION]
+    assert await papers_of({"preprocessing": {"smoothing_fwhm": {"max": 6}}}) == both
+    assert await papers_of({"preprocessing": {"software": "afni"}}) == [SOCIAL_ANXIETY]
+    # A first-level model's software, through the group model's inputs.
+    assert await papers_of({"model": {"software": "3ddeconvolve"}}) == [SOCIAL_ANXIETY]
+    assert await papers_of({"statistic": {"family": "posterior probability"}}) == [DEPRESSION]
+    assert await papers_of({"connectivity": {"method": "dcm"}}) == [DEPRESSION]
+    assert await papers_of({"region": {"atlas": "shirer"}}) == [DEPRESSION]
+    assert await papers_of({"coordinates": {"result_kind": "connectivity"}}) == [
+        SOCIAL_ANXIETY
+    ]
+    assert await papers_of({"task_details": {"response_modality": "covert_response"}}) == [
+        SOCIAL_ANXIETY
+    ]
+    funnel = await _query(
+        auth_client,
+        {"acquisition": {"field_strength": {"min": 3}}, "sample": {"age_sd": {"max": 4}}},
+        funnel=True,
+        base_study_ids=ns_pond,
+    )
+    assert [(s["criterion"], s["base_studies"]) for s in funnel["funnel"]] == [
+        ("sample.age_sd", 1),
+        ("acquisition.field_strength", 1),
+    ]
+
+
 async def test_a_side_s_text_is_shorthand_for_its_name(auth_client, papers):
     shorthand = await _query(auth_client, {"contrast": {"positive": "2-back"}})
     named = await _query(
@@ -654,7 +704,7 @@ async def test_detail_says_how_much_each_study_carries(auth_client, papers):
 
 
 async def test_features_return_every_column_a_criterion_reads_and_their_extraction(
-    auth_client, papers
+    auth_client, side_papers
 ):
     from neurostore.models import Analysis, AnalysisFeature
 
@@ -680,6 +730,11 @@ async def test_features_return_every_column_a_criterion_reads_and_their_extracti
             assert features[column.key] == getattr(row, column.key), column.key
         assert features["updated_at"] == rows[r["analysis"]].updated_at.isoformat()
     assert {r["features"]["config_id"] for r in _rows(every)} != {None}
+    # Text a criterion reads is in the display, as the record words it.
+    scanners = {tuple(r["features"].get("scanner", ())) for r in _rows(every)}
+    assert {(), ("GE Signa",), ("Siemens Prisma",)} <= scanners
+    assert ("",) not in scanners
+    assert {tuple(r["features"]["age_means"] or ()) for r in _rows(every)} >= {(27.09, 26.41)}
     assert {r["features"]["is_meta_analysis"] for r in _rows(every)} != {None}
 
 
