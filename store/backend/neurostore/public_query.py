@@ -4,7 +4,8 @@ A query is a dataset and the `$select`, `$where`, `$group`, `$having`, `$order`,
 `$limit`, `$offset` and `$q` parameters. Each parameter parses with one grammar and
 compiles to SQLAlchemy Core through `DATASETS` and `FUNCTIONS`: a name outside them is an
 error that lists what is allowed, so nothing but a dataset's columns, these functions and
-literals reaches SQL. The datasets hold public rows only (migration e5b7d9f1a3c4).
+literals reaches SQL. The datasets hold public rows only (migrations e5b7d9f1a3c4 and
+b8d0f2a4c6e9).
 
 A query runs in its own read-only transaction on a small pool, as the role that can read
 only the datasets, after its planned cost is checked against the caller's limit.
@@ -242,6 +243,40 @@ DATASETS = {
                 "outcome": TEXT,
                 "created_at": TIMESTAMP,
                 "updated_at": TIMESTAMP,
+            },
+        ),
+        Dataset(
+            "data-sources",
+            "data_sources",
+            "Studies (cohorts), consortia and repositories data can come from, with how "
+            "many public base studies use each and how many of those have coordinates "
+            "or images.",
+            ("id",),
+            {
+                "id": TEXT,
+                "name": TEXT,
+                "kinds": TEXT,
+                "modalities": TEXT,
+                "part_of_id": TEXT,
+                "url": TEXT,
+                "rrids": TEXT,
+                "base_studies": INTEGER,
+                "base_studies_with_data": INTEGER,
+            },
+        ),
+        Dataset(
+            "data-source-uses",
+            "data_source_uses",
+            "Each data source each public base study uses, once, with the base study's "
+            "year, journal and data.",
+            ("base_study_id", "data_source_id"),
+            {
+                "base_study_id": TEXT,
+                "data_source_id": TEXT,
+                "data_source": TEXT,
+                "year": INTEGER,
+                "journal_id": TEXT,
+                **_BASE_STUDY_FLAGS,
             },
         ),
     )

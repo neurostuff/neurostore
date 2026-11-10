@@ -8,15 +8,18 @@ import sqlalchemy as sa
 from neurostore import public_query
 from neurostore.models import (
     Analysis,
+    AnalysisDataSource,
     Author,
     BaseStudy,
     BaseStudyAuthor,
     BaseStudyAuthorAffiliation,
+    DataSource,
     Study,
     University,
     User,
 )
 from neurostore.models.journals import Journal
+from neurostore.services.data_source_links import recompute_data_source_links
 from neurostore.tests.request_utils import AsyncClient
 
 pytestmark = pytest.mark.anyio
@@ -193,6 +196,61 @@ async def test_compose_meta_analyses_per_month(anonymous, corpus):
         "&$group=month&$order=month",
     )
     assert [(month[:7], n) for month, n in rows] == [("2024-05", 1), ("2024-06", 1)]
+
+
+@pytest.fixture
+def data_sources(session, corpus):
+    """UK Biobank used by two public base studies; HCP by one public base study, by a
+    private version of another and by the private base study; OpenNeuro only by a
+    public version of the inactive base study."""
+    ukb = DataSource(id="ukb", name="UK Biobank", kinds=["study"], modalities=["MRI"])
+    hcp = DataSource(id="hcp", name="Human Connectome Project", kinds=["study", "consortium"])
+    openneuro = DataSource(id="openneuro", name="OpenNeuro", kinds=["repository"])
+    session.add_all([ukb, hcp, openneuro])
+    by_name = {study.name: study for study in session.query(Study)}
+    hidden = Study(name="hidden version", base_study_id=corpus["hidden"])
+    retired = Study(name="retired version", base_study_id=corpus["retired"])
+    session.add_all([hidden, retired])
+    for study, sources in [
+        (by_name["alice 1"], [ukb, hcp]),
+        (by_name["alice 2"], [ukb]),
+        (by_name["alice private"], [hcp]),
+        (hidden, [hcp]),
+        (retired, [openneuro]),
+    ]:
+        session.add(
+            Analysis(
+                name=f"{study.name} analysis",
+                study=study,
+                analysis_data_sources=[AnalysisDataSource(data_source=s) for s in sources],
+            )
+        )
+    session.flush()
+    recompute_data_source_links(
+        [s.base_study_id for s in by_name.values()] + [corpus["hidden"], corpus["retired"]]
+    )
+    session.commit()
+    public_query.refresh_datasets()
+
+
+async def test_base_studies_per_data_source_most_first(anonymous, data_sources):
+    assert await _rows(
+        anonymous,
+        "/api/query/data-sources?$select=name, kinds, base_studies, base_studies_with_data"
+        "&$order=base_studies DESC",
+    ) == [
+        ["UK Biobank", "study", 2, 2],
+        ["Human Connectome Project", "study, consortium", 1, 1],
+        ["OpenNeuro", "repository", 0, 0],
+    ]
+
+
+async def test_base_studies_per_year_by_data_source(anonymous, data_sources):
+    assert await _rows(
+        anonymous,
+        "/api/query/data-source-uses?$select=data_source, year, count(*) AS n"
+        "&$group=data_source, year&$order=n DESC, data_source",
+    ) == [["UK Biobank", 2020, 2], ["Human Connectome Project", 2020, 1]]
 
 
 async def test_text_search_counts_matching_base_studies(anonymous, corpus):
