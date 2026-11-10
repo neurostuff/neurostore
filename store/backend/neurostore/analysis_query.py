@@ -844,10 +844,10 @@ def run_query(body):
     except BaseException:
         connection.close()
         raise
-    listing = None
+    listing, provenance = None, _matched_by(criteria)
     if not (paginate and page_size == 0):
-        listing = _listing(criteria, scope, page, page_size, paginate, detail)
-    return QueryStream(connection, _chunks(connection, head, listing, criteria, detail))
+        listing = _listing(criteria, scope, provenance, page, page_size, paginate, detail)
+    return QueryStream(connection, _chunks(connection, head, listing, provenance, detail))
 
 
 class QueryStream:
@@ -874,7 +874,7 @@ class QueryStream:
             self._connection.close()
 
 
-def _listing(criteria, scope, page, page_size, paginate, detail):
+def _listing(criteria, scope, provenance, page, page_size, paginate, detail):
     """The statement listing the page's studies, by paper, with what ``detail`` asks for."""
     selected = _from(criteria, **scope).where(_where(criteria))
     studies = (
@@ -907,21 +907,18 @@ def _listing(criteria, scope, page, page_size, paginate, detail):
                 if features
                 else (AFD.display["name"].astext.label("name"),)
             ),
-            *(
-                how.label(f"matched_by_{i}")
-                for i, how in enumerate(_matched_by(criteria).values())
-            ),
+            *(how.label(f"matched_by_{i}") for i, how in enumerate(provenance.values())),
         )
         .order_by(AF.base_study_id, AF.study_id, AF.analysis_id)
     )
 
 
-def _chunks(connection, head, listing, criteria, detail):
+def _chunks(connection, head, listing, provenance, detail):
     """``head`` and then its results as JSON text, about CHUNK_BYTES at a time."""
     yield orjson.dumps(head)[:-1] + b',"results":['
     if listing is not None:
         buffer, first = bytearray(), True
-        for study in _studies(connection, listing, criteria, detail):
+        for study in _studies(connection, listing, provenance, detail):
             buffer += (b"" if first else b",") + orjson.dumps(study)
             first = False
             if len(buffer) >= CHUNK_BYTES:
@@ -932,9 +929,9 @@ def _chunks(connection, head, listing, criteria, detail):
     yield b"]}"
 
 
-def _studies(connection, listing, criteria, detail):
-    """Each listed study, read through a server-side cursor on ``connection``."""
-    provenance = _matched_by(criteria)
+def _studies(connection, listing, provenance, detail):
+    """Each listed study, read through a server-side cursor on ``connection``; ``provenance``
+    names the listing's `matched_by_<i>` columns."""
     # A cursor is planned for its first tenth by default; this one is read to the end.
     connection.exec_driver_sql("SET LOCAL cursor_tuple_fraction = 1")
     rows = connection.execute(
