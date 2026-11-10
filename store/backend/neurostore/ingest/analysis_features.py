@@ -473,7 +473,6 @@ TEXT_COLUMNS = {
     "hrf_model": "hrf_model_text",
     "estimator": "estimator_text",
     "model_terms": "model_term_text",
-    "statistic_family": "statistic_family_text",
     "seed_regions": "seed_region_text",
     "target_regions": "target_region_text",
     "regions": "region_text",
@@ -484,8 +483,16 @@ TEXT_COLUMNS = {
 }
 
 
+#: The largest whole number a count column holds (bigint); a larger one is silent.
+MAX_COUNT = 2**63 - 1
+
+
 def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _count(value):
+    return int(value) if _number(value) and abs(value) <= MAX_COUNT else None
 
 
 def _numbers(slots):
@@ -507,7 +514,7 @@ def _array(numbers):
 
 
 def _total(values):
-    return int(sum(values)) if values else None
+    return _count(sum(values)) if values else None
 
 
 def _linked(ids, by_id):
@@ -611,8 +618,7 @@ class RecordDetails:
             return float(value) if _number(value) else None
 
         def whole(slot):
-            value = reported_value(settings.get(slot))
-            return int(value) if _number(value) else None
+            return _count(reported_value(settings.get(slot)))
 
         tfce = reported_value(settings.get("tfce_used"))
         scope = reported_value(settings.get("correction_scope"))
@@ -691,8 +697,9 @@ class RecordDetails:
             value = reported_value(statistic.get(slot))
             return float(value) if _number(value) else None
 
+        family = reported_value(statistic.get("family"))
         return {
-            "statistic_family": _strings([statistic.get("family")]),
+            "statistic_family": str(family).strip().lower() if family else None,
             "df_numerator": number("degrees_of_freedom_numerator"),
             "df_denominator": number("degrees_of_freedom_denominator"),
         }

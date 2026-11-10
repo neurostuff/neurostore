@@ -84,6 +84,8 @@ class Field:
     role_ancestors: object = None
     #: Restricts a value criterion to these values.
     values: tuple = ()
+    #: A number array's items as a multirange of points, which a range overlaps.
+    points: object = None
 
     @property
     def silent(self):
@@ -91,6 +93,11 @@ class Field:
         if self.unmapped is not None:
             return self.unmapped.is_(None)
         return self.column.is_(None)
+
+
+def _number_array(name):
+    """The number array ``name``, searched through its points."""
+    return Field("number_array", getattr(AF, name), points=getattr(AF, f"{name}_points"))
 
 
 def _normalized(name, text=True, roles=False):
@@ -162,11 +169,11 @@ FIELDS = {
     "design.blinding": Field("value", AF.blinding),
     "design.arm_kind": Field("array_value", AF.arm_kinds),
     "design.longitudinal": Field("boolean", AF.longitudinal),
-    "sample.age_mean": Field("number_array", AF.age_means),
-    "sample.age_sd": Field("number_array", AF.age_sds),
-    "sample.age_min": Field("number_array", AF.age_minimums),
-    "sample.age_max": Field("number_array", AF.age_maximums),
-    "sample.age_median": Field("number_array", AF.age_medians),
+    "sample.age_mean": _number_array("age_means"),
+    "sample.age_sd": _number_array("age_sds"),
+    "sample.age_min": _number_array("age_minimums"),
+    "sample.age_max": _number_array("age_maximums"),
+    "sample.age_median": _number_array("age_medians"),
     "sample.female_count": Field("range", AF.female_count),
     "sample.male_count": Field("range", AF.male_count),
     "sample.female_percent": Field("range", AF.female_percent),
@@ -189,12 +196,12 @@ FIELDS = {
     "inference.tfce": Field("boolean", AF.tfce),
     "inference.permutations": Field("range", AF.permutations),
     "acquisition.modality": Field("array_value", AF.modalities),
-    "acquisition.field_strength": Field("number_array", AF.field_strengths),
-    "acquisition.repetition_time": Field("number_array", AF.repetition_times),
-    "acquisition.echo_time": Field("number_array", AF.echo_times),
-    "acquisition.voxel_size": Field("number_array", AF.voxel_sizes),
+    "acquisition.field_strength": _number_array("field_strengths"),
+    "acquisition.repetition_time": _number_array("repetition_times"),
+    "acquisition.echo_time": _number_array("echo_times"),
+    "acquisition.voxel_size": _number_array("voxel_sizes"),
     "acquisition.scanner": Field("text", AF.scanner_text),
-    "preprocessing.smoothing_fwhm": Field("number_array", AF.smoothing_fwhms),
+    "preprocessing.smoothing_fwhm": _number_array("smoothing_fwhms"),
     "preprocessing.software": Field("text", AF.preprocessing_software_text),
     "preprocessing.steps": Field("text", AF.preprocessing_steps_text),
     "model.family": Field("text", AF.model_family_text),
@@ -204,7 +211,7 @@ FIELDS = {
     "model.estimator": Field("text", AF.estimator_text),
     "model.term": Field("text", AF.model_term_text),
     "model.term_type": Field("array_value", AF.model_term_types),
-    "statistic.family": Field("text", AF.statistic_family_text),
+    "statistic.family": Field("value", AF.statistic_family),
     "statistic.df_numerator": Field("range", AF.df_numerator),
     "statistic.df_denominator": Field("range", AF.df_denominator),
     "connectivity.method": Field("value", AF.connectivity_method),
@@ -403,8 +410,8 @@ def _match(field, form, path, errors):
         return _bounds(field.column, form)
     if field.kind == "number_array":
         # Any one item in range: a group's age, an acquisition's TR.
-        item = sa.func.unnest(field.column).column_valued("item")
-        return sa.select(item).where(_bounds(item, form)).exists()
+        bound = [sa.cast(form.get(end), sa.Float) for end in ("min", "max")]
+        return field.points.op("&&")(sa.func.float8range(*bound, "[]"))
     if field.kind == "boolean":
         return field.column.is_(form["is"])
     match = MATCHERS[field.kind](field, path, errors)
@@ -899,9 +906,11 @@ def _analysis(row, provenance, features):
     }
     if features:
         display = {k: v for k, v in display.items() if k != "contrast_sides"}
+        # A column the record is silent on is left out: most are, on most analyses.
+        columns = (*RESULT_COLUMNS, *ANALYSIS_COLUMNS)
         result["features"] = {
             **display,
-            **{name: row[name] for name in (*RESULT_COLUMNS, *ANALYSIS_COLUMNS)},
+            **{name: row[name] for name in columns if row[name] is not None},
         }
     return result
 

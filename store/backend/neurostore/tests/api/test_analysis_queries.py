@@ -727,15 +727,16 @@ async def test_features_return_every_column_a_criterion_reads_and_their_extracti
         for column in (*read, AnalysisFeature.config_id):
             on = AnalysisFeature if column.class_ is AnalysisFeature else Analysis
             row = (rows if on is AnalysisFeature else analyses)[r["analysis"]]
-            assert features[column.key] == getattr(row, column.key), column.key
+            # Silent columns are left out.
+            assert features.get(column.key) == getattr(row, column.key), column.key
         assert features["updated_at"] == rows[r["analysis"]].updated_at.isoformat()
-    assert {r["features"]["config_id"] for r in _rows(every)} != {None}
+    assert {r["features"].get("config_id") for r in _rows(every)} != {None}
     # Text a criterion reads is in the display, as the record words it.
     scanners = {tuple(r["features"].get("scanner", ())) for r in _rows(every)}
     assert {(), ("GE Signa",), ("Siemens Prisma",)} <= scanners
     assert ("",) not in scanners
-    assert {tuple(r["features"]["age_means"] or ()) for r in _rows(every)} >= {(27.09, 26.41)}
-    assert {r["features"]["is_meta_analysis"] for r in _rows(every)} != {None}
+    assert {tuple(r["features"].get("age_means", ())) for r in _rows(every)} >= {(27.09, 26.41)}
+    assert {r["features"].get("is_meta_analysis") for r in _rows(every)} != {None}
 
 
 async def test_the_response_streams_in_chunks_that_join_to_it(

@@ -452,6 +452,18 @@ def test_inference_acquisitions_and_preprocessing_are_the_analysis_s_own():
     assert treated["preprocessing_software_text"] == "afni"
 
 
+def test_a_count_too_large_for_a_bigint_is_silent():
+    document = af.record(SOCIAL_ANXIETY)
+    settings = document["inference_settings"][0]
+    settings["permutation_count"] = {"value": 20_000_000_000, "extraction_status": "extracted"}
+    large = record_features(document)
+    settings["permutation_count"]["value"] = 2**64
+    too_large = record_features(document)
+
+    assert {row["permutations"] for row in large.values()} == {20_000_000_000}
+    assert {row["permutations"] for row in too_large.values()} == {None}
+
+
 def test_a_model_has_the_models_it_takes_inputs_from_nearest_first():
     treated = _by_name(SOCIAL_ANXIETY)["Positive FC"]
 
@@ -460,7 +472,7 @@ def test_a_model_has_the_models_it_takes_inputs_from_nearest_first():
     assert treated["model_software_text"] == "3ddeconvolve"
     assert treated["hrf_model_text"].startswith("gamma variate")
     assert treated["model_term_types"] == ["categorical", "continuous"]
-    assert treated["statistic_family_text"] == "t"
+    assert treated["statistic_family"] == "t"
 
 
 def test_connectivity_regions_coordinate_sets_and_task_details():
