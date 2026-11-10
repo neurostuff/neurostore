@@ -48,7 +48,7 @@ dependencies = [
     # A journal's name close to a known one (services/journals.py).
     "rapidfuzz~=3.14",
     # The public query's SoQL subset (public_query.py).
-    "lark~=1.2",
+    "lark~=1.3",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read, and the vocabulary manifest the analysis features resolve against,
     # pinned to study_schema main at the merge of neurostuff/study_schema#60.
