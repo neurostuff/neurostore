@@ -20,7 +20,8 @@ class _QueryResponse(StreamingResponse):
         try:
             await super().__call__(scope, receive, send)
         except ClientDisconnect:
-            pass
+            # The client went away (ASGI 2.4); there is no one left to answer.
+            return
         finally:
             await run_in_threadpool(self._stream.close)
 
