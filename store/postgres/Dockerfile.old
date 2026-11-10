@@ -1,4 +1,11 @@
 FROM postgres:12.12
+# Bullseye has left deb.debian.org and PGDG; nothing below comes from PGDG.
+RUN rm /etc/apt/sources.list.d/pgdg.list \
+    && printf '%s\n' \
+        'deb http://archive.debian.org/debian bullseye main' \
+        'deb http://archive.debian.org/debian bullseye-updates main' \
+        'deb http://archive.debian.org/debian-security bullseye-security main' \
+        > /etc/apt/sources.list
 RUN apt-get update && apt-get install -y dos2unix
 RUN apt-get install -yq python3-pip python-dev build-essential
 RUN apt-get install -yq cron
