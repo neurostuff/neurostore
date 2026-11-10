@@ -59,6 +59,7 @@ CONCEPT_RELEASES_REVISION = "f2a4c6e8b0d3"
 PUBLIC_QUERY_REVISION = "e5b7d9f1a3c4"
 CONTRAST_SIDES_REVISION = "b4d6f8a0c2e4"
 PUBLIC_QUERY_DATA_SOURCES_REVISION = "b8d0f2a4c6e9"
+RECORD_DETAILS_REVISION = "d5f7a9c1e3b6"
 MIGRATIONS = Path(__file__).resolve().parents[3] / "migrations" / "versions"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
@@ -666,9 +667,12 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_public_query_data_sources_migration_is_the_only_head():
+def test_the_record_details_migration_is_the_only_head():
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [PUBLIC_QUERY_DATA_SOURCES_REVISION]
+    assert script.get_heads() == [RECORD_DETAILS_REVISION]
+    assert script.get_revision(RECORD_DETAILS_REVISION).down_revision == (
+        PUBLIC_QUERY_DATA_SOURCES_REVISION
+    )
     assert script.get_revision(PUBLIC_QUERY_DATA_SOURCES_REVISION).down_revision == (
         CONTRAST_SIDES_REVISION
     )
