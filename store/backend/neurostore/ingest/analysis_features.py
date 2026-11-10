@@ -73,6 +73,8 @@ NO_BASELINE = "-"
 UNKNOWN_KIND = "?"
 
 #: A coordinate meta-analysis indexed as a paper (pondie.query.engine.META_ANALYSIS).
+#: Kept equal to pondie's, so ASCII hyphens only; ACE titles use
+#: neurostore.ingest.META_ANALYSIS_TITLE, which also takes U+2010.
 META_ANALYSIS = re.compile(
     r"meta-?analy|activation likelihood estimation|\bALE\b|\bMKDA\b|"
     r"seed-based d mapping|\bSDM\b|coordinate-based",
