@@ -1,0 +1,108 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/query/
+  response:
+    body:
+      string: '{"refreshed_at":"2026-11-11T06:05:35.019071+00:00","results":[{"name":"base-studies","description":"Active,
+        public base studies: one per paper.","key":["id"],"columns":[{"name":"id","type":"text"},{"name":"title","type":"text"},{"name":"year","type":"integer"},{"name":"doi","type":"text"},{"name":"pmid","type":"text"},{"name":"pmcid","type":"text"},{"name":"journal_id","type":"text"},{"name":"journal","type":"text"},{"name":"journal_abbreviation","type":"text"},{"name":"is_oa","type":"boolean"},{"name":"publication_status","type":"text"},{"name":"is_retracted","type":"boolean"},{"name":"license","type":"text"},{"name":"level","type":"text"},{"name":"has_coordinates","type":"boolean"},{"name":"has_images","type":"boolean"},{"name":"has_z_maps","type":"boolean"},{"name":"has_t_maps","type":"boolean"},{"name":"has_beta_and_variance_maps","type":"boolean"},{"name":"created_at","type":"timestamp"},{"name":"updated_at","type":"timestamp"}]},{"name":"journals","description":"Journals,
+        with how many public base studies each has, and how many of those have coordinates
+        or images.","key":["id"],"columns":[{"name":"id","type":"text"},{"name":"openalex_id","type":"text"},{"name":"kind","type":"text"},{"name":"title","type":"text"},{"name":"abbreviation","type":"text"},{"name":"issn_l","type":"text"},{"name":"nlm_id","type":"text"},{"name":"wikidata_id","type":"text"},{"name":"base_studies","type":"integer"},{"name":"base_studies_with_data","type":"integer"}]},{"name":"authors","description":"Authors
+        of public base studies, with how many each wrote and how many of those have
+        coordinates or images.","key":["id"],"columns":[{"name":"id","type":"text"},{"name":"name","type":"text"},{"name":"orcid","type":"text"},{"name":"openalex_id","type":"text"},{"name":"base_studies","type":"integer"},{"name":"base_studies_with_data","type":"integer"}]},{"name":"authorships","description":"Each
+        author of each public base study, with the base study''s year, journal and
+        data.","key":["base_study_id","position"],"columns":[{"name":"base_study_id","type":"text"},{"name":"author_id","type":"text"},{"name":"author_name","type":"text"},{"name":"printed_name","type":"text"},{"name":"orcid","type":"text"},{"name":"openalex_id","type":"text"},{"name":"position","type":"integer"},{"name":"corresponding","type":"boolean"},{"name":"year","type":"integer"},{"name":"journal_id","type":"text"},{"name":"has_coordinates","type":"boolean"},{"name":"has_images","type":"boolean"}]},{"name":"institutions","description":"Research
+        organizations (ROR) named by public base studies'' authors, with how many
+        base studies name each.","key":["id"],"columns":[{"name":"id","type":"text"},{"name":"ror","type":"text"},{"name":"name","type":"text"},{"name":"country","type":"text"},{"name":"base_studies","type":"integer"}]},{"name":"affiliations","description":"Each
+        institution each public base study names, once.","key":["base_study_id","institution_id"],"columns":[{"name":"base_study_id","type":"text"},{"name":"institution_id","type":"text"},{"name":"institution","type":"text"},{"name":"ror","type":"text"},{"name":"country","type":"text"},{"name":"year","type":"integer"},{"name":"journal_id","type":"text"}]},{"name":"studies","description":"Public
+        studies (versions of base studies, and Compose''s meta-analysis projects at
+        level meta), with their owner''s username.","key":["id"],"columns":[{"name":"id","type":"text"},{"name":"base_study_id","type":"text"},{"name":"name","type":"text"},{"name":"year","type":"integer"},{"name":"level","type":"text"},{"name":"source","type":"text"},{"name":"username","type":"text"},{"name":"created_at","type":"timestamp"},{"name":"updated_at","type":"timestamp"},{"name":"has_coordinates","type":"boolean"},{"name":"has_images","type":"boolean"}]},{"name":"analyses","description":"Analyses
+        of public studies, with their study''s level and source.","key":["id"],"columns":[{"name":"id","type":"text"},{"name":"study_id","type":"text"},{"name":"base_study_id","type":"text"},{"name":"name","type":"text"},{"name":"level","type":"text"},{"name":"source","type":"text"},{"name":"point_count","type":"integer"},{"name":"image_count","type":"integer"},{"name":"has_coordinates","type":"boolean"},{"name":"has_images","type":"boolean"},{"name":"role","type":"text"},{"name":"outcome","type":"text"},{"name":"created_at","type":"timestamp"},{"name":"updated_at","type":"timestamp"}]},{"name":"data-sources","description":"Studies
+        (cohorts), consortia and repositories data can come from, with how many public
+        base studies use each and how many of those have coordinates or images.","key":["id"],"columns":[{"name":"id","type":"text"},{"name":"name","type":"text"},{"name":"kinds","type":"text"},{"name":"modalities","type":"text"},{"name":"part_of_id","type":"text"},{"name":"url","type":"text"},{"name":"rrids","type":"text"},{"name":"base_studies","type":"integer"},{"name":"base_studies_with_data","type":"integer"}]},{"name":"data-source-uses","description":"Each
+        data source each public base study uses, once, with the base study''s year,
+        journal and data.","key":["base_study_id","data_source_id"],"columns":[{"name":"base_study_id","type":"text"},{"name":"data_source_id","type":"text"},{"name":"data_source","type":"text"},{"name":"year","type":"integer"},{"name":"journal_id","type":"text"},{"name":"has_coordinates","type":"boolean"},{"name":"has_images","type":"boolean"}]}]}
+
+        '
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '5406'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:34 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - a19753af637e4dfc
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/query/base-studies?%24select=year%2C+count%28%2A%29+AS+n&%24where=year+%3E%3D+2020&%24group=year&%24order=year&%24limit=50&%24offset=0
+  response:
+    body:
+      string: '{"dataset":"base-studies","query":{"$select":"year, count(*) AS n","$where":"year
+        >= 2020","$group":"year","$order":"year","$limit":"50","$offset":"0"},"columns":[{"name":"year","type":"integer"},{"name":"n","type":"integer"}],"rows":[[2020,4430],[2021,4458],[2022,4125],[2023,3629],[2024,3343],[2025,3416],[2026,2316],[2027,1]],"limit":50,"offset":0,"refreshed_at":"2026-11-11T06:05:35.019071+00:00"}'
+    headers:
+      cache-control:
+      - public, max-age=300
+      connection:
+      - keep-alive
+      content-length:
+      - '401'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:34 GMT
+      etag:
+      - W/"40edd7099e49c40d50083122c5aec834"
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - 0fe6d340112040b0
+    status:
+      code: 200
+      message: OK
+version: 1

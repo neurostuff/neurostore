@@ -1,0 +1,289 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/studysets/ewtEqjidaJbH
+  response:
+    body:
+      string: '{"id":"ewtEqjidaJbH","user":null,"username":"Diego Montenegro","created_at":"2026-11-10T18:38:19.176804+00:00","updated_at":null,"studies":["3cmunZZRHSp5","3wQSfP8uTh7q","99H9LHrxQWMz","JB7cWoQtT8DH","Qyi8Z5VDZzTa","Y4FKeRvsTRDH","dWSdXjUrUCVr","dzqBTuRzVFta","fGpYxysHnRxF"],"studyset_studies":[{"id":"3cmunZZRHSp5","curation_stub_uuid":"0968435a-45d1-46eb-8466-f507414a2b5e"},{"id":"3wQSfP8uTh7q","curation_stub_uuid":"a1de8aa1-49e3-4944-96df-0be665f8e230"},{"id":"99H9LHrxQWMz","curation_stub_uuid":"31545e83-5efa-418c-8e7e-fc282bd68c88"},{"id":"JB7cWoQtT8DH","curation_stub_uuid":"5863abbf-09f8-44aa-9de9-f44ad399b9c6"},{"id":"Qyi8Z5VDZzTa","curation_stub_uuid":"fbe00bbf-9a1e-4196-8692-c56c281b427b"},{"id":"Y4FKeRvsTRDH","curation_stub_uuid":"3ec83bc2-e75c-4b36-8b9e-1e94dc767467"},{"id":"dWSdXjUrUCVr","curation_stub_uuid":"1d26c104-7bc2-4dda-9489-e7bba3415b68"},{"id":"dzqBTuRzVFta","curation_stub_uuid":"3a5a3958-3ebd-429d-a89c-10b9d3766625"},{"id":"fGpYxysHnRxF","curation_stub_uuid":"fdc38a47-feeb-4157-9721-d7f9877231bc"}],"source":null,"source_id":null,"source_updated_at":null,"name":"Untitled
+        CBMA Studyset","description":"","publication":null,"doi":null,"pmid":null}
+
+        '
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '1183'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:34 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - 26555415397247b2
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/annotations/?studyset_id=ewtEqjidaJbH&page=1&page_size=10
+  response:
+    body:
+      string: "{\"metadata\":{\"total_count\":1},\"results\":[{\"id\":\"WrGg7oA9QiZB\",\"user\":null,\"username\":\"Diego
+        Montenegro\",\"created_at\":\"2026-11-10T18:38:19.685469+00:00\",\"updated_at\":null,\"studyset\":\"ewtEqjidaJbH\",\"notes\":[{\"id\":\"WrGg7oA9QiZB_o58Tnw7rxpXi\",\"note\":{\"included\":true},\"analysis\":\"o58Tnw7rxpXi\",\"study\":\"JB7cWoQtT8DH\",\"study_name\":\"Impairment
+        in complex activities of daily living is related to neurodegeneration in Alzheimer's
+        disease\u2013specific regions\",\"analysis_name\":\"Regions of significant
+        gray matter volume associated with A-IADL-Q score across the AD clinical spectrum
+        (N=160)\",\"study_year\":2019,\"authors\":\"Roos J. Jutten; Ellen Dicks; Lieke
+        Vermaat; Frederik Barkhof; Philip Scheltens; Betty M. Tijms; Sietske A.M.
+        Sikkes\",\"publication\":\"Neurobiology of Aging\"},{\"id\":\"WrGg7oA9QiZB_YqS7pUBjsBeF\",\"note\":{\"included\":true},\"analysis\":\"YqS7pUBjsBeF\",\"study\":\"JB7cWoQtT8DH\",\"study_name\":\"Impairment
+        in complex activities of daily living is related to neurodegeneration in Alzheimer's
+        disease\u2013specific regions\",\"analysis_name\":\"Regions of significant
+        gray matter volume associated with A-IADL-Q score in the AD dementia group
+        (n=86)\",\"study_year\":2019,\"authors\":\"Roos J. Jutten; Ellen Dicks; Lieke
+        Vermaat; Frederik Barkhof; Philip Scheltens; Betty M. Tijms; Sietske A.M.
+        Sikkes\",\"publication\":\"Neurobiology of Aging\"},{\"id\":\"WrGg7oA9QiZB_9gUSaBt7jpuq\",\"note\":{\"included\":true},\"analysis\":\"9gUSaBt7jpuq\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"AD patients >
+        Controls\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_eqBNvkrciWm9\",\"note\":{\"included\":true},\"analysis\":\"eqBNvkrciWm9\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"MNI coordinates\",\"study_year\":2019,\"authors\":\"Andrea
+        Slachevsky; Gonzalo Forno; Paulo Barraza; Eneida Mioshi; Carolina Delgado;
+        Patricia Lillo; Fernando Henriquez; Eduardo Bravo; Mauricio Farias; Carlos
+        Mu\xF1oz-Neira; Agustin Iba\xF1ez; Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal
+        of Neurology\"},{\"id\":\"WrGg7oA9QiZB_YqKSXEas2j8W\",\"note\":{\"included\":true},\"analysis\":\"YqKSXEas2j8W\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"fusiform cortex
+        /Parahippocampalgyrus, anteriordivision\",\"study_year\":2019,\"authors\":\"Andrea
+        Slachevsky; Gonzalo Forno; Paulo Barraza; Eneida Mioshi; Carolina Delgado;
+        Patricia Lillo; Fernando Henriquez; Eduardo Bravo; Mauricio Farias; Carlos
+        Mu\xF1oz-Neira; Agustin Iba\xF1ez; Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal
+        of Neurology\"},{\"id\":\"WrGg7oA9QiZB_L2VrDNe64K7b\",\"note\":{\"included\":true},\"analysis\":\"L2VrDNe64K7b\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"a-ADL^{iii} domain
+        subscore\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_7E2n2fe8eJpw\",\"note\":{\"included\":true},\"analysis\":\"7E2n2fe8eJpw\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"gyrus / Superiorfrontal
+        gyrus\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_SZREjBShNF5d\",\"note\":{\"included\":true},\"analysis\":\"SZREjBShNF5d\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"IADL^i domain
+        subscores\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_CrrgbUUuKawB\",\"note\":{\"included\":true},\"analysis\":\"CrrgbUUuKawB\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"a-ADL^{ii} domain
+        subscores\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_ioWKUGgsD9xi\",\"note\":{\"included\":true},\"analysis\":\"ioWKUGgsD9xi\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"BADL^i domain
+        subscore\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_ijVazuScaxoj\",\"note\":{\"included\":true},\"analysis\":\"ijVazuScaxoj\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"IADL^{ii} domain
+        subscore\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_zpQWoGFFyWAW\",\"note\":{\"included\":true},\"analysis\":\"zpQWoGFFyWAW\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"Regions of overlap\",\"study_year\":2019,\"authors\":\"Andrea
+        Slachevsky; Gonzalo Forno; Paulo Barraza; Eneida Mioshi; Carolina Delgado;
+        Patricia Lillo; Fernando Henriquez; Eduardo Bravo; Mauricio Farias; Carlos
+        Mu\xF1oz-Neira; Agustin Iba\xF1ez; Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal
+        of Neurology\"},{\"id\":\"WrGg7oA9QiZB_eGpYcZKNLmtx\",\"note\":{\"included\":true},\"analysis\":\"eGpYcZKNLmtx\",\"study\":\"dzqBTuRzVFta\",\"study_name\":\"Neural
+        Correlates of Impaired Functional Independence in Early Alzheimer\u2019s Disease\",\"analysis_name\":\"Alzheimer\u2019s
+        disease\",\"study_year\":2010,\"authors\":\"Eric D. Vidoni; Robyn A. Honea;
+        Jeffrey M. Burns\",\"publication\":\"Journal of Alzheimer's Disease\"},{\"id\":\"WrGg7oA9QiZB_xS9Dfrpbbf32\",\"note\":{\"included\":true},\"analysis\":\"xS9Dfrpbbf32\",\"study\":\"dzqBTuRzVFta\",\"study_name\":\"Neural
+        Correlates of Impaired Functional Independence in Early Alzheimer\u2019s Disease\",\"analysis_name\":\"Nondemented\",\"study_year\":2010,\"authors\":\"Eric
+        D. Vidoni; Robyn A. Honea; Jeffrey M. Burns\",\"publication\":\"Journal of
+        Alzheimer's Disease\"}],\"source\":null,\"source_id\":null,\"source_updated_at\":null,\"note_keys\":{\"included\":{\"type\":\"boolean\",\"order\":0,\"default\":true}},\"metadata\":null,\"name\":\"Annotation
+        for studyset ewtEqjidaJbH\",\"description\":\"\"}]}\n"
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '8082'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:35 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - 44e86fd65c24405b
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/annotations/WrGg7oA9QiZB
+  response:
+    body:
+      string: "{\"id\":\"WrGg7oA9QiZB\",\"user\":null,\"username\":\"Diego Montenegro\",\"created_at\":\"2026-11-10T18:38:19.685469+00:00\",\"updated_at\":null,\"studyset\":\"ewtEqjidaJbH\",\"notes\":[{\"id\":\"WrGg7oA9QiZB_o58Tnw7rxpXi\",\"note\":{\"included\":true},\"analysis\":\"o58Tnw7rxpXi\",\"study\":\"JB7cWoQtT8DH\",\"study_name\":\"Impairment
+        in complex activities of daily living is related to neurodegeneration in Alzheimer's
+        disease\u2013specific regions\",\"analysis_name\":\"Regions of significant
+        gray matter volume associated with A-IADL-Q score across the AD clinical spectrum
+        (N=160)\",\"study_year\":2019,\"authors\":\"Roos J. Jutten; Ellen Dicks; Lieke
+        Vermaat; Frederik Barkhof; Philip Scheltens; Betty M. Tijms; Sietske A.M.
+        Sikkes\",\"publication\":\"Neurobiology of Aging\"},{\"id\":\"WrGg7oA9QiZB_YqS7pUBjsBeF\",\"note\":{\"included\":true},\"analysis\":\"YqS7pUBjsBeF\",\"study\":\"JB7cWoQtT8DH\",\"study_name\":\"Impairment
+        in complex activities of daily living is related to neurodegeneration in Alzheimer's
+        disease\u2013specific regions\",\"analysis_name\":\"Regions of significant
+        gray matter volume associated with A-IADL-Q score in the AD dementia group
+        (n=86)\",\"study_year\":2019,\"authors\":\"Roos J. Jutten; Ellen Dicks; Lieke
+        Vermaat; Frederik Barkhof; Philip Scheltens; Betty M. Tijms; Sietske A.M.
+        Sikkes\",\"publication\":\"Neurobiology of Aging\"},{\"id\":\"WrGg7oA9QiZB_9gUSaBt7jpuq\",\"note\":{\"included\":true},\"analysis\":\"9gUSaBt7jpuq\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"AD patients >
+        Controls\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_eqBNvkrciWm9\",\"note\":{\"included\":true},\"analysis\":\"eqBNvkrciWm9\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"MNI coordinates\",\"study_year\":2019,\"authors\":\"Andrea
+        Slachevsky; Gonzalo Forno; Paulo Barraza; Eneida Mioshi; Carolina Delgado;
+        Patricia Lillo; Fernando Henriquez; Eduardo Bravo; Mauricio Farias; Carlos
+        Mu\xF1oz-Neira; Agustin Iba\xF1ez; Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal
+        of Neurology\"},{\"id\":\"WrGg7oA9QiZB_YqKSXEas2j8W\",\"note\":{\"included\":true},\"analysis\":\"YqKSXEas2j8W\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"fusiform cortex
+        /Parahippocampalgyrus, anteriordivision\",\"study_year\":2019,\"authors\":\"Andrea
+        Slachevsky; Gonzalo Forno; Paulo Barraza; Eneida Mioshi; Carolina Delgado;
+        Patricia Lillo; Fernando Henriquez; Eduardo Bravo; Mauricio Farias; Carlos
+        Mu\xF1oz-Neira; Agustin Iba\xF1ez; Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal
+        of Neurology\"},{\"id\":\"WrGg7oA9QiZB_L2VrDNe64K7b\",\"note\":{\"included\":true},\"analysis\":\"L2VrDNe64K7b\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"a-ADL^{iii} domain
+        subscore\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_7E2n2fe8eJpw\",\"note\":{\"included\":true},\"analysis\":\"7E2n2fe8eJpw\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"gyrus / Superiorfrontal
+        gyrus\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_SZREjBShNF5d\",\"note\":{\"included\":true},\"analysis\":\"SZREjBShNF5d\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"IADL^i domain
+        subscores\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_CrrgbUUuKawB\",\"note\":{\"included\":true},\"analysis\":\"CrrgbUUuKawB\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"a-ADL^{ii} domain
+        subscores\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_ioWKUGgsD9xi\",\"note\":{\"included\":true},\"analysis\":\"ioWKUGgsD9xi\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"BADL^i domain
+        subscore\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_ijVazuScaxoj\",\"note\":{\"included\":true},\"analysis\":\"ijVazuScaxoj\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"IADL^{ii} domain
+        subscore\",\"study_year\":2019,\"authors\":\"Andrea Slachevsky; Gonzalo Forno;
+        Paulo Barraza; Eneida Mioshi; Carolina Delgado; Patricia Lillo; Fernando Henriquez;
+        Eduardo Bravo; Mauricio Farias; Carlos Mu\xF1oz-Neira; Agustin Iba\xF1ez;
+        Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal of Neurology\"},{\"id\":\"WrGg7oA9QiZB_zpQWoGFFyWAW\",\"note\":{\"included\":true},\"analysis\":\"zpQWoGFFyWAW\",\"study\":\"Qyi8Z5VDZzTa\",\"study_name\":\"Mapping
+        the neuroanatomy of functional decline in Alzheimer\u2019s disease from basic
+        to advanced activities of daily living\",\"analysis_name\":\"Regions of overlap\",\"study_year\":2019,\"authors\":\"Andrea
+        Slachevsky; Gonzalo Forno; Paulo Barraza; Eneida Mioshi; Carolina Delgado;
+        Patricia Lillo; Fernando Henriquez; Eduardo Bravo; Mauricio Farias; Carlos
+        Mu\xF1oz-Neira; Agustin Iba\xF1ez; Mario A. Parra; Michael Hornberger\",\"publication\":\"Journal
+        of Neurology\"},{\"id\":\"WrGg7oA9QiZB_eGpYcZKNLmtx\",\"note\":{\"included\":true},\"analysis\":\"eGpYcZKNLmtx\",\"study\":\"dzqBTuRzVFta\",\"study_name\":\"Neural
+        Correlates of Impaired Functional Independence in Early Alzheimer\u2019s Disease\",\"analysis_name\":\"Alzheimer\u2019s
+        disease\",\"study_year\":2010,\"authors\":\"Eric D. Vidoni; Robyn A. Honea;
+        Jeffrey M. Burns\",\"publication\":\"Journal of Alzheimer's Disease\"},{\"id\":\"WrGg7oA9QiZB_xS9Dfrpbbf32\",\"note\":{\"included\":true},\"analysis\":\"xS9Dfrpbbf32\",\"study\":\"dzqBTuRzVFta\",\"study_name\":\"Neural
+        Correlates of Impaired Functional Independence in Early Alzheimer\u2019s Disease\",\"analysis_name\":\"Nondemented\",\"study_year\":2010,\"authors\":\"Eric
+        D. Vidoni; Robyn A. Honea; Jeffrey M. Burns\",\"publication\":\"Journal of
+        Alzheimer's Disease\"}],\"source\":null,\"source_id\":null,\"source_updated_at\":null,\"note_keys\":{\"included\":{\"type\":\"boolean\",\"order\":0,\"default\":true}},\"metadata\":null,\"name\":\"Annotation
+        for studyset ewtEqjidaJbH\",\"description\":\"\"}\n"
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '8039'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:35 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - 6ce369ec68284222
+    status:
+      code: 200
+      message: OK
+version: 1

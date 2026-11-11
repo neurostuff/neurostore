@@ -1,0 +1,54 @@
+interactions:
+- request:
+    body: '{"query":{"task":{"text":"n-back"},"species":"human"},"page":1,"page_size":3,"detail":"analyses","funnel":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '111'
+      content-type:
+      - application/json
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: POST
+    uri: https://neurostore.org/api/analysis-queries/
+  response:
+    body:
+      string: '{"metadata":{"total_count":1435,"analysis_count":5220},"query":{"species":{"when_silent":"exclude","any":["human"]},"task":{"text":["n-back"],"descendants":true,"when_unmapped":"exclude","when_silent":"exclude"}},"searched":{"analyses":255990,"base_studies":64769},"funnel":[{"criterion":"species","analyses":249915,"base_studies":63193,"dropped":6075,"silent":3013,"unmapped":null},{"criterion":"task","analyses":5220,"base_studies":1435,"dropped":244695,"silent":36026,"unmapped":4272}],"results":[{"study":"J7erSwsHoiaP","base_study":"277L754xor6d","analyses":[{"id":"HuVH3pujr5NA","name":"ACC
+        ROI","matched_by":{"task":"text"}},{"id":"N2WKi2o6vDXz","name":"lPFC ROI","matched_by":{"task":"text"}},{"id":"yQvoq7yhtkgU","name":"PC
+        ROI","matched_by":{"task":"text"}}]},{"study":"prPaJgt6jpfR","base_study":"2CgS3xpRkAUN","analyses":[{"id":"C7kpHgphoyqh","name":"main
+        effect of auditory load","matched_by":{"task":"text"}},{"id":"GCtzBf5B4SqZ","name":"visual
+        perceptual salience effect","matched_by":{"task":"text"}},{"id":"K4jnkgUP75yS","name":"main
+        effect of object visibility","matched_by":{"task":"text"}},{"id":"rdFcbVrc2hFp","name":"auditory
+        load x object visibility interaction","matched_by":{"task":"text"}}]},{"study":"RbSyEwyNwpdE","base_study":"2FnUFz9yaWT3","analyses":[{"id":"U7NKcBzVzgdo","name":"NF
+        group < SH group during 2-back > 0-back","matched_by":{"task":"text"}}]}]}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '1388'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:33 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - 5a601c1c2bd1480d
+    status:
+      code: 200
+      message: OK
+version: 1

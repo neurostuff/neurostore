@@ -497,6 +497,28 @@ jobs:
         run: |
           ../scripts/validate_reduced_backup_restore.sh compose
 
+  mcp_tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+    -
+      name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+    -
+      name: Set up uv
+      uses: astral-sh/setup-uv@v6
+    -
+      name: MCP server tests (recorded responses, network blocked)
+      run: |
+        uv venv --python 3.12
+        uv pip install -e ".[test]"
+        .venv/bin/python -m pytest --record-mode=none --block-network --allowed-hosts=127.0.0.1,localhost
+        uvx flake8 src tests
+
   style_check:
     runs-on: ubuntu-latest
     steps:

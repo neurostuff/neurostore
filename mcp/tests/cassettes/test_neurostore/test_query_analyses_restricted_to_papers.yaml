@@ -1,0 +1,117 @@
+interactions:
+- request:
+    body: '{"query":{},"page":1,"page_size":10,"detail":"features","base_study_ids":["277L754xor6d"]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '90'
+      content-type:
+      - application/json
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: POST
+    uri: https://neurostore.org/api/analysis-queries/
+  response:
+    body:
+      string: "{\"metadata\":{\"total_count\":1,\"analysis_count\":3},\"query\":{},\"results\":[{\"study\":\"J7erSwsHoiaP\",\"base_study\":\"277L754xor6d\",\"analyses\":[{\"id\":\"HuVH3pujr5NA\",\"name\":\"ACC
+        ROI\",\"matched_by\":{},\"role\":\"anchor\",\"has_coordinates\":false,\"config_id\":\"uDJPLKTZEhgX\",\"updated_at\":\"2026-11-11T06:00:17.856938+00:00\",\"features\":{\"has_patients\":false,\"has_healthy\":true,\"species\":[\"human\"],\"task\":{\"ids\":[\"hedtsk_n_back\"],\"family_ids\":[\"working_memory_span\"],\"text\":[\"N-Back
+        Task\"]},\"spatial_scope\":\"roi\",\"coordinate_space\":\"MNI\",\"measure_type\":\"connectivity_strength\",\"measure_family\":\"functional_bold\",\"details_type\":\"ConnectivityDetails\",\"is_meta_analysis\":false,\"n\":42,\"contrast\":{\"kind\":\"simple_effect\",\"groups\":\"within\",\"positive\":{\"name\":[\"family
+        of models characterized by the modulation of PC-to-ACC effective connectivity\"]}},\"design\":{\"allocation\":\"not_applicable\",\"assignment_structure\":\"observational_cohorts\"},\"groups\":{\"acquired_count\":50,\"excluded_count\":8,\"diagnostic_instrument\":[\"SCID
+        for DSM-V\",\"Structured Clinical Interview for DSM-5 Personality Disorders\"],\"diagnostic_system\":[\"DSM-5\"],\"clinical_characteristics\":[\"Excluded
+        for a history of major psychiatric or personality disorders, lifetime substance
+        use disorders, psychosis in a first-degree relative, or taking psychoactive
+        medications.\"]},\"inference_settings\":{\"inference_level\":[\"model family\"],\"multiple_comparison_method\":[\"Bayesian
+        family-wise random effect exceedance probability\"]},\"acquisitions\":{\"modality\":[\"fmri\"],\"magnetic_field_strength_tesla\":[3.0],\"repetition_time_seconds\":[1.5],\"echo_time_seconds\":[0.027],\"acquisition_voxel_size_mm\":[3.0],\"device\":[\"Siemens
+        Biograph mMR\"]},\"preprocessing\":{\"smoothing_fwhm_mm\":[6.0],\"software\":[\"SPM12\"],\"steps\":[\"Remove
+        first 12 volumes\",\"Motion correction using realignment with reslicing\",\"Coregistration
+        of mean functional image with individual high-resolution anatomical image\",\"Grey
+        and white matter segmentation\",\"Normalization to standard MNI template and
+        resampling to 2 \xD7 2 \xD7 2 mm\",\"Gaussian spatial smoothing\"]},\"model_estimation\":{\"model_family\":[\"dynamic
+        causal modeling\"],\"model_type\":[\"Bayesian family-wise random effect approach\"],\"software\":[\"SPM12\"],\"estimator\":[\"Bayesian
+        family-wise random effect\"],\"terms\":{\"name\":[\"model family\"],\"type\":[\"categorical\"]}},\"effect\":{\"statistic\":{\"family\":\"exceedance
+        probability\"}},\"details\":{\"connectivity_method\":\"dcm\",\"inference_target\":\"model_comparison\",\"seed_regions\":[\"VC\"],\"target_regions\":[\"ACC\",\"lPFC\",\"PC\"]},\"regions\":{\"name\":[\"ACC\",\"lPFC\",\"PC\",\"VC\"],\"region_type\":[\"coordinate_sphere\"],\"definition_method\":[\"same_study_analysis\"]},\"tasks\":{\"stimuli\":[\"Consonant
+        English letters\",\"Target letter T/t\",\"Central fixation dot\",\"Task-condition
+        instruction screens\"],\"stimulus_modality\":[\"visual\"],\"response_modality\":[\"button_press\"],\"design_type\":[\"mixed\"],\"instructions\":[\"Indicate
+        by button press whether the currently displayed letter matches the letter
+        from the preceding one, two, or three trials, according to the block instruction.\"],\"performance_measures\":[\"Number
+        of hits\",\"Number of false alarms (errors of commission)\",\"Number of misses
+        (errors of omission)\"]}}},{\"id\":\"N2WKi2o6vDXz\",\"name\":\"lPFC ROI\",\"matched_by\":{},\"role\":\"anchor\",\"has_coordinates\":false,\"config_id\":\"uDJPLKTZEhgX\",\"updated_at\":\"2026-11-11T06:00:17.856938+00:00\",\"features\":{\"medical_condition\":{\"ids\":[\"MONDO:0001087\",\"ONVOC:0000214\",\"MONDO:0002009\",\"ONVOC:0000207\",\"MONDO:0005090\",\"ONVOC:0000217\",\"MONDO:0005487\",\"ONVOC:0000219\"],\"role_ids\":[\"primary|MONDO:0001087\",\"primary|ONVOC:0000214\",\"comorbid|MONDO:0002009\",\"comorbid|ONVOC:0000207\",\"primary|MONDO:0005090\",\"primary|ONVOC:0000217\",\"primary|MONDO:0005487\",\"primary|ONVOC:0000219\"],\"text\":[\"schizotypal
+        personality disorder\",\"Personality Disorders\",\"major depressive disorder\",\"Depressive
+        Disorder\",\"schizophrenia\",\"Schizophrenia\",\"schizoaffective disorder\",\"Psychotic
+        Disorder\"]},\"has_patients\":true,\"has_healthy\":false,\"species\":[\"human\"],\"task\":{\"ids\":[\"hedtsk_n_back\"],\"family_ids\":[\"working_memory_span\"],\"text\":[\"N-Back
+        Task\"]},\"spatial_scope\":\"roi\",\"coordinate_space\":\"MNI\",\"measure_type\":\"connectivity_strength\",\"measure_family\":\"functional_bold\",\"details_type\":\"ConnectivityDetails\",\"is_meta_analysis\":false,\"n\":63,\"contrast\":{\"kind\":\"simple_effect\",\"groups\":\"between\",\"positive\":{\"name\":[\"models
+        characterized by the modulation of the ACC-to-PC effective connectivity\"]}},\"design\":{\"allocation\":\"not_applicable\",\"assignment_structure\":\"observational_cohorts\"},\"groups\":{\"acquired_count\":66,\"excluded_count\":3,\"diagnostic_instrument\":[\"SCID
+        for DSM-V\",\"Structured Clinical Interview for DSM-5 Personality Disorders\"],\"diagnostic_system\":[\"DSM-5\"],\"clinical_characteristics\":[\"Ten
+        participants had lifetime MDD more than 3 months before participation; seven
+        had past substance-use disorder, including five with cannabis and two with
+        alcohol.\",\"Five participants had past substance-use disorder, including
+        four with cannabis and one with alcohol.\"]},\"inference_settings\":{\"inference_level\":[\"model
+        family\"],\"multiple_comparison_method\":[\"Bayesian family-wise random effect
+        exceedance probability\"]},\"acquisitions\":{\"modality\":[\"fmri\"],\"magnetic_field_strength_tesla\":[3.0],\"repetition_time_seconds\":[1.5],\"echo_time_seconds\":[0.027],\"acquisition_voxel_size_mm\":[3.0],\"device\":[\"Siemens
+        Biograph mMR\"]},\"preprocessing\":{\"smoothing_fwhm_mm\":[6.0],\"software\":[\"SPM12\"],\"steps\":[\"Remove
+        first 12 volumes\",\"Motion correction using realignment with reslicing\",\"Coregistration
+        of mean functional image with individual high-resolution anatomical image\",\"Grey
+        and white matter segmentation\",\"Normalization to standard MNI template and
+        resampling to 2 \xD7 2 \xD7 2 mm\",\"Gaussian spatial smoothing\"]},\"model_estimation\":{\"model_family\":[\"dynamic
+        causal modeling\"],\"model_type\":[\"Bayesian family-wise random effect approach\"],\"software\":[\"SPM12\"],\"estimator\":[\"Bayesian
+        family-wise random effect\"],\"terms\":{\"name\":[\"model family\"],\"type\":[\"categorical\"]}},\"effect\":{\"statistic\":{\"family\":\"exceedance
+        probability\"}},\"details\":{\"connectivity_method\":\"dcm\",\"inference_target\":\"model_comparison\",\"seed_regions\":[\"VC\"],\"target_regions\":[\"ACC\",\"lPFC\",\"PC\"]},\"regions\":{\"name\":[\"ACC\",\"lPFC\",\"PC\",\"VC\"],\"region_type\":[\"coordinate_sphere\"],\"definition_method\":[\"same_study_analysis\"]},\"tasks\":{\"stimuli\":[\"Consonant
+        English letters\",\"Target letter T/t\",\"Central fixation dot\",\"Task-condition
+        instruction screens\"],\"stimulus_modality\":[\"visual\"],\"response_modality\":[\"button_press\"],\"design_type\":[\"mixed\"],\"instructions\":[\"Indicate
+        by button press whether the currently displayed letter matches the letter
+        from the preceding one, two, or three trials, according to the block instruction.\"],\"performance_measures\":[\"Number
+        of hits\",\"Number of false alarms (errors of commission)\",\"Number of misses
+        (errors of omission)\"]}}},{\"id\":\"yQvoq7yhtkgU\",\"name\":\"PC ROI\",\"matched_by\":{},\"role\":\"anchor\",\"has_coordinates\":false,\"config_id\":\"uDJPLKTZEhgX\",\"updated_at\":\"2026-11-11T06:00:17.856938+00:00\",\"features\":{\"medical_condition\":{\"ids\":[\"MONDO:0001087\",\"ONVOC:0000214\",\"MONDO:0002009\",\"ONVOC:0000207\"],\"role_ids\":[\"primary|MONDO:0001087\",\"primary|ONVOC:0000214\",\"comorbid|MONDO:0002009\",\"comorbid|ONVOC:0000207\"],\"text\":[\"schizotypal
+        personality disorder\",\"Personality Disorders\",\"major depressive disorder\",\"Depressive
+        Disorder\"]},\"has_patients\":true,\"has_healthy\":false,\"species\":[\"human\"],\"task\":{\"ids\":[\"hedtsk_n_back\"],\"family_ids\":[\"working_memory_span\"],\"text\":[\"N-Back
+        Task\"]},\"spatial_scope\":\"roi\",\"coordinate_space\":\"MNI\",\"measure_type\":\"connectivity_strength\",\"measure_family\":\"functional_bold\",\"details_type\":\"ConnectivityDetails\",\"is_meta_analysis\":false,\"n\":28,\"contrast\":{\"kind\":\"omnibus\",\"groups\":\"within\"},\"design\":{\"allocation\":\"not_applicable\",\"assignment_structure\":\"observational_cohorts\"},\"groups\":{\"acquired_count\":30,\"excluded_count\":2,\"diagnostic_instrument\":[\"SCID
+        for DSM-V\",\"Structured Clinical Interview for DSM-5 Personality Disorders\"],\"diagnostic_system\":[\"DSM-5\"],\"clinical_characteristics\":[\"Ten
+        participants had lifetime MDD more than 3 months before participation; seven
+        had past substance-use disorder, including five with cannabis and two with
+        alcohol.\"]},\"inference_settings\":{\"inference_level\":[\"model family\"],\"multiple_comparison_method\":[\"Bayesian
+        family-wise random effect exceedance probability\"]},\"acquisitions\":{\"modality\":[\"fmri\"],\"magnetic_field_strength_tesla\":[3.0],\"repetition_time_seconds\":[1.5],\"echo_time_seconds\":[0.027],\"acquisition_voxel_size_mm\":[3.0],\"device\":[\"Siemens
+        Biograph mMR\"]},\"preprocessing\":{\"smoothing_fwhm_mm\":[6.0],\"software\":[\"SPM12\"],\"steps\":[\"Remove
+        first 12 volumes\",\"Motion correction using realignment with reslicing\",\"Coregistration
+        of mean functional image with individual high-resolution anatomical image\",\"Grey
+        and white matter segmentation\",\"Normalization to standard MNI template and
+        resampling to 2 \xD7 2 \xD7 2 mm\",\"Gaussian spatial smoothing\"]},\"model_estimation\":{\"model_family\":[\"dynamic
+        causal modeling\"],\"model_type\":[\"Bayesian family-wise random effect approach\"],\"software\":[\"SPM12\"],\"estimator\":[\"Bayesian
+        family-wise random effect\"],\"terms\":{\"name\":[\"model family\"],\"type\":[\"categorical\"]}},\"effect\":{\"statistic\":{\"family\":\"exceedance
+        probability\"}},\"details\":{\"connectivity_method\":\"dcm\",\"inference_target\":\"model_comparison\",\"seed_regions\":[\"VC\"],\"target_regions\":[\"ACC\",\"lPFC\",\"PC\"]},\"regions\":{\"name\":[\"ACC\",\"lPFC\",\"PC\",\"VC\"],\"region_type\":[\"coordinate_sphere\"],\"definition_method\":[\"same_study_analysis\"]},\"tasks\":{\"stimuli\":[\"Consonant
+        English letters\",\"Target letter T/t\",\"Central fixation dot\",\"Task-condition
+        instruction screens\"],\"stimulus_modality\":[\"visual\"],\"response_modality\":[\"button_press\"],\"design_type\":[\"mixed\"],\"instructions\":[\"Indicate
+        by button press whether the currently displayed letter matches the letter
+        from the preceding one, two, or three trials, according to the block instruction.\"],\"performance_measures\":[\"Number
+        of hits\",\"Number of false alarms (errors of commission)\",\"Number of misses
+        (errors of omission)\"]}}}]}]}"
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '10042'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:33 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - 7c1e4d1c1f87472e
+    status:
+      code: 200
+      message: OK
+version: 1

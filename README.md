@@ -11,6 +11,7 @@ This monorepo contains the backend and frontend services that power the Neurosyn
 - `store/`: **Neurostore** backend (study, image, and metadata storage APIs)
 - `compose/backend/`: **Neurosynth Compose** backend (project workflows and execution)
 - `compose/neurosynth-frontend/`: **Neurosynth Compose** web application
+- `mcp/`: read-only **MCP server** over the public Neurostore and Compose APIs, for agents such as Claude
 
 Neurosynth Compose is a free, web-based platform for reproducible neuroimaging meta-analysis, including study search, curation workflows, extraction, and cloud/local analysis execution.
 

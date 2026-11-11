@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "neurostore-mcp"
+dynamic = ["version"]
+description = "Read-only MCP server for the Neurostore and Neurosynth Compose APIs"
+readme = "README.md"
+license = "BSD-2-Clause"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=4.1,<5",
+    "httpx>=0.28",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+    "pytest-asyncio>=1.0",
+    "pytest-recording>=0.14",
+    "vcrpy>=7",
+]
+
+[project.scripts]
+neurostore-mcp = "neurostore_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/neurostuff/neurostore/tree/master/mcp"
+
+[tool.hatch.version]
+path = "src/neurostore_mcp/__init__.py"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]

@@ -1,0 +1,116 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/base-studies/?x=-44.0&y=20.0&z=30.0&radius=6.0&page=1&page_size=3
+  response:
+    body:
+      string: "{\"metadata\":{\"total_count\":1716},\"results\":[{\"publication_status\":\"published\",\"preprint_dois\":[],\"preprint_pmids\":[],\"preprint_pmcids\":[],\"alternative_dois\":[],\"alternative_pmids\":[],\"alternative_pmcids\":[],\"id\":\"iL5nV6JyZXQs\",\"user\":null,\"username\":null,\"created_at\":\"2026-11-10T17:06:01.102685+00:00\",\"updated_at\":\"2026-11-10T17:06:01.102685+00:00\",\"metadata\":null,\"name\":\"The
+        counting Stroop: an interference task specialized for functional neuroimaging--validation
+        study with functional MRI.\",\"description\":\"The anterior cingulate cortex
+        has been activated by color Stroop tasks, supporting the hypothesis that it
+        is recruited to mediate response selection or allocate attentional resources
+        when confronted with competing information-processing streams. The current
+        study used the newly developed \\\"Counting Stroop\\\" to identify the mediating
+        neural substrate of cognitive interference. The Counting Stroop, a Stroop
+        variant allowing on-line response time measurements while obviating speech,
+        was created because speaking produces head movements that can exceed those
+        tolerated by functional magnetic resonance imaging (fMRI), preventing the
+        collection of vital performance data. During this task, subjects report by
+        button-press the number of words (1-4) on the screen, regardless of word meaning.
+        Interference trials contain number words that are incongruent with the correct
+        response (e.g., \\\"two\\\" written three times), while neutral trials contain
+        single semantic category common animals (e.g., \\\"bird\\\"). Nine normal
+        right-handed adult volunteers underwent fMRI while performing the Counting
+        Stroop. Group fMRI data revealed significant (P < or = 10(-4) activity in
+        the cognitive division of anterior cingulate cortex when contrasting the interference
+        vs. neutral conditions. On-line performance data showed 1) longer reaction
+        times for interference blocks than for neutral ones, and 2) decreasing reaction
+        times with practice during interference trials (diminished interference effects),
+        indicating that learning occurred. The performance data proved to be a useful
+        guide in analyzing the image data. The relative difference in anterior cingulate
+        activity between the interference and neutral conditions decreased as subjects
+        learned the task. These findings have ramifications for attentional, cognitive
+        interference, learning, and motor control mechanism theories.\",\"publication\":\"Human
+        Brain Mapping\",\"journal\":{\"id\":\"7t7BQTdCFbPx\",\"title\":\"Human Brain
+        Mapping\",\"abbreviation\":\"Hum Brain Mapp\"},\"doi\":\"10.1002/(sici)1097-0193(1998)6:4<270::aid-hbm6>3.0.co;2-0\",\"pmid\":\"9704265\",\"pmcid\":\"PMC6873370\",\"authors\":\"George
+        Bush; Paul J. Whalen; Bruce R. Rosen; Michael A. Jenike; Sean C. McInerney;
+        Scott L. Rauch\",\"year\":1998,\"level\":\"group\",\"is_oa\":null,\"has_coordinates\":true,\"has_images\":false,\"has_z_maps\":false,\"has_t_maps\":false,\"has_beta_and_variance_maps\":false,\"versions\":[\"kWTCvMVA3EoP\"],\"features\":{}},{\"publication_status\":\"published\",\"preprint_dois\":[],\"preprint_pmids\":[],\"preprint_pmcids\":[],\"alternative_dois\":[],\"alternative_pmids\":[],\"alternative_pmcids\":[],\"id\":\"TzB6mEsE9rJF\",\"user\":null,\"username\":null,\"created_at\":\"2026-11-09T16:02:34.472008+00:00\",\"updated_at\":\"2026-11-09T16:02:34.472008+00:00\",\"metadata\":null,\"name\":\"Learning\u2010related
+        effects and functional neuroimaging\",\"description\":\"A fundamental problem
+        in the study of learning is that learning-related changes may be confounded
+        by nonspecific time effects. There are several strategies for handling this
+        problem. This problem may be of greater significance in functional magnetic
+        resonance imaging (fMRI) compared to positron emission tomography (PET). Using
+        the general linear model, we describe, compare, and discuss two approaches
+        for separating learning-related from nonspecific time effects. The first approach
+        makes assumptions on the general behavior of nonspecific effects and explicitly
+        models these effects, i.e., nonspecific time effects are incorporated as a
+        linear or nonlinear confounding covariate in the statistical model. The second
+        strategy makes no a priori assumption concerning the form of nonspecific time
+        effects, but implicitly controls for nonspecific effects using an interaction
+        approach, i.e., learning effects are assessed with an interaction contrast.
+        The two approaches depend on specific assumptions and have specific limitations.
+        With certain experimental designs, both approaches may be used and the results
+        compared, lending particular support to effects that are independent of the
+        method used. A third and perhaps better approach that sometimes may be practically
+        unfeasible is to use a completely temporally balanced experimental design.
+        The choice of approach may be of particular importance when learning-related
+        effects are studied with fMRI.\",\"publication\":\"Human Brain Mapping\",\"journal\":{\"id\":\"7t7BQTdCFbPx\",\"title\":\"Human
+        Brain Mapping\",\"abbreviation\":\"Hum Brain Mapp\"},\"doi\":\"10.1002/(sici)1097-0193(1999)7:4<234::aid-hbm2>3.0.co;2-o\",\"pmid\":\"10408767\",\"pmcid\":\"PMC6873329\",\"authors\":\"Karl
+        Magnus Petersson; Christina Elfgren; Martin Ingvar\",\"year\":1999,\"level\":\"group\",\"is_oa\":null,\"has_coordinates\":true,\"has_images\":false,\"has_z_maps\":false,\"has_t_maps\":false,\"has_beta_and_variance_maps\":false,\"versions\":[\"HZ2ppkNFAULb\"],\"features\":{}},{\"publication_status\":\"published\",\"preprint_dois\":[],\"preprint_pmids\":[],\"preprint_pmcids\":[],\"alternative_dois\":[],\"alternative_pmids\":[],\"alternative_pmcids\":[],\"id\":\"Csy2GeTaB5sK\",\"user\":null,\"username\":null,\"created_at\":\"2026-11-08T22:17:38.277109+00:00\",\"updated_at\":\"2026-11-08T22:17:38.277109+00:00\",\"metadata\":null,\"name\":\"Multifaceted
+        multilingual experiences modulate neurocognitive mechanisms of task switching\",\"description\":\"\\n
+        This study explored the relationship between multifaceted multilingualism
+        and cognitive shifting through a task-switching paradigm using fMRI. Multilingualism
+        was modeled from both convergent (i.e., integrated multilingual index) and
+        divergent (i.e., L2 proficiency, interpreting training, language entropy)
+        perspectives. Participants identified letters or numbers based on task cues,
+        with Repeat trials maintaining the same task and Switch trials requiring a
+        different task. Switch cost (Switch\u2013Repeat) was used to reflect shifting
+        demands. Better task-switching performance was associated with a higher integrated
+        multilingual index and interpreting training. Neuroimaging indicated that
+        multilinguals predominantly engaged left-hemisphere regions for switching,
+        with extensive multilingual experience requiring fewer neural resources for
+        switch cost (i.e., more efficient processing for cognitive control). During
+        task switching, brain connectivity was regulated locally by L2 proficiency,
+        and globally by interpreting training. These findings underscore the importance
+        of considering multifaceted multilingual experience to understand its impact
+        on cognitive function and brain activity.\",\"publication\":\"Bilingualism
+        Language and Cognition\",\"journal\":{\"id\":\"6MYocLQfwXQ3\",\"title\":\"Bilingualism
+        Language and Cognition\",\"abbreviation\":\"Biling (Camb Engl)\"},\"doi\":\"10.1017/s1366728925000094\",\"pmid\":null,\"pmcid\":null,\"authors\":\"Haoyun
+        Zhang; Defeng Li; Victoria Lai Cheng Lei; Teng Ieng Leong; Cheok Teng Leong;
+        Jiaze Li; Ruey-Song Huang\",\"year\":2025,\"level\":\"group\",\"is_oa\":null,\"has_coordinates\":true,\"has_images\":false,\"has_z_maps\":false,\"has_t_maps\":false,\"has_beta_and_variance_maps\":false,\"versions\":[\"hQeenneY9nmh\"],\"features\":{}}]}\n"
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '7465'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:31 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - d9754c4ba56146e9
+    status:
+      code: 200
+      message: OK
+version: 1
