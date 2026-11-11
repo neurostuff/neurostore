@@ -1,7 +1,10 @@
 """POST /analysis-queries/, GET /analysis-terms/, and the annotation's analysis_query."""
 
+import anyio
+import orjson
 import pytest
 
+from neurostore import analysis_query
 from neurostore.database import db
 from neurostore.tests import analysis_fixtures as af
 from neurostore.tests.utils import ordered_note_keys
@@ -20,22 +23,42 @@ def papers(session):
 
 
 async def _query(client, query, status=200, **body):
+    """The query's response; every selected study unless the body pages them."""
+    body.setdefault("paginate", False)
     resp = await client.post("/api/analysis-queries/", data={"query": query, **body})
     assert resp.status_code == status, resp.json()
     return resp.json()
 
 
+def _rows(result):
+    """Each listed analysis beside its study and paper."""
+    return [
+        {
+            "study": s["study"],
+            "base_study": s["base_study"],
+            "analysis": a["id"],
+            **{k: v for k, v in a.items() if k != "id"},
+        }
+        for s in result["results"]
+        for a in s["analyses"]
+    ]
+
+
+def _studies(result):
+    return [s["study"] for s in result["results"]]
+
+
 def _names(result):
-    return sorted(r["name"] for r in result["results"])
+    return sorted(r["name"] for r in _rows(result))
 
 
 def _papers(result, papers):
     by_id = {v: k for k, v in papers.items()}
-    return sorted({by_id[r["base_study"]] for r in result["results"]})
+    return sorted({by_id[r["base_study"]] for r in _rows(result)})
 
 
 def _matched_by(result, criterion):
-    return sorted({r["matched_by"].get(criterion) for r in result["results"]}, key=str)
+    return sorted({r["matched_by"].get(criterion) for r in _rows(result)}, key=str)
 
 
 async def test_medical_condition_matches_by_text_or_by_id(auth_client, papers):
@@ -56,12 +79,12 @@ async def test_medical_condition_matches_by_text_or_by_id(auth_client, papers):
 
     assert _names(by_text) == ["schizophrenia > BDp", "schizophrenia > control"]
     assert _names(by_id) == ["schizophrenia > BDp"]
-    assert as_text["results"] == []
+    assert _rows(as_text) == []
     assert _papers(either, papers) == [NICOTINE, SCHIZOPHRENIA]
     assert _matched_by(by_text, "medical_condition") == ["text"]
     assert _matched_by(by_id, "medical_condition") == ["id"]
     assert _matched_by(either, "medical_condition") == ["id", "text"]
-    assert by_text["counts"] == {"analyses": 2, "studies": 1, "base_studies": 1}
+    assert by_text["metadata"] == {"total_count": 1, "analysis_count": 2}
     assert by_text["searched"] == {"analyses": 5, "base_studies": 3}
     assert "funnel" not in by_id and "searched" not in by_id
 
@@ -81,7 +104,7 @@ async def test_when_unmapped_decides_the_analyses_whose_wording_mapped_to_nothin
     )
 
     assert _papers(by_wording, papers) == [NICOTINE]
-    assert mapped_only["results"] == []
+    assert _rows(mapped_only) == []
     assert _papers(unmapped_in, papers) == [NICOTINE, CONDUCT, SCHIZOPHRENIA]
     assert _matched_by(unmapped_in, "medical_condition") == ["id", "unmapped"]
     assert unmapped_in["funnel"][0]["unmapped"] == 3
@@ -97,7 +120,7 @@ async def test_an_unmapped_analysis_needs_text_to_match_under_when_unmapped_text
         auth_client, {"medical_condition": {**not_schizophrenia, "when_unmapped": "include"}}
     )
 
-    assert by_ids["results"] == []
+    assert _rows(by_ids) == []
     assert _papers(included, papers) == [NICOTINE, CONDUCT]
     assert _matched_by(included, "medical_condition") == ["unmapped"]
 
@@ -130,9 +153,9 @@ async def test_an_id_matches_its_descendants_unless_told_not_to(auth_client, pap
     key_family = await _query(auth_client, {"contrast": {"key": "reward_and_value_choice"}})
 
     assert _names(family) == ["schizophrenia > control"]
-    assert exact["results"] == []
+    assert _rows(exact) == []
     assert _papers(task_family, papers) == [CONDUCT, SCHIZOPHRENIA]
-    assert task_exact["results"] == []
+    assert _rows(task_exact) == []
     assert _papers(key_family, papers) == [NICOTINE]
 
 
@@ -147,8 +170,8 @@ async def test_keys_and_sets_are_directional_terms(auth_client, papers):
     )
 
     assert _names(as_stated) == _names(either) == ["schizophrenia > control"]
-    assert the_set_s_way["results"] == []
-    assert reversed_key["results"] == []
+    assert _rows(the_set_s_way) == []
+    assert _rows(reversed_key) == []
 
 
 async def test_the_analysis_name_is_text(auth_client, papers):
@@ -173,12 +196,12 @@ async def test_role_narrows_medical_condition_ids(auth_client, session):
     )
 
     assert _names(any_role) == _names(comorbid) == ["schizophrenia > BDp"]
-    assert primary["results"] == []
+    assert _rows(primary) == []
     assert _codes(worded) == ["ROLE_NEEDS_IDS_ONLY"]
 
 
 async def test_whole_words_and_wildcards(auth_client, papers):
-    assert (await _query(auth_client, {"medical_condition": "nicot"}))["results"] == []
+    assert _rows(await _query(auth_client, {"medical_condition": "nicot"})) == []
     nicotine = await _query(
         auth_client, {"medical_condition": {"text": "nicot*", "when_unmapped": "text"}}
     )
@@ -193,7 +216,7 @@ async def test_text_is_case_insensitive_and_stays_within_one_item(auth_client, p
     assert _papers(await _query(auth_client, {"task": "N?BACK"}), papers) == [SCHIZOPHRENIA]
     # "schizophrenia | bipolar disorder" holds both, but no match crosses the separator.
     across_items = await _query(auth_client, {"medical_condition": "schizophrenia*bipolar"})
-    assert across_items["results"] == []
+    assert _rows(across_items) == []
 
 
 def _codes(body):
@@ -226,7 +249,6 @@ async def test_invalid_queries_are_refused(auth_client, papers):
     await _query(auth_client, {"contrast": {"set": {"text": "2-back"}}}, status=400)
     await _query(auth_client, {"task": {"when_unmapped": "text"}}, status=400)
     await _query(auth_client, {"task": {"text": "n-back", "when_unmapped": "x"}}, status=400)
-    await _query(auth_client, {"species": "human"}, status=400, limit=1001)
     await _query(auth_client, {"contrast": {"positive": {"bogus": True}}}, status=400)
     await _query(auth_client, {"contrast": {"positive": {}}}, status=400)
 
@@ -263,7 +285,7 @@ async def test_contrast_sides_and_sets(auth_client, papers):
     within = await _query(auth_client, {"contrast": {"groups": "within"}})
 
     assert _papers(load, papers) == [SCHIZOPHRENIA]
-    assert reversed_["results"] == []
+    assert _rows(reversed_) == []
     assert _names(by_set) == ["schizophrenia > control"]
     assert _names(by_key) == ["schizophrenia > BDp", "schizophrenia > control"]
     assert _papers(between, papers) == [NICOTINE, SCHIZOPHRENIA]
@@ -300,7 +322,7 @@ async def test_a_side_s_groups_say_which_cohort_is_on_it(auth_client, side_paper
         "Group differences between MDD and HCs",
         "schizophrenia > control",
     ]
-    assert controls_first["results"] == []
+    assert _rows(controls_first) == []
     assert patients_first["query"]["contrast"]["positive"] == {
         "has_patients": {"is": True, "when_silent": "exclude"},
         "has_healthy": {"is": False, "when_silent": "exclude"},
@@ -313,14 +335,14 @@ async def test_a_side_s_groups_say_which_cohort_is_on_it(auth_client, side_paper
     ]
     features = next(
         r["features"]
-        for r in patients_first["results"]
+        for r in _rows(patients_first)
         if r["name"] == "Group differences between MDD and HCs"
     )
-    assert features["contrast_positive_medical_condition_ids"] == [
+    assert features["contrast"]["positive"]["medical_condition"]["ids"] == [
         "MONDO:0002009",
         "ONVOC:0000207",
     ]
-    assert features["contrast_negative_has_healthy"] is True
+    assert features["contrast"]["negative"]["has_healthy"] is True
 
 
 async def test_a_side_s_medical_condition_matches_that_side_s_groups_only(
@@ -344,7 +366,7 @@ async def test_a_side_s_medical_condition_matches_that_side_s_groups_only(
     assert _names(versus_bipolar) == ["schizophrenia > BDp"]
     assert _matched_by(versus_bipolar, "contrast.positive.medical_condition") == ["id"]
     assert _matched_by(versus_bipolar, "contrast.negative.medical_condition") == ["text"]
-    assert bipolar_first["results"] == []
+    assert _rows(bipolar_first) == []
     assert _names(either) == ["schizophrenia > BDp"]
 
 
@@ -380,6 +402,53 @@ async def test_a_side_s_timepoints_arms_and_facets(auth_client, side_papers):
     assert _names(reappraisal) == ["Inverse FC", "Positive FC"]
     assert _papers(high_load, side_papers) == [SCHIZOPHRENIA]
     assert _papers(against_a_control_state, side_papers) == [CONDUCT]
+
+
+async def test_what_an_analysis_links_to_is_queryable(auth_client, side_papers):
+    ns_pond = [side_papers[DEPRESSION], side_papers[SOCIAL_ANXIETY]]
+    depression, anxiety = [DEPRESSION], [SOCIAL_ANXIETY]
+    both = sorted([DEPRESSION, SOCIAL_ANXIETY])
+    expected = [
+        ({"groups": {"age_mean": {"min": 27}}}, depression),
+        # Any group in range: 26.41 is under 26.5 and 27.09 over 27.
+        ({"groups": {"age_mean": {"min": 26.5, "max": 27}}}, []),
+        ({"groups": {"female_percent": {"min": 70}}}, depression),
+        ({"groups": {"handedness": "Right-Handed"}}, anxiety),
+        ({"groups": {"diagnostic_instrument": "adis*"}}, anxiety),
+        ({"inference_settings": {"height_threshold_value": {"max": 0.01}}}, anxiety),
+        ({"inference_settings": {"multiple_comparison_method": "bayesian"}}, depression),
+        ({"inference_settings": {"tfce_used": False}}, []),
+        ({"inference_settings": {"tfce_used": {"is": False, "when_silent": "include"}}}, both),
+        ({"acquisitions": {"repetition_time_seconds": {"min": 1.8}}}, depression),
+        ({"acquisitions": {"modality": "fMRI"}}, both),
+        ({"acquisitions": {"device": "siemens"}}, depression),
+        ({"preprocessing": {"smoothing_fwhm_mm": {"max": 6}}}, both),
+        ({"preprocessing": {"software": "afni"}}, anxiety),
+        # A first-level model's software, through the group model's inputs.
+        ({"model_estimation": {"software": "3ddeconvolve"}}, anxiety),
+        ({"effect": {"statistic": {"family": "Posterior Probability"}}}, depression),
+        ({"details": {"connectivity_method": "DCM"}}, depression),
+        ({"regions": {"atlas": "shirer"}}, depression),
+        ({"coordinate_sets": {"result_kind": "connectivity"}}, anxiety),
+        ({"tasks": {"response_modality": "covert_response"}}, anxiety),
+    ]
+
+    for query, papers in expected:
+        result = await _query(auth_client, query, base_study_ids=ns_pond)
+        assert _papers(result, side_papers) == papers, query
+    funnel = await _query(
+        auth_client,
+        {
+            "acquisitions": {"magnetic_field_strength_tesla": {"min": 3}},
+            "groups": {"age_standard_deviation": {"max": 4}},
+        },
+        funnel=True,
+        base_study_ids=ns_pond,
+    )
+    assert [(s["criterion"], s["base_studies"]) for s in funnel["funnel"]] == [
+        ("acquisitions.magnetic_field_strength_tesla", 2),
+        ("groups.age_standard_deviation", 1),
+    ]
 
 
 async def test_a_side_s_text_is_shorthand_for_its_name(auth_client, papers):
@@ -427,7 +496,7 @@ async def test_when_silent_decides_the_analyses_a_record_says_nothing_about(
             "unmapped": None,
         }
     ]
-    assert lenient["counts"]["analyses"] == 5
+    assert lenient["metadata"]["analysis_count"] == 5
 
 
 async def test_or_takes_sub_queries(auth_client, papers):
@@ -443,7 +512,7 @@ async def test_or_takes_sub_queries(auth_client, papers):
         "when_unmapped": "exclude",
         "when_silent": "exclude",
     }
-    assert {how for r in result["results"] for how in r["matched_by"].items()} == {
+    assert {how for r in _rows(result) for how in r["matched_by"].items()} == {
         ("or[0].medical_condition", "text"),
         ("or[1].task", "text"),
     }
@@ -475,7 +544,7 @@ async def test_analysis_columns_join_without_multiplying(auth_client, papers):
         auth_client, {"or": [{"has_coordinates": True}, {"role": "anchor"}]}
     )
 
-    assert result["counts"]["analyses"] == inside_or["counts"]["analyses"] == 5
+    assert result["metadata"]["analysis_count"] == inside_or["metadata"]["analysis_count"] == 5
     assert result["searched"] == {"analyses": 5, "base_studies": 3}
 
 
@@ -496,18 +565,359 @@ async def test_none_excludes_a_silent_record_unless_it_says_include(auth_client,
         auth_client, {"medical_condition": {**none, "when_silent": "include"}}
     )
 
-    assert strict["results"] == []
+    assert _rows(strict) == []
     assert strict["funnel"][0]["silent"] == 1
-    assert [r["name"] for r in lenient["results"]] == ["+/- SWM (−)"]
-    assert lenient["results"][0]["matched_by"] == {"medical_condition": "silent"}
+    assert [r["name"] for r in _rows(lenient)] == ["+/- SWM (−)"]
+    assert _rows(lenient)[0]["matched_by"] == {"medical_condition": "silent"}
 
 
-async def test_limit_caps_the_results_not_the_counts(auth_client, papers):
-    result = await _query(auth_client, {"species": "human"}, limit=1)
+async def test_results_are_studies_each_with_its_selected_analyses(auth_client, papers):
+    every = await _query(auth_client, {"species": "human"})
+    resp = await auth_client.post(
+        "/api/analysis-queries/", data={"query": {"species": "human"}}
+    )
+    one = await _query(auth_client, {"species": "human"}, paginate=True, page_size=1)
+    counts_only = await _query(auth_client, {"species": "human"}, paginate=True, page_size=0)
 
-    assert len(result["results"]) == 1
-    assert result["counts"]["analyses"] == 5
-    assert len(result["study_ids"]) == 3
+    assert every["metadata"] == {"total_count": 3, "analysis_count": 5}
+    assert len(every["results"]) == 3 and len(_rows(every)) == 5
+    assert len({s["base_study"] for s in every["results"]}) == 3
+    # Paged by default, 20 studies a page: all three here.
+    assert resp.json()["results"] == every["results"]
+    # A page holds whole studies: the first study and every one of its analyses.
+    assert one["results"] == every["results"][:1]
+    assert counts_only["results"] == []
+    for result in (one, counts_only):
+        assert result["metadata"] == every["metadata"]
+
+
+async def test_base_study_ids_restrict_the_selection_the_counts_and_the_funnel(
+    auth_client, papers
+):
+    every = await _query(auth_client, {})
+    per_paper = {}
+    for r in _rows(every):
+        per_paper.setdefault(r["base_study"], []).append(r["analysis"])
+    smokers = papers[NICOTINE]
+
+    theirs = await _query(auth_client, {}, base_study_ids=[smokers], funnel=True)
+    whole_brain = await _query(
+        auth_client,
+        {"spatial_scope": "whole_brain"},
+        base_study_ids=[smokers, papers[SCHIZOPHRENIA]],
+        funnel=True,
+    )
+    everywhere = await _query(auth_client, {"spatial_scope": "whole_brain"})
+
+    # An empty query lists every analysis the paper has features for, with them.
+    assert sorted(r["analysis"] for r in _rows(theirs)) == sorted(per_paper[smokers])
+    assert all(r["features"] for r in _rows(theirs))
+    assert theirs["metadata"]["total_count"] == 1
+    assert theirs["searched"] == {"analyses": len(per_paper[smokers]), "base_studies": 1}
+    # The two whole-brain smokers, not the conduct paper's whole-brain analysis.
+    assert _papers(whole_brain, papers) == [NICOTINE]
+    assert (
+        whole_brain["metadata"]["analysis_count"]
+        == everywhere["metadata"]["analysis_count"] - 1
+    )
+    assert whole_brain["searched"]["base_studies"] == 2
+    assert whole_brain["funnel"][0]["dropped"] == (
+        len(per_paper[smokers]) + len(per_paper[papers[SCHIZOPHRENIA]])
+        - whole_brain["metadata"]["analysis_count"]
+    )
+
+
+async def test_study_ids_restrict_too_and_combine_with_base_study_ids(auth_client, papers):
+    theirs = await _query(auth_client, {}, base_study_ids=[papers[CONDUCT]])
+    (study,) = _studies(theirs)
+
+    by_study = await _query(auth_client, {}, study_ids=[study])
+    both = await _query(auth_client, {}, study_ids=[study], base_study_ids=[papers[CONDUCT]])
+    disjoint = await _query(
+        auth_client, {}, study_ids=[study], base_study_ids=[papers[NICOTINE]]
+    )
+    unknown = await _query(auth_client, {}, base_study_ids=["noSuchPaper1"])
+
+    assert _rows(by_study) == _rows(both) == _rows(theirs)
+    assert _rows(disjoint) == [] and disjoint["metadata"]["analysis_count"] == 0
+    assert unknown["results"] == []
+    assert unknown["metadata"] == {"total_count": 0, "analysis_count": 0}
+
+
+async def test_a_scope_takes_any_number_of_ids(auth_client, papers):
+    filler = [f"noSuchPaper{i:06d}" for i in range(20000)]
+    theirs = await _query(auth_client, {}, base_study_ids=[papers[CONDUCT]])
+
+    wide = await _query(auth_client, {}, base_study_ids=[*filler, papers[CONDUCT]])
+
+    assert _rows(wide) == _rows(theirs)
+
+
+async def test_a_page_holds_twenty_studies_unless_told_otherwise(
+    auth_client, papers, monkeypatch
+):
+    monkeypatch.setattr(analysis_query, "DEFAULT_PAGE_SIZE", 1)
+    resp = await auth_client.post("/api/analysis-queries/", data={"query": {}})
+
+    assert resp.status_code == 200
+    assert len(resp.json()["results"]) == 1 < resp.json()["metadata"]["total_count"]
+
+
+async def test_pages_walk_the_listing_in_order(auth_client, papers):
+    every = await _query(auth_client, {})
+    total = every["metadata"]["total_count"]
+    pages = []
+    for page in range(1, total + 2):
+        listed = await _query(auth_client, {}, paginate=True, page=page, page_size=1)
+        assert listed["metadata"] == every["metadata"]
+        pages.append(listed["results"])
+
+    assert [len(p) for p in pages] == [1] * total + [0]
+    assert [s for p in pages for s in p] == every["results"]
+
+
+async def test_detail_says_how_much_each_study_carries(auth_client, papers):
+    full = await _query(auth_client, {"species": "human"}, funnel=True)
+    slim = await _query(auth_client, {"species": "human"}, funnel=True, detail="analyses")
+    bare = await _query(auth_client, {"species": "human"}, funnel=True, detail="studies")
+
+    assert all("features" in r for r in _rows(full))
+    # The features and the extraction they were read from.
+    assert _rows(slim) == [
+        {
+            k: v
+            for k, v in r.items()
+            if k not in ("features", "role", "has_coordinates", "config_id", "updated_at")
+        }
+        for r in _rows(full)
+    ]
+    assert all(r["name"] for r in _rows(slim))
+    assert bare["results"] == [
+        {"study": s["study"], "base_study": s["base_study"]} for s in full["results"]
+    ]
+    for result in (slim, bare):
+        assert {k: v for k, v in result.items() if k != "results"} == {
+            k: v for k, v in full.items() if k != "results"
+        }
+    # Paged the same way.
+    page = await _query(
+        auth_client, {"species": "human"}, paginate=True, page=2, page_size=1, detail="studies"
+    )
+    assert page["results"] == bare["results"][1:2]
+
+
+def _at(features, keys):
+    for key in keys:
+        features = features.get(key) if isinstance(features, dict) else None
+    return features
+
+
+async def test_features_have_the_query_s_shape_and_name_their_extraction(
+    auth_client, side_papers
+):
+    from neurostore.models import Analysis, AnalysisFeature, AnalysisFeatureDisplay
+
+    every = await _query(auth_client, {})
+    rows = {row.analysis_id: row for row in AnalysisFeature.query}
+    analyses = {row.id: row for row in Analysis.query}
+    displays = {row.analysis_id: row.display for row in AnalysisFeatureDisplay.query}
+
+    assert len(_rows(every)) == len(rows)
+    for r in _rows(every):
+        row, display = rows[r["analysis"]], displays[r["analysis"]]
+        analysis = analyses[r["analysis"]]
+        assert (r["config_id"], r["updated_at"]) == (row.config_id, row.updated_at.isoformat())
+        assert (r["role"], r["has_coordinates"]) == (analysis.role, analysis.has_coordinates)
+        for item in analysis_query.SHOWN:
+            if item.display is not None:
+                expected = _at(display, [k for k in item.display if isinstance(k, str)])
+                index = [k for k in item.display if isinstance(k, int)]
+                if index and expected:
+                    expected = expected[index[0]]
+            elif item.groups:
+                n = row.group_count
+                expected = None if n is None else ("between" if n > 1 else "within")
+            else:
+                expected = getattr(row, item.column.key)
+            # Silent items are left out.
+            assert _at(r["features"], item.keys) == (
+                None if expected in (None, []) else expected
+            ), item.keys
+    patients = next(
+        r["features"] for r in _rows(every) if r["name"] == "Group differences between MDD and HCs"
+    )
+    assert patients["acquisitions"]["device"] == ["Siemens Prisma"]
+    assert patients["groups"]["age_mean"] == [27.09, 26.41]
+    assert patients["contrast"]["groups"] == "between"
+    assert "name" not in patients
+
+
+async def test_value_criteria_ignore_case_and_refuse_values_and_ranges_out_of_bounds(
+    auth_client, side_papers
+):
+    refused = [
+        {"inference_settings": {"correction_scope": "everywhere"}},
+        {"n": {"min": 20, "max": 10}},
+        {"groups": {"age_mean": {"min": 65, "max": 18}}},
+    ]
+
+    for query in refused:
+        assert _codes(await _query(auth_client, query, status=400)) == ["INVALID_VALUE"]
+    upper = await _query(auth_client, {"inference_settings": {"correction_scope": "WHOLE_BRAIN"}})
+    lower = await _query(auth_client, {"inference_settings": {"correction_scope": "whole_brain"}})
+    assert _rows(upper) == _rows(lower) != []
+
+
+def _spec():
+    import yaml
+    from pathlib import Path
+
+    path = Path(analysis_query.__file__).parent / "openapi" / "neurostore-openapi.yml"
+    return yaml.safe_load(path.read_text())
+
+
+def _paths(schema, schemas, prefix=()):
+    """Every leaf property path of ``schema``, through refs, oneOf objects and nesting."""
+    if "$ref" in schema:
+        name = schema["$ref"].rsplit("/", 1)[-1]
+        if name in ("analysis-query-contrast-side", "analysis-features"):
+            return _paths(schemas[name], schemas, prefix)
+        return {prefix}
+    for option in schema.get("oneOf", []):
+        if option.get("type") == "object":
+            return _paths(option, schemas, prefix)
+    if "properties" in schema:
+        found = set()
+        for key, value in schema["properties"].items():
+            found |= _paths(value, schemas, (*prefix, key))
+        return found
+    return {prefix}
+
+
+def test_the_spec_names_every_criterion_feature_and_term_field():
+    spec = _spec()
+    schemas = spec["components"]["schemas"]
+    query = _paths(schemas["analysis-query"], schemas) - {("or",)}
+    features = _paths(schemas["analysis-features"], schemas)
+    terms = next(
+        p for p in spec["paths"]["/analysis-terms/"]["get"]["parameters"] if p["name"] == "field"
+    )["schema"]["enum"]
+
+    assert query == {tuple(name.split(".")) for name in analysis_query.FIELDS}
+    assert features == {item.keys for item in analysis_query.SHOWN}
+    assert set(terms) == {*analysis_query.TERM_FIELDS, "task_family"}
+
+
+async def test_the_response_streams_in_chunks_that_join_to_it(
+    auth_client, papers, monkeypatch
+):
+    body = {"query": {}, "paginate": False, "funnel": True}
+    whole = await _query(auth_client, {}, funnel=True)
+    monkeypatch.setattr(analysis_query, "CHUNK_BYTES", 1)
+    monkeypatch.setattr(analysis_query, "BATCH_ROWS", 2)
+
+    chunks = list(analysis_query.run_query(body))
+
+    # The head, one chunk a study, the close.
+    assert len(chunks) == 2 + whole["metadata"]["total_count"]
+    assert orjson.loads(b"".join(chunks)) == whole
+    assert orjson.loads(b"".join(analysis_query.run_query({"query": {}, "page_size": 0}))) == {
+        **{k: v for k, v in whole.items() if k not in ("searched", "funnel")},
+        "results": [],
+    }
+
+
+async def test_a_stream_holds_one_connection_until_closed_read_or_not(papers, monkeypatch):
+    monkeypatch.setattr(analysis_query, "CHUNK_BYTES", 1)
+    pool = db.engine.pool
+    before = pool.checkedout()
+    unread = analysis_query.run_query({"query": {}, "paginate": False, "funnel": True})
+    assert pool.checkedout() == before + 1  # the counts' connection, kept for the listing
+    unread.close()
+    assert pool.checkedout() == before
+
+    stream = analysis_query.run_query({"query": {}, "paginate": False})
+    next(stream)
+    next(stream)  # the first study: the cursor is open
+    assert pool.checkedout() == before + 1
+    stream.close()
+    assert pool.checkedout() == before
+
+    list(analysis_query.run_query({"query": {}, "paginate": False}))
+    assert pool.checkedout() == before
+
+
+async def _post_query(app, receive, send, spec_version):
+    """POST an analysis query straight to the ASGI app, with its own receive and send."""
+    body = orjson.dumps({"query": {}, "paginate": False})
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": spec_version},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/analysis-queries/",
+        "raw_path": b"/api/analysis-queries/",
+        "root_path": "",
+        "query_string": b"",
+        "headers": [
+            (b"host", b"testserver"),
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(body)).encode()),
+        ],
+        "server": ("testserver", 80),
+        "client": ("127.0.0.1", 1234),
+    }
+    request = [{"type": "http.request", "body": body, "more_body": False}]
+
+    async def first_the_request():
+        if request:
+            return request.pop(0)
+        return await receive()
+
+    await app.asgi_app(scope, first_the_request, send)
+
+
+@pytest.mark.parametrize("spec_version", ["2.3", "2.4"])
+async def test_a_client_that_goes_away_mid_stream_gives_the_connection_back(
+    app, papers, monkeypatch, spec_version
+):
+    """Under ASGI 2.3 the client's disconnect cancels the stream; under 2.4 the send fails."""
+    monkeypatch.setattr(analysis_query, "CHUNK_BYTES", 1)
+    pool = db.engine.pool
+    before, during, bodies = pool.checkedout(), [], []
+
+    async def receive():
+        while not bodies:
+            await anyio.sleep(0.01)
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        if message["type"] != "http.response.body":
+            return
+        bodies.append(message["more_body"])
+        during.append(pool.checkedout())
+        if spec_version == "2.4":
+            raise OSError("the client went away")
+        await anyio.sleep(0.05)
+
+    await _post_query(app, receive, send, spec_version)
+
+    assert bodies and False not in bodies  # it ended before the last chunk
+    # The stream's connection, and not the request session's beside it.
+    assert during[0] == before + 1
+    assert pool.checkedout() == before
+
+
+async def test_the_spec_refuses_invalid_scopes_pages_and_flags(auth_client, papers):
+    await _query(auth_client, {}, status=400, base_study_ids=papers[CONDUCT])
+    await _query(auth_client, {}, status=400, page=0)
+    await _query(auth_client, {}, status=400, page_size=-1)
+    await _query(auth_client, {}, status=400, page_size=True)
+    await _query(auth_client, {}, status=400, detail="everything")
+    await _query(auth_client, {}, status=400, paginate="no")
+    await _query(auth_client, {}, status=400, base_study_ids=[""])
+    await _query(auth_client, {}, status=400, funnel="yes")
 
 
 async def test_terms_list_values_with_counts(auth_client, papers):
@@ -564,7 +974,7 @@ async def test_a_query_becomes_a_studyset_and_an_annotation_column(auth_client, 
     query = {"task": "working memory"}
     result = await _query(auth_client, query)
     studyset = await auth_client.post(
-        "/api/studysets/", data={"name": "working memory", "studies": result["study_ids"]}
+        "/api/studysets/", data={"name": "working memory", "studies": _studies(result)}
     )
     assert studyset.status_code == 200
     annotation = await auth_client.post(
@@ -628,7 +1038,7 @@ async def test_a_query_becomes_a_studyset_and_an_annotation_column(auth_client, 
 async def test_the_annotation_column_is_rewritten_beside_pipeline_columns(
     auth_client, papers
 ):
-    study_ids = (await _query(auth_client, {"species": "human"}))["study_ids"]
+    study_ids = _studies(await _query(auth_client, {"species": "human"}))
     # A study of the user's own, whose analysis no record describes.
     own = await auth_client.post(
         "/api/studies/", data={"name": "my study", "analyses": [{"name": "my analysis"}]}
@@ -695,7 +1105,7 @@ async def test_a_medical_condition_id_matches_its_descendants_in_the_loaded_rele
 
     assert _names(below) == ["schizophrenia > BDp", "schizophrenia > control"]
     assert _matched_by(below, "medical_condition") == ["id"]
-    assert exact["results"] == []
+    assert _rows(exact) == []
     assert _names(by_synonym) == ["schizophrenia > BDp", "schizophrenia > control"]
     assert [
         (r["value"], r["label"], r["parent"], r["synonyms"]) for r in terms.json()["results"]

@@ -25,16 +25,23 @@ names (`name`, the text of the side's cell levels and conditions), its groups' h
 medical conditions, its timepoints' relation to the intervention, its arms' kinds, and its
 contrast keys' facets. A text criterion in their place is shorthand for its `name`.
 
-`run_query` returns the canonical query, the counts, the first `limit` analyses and every
-selected analysis's study id; with `funnel`, also what each criterion dropped and how many
-analyses it found silent, which costs a count per criterion.
+`run_query` returns the canonical query, how many studies and analyses it selects, and a
+page of the selected studies (all of them when `paginate` is false), each with its selected
+analyses and their features, or less as `detail` says; with `funnel`, also what each
+criterion dropped and how many analyses it found silent, which costs a count per
+criterion. `base_study_ids` and `study_ids` restrict all of it to those papers or studies,
+so an empty query with them returns their analyses' features.
 """
 
 import re
 from dataclasses import dataclass
+from itertools import groupby
 
+import orjson
 import sqlalchemy as sa
 
+from neurostore.analysis_vocabulary import FEATURES, SPATIAL_SCOPES
+from neurostore.analysis_vocabulary import GROUPS as DETAIL_GROUPS
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
@@ -53,8 +60,13 @@ SILENT_MODES = ["exclude", "include"]
 #: when_unmapped, for a field with text and for an ids-only one.
 UNMAPPED_MODES = ["exclude", "include", "text"]
 IDS_ONLY_UNMAPPED_MODES = ["exclude", "include"]
-DEFAULT_LIMIT = 100
-MAX_LIMIT = 1000
+#: Rows a listing reads from its cursor at a time, and the response bytes sent at a time.
+BATCH_ROWS = 2000
+CHUNK_BYTES = 256 * 1024
+#: Studies a page lists unless `page_size` says otherwise, as on the list endpoints.
+DEFAULT_PAGE_SIZE = 20
+#: The body keys that restrict a query to papers or to pipeline studies.
+SCOPE_KEYS = ("base_study_ids", "study_ids")
 #: The fewest consecutive letters or digits a text pattern needs.
 MIN_LITERAL = 3
 
@@ -63,7 +75,7 @@ MIN_LITERAL = 3
 class Field:
     """One criterion: its kind, the column it reads, and its ids column."""
 
-    kind: str  # text, normalized, value, array_value, groups, boolean, range
+    kind: str  # text, normalized, value, array_value, groups, boolean, range, number_array
     column: object
     #: A normalized field's mapped ids, those and their ancestors, and its unmapped flag;
     #: the same ids as "role|id", where the field has roles.
@@ -74,6 +86,10 @@ class Field:
     role_ancestors: object = None
     #: Restricts a value criterion to these values.
     values: tuple = ()
+    #: A number array's items as a multirange of points, which a range overlaps.
+    points: object = None
+    #: The column holds lower-cased values, so a value criterion is lower-cased too.
+    lower: bool = False
 
     @property
     def silent(self):
@@ -81,6 +97,13 @@ class Field:
         if self.unmapped is not None:
             return self.unmapped.is_(None)
         return self.column.is_(None)
+
+
+def _detail(feature):
+    """The criterion of a `neurostore.analysis_vocabulary` feature."""
+    column = getattr(AF, feature.column)
+    points = getattr(AF, f"{feature.column}_points", None)
+    return Field(feature.kind, column, values=feature.values, points=points, lower=True)
 
 
 def _normalized(name, text=True, roles=False):
@@ -96,7 +119,6 @@ def _normalized(name, text=True, roles=False):
     )
 
 
-SPATIAL_SCOPES = ("whole_brain", "roi", "searchlight")
 #: The roles ns-pond gives a medical condition's items.
 MEDICAL_ROLES = ("primary", "comorbid", "none")
 EFFECT_KINDS = (
@@ -152,8 +174,16 @@ FIELDS = {
     "design.blinding": Field("value", AF.blinding),
     "design.arm_kind": Field("array_value", AF.arm_kinds),
     "design.longitudinal": Field("boolean", AF.longitudinal),
+    **{feature.path: _detail(feature) for feature in FEATURES},
 }
-GROUPS = ("contrast", "contrast.positive", "contrast.negative", "design")
+GROUPS = ("contrast", "contrast.positive", "contrast.negative", "design", *DETAIL_GROUPS)
+GROUPS = (
+    "contrast",
+    "contrast.positive",
+    "contrast.negative",
+    "design",
+    *DETAIL_GROUPS,
+)
 #: The criterion a group takes a text criterion (a value, a list or any/all/none) in place
 #: of itself as.
 SHORTHAND = {"contrast.positive": "name", "contrast.negative": "name"}
@@ -266,6 +296,9 @@ def _range_form(path, raw, errors):
         return None
     if _unknown(f"{path}.", raw, ("min", "max", "when_silent"), errors):
         return None
+    if bounds.keys() == {"min", "max"} and bounds["min"] > bounds["max"]:
+        errors.append(make_field_error(path, raw, code="INVALID_VALUE"))
+        return None
     mode = _silent_mode(path, raw, errors)
     return {**bounds, "when_silent": mode} if mode else None
 
@@ -289,7 +322,8 @@ def _groups_matcher(field, path, errors):
 #: on a silent record, so `none` is the complement of `any` among the records that speak.
 MATCHERS = {
     "text": _text_matcher,
-    "value": lambda field, path, errors: lambda value: field.column == value,
+    "value": lambda field, path, errors: lambda value: field.column
+    == (value.lower() if field.lower else value),
     "array_value": lambda field, path, errors: lambda value: field.column.contains(
         [value.lower()]
     ),
@@ -297,15 +331,23 @@ MATCHERS = {
 }
 
 
+def _bounds(column, form):
+    bounds = []
+    if "min" in form:
+        bounds.append(column >= form["min"])
+    if "max" in form:
+        bounds.append(column <= form["max"])
+    return sa.and_(*bounds)
+
+
 def _match(field, form, path, errors):
     """The condition ``form`` puts on ``field``, before silence is decided."""
     if field.kind == "range":
-        bounds = []
-        if "min" in form:
-            bounds.append(field.column >= form["min"])
-        if "max" in form:
-            bounds.append(field.column <= form["max"])
-        return sa.and_(*bounds)
+        return _bounds(field.column, form)
+    if field.kind == "number_array":
+        # Any one item in range: a group's age, an acquisition's TR.
+        bound = [sa.cast(form.get(end), sa.Float) for end in ("min", "max")]
+        return field.points.op("&&")(sa.func.float8range(*bound, "[]"))
     if field.kind == "boolean":
         return field.column.is_(form["is"])
     match = MATCHERS[field.kind](field, path, errors)
@@ -495,7 +537,7 @@ def _normalized_criterion(name, path, field, raw, errors):
     return Criterion(name, condition, field.silent, form, unmapped=unmapped, matched_by=matched_by)
 
 
-FORMS = {"range": _range_form, "boolean": _boolean_form}
+FORMS = {"range": _range_form, "number_array": _range_form, "boolean": _boolean_form}
 
 
 def _criterion(name, path, field, raw, errors):
@@ -506,7 +548,7 @@ def _criterion(name, path, field, raw, errors):
         return None
     if field.values:
         bad = [v for part in ("any", "all", "none") for v in form.get(part, [])]
-        bad = [v for v in bad if v not in field.values]
+        bad = [v for v in bad if (v.lower() if field.lower else v) not in field.values]
         if bad:
             errors.append(make_field_error(path, bad, list(field.values)))
             return None
@@ -613,12 +655,17 @@ def _canonical(criteria):
 # ---------------------------------------------------------------------------
 
 
-def _from(criteria, study_ids=None):
+def _from(criteria, study_ids=None, base_study_ids=None, analyses=False):
+    """The analyses ``criteria`` read, within the scope; joined to `analyses` when a
+    criterion reads it or ``analyses`` asks."""
     source = sa.select().select_from(AF)
-    if any(c.joins for c in criteria):
+    if analyses or any(c.joins for c in criteria):
         source = source.join(Analysis, Analysis.id == AF.analysis_id)
-    if study_ids is not None:
-        source = source.where(AF.study_id.in_(study_ids))
+    # One array parameter, however many ids.
+    for column, ids in ((AF.study_id, study_ids), (AF.base_study_id, base_study_ids)):
+        if ids is not None:
+            param = sa.bindparam(None, list(ids), sa.ARRAY(sa.Text))
+            source = source.where(column == sa.any_(param))
     return source
 
 
@@ -631,6 +678,11 @@ def _parse_or_abort(query):
         return parse(query)
     except QueryError as error:
         abort_validation("The analysis query is not valid.", error.errors)
+
+
+def _scope(body):
+    """The papers and studies ``body`` restricts the query to, as `_from` keywords."""
+    return {key: sorted(set(body[key])) for key in SCOPE_KEYS if key in body}
 
 
 def select_analyses(query, study_ids, analysis_ids):
@@ -651,21 +703,24 @@ def select_analyses(query, study_ids, analysis_ids):
     }
 
 
-def _count(criteria, *conditions):
-    """How many analyses match ``conditions``."""
-    return db.session.scalar(_from(criteria).where(*conditions).add_columns(sa.func.count()))
+def _count(connection, criteria, *conditions, scope=None):
+    """How many analyses match ``conditions`` within ``scope``."""
+    return connection.scalar(
+        _from(criteria, **(scope or {})).where(*conditions).add_columns(sa.func.count())
+    )
 
 
-def _count_papers(criteria, *conditions):
-    """``{analyses, base_studies}`` matching ``conditions``; papers counted by hashing."""
+def _count_papers(connection, criteria, *conditions, scope=None):
+    """``{analyses, base_studies}`` matching ``conditions`` within ``scope``; papers counted
+    by hashing."""
     per_paper = (
-        _from(criteria)
+        _from(criteria, **(scope or {}))
         .where(*conditions)
         .add_columns(AF.base_study_id, sa.func.count().label("n"))
         .group_by(AF.base_study_id)
         .subquery()
     )
-    analyses, papers = db.session.execute(
+    analyses, papers = connection.execute(
         sa.select(sa.func.coalesce(sa.func.sum(per_paper.c.n), 0), sa.func.count()).select_from(
             per_paper
         )
@@ -673,30 +728,30 @@ def _count_papers(criteria, *conditions):
     return {"analyses": int(analyses), "base_studies": papers}
 
 
-def _funnel(criteria, selected):
-    """Every analysis with features, and what each criterion in turn leaves.
+def _funnel(connection, criteria, scope=None):
+    """Every analysis with features (within ``scope``), and what each criterion in turn
+    leaves.
 
-    A statement a step, each served by the indexes; ``selected`` is the last step, which
-    the caller has counted. One pass with a FILTER per step would run every pattern on
-    every row. Steps that keep most of the table are the expensive ones.
+    A statement a step, each served by the indexes. One pass with a FILTER per step would
+    run every pattern on every row. Steps that keep most of the table are the expensive
+    ones.
     """
-    searched = _count_papers([])
+    searched = _count_papers(connection, [], scope=scope)
     steps, remaining = [], searched
     for i, c in enumerate(criteria):
-        last = i == len(criteria) - 1
-        kept = selected if last else _count_papers(criteria, _where(criteria[: i + 1]))
+        kept = _count_papers(connection, criteria, _where(criteria[: i + 1]), scope=scope)
         steps.append(
             {
                 "criterion": c.name,
                 **kept,
                 "dropped": remaining["analyses"] - kept["analyses"],
                 "silent": (
-                    _count(criteria, _where(criteria[:i]), c.silent)
+                    _count(connection, criteria, _where(criteria[:i]), c.silent, scope=scope)
                     if c.silent is not None
                     else None
                 ),
                 "unmapped": (
-                    _count(criteria, _where(criteria[:i]), c.unmapped)
+                    _count(connection, criteria, _where(criteria[:i]), c.unmapped, scope=scope)
                     if c.unmapped is not None
                     else None
                 ),
@@ -706,30 +761,84 @@ def _funnel(criteria, selected):
     return searched, steps
 
 
-#: Columns each result lists beside its display values.
-RESULT_COLUMNS = (
-    "spatial_scope",
-    "coordinate_space",
-    "measure_type",
-    "measure_family",
-    "effect_kind",
-    "group_count",
-    "n",
-    "has_patients",
-    "has_healthy",
-    "medical_condition_ids",
-    "task_ids",
-    "contrast_key_ids",
-    "contrast_set_ids",
-    "allocation",
-    "assignment_structure",
-    "blinding",
-    *(
-        f"contrast_{side}_{column}"
-        for side in ("positive", "negative")
-        for column in ("has_patients", "has_healthy", "medical_condition_ids", "facets")
-    ),
-)
+@dataclass(frozen=True)
+class Shown:
+    """One item of a result's features: its keys, and the column or display value it is."""
+
+    keys: tuple
+    column: object = None
+    #: Keys into the display (the record's wording), for an item that is not a column.
+    display: tuple = None
+    #: A group count shown as `contrast.groups` shows it: between or within.
+    groups: bool = False
+
+
+#: The display values of the criteria whose wording is there.
+DISPLAY = {
+    "medical_condition": ("medical_condition",),
+    "task": ("task",),
+    "contrast.positive.name": ("contrast_sides", 0),
+    "contrast.negative.name": ("contrast_sides", 1),
+    **{f.path: (f.path,) for f in FEATURES if f.kind == "text"},
+}
+
+
+def _shown():
+    """A result's features, in the shape of the query: each criterion's value under its
+    path, a normalized criterion's as its `ids` (and `role_ids`, `family_ids`) and `text`.
+    The analysis's name, role and has_coordinates are beside its features, not among them:
+    the features are what its record says, written with the row."""
+    shown = []
+    for name, field in FIELDS.items():
+        keys = tuple(name.split("."))
+        if name == "name" or name in JOINED:
+            continue
+        if field.kind == "normalized":
+            shown.append(Shown((*keys, "ids"), field.ids))
+            if field.role_ids is not None:
+                shown.append(Shown((*keys, "role_ids"), field.role_ids))
+            if name == "task":
+                shown.append(Shown((*keys, "family_ids"), AF.task_family_ids))
+            if name in DISPLAY:
+                shown.append(Shown((*keys, "text"), display=DISPLAY[name]))
+        elif name in DISPLAY:
+            shown.append(Shown(keys, display=DISPLAY[name]))
+        elif field.kind == "groups":
+            shown.append(Shown(keys, field.column, groups=True))
+        else:
+            shown.append(Shown(keys, field.column))
+    return tuple(shown)
+
+
+SHOWN = _shown()
+
+
+def features_of(columns, display):
+    """An analysis's features from its `analysis_features` columns and display, as `SHOWN`
+    lays them out; an item the record is silent on is left out. The ingester writes them
+    with the row, so a listing passes them through."""
+    out = {}
+    for item in SHOWN:
+        if item.display is None:
+            value = columns.get(item.column.key)
+            if item.groups and value is not None:
+                value = "between" if value > 1 else "within"
+        else:
+            value = display
+            for key in item.display:
+                if isinstance(key, int):
+                    value = value[key] if isinstance(value, list) and len(value) > key else None
+                else:
+                    value = value.get(key) if isinstance(value, dict) else None
+                if value is None:
+                    break
+        if value is None or value == []:
+            continue
+        node = out
+        for key in item.keys[:-1]:
+            node = node.setdefault(key, {})
+        node[item.keys[-1]] = value
+    return out
 
 
 def _matched_by(criteria, prefix=""):
@@ -743,61 +852,173 @@ def _matched_by(criteria, prefix=""):
     return out
 
 
-def _result(row, provenance):
-    display = {k: v for k, v in (row["display"] or {}).items() if k != "contrast_sides"}
+def _raw(column):
+    """``column`` as psycopg2 returns it, with no SQLAlchemy result processing."""
+    if isinstance(column.type, sa.ARRAY) and not isinstance(column.type.item_type, sa.Float):
+        column = sa.cast(column, sa.ARRAY(sa.Text))
+    return sa.type_coerce(column, sa.types.NullType())
+
+
+def _analysis(row, provenance, features):
+    """One listed analysis: its id, name and matches, and with ``features`` its features
+    (JSON text the ingester wrote, passed through), its role and whether it has
+    coordinates, and the extraction its features were read from."""
     matched_by = {name: row[f"matched_by_{i}"] for i, name in enumerate(provenance)}
-    return {
-        "analysis": row["analysis_id"],
-        "study": row["study_id"],
-        "base_study": row["base_study_id"],
-        "name": display.get("name"),
+    result = {
+        "id": row["analysis_id"],
+        "name": row["name"],
         "matched_by": {name: how for name, how in matched_by.items() if how is not None},
-        "features": {**display, **{name: row[name] for name in RESULT_COLUMNS}},
     }
+    if features:
+        for name in ("role", "has_coordinates", "config_id", "updated_at"):
+            result[name] = row[name]
+        # Written with the row; none before the backfill that fills it.
+        result["features"] = orjson.Fragment(row["features"] or "{}")
+    return result
 
 
 def run_query(body):
-    """Run an analysis query body: ``{"query": {...}, "limit": n, "funnel": bool}``."""
-    limit = body.get("limit", DEFAULT_LIMIT)
-    if not isinstance(limit, int) or isinstance(limit, bool) or not 0 <= limit <= MAX_LIMIT:
-        abort_validation(
-            f"limit is a whole number from 0 to {MAX_LIMIT}.",
-            [make_field_error("limit", limit)],
-        )
+    """Run an analysis query body: ``{"query": {...}, "page": n, "page_size": n,
+    "paginate": bool, "detail": "studies" | "analyses" | "features", "funnel": bool,
+    "base_study_ids": [...], "study_ids": [...]}``, which the spec has validated.
+
+    Returns a `QueryStream` of the response's JSON text. The results are the studies with
+    a selected analysis, a page of them unless `paginate` is false, each with as much as
+    `detail` asks for; they come last, read and written a batch at a time, so a listing of
+    the whole corpus never sits in memory. The query is parsed and the counts taken first,
+    so a refused query is answered before anything is sent.
+    """
+    page, page_size = body.get("page", 1), body.get("page_size", DEFAULT_PAGE_SIZE)
+    paginate, detail = body.get("paginate", True), body.get("detail", "features")
+    scope = _scope(body)
     criteria = _parse_or_abort(body.get("query", {}))
-    selected = _from(criteria).where(_where(criteria))
-    per_study = db.session.execute(
-        selected.add_columns(AF.study_id, AF.base_study_id, sa.func.count()).group_by(
-            AF.study_id, AF.base_study_id
-        )
-    ).all()
-    counts = {
-        "analyses": sum(n for _, _, n in per_study),
-        "base_studies": len({base_study_id for _, base_study_id, _ in per_study}),
-    }
-    provenance = _matched_by(criteria)
-    rows = db.session.execute(
-        selected.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
+    # Counts and listing read one snapshot, on a connection the response owns: it outlives
+    # the request's session.
+    connection = db.engine.connect().execution_options(
+        isolation_level="REPEATABLE READ", postgresql_readonly=True
+    )
+    try:
+        selected = _from(criteria, **scope).where(_where(criteria))
+        studies, analyses = connection.execute(
+            selected.add_columns(sa.func.count(AF.study_id.distinct()), sa.func.count())
+        ).one()
+        head = {
+            "metadata": {"total_count": studies, "analysis_count": analyses},
+            "query": _canonical(criteria),
+        }
+        if body.get("funnel"):
+            head["searched"], head["funnel"] = _funnel(connection, criteria, scope)
+    except BaseException:
+        connection.close()
+        raise
+    listing, provenance = None, _matched_by(criteria)
+    if not (paginate and page_size == 0):
+        listing = _listing(criteria, scope, provenance, page, page_size, paginate, detail)
+    return QueryStream(connection, _chunks(connection, head, listing, provenance, detail))
+
+
+class QueryStream:
+    """The response's chunks, read on ``connection``; it is closed once they are read to
+    the end, fail, or are closed unread."""
+
+    def __init__(self, connection, chunks):
+        self._connection, self._chunks = connection, chunks
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            return next(self._chunks)
+        except BaseException:
+            self.close()
+            raise
+
+    def close(self):
+        try:
+            self._chunks.close()
+        finally:
+            self._connection.close()
+
+
+def _listing(criteria, scope, provenance, page, page_size, paginate, detail):
+    """The statement listing the page's studies, by paper, with what ``detail`` asks for."""
+    selected = _from(criteria, **scope).where(_where(criteria))
+    studies = (
+        selected.add_columns(AF.base_study_id, AF.study_id)
+        .group_by(AF.base_study_id, AF.study_id)
+        .order_by(AF.base_study_id, AF.study_id)
+    )
+    if paginate:
+        studies = studies.offset((page - 1) * page_size).limit(page_size)
+    if detail == "studies":
+        return studies
+    features = detail == "features"
+    listing = _from(criteria, analyses=features, **scope).where(_where(criteria))
+    if paginate:
+        on_page = studies.subquery()
+        listing = listing.where(AF.study_id.in_(sa.select(on_page.c.study_id)))
+    # The features' JSON, written at ingest, is passed through (ADR 0019).
+    return (
+        listing.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
         .add_columns(
             AF.analysis_id,
             AF.study_id,
             AF.base_study_id,
-            AFD.display,
-            *(getattr(AF, name) for name in RESULT_COLUMNS),
+            AFD.display["name"].astext.label("name"),
+            *(
+                (
+                    _raw(Analysis.role).label("role"),
+                    _raw(Analysis.has_coordinates).label("has_coordinates"),
+                    _raw(AF.config_id).label("config_id"),
+                    _raw(AF.updated_at).label("updated_at"),
+                    AFD.features.label("features"),
+                )
+                if features
+                else ()
+            ),
             *(how.label(f"matched_by_{i}") for i, how in enumerate(provenance.values())),
         )
-        .order_by(AF.base_study_id, AF.analysis_id)
-        .limit(limit)
-    ).mappings().all()
-    result = {
-        "query": _canonical(criteria),
-        "counts": {**counts, "studies": len(per_study)},
-        "results": [_result(row, provenance) for row in rows],
-        "study_ids": sorted(study_id for study_id, _, _ in per_study),
-    }
-    if body.get("funnel"):
-        result["searched"], result["funnel"] = _funnel(criteria, counts)
-    return result
+        .order_by(AF.base_study_id, AF.study_id, AF.analysis_id)
+    )
+
+
+def _chunks(connection, head, listing, provenance, detail):
+    """``head`` and then its results as JSON text, about CHUNK_BYTES at a time."""
+    yield orjson.dumps(head)[:-1] + b',"results":['
+    if listing is not None:
+        buffer, first = bytearray(), True
+        for study in _studies(connection, listing, provenance, detail):
+            buffer += (b"" if first else b",") + orjson.dumps(study)
+            first = False
+            if len(buffer) >= CHUNK_BYTES:
+                yield bytes(buffer)
+                buffer.clear()
+        if buffer:
+            yield bytes(buffer)
+    yield b"]}"
+
+
+def _studies(connection, listing, provenance, detail):
+    """Each listed study, read through a server-side cursor on ``connection``; ``provenance``
+    names the listing's `matched_by_<i>` columns."""
+    # A cursor is planned for its first tenth by default; this one is read to the end.
+    connection.exec_driver_sql("SET LOCAL cursor_tuple_fraction = 1")
+    rows = connection.execute(
+        listing, execution_options={"stream_results": True, "yield_per": BATCH_ROWS}
+    ).mappings()
+    if detail == "studies":
+        for row in rows:
+            yield {"study": row["study_id"], "base_study": row["base_study_id"]}
+        return
+    for (base_study, study), group in groupby(
+        rows, key=lambda row: (row["base_study_id"], row["study_id"])
+    ):
+        yield {
+            "study": study,
+            "base_study": base_study,
+            "analyses": [_analysis(row, provenance, detail == "features") for row in group],
+        }
 
 
 #: Term listing field -> the criterion whose values it lists.
@@ -818,6 +1039,7 @@ TERM_FIELDS = {
     "allocation": "design.allocation",
     "assignment_structure": "design.assignment_structure",
     "blinding": "design.blinding",
+    **{f.path: f.path for f in FEATURES if f.kind in ("value", "array_value")},
 }
 #: The fields whose terms `analysis_terms` labels and places under a parent, and the field
 #: each one's children are listed under.
