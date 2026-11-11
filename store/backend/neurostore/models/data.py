@@ -1960,6 +1960,9 @@ class AnalysisFeatureDisplay(db.Model):
         primary_key=True,
     )
     display = db.Column(JSONB, nullable=False)
+    #: The result's features, JSON text written with the row
+    #: (`neurostore.analysis_query.features_of`); a listing passes it through.
+    features = db.Column(db.Text)
 
 
 #: Bump to change what an entity hash covers. Every entity row stores what its

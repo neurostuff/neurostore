@@ -684,7 +684,11 @@ async def test_detail_says_how_much_each_study_carries(auth_client, papers):
     assert all("features" in r for r in _rows(full))
     # The features and the extraction they were read from.
     assert _rows(slim) == [
-        {k: v for k, v in r.items() if k not in ("features", "config_id", "updated_at")}
+        {
+            k: v
+            for k, v in r.items()
+            if k not in ("features", "role", "has_coordinates", "config_id", "updated_at")
+        }
         for r in _rows(full)
     ]
     assert all(r["name"] for r in _rows(slim))
@@ -711,8 +715,6 @@ def _at(features, keys):
 async def test_features_have_the_query_s_shape_and_name_their_extraction(
     auth_client, side_papers
 ):
-    import sqlalchemy as sa
-
     from neurostore.models import Analysis, AnalysisFeature, AnalysisFeatureDisplay
 
     every = await _query(auth_client, {})
@@ -723,19 +725,20 @@ async def test_features_have_the_query_s_shape_and_name_their_extraction(
     assert len(_rows(every)) == len(rows)
     for r in _rows(every):
         row, display = rows[r["analysis"]], displays[r["analysis"]]
+        analysis = analyses[r["analysis"]]
         assert (r["config_id"], r["updated_at"]) == (row.config_id, row.updated_at.isoformat())
+        assert (r["role"], r["has_coordinates"]) == (analysis.role, analysis.has_coordinates)
         for item in analysis_query.SHOWN:
             if item.display is not None:
                 expected = _at(display, [k for k in item.display if isinstance(k, str)])
                 index = [k for k in item.display if isinstance(k, int)]
                 if index and expected:
                     expected = expected[index[0]]
-            elif isinstance(item.column, sa.Case):
+            elif item.groups:
                 n = row.group_count
                 expected = None if n is None else ("between" if n > 1 else "within")
             else:
-                owner = row if item.column.class_ is AnalysisFeature else analyses[r["analysis"]]
-                expected = getattr(owner, item.column.key)
+                expected = getattr(row, item.column.key)
             # Silent items are left out.
             assert _at(r["features"], item.keys) == (
                 None if expected in (None, []) else expected

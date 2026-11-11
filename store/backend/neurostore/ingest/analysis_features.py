@@ -38,12 +38,15 @@ the display carries their wording.
 import functools
 import re
 
+import orjson
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import distinct_on
 from study_schema.vocabularies import for_legacy
 from study_schema.vocabularies import vocabulary as manifest_vocabulary
 
+from neurostore.analysis_query import features_of
 from neurostore.analysis_vocabulary import FEATURES as DETAIL_FEATURES
 from neurostore.database import db
 from neurostore.ingest.concepts import concept_lineages
@@ -1076,7 +1079,14 @@ def sync_analysis_features(base_study_id, study_id, latest=None):
         else:
             continue
         features = dict(features)
-        displays.append({"analysis_id": analysis_id, "display": features.pop("display")})
+        display = features.pop("display")
+        displays.append(
+            {
+                "analysis_id": analysis_id,
+                "display": display,
+                "features": orjson.dumps(features_of(features, display)).decode(),
+            }
+        )
         for field, term, label, parent in features.pop("terms"):
             known = terms.get((field, term), {})
             terms[(field, term)] = {

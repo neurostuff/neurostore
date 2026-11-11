@@ -6,10 +6,11 @@ Revision ID: d5f7a9c1e3b6
 Revises: b8d0f2a4c6e9
 Create Date: 2026-11-10
 
-The columns are NULL on existing rows until `manage backfill-analysis-features` rewrites
-them. Each number array has a generated `<name>_points`, its items as a `float8multirange`
-of points, which a range criterion overlaps through a GiST index; adding them rewrites the
-table once.
+The columns, and each display's `features` (a result's features, written with the row),
+are NULL on existing rows until `manage backfill-analysis-features` rewrites them. Each
+number array has a generated `<name>_points`, its items as a `float8multirange` of points,
+which a range criterion overlaps through a GiST index; adding them rewrites the table
+once.
 """
 
 from alembic import op
@@ -23,6 +24,7 @@ branch_labels = None
 depends_on = None
 
 TABLE = "analysis_features"
+DISPLAYS = "analysis_feature_displays"
 TEXT_ARRAY = postgresql.ARRAY(sa.Text())
 FLOAT_ARRAY = postgresql.ARRAY(sa.Float())
 COLUMNS = (
@@ -174,6 +176,7 @@ def upgrade():
     )
     for name, type_ in COLUMNS:
         op.add_column(TABLE, sa.Column(name, type_, nullable=True))
+    op.add_column(DISPLAYS, sa.Column("features", sa.Text(), nullable=True))
     op.execute(
         f"ALTER TABLE {TABLE} "
         + ", ".join(
@@ -212,5 +215,6 @@ def downgrade():
         op.drop_index(f"ix_{TABLE}__{column}", table_name=TABLE)
     for name, _ in reversed(COLUMNS):
         op.drop_column(TABLE, name)
+    op.drop_column(DISPLAYS, "features")
     op.execute("DROP FUNCTION analysis_feature_points(float8[])")
     op.execute("DROP TYPE float8range")

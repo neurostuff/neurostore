@@ -769,6 +769,8 @@ class Shown:
     column: object = None
     #: Keys into the display (the record's wording), for an item that is not a column.
     display: tuple = None
+    #: A group count shown as `contrast.groups` shows it: between or within.
+    groups: bool = False
 
 
 #: The display values of the criteria whose wording is there.
@@ -784,11 +786,12 @@ DISPLAY = {
 def _shown():
     """A result's features, in the shape of the query: each criterion's value under its
     path, a normalized criterion's as its `ids` (and `role_ids`, `family_ids`) and `text`.
-    The analysis's name is beside its features, not among them."""
+    The analysis's name, role and has_coordinates are beside its features, not among them:
+    the features are what its record says, written with the row."""
     shown = []
     for name, field in FIELDS.items():
         keys = tuple(name.split("."))
-        if name == "name":
+        if name == "name" or name in JOINED:
             continue
         if field.kind == "normalized":
             shown.append(Shown((*keys, "ids"), field.ids))
@@ -801,14 +804,41 @@ def _shown():
         elif name in DISPLAY:
             shown.append(Shown(keys, display=DISPLAY[name]))
         elif field.kind == "groups":
-            between = sa.case((field.column > 1, "between"), (field.column == 1, "within"))
-            shown.append(Shown(keys, between))
+            shown.append(Shown(keys, field.column, groups=True))
         else:
             shown.append(Shown(keys, field.column))
     return tuple(shown)
 
 
 SHOWN = _shown()
+
+
+def features_of(columns, display):
+    """An analysis's features from its `analysis_features` columns and display, as `SHOWN`
+    lays them out; an item the record is silent on is left out. The ingester writes them
+    with the row, so a listing passes them through."""
+    out = {}
+    for item in SHOWN:
+        if item.display is None:
+            value = columns.get(item.column.key)
+            if item.groups and value is not None:
+                value = "between" if value > 1 else "within"
+        else:
+            value = display
+            for key in item.display:
+                if isinstance(key, int):
+                    value = value[key] if isinstance(value, list) and len(value) > key else None
+                else:
+                    value = value.get(key) if isinstance(value, dict) else None
+                if value is None:
+                    break
+        if value is None or value == []:
+            continue
+        node = out
+        for key in item.keys[:-1]:
+            node = node.setdefault(key, {})
+        node[item.keys[-1]] = value
+    return out
 
 
 def _matched_by(criteria, prefix=""):
@@ -831,43 +861,20 @@ def _raw(column):
 
 def _analysis(row, provenance, features):
     """One listed analysis: its id, name and matches, and with ``features`` its features
-    and the extraction they were read from."""
+    (JSON text the ingester wrote, passed through), its role and whether it has
+    coordinates, and the extraction its features were read from."""
     matched_by = {name: row[f"matched_by_{i}"] for i, name in enumerate(provenance)}
-    display = orjson.loads(row["display"] or "{}") if features else {"name": row["name"]}
     result = {
         "id": row["analysis_id"],
-        "name": display.get("name"),
+        "name": row["name"],
         "matched_by": {name: how for name, how in matched_by.items() if how is not None},
     }
     if features:
-        result["config_id"] = row["config_id"]
-        result["updated_at"] = row["updated_at"]
-        result["features"] = _features(row, display)
+        for name in ("role", "has_coordinates", "config_id", "updated_at"):
+            result[name] = row[name]
+        # Written with the row; none before the backfill that fills it.
+        result["features"] = orjson.Fragment(row["features"] or "{}")
     return result
-
-
-def _features(row, display):
-    """The features of a listed analysis; an item the record is silent on is left out."""
-    out = {}
-    for i, item in enumerate(SHOWN):
-        if item.display is None:
-            value = row[f"shown_{i}"]
-        else:
-            value = display
-            for key in item.display:
-                if isinstance(key, int):
-                    value = value[key] if isinstance(value, list) and len(value) > key else None
-                else:
-                    value = value.get(key) if isinstance(value, dict) else None
-                if value is None:
-                    break
-        if value is None or value == []:
-            continue
-        node = out
-        for key in item.keys[:-1]:
-            node = node.setdefault(key, {})
-        node[item.keys[-1]] = value
-    return out
 
 
 def run_query(body):
@@ -951,26 +958,24 @@ def _listing(criteria, scope, provenance, page, page_size, paginate, detail):
     if paginate:
         on_page = studies.subquery()
         listing = listing.where(AF.study_id.in_(sa.select(on_page.c.study_id)))
-    # The display as text and arrays as text[], parsed by orjson and psycopg2 (ADR 0019).
+    # The features' JSON, written at ingest, is passed through (ADR 0019).
     return (
         listing.outerjoin(AFD, AFD.analysis_id == AF.analysis_id)
         .add_columns(
             AF.analysis_id,
             AF.study_id,
             AF.base_study_id,
+            AFD.display["name"].astext.label("name"),
             *(
                 (
-                    sa.cast(AFD.display, sa.Text).label("display"),
+                    _raw(Analysis.role).label("role"),
+                    _raw(Analysis.has_coordinates).label("has_coordinates"),
                     _raw(AF.config_id).label("config_id"),
                     _raw(AF.updated_at).label("updated_at"),
-                    *(
-                        _raw(item.column).label(f"shown_{i}")
-                        for i, item in enumerate(SHOWN)
-                        if item.column is not None
-                    ),
+                    AFD.features.label("features"),
                 )
                 if features
-                else (AFD.display["name"].astext.label("name"),)
+                else ()
             ),
             *(how.label(f"matched_by_{i}") for i, how in enumerate(provenance.values())),
         )
