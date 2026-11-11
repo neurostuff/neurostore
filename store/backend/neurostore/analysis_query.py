@@ -40,6 +40,8 @@ from itertools import groupby
 import orjson
 import sqlalchemy as sa
 
+from neurostore.analysis_vocabulary import FEATURES, SPATIAL_SCOPES
+from neurostore.analysis_vocabulary import GROUPS as DETAIL_GROUPS
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
@@ -86,6 +88,8 @@ class Field:
     values: tuple = ()
     #: A number array's items as a multirange of points, which a range overlaps.
     points: object = None
+    #: The column holds lower-cased values, so a value criterion is lower-cased too.
+    lower: bool = False
 
     @property
     def silent(self):
@@ -95,9 +99,11 @@ class Field:
         return self.column.is_(None)
 
 
-def _number_array(name):
-    """The number array ``name``, searched through its points."""
-    return Field("number_array", getattr(AF, name), points=getattr(AF, f"{name}_points"))
+def _detail(feature):
+    """The criterion of a `neurostore.analysis_vocabulary` feature."""
+    column = getattr(AF, feature.column)
+    points = getattr(AF, f"{feature.column}_points", None)
+    return Field(feature.kind, column, values=feature.values, points=points, lower=True)
 
 
 def _normalized(name, text=True, roles=False):
@@ -113,7 +119,6 @@ def _normalized(name, text=True, roles=False):
     )
 
 
-SPATIAL_SCOPES = ("whole_brain", "roi", "searchlight")
 #: The roles ns-pond gives a medical condition's items.
 MEDICAL_ROLES = ("primary", "comorbid", "none")
 EFFECT_KINDS = (
@@ -169,82 +174,9 @@ FIELDS = {
     "design.blinding": Field("value", AF.blinding),
     "design.arm_kind": Field("array_value", AF.arm_kinds),
     "design.longitudinal": Field("boolean", AF.longitudinal),
-    "sample.age_mean": _number_array("age_means"),
-    "sample.age_sd": _number_array("age_sds"),
-    "sample.age_min": _number_array("age_minimums"),
-    "sample.age_max": _number_array("age_maximums"),
-    "sample.age_median": _number_array("age_medians"),
-    "sample.female_count": Field("range", AF.female_count),
-    "sample.male_count": Field("range", AF.male_count),
-    "sample.female_percent": Field("range", AF.female_percent),
-    "sample.handedness": Field("array_value", AF.handedness),
-    "sample.enrolled_count": Field("range", AF.enrolled_count),
-    "sample.acquired_count": Field("range", AF.acquired_count),
-    "sample.excluded_count": Field("range", AF.excluded_count),
-    "sample.diagnostic_instrument": Field("text", AF.diagnostic_instrument_text),
-    "sample.diagnostic_system": Field("text", AF.diagnostic_system_text),
-    "sample.clinical_characteristics": Field("text", AF.clinical_text),
-    "sample.education": Field("text", AF.education_text),
-    "inference.level": Field("text", AF.inference_level_text),
-    "inference.height_threshold": Field("range", AF.height_threshold),
-    "inference.height_threshold_type": Field("text", AF.height_threshold_type_text),
-    "inference.cluster_extent": Field("range", AF.cluster_extent),
-    "inference.cluster_threshold": Field("range", AF.cluster_threshold),
-    "inference.correction": Field("text", AF.correction_text),
-    "inference.correction_scope": Field("value", AF.correction_scope),
-    "inference.alpha": Field("range", AF.alpha),
-    "inference.tfce": Field("boolean", AF.tfce),
-    "inference.permutations": Field("range", AF.permutations),
-    "acquisition.modality": Field("array_value", AF.modalities),
-    "acquisition.field_strength": _number_array("field_strengths"),
-    "acquisition.repetition_time": _number_array("repetition_times"),
-    "acquisition.echo_time": _number_array("echo_times"),
-    "acquisition.voxel_size": _number_array("voxel_sizes"),
-    "acquisition.scanner": Field("text", AF.scanner_text),
-    "preprocessing.smoothing_fwhm": _number_array("smoothing_fwhms"),
-    "preprocessing.software": Field("text", AF.preprocessing_software_text),
-    "preprocessing.steps": Field("text", AF.preprocessing_steps_text),
-    "model.family": Field("text", AF.model_family_text),
-    "model.type": Field("text", AF.model_type_text),
-    "model.software": Field("text", AF.model_software_text),
-    "model.hrf": Field("text", AF.hrf_model_text),
-    "model.estimator": Field("text", AF.estimator_text),
-    "model.term": Field("text", AF.model_term_text),
-    "model.term_type": Field("array_value", AF.model_term_types),
-    "statistic.family": Field("value", AF.statistic_family),
-    "statistic.df_numerator": Field("range", AF.df_numerator),
-    "statistic.df_denominator": Field("range", AF.df_denominator),
-    "connectivity.method": Field("value", AF.connectivity_method),
-    "connectivity.inference_target": Field("value", AF.connectivity_inference_target),
-    "connectivity.seed": Field("text", AF.seed_region_text),
-    "connectivity.target": Field("text", AF.target_region_text),
-    "region.name": Field("text", AF.region_text),
-    "region.atlas": Field("text", AF.region_atlas_text),
-    "region.type": Field("array_value", AF.region_types),
-    "region.definition": Field("array_value", AF.region_definitions),
-    "coordinates.role": Field("array_value", AF.coordinate_roles),
-    "coordinates.result_kind": Field("array_value", AF.result_kinds),
-    "coordinates.anchor_kind": Field("array_value", AF.anchor_kinds),
-    "task_details.stimuli": Field("text", AF.stimulus_text),
-    "task_details.stimulus_modality": Field("array_value", AF.stimulus_modalities),
-    "task_details.response_modality": Field("array_value", AF.response_modalities),
-    "task_details.design_type": Field("array_value", AF.design_types),
-    "task_details.instructions": Field("text", AF.instructions_text),
-    "task_details.performance": Field("text", AF.performance_text),
+    **{feature.path: _detail(feature) for feature in FEATURES},
 }
-#: The groups of `RecordDetails`'s criteria.
-DETAIL_GROUPS = (
-    "sample",
-    "inference",
-    "acquisition",
-    "preprocessing",
-    "model",
-    "statistic",
-    "connectivity",
-    "region",
-    "coordinates",
-    "task_details",
-)
+GROUPS = ("contrast", "contrast.positive", "contrast.negative", "design", *DETAIL_GROUPS)
 GROUPS = (
     "contrast",
     "contrast.positive",
@@ -364,6 +296,9 @@ def _range_form(path, raw, errors):
         return None
     if _unknown(f"{path}.", raw, ("min", "max", "when_silent"), errors):
         return None
+    if bounds.keys() == {"min", "max"} and bounds["min"] > bounds["max"]:
+        errors.append(make_field_error(path, raw, code="INVALID_VALUE"))
+        return None
     mode = _silent_mode(path, raw, errors)
     return {**bounds, "when_silent": mode} if mode else None
 
@@ -387,7 +322,8 @@ def _groups_matcher(field, path, errors):
 #: on a silent record, so `none` is the complement of `any` among the records that speak.
 MATCHERS = {
     "text": _text_matcher,
-    "value": lambda field, path, errors: lambda value: field.column == value,
+    "value": lambda field, path, errors: lambda value: field.column
+    == (value.lower() if field.lower else value),
     "array_value": lambda field, path, errors: lambda value: field.column.contains(
         [value.lower()]
     ),
@@ -612,7 +548,7 @@ def _criterion(name, path, field, raw, errors):
         return None
     if field.values:
         bad = [v for part in ("any", "all", "none") for v in form.get(part, [])]
-        bad = [v for v in bad if v not in field.values]
+        bad = [v for v in bad if (v.lower() if field.lower else v) not in field.values]
         if bad:
             errors.append(make_field_error(path, bad, list(field.values)))
             return None
@@ -825,56 +761,54 @@ def _funnel(connection, criteria, scope=None):
     return searched, steps
 
 
-#: Columns each result lists beside its display values.
-RESULT_COLUMNS = (
-    # Which extraction the row was read from, and when it was written.
-    "config_id",
-    "updated_at",
-    "is_meta_analysis",
-    "details_type",
-    "species",
-    "spatial_scope",
-    "coordinate_space",
-    "measure_type",
-    "measure_family",
-    "effect_kind",
-    "group_count",
-    "n",
-    "has_patients",
-    "has_healthy",
-    "medical_condition_ids",
-    "medical_condition_role_ids",
-    "task_ids",
-    "task_family_ids",
-    "contrast_key_ids",
-    "contrast_set_ids",
-    "allocation",
-    "assignment_structure",
-    "blinding",
-    "arm_kinds",
-    "longitudinal",
-    *(
-        f"contrast_{side}_{column}"
-        for side in ("positive", "negative")
-        for column in (
-            "has_patients",
-            "has_healthy",
-            "medical_condition_ids",
-            "timepoints",
-            "arm_kinds",
-            "facets",
-        )
-    ),
-    # What the analysis links to beyond its conditions, tasks and contrast; the display
-    # has their text.
-    *(
-        field.column.key
-        for name, field in FIELDS.items()
-        if name.split(".")[0] in DETAIL_GROUPS and field.kind != "text"
-    ),
-)
-#: Columns of `analyses` each result lists too, which criteria read.
-ANALYSIS_COLUMNS = ("role", "has_coordinates")
+@dataclass(frozen=True)
+class Shown:
+    """One item of a result's features: its keys, and the column or display value it is."""
+
+    keys: tuple
+    column: object = None
+    #: Keys into the display (the record's wording), for an item that is not a column.
+    display: tuple = None
+
+
+#: The display values of the criteria whose wording is there.
+DISPLAY = {
+    "medical_condition": ("medical_condition",),
+    "task": ("task",),
+    "contrast.positive.name": ("contrast_sides", 0),
+    "contrast.negative.name": ("contrast_sides", 1),
+    **{f.path: (f.path,) for f in FEATURES if f.kind == "text"},
+}
+
+
+def _shown():
+    """A result's features, in the shape of the query: each criterion's value under its
+    path, a normalized criterion's as its `ids` (and `role_ids`, `family_ids`) and `text`.
+    The analysis's name is beside its features, not among them."""
+    shown = []
+    for name, field in FIELDS.items():
+        keys = tuple(name.split("."))
+        if name == "name":
+            continue
+        if field.kind == "normalized":
+            shown.append(Shown((*keys, "ids"), field.ids))
+            if field.role_ids is not None:
+                shown.append(Shown((*keys, "role_ids"), field.role_ids))
+            if name == "task":
+                shown.append(Shown((*keys, "family_ids"), AF.task_family_ids))
+            if name in DISPLAY:
+                shown.append(Shown((*keys, "text"), display=DISPLAY[name]))
+        elif name in DISPLAY:
+            shown.append(Shown(keys, display=DISPLAY[name]))
+        elif field.kind == "groups":
+            between = sa.case((field.column > 1, "between"), (field.column == 1, "within"))
+            shown.append(Shown(keys, between))
+        else:
+            shown.append(Shown(keys, field.column))
+    return tuple(shown)
+
+
+SHOWN = _shown()
 
 
 def _matched_by(criteria, prefix=""):
@@ -896,7 +830,8 @@ def _raw(column):
 
 
 def _analysis(row, provenance, features):
-    """One listed analysis: its id, name and matches, and with ``features`` its features."""
+    """One listed analysis: its id, name and matches, and with ``features`` its features
+    and the extraction they were read from."""
     matched_by = {name: row[f"matched_by_{i}"] for i, name in enumerate(provenance)}
     display = orjson.loads(row["display"] or "{}") if features else {"name": row["name"]}
     result = {
@@ -905,14 +840,34 @@ def _analysis(row, provenance, features):
         "matched_by": {name: how for name, how in matched_by.items() if how is not None},
     }
     if features:
-        display = {k: v for k, v in display.items() if k != "contrast_sides"}
-        # A column the record is silent on is left out: most are, on most analyses.
-        columns = (*RESULT_COLUMNS, *ANALYSIS_COLUMNS)
-        result["features"] = {
-            **display,
-            **{name: row[name] for name in columns if row[name] is not None},
-        }
+        result["config_id"] = row["config_id"]
+        result["updated_at"] = row["updated_at"]
+        result["features"] = _features(row, display)
     return result
+
+
+def _features(row, display):
+    """The features of a listed analysis; an item the record is silent on is left out."""
+    out = {}
+    for i, item in enumerate(SHOWN):
+        if item.display is None:
+            value = row[f"shown_{i}"]
+        else:
+            value = display
+            for key in item.display:
+                if isinstance(key, int):
+                    value = value[key] if isinstance(value, list) and len(value) > key else None
+                else:
+                    value = value.get(key) if isinstance(value, dict) else None
+                if value is None:
+                    break
+        if value is None or value == []:
+            continue
+        node = out
+        for key in item.keys[:-1]:
+            node = node.setdefault(key, {})
+        node[item.keys[-1]] = value
+    return out
 
 
 def run_query(body):
@@ -1006,8 +961,13 @@ def _listing(criteria, scope, provenance, page, page_size, paginate, detail):
             *(
                 (
                     sa.cast(AFD.display, sa.Text).label("display"),
-                    *(_raw(getattr(AF, name)).label(name) for name in RESULT_COLUMNS),
-                    *(_raw(getattr(Analysis, name)).label(name) for name in ANALYSIS_COLUMNS),
+                    _raw(AF.config_id).label("config_id"),
+                    _raw(AF.updated_at).label("updated_at"),
+                    *(
+                        _raw(item.column).label(f"shown_{i}")
+                        for i, item in enumerate(SHOWN)
+                        if item.column is not None
+                    ),
                 )
                 if features
                 else (AFD.display["name"].astext.label("name"),)
@@ -1074,6 +1034,7 @@ TERM_FIELDS = {
     "allocation": "design.allocation",
     "assignment_structure": "design.assignment_structure",
     "blinding": "design.blinding",
+    **{f.path: f.path for f in FEATURES if f.kind in ("value", "array_value")},
 }
 #: The fields whose terms `analysis_terms` labels and places under a parent, and the field
 #: each one's children are listed under.

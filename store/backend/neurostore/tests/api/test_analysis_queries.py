@@ -338,11 +338,11 @@ async def test_a_side_s_groups_say_which_cohort_is_on_it(auth_client, side_paper
         for r in _rows(patients_first)
         if r["name"] == "Group differences between MDD and HCs"
     )
-    assert features["contrast_positive_medical_condition_ids"] == [
+    assert features["contrast"]["positive"]["medical_condition"]["ids"] == [
         "MONDO:0002009",
         "ONVOC:0000207",
     ]
-    assert features["contrast_negative_has_healthy"] is True
+    assert features["contrast"]["negative"]["has_healthy"] is True
 
 
 async def test_a_side_s_medical_condition_matches_that_side_s_groups_only(
@@ -406,51 +406,48 @@ async def test_a_side_s_timepoints_arms_and_facets(auth_client, side_papers):
 
 async def test_what_an_analysis_links_to_is_queryable(auth_client, side_papers):
     ns_pond = [side_papers[DEPRESSION], side_papers[SOCIAL_ANXIETY]]
-
-    async def papers_of(query):
-        result = await _query(auth_client, query, base_study_ids=ns_pond)
-        return _papers(result, side_papers)
-
+    depression, anxiety = [DEPRESSION], [SOCIAL_ANXIETY]
     both = sorted([DEPRESSION, SOCIAL_ANXIETY])
-    assert await papers_of({"sample": {"age_mean": {"min": 27}}}) == [DEPRESSION]
-    # Any group in range: 26.41 is under 26.5 and 27.09 over 27.
-    assert await papers_of({"sample": {"age_mean": {"min": 26.5, "max": 27}}}) == []
-    assert await papers_of({"sample": {"female_percent": {"min": 70}}}) == [DEPRESSION]
-    assert await papers_of({"sample": {"handedness": "right-handed"}}) == [SOCIAL_ANXIETY]
-    assert await papers_of({"sample": {"diagnostic_instrument": "adis*"}}) == [SOCIAL_ANXIETY]
-    assert await papers_of({"inference": {"height_threshold": {"max": 0.01}}}) == [
-        SOCIAL_ANXIETY
+    expected = [
+        ({"groups": {"age_mean": {"min": 27}}}, depression),
+        # Any group in range: 26.41 is under 26.5 and 27.09 over 27.
+        ({"groups": {"age_mean": {"min": 26.5, "max": 27}}}, []),
+        ({"groups": {"female_percent": {"min": 70}}}, depression),
+        ({"groups": {"handedness": "Right-Handed"}}, anxiety),
+        ({"groups": {"diagnostic_instrument": "adis*"}}, anxiety),
+        ({"inference_settings": {"height_threshold_value": {"max": 0.01}}}, anxiety),
+        ({"inference_settings": {"multiple_comparison_method": "bayesian"}}, depression),
+        ({"inference_settings": {"tfce_used": False}}, []),
+        ({"inference_settings": {"tfce_used": {"is": False, "when_silent": "include"}}}, both),
+        ({"acquisitions": {"repetition_time_seconds": {"min": 1.8}}}, depression),
+        ({"acquisitions": {"modality": "fMRI"}}, both),
+        ({"acquisitions": {"device": "siemens"}}, depression),
+        ({"preprocessing": {"smoothing_fwhm_mm": {"max": 6}}}, both),
+        ({"preprocessing": {"software": "afni"}}, anxiety),
+        # A first-level model's software, through the group model's inputs.
+        ({"model_estimation": {"software": "3ddeconvolve"}}, anxiety),
+        ({"effect": {"statistic": {"family": "Posterior Probability"}}}, depression),
+        ({"details": {"connectivity_method": "DCM"}}, depression),
+        ({"regions": {"atlas": "shirer"}}, depression),
+        ({"coordinate_sets": {"result_kind": "connectivity"}}, anxiety),
+        ({"tasks": {"response_modality": "covert_response"}}, anxiety),
     ]
-    assert await papers_of({"inference": {"correction": "bayesian"}}) == [DEPRESSION]
-    assert await papers_of({"inference": {"tfce": False}}) == []
-    assert await papers_of({"inference": {"tfce": {"is": False, "when_silent": "include"}}}) == (
-        both
-    )
-    assert await papers_of({"acquisition": {"repetition_time": {"min": 1.8}}}) == [DEPRESSION]
-    assert await papers_of({"acquisition": {"modality": "fmri"}}) == both
-    assert await papers_of({"acquisition": {"scanner": "siemens"}}) == [DEPRESSION]
-    assert await papers_of({"preprocessing": {"smoothing_fwhm": {"max": 6}}}) == both
-    assert await papers_of({"preprocessing": {"software": "afni"}}) == [SOCIAL_ANXIETY]
-    # A first-level model's software, through the group model's inputs.
-    assert await papers_of({"model": {"software": "3ddeconvolve"}}) == [SOCIAL_ANXIETY]
-    assert await papers_of({"statistic": {"family": "posterior probability"}}) == [DEPRESSION]
-    assert await papers_of({"connectivity": {"method": "dcm"}}) == [DEPRESSION]
-    assert await papers_of({"region": {"atlas": "shirer"}}) == [DEPRESSION]
-    assert await papers_of({"coordinates": {"result_kind": "connectivity"}}) == [
-        SOCIAL_ANXIETY
-    ]
-    assert await papers_of({"task_details": {"response_modality": "covert_response"}}) == [
-        SOCIAL_ANXIETY
-    ]
+
+    for query, papers in expected:
+        result = await _query(auth_client, query, base_study_ids=ns_pond)
+        assert _papers(result, side_papers) == papers, query
     funnel = await _query(
         auth_client,
-        {"acquisition": {"field_strength": {"min": 3}}, "sample": {"age_sd": {"max": 4}}},
+        {
+            "acquisitions": {"magnetic_field_strength_tesla": {"min": 3}},
+            "groups": {"age_standard_deviation": {"max": 4}},
+        },
         funnel=True,
         base_study_ids=ns_pond,
     )
     assert [(s["criterion"], s["base_studies"]) for s in funnel["funnel"]] == [
-        ("sample.age_sd", 1),
-        ("acquisition.field_strength", 1),
+        ("acquisitions.magnetic_field_strength_tesla", 2),
+        ("groups.age_standard_deviation", 1),
     ]
 
 
@@ -685,8 +682,10 @@ async def test_detail_says_how_much_each_study_carries(auth_client, papers):
     bare = await _query(auth_client, {"species": "human"}, funnel=True, detail="studies")
 
     assert all("features" in r for r in _rows(full))
+    # The features and the extraction they were read from.
     assert _rows(slim) == [
-        {k: v for k, v in r.items() if k != "features"} for r in _rows(full)
+        {k: v for k, v in r.items() if k not in ("features", "config_id", "updated_at")}
+        for r in _rows(full)
     ]
     assert all(r["name"] for r in _rows(slim))
     assert bare["results"] == [
@@ -703,40 +702,107 @@ async def test_detail_says_how_much_each_study_carries(auth_client, papers):
     assert page["results"] == bare["results"][1:2]
 
 
-async def test_features_return_every_column_a_criterion_reads_and_their_extraction(
+def _at(features, keys):
+    for key in keys:
+        features = features.get(key) if isinstance(features, dict) else None
+    return features
+
+
+async def test_features_have_the_query_s_shape_and_name_their_extraction(
     auth_client, side_papers
 ):
-    from neurostore.models import Analysis, AnalysisFeature
+    import sqlalchemy as sa
+
+    from neurostore.models import Analysis, AnalysisFeature, AnalysisFeatureDisplay
 
     every = await _query(auth_client, {})
     rows = {row.analysis_id: row for row in AnalysisFeature.query}
     analyses = {row.id: row for row in Analysis.query}
-    # Text criteria read a search column; the display carries their wording.
-    read = [
-        column
-        for field in analysis_query.FIELDS.values()
-        for column in (
-            (field.ids, field.role_ids) if field.kind == "normalized" else (field.column,)
-        )
-        if column is not None and field.kind != "text"
-    ]
+    displays = {row.analysis_id: row.display for row in AnalysisFeatureDisplay.query}
 
     assert len(_rows(every)) == len(rows)
     for r in _rows(every):
-        features = r["features"]
-        for column in (*read, AnalysisFeature.config_id):
-            on = AnalysisFeature if column.class_ is AnalysisFeature else Analysis
-            row = (rows if on is AnalysisFeature else analyses)[r["analysis"]]
-            # Silent columns are left out.
-            assert features.get(column.key) == getattr(row, column.key), column.key
-        assert features["updated_at"] == rows[r["analysis"]].updated_at.isoformat()
-    assert {r["features"].get("config_id") for r in _rows(every)} != {None}
-    # Text a criterion reads is in the display, as the record words it.
-    scanners = {tuple(r["features"].get("scanner", ())) for r in _rows(every)}
-    assert {(), ("GE Signa",), ("Siemens Prisma",)} <= scanners
-    assert ("",) not in scanners
-    assert {tuple(r["features"].get("age_means", ())) for r in _rows(every)} >= {(27.09, 26.41)}
-    assert {r["features"].get("is_meta_analysis") for r in _rows(every)} != {None}
+        row, display = rows[r["analysis"]], displays[r["analysis"]]
+        assert (r["config_id"], r["updated_at"]) == (row.config_id, row.updated_at.isoformat())
+        for item in analysis_query.SHOWN:
+            if item.display is not None:
+                expected = _at(display, [k for k in item.display if isinstance(k, str)])
+                index = [k for k in item.display if isinstance(k, int)]
+                if index and expected:
+                    expected = expected[index[0]]
+            elif isinstance(item.column, sa.Case):
+                n = row.group_count
+                expected = None if n is None else ("between" if n > 1 else "within")
+            else:
+                owner = row if item.column.class_ is AnalysisFeature else analyses[r["analysis"]]
+                expected = getattr(owner, item.column.key)
+            # Silent items are left out.
+            assert _at(r["features"], item.keys) == (
+                None if expected in (None, []) else expected
+            ), item.keys
+    patients = next(
+        r["features"] for r in _rows(every) if r["name"] == "Group differences between MDD and HCs"
+    )
+    assert patients["acquisitions"]["device"] == ["Siemens Prisma"]
+    assert patients["groups"]["age_mean"] == [27.09, 26.41]
+    assert patients["contrast"]["groups"] == "between"
+    assert "name" not in patients
+
+
+async def test_value_criteria_ignore_case_and_refuse_values_and_ranges_out_of_bounds(
+    auth_client, side_papers
+):
+    refused = [
+        {"inference_settings": {"correction_scope": "everywhere"}},
+        {"n": {"min": 20, "max": 10}},
+        {"groups": {"age_mean": {"min": 65, "max": 18}}},
+    ]
+
+    for query in refused:
+        assert _codes(await _query(auth_client, query, status=400)) == ["INVALID_VALUE"]
+    upper = await _query(auth_client, {"inference_settings": {"correction_scope": "WHOLE_BRAIN"}})
+    lower = await _query(auth_client, {"inference_settings": {"correction_scope": "whole_brain"}})
+    assert _rows(upper) == _rows(lower) != []
+
+
+def _spec():
+    import yaml
+    from pathlib import Path
+
+    path = Path(analysis_query.__file__).parent / "openapi" / "neurostore-openapi.yml"
+    return yaml.safe_load(path.read_text())
+
+
+def _paths(schema, schemas, prefix=()):
+    """Every leaf property path of ``schema``, through refs, oneOf objects and nesting."""
+    if "$ref" in schema:
+        name = schema["$ref"].rsplit("/", 1)[-1]
+        if name in ("analysis-query-contrast-side", "analysis-features"):
+            return _paths(schemas[name], schemas, prefix)
+        return {prefix}
+    for option in schema.get("oneOf", []):
+        if option.get("type") == "object":
+            return _paths(option, schemas, prefix)
+    if "properties" in schema:
+        found = set()
+        for key, value in schema["properties"].items():
+            found |= _paths(value, schemas, (*prefix, key))
+        return found
+    return {prefix}
+
+
+def test_the_spec_names_every_criterion_feature_and_term_field():
+    spec = _spec()
+    schemas = spec["components"]["schemas"]
+    query = _paths(schemas["analysis-query"], schemas) - {("or",)}
+    features = _paths(schemas["analysis-features"], schemas)
+    terms = next(
+        p for p in spec["paths"]["/analysis-terms/"]["get"]["parameters"] if p["name"] == "field"
+    )["schema"]["enum"]
+
+    assert query == {tuple(name.split(".")) for name in analysis_query.FIELDS}
+    assert features == {item.keys for item in analysis_query.SHOWN}
+    assert set(terms) == {*analysis_query.TERM_FIELDS, "task_family"}
 
 
 async def test_the_response_streams_in_chunks_that_join_to_it(

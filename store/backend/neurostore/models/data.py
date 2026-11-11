@@ -15,6 +15,7 @@ from sqlalchemy.orm import aliased, backref, relationship, validates
 from study_schema.keys import normalize_name
 from study_schema.models.paper_parse import LicenseId
 
+from neurostore.analysis_vocabulary import FEATURES as DETAIL_FEATURES
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore import encryption
@@ -1663,85 +1664,6 @@ def _trigram_index(column):
     )
 
 
-#: What an analysis links to beyond its conditions, tasks and contrast
-#: (`neurostore.ingest.analysis_features.RecordDetails`): arrays of values, searched by GIN,
-#: and text, by trigram.
-DETAIL_VALUE_ARRAYS = (
-    "handedness",
-    "modalities",
-    "model_term_types",
-    "region_types",
-    "region_definitions",
-    "coordinate_roles",
-    "result_kinds",
-    "anchor_kinds",
-    "stimulus_modalities",
-    "response_modalities",
-    "design_types",
-)
-#: Arrays of numbers (one item a group or acquisition), each searched through
-#: ``<name>_points``: the items as a multirange of points, generated from the array, so a
-#: GiST index finds the rows with any item in a range.
-DETAIL_NUMBER_ARRAYS = (
-    "age_means",
-    "age_sds",
-    "age_minimums",
-    "age_maximums",
-    "age_medians",
-    "field_strengths",
-    "repetition_times",
-    "echo_times",
-    "voxel_sizes",
-    "smoothing_fwhms",
-)
-#: Scalars a criterion selects few rows by, searched by B-tree.
-DETAIL_SCALARS = (
-    "female_count",
-    "male_count",
-    "female_percent",
-    "enrolled_count",
-    "acquired_count",
-    "excluded_count",
-    "height_threshold",
-    "cluster_extent",
-    "cluster_threshold",
-    "correction_scope",
-    "alpha",
-    "tfce",
-    "permutations",
-    "statistic_family",
-    "df_numerator",
-    "df_denominator",
-    "connectivity_method",
-    "connectivity_inference_target",
-)
-DETAIL_TEXTS = (
-    "diagnostic_instrument_text",
-    "diagnostic_system_text",
-    "clinical_text",
-    "education_text",
-    "inference_level_text",
-    "height_threshold_type_text",
-    "correction_text",
-    "scanner_text",
-    "preprocessing_software_text",
-    "preprocessing_steps_text",
-    "model_family_text",
-    "model_type_text",
-    "model_software_text",
-    "hrf_model_text",
-    "estimator_text",
-    "model_term_text",
-    "seed_region_text",
-    "target_region_text",
-    "region_text",
-    "region_atlas_text",
-    "stimulus_text",
-    "instructions_text",
-    "performance_text",
-)
-
-
 #: The features read from normalizer entries, by column prefix.
 NORMALIZED_FEATURES = ("medical_condition", "task", "contrast_key", "contrast_set")
 #: The array columns each side of a contrast has, `contrast_<side>_<column>`, all GIN-indexed.
@@ -1755,7 +1677,53 @@ CONTRAST_SIDE_ARRAYS = (
 CONTRAST_SIDES = ("positive", "negative")
 
 
-class AnalysisFeature(db.Model):
+#: The column type of each kind of `neurostore.analysis_vocabulary` feature.
+DETAIL_TYPES = {
+    "text": sa.Text,
+    "value": sa.Text,
+    "array_value": lambda: ARRAY(sa.Text),
+    "boolean": sa.Boolean,
+    "number_array": lambda: ARRAY(sa.Float),
+}
+
+
+def _detail_column(feature):
+    if feature.kind == "range":
+        return db.Column(sa.BigInteger if feature.number == "int" else sa.Float)
+    return db.Column(DETAIL_TYPES[feature.kind]())
+
+
+def _detail_index(feature):
+    """Trigram for text, GIN for values, GiST on a number array's points, else B-tree."""
+    if feature.kind == "text":
+        return _trigram_index(feature.column)
+    if feature.kind == "array_value":
+        return _gin_index(feature.column)
+    if feature.kind == "number_array":
+        return _gist_index(f"{feature.column}_points")
+    return sa.Index(_index_name(feature.column), feature.column)
+
+
+#: A column per feature, and a number array's points.
+_DetailColumns = type(
+    "_DetailColumns",
+    (),
+    {
+        name: column
+        for feature in DETAIL_FEATURES
+        for name, column in (
+            (feature.column, _detail_column(feature)),
+            *(
+                ((f"{feature.column}_points", _points(feature.column)),)
+                if feature.kind == "number_array"
+                else ()
+            ),
+        )
+    },
+)
+
+
+class AnalysisFeature(_DetailColumns, db.Model):
     """What the latest extraction record says about one current pipeline analysis.
 
     The query surface over records (`neurostore.analysis_query`): the record's local-id
@@ -1776,10 +1744,7 @@ class AnalysisFeature(db.Model):
         _gin_index("medical_condition_role_ancestor_ids"),
         _gin_index("arm_kinds"),
         _gin_index("species"),
-        *(_gin_index(column) for column in DETAIL_VALUE_ARRAYS),
-        *(_gist_index(f"{column}_points") for column in DETAIL_NUMBER_ARRAYS),
-        *(sa.Index(_index_name(column), column) for column in DETAIL_SCALARS),
-        *(_trigram_index(column) for column in DETAIL_TEXTS),
+        *(_detail_index(feature) for feature in DETAIL_FEATURES),
         *(
             _gin_index(f"contrast_{side}_{column}")
             for side in CONTRAST_SIDES
@@ -1903,96 +1868,6 @@ class AnalysisFeature(db.Model):
     #: Pre- and post-intervention timepoints both present.
     longitudinal = db.Column(db.Boolean)
     is_meta_analysis = db.Column(db.Boolean, index=True)
-
-    # The sample: its groups' ages in years, one item a group that reports it; sex counts
-    # summed over the groups that report them; handedness categories; recruitment counts.
-    age_means = db.Column(ARRAY(db.Float))
-    age_means_points = _points("age_means")
-    age_sds = db.Column(ARRAY(db.Float))
-    age_sds_points = _points("age_sds")
-    age_minimums = db.Column(ARRAY(db.Float))
-    age_minimums_points = _points("age_minimums")
-    age_maximums = db.Column(ARRAY(db.Float))
-    age_maximums_points = _points("age_maximums")
-    age_medians = db.Column(ARRAY(db.Float))
-    age_medians_points = _points("age_medians")
-    female_count = db.Column(db.BigInteger)
-    male_count = db.Column(db.BigInteger)
-    #: Female among those whose sex is counted, over the groups that count it.
-    female_percent = db.Column(db.Float)
-    handedness = db.Column(ARRAY(db.Text))
-    enrolled_count = db.Column(db.BigInteger)
-    acquired_count = db.Column(db.BigInteger)
-    excluded_count = db.Column(db.BigInteger)
-    #: The groups' diagnostic instruments, by their assessments' names.
-    diagnostic_instrument_text = db.Column(db.Text)
-    diagnostic_system_text = db.Column(db.Text)
-    clinical_text = db.Column(db.Text)
-    education_text = db.Column(db.Text)
-    # The analysis's inference settings.
-    inference_level_text = db.Column(db.Text)
-    height_threshold = db.Column(db.Float)
-    height_threshold_type_text = db.Column(db.Text)
-    cluster_extent = db.Column(db.BigInteger)
-    cluster_threshold = db.Column(db.Float)
-    #: `multiple_comparison_method`.
-    correction_text = db.Column(db.Text)
-    correction_scope = db.Column(db.Text)
-    alpha = db.Column(db.Float)
-    tfce = db.Column(db.Boolean)
-    permutations = db.Column(db.BigInteger)
-    # Its acquisitions, one item each: field strength (T), TR and TE (s), and the largest
-    # voxel dimension (mm); their devices' manufacturer and model.
-    modalities = db.Column(ARRAY(db.Text))
-    field_strengths = db.Column(ARRAY(db.Float))
-    field_strengths_points = _points("field_strengths")
-    repetition_times = db.Column(ARRAY(db.Float))
-    repetition_times_points = _points("repetition_times")
-    echo_times = db.Column(ARRAY(db.Float))
-    echo_times_points = _points("echo_times")
-    voxel_sizes = db.Column(ARRAY(db.Float))
-    voxel_sizes_points = _points("voxel_sizes")
-    scanner_text = db.Column(db.Text)
-    # Its model estimation and those it takes inputs from, with their preprocessing.
-    smoothing_fwhms = db.Column(ARRAY(db.Float))
-    smoothing_fwhms_points = _points("smoothing_fwhms")
-    preprocessing_software_text = db.Column(db.Text)
-    preprocessing_steps_text = db.Column(db.Text)
-    model_family_text = db.Column(db.Text)
-    model_type_text = db.Column(db.Text)
-    model_software_text = db.Column(db.Text)
-    hrf_model_text = db.Column(db.Text)
-    estimator_text = db.Column(db.Text)
-    #: The models' terms' names, and their types.
-    model_term_text = db.Column(db.Text)
-    model_term_types = db.Column(ARRAY(db.Text))
-    # Its statistic and, for a connectivity analysis, its method, inference target and
-    # seed and target regions' names.
-    #: Lower-cased.
-    statistic_family = db.Column(db.Text)
-    df_numerator = db.Column(db.Float)
-    df_denominator = db.Column(db.Float)
-    connectivity_method = db.Column(db.Text)
-    connectivity_inference_target = db.Column(db.Text)
-    seed_region_text = db.Column(db.Text)
-    target_region_text = db.Column(db.Text)
-    #: The regions it names, its seeds and targets, and its coordinate sets' regions.
-    region_text = db.Column(db.Text)
-    region_atlas_text = db.Column(db.Text)
-    region_types = db.Column(ARRAY(db.Text))
-    region_definitions = db.Column(ARRAY(db.Text))
-    #: The coordinate sets that name it.
-    coordinate_roles = db.Column(ARRAY(db.Text))
-    result_kinds = db.Column(ARRAY(db.Text))
-    anchor_kinds = db.Column(ARRAY(db.Text))
-    # Its tasks' stimuli (and stimulus content), modalities, design, instructions and
-    # performance measures.
-    stimulus_text = db.Column(db.Text)
-    stimulus_modalities = db.Column(ARRAY(db.Text))
-    response_modalities = db.Column(ARRAY(db.Text))
-    design_types = db.Column(ARRAY(db.Text))
-    instructions_text = db.Column(db.Text)
-    performance_text = db.Column(db.Text)
 
     display_row = relationship("AnalysisFeatureDisplay", uselist=False, passive_deletes=True)
 

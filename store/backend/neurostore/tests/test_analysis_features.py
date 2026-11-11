@@ -427,12 +427,54 @@ def test_the_sample_has_ages_in_years_sex_handedness_counts_and_diagnosis():
     assert patients["female_percent"] == pytest.approx(100 * 74 / 104)
     assert (patients["enrolled_count"], patients["excluded_count"]) == (124, 20)
     assert patients["diagnostic_instrument_text"].startswith("mini international")
-    assert patients["display"]["diagnostic_system"] == ["DSM-IV"]
+    assert patients["display"]["groups.diagnostic_system"] == ["DSM-IV"]
     assert all(
         row["age_means"] == [pytest.approx(27.09 / 12), 26.41] for row in in_months.values()
     )
     assert treated["handedness"] == ["right-handed"]
     assert treated["age_means"] is None and treated["female_percent"] is None
+
+
+def test_sex_is_read_from_percentages_and_from_gender_where_that_is_all():
+    document = af.record(DEPRESSION)
+    mdd, hc = document["groups"]
+    # 11 male and 35 female of 46, as percentages of the denominator.
+    for item in mdd["sex_distribution"]:
+        count = item.pop("count")["value"]
+        share = 100 * count / item["denominator"]["value"]
+        item["percentage"] = {"value": share, "extraction_status": "extracted"}
+    # The healthy group reports gender only.
+    hc["gender_distribution"], hc["sex_distribution"] = hc["sex_distribution"], []
+    rows = {
+        row["display"]["name"]: row for row in record_features(document).values()
+    }
+    patients = rows["Group differences between MDD and HCs"]
+
+    assert (patients["female_count"], patients["male_count"]) == (74, 30)
+    assert patients["female_percent"] == pytest.approx(100 * 74 / 104)
+
+
+def test_a_percentage_without_a_denominator_is_of_the_group_s_n():
+    document = af.record(DEPRESSION)
+    mdd = document["groups"][0]
+    for item in mdd["sex_distribution"]:
+        item.pop("count")
+        item.pop("denominator", None)
+        item["percentage"] = {"value": 50, "extraction_status": "extracted"}
+    links = document["analyses"][0]["groups"]
+    n = next(link for link in links if link["group"] == mdd["local_id"])["n"]["value"]
+    features = next(iter(record_features(document).values()))
+
+    # Half of the analysis's n of the group, and the healthy group's counts.
+    assert features["female_count"] == round(n / 2) + 39
+
+
+def test_an_instrument_whose_assessment_has_no_name_is_left_out():
+    document = af.record(SOCIAL_ANXIETY)
+    document["assessments"][0]["name"] = {"extraction_status": "not_reported"}
+    features = next(iter(record_features(document).values()))
+
+    assert features["diagnostic_instrument_text"] is None
 
 
 def test_inference_acquisitions_and_preprocessing_are_the_analysis_s_own():
@@ -447,7 +489,7 @@ def test_inference_acquisitions_and_preprocessing_are_the_analysis_s_own():
     assert treated["repetition_times"] == [1.5]
     assert treated["voxel_sizes"] == [4.5]
     assert treated["modalities"] == ["fmri"]
-    assert patients["display"]["scanner"] == ["Siemens Prisma"]
+    assert patients["display"]["acquisitions.device"] == ["Siemens Prisma"]
     assert treated["smoothing_fwhms"] == [4.0]
     assert treated["preprocessing_software_text"] == "afni"
 
@@ -483,7 +525,7 @@ def test_connectivity_regions_coordinate_sets_and_task_details():
         "seed_based",
         "dmpfc",
     )
-    assert patients["display"]["regions"] == ["DMN", "SN", "DAN"]
+    assert patients["display"]["regions.name"] == ["DMN", "SN", "DAN"]
     assert patients["region_atlas_text"] == "shirer et al., 2012 network templates"
     assert patients["region_types"] == ["network"]
     # Coordinate sets that name the analysis; the depression paper's anchors name none.
