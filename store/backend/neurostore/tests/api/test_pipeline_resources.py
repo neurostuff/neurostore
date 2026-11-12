@@ -562,6 +562,31 @@ async def test_list_of_studies(
     assert study_ids == {study1_id, study2_id}
 
 
+async def test_list_pipeline_study_results_with_list_file_inputs(
+    auth_client, result1, pipeline_study_result_payload, session
+):
+    """A study_schema result stores file_inputs as a list; listing it must not 500."""
+    inputs = [
+        {
+            "artifact_kind": "parsed_paper",
+            "fingerprint": "1f2a12c07d024b31",
+            "producer_version": None,
+        },
+        {"artifact_kind": "analyses", "fingerprint": "528a5529", "producer_version": None},
+    ]
+    result1.file_inputs = inputs
+    db.session.commit()
+
+    study1_id = pipeline_study_result_payload[0]["base_study_id"]
+    response = await auth_client.get(
+        f"/api/pipeline-study-results/?study_id={study1_id}"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["results"]) == 1
+    assert data["results"][0]["file_inputs"] == inputs
+
+
 async def test_pipeline_config_with_schema(auth_client, pipeline1):
     """Test creating and reading pipeline config with schema."""
     # Create config with schema and extractor info
