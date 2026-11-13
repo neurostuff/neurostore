@@ -4,13 +4,15 @@ import userEvent from '@testing-library/user-event';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { useProjectId } from 'stores/projects/ProjectStore';
+import { useStudyCBMAContext } from 'pages/StudyCBMA/context/StudyCBMAContext';
 import { useStudyAnalysisPoints } from 'stores/study/StudyStore';
 import { IStorePoint } from 'stores/study/StudyStore.helpers';
 import { mockStorePoints } from 'testing/mockData';
 import EditStudyAnalysisCBMAPoints from './EditStudyAnalysisCBMAPoints';
 
 vi.mock('stores/study/StudyStore.ts');
-vi.mock('pages/StudyCBMA/components/EditStudyAnalysisCBMAPointsHotTable');
+vi.mock('pages/StudyCBMA/context/StudyCBMAContext');
+vi.mock('pages/StudyCBMA/components/EditStudyAnalysisCBMAPointsTableContainer');
 vi.mock('pages/StudyCBMA/components/EditStudyAnalysisCBMAPointSpaceAndStatistic');
 vi.mock('./RelegateExtractionStudyDialog');
 vi.mock('react-router-dom');
@@ -18,6 +20,8 @@ vi.mock('stores/projects/ProjectStore');
 vi.mock('notistack');
 
 const RELEGATE_LINK_TEXT = /I couldn't find coordinates for this study/i;
+
+const renderPoints = (analysisId = 'analysis-1') => render(<EditStudyAnalysisCBMAPoints analysisId={analysisId} />);
 
 describe('EditStudyAnalysisPoints', () => {
     const mockNavigate = vi.fn();
@@ -28,27 +32,26 @@ describe('EditStudyAnalysisPoints', () => {
         (useProjectId as Mock).mockReturnValue('project-id');
         (useSnackbar as Mock).mockReturnValue({ enqueueSnackbar: vi.fn() });
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
+        (useStudyCBMAContext as Mock).mockReturnValue({
+            pointsTableRef: { current: null },
+            pointsTableSeed: 0,
+        });
     });
 
     it('renders the Analysis Coordinates heading', async () => {
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        renderPoints();
         expect(screen.getByText('Analysis Coordinates')).toBeInTheDocument();
     });
 
     it('passes analysisId to coordinate subcomponents', async () => {
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-xyz" />);
+        renderPoints('analysis-xyz');
         expect(screen.getByTestId('mock-analysis-points-hot-table')).toHaveTextContent('analysis-xyz');
         expect(screen.getByTestId('mock-point-space-and-statistic')).toHaveTextContent('analysis-xyz');
     });
 
-    it('calls useStudyAnalysisPoints with the current analysisId', async () => {
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-abc" />);
-        expect(useStudyAnalysisPoints).toHaveBeenCalledWith('analysis-abc');
-    });
-
     it('shows the relegate link text when there are no coordinates (empty points)', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        renderPoints();
         expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
     });
 
@@ -66,7 +69,42 @@ describe('EditStudyAnalysisPoints', () => {
                 deactivation: undefined,
             } as IStorePoint,
         ]);
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        renderPoints();
+        expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
+    });
+
+    it('shows the relegate link when any point is missing a coordinate', async () => {
+        (useStudyAnalysisPoints as Mock).mockReturnValue([
+            {
+                id: 'complete',
+                isNew: false,
+                x: 1,
+                y: 2,
+                z: 3,
+            } as IStorePoint,
+            {
+                id: 'incomplete',
+                isNew: false,
+                x: 4,
+                y: undefined,
+                z: 6,
+            } as IStorePoint,
+        ]);
+        renderPoints();
+        expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
+    });
+
+    it('shows the relegate link when a persisted row is missing a coordinate', async () => {
+        (useStudyAnalysisPoints as Mock).mockReturnValue([
+            {
+                id: 'p1',
+                isNew: false,
+                x: 10,
+                y: undefined,
+                z: 30,
+            } as IStorePoint,
+        ]);
+        renderPoints();
         expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
     });
 
@@ -81,25 +119,57 @@ describe('EditStudyAnalysisPoints', () => {
                 value: undefined,
             } as IStorePoint,
         ]);
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        renderPoints();
         expect(screen.queryByText(RELEGATE_LINK_TEXT)).not.toBeInTheDocument();
     });
 
     it('shows the relegate link text when points is null', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue(null);
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        renderPoints();
         expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
     });
 
     it('does not show the relegate link text when points exist', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue(mockStorePoints());
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        renderPoints();
         expect(screen.queryByText(RELEGATE_LINK_TEXT)).not.toBeInTheDocument();
+    });
+
+    it('reseeds the relegate link when the points table seed changes', () => {
+        (useStudyAnalysisPoints as Mock).mockReturnValue([]);
+        const { rerender } = renderPoints('analysis-1');
+        expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
+
+        (useStudyAnalysisPoints as Mock).mockReturnValue(mockStorePoints());
+        (useStudyCBMAContext as Mock).mockReturnValue({
+            pointsTableRef: { current: null },
+            pointsTableSeed: 1,
+        });
+        rerender(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        expect(screen.queryByText(RELEGATE_LINK_TEXT)).not.toBeInTheDocument();
+    });
+
+    it('hides the relegate link when the table reports that every point has coordinates', async () => {
+        (useStudyAnalysisPoints as Mock).mockReturnValue([]);
+        renderPoints();
+        expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByTestId('mock-report-complete-coordinates'));
+        expect(screen.queryByText(RELEGATE_LINK_TEXT)).not.toBeInTheDocument();
+    });
+
+    it('shows the relegate link when the table reports that a point is missing coordinates', async () => {
+        (useStudyAnalysisPoints as Mock).mockReturnValue(mockStorePoints());
+        renderPoints();
+        expect(screen.queryByText(RELEGATE_LINK_TEXT)).not.toBeInTheDocument();
+
+        await userEvent.click(screen.getByTestId('mock-report-incomplete-coordinates'));
+        expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
     });
 
     it('opens the relegate dialog when the link is clicked', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        renderPoints();
 
         expect(screen.getByTestId('mock-relegate-closed')).toBeInTheDocument();
 
@@ -112,7 +182,7 @@ describe('EditStudyAnalysisPoints', () => {
         const enqueueSnackbar = vi.fn();
         (useSnackbar as Mock).mockReturnValue({ enqueueSnackbar });
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
-        render(<EditStudyAnalysisCBMAPoints analysisId="analysis-1" />);
+        renderPoints();
 
         await userEvent.click(screen.getByText(RELEGATE_LINK_TEXT));
         await userEvent.click(screen.getByTestId('mock-relegate-confirm'));

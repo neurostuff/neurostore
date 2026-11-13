@@ -3,8 +3,8 @@ import NavigationButtons, { ENavigationButton } from 'components/Buttons/Navigat
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { useState } from 'react';
 
-const InputNumberDialog = (props: 
-    IDialog & {
+const InputNumberDialog = (
+    props: IDialog & {
         onSubmit: (value: number) => void;
         dialogTitle: string;
         dialogDescription: string;

@@ -1,5 +1,3 @@
-import { PointReturn } from 'neurostore-typescript-sdk';
-
 export enum SortBy {
     RELEVANCE = 'relevance',
     TITLE = 'name',
@@ -31,12 +29,7 @@ export const STUDY_SORT_OPTIONS: SortBy[] = [
     SortBy.JOURNAL,
 ];
 
-export const PROJECT_SORT_OPTIONS: SortBy[] = [
-    SortBy.LASTUPDATED,
-    SortBy.TITLE,
-    SortBy.CREATEDAT,
-    SortBy.DESCRIPTION,
-];
+export const PROJECT_SORT_OPTIONS: SortBy[] = [SortBy.LASTUPDATED, SortBy.TITLE, SortBy.CREATEDAT, SortBy.DESCRIPTION];
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -90,10 +83,4 @@ export class SearchCriteria {
         public info: boolean | undefined = true,
         public IBMAMapType: EMapType | undefined = EMapType.ANY
     ) {}
-}
-
-export interface IEditAnalysisPoints {
-    points: PointReturn[] | undefined;
-    studyId: string | undefined;
-    analysisId: string | undefined;
 }

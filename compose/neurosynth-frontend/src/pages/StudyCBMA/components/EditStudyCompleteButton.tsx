@@ -7,12 +7,12 @@ import {
 } from 'stores/projects/ProjectStore';
 import React, { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import useSaveStudy from 'pages/StudyCBMA/hooks/useSaveStudy';
+import { useStudyCBMAContext } from 'pages/StudyCBMA/context/StudyCBMAContext';
 import { Check } from '@mui/icons-material';
 
 const EditStudyCompleteButton = React.memo(() => {
     const { studyId } = useParams<{ studyId: string }>();
-    const { isLoading, hasEdits, handleSave } = useSaveStudy();
+    const { isLoading, hasEdits, handleSave } = useStudyCBMAContext().saveStudy;
     const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
     const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
 

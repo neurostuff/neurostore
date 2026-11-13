@@ -8,9 +8,7 @@ export const MockConditionSelected = {
     user: 'github|user-1',
 };
 
-const mockConditionSelector = (props: {
-    onConditionSelected: (condition: ConditionReturn) => void;
-}) => {
+const mockConditionSelector = (props: { onConditionSelected: (condition: ConditionReturn) => void }) => {
     return (
         <button
             data-testid="mock-condition-selector"

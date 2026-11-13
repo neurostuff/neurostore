@@ -1,40 +1,31 @@
 import { HotTableProps } from '@handsontable/react-wrapper';
 import styles from 'components/HotTables/HotTables.module.css';
 import { CellValue } from 'handsontable';
+import { IStorePoint } from 'stores/study/StudyStore.helpers';
+import { v4 as uuid } from 'uuid';
 
-const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
-    const isNumber = !Number.isNaN(Number(value));
-    if (
-        isNumber &&
-        value !== 'e' &&
-        value !== true &&
-        value !== false &&
-        value !== '' // all these things are considered numbers
-    ) {
-        callback(true);
-    } else {
-        callback(false);
-    }
-};
+/** Cell writes from seeding a new row. afterChange ignores this source. */
+export const POINTS_SYNC_SOURCE = 'points.sync';
 
 export const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?', 'Deactivations'];
 export const getHotTableColumnSettings = (disabled: boolean) => [
     {
-        validator: nonEmptyNumericValidator,
+        // Built-in numeric validator. Empty is invalid so a cleared coordinate keeps the warning fill.
+        allowEmpty: false,
         className: styles.number,
         data: 'x',
         type: 'numeric',
         readOnly: disabled,
     },
     {
-        validator: nonEmptyNumericValidator,
+        allowEmpty: false,
         className: styles.number,
         data: 'y',
         type: 'numeric',
         readOnly: disabled,
     },
     {
-        validator: nonEmptyNumericValidator,
+        allowEmpty: false,
         className: styles.number,
         data: 'z',
         type: 'numeric',
@@ -54,7 +45,8 @@ export const getHotTableColumnSettings = (disabled: boolean) => [
     },
     {
         validator: (value: CellValue, callback: (isValid: boolean) => void) => {
-            callback(value === true || value === false || value === undefined);
+            // Delete clears a checkbox to null. That is unchecked, not an invalid coordinate.
+            callback(value === true || value === false || value === undefined || value === null);
         },
         className: styles.boolean,
         data: 'subpeak',
@@ -79,29 +71,54 @@ export const EditStudyAnalysisCBMAPointsDefaultConfig: HotTableProps = {
         direction: 'vertical', // autofill horizontal doesnt follow cell validations set by columns...
         autoInsertRow: false, // when fill handle reaches the bottom of the spreadsheet, prevent more rows from being added
     },
-    allowInvalid: false,
+    allowInvalid: true,
     undo: false,
     manualColumnResize: false,
     allowInsertColumn: false,
     colWidths: [30, 30, 30, 80, 100, 70, 70],
 };
 
-export const getHotTableInsertionIndices = (selectedCoords: number[][]) => {
-    if (selectedCoords.length === 0)
-        return {
-            insertAboveIndex: 0,
-            insertBelowIndex: 0,
-        };
-
-    let topMostIndex = selectedCoords[0][0]; // target startRow of first selected coord
-    let bottomMostIndex = selectedCoords[selectedCoords.length - 1][2]; // target endRow of last selected coord
-
-    selectedCoords.forEach(([startRow, startCol, endRow, endCol]) => {
-        if (startRow < topMostIndex) topMostIndex = startRow;
-        if (endRow > bottomMostIndex) bottomMostIndex = endRow;
-    });
-    return {
-        insertAboveIndex: topMostIndex,
-        insertBelowIndex: bottomMostIndex,
-    };
+// selectedCoords: [ [ startRow, startCol, endRow, endCol ] ]
+// startRow is where the drag began. endRow is the cell it finished on.
+export const getHotTableInsertionIndex = (selectedCoords: number[][]) => {
+    if (selectedCoords.length === 0) return 0;
+    const endRow = selectedCoords[selectedCoords.length - 1][2];
+    return endRow >= 0 ? endRow : 0;
 };
+
+/** Row span of the active selection. top and bottom ignore which way the drag went. */
+export const getSelectionRowBounds = (selectedCoords: number[][]) => {
+    if (selectedCoords.length === 0) return undefined;
+    const [startRow, , endRow] = selectedCoords[selectedCoords.length - 1];
+    if (typeof startRow !== 'number' || typeof endRow !== 'number' || startRow < 0 || endRow < 0) return undefined;
+
+    const top = Math.min(startRow, endRow);
+    const bottom = Math.max(startRow, endRow);
+    return { top, bottom, count: bottom - top + 1 };
+};
+
+export const multiRowInsertLabel = (count: number, placement: 'above' | 'below') =>
+    `Add ${count} ${count === 1 ? 'row' : 'rows'} ${placement}`;
+
+export const pointsTableHeight = (rowCount: number) => {
+    const totalHeight = 38 + rowCount * 27;
+    return totalHeight > 600 ? 600 : totalHeight;
+};
+
+const emptyToUndefined = (value: unknown) => (value === '' || value === null ? undefined : value);
+
+/** getSourceData() keeps id and isNew. '' and null become undefined so the empty-coordinate check still sees blanks. */
+export const pointsFromSourceData = (sourceRows: unknown[]): IStorePoint[] =>
+    sourceRows.map((sourceRow) => {
+        const point = { ...((sourceRow ?? {}) as IStorePoint) };
+        point.x = emptyToUndefined(point.x) as IStorePoint['x'];
+        point.y = emptyToUndefined(point.y) as IStorePoint['y'];
+        point.z = emptyToUndefined(point.z) as IStorePoint['z'];
+        point.value = emptyToUndefined(point.value) as IStorePoint['value'];
+        point.cluster_size = emptyToUndefined(point.cluster_size) as IStorePoint['cluster_size'];
+        point.subpeak = emptyToUndefined(point.subpeak) as IStorePoint['subpeak'];
+        point.deactivation = emptyToUndefined(point.deactivation) as IStorePoint['deactivation'];
+        if (!point.id) point.id = uuid();
+        if (point.isNew === undefined || point.isNew === null) point.isNew = true;
+        return point;
+    });
