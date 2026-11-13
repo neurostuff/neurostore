@@ -1,0 +1,50 @@
+interactions:
+- request:
+    body: '{"query":{"task":{"text":"nb"}},"page":1,"page_size":10,"detail":"analyses"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '76'
+      content-type:
+      - application/json
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: POST
+    uri: https://neurostore.org/api/analysis-queries/
+  response:
+    body:
+      string: '{"status": 400, "title": "Bad Request", "detail": {"message": "The
+        analysis query is not valid.", "errors": [{"value": "n", "error": "The analysis
+        query is not valid."}, {"value": "b", "error": "The analysis query is not
+        valid."}]}, "type": "about:blank", "errors": [{"field": "task.text", "code":
+        "PATTERN_TOO_BROAD", "message": "invalid value for task.text", "context":
+        {"provided": "nb"}}], "timestamp": "2026-11-11T17:33:33.721055Z", "request_id":
+        "10702686dff243d4"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '471'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:33 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      vary:
+      - Origin
+      x-request-id:
+      - 10702686dff243d4
+    status:
+      code: 400
+      message: Bad Request
+version: 1

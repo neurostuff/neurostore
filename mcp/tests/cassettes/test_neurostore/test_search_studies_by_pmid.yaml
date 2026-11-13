@@ -1,0 +1,66 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/studies/?pmid=11506538&page=1&page_size=10&flat=true
+  response:
+    body:
+      string: '{"metadata":{"total_count":1},"results":[{"id":"6NNqviMdKeVi","user":null,"username":"Nicholas
+        Lee","created_at":"2024-06-21T23:16:48.551245+00:00","updated_at":"2024-07-12T14:42:29.701195+00:00","metadata":null,"name":"Working
+        memory in another dimension: functional imaging of human olfactory working
+        memory.","description":"\nThe majority of working memory research has been
+        carried out within the visual and auditory modalities, leaving it unclear
+        how other modalities would map onto currently proposed working memory models.
+        In this study we examined the previously uninvestigated area of olfactory
+        working memory. Our aim was to investigate if olfactory working memory would
+        engage prefrontal regions known to be involved in working memory for other
+        sensory modalities. Using positron emission tomography we measured cerebral
+        blood flow changes in 12 volunteers during an olfactory working memory task
+        and a comparison visual working memory task. Our findings indicate that both
+        olfactory and face working memory engaged dorsolateral and ventrolateral frontal
+        cortex when the task requirements were matched; a conjunction analysis indicated
+        overlap in the distribution of activity in the two tasks. Similarities and
+        differences in activity were noted in parietal lobe regions, with both tasks
+        engaging inferior areas of 40/7, but only visual working memory showing increased
+        activity within left superior parietal cortex. The findings support the idea
+        that working memory processes engage frontal cortical areas independent of
+        the modality of input, but do not rule out the possibility of modality-specific
+        neural populations within dorsolateral or ventrolateral cortex.","publication":"NeuroImage","journal":{"id":"gZyrsL9EgesF","title":"NeuroImage","abbreviation":"Neuroimage"},"doi":"10.1006/nimg.2001.0868","pmid":"11506538","pmcid":null,"authors":"Dade
+        L A,","year":2001,"level":"group","tables":[],"source":null,"source_id":null,"base_study":"cTgsCR4mf54E","has_coordinates":true,"has_images":false,"has_z_maps":false,"has_t_maps":false,"has_beta_and_variance_maps":false,"source_updated_at":null}]}
+
+        '
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '2112'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:31 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - ce2f3a3431844806
+    status:
+      code: 200
+      message: OK
+version: 1

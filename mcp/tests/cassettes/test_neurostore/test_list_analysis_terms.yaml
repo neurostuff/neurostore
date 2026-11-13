@@ -1,0 +1,47 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/analysis-terms/?field=task&search=stroop&limit=5
+  response:
+    body:
+      string: '{"results":[{"value":"hedtsk_stroop_color_word","analyses":2182,"base_studies":561,"parent":"conflict_and_interference","label":"Stroop
+        Color-Word Task","synonyms":[],"children":[]},{"value":"hedtsk_emotional_stroop","analyses":408,"base_studies":88,"parent":"conflict_and_interference","label":"Emotional
+        Stroop Task","synonyms":[],"children":[]}]}
+
+        '
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '350'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:34 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - e19fcfa365674bc0
+    status:
+      code: 200
+      message: OK
+version: 1

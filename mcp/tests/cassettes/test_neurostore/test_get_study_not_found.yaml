@@ -1,0 +1,45 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/studies/doesNotExist1?nested=true
+  response:
+    body:
+      string: '{"status": 404, "title": "Not Found", "detail": "Record doesNotExist1
+        not found in Study", "type": "about:blank", "timestamp": "2026-11-11T17:33:32.370544Z",
+        "request_id": "9395dcd284dc4770"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '191'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:32 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - 9395dcd284dc4770
+    status:
+      code: 404
+      message: Not Found
+version: 1

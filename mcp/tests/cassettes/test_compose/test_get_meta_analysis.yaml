@@ -1,0 +1,44 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - compose.neurosynth.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://compose.neurosynth.org/api/meta-analyses/PdFgYTpH7sJj?nested=true
+  response:
+    body:
+      string: '{"id":"PdFgYTpH7sJj","created_at":"2026-11-10T07:36:06.864980+00:00","updated_at":"2026-11-10T16:25:30.153113+00:00","user":null,"username":"Abigail","name":"Untitled
+        CBMA ALE Meta Analysis: included","description":"ALE meta analysis with FDRCorrector","public":true,"provenance":null,"tags":[],"specification":{"id":"RgP8xeiDHy5N","created_at":"2026-11-10T07:36:06.497085+00:00","updated_at":null,"user":null,"username":"Abigail","type":"CBMA","estimator":{"type":"ALE","args":{"null_method":"approximate","n_iters":5000,"**kwargs":{},"kernel__fwhm":8,"kernel__sample_size":null}},"database_studyset":null,"filter":"included","corrector":{"type":"FDRCorrector","args":{"method":"indep","alpha":0.05}},"conditions":["true"],"weights":[1.0]},"neurostore_analysis":{"created_at":"2026-11-10T07:36:06.873206+00:00","updated_at":"2026-11-10T07:37:43.036398+00:00","neurostore_id":"UKaDi9XmPzyA","exception":null,"traceback":null,"status":"OK"},"project":"E9U9DFRDYmWB","run_key":"REDACTED","snapshots":[{"result_id":"EG6N9vUcHmGz","snapshot_studyset_id":"pMQkt6BnCdbZ","snapshot_annotation_id":"HijwpVE4xTHi"},{"result_id":"wo2hbmjx38oW","snapshot_studyset_id":"pMQkt6BnCdbZ","snapshot_annotation_id":"HijwpVE4xTHi"}],"results":["EG6N9vUcHmGz","wo2hbmjx38oW"],"neurostore_url":"https://neurostore.org/api/analyses/UKaDi9XmPzyA","neurostore_studyset":{"id":"usv7vUoCDb5s","created_at":"2026-11-10T07:34:57.155146+00:00","updated_at":null,"studysets":[{"id":"afU2ih5xQ7fC","md5":null},{"id":"pMQkt6BnCdbZ","md5":"9f005650c75aa06358905743defb7f3a"}]},"neurostore_annotation":{"id":"FAtMUyFNMUhS","annotations":[{"id":"b8jMVuJqmvwQ","md5":null},{"id":"HijwpVE4xTHi","md5":"9e495d14fe95b7b277c315937a0c7be2"}]}}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '1716'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:34:16 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - c2e262314e374a1c
+    status:
+      code: 200
+      message: OK
+version: 1

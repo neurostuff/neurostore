@@ -1,0 +1,594 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - neurostore.org
+      user-agent:
+      - neurostore-mcp/0.1.0
+    method: GET
+    uri: https://neurostore.org/api/base-studies/?search=working+memory&data_type=coordinate&page=1&page_size=5
+  response:
+    body:
+      string: "{\"metadata\":{\"total_count\":3831},\"results\":[{\"publication_status\":null,\"preprint_dois\":[],\"preprint_pmids\":[],\"preprint_pmcids\":[],\"alternative_dois\":[],\"alternative_pmids\":[],\"alternative_pmcids\":[],\"id\":\"cTgsCR4mf54E\",\"user\":null,\"username\":\"Nicholas
+        Lee\",\"created_at\":\"2024-06-21T23:16:48.551245+00:00\",\"updated_at\":\"2026-11-06T22:53:13.715768+00:00\",\"metadata\":null,\"name\":\"Working
+        memory in another dimension: functional imaging of human olfactory working
+        memory.\",\"description\":\"\\nThe majority of working memory research has
+        been carried out within the visual and auditory modalities, leaving it unclear
+        how other modalities would map onto currently proposed working memory models.
+        In this study we examined the previously uninvestigated area of olfactory
+        working memory. Our aim was to investigate if olfactory working memory would
+        engage prefrontal regions known to be involved in working memory for other
+        sensory modalities. Using positron emission tomography we measured cerebral
+        blood flow changes in 12 volunteers during an olfactory working memory task
+        and a comparison visual working memory task. Our findings indicate that both
+        olfactory and face working memory engaged dorsolateral and ventrolateral frontal
+        cortex when the task requirements were matched; a conjunction analysis indicated
+        overlap in the distribution of activity in the two tasks. Similarities and
+        differences in activity were noted in parietal lobe regions, with both tasks
+        engaging inferior areas of 40/7, but only visual working memory showing increased
+        activity within left superior parietal cortex. The findings support the idea
+        that working memory processes engage frontal cortical areas independent of
+        the modality of input, but do not rule out the possibility of modality-specific
+        neural populations within dorsolateral or ventrolateral cortex.\",\"publication\":\"NeuroImage\",\"journal\":{\"id\":\"gZyrsL9EgesF\",\"title\":\"NeuroImage\",\"abbreviation\":\"Neuroimage\"},\"doi\":\"10.1006/nimg.2001.0868\",\"pmid\":\"11506538\",\"pmcid\":null,\"authors\":\"Dade
+        L A,\",\"year\":2001,\"level\":\"group\",\"is_oa\":false,\"has_coordinates\":true,\"has_images\":false,\"has_z_maps\":false,\"has_t_maps\":false,\"has_beta_and_variance_maps\":false,\"versions\":[\"6NNqviMdKeVi\"],\"features\":{}},{\"publication_status\":\"published\",\"preprint_dois\":[],\"preprint_pmids\":[],\"preprint_pmcids\":[],\"alternative_dois\":[],\"alternative_pmids\":[],\"alternative_pmcids\":[],\"id\":\"3YJn3UsehB4M\",\"user\":null,\"username\":null,\"created_at\":\"2023-06-23T03:08:47.052372+00:00\",\"updated_at\":\"2026-11-06T22:48:16.502311+00:00\",\"metadata\":{\"slug\":\"22701418-10-3389-fnhum-2012-00173-pmc3373207\",\"source\":\"semantic_scholar\",\"keywords\":[\"auditory\",\"fMRI\",\"n-back
+        task\",\"plasticity\",\"training\",\"visual\",\"working memory\"],\"raw_metadata\":{\"pubmed\":{\"PubmedData\":{\"History\":{\"PubMedPubDate\":[{\"Day\":\"16\",\"Year\":\"2012\",\"Month\":\"2\",\"@PubStatus\":\"received\"},{\"Day\":\"29\",\"Year\":\"2012\",\"Month\":\"5\",\"@PubStatus\":\"accepted\"},{\"Day\":\"16\",\"Hour\":\"6\",\"Year\":\"2012\",\"Month\":\"6\",\"Minute\":\"0\",\"@PubStatus\":\"entrez\"},{\"Day\":\"16\",\"Hour\":\"6\",\"Year\":\"2012\",\"Month\":\"6\",\"Minute\":\"0\",\"@PubStatus\":\"pubmed\"},{\"Day\":\"16\",\"Hour\":\"6\",\"Year\":\"2012\",\"Month\":\"6\",\"Minute\":\"1\",\"@PubStatus\":\"medline\"},{\"Day\":\"1\",\"Year\":\"2012\",\"Month\":\"1\",\"@PubStatus\":\"pmc-release\"}]},\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"22701418\",\"@IdType\":\"pubmed\"},{\"#text\":\"PMC3373207\",\"@IdType\":\"pmc\"},{\"#text\":\"10.3389/fnhum.2012.00173\",\"@IdType\":\"doi\"}]},\"ReferenceList\":{\"Reference\":[{\"Citation\":\"Baddeley
+        A. D. (1986). Working Memory. Oxford: Oxford University Press\"},{\"Citation\":\"Baddeley
+        A. D. (2002). Is working memory still working? Eur. Psychol. 7, 85\u201397\"},{\"Citation\":\"Baddeley
+        A. D. (2003). Working memory: looking back and looking forward. Nat. Rev.
+        Neurosci. 4, 829\u2013839 10.1038/nrn1201\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1038/nrn1201\",\"@IdType\":\"doi\"},{\"#text\":\"14523382\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Baddeley
+        A. D., Gathercole S., Papagno C. (1998). The phonological loop as a language
+        learning device. Psychol. Rev. 105, 158\u2013173\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"9450375\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Baddeley
+        A. D., Hitch G. (1974). \u201CThe psychology of learning and motivation,\u201D
+        in Working Memory, ed Bower G. H. (San Diego, CA: Academic Press; ), 47\u201389\"},{\"Citation\":\"Baddeley
+        A. D., Logie R. H. (1999). \u201CWorking memory: the multiple-component model,\u201D
+        in Models of Working Memory, eds Miyake A., Shah P. (Cambridge, UK: Cambridge
+        University Press; ), 28\u201361\"},{\"Citation\":\"Buschkuehl M., Jaeggi S.
+        M., Jonides J. (2012). Neural effects following working memory training. Dev.
+        Cogn. Neurosci. 2, S167\u2013S179\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"PMC6987667\",\"@IdType\":\"pmc\"},{\"#text\":\"22682905\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Crottaz-Herbette
+        S., Anagnoson R. T., Menon V. (2004). Modality effects in verbal working memory:
+        differential prefrontal and parietal responses to auditory and visual stimuli.
+        Neuroimage 21, 340\u2013351 10.1016/j.neuroimage.2003.09.019\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2003.09.019\",\"@IdType\":\"doi\"},{\"#text\":\"14741672\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Dahlin
+        E., Neely A. S., Larsson A., B\xE4ckman L., Nyberg L. (2008). Transfer of
+        learning after updating training mediated by the striatum. Science 320, 1510\u20131512
+        10.1126/science.1155466\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1126/science.1155466\",\"@IdType\":\"doi\"},{\"#text\":\"18556560\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Erickson
+        K. I., Colcombe S. J., Wadhwa R., Bherer L., Peterson M. S., Scalf P. E.,
+        Kim J. S., Alvarado M., Kramer A. F. (2007). Training-induced functional activation
+        changes in dual-task processing: an fMRI study. Cereb. Cortex 17, 192\u2013204
+        10.1093/cercor/bhj137\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1093/cercor/bhj137\",\"@IdType\":\"doi\"},{\"#text\":\"16467562\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Foxton
+        J. M., Brown A., Chambers S., Griffiths T. (2004). Training improves acoustic
+        pattern perception. Curr. Biol. 14, 322\u2013325 10.1016/j.cub.2004.02.001\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.cub.2004.02.001\",\"@IdType\":\"doi\"},{\"#text\":\"14972683\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Foxton
+        J. M., Talcott J. B., Witton C., Brace H., McIntyre F., Griffiths T. D. (2003).
+        Reading skills are related to global, but not local, acoustic pattern perception.
+        Nat. Neurosci. 6, 343\u2013344 10.1038/nn1035\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1038/nn1035\",\"@IdType\":\"doi\"},{\"#text\":\"12652304\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Friston
+        K. J., Fletcher P., Josephs O., Holmes A., Rugg M. D., Turner R. (1998). Event-related
+        fMRI: characterizing differential responses. Neuroimage 7, 30\u201340 10.1006/nimg.1997.0306\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1006/nimg.1997.0306\",\"@IdType\":\"doi\"},{\"#text\":\"9500830\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Friston
+        K. J., Holmes A. P., Price C. J., B\xFCchel C., Worsley K. J. (1999). Multisubject
+        fMRI studies and conjunction analyses. Neuroimage 10, 385\u2013396 10.1006/nimg.1999.0484\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1006/nimg.1999.0484\",\"@IdType\":\"doi\"},{\"#text\":\"10493897\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Gaab
+        N., Gaser C. K., Zaehle T., Jancke L., Schlaug G. (2003). Functional anatomy
+        of pitch memory \u2013 an fMRI study with sparse temporal sampling. Neuroimage
+        19, 1417\u20131426 10.1016/S1053-8119(03)00224-6\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/S1053-8119(03)00224-6\",\"@IdType\":\"doi\"},{\"#text\":\"12948699\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Garavan
+        H., Kelley D., Rosen A., Rao S. M., Stein E. A. (2000). Practice-related functional
+        activation changes in a working memory task. Microsc. Res. Tech. 51, 54\u201363
+        10.1002/1097-0029(20001001)51:1<54::AID-JEMT6>3.0.CO;2-J\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1002/1097-0029(20001001)51:1<54::AID-JEMT6>3.0.CO;2-J\",\"@IdType\":\"doi\"},{\"#text\":\"11002353\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Goebel
+        R., Esposito F., Formisano E. (2006). Analysis of functional image analysis
+        contest (FIAC) data with brainvoyager QX: from single-subject to cortically
+        aligned group, general linear model analysis and self-organizing group independent
+        component analysis. Hum. Brain Mapp. 27, 392\u2013401 10.1002/hbm.20249\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1002/hbm.20249\",\"@IdType\":\"doi\"},{\"#text\":\"PMC6871277\",\"@IdType\":\"pmc\"},{\"#text\":\"16596654\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Griffiths
+        T. D., Johnsrude I., Dean J. L., Green G. G. R. (1999). A common neural substrate
+        for the analysis of pitch and duration pattern in segmented sounds? Neuroreport
+        10, 3825\u20133830\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"10716217\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Hempel
+        A., Giesel F. L., Garcia Caraballo N. M., Amann M., Meyer H., W\xFCstenberg
+        T., Essig M., Schr\xF6der J. (2004). Plasticity of cortical activation related
+        to working memory during training. Am. J. Psychiatry 161, 745\u2013747\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"15056524\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Hossiep
+        R., Turck D., Hasella M. (1999) Bochumer Matrizentest\u2014advanced version.
+        G\xF6ttingen, Germany: Hogrefe\"},{\"Citation\":\"Jaeggi S. M., Buschkuehl
+        M., Jonides J., Perrig J. W. (2008). Improving fluid intelligence with training
+        on working memory. Proc. Natl. Acad. Sci. U.S.A. 108, 6829\u20136833 10.1073/pnas.0801268105\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1073/pnas.0801268105\",\"@IdType\":\"doi\"},{\"#text\":\"PMC2383929\",\"@IdType\":\"pmc\"},{\"#text\":\"18443283\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Jansma
+        J. M., Ramsey N. F., Slagter H. A., Kahn R. S. (2001). Functional anatomical
+        correlated of controlled and automatic processing. J. Cogn. Neurosci. 13,
+        730\u2013743 10.1162/08989290152541403\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1162/08989290152541403\",\"@IdType\":\"doi\"},{\"#text\":\"11564318\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Jerde
+        T. A., Childs S. K., Handy S. T., Nagode J. C., Pardo J. V. (2011). Dissociable
+        systems of working memory for rhythm and melody. Neuroimage 57, 1572\u20131579
+        10.1016/j.neuroimage.2011.05.061\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2011.05.061\",\"@IdType\":\"doi\"},{\"#text\":\"21645625\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Jolles
+        D. D., Grol M. J., van Buchem M. A., Rombouts S. A. R. B., Crone E. A. (2010).
+        Practice effects in the brain: changes in cerebral activation after working
+        memory practice depend on tasks demands. Neuroimage 52, 658\u2013668 10.1016/j.neuroimage.2010.04.028\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2010.04.028\",\"@IdType\":\"doi\"},{\"#text\":\"20399274\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Jonides
+        J. (2004). How does practice makes perfect? Nat. Neurosci. 7, 10\u201311 10.1038/nn0104-10\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1038/nn0104-10\",\"@IdType\":\"doi\"},{\"#text\":\"14699412\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Jonides
+        J., Schumacher E. H., Smith E. E., Koeppe R. A., Awh E., Reuter-Lorenz P.
+        A., Marshuetz C., Willis C. R. (1998). The role of parietal cortex in verbal
+        working memory. J. Neurosci. 18, 5026\u20135034\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"PMC6792554\",\"@IdType\":\"pmc\"},{\"#text\":\"9634568\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Kelly
+        A. M., Foxe J. J., Garvan H. (2006). Patterns of normal human brain plasticity
+        after practice and their implications for neurohabilitation. Arch. Phys. Med.
+        Rehabil. 87, 20\u201329 10.1016/j.apmr.2006.08.333\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.apmr.2006.08.333\",\"@IdType\":\"doi\"},{\"#text\":\"17140876\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Kelly
+        A. M. C., Garavan H. (2005). Human functional neuroimaging of brain changes
+        associated with practice. Cereb. Cortex 15, 1089\u20131102 10.1093/cercor/bhi005\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1093/cercor/bhi005\",\"@IdType\":\"doi\"},{\"#text\":\"15616134\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Klingberg
+        T. (2010). Training and plasticity of working memory. Trends Cogn. Sci. 14,
+        317\u2013324 10.1016/j.tics.2010.05.002\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.tics.2010.05.002\",\"@IdType\":\"doi\"},{\"#text\":\"20630350\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Koelsch
+        S., Schulze K., Sammler D., Fritz T., M\xFCller K., Gruber O. (2009). Functional
+        architecture of verbal and tonal working memory: an fMRI study. Hum. Brain
+        Mapp. 3, 859\u2013873 10.1002/hbm.20550\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1002/hbm.20550\",\"@IdType\":\"doi\"},{\"#text\":\"PMC6871123\",\"@IdType\":\"pmc\"},{\"#text\":\"18330870\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Landau
+        S. M., Schumacher E. H., Garavan H., Druzgal T. J., D'Esposito M. (2004).
+        A functional MRI study of the influence of practice on component processes
+        of working memory. Neuroimage 22, 211\u2013221 10.1016/j.neuroimage.2004.01.003\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2004.01.003\",\"@IdType\":\"doi\"},{\"#text\":\"15110011\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Lieberman
+        M. D., Cunningham W. A. (2009). Type I and Type II error concerns in fMRI
+        research: re-balancing the scale. Soc. Cogn. Affect. Neurosci. 4, 423\u2013428
+        10.1093/scan/nsp052\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1093/scan/nsp052\",\"@IdType\":\"doi\"},{\"#text\":\"PMC2799956\",\"@IdType\":\"pmc\"},{\"#text\":\"20035017\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"L\xF6vd\xE9n
+        M., B\xE4ckmann L., Lindenberger U., Schaefer S., Schmiedek F. (2010). A theoretical
+        framework for the study of adult cognitive plasticity. Psychol. Bull. 136,
+        659\u2013676 10.1037/a0020080\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1037/a0020080\",\"@IdType\":\"doi\"},{\"#text\":\"20565172\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Mecklinger
+        A., Opitz B. (2003). Neglecting the parietal cortex: the role of higher-order
+        perceptual memories for working-memory retention. Behav. Brain Sci. 26, 749\"},{\"Citation\":\"Morrison
+        A. B., Chein J. M. (2011). Does working memory training work? The promise
+        and challenges of enhancing cognition by training working memory. Psychon.
+        Bull. Rev. 18, 46\u201360 10.3758/s13423-010-0034-0\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.3758/s13423-010-0034-0\",\"@IdType\":\"doi\"},{\"#text\":\"21327348\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Neubauer
+        A. C., Fink A. (2009). Intelligence and neural efficiency: measures of brain
+        activation versus measures of functional connectivity in the brain. Intelligence
+        37, 223\u2013229\"},{\"Citation\":\"Nystrom L. E., Braver T. S., Sabb F. W.,
+        Delgado M. R., Noll D. C., Cohen J. D. (2000). Working memory for letters,
+        shapes, and locations: fMRI evidence against stimulus-based regional organization
+        in human prefrontal cortex. Neuroimage 11, 424\u2013446 10.1006/nimg.2000.0572\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1006/nimg.2000.0572\",\"@IdType\":\"doi\"},{\"#text\":\"10806029\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Oldfield
+        R. C. (1971). The assessment and analysis of handedness: the Edinburgh inventory.
+        Neuropsychologia 9, 97\u2013113\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"5146491\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Olesen
+        P. J., Westerberg H., Klingberg T. (2004). Increased prefrontal and parietal
+        activity after training of working memory. Nat. Neurosci. 7, 75\u201379 10.1038/nn1165\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1038/nn1165\",\"@IdType\":\"doi\"},{\"#text\":\"14699419\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Owen
+        A. M., McMillan K. M., Laird A. R., Bullmore E. (2005). N-back working memory
+        paradigm: a meta-analysis of normative functional neuroimaging studies. Hum.
+        Brain Mapp. 25, 46\u201359 10.1002/hbm.20131\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1002/hbm.20131\",\"@IdType\":\"doi\"},{\"#text\":\"PMC6871745\",\"@IdType\":\"pmc\"},{\"#text\":\"15846822\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Owen
+        A., Hampshir A., Grahn J. A., Stenton R., Dajani S., Burns A. S., Howard R.
+        J., Ballard C. G. (2010). Putting brain training to the test. Nature 465,
+        775\u2013779 10.1038/nature09042\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1038/nature09042\",\"@IdType\":\"doi\"},{\"#text\":\"PMC2884087\",\"@IdType\":\"pmc\"},{\"#text\":\"20407435\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Petersen
+        S. E., van Mier H., Fiez J. A., Raichle M. E. (1998). The effects of practice
+        on the functional anatomy of task performance. Proc. Natl. Acad. Sci. U.S.A.
+        95, 853\u2013860\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"PMC33808\",\"@IdType\":\"pmc\"},{\"#text\":\"9448251\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Petrides
+        M., Pandya D. N. (2002). \u201CAssociation pathways of the prefrontal cortex
+        and functional observations,\u201D in Principles of Frontal Lobe Function,
+        eds Stuss D. T., Knight R. T. (New York, NY: Oxford University Press; ), 31\u201350\"},{\"Citation\":\"Poldrack
+        R. A. (2000). Comments and controversies, imaging brain plasticity: conceptual
+        and methodological issues\u2014a theoretical review. Neuroimage 12, 1\u201313
+        10.1006/nimg.2000.0596\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1006/nimg.2000.0596\",\"@IdType\":\"doi\"},{\"#text\":\"10875897\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Poldrack
+        R. A., Desmond J. E., Glover G. H., Gabrieli J. D. (1998). The neural basis
+        of visual skill learning: an fMRI study on mirror reading. Cereb. Cortex 8,
+        1\u201310\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"9510380\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Poldrack
+        R. A., Gabrieli J. D. (2001). Characterizing the neural mechanisms of skill
+        learning and repetition priming: evidence from mirror reading. Brain 124,
+        67\u201382 10.1093/brain/124.1.67\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1093/brain/124.1.67\",\"@IdType\":\"doi\"},{\"#text\":\"11133788\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Protzner
+        A. B., McIntosh A. R. (2007). The interplay of stimulus modality and response
+        latency in neural network organization for simple working memory tasks. J.
+        Neurosci. 27, 3187\u20133197 10.1523/JNEUROSCI.4963-06.2007\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1523/JNEUROSCI.4963-06.2007\",\"@IdType\":\"doi\"},{\"#text\":\"PMC6672478\",\"@IdType\":\"pmc\"},{\"#text\":\"17376980\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"R\xE4m\xE4
+        P. (2008). Domain-dependent activation during spatial and nonspatial auditory
+        working memory. Cogn. Process. 9, 29\u201334 10.1007/s10339-007-0182-y\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1007/s10339-007-0182-y\",\"@IdType\":\"doi\"},{\"#text\":\"17885775\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"R\xE4m\xE4
+        P., Courtney S. M. (2005). Functional topography of working memory for face
+        or voice identity. Neuroimage 24, 224\u2013234 10.1016/j.neuroimage.2004.08.024\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2004.08.024\",\"@IdType\":\"doi\"},{\"#text\":\"15588614\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Rodriguez-Jimenez
+        R., Avila C., Garcia-Navarro C., Bagney A., Aragon A. M., Ventura-Campos N.,
+        Martinez-Gras I., Forn C., Ponce G., Rubio G., Jimenez-Arriero M. A., Palomo
+        T. (2009). Differential dorsolateral prefrontal cortex activation during a
+        verbal n-back task according to sensory modality. Behav. Brain Res. 20, 299\u2013302
+        10.1016/j.bbr.2009.08.022\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.bbr.2009.08.022\",\"@IdType\":\"doi\"},{\"#text\":\"19712703\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Sayala
+        S., Sala J. B., Courtney S. M. (2006). Increased neural efficiency with repeated
+        performance of a working memory task is information-type dependent. Cereb.
+        Cortex 16, 609\u2013617 10.1093/cercor/bhj007\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1093/cercor/bhj007\",\"@IdType\":\"doi\"},{\"#text\":\"16079245\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Schneiders
+        J. A., Opitz B., Krick C. M., Mecklinger A. (2011). Separating intra-modal
+        and across-modal training effects in visual working memory: an fMRI investigation.
+        Cereb. Cortex 21, 2555\u20132564 10.1093/cercor/bhr037\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1093/cercor/bhr037\",\"@IdType\":\"doi\"},{\"#text\":\"21471559\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Schubotz
+        R. I. (2007). Prediction of external events with our motor system: towards
+        a new framework. Trends Cogn. Sci. 11, 211\u2013218 10.1016/j.tics.2007.02.006\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.tics.2007.02.006\",\"@IdType\":\"doi\"},{\"#text\":\"17383218\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Smith
+        E. E., Jonides J. (1997). Working memory: a view from neuroimaging. Cogn.
+        Psychol. 33, 5\u201342 10.1016/j.neuroimage.2005.08.014\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2005.08.014\",\"@IdType\":\"doi\"},{\"#text\":\"9212720\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Smith
+        G. E., Housen P., Yaffe K., Ruff R., Kennison R. F., Mahncke H. W., Zelinski
+        E. M. (2009). A cognitive training program based on principles of brain plasticity:
+        results from the improvement in memory with plasticity-based adaptive cognitive
+        training (IMPACT) study. J. Am. Geriatr. Soc. 57, 594\u2013603 10.1111/j.1532-5415.2008.02167.x\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1111/j.1532-5415.2008.02167.x\",\"@IdType\":\"doi\"},{\"#text\":\"PMC4169294\",\"@IdType\":\"pmc\"},{\"#text\":\"19220558\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Snodgrass
+        J. G., Corwin J. (1988). Pragmatics of measuring recognition memory: applications
+        to dementia and amnesia. J. Exp. Psychol. Gen. 117, 34\u201350\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"2966230\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Suchan
+        B., Linnewerth B., K\xF6ster O., Daum I., Schmid G. (2006). Cross-modal processing
+        in auditory and visual working memory. Neuroimage 29, 853\u2013858 10.1016/j.neuroimage.2005.08.014\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2005.08.014\",\"@IdType\":\"doi\"},{\"#text\":\"16154767\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Talairach
+        J., Tournoux P. (1988). Co-Planar Stereotaxic Atlas of the Human Brain. New
+        York, NY: Thieme Medical Publishers\"},{\"Citation\":\"Wager T. D., Smith
+        E. E. (2003). Neuroimaging studies of working memory: a meta-analysis. Cogn.
+        Affect. Behav. Neurosci. 3, 255\u2013274\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"15040547\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Zatorre
+        R. J., Evans A. C., Meyer E. (1994). Neural mechanisms underlying melodic
+        perception and memory for pitch. J. Neurosci. 14, 1908\u20131919\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"PMC6577137\",\"@IdType\":\"pmc\"},{\"#text\":\"8158246\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Zimmer
+        H. D. (2008). Visual and spatial working memory: from boxes to networks. Neurosci.
+        Biobehav. Rev. 32, 1373\u20131395 10.1016/j.neubiorev.2008.05.016\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neubiorev.2008.05.016\",\"@IdType\":\"doi\"},{\"#text\":\"18603299\",\"@IdType\":\"pubmed\"}]}}]},\"PublicationStatus\":\"epublish\"},\"MedlineCitation\":{\"PMID\":{\"#text\":\"22701418\",\"@Version\":\"1\"},\"@Owner\":\"NLM\",\"@Status\":\"PubMed-not-MEDLINE\",\"Article\":{\"Journal\":{\"ISSN\":{\"#text\":\"1662-5161\",\"@IssnType\":\"Electronic\"},\"Title\":\"Frontiers
+        in human neuroscience\",\"JournalIssue\":{\"Volume\":\"6\",\"PubDate\":{\"Year\":\"2012\"},\"@CitedMedium\":\"Internet\"},\"ISOAbbreviation\":\"Front
+        Hum Neurosci\"},\"Abstract\":{\"AbstractText\":\"Working memory training has
+        been widely used to investigate working memory processes. We have shown previously
+        that visual working memory benefits only from intra-modal visual but not from
+        across-modal auditory working memory training. In the present functional magnetic
+        resonance imaging study we examined whether auditory working memory processes
+        can also be trained specifically and which training-induced activation changes
+        accompany theses effects. It was investigated whether working memory training
+        with strongly distinct auditory materials transfers exclusively to an auditory
+        (intra-modal) working memory task or whether it generalizes to a (across-modal)
+        visual working memory task. We used adaptive n-back training with tonal sequences
+        and a passive control condition. The memory training led to a reliable training
+        gain. Transfer effects were found for the (intra-modal) auditory but not for
+        the (across-modal) visual transfer task. Training-induced activation decreases
+        in the auditory transfer task were found in two regions in the right inferior
+        frontal gyrus. These effects confirm our previous findings in the visual modality
+        and extents intra-modal effects in the prefrontal cortex to the auditory modality.
+        As the right inferior frontal gyrus is frequently found in maintaining modality-specific
+        auditory information, these results might reflect increased neural efficiency
+        in auditory working memory processes. Furthermore, task-unspecific (amodal)
+        activation decreases in the visual and auditory transfer task were found in
+        the right inferior parietal lobule and the superior portion of the right middle
+        frontal gyrus reflecting less demand on general attentional control processes.
+        These data are in good agreement with amodal activation decreases within the
+        same brain regions on a visual transfer task reported previously.\"},\"Language\":\"eng\",\"@PubModel\":\"Electronic-eCollection\",\"AuthorList\":{\"Author\":[{\"@ValidYN\":\"Y\",\"ForeName\":\"Julia
+        A\",\"Initials\":\"JA\",\"LastName\":\"Schneiders\",\"AffiliationInfo\":{\"Affiliation\":\"Department
+        of Psychology, Saarland University Saarbr\xFCcken, Germany.\"}},{\"@ValidYN\":\"Y\",\"ForeName\":\"Bertram\",\"Initials\":\"B\",\"LastName\":\"Opitz\"},{\"@ValidYN\":\"Y\",\"ForeName\":\"Huijun\",\"Initials\":\"H\",\"LastName\":\"Tang\"},{\"@ValidYN\":\"Y\",\"ForeName\":\"Yuan\",\"Initials\":\"Y\",\"LastName\":\"Deng\"},{\"@ValidYN\":\"Y\",\"ForeName\":\"Chaoxiang\",\"Initials\":\"C\",\"LastName\":\"Xie\"},{\"@ValidYN\":\"Y\",\"ForeName\":\"Hong\",\"Initials\":\"H\",\"LastName\":\"Li\"},{\"@ValidYN\":\"Y\",\"ForeName\":\"Axel\",\"Initials\":\"A\",\"LastName\":\"Mecklinger\"}],\"@CompleteYN\":\"Y\"},\"Pagination\":{\"StartPage\":\"173\",\"MedlinePgn\":\"173\"},\"ArticleDate\":{\"Day\":\"12\",\"Year\":\"2012\",\"Month\":\"06\",\"@DateType\":\"Electronic\"},\"ELocationID\":[{\"#text\":\"173\",\"@EIdType\":\"pii\",\"@ValidYN\":\"Y\"},{\"#text\":\"10.3389/fnhum.2012.00173\",\"@EIdType\":\"doi\",\"@ValidYN\":\"Y\"}],\"ArticleTitle\":\"The
+        impact of auditory working memory training on the fronto-parietal working
+        memory network.\",\"PublicationTypeList\":{\"PublicationType\":{\"@UI\":\"D016428\",\"#text\":\"Journal
+        Article\"}}},\"DateRevised\":{\"Day\":\"08\",\"Year\":\"2022\",\"Month\":\"04\"},\"KeywordList\":{\"@Owner\":\"NOTNLM\",\"Keyword\":[{\"#text\":\"auditory\",\"@MajorTopicYN\":\"N\"},{\"#text\":\"fMRI\",\"@MajorTopicYN\":\"N\"},{\"#text\":\"n-back
+        task\",\"@MajorTopicYN\":\"N\"},{\"#text\":\"plasticity\",\"@MajorTopicYN\":\"N\"},{\"#text\":\"training\",\"@MajorTopicYN\":\"N\"},{\"#text\":\"visual\",\"@MajorTopicYN\":\"N\"},{\"#text\":\"working
+        memory\",\"@MajorTopicYN\":\"N\"}]},\"DateCompleted\":{\"Day\":\"02\",\"Year\":\"2012\",\"Month\":\"10\"},\"MedlineJournalInfo\":{\"Country\":\"Switzerland\",\"MedlineTA\":\"Front
+        Hum Neurosci\",\"ISSNLinking\":\"1662-5161\",\"NlmUniqueID\":\"101477954\"}}},\"semantic_scholar\":{\"year\":2012,\"title\":\"The
+        impact of auditory working memory training on the fronto-parietal working
+        memory network\",\"venue\":\"Frontiers in Human Neuroscience\",\"authors\":[{\"name\":\"Julia
+        A Schneiders\",\"authorId\":\"6848229\"},{\"name\":\"B. Opitz\",\"authorId\":\"40035835\"},{\"name\":\"Huijun
+        Tang\",\"authorId\":\"2329325979\"},{\"name\":\"Yuan Deng\",\"authorId\":\"2111232632\"},{\"name\":\"Chaoxiang
+        Xie\",\"authorId\":\"2064755700\"},{\"name\":\"Hong Li\",\"authorId\":\"49404035\"},{\"name\":\"A.
+        Mecklinger\",\"authorId\":\"1796676\"}],\"paperId\":\"ce8a110a3086794d79fa49f3f626c5fae06a9a37\",\"abstract\":\"Working
+        memory training has been widely used to investigate working memory processes.
+        We have shown previously that visual working memory benefits only from intra-modal
+        visual but not from across-modal auditory working memory training. In the
+        present functional magnetic resonance imaging study we examined whether auditory
+        working memory processes can also be trained specifically and which training-induced
+        activation changes accompany theses effects. It was investigated whether working
+        memory training with strongly distinct auditory materials transfers exclusively
+        to an auditory (intra-modal) working memory task or whether it generalizes
+        to a (across-modal) visual working memory task. We used adaptive n-back training
+        with tonal sequences and a passive control condition. The memory training
+        led to a reliable training gain. Transfer effects were found for the (intra-modal)
+        auditory but not for the (across-modal) visual transfer task. Training-induced
+        activation decreases in the auditory transfer task were found in two regions
+        in the right inferior frontal gyrus. These effects confirm our previous findings
+        in the visual modality and extents intra-modal effects in the prefrontal cortex
+        to the auditory modality. As the right inferior frontal gyrus is frequently
+        found in maintaining modality-specific auditory information, these results
+        might reflect increased neural efficiency in auditory working memory processes.
+        Furthermore, task-unspecific (amodal) activation decreases in the visual and
+        auditory transfer task were found in the right inferior parietal lobule and
+        the superior portion of the right middle frontal gyrus reflecting less demand
+        on general attentional control processes. These data are in good agreement
+        with amodal activation decreases within the same brain regions on a visual
+        transfer task reported previously.\",\"isOpenAccess\":true,\"openAccessPdf\":{\"url\":\"https://www.frontiersin.org/articles/10.3389/fnhum.2012.00173/pdf\",\"status\":\"GOLD\",\"license\":\"CCBY\",\"disclaimer\":\"Notice:
+        Paper or abstract available at https://pmc.ncbi.nlm.nih.gov/articles/PMC3373207,
+        which is subject to the license by the author or copyright owner provided
+        with this content. Please go to the source to verify the license and copyright
+        information for your use.\"},\"publicationDate\":\"2012-06-12\"}}},\"name\":\"The
+        impact of auditory working memory training on the fronto-parietal working
+        memory network.\",\"description\":\"Working memory training has been widely
+        used to investigate working memory processes. We have shown previously that
+        visual working memory benefits only from intra-modal visual but not from across-modal
+        auditory working memory training. In the present functional magnetic resonance
+        imaging study we examined whether auditory working memory processes can also
+        be trained specifically and which training-induced activation changes accompany
+        theses effects. It was investigated whether working memory training with strongly
+        distinct auditory materials transfers exclusively to an auditory (intra-modal)
+        working memory task or whether it generalizes to a (across-modal) visual working
+        memory task. We used adaptive n-back training with tonal sequences and a passive
+        control condition. The memory training led to a reliable training gain. Transfer
+        effects were found for the (intra-modal) auditory but not for the (across-modal)
+        visual transfer task. Training-induced activation decreases in the auditory
+        transfer task were found in two regions in the right inferior frontal gyrus.
+        These effects confirm our previous findings in the visual modality and extents
+        intra-modal effects in the prefrontal cortex to the auditory modality. As
+        the right inferior frontal gyrus is frequently found in maintaining modality-specific
+        auditory information, these results might reflect increased neural efficiency
+        in auditory working memory processes. Furthermore, task-unspecific (amodal)
+        activation decreases in the visual and auditory transfer task were found in
+        the right inferior parietal lobule and the superior portion of the right middle
+        frontal gyrus reflecting less demand on general attentional control processes.
+        These data are in good agreement with amodal activation decreases within the
+        same brain regions on a visual transfer task reported previously.\",\"publication\":\"Frontiers
+        in Human Neuroscience\",\"journal\":{\"id\":\"ZhAWG2Tix8iZ\",\"title\":\"Frontiers
+        in Human Neuroscience\",\"abbreviation\":\"Front Hum Neurosci\"},\"doi\":\"10.3389/fnhum.2012.00173\",\"pmid\":\"22701418\",\"pmcid\":\"PMC3373207\",\"authors\":\"Julia
+        A. Schneiders; Bertram Opitz; Huijun Tang; Yuan Deng; Chaoxiang Xie; Hong
+        Li; Axel Mecklinger\",\"year\":2012,\"level\":\"group\",\"is_oa\":true,\"has_coordinates\":true,\"has_images\":false,\"has_z_maps\":false,\"has_t_maps\":false,\"has_beta_and_variance_maps\":false,\"versions\":[\"Eiq6NybFwaUC\",\"zg2cKkfGLUa5\",\"PUxjDQaAKhQF\",\"47bQ5gkknKWK\",\"9xs6nw4yG4hK\"],\"features\":{}},{\"publication_status\":\"published\",\"preprint_dois\":[],\"preprint_pmids\":[],\"preprint_pmcids\":[],\"alternative_dois\":[],\"alternative_pmids\":[],\"alternative_pmcids\":[],\"id\":\"Y8aQfLc64h7L\",\"user\":null,\"username\":null,\"created_at\":\"2026-10-05T04:15:03.936544+00:00\",\"updated_at\":\"2026-11-06T23:40:27.138622+00:00\",\"metadata\":{\"slug\":\"34421789-10-3389-fneur-2021-681141-pmc8371181\",\"source\":\"semantic_scholar\",\"raw_metadata\":{\"semantic_scholar\":{\"year\":2021,\"title\":\"Distinct
+        Neural Substrates Support Phonological and Orthographic Working Memory: Implications
+        for Theories of Working Memory\",\"venue\":\"Frontiers in Neurology\",\"authors\":[{\"name\":\"Jeremy
+        J. Purcell\",\"authorId\":\"39899110\"},{\"name\":\"B. Rapp\",\"authorId\":\"2234560\"},{\"name\":\"Randi
+        C. Martin\",\"authorId\":\"145944424\"}],\"paperId\":\"0aae337753a804180fc93388f470cf9d4b4d38f1\",\"abstract\":\"Prior
+        behavioral and neuroimaging evidence supports a separation between working
+        memory capacities in the phonological and orthographic domains. Although these
+        data indicate distinct buffers for orthographic and phonological information,
+        prior neural evidence does indicate that nearby left inferior parietal regions
+        support both of these working memory capacities. Given that no study has directly
+        compared their neural substrates based on data from the same individuals,
+        it is possible that there is a common left inferior parietal region shared
+        by both working memory capacities. In fact, those endorsing an embedded processes
+        account of working memory might suggest that parietal involvement reflects
+        a domain-general attentional system that directs attention to long-term memory
+        representations in the two domains, implying that the same neural region supports
+        the two capacities. Thus, in this work, a multivariate lesion-symptom mapping
+        approach was used to assess the neural basis of phonological and orthographic
+        working memory using behavioral and lesion data from the same set of 37 individuals.
+        The results showed a separation of the neural substrates, with regions in
+        the angular gyrus supporting orthographic working memory and with regions
+        primarily in the supramarginal gyrus supporting phonological working memory.
+        The results thus argue against the parietal involvement as supporting a domain-general
+        attentional mechanism and support a domain-specific buffer account of working
+        memory.\",\"isOpenAccess\":true,\"openAccessPdf\":{\"url\":\"https://www.frontiersin.org/articles/10.3389/fneur.2021.681141/pdf\",\"status\":\"GOLD\",\"license\":\"CCBY\",\"disclaimer\":\"Notice:
+        Paper or abstract available at https://pmc.ncbi.nlm.nih.gov/articles/PMC8371181,
+        which is subject to the license by the author or copyright owner provided
+        with this content. Please go to the source to verify the license and copyright
+        information for your use.\"},\"publicationDate\":\"2021-08-04\"}}},\"name\":\"Distinct
+        Neural Substrates Support Phonological and Orthographic Working Memory: Implications
+        for Theories of Working Memory\",\"description\":\"Prior behavioral and neuroimaging
+        evidence supports a separation between working memory capacities in the phonological
+        and orthographic domains. Although these data indicate distinct buffers for
+        orthographic and phonological information, prior neural evidence does indicate
+        that nearby left inferior parietal regions support both of these working memory
+        capacities. Given that no study has directly compared their neural substrates
+        based on data from the same individuals, it is possible that there is a common
+        left inferior parietal region shared by both working memory capacities. In
+        fact, those endorsing an embedded processes account of working memory might
+        suggest that parietal involvement reflects a domain-general attentional system
+        that directs attention to long-term memory representations in the two domains,
+        implying that the same neural region supports the two capacities. Thus, in
+        this work, a multivariate lesion-symptom mapping approach was used to assess
+        the neural basis of phonological and orthographic working memory using behavioral
+        and lesion data from the same set of 37 individuals. The results showed a
+        separation of the neural substrates, with regions in the angular gyrus supporting
+        orthographic working memory and with regions primarily in the supramarginal
+        gyrus supporting phonological working memory. The results thus argue against
+        the parietal involvement as supporting a domain-general attentional mechanism
+        and support a domain-specific buffer account of working memory.\",\"publication\":\"Frontiers
+        in Neurology\",\"journal\":{\"id\":\"4Xwu8je9yxRE\",\"title\":\"Frontiers
+        in Neurology\",\"abbreviation\":\"Front Neurol\"},\"doi\":\"10.3389/fneur.2021.681141\",\"pmid\":\"34421789\",\"pmcid\":\"PMC8371181\",\"authors\":\"Jeremy
+        Purcell; Brenda Rapp; Randi C. Martin\",\"year\":2021,\"level\":\"group\",\"is_oa\":true,\"has_coordinates\":true,\"has_images\":false,\"has_z_maps\":false,\"has_t_maps\":false,\"has_beta_and_variance_maps\":false,\"versions\":[\"yoiZdzZDGBNh\",\"x7CAoK6CMe5p\"],\"features\":{}},{\"publication_status\":\"published\",\"preprint_dois\":[],\"preprint_pmids\":[],\"preprint_pmcids\":[],\"alternative_dois\":[],\"alternative_pmids\":[],\"alternative_pmcids\":[],\"id\":\"Squnco9UbJru\",\"user\":null,\"username\":null,\"created_at\":\"2026-10-03T02:12:24.572375+00:00\",\"updated_at\":\"2026-11-06T23:35:06.903104+00:00\",\"metadata\":{\"slug\":\"20503117-10-1007-s11682-010-9089-9-pmc2854358\",\"source\":\"semantic_scholar\",\"raw_metadata\":{\"pubmed\":{\"PubmedData\":{\"History\":{\"PubMedPubDate\":[{\"Day\":\"27\",\"Hour\":\"6\",\"Year\":\"2010\",\"Month\":\"5\",\"Minute\":\"0\",\"@PubStatus\":\"entrez\"},{\"Day\":\"27\",\"Hour\":\"6\",\"Year\":\"2010\",\"Month\":\"5\",\"Minute\":\"0\",\"@PubStatus\":\"pubmed\"},{\"Day\":\"25\",\"Hour\":\"6\",\"Year\":\"2010\",\"Month\":\"8\",\"Minute\":\"0\",\"@PubStatus\":\"medline\"},{\"Day\":\"20\",\"Year\":\"2010\",\"Month\":\"2\",\"@PubStatus\":\"pmc-release\"}]},\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"20503117\",\"@IdType\":\"pubmed\"},{\"#text\":\"PMC2854358\",\"@IdType\":\"pmc\"},{\"#text\":\"10.1007/s11682-010-9089-9\",\"@IdType\":\"doi\"}]},\"ReferenceList\":{\"Reference\":[{\"Citation\":\"Altamura
+        M, Elvevag B, Blasi G, Bertolino A, Callicott JH, Weinberger DR, et al. Dissociating
+        the effects of Sternberg working memory demands in prefrontal cortex. Psychiatry
+        Research. 2007;154(2):103\u2013114. doi: 10.1016/j.pscychresns.2006.08.002.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.pscychresns.2006.08.002\",\"@IdType\":\"doi\"},{\"#text\":\"17292590\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Amat
+        J, Baratta MV, Paul E, Bland ST, Watkins LR, Maier SF. Medial prefrontal cortex
+        determines how stressor controllability affects behavior and dorsal raphe
+        nucleus. Nature Neuroscience. 2005;8(3):365\u2013371. doi: 10.1038/nn1399.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1038/nn1399\",\"@IdType\":\"doi\"},{\"#text\":\"15696163\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Arbib
+        MA. The elements of brain theory and neurral networks. In: Arbib MA, editor.
+        The handbook of brain theory and neural networks. Cambridge: MIT; 2003. pp.
+        2\u201323.\"},{\"Citation\":\"Botvinick MM, Cohen JD, Carter CS. Conflict
+        monitoring and anterior cingulate cortex: an update. Trends in Cognitive Science.
+        2004;8(12):539\u2013546. doi: 10.1016/j.tics.2004.10.003.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.tics.2004.10.003\",\"@IdType\":\"doi\"},{\"#text\":\"15556023\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Braver
+        TS, Cohen JD, Nystrom LE, Jonides J, Smith EE, Noll DC. A parametric study
+        of prefrontal cortex involvement in human working memory. Neuroimage. 1997;5(1):49\u201362.
+        doi: 10.1006/nimg.1996.0247.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1006/nimg.1996.0247\",\"@IdType\":\"doi\"},{\"#text\":\"9038284\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Callicott
+        JH, Mattay VS, Bertolino A, Finn K, Coppola R, Frank JA, et al. Physiological
+        characteristics of capacity constraints in working memory as revealed by functional
+        MRI. Cerebral Cortex. 1999;9(1):20\u201326. doi: 10.1093/cercor/9.1.20.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1093/cercor/9.1.20\",\"@IdType\":\"doi\"},{\"#text\":\"10022492\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Cohen
+        JD, Forman SD, Braver TS, Casey BJ, Servan-Schreiber D, Noll DC. Activation
+        of the prefrontal cortex in a nonspatial working memory task with functional
+        MRI. Human Brain Mapping. 1994;1(4):293\u2013304. doi: 10.1002/hbm.460010407.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1002/hbm.460010407\",\"@IdType\":\"doi\"},{\"#text\":\"24591198\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Cook
+        DB, O\u2019Connor PJ, Lange G, Steffener J. Functional neuroimaging correlates
+        of mental fatigue induced by cognition among chronic fatigue syndrome patients
+        and controls. Neuroimage. 2007;36(1):108\u2013122. doi: 10.1016/j.neuroimage.2007.02.033.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2007.02.033\",\"@IdType\":\"doi\"},{\"#text\":\"17408973\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Dolcos
+        F, McCarthy G. Brain systems mediating cognitive interference by emotional
+        distraction. Journal of Neuroscience. 2006;26(7):2072\u20132079. doi: 10.1523/JNEUROSCI.5042-05.2006.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1523/JNEUROSCI.5042-05.2006\",\"@IdType\":\"doi\"},{\"#text\":\"PMC6674921\",\"@IdType\":\"pmc\"},{\"#text\":\"16481440\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Erk
+        S, Kleczar A, Walter H. Valence-specific regulation effects in a working memory
+        task with emotional context. Neuroimage. 2007;37(2):623\u2013632. doi: 10.1016/j.neuroimage.2007.05.006.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2007.05.006\",\"@IdType\":\"doi\"},{\"#text\":\"17570686\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"First
+        MB, Spitzer RL, Gibbon M, Williams JBW. Structured clinical interview for
+        DSM-IV-TR Axis I disorders, research version, non-patient Ed. (SCID-I/NP)
+        New York: Biometrics Research, New York State Psychiatric Institute; 2002.\"},{\"Citation\":\"Freire
+        L, Roche A, Mangin JF. What is the best similarity measure for motion correction
+        in fMRI? IEEE Transactions in Medical Imaging. 2002;21:470\u2013484. doi:
+        10.1109/TMI.2002.1009383.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1109/TMI.2002.1009383\",\"@IdType\":\"doi\"},{\"#text\":\"12071618\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Genovese
+        CR, Lazar NA, Nichols T. Thresholding of statistical maps in functional neuroimaging
+        using the false discovery rate. Neuroimage. 2002;15(4):870\u2013878. doi:
+        10.1006/nimg.2001.1037.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1006/nimg.2001.1037\",\"@IdType\":\"doi\"},{\"#text\":\"11906227\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Ghashghaei
+        HT, Barbas H. Pathways for emotion: interactions of prefrontal and anterior
+        temporal pathways in the amygdala of the rhesus monkey. Neuroscience. 2002;115(4):1261\u20131279.
+        doi: 10.1016/S0306-4522(02)00446-3.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/S0306-4522(02)00446-3\",\"@IdType\":\"doi\"},{\"#text\":\"12453496\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Ginsberg
+        J. Wechsler test of adult reading. Applied Neuropsychology. 2003;10(3):182\u2013184.
+        doi: 10.1207/S15324826AN1003_08.\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"10.1207/S15324826AN1003_08\",\"@IdType\":\"doi\"}}},{\"Citation\":\"Gitelman
+        DR, Penny WD, Ashburner J, Friston KJ. Modeling regional and psychophsyiologic
+        interactions in fMRI: the importance of hemodynamic deconvolution. Neuroimage.
+        2003;19:200\u2013207.\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"12781739\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Gray
+        JR. Emotional modulation of cognitive control: approach-withdrawal states
+        double-dissociate spatial from verbal two-back task performance. Journal of
+        Experimental Psychology: General. 2001;130(3):436\u2013452. doi: 10.1037/0096-3445.130.3.436.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1037/0096-3445.130.3.436\",\"@IdType\":\"doi\"},{\"#text\":\"11561919\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Hariri
+        AR, Mattay VS, Tessitore A, Fera F, Weinberger DR. Neocortical modulation
+        of the amygdala response to fearful stimuli. Biological Psychiatry. 2003;53(6):494\u2013501.
+        doi: 10.1016/S0006-3223(02)01786-9.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/S0006-3223(02)01786-9\",\"@IdType\":\"doi\"},{\"#text\":\"12644354\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Krystal
+        JH, Kosten TR, Perry BD, Southwick S, Mason JW, Giller EL. Neurobiological
+        aspects of PTSD: review of clinical and preclinical studies. Behavior Therapist.
+        1989;20:177\u2013198. doi: 10.1016/S0005-7894(89)80068-1.\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"10.1016/S0005-7894(89)80068-1\",\"@IdType\":\"doi\"}}},{\"Citation\":\"Lancaster
+        JL, Summerln JL, Rainey L, Freitas CS, Fox PT. The Talairach Daemon, a database
+        server for Talairach Atlas Labels. Neuroimage. 1997;5:S633.\"},{\"Citation\":\"LeDoux
+        J. The emotional brain, fear, and the amygdala. Cellular and Molecular Neurobiology.
+        2003;23(4\u20135):727\u2013738. doi: 10.1023/A:1025048802629.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1023/A:1025048802629\",\"@IdType\":\"doi\"},{\"#text\":\"PMC11530156\",\"@IdType\":\"pmc\"},{\"#text\":\"14514027\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Levesque
+        J, Eugene F, Joanette Y, Paquette V, Mensour B, Beaudoin G, et al. Neural
+        circuitry underlying voluntary suppression of sadness. Biological Psychiatry.
+        2003;53(6):502\u2013510. doi: 10.1016/S0006-3223(02)01817-6.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/S0006-3223(02)01817-6\",\"@IdType\":\"doi\"},{\"#text\":\"12644355\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":{\"i\":\"J
+        Cogn Neurosci\",\"#text\":\"Longe, O., Senior, C., & Rippon, G. (2008). The
+        lateral prefrontal cortex and the ventromedial prefrontal cortex work as a
+        dynamic integrated system: evidence from functional magnetic resonance imaging
+        connectivity analysis. .\"},\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"18476765\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Low
+        KA, Leaver EE, Kramer AF, Fabiani M, Gratton G. Share or compete? Load-dependent
+        recruitment of prefrontal cortex during dual-task performance. Psychophysiology.
+        2009;46(5):1069\u20131079. doi: 10.1111/j.1469-8986.2009.00854.x.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1111/j.1469-8986.2009.00854.x\",\"@IdType\":\"doi\"},{\"#text\":\"PMC2746863\",\"@IdType\":\"pmc\"},{\"#text\":\"19572909\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Maldjian
+        JA, Laurienti PJ, Kraft RA, Burdette JH. An automated method for neuroanatomic
+        and cytoarchitectonic atlas-based interrogation of fmri data sets. Neuroimage.
+        2003;19:1233\u20131239. doi: 10.1016/S1053-8119(03)00169-1.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/S1053-8119(03)00169-1\",\"@IdType\":\"doi\"},{\"#text\":\"12880848\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Mayberg
+        HS, Liotti M, Brannan SK, McGinnis S, Mahurin RK, Jerabek PA, et al. Reciprocal
+        limbic-cortical function and negative mood: converging PET findings in depression
+        and normal sadness. American Journal of Psychiatry. 1999;156(5):675\u2013682.\",\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"10327898\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"McEwen
+        BS. Protection and damage from acute and chronic stress: allostasis and allostatic
+        overload and relevance to the pathophysiology of psychiatric disorders. Annals
+        of the New York Academy of Sciences. 2004;1032:1\u20137. doi: 10.1196/annals.1314.001.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1196/annals.1314.001\",\"@IdType\":\"doi\"},{\"#text\":\"15677391\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Northoff
+        G, Heinzel A, Bermpohl F, Niese R, Pfennig A, Pascual-Leone A, et al. Reciprocal
+        modulation and attenuation in the prefrontal cortex: an fMRI study on emotional-cognitive
+        interaction. Human Brain Mapping. 2004;21(3):202\u2013212. doi: 10.1002/hbm.20002.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1002/hbm.20002\",\"@IdType\":\"doi\"},{\"#text\":\"PMC6871994\",\"@IdType\":\"pmc\"},{\"#text\":\"14755839\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Pessoa
+        L, Padmala S, Morland T. Fate of unattended fearful faces in the amygdala
+        is determined by both attentional resources and cognitive modulation. Neuroimage.
+        2005;28(1):249\u2013255. doi: 10.1016/j.neuroimage.2005.05.048.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuroimage.2005.05.048\",\"@IdType\":\"doi\"},{\"#text\":\"PMC2427145\",\"@IdType\":\"pmc\"},{\"#text\":\"15993624\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Peterson
+        C, Seligman ME. Causal explanations as a risk factor for depression: theory
+        and evidence. Psychological Review. 1984;91(3):347\u2013374. doi: 10.1037/0033-295X.91.3.347.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1037/0033-295X.91.3.347\",\"@IdType\":\"doi\"},{\"#text\":\"6473583\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Phan
+        KL, Fitzgerald DA, Nathan PJ, Moore GJ, Uhde TW, Tancer ME. Neural substrates
+        for voluntary suppression of negative affect: a functional magnetic resonance
+        imaging study. Biological Psychiatry. 2005;57(3):210\u2013219. doi: 10.1016/j.biopsych.2004.10.030.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.biopsych.2004.10.030\",\"@IdType\":\"doi\"},{\"#text\":\"15691521\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Porrino
+        LJ, Crane AM, Goldman-Rakic PS. Direct and indirect pathways from the amygdala
+        to the frontal lobe in rhesus monkeys. Journal of Comparative Neurology. 1981;198(1):121\u2013136.
+        doi: 10.1002/cne.901980111.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1002/cne.901980111\",\"@IdType\":\"doi\"},{\"#text\":\"6164704\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Ridderinkhof
+        KR, Ullsperger M, Crone EA, Nieuwenhuis S. The role of the medial frontal
+        cortex in cognitive control. Science. 2004;306(5695):443\u2013447. doi: 10.1126/science.1100301.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1126/science.1100301\",\"@IdType\":\"doi\"},{\"#text\":\"15486290\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Sandrini
+        M, Rossini PM, Miniussi C. Lateralized contribution of prefrontal cortex in
+        controlling task-irrelevant information during verbal and spatial working
+        memory tasks: rTMS evidence. Neuropsychologia. 2008;46(7):2056\u20132063.
+        doi: 10.1016/j.neuropsychologia.2008.02.003.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/j.neuropsychologia.2008.02.003\",\"@IdType\":\"doi\"},{\"#text\":\"18336847\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Schaefer
+        A, Braver TS, Reynolds JR, Burgess GC, Yarkoni T, Gray JR, et al. Individual
+        differences in amygdala activity predict response speed during working memory.
+        Anxiety and cognitive efficiency: differential modulation of transient and
+        sustained neural activity during a working memory task. Journal of Neuroscience.
+        2006;26(40):10120\u201310128. doi: 10.1523/JNEUROSCI.2567-06.2006.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1523/JNEUROSCI.2567-06.2006\",\"@IdType\":\"doi\"},{\"#text\":\"PMC1851922\",\"@IdType\":\"pmc\"},{\"#text\":\"17021168\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":{\"i\":\"Biol
+        Psychiatry, In press\",\"#text\":\"Siegle, G., Thompson, W., Carter, C., Steinhauer,
+        S., & Thase, M. (2006). Increased amygdala and decreased dorso-lateral prefrontal
+        BOLD responses in unipolar depression: related and independent features. .\"},\"ArticleIdList\":{\"ArticleId\":{\"#text\":\"17027931\",\"@IdType\":\"pubmed\"}}},{\"Citation\":\"Simpson
+        JR, Ongur D, Akbudak E, Conturo TE, Ollinger JM, Snyder AZ, et al. The emotional
+        modulation of cognitive processing: an fMRI study. Journal of Cognitive Neuroscience.
+        2000;12(Suppl 2):157\u2013170. doi: 10.1162/089892900564019.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1162/089892900564019\",\"@IdType\":\"doi\"},{\"#text\":\"11506655\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"Tartaglia
+        MC, Narayanan S, Arnold DL. Mental fatigue alters the pattern and increases
+        the volume of cerebral activation required for a motor task in multiple sclerosis
+        patients with fatigue. European Journal of Neurology. 2008;15(4):413\u2013419.
+        doi: 10.1111/j.1468-1331.2008.02090.x.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1111/j.1468-1331.2008.02090.x\",\"@IdType\":\"doi\"},{\"#text\":\"18353127\",\"@IdType\":\"pubmed\"}]}},{\"Citation\":\"van
+        der Kolk B, Greenberg M, Boyd H, Krystal J. Inescapable shock, neurotransmitters,
+        and addiction to trauma: toward a psychobiology of post traumatic stress.
+        Biological Psychiatry. 1985;20(3):314\u2013325. doi: 10.1016/0006-3223(85)90061-7.\",\"ArticleIdList\":{\"ArticleId\":[{\"#text\":\"10.1016/0006-3223(85)90061-7\",\"@IdType\":\"doi\"},{\"#text\":\"2858226\",\"@IdType\":\"pubmed\"}]}}]},\"PublicationStatus\":\"ppublish\"},\"MedlineCitation\":{\"PMID\":{\"#text\":\"20503117\",\"@Version\":\"1\"},\"@Owner\":\"NLM\",\"@Status\":\"MEDLINE\",\"Article\":{\"Journal\":{\"ISSN\":{\"#text\":\"1931-7565\",\"@IssnType\":\"Electronic\"},\"Title\":\"Brain
+        imaging and behavior\",\"JournalIssue\":{\"Issue\":\"1\",\"Volume\":\"4\",\"PubDate\":{\"Year\":\"2010\",\"Month\":\"Mar\"},\"@CitedMedium\":\"Internet\"},\"ISOAbbreviation\":\"Brain
+        Imaging Behav\"},\"Abstract\":{\"AbstractText\":\"The human working memory
+        system provides an experimentally useful model for examination of neural overload
+        effects on subsequent functioning of the overloaded system. This study employed
+        functional magnetic resonance imaging in conjunction with a parametric working
+        memory task to characterize the behavioral and neural effects of cognitive
+        overload on subsequent cognitive performance, with particular attention to
+        cognitive-limbic interactions. Overloading the working memory system was associated
+        with varying degrees of subsequent decline in performance accuracy and reduced
+        activation of brain regions central to both task performance and suppression
+        of negative affect. The degree of performance decline was independently predicted
+        by three separate factors operating during the overload condition: the degree
+        of task failure, the degree of amygdala activation, and the degree of inverse
+        coupling between the amygdala and dorsolateral prefrontal cortex. These findings
+        suggest that vulnerability to overload effects in cognitive functioning may
+        be mediated by reduced amygdala suppression and subsequent amygdala-prefrontal
+        interaction.\"},\"Language\":\"eng\",\"@PubModel\":\"Print\",\"GrantList\":{\"Grant\":[{\"Agency\":\"NIMH
+        NIH HHS\",\"Acronym\":\"MH\",\"Country\":\"United States\",\"GrantID\":\"T32
+        MH019126\"},{\"Agency\":\"NIMH NIH HHS\",\"Acronym\":\"MH\",\"Country\":\"United
+        States\",\"GrantID\":\"T32 MH019961\"},{\"Agency\":\"NIMH NIH HHS\",\"Acronym\":\"MH\",\"Country\":\"United
+        States\",\"GrantID\":\"T32 MH19126\"},{\"Agency\":\"NIMH NIH HHS\",\"Acronym\":\"MH\",\"Country\":\"United
+        States\",\"GrantID\":\"T32 MH19961\"}],\"@CompleteYN\":\"Y\"},\"AuthorList\":{\"Author\":[{\"@ValidYN\":\"Y\",\"ForeName\":\"Richard
+        J\",\"Initials\":\"RJ\",\"LastName\":\"Yun\",\"AffiliationInfo\":{\"Affiliation\":\"Department
+        of Psychiatry, Yale University, New Haven, CT, USA. richard.yun@yale.edu\"}},{\"@ValidYN\":\"Y\",\"ForeName\":\"John
+        H\",\"Initials\":\"JH\",\"LastName\":\"Krystal\"},{\"@ValidYN\":\"Y\",\"ForeName\":\"Daniel
+        H\",\"Initials\":\"DH\",\"LastName\":\"Mathalon\"}],\"@CompleteYN\":\"Y\"},\"Pagination\":{\"EndPage\":\"108\",\"StartPage\":\"96\",\"MedlinePgn\":\"96-108\"},\"ELocationID\":{\"#text\":\"10.1007/s11682-010-9089-9\",\"@EIdType\":\"doi\",\"@ValidYN\":\"Y\"},\"ArticleTitle\":\"Working
+        memory overload: fronto-limbic interactions and effects on subsequent working
+        memory function.\",\"PublicationTypeList\":{\"PublicationType\":[{\"@UI\":\"D016428\",\"#text\":\"Journal
+        Article\"},{\"@UI\":\"D052061\",\"#text\":\"Research Support, N.I.H., Extramural\"},{\"@UI\":\"D013485\",\"#text\":\"Research
+        Support, Non-U.S. Gov't\"},{\"@UI\":\"D013486\",\"#text\":\"Research Support,
+        U.S. Gov't, Non-P.H.S.\"}]}},\"DateRevised\":{\"Day\":\"20\",\"Year\":\"2021\",\"Month\":\"10\"},\"DateCompleted\":{\"Day\":\"24\",\"Year\":\"2010\",\"Month\":\"08\"},\"CitationSubset\":\"IM\",\"@IndexingMethod\":\"Manual\",\"MeshHeadingList\":{\"MeshHeading\":[{\"DescriptorName\":{\"@UI\":\"D000328\",\"#text\":\"Adult\",\"@MajorTopicYN\":\"N\"}},{\"QualifierName\":{\"@UI\":\"Q000502\",\"#text\":\"physiology\",\"@MajorTopicYN\":\"Y\"},\"DescriptorName\":{\"@UI\":\"D000679\",\"#text\":\"Amygdala\",\"@MajorTopicYN\":\"N\"}},{\"QualifierName\":{\"@UI\":\"Q000502\",\"#text\":\"physiology\",\"@MajorTopicYN\":\"Y\"},\"DescriptorName\":{\"@UI\":\"D001921\",\"#text\":\"Brain\",\"@MajorTopicYN\":\"N\"}},{\"DescriptorName\":{\"@UI\":\"D001931\",\"#text\":\"Brain
+        Mapping\",\"@MajorTopicYN\":\"N\"}},{\"DescriptorName\":{\"@UI\":\"D005260\",\"#text\":\"Female\",\"@MajorTopicYN\":\"N\"}},{\"DescriptorName\":{\"@UI\":\"D006801\",\"#text\":\"Humans\",\"@MajorTopicYN\":\"N\"}},{\"DescriptorName\":{\"@UI\":\"D016014\",\"#text\":\"Linear
+        Models\",\"@MajorTopicYN\":\"N\"}},{\"DescriptorName\":{\"@UI\":\"D008279\",\"#text\":\"Magnetic
+        Resonance Imaging\",\"@MajorTopicYN\":\"N\"}},{\"DescriptorName\":{\"@UI\":\"D008297\",\"#text\":\"Male\",\"@MajorTopicYN\":\"N\"}},{\"QualifierName\":{\"@UI\":\"Q000502\",\"#text\":\"physiology\",\"@MajorTopicYN\":\"Y\"},\"DescriptorName\":{\"@UI\":\"D008570\",\"#text\":\"Memory,
+        Short-Term\",\"@MajorTopicYN\":\"N\"}},{\"QualifierName\":{\"@UI\":\"Q000502\",\"#text\":\"physiology\",\"@MajorTopicYN\":\"N\"},\"DescriptorName\":{\"@UI\":\"D009434\",\"#text\":\"Neural
+        Pathways\",\"@MajorTopicYN\":\"N\"}},{\"DescriptorName\":{\"@UI\":\"D009483\",\"#text\":\"Neuropsychological
+        Tests\",\"@MajorTopicYN\":\"N\"}},{\"QualifierName\":{\"@UI\":\"Q000502\",\"#text\":\"physiology\",\"@MajorTopicYN\":\"Y\"},\"DescriptorName\":{\"@UI\":\"D017397\",\"#text\":\"Prefrontal
+        Cortex\",\"@MajorTopicYN\":\"N\"}},{\"QualifierName\":{\"@UI\":\"Q000502\",\"#text\":\"physiology\",\"@MajorTopicYN\":\"N\"},\"DescriptorName\":{\"@UI\":\"D011597\",\"#text\":\"Psychomotor
+        Performance\",\"@MajorTopicYN\":\"N\"}},{\"DescriptorName\":{\"@UI\":\"D011930\",\"#text\":\"Reaction
+        Time\",\"@MajorTopicYN\":\"N\"}}]},\"MedlineJournalInfo\":{\"Country\":\"United
+        States\",\"MedlineTA\":\"Brain Imaging Behav\",\"ISSNLinking\":\"1931-7557\",\"NlmUniqueID\":\"101300405\"}}},\"semantic_scholar\":{\"year\":2010,\"title\":\"Working
+        Memory Overload: Fronto-Limbic Interactions and Effects on Subsequent Working
+        Memory Function\",\"venue\":\"Brain Imaging and Behavior\",\"authors\":[{\"name\":\"Richard
+        J. Yun\",\"authorId\":\"4393237\"},{\"name\":\"J. Krystal\",\"authorId\":\"5584248\"},{\"name\":\"D.
+        Mathalon\",\"authorId\":\"2082340\"}],\"paperId\":\"f2f95de84a7a555f7c9bb19959c0cb26a7e09d29\",\"abstract\":\"The
+        human working memory system provides an experimentally useful model for examination
+        of neural overload effects on subsequent functioning of the overloaded system.
+        This study employed functional magnetic resonance imaging in conjunction with
+        a parametric working memory task to characterize the behavioral and neural
+        effects of cognitive overload on subsequent cognitive performance, with particular
+        attention to cognitive-limbic interactions. Overloading the working memory
+        system was associated with varying degrees of subsequent decline in performance
+        accuracy and reduced activation of brain regions central to both task performance
+        and suppression of negative affect. The degree of performance decline was
+        independently predicted by three separate factors operating during the overload
+        condition: the degree of task failure, the degree of amygdala activation,
+        and the degree of inverse coupling between the amygdala and dorsolateral prefrontal
+        cortex. These findings suggest that vulnerability to overload effects in cognitive
+        functioning may be mediated by reduced amygdala suppression and subsequent
+        amygdala-prefrontal interaction.\",\"isOpenAccess\":true,\"openAccessPdf\":{\"url\":\"https://link.springer.com/content/pdf/10.1007/s11682-010-9089-9.pdf\",\"status\":\"HYBRID\",\"license\":\"CCBYNC\",\"disclaimer\":\"Notice:
+        Paper or abstract available at https://pmc.ncbi.nlm.nih.gov/articles/PMC2854358,
+        which is subject to the license by the author or copyright owner provided
+        with this content. Please go to the source to verify the license and copyright
+        information for your use.\"},\"publicationDate\":\"2010-02-20\"}}},\"name\":\"Working
+        Memory Overload: Fronto-Limbic Interactions and Effects on Subsequent Working
+        Memory Function\",\"description\":\"The human working memory system provides
+        an experimentally useful model for examination of neural overload effects
+        on subsequent functioning of the overloaded system. This study employed functional
+        magnetic resonance imaging in conjunction with a parametric working memory
+        task to characterize the behavioral and neural effects of cognitive overload
+        on subsequent cognitive performance, with particular attention to cognitive-limbic
+        interactions. Overloading the working memory system was associated with varying
+        degrees of subsequent decline in performance accuracy and reduced activation
+        of brain regions central to both task performance and suppression of negative
+        affect. The degree of performance decline was independently predicted by three
+        separate factors operating during the overload condition: the degree of task
+        failure, the degree of amygdala activation, and the degree of inverse coupling
+        between the amygdala and dorsolateral prefrontal cortex. These findings suggest
+        that vulnerability to overload effects in cognitive functioning may be mediated
+        by reduced amygdala suppression and subsequent amygdala-prefrontal interaction.\",\"publication\":\"Brain
+        Imaging and Behavior\",\"journal\":{\"id\":\"JLMBQxk8gtFq\",\"title\":\"Brain
+        Imaging and Behavior\",\"abbreviation\":null},\"doi\":\"10.1007/s11682-010-9089-9\",\"pmid\":\"20503117\",\"pmcid\":\"PMC2854358\",\"authors\":\"Richard
+        J. Yun; John H. Krystal; Daniel H. Mathalon\",\"year\":2010,\"level\":\"group\",\"is_oa\":null,\"has_coordinates\":true,\"has_images\":false,\"has_z_maps\":false,\"has_t_maps\":false,\"has_beta_and_variance_maps\":false,\"versions\":[\"Cr2oZXo6VJNW\",\"ARaNQZpiSrEN\"],\"features\":{}},{\"publication_status\":\"published\",\"preprint_dois\":[],\"preprint_pmids\":[],\"preprint_pmcids\":[],\"alternative_dois\":[],\"alternative_pmids\":[],\"alternative_pmcids\":[],\"id\":\"AU86cc9ocqgM\",\"user\":null,\"username\":null,\"created_at\":\"2026-10-31T01:07:39.495083+00:00\",\"updated_at\":\"2026-11-07T00:05:42.001466+00:00\",\"metadata\":null,\"name\":\"The
+        Working Memory Network and Its Association with Working Memory Performance
+        in Survivors of non-CNS Childhood Cancer\",\"description\":\"ABSTRACT Childhood
+        cancer and its treatment puts survivors at risk of low working memory capacity.
+        Working memory represents a core cognitive function, which is crucial in daily
+        life and academic tasks. The aim of this functional MRI (fMRI) study was to
+        examine the working memory network of survivors of childhood cancer without
+        central nervous system (CNS) involvement and its relation to cognitive performance.
+        Thirty survivors (aged 7\u201316 years, \u2265 1 year after cancer treatment)
+        and 30 healthy controls performed a visuospatial working memory task during
+        MRI, including a low- and a high-demand condition. Working memory performance
+        was assessed using standardized tests outside the scanner. When cognitive
+        demands increased, survivors performed worse than controls and showed evidence
+        for slightly atypical working memory-related activation. The survivor group
+        exhibited hyperactivation in the right-hemispheric superior parietal lobe
+        (SPL) in the high- compared to the low-demand working memory condition, while
+        maintaining their performance levels. Hyperactivation in the right SPL coincided
+        with poorer working memory performance outside the scanner in survivors. Even
+        in survivors of childhood cancer without CNS involvement, we find neural markers
+        pointing toward late effects in the cerebral working memory network. Abbreviations
+        fMRI: Functional magnetic resonance imaging; CNS: Central nervous system;
+        MNI: Montreal Neurological Institute; SES: Socioeconomic status; SPL: Superior
+        parietal lobe\",\"publication\":\"Developmental Neuropsychology\",\"journal\":{\"id\":\"m74eDM9JsbkA\",\"title\":\"Developmental
+        Neuropsychology\",\"abbreviation\":\"Dev Neuropsychol\"},\"doi\":\"10.1080/87565641.2021.1922410\",\"pmid\":\"33969767\",\"pmcid\":null,\"authors\":\"Valerie
+        Siegwart; Leonie Steiner; Manuela Pastore-Wapp; Valentin Benzing; Janine Spitzhuttl;
+        Mirko Schmidt; Claus Kiefer; Nedelina Slavova; Michael Grotzer; Claudia Roebers;
+        Maja Steinlin; Kurt Leibundgut; Regula Everts\",\"year\":2021,\"level\":\"group\",\"is_oa\":null,\"has_coordinates\":true,\"has_images\":false,\"has_z_maps\":false,\"has_t_maps\":false,\"has_beta_and_variance_maps\":false,\"versions\":[\"an8GMds6YTb7\"],\"features\":{}}]}\n"
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '62500'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 17:33:30 GMT
+      server:
+      - nginx/1.21.6
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      - Origin
+      x-request-id:
+      - f48895dc4bfa4330
+    status:
+      code: 200
+      message: OK
+version: 1
