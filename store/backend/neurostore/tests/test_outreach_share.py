@@ -248,6 +248,46 @@ async def test_submitting_needs_a_usable_map_and_a_name_then_locks_the_draft(aut
     assert late.status_code == 409
 
 
+async def test_submitting_records_whether_unassigned_maps_go_to_neurovault(
+        author, session, share_settings):
+    draft, token = _sent_draft()
+    tmp = share_settings
+    await author.post("/api/share/session", json={"token": token})
+    await _upload(author, "a.nii.gz", _nifti(tmp, "a.nii.gz", synthetic_map(PEAKS_A)))
+    await _upload(author, "c.nii.gz", _nifti(tmp, "c.nii.gz", synthetic_map(PEAKS_C, seed=3)))
+
+    not_a_flag = await author.post(
+        "/api/share/submit", json={"name": "Ada", "upload_unassigned": "no"})
+    submitted = await author.post(
+        "/api/share/submit", json={"name": "Ada", "upload_unassigned": False})
+
+    session.refresh(draft)
+    assert not_a_flag.status_code == 409
+    assert submitted.json()["status"] == "submitted"
+    assert draft.upload_unassigned is False
+    # Part A only records the choice: both files are still kept for whatever reads it.
+    kept = db.session.scalars(
+        sa.select(OutreachUpload).where(OutreachUpload.draft_id == draft.id)).all()
+    assert len(kept) == 2 and all(u.path and u.deleted_at is None for u in kept)
+    event = db.session.scalars(
+        sa.select(OutreachEvent).where(
+            OutreachEvent.draft_id == draft.id, OutreachEvent.kind == "submitted")).one()
+    assert event.data["upload_unassigned"] is False
+
+
+async def test_unassigned_maps_go_to_neurovault_unless_the_author_says_not(
+        author, session, share_settings):
+    draft, token = _sent_draft()
+    tmp = share_settings
+    await author.post("/api/share/session", json={"token": token})
+    await _upload(author, "a.nii.gz", _nifti(tmp, "a.nii.gz", synthetic_map(PEAKS_A)))
+
+    await author.post("/api/share/submit", json={"name": "Ada"})
+
+    session.refresh(draft)
+    assert draft.upload_unassigned is True
+
+
 async def test_a_preview_shows_the_page_but_keeps_nothing(author, session, share_settings):
     draft, token = _sent_draft(preview=True)
     tmp = share_settings

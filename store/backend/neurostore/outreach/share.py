@@ -647,9 +647,16 @@ def _submit(link, draft, body, _request):
     orcid = (body.get("orcid") or "").strip() or None
     if orcid is not None and not re.fullmatch(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]", orcid):
         raise DraftError("An ORCID iD looks like 0000-0002-1825-0097.")
+    upload_unassigned = body.get("upload_unassigned", True)
+    if not isinstance(upload_unassigned, bool):
+        raise DraftError("upload_unassigned must be true or false.")
     draft.submitter_name, draft.submitter_orcid = name[:300], orcid
+    draft.upload_unassigned = upload_unassigned
     draft.submitter_orcid_verified = False
-    _act(link, draft, "submitted", {"files": len(_uploads(draft.id))})
+    _act(link, draft, "submitted", {
+        "files": len(_uploads(draft.id)),
+        "upload_unassigned": upload_unassigned,
+    })
 
 
 async def _http_error(request, exc):
