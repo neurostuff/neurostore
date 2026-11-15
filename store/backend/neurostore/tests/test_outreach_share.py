@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from neurostore.database import db
 from neurostore.ingest.study_schema import ingest_upload
 from neurostore.models import OutreachEvent, OutreachIssue, OutreachPerson, OutreachUpload
-from neurostore.outreach import map_sets
+from neurostore.outreach import map_sets, share
 from neurostore.outreach.drafts import build_draft, check_draft, create_link, mark_sent
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.test_outreach_matching import PEAKS_A, PEAKS_B, PEAKS_C, synthetic_map
@@ -104,7 +104,7 @@ async def test_a_link_s_token_becomes_a_cookie_for_its_draft_only(author, sessio
     assert "httponly" in opened.headers["set-cookie"].lower()
     names = [a["name"] for a in again.json()["analyses"]]
     assert names == ["Faces > Houses", "Houses > Scrambled"]
-    assert again.json()["limits"]["max_files"] == 6  # a t/z, effect and variance map each
+    assert again.json()["limits"]["max_files"] == 100  # per draft, however many analyses
     assert "pi@example.org" not in again.text
 
 
@@ -152,7 +152,9 @@ async def test_uploads_are_kept_checked_and_matched_to_their_analyses(author, se
 
 
 async def test_files_outside_the_limits_are_refused_and_bad_ones_flagged(author, session,
-                                                                         share_settings):
+                                                                         share_settings,
+                                                                         monkeypatch):
+    monkeypatch.setattr(share, "MAX_FILES", 6)
     draft, token = _sent_draft()
     tmp = share_settings
     await author.post("/api/share/session", json={"token": token})
@@ -171,7 +173,7 @@ async def test_files_outside_the_limits_are_refused_and_bad_ones_flagged(author,
     flagged = unreadable.json()["uploads"][0]
     assert (flagged["check_status"], flagged["problem"]) == (
         "problem", "This is not a readable NIfTI file.")
-    assert too_many.status_code == 409  # three files per analysis: six here
+    assert too_many.status_code == 409  # the draft is full at six files (set small here)
 
 
 async def test_the_author_s_assignment_stands_and_files_can_be_removed(author, session,

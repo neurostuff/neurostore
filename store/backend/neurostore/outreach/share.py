@@ -56,8 +56,8 @@ MAX_FILE_BYTES = 200 * 1024 * 1024
 #: client_max_body_size of location /api/share/ in store/nginx/nginx.conf.
 MAX_BODY_BYTES = MAX_FILE_BYTES
 EXTENSIONS = (".nii.gz", ".nii")
-#: At most this many files per analysis the draft lists: its t/z, effect and variance map.
-FILES_PER_ANALYSIS = 3
+#: At most this many files per draft, however many analyses it lists.
+MAX_FILES = 100
 MAP_TYPES = map_sets.MAP_TYPES
 #: Statuses whose draft the author can still upload to and change.
 OPEN = ("draft", "checked", "contacted", "opened", "uploading", "declined")
@@ -215,16 +215,12 @@ def view(link, draft):
         "submitter_name": draft.submitter_name,
         "submitter_orcid": draft.submitter_orcid,
         "limits": {
-            "max_files": max_files(draft),
+            "max_files": MAX_FILES,
             "max_file_bytes": MAX_FILE_BYTES,
             "extensions": list(EXTENSIONS),
             "map_types": list(MAP_TYPES),
         },
     }
-
-
-def max_files(draft):
-    return max(1, FILES_PER_ANALYSIS * len(draft.analyses))
 
 
 # checking and scoring a file
@@ -451,9 +447,9 @@ async def upload(request: Request):
     def _start():
         link, draft = _session(request)
         _writable(link, draft)
-        if len(_uploads(draft.id)) >= max_files(draft):
+        if len(_uploads(draft.id)) >= MAX_FILES:
             raise HTTPException(
-                409, f"This paper takes at most {max_files(draft)} files; remove one first."
+                409, f"This paper takes at most {MAX_FILES} files; remove one first."
             )
         return link.id, draft.id
 
