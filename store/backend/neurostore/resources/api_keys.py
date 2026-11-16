@@ -33,9 +33,10 @@ def _api_key_id():
 
 
 def _login_user():
-    # a leaked key must not be able to mint or revoke keys
-    if _api_key_id():
-        abort_permission("API keys are managed with a login token, not an API key.")
+    # a leaked key must not mint or revoke keys, nor an agent turn its short-lived
+    # token into a key that lasts until revoked
+    if _api_key_id() or context.get("token_info", {}).get("delegated"):
+        abort_permission("API keys are managed with a login token, not an API key or agent token.")
     return resolve_current_user()
 
 

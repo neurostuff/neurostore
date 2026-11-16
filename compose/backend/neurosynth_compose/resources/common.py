@@ -78,11 +78,22 @@ def get_current_user():
     return None
 
 
+def _acting_as_agent(user):
+    """True when ``user`` is this request's caller and the caller is an agent's token."""
+    try:
+        token_info = connexion.context.request.context.get("token_info") or {}
+    except Exception:
+        return False
+    return bool(token_info.get("delegated")) and token_info.get("sub") == user.external_id
+
+
 def is_user_admin(user=_UNSET):
     if user is _UNSET:
         user = get_current_user()
 
     if user is None or getattr(user, "id", None) is None:
+        return False
+    if _acting_as_agent(user):
         return False
 
     try:
