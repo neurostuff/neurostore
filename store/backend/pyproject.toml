@@ -42,7 +42,7 @@ dependencies = [
     "NiMARE[parquet]==0.22.1",
     "openai~=3.41",
     "tenacity~=9.2",
-    "sentry-sdk~=2.73",
+    "sentry-sdk~=2.75",
     # A link's registrable domain, from the public suffix list snapshot it ships.
     "tldextract~=5.4",
     # A journal's name close to a known one (services/journals.py).
