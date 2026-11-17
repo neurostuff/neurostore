@@ -1,6 +1,6 @@
 # Hosting neurostore-mcp, and signing in
 
-Status 2026-11-17: built. The hosted server is not yet deployed. Production Auth0 has the MCP API; the rest of the setup below is not made. The decision on agent tokens is ADR 0021 (`docs/adr/0021-agents-act-for-users-on-an-agents-audience.md`).
+Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup below is made on production and staging; the client secrets are not yet in either `.env`. The decision on agent tokens is ADR 0021 (`docs/adr/0021-agents-act-for-users-on-an-agents-audience.md`).
 
 ## Where it runs
 
@@ -34,13 +34,22 @@ Status 2026-11-17: built. The hosted server is not yet deployed. Production Auth
 
 ## Auth0 changes, per tenant
 
-**Production, 2026-11-17:**
-- **Done:** step 1, the API `https://neurostore.org/mcp` (id `6afbcff2fa8fcf0c2be04035`). Step 4 needs nothing while that API's user policy is `allow_all`. A device-code request for it through "Neurostore agents" succeeds.
-- **Not done:** steps 2 and 3. Auth0's MCP server has no tool for tenant settings. Its app and grant tools can't set `app_type: resource_server`, `token_exchange` or a user-delegated grant (`subject_type: user`), so both are dashboard steps.
+**Production, 2026-11-17: steps 1–4 done.**
+- Step 1: the API `https://neurostore.org/mcp` (id `6afbcff2fa8fcf0c2be04035`).
+- Step 2: both settings on; discovery reports `authorization_response_iss_parameter_supported: true`.
+- Step 3: the Custom API client "Neurostore MCP server" (client id `XioZhXmGdh3uWmVGMjxNynBrCgS3nmdL`), On-Behalf-Of on. The agents API's user policy is `allow_all`, so its user-delegated access needs no per-app grant.
+- Step 4: nothing needed while the MCP API's user policy is `allow_all`. A device-code request for it through "Neurostore agents" succeeds.
+- Not yet tried: an On-Behalf-Of exchange with a real token.
 
-**Staging:** nothing done.
+Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and grant tools can't set `app_type: resource_server` or `token_exchange`), so they were done in the dashboard.
 
-Production is `neurosynth.us.auth0.com`. Staging is `neurosynth-staging.us.auth0.com` with `https://staging.neurostore.xyz/...`, but that tenant is at its application limit, so step 3 needs an app freed first.
+**Staging** (`neurosynth-staging.us.auth0.com`, 2026-11-17): steps 1–4 done.
+- Step 1: the API "Neurostore MCP (staging)", `https://staging.neurostore.xyz/mcp` (id `6afc99299706952d0484b1cc`), set up like production's.
+  - The tenant is at its API limit, so Auth0 couldn't add the usual auto-created test app and showed an error, but the API was created.
+- Step 2: both settings on.
+- Step 3: "Neurostore MCP server (staging)" (client id `kLBZbOywoE6D9rGcX7FwxU6sjo9cXnel`), On-Behalf-Of on. The agents API is `https://staging.neurostore.xyz/agents/`, user policy `allow_all`. To make room, "Auth0 Management API (Test Application)" was deleted; no deploy env used it.
+- Step 4: users sign in with `neurosynth-cli`, which already allows the claude.ai and port-33418 callbacks. A device-code request for the MCP API through it succeeds.
+- For staging's `store/.env.staging`: `NEUROSTORE_MCP_PUBLIC_URL=https://staging.neurostore.xyz`, `NEUROSTORE_MCP_AUTH0_DOMAIN=neurosynth-staging.us.auth0.com`, `NEUROSTORE_MCP_AGENT_AUDIENCE=https://staging.neurostore.xyz/agents/`, plus that client's id and secret.
 
 1. **An API for the MCP server.**
    - Identifier `https://neurostore.org/mcp`, RS256.
