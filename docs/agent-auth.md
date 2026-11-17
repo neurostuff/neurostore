@@ -40,9 +40,23 @@ The decision is [ADR 0021](adr/0021-agents-act-for-users-on-an-agents-audience.m
 | Revocation | refresh tokens at once; access tokens within 1 h | delete the grant | at once |
 | Auth0 cost | none | the M2M quota | none |
 
-## Auth0 changes (for James; none made)
+## Auth0 changes
 
-Make these in each tenant: production `neurosynth.us.auth0.com`, staging `neurosynth-staging.us.auth0.com`.
+**Staging (`neurosynth-staging.us.auth0.com`), done 2026-11-17 through Auth0's MCP server:**
+- **The agents API** `https://staging.neurostore.xyz/agents/` was created as specified below, with consent shown (`skip_consent_for_verifiable_first_party_clients: false`).
+- **No new application:** the tenant is at its application limit. Agents use the existing native app `neurosynth-cli`, updated additively:
+  - the device-code grant and the three callbacks were added;
+  - its existing grants, its callback `http://127.0.0.1:5000/callback`, its name and its refresh-token settings are unchanged.
+  - Nothing in the repos, the env files (laptop, beast, staging host) or the last day of Auth0 logs referenced it.
+- **Not done, so make these in the dashboard when wanted:**
+  - rotating refresh tokens on `neurosynth-cli`;
+  - Per-app authorization on the agents API, plus a user-delegated grant for `neurosynth-cli`. The MCP server's grant tool only makes M2M grants.
+
+  While the API's user policy stays `allow_all`, any first-party app can get an agents token. Such a token can do less than that user's login token, never more.
+
+**Production (`neurosynth.us.auth0.com`): not done.** It may have the same application limit.
+
+The spec, per tenant:
 
 1. **The agents API.** Applications → APIs → Create.
    - Identifier: `https://neurostore.org/agents/` (staging `https://staging.neurostore.xyz/agents/`). It must match `AUTH0_AGENT_AUDIENCE`.
@@ -80,4 +94,4 @@ curl -s https://neurosynth.us.auth0.com/oauth/device/code \
 3. It sends `Authorization: Bearer <access_token>` to `https://neurostore.org/api/` and `https://compose.neurosynth.org/api/`.
 4. When the token expires, it trades the refresh token at `/oauth/token` with `grant_type=refresh_token`.
 
-Ask for only `read` for an agent that shouldn't write.
+Ask for only `read` for an agent that shouldn't write. On staging, use the `neurosynth-staging` tenant, the `neurosynth-cli` client id and audience `https://staging.neurostore.xyz/agents/`.
