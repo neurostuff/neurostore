@@ -10,7 +10,7 @@
  * Logins that can't show a page (refresh, token exchange, password grants) are left alone.
  */
 const FORM_IDS = {
-  neurosynth: "", // production: set when the form is created there
+  neurosynth: "ap_tMir1bdqYVjFvrtyzgniFR",
   "neurosynth-staging": "ap_wMqyMLJTQSVo8MxSKHoJGy",
 };
 const NO_PAGE = new Set([
