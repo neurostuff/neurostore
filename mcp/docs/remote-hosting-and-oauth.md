@@ -40,6 +40,7 @@ Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup
 - Step 2: both settings on; discovery reports `authorization_response_iss_parameter_supported: true`.
 - Step 3: the Custom API client "Neurostore MCP server" (client id `XioZhXmGdh3uWmVGMjxNynBrCgS3nmdL`), On-Behalf-Of on. The agents API's user policy is `allow_all`, so its user-delegated access needs no per-app grant.
 - Step 4: nothing needed while the MCP API's user policy is `allow_all`. A device-code request for it through "Neurostore agents" succeeds.
+- The post-login Action "Neurostore user name" (id `002a0e09-ef29-4f8a-ba2e-c8e08ab44d72`) is deployed and in the Login flow. A device-code token for the agents API through "Neurostore agents" carries `https://neurostore.org/name`.
 - Not yet done: Allow Skipping User Consent on the agents API (step 3), so exchanges fail until it is on.
 
 Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and grant tools can't set `app_type: resource_server` or `token_exchange`), so they were done in the dashboard.
@@ -50,6 +51,7 @@ Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and 
 - Step 2: both settings on.
 - Step 3: "Neurostore MCP server (staging)" (client id `kLBZbOywoE6D9rGcX7FwxU6sjo9cXnel`), On-Behalf-Of on. The agents API is `https://staging.neurostore.xyz/agents/`, user policy `allow_all`. To make room, "Auth0 Management API (Test Application)" was deleted; no deploy env used it.
 - Step 4: users sign in with `neurosynth-cli`, which already allows the claude.ai and port-33418 callbacks. A device-code request for the MCP API through it succeeds.
+- The post-login Action "Neurostore user name" (id `36a409cd-9a57-425d-aa95-dcee08308e8a`) is deployed and in the Login flow; exchanged agents tokens carry `https://neurostore.org/name`.
 - Allow Skipping User Consent is on for the agents API. A real exchange then works: a `read write` sign-in for the MCP API, exchanged with the server's client on the staging host, gave an agents token with `aud` `https://staging.neurostore.xyz/agents/`, the user's `sub`, `act.sub` = the server's client, `act.act.sub` = `neurosynth-cli`, and the scope asked for (`read write`, or `read` when only that was asked).
 - For staging's `store/.env.staging`: `NEUROSTORE_MCP_PUBLIC_URL=https://staging.neurostore.xyz`, `NEUROSTORE_MCP_AUTH0_DOMAIN=neurosynth-staging.us.auth0.com`, `NEUROSTORE_MCP_AGENT_AUDIENCE=https://staging.neurostore.xyz/agents/`, plus that client's id and secret.
 
