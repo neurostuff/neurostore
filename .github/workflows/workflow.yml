@@ -170,6 +170,8 @@ jobs:
           GIT_SHA: ${{ github.sha }}
         with:
           files: docker-compose.yml,docker-compose.dev.yml,docker-compose.bake.override.yml
+          # The store images only: neurostore-mcp builds from ../mcp, outside this context.
+          targets: neurostore,store_nginx,store-pgsql,store-pgsql17
           push: true
           load: false
           workdir: store
