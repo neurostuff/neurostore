@@ -27,7 +27,7 @@ Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup
    - A write without the `write` scope gets 403 `insufficient_scope, scope="write"`, so the client can ask for more.
 4. **The server swaps the token (`auth.TokenExchange`).** It exchanges the user's token for an agents-API token with Auth0's On-Behalf-Of grant (`urn:ietf:params:oauth:grant-type:token-exchange`, audience `https://neurostore.org/agents/`), and caches it until it expires.
    - Every call to Store or Compose for that user carries the agents token.
-   - The token keeps `sub` (the user) and adds `act` (this server's client).
+   - The token keeps `sub` (the user) and adds `act` (this server's client), nesting the client the user signed in through as `act.act`. The backends log `act.sub`.
    - The backends treat it as an agent: its scopes are enforced, the user's roles are dropped, and its writes are logged with `actor=<this client>`.
    - The MCP spec forbids forwarding the client's own token, and the server never does.
    - Auth0 rate-limits On-Behalf-Of per tenant (2/s on Free, 8/s on Essentials and Professional), which the cache keeps well below.
@@ -50,6 +50,7 @@ Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and 
 - Step 2: both settings on.
 - Step 3: "Neurostore MCP server (staging)" (client id `kLBZbOywoE6D9rGcX7FwxU6sjo9cXnel`), On-Behalf-Of on. The agents API is `https://staging.neurostore.xyz/agents/`, user policy `allow_all`. To make room, "Auth0 Management API (Test Application)" was deleted; no deploy env used it.
 - Step 4: users sign in with `neurosynth-cli`, which already allows the claude.ai and port-33418 callbacks. A device-code request for the MCP API through it succeeds.
+- Allow Skipping User Consent is on for the agents API. A real exchange then works: a `read write` sign-in for the MCP API, exchanged with the server's client on the staging host, gave an agents token with `aud` `https://staging.neurostore.xyz/agents/`, the user's `sub`, `act.sub` = the server's client, `act.act.sub` = `neurosynth-cli`, and the scope asked for (`read write`, or `read` when only that was asked).
 - For staging's `store/.env.staging`: `NEUROSTORE_MCP_PUBLIC_URL=https://staging.neurostore.xyz`, `NEUROSTORE_MCP_AUTH0_DOMAIN=neurosynth-staging.us.auth0.com`, `NEUROSTORE_MCP_AGENT_AUDIENCE=https://staging.neurostore.xyz/agents/`, plus that client's id and secret.
 
 1. **An API for the MCP server.**
@@ -79,7 +80,7 @@ Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and 
 ## Open questions
 
 - **Mixed open and protected tools in claude.ai.** Claude's connector docs support it, and the MCP spec says clients act on a 401 for any request. This server only challenges `tools/call`, so it needs one end-to-end test in claude.ai.
-- **Exchanged scopes.** Auth0's docs don't say whether the exchanged token's scopes are the subject token's intersected with the request, or the client grant's. The server asks for the subject token's `read`/`write`. Check the first exchanged token's `scope`.
+- **Exchanged scopes.** On staging the exchanged token carried exactly the scopes asked for (`read write`, or `read`); the server never asks for more than the subject token has. Whether Auth0 would also refuse a scope the subject token lacks is untested.
 
 ## Sources (read 2026-11-11 and 2026-11-17)
 
