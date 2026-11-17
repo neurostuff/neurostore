@@ -185,6 +185,11 @@ OPERATIONS: dict[tuple[str, str, str], tuple[str, str]] = {
     ),
 }
 
+# How many levels of fields a tool's input schema lists (schema.compact); 2 unless named.
+# query_analyses gets one more, so its nested criteria (acquisitions.modality,
+# groups.age_mean, ...) are listed, not just accepted.
+SCHEMA_DEPTH = {"query_analyses": 3}
+
 # POSTs that only read: the analysis query stores nothing.
 READ_ONLY_POSTS = {("store", "POST", "/analysis-queries/")}
 

@@ -57,6 +57,14 @@ async def test_schemas_are_compact(server):
     assert "created_at" not in study  # read-only in the spec
 
 
+async def test_query_analyses_lists_its_nested_criteria(anonymous_server):
+    query = (await tools(anonymous_server))["query_analyses"].input_schema["properties"]["query"]
+    criteria = query["properties"]
+    assert {"task", "medical_condition", "groups", "acquisitions", "or"} <= set(criteria)
+    assert "modality" in criteria["acquisitions"]["properties"]
+    assert "age_mean" in criteria["groups"]["properties"]
+
+
 async def test_a_read_calls_its_operation_with_the_arguments(anonymous_server, apis):
     async with Client(anonymous_server) as client:
         await client.call_tool("search_base_studies", {"search": "stroop", "page_size": 2})

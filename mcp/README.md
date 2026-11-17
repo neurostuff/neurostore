@@ -23,7 +23,7 @@ as that user.
 What the server adds to the raw operations:
 
 - **Hints.** Reads are marked `readOnlyHint`. `PUT` and `DELETE` are marked `destructiveHint`, so clients can run reads freely and ask before changing anything.
-- **Smaller schemas.** The specs inline every nested record. Tool schemas drop examples and read-only fields, and stop listing fields two levels down. All 41 come to about 100,000 characters.
+- **Smaller schemas.** The specs inline every nested record. Tool schemas drop examples and read-only fields, and stop listing fields two levels down. `query_analyses` lists three, so its nested criteria are spelled out (`acquisitions.modality`, `groups.age_mean`, ...). All 41 come to about 125,000 characters.
 - **Capped results.** A result over 60,000 characters is cut, with a note saying how to ask for less. Claude Code's default limit is 25,000 tokens. Override the cap with `NEUROSTORE_MCP_MAX_RESULT_CHARS`.
 - **Errors.** The API's own status and message come back as a tool error.
 
