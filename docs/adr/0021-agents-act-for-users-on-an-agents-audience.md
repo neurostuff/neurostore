@@ -1,6 +1,6 @@
 # 0021. AI agents act for a user on tokens for a second Auth0 API, with scopes and no roles
 
-Status: accepted, backends built; Auth0 tenants and the MCP server not yet
+Status: accepted, backends and both Auth0 tenants set up (2026-11-17); the MCP server not yet
 
 ## Context
 
