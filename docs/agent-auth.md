@@ -54,7 +54,17 @@ The decision is [ADR 0021](adr/0021-agents-act-for-users-on-an-agents-audience.m
 
   While the API's user policy stays `allow_all`, any first-party app can get an agents token. Such a token can do less than that user's login token, never more.
 
-**Production (`neurosynth.us.auth0.com`): not done.** It may have the same application limit.
+**Checked on staging after #1956 deployed (2026-11-17)**, with a real device-flow sign-in:
+- a `read write` token reads Store and Compose, and created and deleted a study owned by its user, logging each write on `neurostore.agents`;
+- a `read` token gets 403 on writes to Store and Compose;
+- Store's `/api/api-keys/` refuses an agent token with 403.
+
+**Production (`neurosynth.us.auth0.com`), done 2026-11-17 through Auth0's MCP server:**
+- **The agents API** `https://neurostore.org/agents/` was created as specified below, with consent shown.
+- **A new application, "Neurostore agents",** as specified below: the tenant had room, so nothing existing was changed. Its refresh tokens rotate, with an idle lifetime of 30 days and an absolute one of 90 days.
+- **Not done:** Per-app authorization on the agents API, plus a user-delegated grant for "Neurostore agents", as on staging.
+
+Auth0's MCP server set `skip_non_verifiable_callback_uri_confirmation_prompt` to true on both tenants without being asked, once on update and once on create. It was set back to false, so Auth0 still asks users to confirm a localhost callback.
 
 The spec, per tenant:
 
@@ -93,5 +103,7 @@ curl -s https://neurosynth.us.auth0.com/oauth/device/code \
 2. The agent polls `/oauth/token` with `grant_type=urn:ietf:params:oauth:grant-type:device_code` and the `device_code` until it gets tokens.
 3. It sends `Authorization: Bearer <access_token>` to `https://neurostore.org/api/` and `https://compose.neurosynth.org/api/`.
 4. When the token expires, it trades the refresh token at `/oauth/token` with `grant_type=refresh_token`.
+
+`NEUROSTORE_AGENT_CLIENT_ID` is the client id of "Neurostore agents" in the production tenant. It isn't secret.
 
 Ask for only `read` for an agent that shouldn't write. On staging, use the `neurosynth-staging` tenant, the `neurosynth-cli` client id and audience `https://staging.neurostore.xyz/agents/`.
