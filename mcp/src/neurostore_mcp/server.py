@@ -22,7 +22,14 @@ from fastmcp.tools import ToolResult
 from mcp.types import TextContent
 
 from neurostore_mcp import __version__
-from neurostore_mcp.auth import LazyAuth, Settings, TokenExchange, as_user, provider
+from neurostore_mcp.auth import (
+    LazyAuth,
+    Settings,
+    TokenExchange,
+    as_user,
+    provider,
+    security_schemes,
+)
 from neurostore_mcp.operations import OPERATIONS, SCHEMA_DEPTH, annotations, reads
 from neurostore_mcp.schema import compact
 
@@ -140,6 +147,8 @@ def _provider(
         tool.annotations = annotations(service, route.method, route.path)
         tool.parameters = compact(tool.parameters, max_depth=SCHEMA_DEPTH.get(tool.name, 2))
         tool.output_schema = None  # results are the API's JSON, possibly cut by CapResults
+        schemes = security_schemes(tool.name in sign_in, tool.name in write)
+        tool.meta = {**(tool.meta or {}), "securitySchemes": schemes}
 
     client = httpx2.AsyncClient(
         base_url=API_URLS[service],

@@ -276,3 +276,50 @@ def test_a_partial_sign_in_config_says_what_is_missing(monkeypatch, caplog):
         assert Settings.from_env() is None
     assert "NEUROSTORE_MCP_CLIENT_SECRET" in caplog.text
     assert "not-a-secret" not in caplog.text
+
+
+CHATGPT = {"openai/userAgent": "ChatGPT/1.0", "openai/locale": "en-US"}
+
+
+async def test_tools_declare_their_security_schemes(server):
+    async with serve(server) as http:
+        listed = (await rpc(http, "tools/list")).json()["result"]["tools"]
+    schemes = {t["name"]: t["_meta"]["securitySchemes"] for t in listed}
+    assert schemes["get_study"] == [{"type": "noauth"}]
+    assert schemes["create_studyset"] == [{"type": "oauth2", "scopes": ["read", "write"]}]
+    assert schemes["list_meta_analysis_jobs"] == [{"type": "oauth2", "scopes": ["read"]}]
+
+
+async def test_chatgpt_is_asked_to_sign_in_with_a_tool_result(server, apis):
+    async with serve(server) as http:
+        call = {"name": "create_studyset", "arguments": {"name": "x"}, "_meta": CHATGPT}
+        response = await rpc(http, "tools/call", call)
+        assert response.status_code == 200  # ChatGPT reads the result, not the status
+        body = response.json()
+        assert body["id"] == 1
+        result = body["result"]
+        assert result["isError"]
+        [challenge] = result["_meta"]["mcp/www_authenticate"]
+        assert f'resource_metadata="{METADATA}"' in challenge
+        assert 'error="insufficient_scope"' in challenge and "error_description=" in challenge
+        assert 'scope="read write"' in challenge
+        assert apis.requests == []
+
+
+async def test_chatgpt_with_a_read_only_sign_in_is_asked_for_write(server, keys, apis):
+    async with serve(server) as http:
+        call = {"name": "create_studyset", "arguments": {"name": "x"}, "_meta": CHATGPT}
+        response = await rpc(http, "tools/call", call, token(keys, scopes=("read",)))
+        assert response.status_code == 200
+        [challenge] = response.json()["result"]["_meta"]["mcp/www_authenticate"]
+        assert 'scope="read write"' in challenge
+        assert apis.requests == []
+
+
+async def test_chatgpt_reads_need_no_sign_in(server, apis):
+    async with serve(server) as http:
+        call = {"name": "get_study", "arguments": {"id": "abc"}, "_meta": CHATGPT}
+        response = await rpc(http, "tools/call", call)
+        assert response.status_code == 200
+        assert not response.json()["result"].get("isError")
+        assert apis.requests[-1].url.path == "/api/studies/abc"

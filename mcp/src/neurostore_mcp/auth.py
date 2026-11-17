@@ -136,6 +136,13 @@ def as_user(exchange: TokenExchange):
     return hook
 
 
+def security_schemes(sign_in: bool, write: bool) -> list[dict]:
+    """A tool's `securitySchemes` (OpenAI Apps SDK), which ChatGPT reads to offer sign-in."""
+    if not sign_in:
+        return [{"type": "noauth"}]
+    return [{"type": "oauth2", "scopes": list(SCOPES) if write else ["read"]}]
+
+
 class LazyAuth:
     """Ask for a sign-in only when a call needs one.
 
@@ -143,6 +150,10 @@ class LazyAuth:
     token. Requests with a token, and calls of `sign_in` tools, still go through it;
     anything else reaches the MCP app anonymously. A signed-in call of a `write` tool
     without the `write` scope gets the RFC 6750 `insufficient_scope` challenge.
+
+    Clients disagree on how to ask: Claude starts a sign-in only on an HTTP 401 or 403,
+    ChatGPT only on a tool result carrying `_meta["mcp/www_authenticate"]`. A call whose
+    `_meta` has ChatGPT's `openai/` keys gets the tool result; every other call the status.
     """
 
     def __init__(self, guarded: ASGIApp, sign_in: set[str], write: set[str]):
@@ -159,19 +170,52 @@ class LazyAuth:
             return
         body = await _read_body(receive) if scope.get("method") == "POST" else b""
         replay = _replay(body, receive)
-        tools = _called_tools(body)
+        messages = _messages(body)
+        tools = _called_tools(messages)
+        openai_call = _openai_call(messages)
         has_token = any(name.lower() == b"authorization" for name, _ in scope.get("headers", []))
         if has_token:
             signed_in = getattr(scope.get("user"), "is_authenticated", False)
             granted = set(getattr(scope.get("auth"), "scopes", None) or [])
             if signed_in and tools & self.write and "write" not in granted:
-                await self._insufficient_scope(send)
+                if openai_call:
+                    await self._sign_in_result(send, openai_call, "allow 'write'", write=True)
+                else:
+                    await self._insufficient_scope(send)
                 return
             await self.guarded(scope, replay, send)
         elif tools & self.sign_in:
-            await self.guarded(scope, replay, send)
+            if openai_call:
+                write = bool(tools & self.write)
+                await self._sign_in_result(send, openai_call, "sign in", write=write)
+            else:
+                await self.guarded(scope, replay, send)
         else:
             await self.app(scope, replay, send)
+
+    async def _sign_in_result(self, send: Send, call: dict, ask: str, write: bool) -> None:
+        """The tool result that makes ChatGPT offer its sign-in (Apps SDK auth docs)."""
+        wanted = " ".join(SCOPES) if write else "read"
+        description = f"{call['params']['name']} needs you to {ask} to Neurostore."
+        challenge = (
+            f'Bearer resource_metadata="{self.resource_metadata_url}", '
+            f'error="insufficient_scope", scope="{wanted}", '
+            f'error_description="{description}"'
+        )
+        result = {
+            "content": [{"type": "text", "text": description}],
+            "_meta": {"mcp/www_authenticate": [challenge]},
+            "isError": True,
+        }
+        payload = json.dumps({"jsonrpc": "2.0", "id": call.get("id"), "result": result})
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [(b"content-type", b"application/json")],
+            }
+        )
+        await send({"type": "http.response.body", "body": payload.encode()})
 
     async def _insufficient_scope(self, send: Send) -> None:
         challenge = (
@@ -219,18 +263,35 @@ def _replay(body: bytes, receive: Receive) -> Receive:
     return replay
 
 
-def _called_tools(body: bytes) -> set[str]:
-    """The tools a JSON-RPC request calls."""
+def _messages(body: bytes) -> list[dict]:
+    """The JSON-RPC messages of a request: one, or a batch."""
     try:
         message = json.loads(body) if body else None
     except ValueError:
-        return set()
+        return []
     messages = message if isinstance(message, list) else [message]
-    return {
-        m["params"]["name"]
-        for m in messages
-        if isinstance(m, dict)
-        and m.get("method") == "tools/call"
-        and isinstance(m.get("params"), dict)
-        and isinstance(m["params"].get("name"), str)
-    }
+    return [m for m in messages if isinstance(m, dict)]
+
+
+def _tool_call(message: dict) -> bool:
+    params = message.get("params")
+    return (
+        message.get("method") == "tools/call"
+        and isinstance(params, dict)
+        and isinstance(params.get("name"), str)
+    )
+
+
+def _called_tools(messages: list[dict]) -> set[str]:
+    """The tools a request calls."""
+    return {m["params"]["name"] for m in messages if _tool_call(m)}
+
+
+def _openai_call(messages: list[dict]) -> dict | None:
+    """The request's one tool call, if ChatGPT sent it (its `_meta` has `openai/` keys)."""
+    if len(messages) != 1 or not _tool_call(messages[0]):
+        return None
+    meta = messages[0]["params"].get("_meta")
+    if isinstance(meta, dict) and any(str(k).startswith("openai/") for k in meta):
+        return messages[0]
+    return None

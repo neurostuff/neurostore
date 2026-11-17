@@ -18,6 +18,8 @@ Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup
 ## How a sign-in works
 
 1. **Reads stay anonymous.** Without a token, the server passes a request straight to the MCP app. A `tools/call` of a tool that needs a user is the exception: it gets HTTP 401 with `WWW-Authenticate: Bearer resource_metadata=".../.well-known/oauth-protected-resource/mcp"` (`auth.LazyAuth`).
+   - ChatGPT ignores that 401: it signs in only when a tool result is `isError` with `_meta["mcp/www_authenticate"]` (OpenAI Apps SDK, "Triggering authentication UI"). Claude is the reverse: it ignores a 200. Neither names itself reliably, so a call whose `_meta` has ChatGPT's `openai/` keys gets that tool result, and every other call the 401 (or 403).
+   - Each tool also declares `_meta.securitySchemes` for ChatGPT: `noauth` for anonymous reads, `oauth2` with `read` (sign-in reads) or `read write` (writes).
    - The tools that need a user are every write, plus the reads the spec marks as JWT-only (meta-analysis jobs).
    - All tools are listed to everyone, so an agent knows writes exist.
 2. **The client signs the user in with Auth0.** The metadata names `https://neurosynth.us.auth0.com/` as the authorization server.

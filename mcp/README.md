@@ -54,7 +54,11 @@ These variables in `store/.env` turn sign-in on. All five are needed:
 
 How it works, and the Auth0 setup: [docs/remote-hosting-and-oauth.md](docs/remote-hosting-and-oauth.md).
 
-To connect, claude.ai users go to Settings → Connectors → Add custom connector and enter URL `https://neurostore.org/mcp`. Under Advanced they paste the client id of the Auth0 app "Neurostore agents". Claude Code:
+To connect, claude.ai users go to Settings → Connectors → Add custom connector and enter URL `https://neurostore.org/mcp`. Production Auth0 offers Client ID Metadata Documents, so the client registers itself; on a tenant without them, paste the client id of the Auth0 app "Neurostore agents" under Advanced.
+
+ChatGPT (developer mode): add a connector with URL `https://neurostore.org/mcp` and OAuth. It registers itself through the same metadata documents. Each tool declares `_meta.securitySchemes`, and ChatGPT is asked to sign in with a tool result, since it doesn't act on an HTTP 401.
+
+Claude Code:
 
 ```bash
 claude mcp add --transport http --client-id <Neurostore agents client id> --callback-port 33418 neurostore https://neurostore.org/mcp
