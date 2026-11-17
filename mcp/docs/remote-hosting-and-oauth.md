@@ -1,6 +1,6 @@
 # Hosting neurostore-mcp, and signing in
 
-Status 2026-11-17: built. The hosted server is not yet deployed, and the Auth0 setup below hasn't been made. The decision on agent tokens is ADR 0021 (`docs/adr/0021-agents-act-for-users-on-an-agents-audience.md`).
+Status 2026-11-17: built. The hosted server is not yet deployed. Production Auth0 has the MCP API; the rest of the setup below is not made. The decision on agent tokens is ADR 0021 (`docs/adr/0021-agents-act-for-users-on-an-agents-audience.md`).
 
 ## Where it runs
 
@@ -32,7 +32,13 @@ Status 2026-11-17: built. The hosted server is not yet deployed, and the Auth0 s
    - The MCP spec forbids forwarding the client's own token, and the server never does.
    - Auth0 rate-limits On-Behalf-Of per tenant (2/s on Free, 8/s on Essentials and Professional), which the cache keeps well below.
 
-## Auth0 changes, per tenant (not made)
+## Auth0 changes, per tenant
+
+**Production, 2026-11-17:**
+- **Done:** step 1, the API `https://neurostore.org/mcp` (id `6afbcff2fa8fcf0c2be04035`). Step 4 needs nothing while that API's user policy is `allow_all`. A device-code request for it through "Neurostore agents" succeeds.
+- **Not done:** steps 2 and 3. Auth0's MCP server has no tool for tenant settings. Its app and grant tools can't set `app_type: resource_server`, `token_exchange` or a user-delegated grant (`subject_type: user`), so both are dashboard steps.
+
+**Staging:** nothing done.
 
 Production is `neurosynth.us.auth0.com`. Staging is `neurosynth-staging.us.auth0.com` with `https://staging.neurostore.xyz/...`, but that tenant is at its application limit, so step 3 needs an app freed first.
 
