@@ -73,7 +73,10 @@ Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and 
 4. **The client users sign in with:** the existing public app "Neurostore agents". It already allows `https://claude.ai/api/mcp/auth_callback` and port 33418 on localhost.
    - Give it access to the MCP API. Its user policy is `allow_all` unless per-app authorization is set.
    - Users paste its client id into claude.ai's Advanced settings, or pass it to `claude mcp add --client-id`.
-   - Once Auth0's dynamic CIMD is GA, claude.ai can register itself and the paste goes away. Leave DCR off.
+   - Or let clients register themselves with Client ID Metadata Documents (CIMD): Settings → Advanced → "Client ID Metadata Document (CIMD) Registration" and "Dynamic CIMD Registration" (early access, under Okta's free-trial terms) on. Leave DCR off.
+     - A client registered this way is a third-party app (e.g. `tpc_…` for Claude Code, from `https://claude.ai/oauth/claude-code-client-metadata`). Third-party apps get no access to an API until it is granted, so on the MCP API set **Default Permissions for third-party applications → User-delegated Access** to Authorized, `read` and `write` (Client Access stays Unauthorized). Without it `/authorize` fails with "Client … is not authorized to access resource server".
+     - Production, 2026-11-17: both CIMD toggles on, third-party defaults `read write`; Claude Code registered itself. Staging: third-party defaults `read write`, CIMD toggles off.
+     - ChatGPT's metadata document declares `token_endpoint_auth_method: private_key_jwt`, which the dashboard marks Enterprise; whether a CIMD client may use it on the free plan is untested.
 5. **Then set the rest of `store/.env`:** `NEUROSTORE_MCP_PUBLIC_URL=https://neurostore.org`, `NEUROSTORE_MCP_AUTH0_DOMAIN=neurosynth.us.auth0.com`, `NEUROSTORE_MCP_AGENT_AUDIENCE=https://neurostore.org/agents/`. Restart `neurostore-mcp`.
 
 **To check after setup:**
