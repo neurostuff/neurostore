@@ -53,6 +53,10 @@ def create_user():
     if token_info.get("api_key"):
         # Auth0's userinfo only accepts login tokens; Neurostore named the key's owner
         return User(external_id=user_id, name=token_info.get("name") or "Unknown")
+    from neurosynth_compose.resources.auth import NAME_CLAIM
+
+    if token_info.get(NAME_CLAIM):
+        return User(external_id=user_id, name=token_info[NAME_CLAIM])
 
     token = auth.split()[1]
 
