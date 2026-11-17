@@ -1,102 +1,66 @@
 # neurostore-mcp
 
-A read-only [MCP](https://modelcontextprotocol.io) server for the public
+An [MCP](https://modelcontextprotocol.io) server over the
 [Neurostore](https://neurostore.org) and [Neurosynth Compose](https://compose.neurosynth.org)
-APIs. It lets an agent (Claude Code, claude.ai, or any other MCP client) search papers, read
-their analyses and coordinates, select analyses by extracted study features, and inspect
-Compose projects, meta-analyses and their results.
+REST APIs, for agents such as Claude Code and claude.ai.
 
-It calls the public APIs with no credentials, so it can only read public records. Write tools
-through Auth0 OAuth come later: see [docs/remote-hosting-and-oauth.md](docs/remote-hosting-and-oauth.md).
+It is a thin layer. Each tool is one REST operation, built at startup from the API's own
+OpenAPI spec (`/api/openapi.json`), so a tool's arguments and its result are that
+operation's. Anyone can read. Tools that change records ask the user to sign in, then act
+as that user.
 
 ## Tools
 
-| Tool | API call | What it returns |
+`src/neurostore_mcp/operations.py` lists the operations exposed, 41 of the APIs' 186.
+
+| Area | Read | Write (sign-in) |
 | --- | --- | --- |
-| `search_base_studies` | `GET /base-studies/` | Papers by text, author, journal, year, DOI/PMID, data type, level or an MNI sphere |
-| `get_base_study` | `GET /base-studies/{id}` | One paper, its other identifiers and its study versions |
-| `search_studies` | `GET /studies/` | Study versions, by source or owner |
-| `get_study` | `GET /studies/{id}` | A study's analyses with their coordinates, metadata, conditions and images |
-| `query_analyses` | `POST /analysis-queries/` | Analyses selected by extracted features, with `base_study_ids`, `study_ids` and `funnel` (reads only) |
-| `list_analysis_terms` | `GET /analysis-terms/` | The values (and ids) a `query_analyses` field takes |
-| `list_public_datasets` | `GET /query/` | The public aggregate-query datasets and their columns |
-| `run_public_query` | `GET /query/{dataset}` | A SoQL aggregate over one dataset |
-| `get_studyset` | `GET /studysets/{id}` | A studyset and a page of its study ids |
-| `list_annotations` | `GET /annotations/` | Annotations, optionally of one studyset |
-| `get_annotation` | `GET /annotations/{id}` | An annotation's columns and a page of its notes |
-| `search_projects` | Compose `GET /projects` | Public Compose projects |
-| `get_project` | Compose `GET /projects/{id}` | One project, its meta-analyses, studyset and annotation |
-| `get_meta_analysis` | Compose `GET /meta-analyses/{id}` | Its NiMARE specification, inputs and result ids |
-| `get_meta_analysis_result` | Compose `GET /meta-analysis-results/{id}` | Its NeuroVault maps, methods text and references |
+| Papers and studies | `search_base_studies`, `get_base_study`, `search_studies`, `get_study`, `get_analysis` | `create_study`, `update_study`, `delete_study`, `create_analysis`, `update_analysis`, `delete_analysis` |
+| Selecting analyses | `query_analyses`, `list_analysis_terms`, `list_public_datasets`, `run_public_query` | |
+| Studysets and annotations | `search_studysets`, `get_studyset`, `list_annotations`, `get_annotation` | `create_studyset`, `update_studyset`, `delete_studyset`, `create_annotation`, `update_annotation`, `delete_annotation` |
+| Compose | `search_projects`, `get_project`, `get_specification`, `get_meta_analysis`, `list_meta_analysis_results`, `get_meta_analysis_result`, and with a sign-in `list_meta_analysis_jobs`, `get_meta_analysis_job` | `create_project`, `update_project`, `delete_project`, `create_specification`, `update_specification`, `create_meta_analysis`, `update_meta_analysis`, `run_meta_analysis` |
 
-The tools trim each record to the fields an agent needs. List tools return
-`{total, page, page_size, next_page, results}`, with at most 50 results a page.
-`get_study` caps coordinates per analysis (`max_points_per_analysis`, default 100), and
-`get_annotation` and `get_studyset` page their notes and study ids. Abstracts and diagnostic
-tables are cut to a length you choose.
+What the server adds to the raw operations:
 
-## Run it locally
+- **Hints.** Reads are marked `readOnlyHint`. `PUT` and `DELETE` are marked `destructiveHint`, so clients can run reads freely and ask before changing anything.
+- **Smaller schemas.** The specs inline every nested record. Tool schemas drop examples and read-only fields, and stop listing fields two levels down. All 41 come to about 100,000 characters.
+- **Capped results.** A result over 60,000 characters is cut, with a note saying how to ask for less. Claude Code's default limit is 25,000 tokens. Override the cap with `NEUROSTORE_MCP_MAX_RESULT_CHARS`.
+- **Errors.** The API's own status and message come back as a tool error.
 
-You need [uv](https://docs.astral.sh/uv/).
+## Run it
 
-```bash
-uvx --from "git+https://github.com/neurostuff/neurostore#subdirectory=mcp" neurostore-mcp
-```
-
-That starts the server on stdio. From a checkout, use `uvx --from ./mcp neurostore-mcp`.
-
-To serve Streamable HTTP at `http://127.0.0.1:8000/mcp` instead:
-
-```bash
-uvx --from "git+https://github.com/neurostuff/neurostore#subdirectory=mcp" neurostore-mcp --transport http --port 8000
-```
-
-`--host` and `--path` change the bind address and endpoint path. The environment variables
-`NEUROSTORE_API_URL` (default `https://neurostore.org/api`) and `COMPOSE_API_URL` (default
-`https://compose.neurosynth.org/api`) point the server at another deployment, such as staging
-or a local stack.
-
-### Claude Code
-
-Over stdio, Claude Code starts the server itself:
+You need [uv](https://docs.astral.sh/uv/). On stdio, with only the read tools:
 
 ```bash
 claude mcp add neurostore -- uvx --from "git+https://github.com/neurostuff/neurostore#subdirectory=mcp" neurostore-mcp
 ```
 
-Or connect to a server already running over HTTP:
+To serve Streamable HTTP at `http://127.0.0.1:8000/mcp`, add `--transport http --port 8000`. `--host` and `--path` change the bind address and the endpoint.
+
+`NEUROSTORE_API_URL` (default `https://neurostore.org/api`) and `COMPOSE_API_URL` (default `https://compose.neurosynth.org/api`) point it at another deployment.
+
+## The hosted server and signing in
+
+`store/docker-compose.yml` runs the server as `neurostore-mcp`, and `store/nginx/nginx.conf` serves it at `https://neurostore.org/mcp`. With no sign-in settings it only reads.
+
+These variables in `store/.env` turn sign-in on. All five are needed:
+
+| Variable | Production |
+| --- | --- |
+| `NEUROSTORE_MCP_PUBLIC_URL` | `https://neurostore.org` |
+| `NEUROSTORE_MCP_AUTH0_DOMAIN` | `neurosynth.us.auth0.com` |
+| `NEUROSTORE_MCP_AGENT_AUDIENCE` | `https://neurostore.org/agents/` |
+| `NEUROSTORE_MCP_CLIENT_ID`, `NEUROSTORE_MCP_CLIENT_SECRET` | the server's Auth0 Custom API client |
+
+How it works, and the Auth0 setup: [docs/remote-hosting-and-oauth.md](docs/remote-hosting-and-oauth.md).
+
+To connect, claude.ai users go to Settings → Connectors → Add custom connector and enter URL `https://neurostore.org/mcp`. Under Advanced they paste the client id of the Auth0 app "Neurostore agents". Claude Code:
 
 ```bash
-claude mcp add --transport http neurostore http://127.0.0.1:8000/mcp
+claude mcp add --transport http --client-id <Neurostore agents client id> --callback-port 33418 neurostore https://neurostore.org/mcp
 ```
-
-Add `--scope user` to make it available in every project. Claude Code caps a tool result
-at 25,000 tokens by default (`MAX_MCP_OUTPUT_TOKENS`); the defaults here stay well under that.
-
-### Other clients
-
-Any client that launches stdio servers takes the same command, for example in a
-`mcpServers` JSON config:
-
-```json
-{
-  "mcpServers": {
-    "neurostore": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/neurostuff/neurostore#subdirectory=mcp", "neurostore-mcp"]
-    }
-  }
-}
-```
-
-claude.ai custom connectors need a public HTTPS URL; see
-[docs/remote-hosting-and-oauth.md](docs/remote-hosting-and-oauth.md).
 
 ## Tests
-
-The tests call the tools through an in-memory MCP client and replay real production
-responses recorded as VCR cassettes in `tests/cassettes/`. CI runs them with the network
-blocked:
 
 ```bash
 cd mcp
@@ -104,8 +68,17 @@ uv venv && uv pip install -e ".[test]"
 .venv/bin/python -m pytest --record-mode=none --block-network --allowed-hosts=127.0.0.1,localhost
 ```
 
-`test_server.py` also starts the server over stdio and over HTTP on localhost.
+The tests build the server from the specs saved in `tests/specs/`. Those are gzipped copies of what the APIs served on 2026-11-17. The APIs and Auth0 are stubbed.
 
-To re-record after an API change, delete the affected cassettes and run
-`.venv/bin/python -m pytest --record-mode=once`. The recorder replaces the Compose
-`run_key` (a meta-analysis's upload key) with `REDACTED` before writing.
+They cover:
+- the tool list with and without sign-in;
+- the hints and the schema size;
+- the arguments a call sends, and result cutting;
+- the sign-in challenge and the `write` scope check;
+- the On-Behalf-Of exchange and its cache.
+
+Refresh the saved specs when the allowlist gains an operation:
+
+```bash
+curl -s https://neurostore.org/api/openapi.json | gzip > tests/specs/neurostore-openapi.json.gz
+```

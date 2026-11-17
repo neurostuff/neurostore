@@ -350,6 +350,11 @@ configure_track_networking() {
   upsert_env_value "${compose_env}" "CELERY_BROKER_URL" "redis://compose_redis:6379/0"
   upsert_env_value "${compose_env}" "CELERY_RESULT_BACKEND" "redis://compose_redis:6379/0"
   upsert_env_value "${compose_env}" "NEUROSTORE_API_URL" "http://store_nginx/api"
+
+  # The MCP server (in the store project) calls this track's Compose, not production's.
+  local compose_vhost
+  compose_vhost="$(strip_env_quotes "$(read_env_value "${compose_env}" "V_HOST")")"
+  upsert_env_value "${store_env}" "NEUROSTORE_MCP_COMPOSE_API_URL" "https://${compose_vhost%%,*}/api"
 }
 
 sync_repo_env_files() {
@@ -456,6 +461,7 @@ build_store_images() {
     store_metadata_outbox_worker \
     store_release_worker \
     store_nginx \
+    neurostore-mcp \
     store-pgsql \
     store-pgsql17
 }
@@ -612,7 +618,7 @@ deploy_store_staging() {
   compose_for "${service_root}" "${project}" exec -T neurostore manage grant-admin-clients
   compose_for "${service_root}" "${project}" exec -T store_redis redis-cli FLUSHDB >/dev/null
   build_review_frontend
-  recreate_services_cleanly "${service_root}" "${project}" store_nginx
+  recreate_services_cleanly "${service_root}" "${project}" neurostore-mcp store_nginx
   sync_vocabulary_releases "${service_root}" "${project}"
 }
 

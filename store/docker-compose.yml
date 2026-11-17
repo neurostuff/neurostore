@@ -145,6 +145,26 @@ services:
       - default
       - proxy_shared
 
+  # The MCP server (../mcp) at /mcp. Without the NEUROSTORE_MCP_* sign-in settings it
+  # only reads, anonymously. mcp/docs/remote-hosting-and-oauth.md has the Auth0 setup.
+  neurostore-mcp:
+    image: neurostore-mcp
+    restart: always
+    build: ../mcp
+    depends_on:
+      neurostore:
+        condition: service_started
+    expose:
+      - "8000"
+    environment:
+      NEUROSTORE_API_URL: http://neurostore:8000/api
+      COMPOSE_API_URL: ${NEUROSTORE_MCP_COMPOSE_API_URL:-https://compose.neurosynth.org/api}
+      NEUROSTORE_MCP_PUBLIC_URL: ${NEUROSTORE_MCP_PUBLIC_URL:-}
+      NEUROSTORE_MCP_AUTH0_DOMAIN: ${NEUROSTORE_MCP_AUTH0_DOMAIN:-}
+      NEUROSTORE_MCP_AGENT_AUDIENCE: ${NEUROSTORE_MCP_AGENT_AUDIENCE:-}
+      NEUROSTORE_MCP_CLIENT_ID: ${NEUROSTORE_MCP_CLIENT_ID:-}
+      NEUROSTORE_MCP_CLIENT_SECRET: ${NEUROSTORE_MCP_CLIENT_SECRET:-}
+
   store-pgsql:
     image: store-pgsql
     restart: always
