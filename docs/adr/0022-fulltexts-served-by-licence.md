@@ -22,8 +22,8 @@ Ingestion stores one `fulltexts` row per copy of a paper it read (pubget/PMC, Eu
 
 - An agent reads an openly licensed text in one call, and learns for any other where to read it.
 - A text ingested before its copy was recorded is withheld until an upload records its copy.
-- Admin-reviewers still read every text through `/review` (bundles and exports) and admins through the admin panel: staff use, not redistribution. These are the only paths that read `Fulltext.text` besides the gate.
-- The legacy `base_studies.ace_fulltext` and `pubget_fulltext` columns stay load-only.
+- Admin-reviewers still read every text through `/review` (bundles and exports): staff use, not redistribution. It is the only path that reads `Fulltext.text` besides the gate; the admin panel has no full-text view.
+- The legacy `base_studies.ace_fulltext` and `pubget_fulltext` columns stay load-only in the API; the admin panel's base-study pages show them to admins.
 - Abstracts (`base_studies.description`) are still served whatever `base_studies.license` says; that is a separate decision.
 
 ## Rejected
