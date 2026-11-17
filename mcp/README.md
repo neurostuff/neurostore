@@ -11,7 +11,7 @@ as that user.
 
 ## Tools
 
-`src/neurostore_mcp/operations.py` lists the operations exposed, 41 of the APIs' 186.
+`src/neurostore_mcp/operations.py` lists the operations exposed: 41 of the APIs' 156.
 
 | Area | Read | Write (sign-in) |
 | --- | --- | --- |
@@ -63,22 +63,18 @@ claude mcp add --transport http --client-id <Neurostore agents client id> --call
 ## Tests
 
 ```bash
+git submodule update --init --recursive store/backend/neurostore/openapi compose/backend/neurosynth_compose/openapi
 cd mcp
 uv venv && uv pip install -e ".[test]"
-.venv/bin/python -m pytest --record-mode=none --block-network --allowed-hosts=127.0.0.1,localhost
+.venv/bin/python -m pytest --block-network --allowed-hosts=127.0.0.1,localhost
 ```
 
-The tests build the server from the specs saved in `tests/specs/`. Those are gzipped copies of what the APIs served on 2026-11-17. The APIs and Auth0 are stubbed.
+The tests build the server from each backend's own pin of the API spec (the `openapi` submodules), with every `$ref` inlined as the backends do when they serve `/api/openapi.json`. The APIs and Auth0 are stubbed.
 
 They cover:
 - the tool list with and without sign-in;
-- the hints and the schema size;
+- the hints, descriptions and schema size;
 - the arguments a call sends, and result cutting;
 - the sign-in challenge and the `write` scope check;
-- the On-Behalf-Of exchange and its cache.
-
-Refresh the saved specs when the allowlist gains an operation:
-
-```bash
-curl -s https://neurostore.org/api/openapi.json | gzip > tests/specs/neurostore-openapi.json.gz
-```
+- the On-Behalf-Of exchange, its scopes and its cache;
+- reading the sign-in settings from the environment.

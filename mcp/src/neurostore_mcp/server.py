@@ -28,9 +28,10 @@ from neurostore_mcp.schema import compact
 
 logger = logging.getLogger(__name__)
 
+# An empty variable (as docker compose passes an unset one) means the default.
 API_URLS = {
-    "store": os.environ.get("NEUROSTORE_API_URL", "https://neurostore.org/api"),
-    "compose": os.environ.get("COMPOSE_API_URL", "https://compose.neurosynth.org/api"),
+    "store": os.environ.get("NEUROSTORE_API_URL") or "https://neurostore.org/api",
+    "compose": os.environ.get("COMPOSE_API_URL") or "https://compose.neurosynth.org/api",
 }
 TIMEOUT = httpx2.Timeout(float(os.environ.get("NEUROSTORE_MCP_TIMEOUT", "60")), connect=10.0)
 HEADERS = {"User-Agent": f"neurostore-mcp/{__version__}", "Accept": "application/json"}
@@ -52,8 +53,15 @@ Each tool is one REST call and returns the API's JSON. Lists take page and page_
 page_size small, and pass nested=true only when you need the children. Start with
 search_base_studies or query_analyses, then get_study for coordinates. Reads need no
 sign-in. Tools that change records sign you in and act as you: you can change only your own
-records. To build a meta-analysis: create_studyset, create_annotation, create_project,
-create_specification, create_meta_analysis, then run_meta_analysis.
+records.
+
+To build and run a meta-analysis: create_studyset with the studies; create_annotation over
+it with a boolean column (e.g. "included"), then update_annotation to set it per analysis;
+create_project with the Neurostore studyset and annotation ids; create_specification with
+that column as its filter; create_meta_analysis with the project and specification;
+run_meta_analysis; poll get_meta_analysis_job; then list_meta_analysis_results. Compose reads
+the studyset and annotation from Neurostore when the job runs: no snapshots are needed, and at
+least one analysis must have the filter column true.
 """
 
 
@@ -86,7 +94,8 @@ class CapResults(Middleware):
         result = await call_next(context)
         text = "".join(c.text for c in result.content if isinstance(c, TextContent))
         if len(text) <= MAX_RESULT_CHARS:
-            return result
+            # The text is the JSON; the structured copy would send it twice.
+            return ToolResult(content=result.content)
         note = (
             f"\n\n[Cut at {MAX_RESULT_CHARS} of {len(text)} characters. Ask for less: a smaller "
             "page_size, nested=false, or one record at a time.]"
@@ -144,7 +153,6 @@ def _provider(
         client=client,
         route_map_fn=route_map,
         mcp_component_fn=customize,
-        validate_output=False,
     )
 
 
@@ -180,18 +188,19 @@ def build(
     mcp.sign_in_tools = sign_in
     mcp.write_tools = write
     mcp.settings_ = settings
+    mcp.mcp_path = mcp_path  # the token audience is the public URL plus this path
     return mcp
 
 
-def http_app(mcp: FastMCP, path: str = "/mcp"):
-    """Streamable HTTP, asking for a sign-in only on tools that need one."""
+def http_app(mcp: FastMCP):
+    """Streamable HTTP at the server's path, asking for a sign-in only on tools that need one."""
+    path = mcp.mcp_path
     app = mcp.http_app(path=path, stateless_http=True, json_response=True)
     if mcp.settings_ is None:
         return app
-    metadata = f"{mcp.settings_.public_url}/.well-known/oauth-protected-resource{path}"
     for route in app.routes:
         if getattr(route, "path", None) == path:
-            route.app = LazyAuth(route.app, mcp.sign_in_tools, mcp.write_tools, metadata)
+            route.app = LazyAuth(route.app, mcp.sign_in_tools, mcp.write_tools)
             return app
     raise RuntimeError(f"No route at {path} to guard")
 
@@ -210,7 +219,7 @@ def main() -> None:
 
     mcp = build(settings=Settings.from_env(), mcp_path=args.path)
     uvicorn.run(
-        http_app(mcp, args.path),
+        http_app(mcp),
         host=args.host,
         port=args.port,
         proxy_headers=True,

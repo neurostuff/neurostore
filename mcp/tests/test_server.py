@@ -1,13 +1,17 @@
 """The generated tools, the sign-in gate and the token the APIs see."""
 
 import json
+import logging
 
 import pytest
 from fastmcp import Client
 
 from neurostore_mcp import server as server_module
+from neurostore_mcp.auth import Settings
 from neurostore_mcp.operations import OPERATIONS
 from tests.conftest import RESOURCE, rpc, serve, token
+
+METADATA = "https://neurostore.org/.well-known/oauth-protected-resource/mcp"
 
 ALL_TOOLS = {name for name, _ in OPERATIONS.values()}
 SIGN_IN_READS = {"list_meta_analysis_jobs", "get_meta_analysis_job"}
@@ -35,16 +39,17 @@ async def test_signed_in_server_lists_every_operation(server):
     assert server.write_tools == WRITES
     assert server.sign_in_tools == WRITES | SIGN_IN_READS
     hints = {n: listed[n].annotations for n in ("create_study", "update_study", "delete_study")}
-    assert not hints["create_study"].destructive_hint
+    assert not hints["create_study"].destructive_hint and not hints["create_study"].idempotent_hint
     assert hints["update_study"].destructive_hint and hints["update_study"].idempotent_hint
-    assert hints["delete_study"].destructive_hint
+    assert hints["delete_study"].destructive_hint and hints["delete_study"].idempotent_hint
     assert listed["query_analyses"].annotations.read_only_hint
 
 
-async def test_descriptions_lead_with_ours_then_the_spec(server):
+async def test_descriptions_lead_with_ours_then_the_spec(server, specs):
     listed = await tools(server)
     ours = OPERATIONS[("store", "GET", "/studies/{id}")][1]
-    assert listed["get_study"].description.startswith(ours)
+    theirs = specs["store"]["paths"]["/studies/{id}"]["get"]["description"].strip()
+    assert listed["get_study"].description == f"{ours}\n\n{theirs}"
 
 
 async def test_schemas_are_compact(server):
@@ -55,6 +60,26 @@ async def test_schemas_are_compact(server):
     study = listed["create_study"].input_schema["properties"]
     assert "name" in study and "analyses" in study
     assert "created_at" not in study  # read-only in the spec
+    assert "\\u2026" in text  # long field descriptions are cut ("…", escaped by json.dumps)
+
+
+async def test_unlisted_fields_stay_accepted(server):
+    """Where a schema stops listing fields, a closed record must open up, not reject all."""
+
+    def closed(node, path=""):
+        if isinstance(node, dict):
+            if node.get("additionalProperties") is False and not node.get("properties"):
+                yield path
+            for key, value in node.items():
+                yield from closed(value, f"{path}/{key}")
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                yield from closed(value, f"{path}[{i}]")
+
+    listed = await tools(server)
+    assert [p for t in listed.values() for p in closed(t.input_schema, t.name)] == []
+    request = listed["update_annotation"].input_schema["properties"]["annotation_request"]
+    assert "analysis_query" in json.dumps(request)
 
 
 async def test_query_analyses_lists_its_nested_criteria(anonymous_server):
@@ -74,6 +99,13 @@ async def test_a_read_calls_its_operation_with_the_arguments(anonymous_server, a
     assert request.url.params["search"] == "stroop"
     assert request.url.params["page_size"] == "2"
     assert "authorization" not in request.headers
+
+
+async def test_a_result_is_sent_once(anonymous_server):
+    async with Client(anonymous_server) as client:
+        result = await client.call_tool("search_studies", {})
+    assert result.structured_content is None
+    assert json.loads(result.content[0].text)["results"] == []
 
 
 async def test_a_large_result_is_cut_with_a_hint(anonymous_server, apis, monkeypatch):
@@ -113,8 +145,7 @@ async def test_a_tool_that_needs_a_user_asks_for_a_sign_in(server, apis, tool):
         response = await rpc(http, "tools/call", {"name": tool, "arguments": {}})
         assert response.status_code == 401
         challenge = response.headers["www-authenticate"]
-        metadata = "https://neurostore.org/.well-known/oauth-protected-resource/mcp"
-        assert f'resource_metadata="{metadata}"' in challenge
+        assert f'resource_metadata="{METADATA}"' in challenge
         assert apis.requests == []
 
 
@@ -136,7 +167,9 @@ async def test_a_read_only_sign_in_cannot_write(server, keys, apis):
             token(keys, scopes=("read",)),
         )
         assert response.status_code == 403
-        assert 'error="insufficient_scope", scope="write"' in response.headers["www-authenticate"]
+        challenge = response.headers["www-authenticate"]
+        assert 'error="insufficient_scope", scope="write"' in challenge
+        assert f'resource_metadata="{METADATA}"' in challenge
         assert apis.requests == []
 
 
@@ -170,7 +203,7 @@ async def test_a_write_carries_the_exchanged_agents_token(server, keys, apis, au
         }
 
 
-async def test_a_signed_in_read_acts_as_the_user(server, keys, apis):
+async def test_a_signed_in_read_acts_as_the_user(server, keys, apis, auth0):
     async with serve(server) as http:
         response = await rpc(
             http,
@@ -181,6 +214,21 @@ async def test_a_signed_in_read_acts_as_the_user(server, keys, apis):
         assert response.status_code == 200
         assert apis.requests[-1].url.host == "compose.neurosynth.org"
         assert apis.requests[-1].headers["authorization"] == "Bearer agents-token-1"
+        assert auth0.bodies[-1]["scope"] == "read"  # never more than the user granted
+
+
+async def test_an_expiring_agents_token_is_exchanged_again(server, keys, apis, auth0):
+    auth0.expires_in = 10  # inside the 30 s margin: never reused
+    async with serve(server) as http:
+        signed_in = token(keys)
+        for _ in range(2):
+            call = {"name": "create_studyset", "arguments": {"name": "x"}}
+            assert (await rpc(http, "tools/call", call, signed_in)).status_code == 200
+    assert len(auth0.bodies) == 2
+    assert [r.headers["authorization"] for r in apis.requests] == [
+        "Bearer agents-token-1",
+        "Bearer agents-token-2",
+    ]
 
 
 async def test_a_refused_exchange_is_a_tool_error(server, keys, apis, auth0):
@@ -197,3 +245,34 @@ async def test_a_refused_exchange_is_a_tool_error(server, keys, apis, auth0):
         assert result["isError"]
         assert "Auth0 refused to act as you (403): no grant" in result["content"][0]["text"]
         assert apis.requests == []
+
+
+SIGN_IN_ENV = {
+    "NEUROSTORE_MCP_PUBLIC_URL": "https://neurostore.org/",
+    "NEUROSTORE_MCP_AUTH0_DOMAIN": "neurosynth.us.auth0.com",
+    "NEUROSTORE_MCP_AGENT_AUDIENCE": "https://neurostore.org/agents/",
+    "NEUROSTORE_MCP_CLIENT_ID": "mcp-client",
+    "NEUROSTORE_MCP_CLIENT_SECRET": "not-a-secret",
+}
+
+
+def test_sign_in_settings_come_from_the_environment(monkeypatch):
+    for name, value in SIGN_IN_ENV.items():
+        monkeypatch.setenv(name, value)
+    assert Settings.from_env() == Settings(
+        public_url="https://neurostore.org",
+        issuer="https://neurosynth.us.auth0.com/",
+        agent_audience="https://neurostore.org/agents/",
+        client_id="mcp-client",
+        client_secret="not-a-secret",
+    )
+
+
+def test_a_partial_sign_in_config_says_what_is_missing(monkeypatch, caplog):
+    for name, value in SIGN_IN_ENV.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.delenv("NEUROSTORE_MCP_CLIENT_SECRET")
+    with caplog.at_level(logging.WARNING):
+        assert Settings.from_env() is None
+    assert "NEUROSTORE_MCP_CLIENT_SECRET" in caplog.text
+    assert "not-a-secret" not in caplog.text

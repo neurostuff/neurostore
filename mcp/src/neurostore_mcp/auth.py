@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass
@@ -24,6 +25,8 @@ from fastmcp.server.auth.providers.jwt import JWTVerifier
 from fastmcp.server.dependencies import get_access_token
 from pydantic import AnyHttpUrl
 from starlette.types import ASGIApp, Receive, Scope, Send
+
+logger = logging.getLogger(__name__)
 
 SCOPES = ("read", "write")
 
@@ -48,6 +51,9 @@ class Settings:
         )
         values = [os.environ.get(n, "").strip() for n in names]
         if not all(values):
+            if any(values):
+                missing = [n for n, v in zip(names, values) if not v]
+                logger.warning("Sign-in is off (read-only): %s not set", ", ".join(missing))
             return None
         url, domain, audience, client_id, secret = values
         return cls(url.rstrip("/"), f"https://{domain}/", audience, client_id, secret)
@@ -139,18 +145,13 @@ class LazyAuth:
     without the `write` scope gets the RFC 6750 `insufficient_scope` challenge.
     """
 
-    def __init__(
-        self,
-        guarded: ASGIApp,
-        sign_in: set[str],
-        write: set[str],
-        resource_metadata_url: str,
-    ):
+    def __init__(self, guarded: ASGIApp, sign_in: set[str], write: set[str]):
         self.guarded = guarded
         self.app = guarded.app
         self.sign_in = sign_in
         self.write = write
-        self.resource_metadata_url = resource_metadata_url
+        # the URL FastMCP's own 401 challenge names, so both challenges agree
+        self.resource_metadata_url = str(guarded.resource_metadata_url)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":

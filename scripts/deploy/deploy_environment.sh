@@ -675,6 +675,8 @@ deploy_store_dev() {
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=0
   compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=1 store_release_worker
+  # In the `mcp` profile, so the bare `up` above leaves it out.
+  compose_for "${service_root}" "${project}" up -d --no-build neurostore-mcp
   build_review_frontend
   sync_vocabulary_releases "${service_root}" "${project}"
 }

@@ -19,7 +19,8 @@ dependencies = [
 test = [
     "pytest>=8",
     "pytest-asyncio>=1.0",
-    "pytest-recording>=0.14",
+    "pytest-recording>=0.14",  # --block-network
+    "pyyaml>=6",
 ]
 
 [project.scripts]

@@ -31,6 +31,7 @@ Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup
    - The backends treat it as an agent: its scopes are enforced, the user's roles are dropped, and its writes are logged with `actor=<this client>`.
    - The MCP spec forbids forwarding the client's own token, and the server never does.
    - Auth0 rate-limits On-Behalf-Of per tenant (2/s on Free, 8/s on Essentials and Professional), which the cache keeps well below.
+   - The exchange refuses `openid` ("ID tokens (openid scope) are not supported for on-behalf-of token exchange", staging 2026-11-17), so the agents token can't be used at `/userinfo`. A user's first write through the server therefore names them "Unknown" in Store and Compose (#1949 discussion).
 
 ## Auth0 changes, per tenant
 
@@ -39,7 +40,7 @@ Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup
 - Step 2: both settings on; discovery reports `authorization_response_iss_parameter_supported: true`.
 - Step 3: the Custom API client "Neurostore MCP server" (client id `XioZhXmGdh3uWmVGMjxNynBrCgS3nmdL`), On-Behalf-Of on. The agents API's user policy is `allow_all`, so its user-delegated access needs no per-app grant.
 - Step 4: nothing needed while the MCP API's user policy is `allow_all`. A device-code request for it through "Neurostore agents" succeeds.
-- Not yet tried: an On-Behalf-Of exchange with a real token.
+- Not yet done: Allow Skipping User Consent on the agents API (step 3), so exchanges fail until it is on.
 
 Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and grant tools can't set `app_type: resource_server` or `token_exchange`), so they were done in the dashboard.
 
@@ -62,6 +63,7 @@ Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and 
    - `app_type: resource_server`, `resource_server_identifier: https://neurostore.org/mcp`, with a secret.
    - Token Exchange → On-Behalf-Of Token Exchange: on (`token_exchange.allow_any_profile_of_type: ["on_behalf_of_token_exchange"]`).
    - APIs → the agents API → User-Delegated Access, `read` and `write`.
+   - The agents API needs **Allow Skipping User Consent** on. Without it every exchange gets 400 `invalid_request`: "The API must have 'Allow Skipping User Consent for Verifiable First-Party Clients' enabled" (staging, 2026-11-17).
    - Its client id and secret go in `store/.env` as `NEUROSTORE_MCP_CLIENT_ID` and `NEUROSTORE_MCP_CLIENT_SECRET`.
 4. **The client users sign in with:** the existing public app "Neurostore agents". It already allows `https://claude.ai/api/mcp/auth_callback` and port 33418 on localhost.
    - Give it access to the MCP API. Its user policy is `allow_all` unless per-app authorization is set.

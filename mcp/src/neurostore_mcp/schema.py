@@ -22,11 +22,14 @@ def compact(schema: Any, max_depth: int = 3, description_chars: int = 300) -> An
         if not isinstance(node, dict):
             return node
         out: dict[str, Any] = {}
+        cut = depth >= max_depth and isinstance(node.get("properties"), dict)
         for key, value in node.items():
             if key in DROP or key.startswith("x-"):
                 continue
+            if cut and key == "additionalProperties":
+                continue  # the unlisted fields must stay accepted
             if key == "properties" and isinstance(value, dict):
-                if depth >= max_depth:
+                if cut:
                     out["additionalProperties"] = True
                     continue
                 out[key] = {

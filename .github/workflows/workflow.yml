@@ -511,15 +511,24 @@ jobs:
       with:
         ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
+      name: Check out the API specs
+      working-directory: .
+      run: >-
+        git submodule update --init --recursive --depth 1
+        store/backend/neurostore/openapi compose/backend/neurosynth_compose/openapi
+    -
       name: Set up uv
       uses: astral-sh/setup-uv@v6
     -
-      name: MCP server tests (recorded responses, network blocked)
+      name: MCP server tests (network blocked)
       run: |
         uv venv --python 3.12
         uv pip install -e ".[test]"
-        .venv/bin/python -m pytest --record-mode=none --block-network --allowed-hosts=127.0.0.1,localhost
+        .venv/bin/python -m pytest --block-network --allowed-hosts=127.0.0.1,localhost
         uvx flake8 src tests
+    -
+      name: Build the MCP server image
+      run: docker build -t neurostore-mcp .
 
   style_check:
     runs-on: ubuntu-latest

@@ -1,18 +1,23 @@
-"""Servers built from the repo's own API specs, with the APIs and Auth0 stubbed."""
+"""Servers built from the APIs' own specs, with the APIs and Auth0 stubbed."""
 
-import gzip
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx2
 import pytest
+import yaml
 from fastmcp.server.auth.providers.jwt import JWTVerifier, RSAKeyPair
 
 from neurostore_mcp.auth import Settings, TokenExchange
 from neurostore_mcp.server import build, http_app
 
-SPECS = Path(__file__).parent / "specs"
+REPO = Path(__file__).resolve().parents[2]
+# Each backend's own pin of neurostore-spec (a git submodule, with nimads nested in it).
+SPECS = {
+    "store": REPO / "store/backend/neurostore/openapi/neurostore-openapi.yml",
+    "compose": REPO / "compose/backend/neurosynth_compose/openapi/neurosynth-compose-openapi.yml",
+}
 SETTINGS = Settings(
     public_url="https://neurostore.org",
     issuer="https://neurosynth.us.auth0.com/",
@@ -23,13 +28,49 @@ SETTINGS = Settings(
 RESOURCE = "https://neurostore.org/mcp"
 
 
+def inline_refs(path: Path) -> dict:
+    """The spec with every `$ref` inlined, as the backends serve it at /api/openapi.json.
+
+    As there, the referenced schema's keys win over a `$ref`'s siblings.
+    """
+    docs: dict[Path, dict] = {}
+
+    def load(file: Path) -> dict:
+        if file not in docs:
+            docs[file] = yaml.safe_load(file.read_text())
+        return docs[file]
+
+    def walk(node, file: Path, seen: tuple = ()):
+        if isinstance(node, list):
+            return [walk(n, file, seen) for n in node]
+        if not isinstance(node, dict):
+            return node
+        ref = node.get("$ref")
+        if not isinstance(ref, str):
+            return {k: walk(v, file, seen) for k, v in node.items()}
+        name, _, pointer = ref.partition("#")
+        target_file = (file.parent / name).resolve() if name else file
+        if (target_file, pointer) in seen:
+            raise ValueError(f"recursive $ref {ref} in {file}")
+        target = load(target_file)
+        for part in filter(None, pointer.split("/")):
+            target = target[part.replace("~1", "/").replace("~0", "~")]
+        out = walk(target, target_file, seen + ((target_file, pointer),))
+        siblings = {k: walk(v, file, seen) for k, v in node.items() if k != "$ref"}
+        return {**siblings, **out} if isinstance(out, dict) else out
+
+    return walk(load(path.resolve()), path.resolve())
+
+
 @pytest.fixture(scope="session")
 def specs():
-    """The specs the backends serve at /api/openapi.json (saved 2026-11-17)."""
-    return {
-        service: json.loads(gzip.decompress((SPECS / f"{name}-openapi.json.gz").read_bytes()))
-        for service, name in (("store", "neurostore"), ("compose", "compose"))
-    }
+    missing = [str(p.relative_to(REPO)) for p in SPECS.values() if not p.exists()]
+    if missing or not (SPECS["store"].parent / "nimads/nimads").exists():
+        pytest.fail(
+            "The spec submodules are not checked out: git submodule update --init --recursive "
+            "store/backend/neurostore/openapi compose/backend/neurosynth_compose/openapi"
+        )
+    return {service: inline_refs(path) for service, path in SPECS.items()}
 
 
 class FakeAPIs:
@@ -50,6 +91,7 @@ class FakeAuth0:
     def __init__(self):
         self.bodies: list[dict] = []
         self.status = 200
+        self.expires_in = 3600
 
     def __call__(self, request: httpx2.Request) -> httpx2.Response:
         body = json.loads(request.content)
@@ -58,7 +100,10 @@ class FakeAuth0:
             return httpx2.Response(self.status, json={"error_description": "no grant"})
         return httpx2.Response(
             200,
-            json={"access_token": f"agents-token-{len(self.bodies)}", "expires_in": 3600},
+            json={
+                "access_token": f"agents-token-{len(self.bodies)}",
+                "expires_in": self.expires_in,
+            },
         )
 
 

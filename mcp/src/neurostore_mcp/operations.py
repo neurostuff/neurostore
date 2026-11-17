@@ -58,7 +58,8 @@ OPERATIONS: dict[tuple[str, str, str], tuple[str, str]] = {
     ("store", "POST", "/analysis-queries/"): (
         "query_analyses",
         "Select analyses by their papers' extracted features (task, condition, sample, "
-        "acquisition, statistics, ...) and list the studies that have them. Stores nothing.",
+        "acquisition, statistics, ...) and list the studies that have them. Stores nothing. "
+        "Each result's `study` id can go into create_studyset's `studies`.",
     ),
     ("store", "GET", "/analysis-terms/"): (
         "list_analysis_terms",
@@ -87,7 +88,8 @@ OPERATIONS: dict[tuple[str, str, str], tuple[str, str]] = {
     ),
     ("store", "PUT", "/studysets/{id}"): (
         "update_studyset",
-        "Update a studyset you own, e.g. its name or its list of studies.",
+        "Update a studyset you own, e.g. its name or its list of studies. The studyset to "
+        "change is `id__path`.",
     ),
     ("store", "DELETE", "/studysets/{id}"): (
         "delete_studyset",
@@ -103,11 +105,18 @@ OPERATIONS: dict[tuple[str, str, str], tuple[str, str]] = {
     ),
     ("store", "POST", "/annotations/"): (
         "create_annotation",
-        "Create an annotation over a studyset you own.",
+        "Create an annotation over a studyset you own: one note per analysis, filled with "
+        "each column's default. Columns are `note_keys`, e.g. "
+        '{"included": {"type": "boolean", "default": false}}; a bare type such as '
+        '{"included": "boolean"} is refused. analysis_query and pipelines are applied only '
+        "by update_annotation.",
     ),
     ("store", "PUT", "/annotations/{id}"): (
         "update_annotation",
-        "Update an annotation you own: its columns or its notes.",
+        "Update an annotation you own: its columns or its notes. Read it first with "
+        "get_annotation; each note is {analysis, study, note: {column: value}}. "
+        "`analysis_query` = {query, column, feature_columns} runs a query_analyses `query` "
+        "over the studyset and sets the boolean `column` true for the analyses it selects.",
     ),
     ("store", "DELETE", "/annotations/{id}"): (
         "delete_annotation",
@@ -125,7 +134,9 @@ OPERATIONS: dict[tuple[str, str, str], tuple[str, str]] = {
     ),
     ("compose", "POST", "/projects"): (
         "create_project",
-        "Create a Compose project you own, over a Neurostore studyset and annotation.",
+        "Create a Compose project you own, over a Neurostore studyset and annotation: "
+        "`neurostore_studyset_id` and `neurostore_annotation_id` are Neurostore ids. Create "
+        "the project before its meta-analyses.",
     ),
     ("compose", "PUT", "/projects/{id}"): (
         "update_project",
@@ -142,7 +153,10 @@ OPERATIONS: dict[tuple[str, str, str], tuple[str, str]] = {
     ),
     ("compose", "POST", "/specifications"): (
         "create_specification",
-        "Create a meta-analysis specification.",
+        "Create a meta-analysis specification: `type` (cbma), `estimator` {type: ALE, "
+        "MKDADensity or KDA, args}, `corrector` (e.g. {type: FWECorrector, args: {method: "
+        "montecarlo}}), and `filter`, a boolean annotation column: analyses whose note is "
+        "true are included.",
     ),
     ("compose", "PUT", "/specifications/{id}"): (
         "update_specification",
@@ -155,8 +169,9 @@ OPERATIONS: dict[tuple[str, str, str], tuple[str, str]] = {
     ),
     ("compose", "POST", "/meta-analyses"): (
         "create_meta_analysis",
-        "Create a meta-analysis in a project you own, from a specification, studyset and "
-        "annotation.",
+        "Create a meta-analysis in a project you own from a specification. `project` is "
+        "required; the studyset and annotation are taken from the project, so neurostore_"
+        "studyset and neurostore_annotation are ignored.",
     ),
     ("compose", "PUT", "/meta-analyses/{id}"): (
         "update_meta_analysis",
@@ -169,11 +184,12 @@ OPERATIONS: dict[tuple[str, str, str], tuple[str, str]] = {
     ("compose", "GET", "/meta-analysis-results/{id}"): (
         "get_meta_analysis_result",
         "Get one run of a meta-analysis: its NeuroVault maps, methods text and the snapshots it"
-        " ran on.",
+        " ran on. The maps are URLs under neurovault_collection.files; download them there.",
     ),
     ("compose", "POST", "/meta-analysis-jobs"): (
         "run_meta_analysis",
-        "Submit a meta-analysis you own to run on Compose's workers.",
+        "Submit a meta-analysis you own to run on Compose's workers. Returns a job_id: poll "
+        "get_meta_analysis_job until it finishes, then list_meta_analysis_results.",
     ),
     ("compose", "GET", "/meta-analysis-jobs"): (
         "list_meta_analysis_jobs",
