@@ -26,6 +26,9 @@ JWKS_REFETCH = timedelta(minutes=1)
 _jwks_cache: dict[str, tuple[float, dict]] = {}
 # what an agent's token may be granted on the agents API; write includes read
 AGENT_SCOPES = frozenset({"read", "write"})
+# the user's display name, which the tenant's "Neurostore user name" Action adds to agents
+# tokens: an on-behalf-of token can't be used at /userinfo
+NAME_CLAIM = "https://neurostore.org/name"
 audit_log = logging.getLogger("neurostore.agents")
 
 

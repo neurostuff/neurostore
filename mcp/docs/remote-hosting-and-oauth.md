@@ -31,7 +31,7 @@ Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup
    - The backends treat it as an agent: its scopes are enforced, the user's roles are dropped, and its writes are logged with `actor=<this client>`.
    - The MCP spec forbids forwarding the client's own token, and the server never does.
    - Auth0 rate-limits On-Behalf-Of per tenant (2/s on Free, 8/s on Essentials and Professional), which the cache keeps well below.
-   - The exchange refuses `openid` ("ID tokens (openid scope) are not supported for on-behalf-of token exchange", staging 2026-11-17), so the agents token can't be used at `/userinfo`. A user's first write through the server therefore names them "Unknown" in Store and Compose (#1949 discussion).
+   - The exchange refuses `openid` ("ID tokens (openid scope) are not supported for on-behalf-of token exchange", staging 2026-11-17), so the agents token can't be used at `/userinfo`. Instead the post-login Action "Neurostore user name" (`mcp/auth0/neurostore-user-name.js`, on the Login flow of both tenants) adds the user's display name to agents tokens as `https://neurostore.org/name`, and Store and Compose name a new user from it. Without the Action, a user whose first write comes through the server is named "Unknown".
 
 ## Auth0 changes, per tenant
 

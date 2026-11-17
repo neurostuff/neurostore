@@ -117,6 +117,16 @@ def test_write_agent_acts_as_its_user_and_is_logged(
     )
 
 
+def test_a_new_user_is_named_from_the_tokens_name_claim(agent_client, session):
+    # the user's first request is an agent's: its token can't be used at /userinfo
+    client = agent_client("new-agent-user", "write", **{auth.NAME_CLAIM: "Ada Lovelace"})
+
+    resp = client.post("/api/specifications", data=SPEC)
+
+    assert resp.status_code == 200, resp.json()
+    assert User.query.filter_by(external_id="new-agent-user").one().name == "Ada Lovelace"
+
+
 def test_read_agent_cannot_write(agent_client, mock_add_users):
     client = agent_client("user1-id", "openid read")
 
