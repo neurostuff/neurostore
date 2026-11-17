@@ -41,7 +41,7 @@ To serve Streamable HTTP at `http://127.0.0.1:8000/mcp`, add `--transport http -
 
 ## The hosted server and signing in
 
-`store/docker-compose.yml` runs the server as `neurostore-mcp`, and `store/nginx/nginx.conf` serves it at `https://neurostore.org/mcp`. With no sign-in settings it only reads.
+`store/docker-compose.yml` runs the server as `neurostore-mcp`, in the compose profile `mcp`: start it by name. `store/nginx/nginx.conf` serves it at `https://neurostore.org/mcp`. With no sign-in settings it only reads.
 
 These variables in `store/.env` turn sign-in on. All five are needed:
 
