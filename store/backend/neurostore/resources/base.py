@@ -563,6 +563,12 @@ class ListView(BaseView):
         if self._search_fields:
             self._user_args.update({f: fields.Str() for f in self._search_fields})
 
+    def visible(self, q):
+        """``q`` narrowed to the rows the current user may see: public ones and their own."""
+        if hasattr(self._model, "public"):
+            q = q.filter(*visibility_filters(self._model))
+        return q
+
     def view_search(self, q, args):
         return q
 
@@ -613,9 +619,7 @@ class ListView(BaseView):
         if args.get("user_id"):
             q = q.filter(m.user_id == args.get("user_id"))
 
-        # query items that are public and/or you own them
-        if hasattr(m, "public"):
-            q = q.filter(*visibility_filters(m))
+        q = self.visible(q)
 
         # Columns are resolved only for the arguments given: some views list
         # a field or full-text field their model does not have.
