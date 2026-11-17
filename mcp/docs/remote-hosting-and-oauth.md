@@ -6,7 +6,7 @@ Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup
 
 - **The service:** `neurostore-mcp` in `store/docker-compose.yml`, built from `mcp/Dockerfile`.
   - It calls Store inside the stack (`http://neurostore:8000/api`), so nginx's per-client limit on `/api/query/` doesn't throttle every agent at once.
-  - Compose is called at `NEUROSTORE_MCP_COMPOSE_API_URL`. The staging and dev deploys set this to their own Compose.
+  - Compose is called at `http://compose:8000/api` over `proxy_shared` (`SHARED_PROXY_NETWORK`), the Docker network the deploy puts both stacks on; on production that is `nginx-proxy`, which `compose-compose-1` joins.
 - **The deploy:** the service is in the compose profile `mcp`, so a bare `docker compose up` leaves it out. `scripts/deploy/deploy_environment.sh` builds and restarts it by name with `store_nginx`. In production, run `docker compose up -d --build neurostore-mcp` from `store/`.
 - **nginx** serves two paths:
   - `/mcp`, with buffering off and a 300 s read timeout;

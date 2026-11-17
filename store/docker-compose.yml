@@ -158,9 +158,14 @@ services:
         condition: service_started
     expose:
       - "8000"
+    # proxy_shared is the network the deploy puts this track's Compose stack on, so it is
+    # called directly, as Store is, past both nginx's.
+    networks:
+      - default
+      - proxy_shared
     environment:
       NEUROSTORE_API_URL: http://neurostore:8000/api
-      COMPOSE_API_URL: ${NEUROSTORE_MCP_COMPOSE_API_URL:-}
+      COMPOSE_API_URL: http://compose:8000/api
       NEUROSTORE_MCP_PUBLIC_URL: ${NEUROSTORE_MCP_PUBLIC_URL:-}
       NEUROSTORE_MCP_AUTH0_DOMAIN: ${NEUROSTORE_MCP_AUTH0_DOMAIN:-}
       NEUROSTORE_MCP_AGENT_AUDIENCE: ${NEUROSTORE_MCP_AGENT_AUDIENCE:-}

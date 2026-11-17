@@ -350,11 +350,6 @@ configure_track_networking() {
   upsert_env_value "${compose_env}" "CELERY_BROKER_URL" "redis://compose_redis:6379/0"
   upsert_env_value "${compose_env}" "CELERY_RESULT_BACKEND" "redis://compose_redis:6379/0"
   upsert_env_value "${compose_env}" "NEUROSTORE_API_URL" "http://store_nginx/api"
-
-  # The MCP server (in the store project) calls this track's Compose, not production's.
-  local compose_vhost
-  compose_vhost="$(strip_env_quotes "$(read_env_value "${compose_env}" "V_HOST")")"
-  upsert_env_value "${store_env}" "NEUROSTORE_MCP_COMPOSE_API_URL" "https://${compose_vhost%%,*}/api"
 }
 
 sync_repo_env_files() {
