@@ -1,6 +1,6 @@
 # Hosting neurostore-mcp, and signing in
 
-Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup below is made on production and staging; the client secrets are not yet in either `.env`. The decision on agent tokens is ADR 0021 (`docs/adr/0021-agents-act-for-users-on-an-agents-audience.md`).
+Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup below is made, and an On-Behalf-Of exchange checked, on production and staging; both `store/.env` files have all five sign-in variables. The decision on agent tokens is ADR 0021 (`docs/adr/0021-agents-act-for-users-on-an-agents-audience.md`).
 
 ## Where it runs
 
@@ -41,7 +41,7 @@ Status 2026-11-17: built. The hosted server is not yet deployed. The Auth0 setup
 - Step 3: the Custom API client "Neurostore MCP server" (client id `XioZhXmGdh3uWmVGMjxNynBrCgS3nmdL`), On-Behalf-Of on. The agents API's user policy is `allow_all`, so its user-delegated access needs no per-app grant.
 - Step 4: nothing needed while the MCP API's user policy is `allow_all`. A device-code request for it through "Neurostore agents" succeeds.
 - The post-login Action "Neurostore user name" (id `002a0e09-ef29-4f8a-ba2e-c8e08ab44d72`) is deployed and in the Login flow. A device-code token for the agents API through "Neurostore agents" carries `https://neurostore.org/name`.
-- Not yet done: Allow Skipping User Consent on the agents API (step 3), so exchanges fail until it is on.
+- Allow Skipping User Consent is on for the agents API. A real exchange on the production host, from a `read write` sign-in for the MCP API through "Neurostore agents", gave an agents token with the user's `sub`, `act.sub` = the server's client, scope `read write`, and the name claim.
 
 Auth0's MCP server can't do steps 2 and 3 (no tenant-settings tool; its app and grant tools can't set `app_type: resource_server` or `token_exchange`), so they were done in the dashboard.
 
