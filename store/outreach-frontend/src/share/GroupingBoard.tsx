@@ -5,7 +5,6 @@ import { AnalysisMenu } from './AnalysisMenu';
 import type { ShareApi } from './api';
 import { BoardColumn } from './BoardColumn';
 import { board, moves, type Group } from './grouping';
-import { MapExtras } from './MapExtrasMenu';
 import { shownPath } from './review';
 import type { MapType, ShareUpload, ShareView } from './types';
 import { UnassignedColumn } from './UnassignedColumn';
@@ -53,8 +52,13 @@ export function GroupingBoard({
     const statistics = view.uploads.filter(
         (upload) =>
             upload.check_status === 'ok' &&
-            (upload.map_type === 't' || upload.map_type === 'z' || upload.map_type === 'f'),
+            (upload.map_type === 't' || upload.map_type === 'z' || upload.map_type === 'f')
     );
+
+    // An effect or variance map chooses between an analysis (on its own) and a t/z map (to go
+    // with it, on that map's analyses). A t/z map can only be moved to an analysis.
+    const asMember = menu?.upload.kind === 'effect' || menu?.upload.kind === 'variance';
+    const candidates = statistics.filter((other) => other.id !== menu?.upload.id);
 
     function assign(group: Group, to: string | null, from: string | null) {
         setActing(group.lead.id);
@@ -141,28 +145,45 @@ export function GroupingBoard({
                 analyses={view.analyses.map((analysis) => ({
                     ...analysis,
                     count: view.uploads.filter((upload) => upload.analysis_keys.includes(analysis.key)).length,
+                    maps: asMember
+                        ? candidates
+                              .filter((other) => other.analysis_keys.includes(analysis.key))
+                              .map((other) => ({
+                                  id: other.id,
+                                  name: shownPath(other, folder),
+                              }))
+                        : undefined,
                 }))}
+                title={asMember ? 'Assign to an analysis or a t/z map' : 'Assign to analysis'}
                 current={menu?.from ?? null}
-                movable={menu?.group != null}
+                currentMap={menu?.upload.partner_id ?? null}
+                unplaced={
+                    asMember
+                        ? candidates
+                              .filter((other) => !other.analysis_keys.some((key) => lanes.has(key)))
+                              .map((other) => ({
+                                  id: other.id,
+                                  name: shownPath(other, folder),
+                              }))
+                        : []
+                }
                 fits={menu?.upload.kind === 'variance' ? undefined : menu?.upload.fits}
                 onSelect={(to) => {
-                    if (menu?.group) assign(menu.group, to, menu.from);
+                    if (!menu) return;
+                    if (menu.group) assign(menu.group, to, menu.from);
+                    // Inside a t/z map's card: unpair, and put it on the analysis in one request.
+                    else onChange(menu.upload.id, { partner_id: null, analysis_keys: [to] });
                     setMenu(null);
                 }}
-            >
-                {menu && (
-                    <MapExtras
-                        upload={menu.upload}
-                        statistics={statistics}
-                        folder={folder}
-                        showDivider={menu.group != null}
-                        onPartner={(partner_id) => {
-                            onChange(menu.upload.id, { partner_id });
-                            setMenu(null);
-                        }}
-                    />
-                )}
-            </AnalysisMenu>
+                onSelectMap={
+                    asMember
+                        ? (partner_id) => {
+                              onChange(menu!.upload.id, { partner_id });
+                              setMenu(null);
+                          }
+                        : undefined
+                }
+            />
         </Stack>
     );
 }

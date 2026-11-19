@@ -31,7 +31,15 @@ const view = (uploads: ShareUpload[]): ShareView => ({
     status: 'uploading',
     open: true,
     closed_reason: null,
-    paper: { title: 'A paper', journal: null, year: 2026, authors: null, doi: null, pmid: null, pmcid: null },
+    paper: {
+        title: 'A paper',
+        journal: null,
+        year: 2026,
+        authors: null,
+        doi: null,
+        pmid: null,
+        pmcid: null,
+    },
     analyses: [
         { key: 'a', name: 'Faces > Houses', description: null, points: 5 },
         { key: 'b', name: 'Houses > Faces', description: null, points: 5 },
@@ -42,11 +50,21 @@ const view = (uploads: ShareUpload[]): ShareView => ({
     issues: [],
     submitter_name: null,
     submitter_orcid: null,
-    limits: { max_files: 9, max_file_bytes: 200 * 1024 * 1024, extensions: ['.nii.gz'], map_types: [] },
+    limits: {
+        max_files: 9,
+        max_file_bytes: 200 * 1024 * 1024,
+        extensions: ['.nii.gz'],
+        map_types: [],
+    },
 });
 
 function renderBoard(v: ShareView, over: Partial<Parameters<typeof GroupingBoard>[0]> = {}) {
-    const handlers = { onAssign: vi.fn(), onChange: vi.fn(), onRemoveFile: vi.fn(), onIssue: vi.fn() };
+    const handlers = {
+        onAssign: vi.fn(),
+        onChange: vi.fn(),
+        onRemoveFile: vi.fn(),
+        onIssue: vi.fn(),
+    };
     render(<GroupingBoard view={v} folder="" disabled={false} busy={false} {...handlers} {...over} />);
     return handlers;
 }
@@ -105,6 +123,15 @@ test('the move menu only assigns: it has no Unassign, on an analysis or in the p
     }
 });
 
+test('a map attached to a t/z map in the pool can be unattached, not only deleted', async () => {
+    const effect = upload('2', [], { kind: 'effect', map_type: 'effect', partner_id: '1', assigned_by: 'author' });
+    const { onChange, onRemoveFile } = renderBoard(view([upload('1', []), effect]));
+    expect(screen.queryByRole('button', { name: 'Remove 2.nii.gz' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Unassign 2.nii.gz from its t/z map' }));
+    expect(onChange).toHaveBeenCalledWith('2', { partner_id: null, analysis_keys: [] });
+    expect(onRemoveFile).not.toHaveBeenCalled();
+});
+
 test('an assigned map has Unassign where a map in the pool has the trash button', () => {
     renderBoard(view([upload('1', ['a']), upload('2', [])]));
     expect(screen.getByRole('button', { name: 'Unassign 1.nii.gz' })).toBeInTheDocument();
@@ -114,20 +141,21 @@ test('an assigned map has Unassign where a map in the pool has the trash button'
 });
 
 test('an effect map in a card on an analysis is unassigned from its t/z map, not deleted', async () => {
-    const effect = upload('2', ['a'], { kind: 'effect', map_type: 'effect', partner_id: '1', assigned_by: 'set' });
+    const effect = upload('2', ['a'], {
+        kind: 'effect',
+        map_type: 'effect',
+        partner_id: '1',
+        assigned_by: 'set',
+    });
     const { onChange } = renderBoard(view([upload('1', ['a']), effect]));
     expect(screen.getByRole('button', { name: 'Unassign 1.nii.gz' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove 2.nii.gz' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Unassign 2.nii.gz from its t/z map' }));
     // Unpaired and on no analysis, in one request, so the server does not place it again.
-    expect(onChange).toHaveBeenCalledWith('2', { partner_id: null, analysis_keys: [] });
-});
-
-test('an effect map in a card still in the pool keeps the trash button', () => {
-    const effect = upload('2', [], { kind: 'effect', map_type: 'effect', partner_id: '1', assigned_by: null });
-    renderBoard(view([upload('1', []), effect]));
-    expect(screen.getByRole('button', { name: 'Remove 2.nii.gz' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Unassign 2.nii.gz from its t/z map' })).not.toBeInTheDocument();
+    expect(onChange).toHaveBeenCalledWith('2', {
+        partner_id: null,
+        analysis_keys: [],
+    });
 });
 
 test('the move menu searches analyses by name', async () => {
@@ -141,26 +169,78 @@ test('the move menu searches analyses by name', async () => {
     expect(screen.getByText('No matching analyses')).toBeInTheDocument();
 });
 
-test('an effect map sits inside its t/z map\'s card and its menu has no analyses to move to', async () => {
-    const effect = upload('2', ['a'], { kind: 'effect', map_type: 'effect', partner_id: '1', assigned_by: 'set' });
+test("an effect map sits inside its t/z map's card", () => {
+    const effect = upload('2', ['a'], {
+        kind: 'effect',
+        map_type: 'effect',
+        partner_id: '1',
+        assigned_by: 'set',
+    });
     renderBoard(view([upload('1', ['a']), effect]));
     expect(lane('Faces > Houses').getByText('2.nii.gz')).toBeInTheDocument();
     const parentCard = screen.getByText('1.nii.gz').closest('.MuiPaper-root') as HTMLElement;
     expect(parentCard).toContainElement(screen.getByText('2.nii.gz'));
-    await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
-    expect(screen.queryByRole('textbox', { name: 'Search analyses' })).not.toBeInTheDocument();
 });
 
-test('an effect map can be paired with a t/z map from its menu', async () => {
+test('an effect map picks an analysis or a t/z map from one list, with the maps under their analysis', async () => {
+    const effect = upload('2', [], { kind: 'effect', map_type: 'effect' });
+    renderBoard(view([upload('1', ['a']), effect]));
+    await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
+    const menu = within(screen.getByRole('menu'));
+    expect(menu.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+        expect.stringMatching(/Faces > Houses/),
+        expect.stringMatching(/attach to1\.nii\.gz/),
+        expect.stringMatching(/Houses > Faces/),
+    ]);
+});
+
+test('an effect map put on an analysis stays on its own there', async () => {
+    const effect = upload('2', [], { kind: 'effect', map_type: 'effect' });
+    const { onAssign, onChange } = renderBoard(view([upload('1', ['a']), effect]));
+    await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /Houses > Faces/ }));
+    expect(onAssign).toHaveBeenCalledWith([{ id: '2', keys: ['b'] }]);
+    expect(onChange).not.toHaveBeenCalled();
+});
+
+test('an effect map can be paired by choosing a t/z map under an analysis', async () => {
     const effect = upload('2', [], { kind: 'effect', map_type: 'effect' });
     const { onChange } = renderBoard(view([upload('1', ['a']), effect]));
     await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
-    await userEvent.click(screen.getByRole('menuitem', { name: '1.nii.gz' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /1\.nii\.gz/ }));
     expect(onChange).toHaveBeenCalledWith('2', { partner_id: '1' });
 });
 
+test('a t/z map on no analysis is offered after the analyses, to pair with', async () => {
+    const effect = upload('2', [], { kind: 'effect', map_type: 'effect' });
+    const { onChange } = renderBoard(view([upload('1', []), effect]));
+    await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
+    expect(screen.getByText('Not on an analysis yet')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('menuitem', { name: /1\.nii\.gz/ }));
+    expect(onChange).toHaveBeenCalledWith('2', { partner_id: '1' });
+});
+
+test('a map inside a card moves to an analysis on its own, leaving its t/z map', async () => {
+    const effect = upload('2', ['a'], {
+        kind: 'effect',
+        map_type: 'effect',
+        partner_id: '1',
+        assigned_by: 'set',
+    });
+    const { onChange } = renderBoard(view([upload('1', ['a']), effect]));
+    await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /Houses > Faces/ }));
+    expect(onChange).toHaveBeenCalledWith('2', {
+        partner_id: null,
+        analysis_keys: ['b'],
+    });
+});
+
 test('a file that could not be read is listed with its error and can be removed', async () => {
-    const bad = upload('3', [], { check_status: 'problem', problem: 'This map holds no numbers.' });
+    const bad = upload('3', [], {
+        check_status: 'problem',
+        problem: 'This map holds no numbers.',
+    });
     const { onRemoveFile } = renderBoard(view([bad]));
     expect(screen.getByText(/This map holds no numbers\./)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
@@ -201,7 +281,11 @@ test('the description field is hidden until the author says the paper does not t
     const { onChange } = renderBoard(view([upload('1', ['a']), upload('2', [])]));
     expect(screen.queryByRole('textbox', { name: /What is this map\?/ })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: "Not reported in the paper's tables" }));
-    expect(screen.queryByRole('button', { name: "Not reported in the paper's tables" })).not.toBeInTheDocument();
+    expect(
+        screen.queryByRole('button', {
+            name: "Not reported in the paper's tables",
+        })
+    ).not.toBeInTheDocument();
     const field = screen.getByRole('textbox', { name: /What is this map\?/ });
     await userEvent.type(field, 'Faces only');
     await userEvent.tab();
@@ -211,7 +295,11 @@ test('the description field is hidden until the author says the paper does not t
 test('a map with a description shows its field, and only maps in the pool have the link', async () => {
     renderBoard(view([upload('1', ['a']), upload('2', [], { label: 'Faces only' }), upload('3', [])]));
     expect(screen.getAllByRole('textbox', { name: /What is this map\?/ })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: "Not reported in the paper's tables" })).toHaveLength(1);
+    expect(
+        screen.getAllByRole('button', {
+            name: "Not reported in the paper's tables",
+        })
+    ).toHaveLength(1);
     await userEvent.click(screen.getByRole('button', { name: 'Options for 3.nii.gz' }));
     expect(screen.queryByRole('menuitem', { name: /Not reported/ })).not.toBeInTheDocument();
 });
@@ -229,7 +317,15 @@ test('the move menu shows how well the map fits each analysis', async () => {
 });
 
 test('a map shows the folder it is in above its type, file name and size', () => {
-    renderBoard(view([upload('1', ['a'], { path: 'study/stats/z.nii.gz', filename: 'z.nii.gz', size_bytes: 2048 })]));
+    renderBoard(
+        view([
+            upload('1', ['a'], {
+                path: 'study/stats/z.nii.gz',
+                filename: 'z.nii.gz',
+                size_bytes: 2048,
+            }),
+        ])
+    );
     const row = within(lane('Faces > Houses').getByText('z.nii.gz').closest('.MuiPaper-root') as HTMLElement);
     expect(row.getByText('stats')).toBeInTheDocument();
     expect(row.getByText('2 KB')).toBeInTheDocument();

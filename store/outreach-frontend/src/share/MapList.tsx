@@ -112,8 +112,9 @@ function MapRow({
         onDescribe,
     } = shared;
     // What the last button does. A map on an analysis comes off it, and an effect or variance map
-    // inside a card on an analysis comes off its t/z map. Only a map in the pool is deleted.
-    const action = from === null ? 'delete' : group !== null ? 'unassign' : 'detach';
+    // inside any card, on an analysis or in the pool, comes off its t/z map. Only a t/z or lone
+    // map in the pool is deleted.
+    const action = group === null ? 'detach' : from === null ? 'delete' : 'unassign';
     const path = shownPath(upload, folder);
     const inside = parentFolder(upload);
     const fit = from && group ? upload.fits[from] : null;
@@ -206,9 +207,9 @@ function MapRow({
                     <Tooltip
                         title={
                             action === 'unassign'
-                                ? 'Unassign this map from the analysis'
+                                ? 'Unassign from analysis'
                                 : action === 'detach'
-                                  ? 'Unassign this map from its t/z parent'
+                                  ? 'Unassign from parent'
                                   : 'Delete this map'
                         }
                     >
