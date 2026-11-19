@@ -44,7 +44,7 @@ export function AnalysisLane({
                             {count} {count === 1 ? 'map' : 'maps'}
                         </Typography>
                     </Stack>
-                    <Typography variant="h6" component="span" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+                    <Typography variant="h6" component="span" sx={{ fontSize: '1rem', lineHeight: "normal" }}>
                         {analysis.name}
                     </Typography>
                 </Stack>
