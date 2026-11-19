@@ -1,4 +1,4 @@
-import { board, filterAnalyses, moveKeys, moves } from './grouping';
+import { board, filterAnalyses, moveKeys, moves, summary } from './grouping';
 import type { ShareUpload, ShareView } from './types';
 
 const upload = (id: string, keys: string[], over: Partial<ShareUpload> = {}): ShareUpload => ({
@@ -171,4 +171,19 @@ test("moving a group sends its t/z map's analyses, and any member the author pla
         { id: '1', keys: [] },
         { id: '3', keys: [] },
     ]);
+});
+
+test('the summary counts maps, maps still on no analysis, and analyses with and without a map', () => {
+    const v = view([
+        upload('1', ['a']),
+        upload('2', []),
+        upload('3', [], { label: 'Faces only' }),
+        upload('4', [], { kind: 'effect', partner_id: '2' }),
+    ]);
+    // Four maps came up; the unplaced t/z map and its effect map wait, the described one is dealt with.
+    expect(summary(v)).toEqual({ uploaded: 4, unassigned: 2, filled: 1, empty: 2 });
+});
+
+test('with nothing uploaded all three analyses are empty', () => {
+    expect(summary(view([]))).toEqual({ uploaded: 0, unassigned: 0, filled: 0, empty: 3 });
 });

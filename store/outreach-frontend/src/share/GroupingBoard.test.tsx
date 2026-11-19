@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { GroupingBoard } from './GroupingBoard';
@@ -89,11 +89,45 @@ test('choosing the analysis a map is already on changes nothing', async () => {
     expect(onAssign).not.toHaveBeenCalled();
 });
 
-test('"Unassigned maps" in the menu puts the map back in the pool, recording the choice', async () => {
+test('the Unassign button on a map takes it off its analysis, recording the choice', async () => {
     const { onAssign } = renderBoard(view([upload('1', ['a'])]));
-    await userEvent.click(screen.getByRole('button', { name: 'Options for 1.nii.gz' }));
-    await userEvent.click(screen.getByRole('menuitem', { name: /Unassigned maps/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unassign 1.nii.gz' }));
     expect(onAssign).toHaveBeenCalledWith([{ id: '1', keys: [] }]);
+});
+
+test('the move menu only assigns: it has no Unassign, on an analysis or in the pool', async () => {
+    for (const keys of [['a'], []]) {
+        renderBoard(view([upload('1', keys)]));
+        await userEvent.click(screen.getByRole('button', { name: 'Options for 1.nii.gz' }));
+        expect(screen.getByRole('textbox', { name: 'Search analyses' })).toBeInTheDocument();
+        expect(within(screen.getByRole('menu')).queryByText(/Unassign/)).not.toBeInTheDocument();
+        cleanup();
+    }
+});
+
+test('an assigned map has Unassign where a map in the pool has the trash button', () => {
+    renderBoard(view([upload('1', ['a']), upload('2', [])]));
+    expect(screen.getByRole('button', { name: 'Unassign 1.nii.gz' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove 1.nii.gz' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove 2.nii.gz' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Unassign 2.nii.gz' })).not.toBeInTheDocument();
+});
+
+test('an effect map in a card on an analysis is unassigned from its t/z map, not deleted', async () => {
+    const effect = upload('2', ['a'], { kind: 'effect', map_type: 'effect', partner_id: '1', assigned_by: 'set' });
+    const { onChange } = renderBoard(view([upload('1', ['a']), effect]));
+    expect(screen.getByRole('button', { name: 'Unassign 1.nii.gz' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove 2.nii.gz' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Unassign 2.nii.gz from its t/z map' }));
+    // Unpaired and on no analysis, in one request, so the server does not place it again.
+    expect(onChange).toHaveBeenCalledWith('2', { partner_id: null, analysis_keys: [] });
+});
+
+test('an effect map in a card still in the pool keeps the trash button', () => {
+    const effect = upload('2', [], { kind: 'effect', map_type: 'effect', partner_id: '1', assigned_by: null });
+    renderBoard(view([upload('1', []), effect]));
+    expect(screen.getByRole('button', { name: 'Remove 2.nii.gz' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Unassign 2.nii.gz from its t/z map' })).not.toBeInTheDocument();
 });
 
 test('the move menu searches analyses by name', async () => {
@@ -107,10 +141,12 @@ test('the move menu searches analyses by name', async () => {
     expect(screen.getByText('No matching analyses')).toBeInTheDocument();
 });
 
-test('an effect map sits under its t/z map and its menu has no analyses to move to', async () => {
+test('an effect map sits inside its t/z map\'s card and its menu has no analyses to move to', async () => {
     const effect = upload('2', ['a'], { kind: 'effect', map_type: 'effect', partner_id: '1', assigned_by: 'set' });
     renderBoard(view([upload('1', ['a']), effect]));
     expect(lane('Faces > Houses').getByText('2.nii.gz')).toBeInTheDocument();
+    const parentCard = screen.getByText('1.nii.gz').closest('.MuiPaper-root') as HTMLElement;
+    expect(parentCard).toContainElement(screen.getByText('2.nii.gz'));
     await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
     expect(screen.queryByRole('textbox', { name: 'Search analyses' })).not.toBeInTheDocument();
 });
@@ -155,8 +191,8 @@ test('the map type is set from a dropdown on the map', async () => {
     expect(onChange).toHaveBeenCalledWith('1', { map_type: 't' });
 });
 
-test('a map is removed with the trash button on its row', async () => {
-    const { onRemoveFile } = renderBoard(view([upload('1', ['a'])]));
+test('a map in the pool is removed with the trash button on its row', async () => {
+    const { onRemoveFile } = renderBoard(view([upload('1', [])]));
     await userEvent.click(screen.getByRole('button', { name: 'Remove 1.nii.gz' }));
     expect(onRemoveFile).toHaveBeenCalledWith('1');
 });
@@ -164,18 +200,19 @@ test('a map is removed with the trash button on its row', async () => {
 test('the description field is hidden until the author says the paper does not table the map', async () => {
     const { onChange } = renderBoard(view([upload('1', ['a']), upload('2', [])]));
     expect(screen.queryByRole('textbox', { name: /What is this map\?/ })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
-    await userEvent.click(screen.getByRole('menuitem', { name: /Not reported in the paper's tables/ }));
+    await userEvent.click(screen.getByRole('button', { name: "Not reported in the paper's tables" }));
+    expect(screen.queryByRole('button', { name: "Not reported in the paper's tables" })).not.toBeInTheDocument();
     const field = screen.getByRole('textbox', { name: /What is this map\?/ });
     await userEvent.type(field, 'Faces only');
     await userEvent.tab();
     expect(onChange).toHaveBeenCalledWith('2', { label: 'Faces only' });
 });
 
-test('a map with a description always shows its field, and a map on an analysis has no such menu item', async () => {
-    renderBoard(view([upload('1', ['a']), upload('2', [], { label: 'Faces only' })]));
+test('a map with a description shows its field, and only maps in the pool have the link', async () => {
+    renderBoard(view([upload('1', ['a']), upload('2', [], { label: 'Faces only' }), upload('3', [])]));
     expect(screen.getAllByRole('textbox', { name: /What is this map\?/ })).toHaveLength(1);
-    await userEvent.click(screen.getByRole('button', { name: 'Options for 1.nii.gz' }));
+    expect(screen.getAllByRole('button', { name: "Not reported in the paper's tables" })).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Options for 3.nii.gz' }));
     expect(screen.queryByRole('menuitem', { name: /Not reported/ })).not.toBeInTheDocument();
 });
 
@@ -191,13 +228,10 @@ test('the move menu shows how well the map fits each analysis', async () => {
     expect(screen.getAllByText('5 coordinates').length).toBeGreaterThanOrEqual(2);
 });
 
-test('the page counts maps that are on an analysis or described', async () => {
-    renderBoard(view([upload('1', ['a']), upload('2', []), upload('3', [], { label: 'Faces only' }), upload('4', [])]));
-    expect(screen.getByText('Addressed 2 / 4 issues')).toBeInTheDocument();
-});
-
-test('when every map is addressed the page says so', () => {
-    renderBoard(view([upload('1', ['a']), upload('2', [], { label: 'Faces only' })]));
-    expect(screen.getByText('All issues addressed')).toBeInTheDocument();
-    expect(screen.queryByText(/^Addressed /)).not.toBeInTheDocument();
+test('a map shows the folder it is in above its type, file name and size', () => {
+    renderBoard(view([upload('1', ['a'], { path: 'study/stats/z.nii.gz', filename: 'z.nii.gz', size_bytes: 2048 })]));
+    const row = within(lane('Faces > Houses').getByText('z.nii.gz').closest('.MuiPaper-root') as HTMLElement);
+    expect(row.getByText('stats')).toBeInTheDocument();
+    expect(row.getByText('2 KB')).toBeInTheDocument();
+    expect(row.getByRole('combobox', { name: /Kind of map for/ })).toBeInTheDocument();
 });

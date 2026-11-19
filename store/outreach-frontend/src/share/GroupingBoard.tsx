@@ -1,15 +1,14 @@
 import { Alert, Button, Link, Stack, Typography } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useState, type MouseEvent } from 'react';
-import type { ShareApi } from './api';
 import { AnalysisLane } from './AnalysisLane';
 import { AnalysisMenu } from './AnalysisMenu';
-import { board, moves, progress, type Group } from './grouping';
+import type { ShareApi } from './api';
 import { BoardColumn } from './BoardColumn';
+import { board, moves, type Group } from './grouping';
 import { MapExtras } from './MapExtrasMenu';
 import { shownPath } from './review';
-import { UnassignedColumn } from './UnassignedColumn';
 import type { MapType, ShareUpload, ShareView } from './types';
+import { UnassignedColumn } from './UnassignedColumn';
 
 type Change = Parameters<ShareApi['assign']>[1];
 
@@ -50,12 +49,11 @@ export function GroupingBoard({
     const [describing, setDescribing] = useState<Set<string>>(new Set());
     const [acting, setActing] = useState<string | null>(null);
     const { pool, lanes } = board(view);
-    const { done, total } = progress(view);
     const problems = view.uploads.filter((upload) => upload.check_status === 'problem');
     const statistics = view.uploads.filter(
         (upload) =>
             upload.check_status === 'ok' &&
-            (upload.map_type === 't' || upload.map_type === 'z' || upload.map_type === 'f')
+            (upload.map_type === 't' || upload.map_type === 'z' || upload.map_type === 'f'),
     );
 
     function assign(group: Group, to: string | null, from: string | null) {
@@ -68,16 +66,19 @@ export function GroupingBoard({
         folder,
         disabled: disabled || busy,
         loadingId: busy ? acting : null,
-        onMenu: (
-            event: MouseEvent<HTMLElement>,
-            upload: ShareUpload,
-            group: Group | null,
-            from: string | null
-        ) => setMenu({ el: event.currentTarget, upload, group, from }),
+        onMenu: (event: MouseEvent<HTMLElement>, upload: ShareUpload, group: Group | null, from: string | null) =>
+            setMenu({ el: event.currentTarget, upload, group, from }),
         onKind: (id: string, map_type: MapType) => onChange(id, { map_type }),
         onRemoveFile,
+        onUnassign: (group: Group, from: string) => assign(group, null, from),
+        // Unpair and say it is on no analysis, in one request, so the server does not place it again.
+        onDetach: (upload: ShareUpload) => {
+            setActing(upload.id);
+            onChange(upload.id, { partner_id: null, analysis_keys: [] });
+        },
         onLabel: (id: string, label: string) => onChange(id, { label }),
         describing,
+        onDescribe: (id: string) => setDescribing(new Set(describing).add(id)),
     };
 
     return (
@@ -100,18 +101,6 @@ export function GroupingBoard({
                     {shownPath(upload, folder)}: {upload.problem ?? 'This file cannot be used.'}
                 </Alert>
             ))}
-            {total > 0 && done === total ? (
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ color: 'success.main' }}>
-                    <CheckCircleOutlineIcon />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        All maps addressed
-                    </Typography>
-                </Stack>
-            ) : (
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Addressed {done} / {total} maps
-                </Typography>
-            )}
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="flex-start">
                 <UnassignedColumn
                     groups={pool}
@@ -123,12 +112,7 @@ export function GroupingBoard({
                     title="Analyses"
                     flush
                     action={
-                        <Link
-                            component="button"
-                            variant="body2"
-                            disabled={view.preview}
-                            onClick={() => onIssue(null)}
-                        >
+                        <Link component="button" variant="body2" disabled={view.preview} onClick={() => onIssue(null)}>
                             An analysis is missing
                         </Link>
                     }
@@ -154,18 +138,13 @@ export function GroupingBoard({
             <AnalysisMenu
                 anchorEl={menu?.el ?? null}
                 onClose={() => setMenu(null)}
-                analyses={view.analyses}
+                analyses={view.analyses.map((analysis) => ({
+                    ...analysis,
+                    count: view.uploads.filter((upload) => upload.analysis_keys.includes(analysis.key)).length,
+                }))}
                 current={menu?.from ?? null}
                 movable={menu?.group != null}
                 fits={menu?.upload.kind === 'variance' ? undefined : menu?.upload.fits}
-                onDescribe={
-                    menu?.group && menu.from === null
-                        ? () => {
-                              setDescribing(new Set(describing).add(menu.upload.id));
-                              setMenu(null);
-                          }
-                        : undefined
-                }
                 onSelect={(to) => {
                     if (menu?.group) assign(menu.group, to, menu.from);
                     setMenu(null);

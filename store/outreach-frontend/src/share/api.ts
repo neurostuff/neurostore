@@ -46,7 +46,7 @@ export function shareApi(base: string) {
         reply: (reply: { kind: AuthorReply; note?: string; link?: string }) => post('/reply', reply),
         metadata: (collection: Record<string, string>) =>
             request('/metadata', { method: 'PATCH', body: JSON.stringify({ collection }) }),
-        submit: (submitter: { name: string; orcid?: string }) => post('/submit', submitter),
+        submit: (submitter: { name: string; orcid?: string; upload_unassigned: boolean }) => post('/submit', submitter),
     };
 }
 

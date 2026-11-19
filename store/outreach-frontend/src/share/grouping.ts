@@ -84,3 +84,14 @@ export function progress(view: ShareView): { done: number; total: number } {
     const sum = (groups: Group[]) => groups.reduce((total, group) => total + size(group), 0);
     return { done: sum([...placed.values()]) + sum(described), total: sum([...placed.values()]) + sum(pool) };
 }
+
+/** What the submit step sums up: the maps that came up, how many are still on no analysis
+ * (a map the author described counts as dealt with, as on the board), and how many of the
+ * paper's analyses have a map and how many are still empty. */
+export function summary(view: ShareView): { uploaded: number; unassigned: number; filled: number; empty: number } {
+    const { done, total } = progress(view);
+    const filled = view.analyses.filter((analysis) =>
+        view.uploads.some((upload) => upload.check_status === 'ok' && upload.analysis_keys.includes(analysis.key))
+    ).length;
+    return { uploaded: total, unassigned: total - done, filled, empty: view.analyses.length - filled };
+}

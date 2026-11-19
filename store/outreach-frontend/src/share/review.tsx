@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Outcome, ShareUpload, ShareView } from './types';
 
 export type Tone = 'success' | 'warning' | 'info' | 'error';
@@ -15,6 +16,8 @@ export interface Prompt {
     analysisKey?: string;
     tone: Tone;
     text: string;
+    /** What to show instead of ``text`` when it needs more than plain text. */
+    body?: ReactNode;
     /** Only says the map has no analysis yet, which the pool already shows. */
     unplaced?: boolean;
 }
@@ -35,7 +38,7 @@ export function prompts(view: ShareView): Prompt[] {
     // Asking which t/z map an effect map goes with only helps when there is one to pick;
     // an F map is no effect map's partner.
     const statistics = view.uploads.some(
-        (upload) => (upload.map_type === 't' || upload.map_type === 'z') && upload.check_status === 'ok'
+        (upload) => (upload.map_type === 't' || upload.map_type === 'z') && upload.check_status === 'ok',
     );
     const found: Prompt[] = [];
     for (const upload of view.uploads) {
@@ -56,7 +59,7 @@ export function prompts(view: ShareView): Prompt[] {
                     found.push({
                         uploadId: upload.id,
                         tone: 'info',
-                        text: `Which t or z map does this ${upload.kind} map go with? Pick it, so it goes with the same analysis.`,
+                        text: `Which t or z map does this ${upload.kind} map go with? Upload it, so it goes with the same analysis.`,
                     });
             } else if (upload.reversed)
                 found.push({
@@ -105,7 +108,14 @@ export function prompts(view: ShareView): Prompt[] {
             found.push({
                 analysisKey: key,
                 tone: 'info',
-                text: `No file for “${name.get(key)}” yet. Pick one, or leave it if you don't have it.`,
+                text: '',
+                body: (
+                    <>
+                        No map for <strong>“{name.get(key)}”</strong> yet.
+                        <br />
+                        Assign a map to this analysis, or leave it empty and submit.
+                    </>
+                ),
             });
     return found;
 }
@@ -117,14 +127,65 @@ export function formatBytes(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Why a file cannot be uploaded before it is sent, or null. */
-export function refusal(file: File, view: ShareView, queued: number): string | null {
-    const lowered = file.name.toLowerCase();
-    if (!view.limits.extensions.some((ext) => lowered.endsWith(ext))) return 'Only .nii and .nii.gz files.';
-    if (file.size > view.limits.max_file_bytes) return 'Files over 200 MB are not supported.';
-    if (view.uploads.length + queued >= view.limits.max_files)
-        return `This paper takes at most ${view.limits.max_files} files.`;
-    return null;
+/** What to send of the files the author chose, and what to tell them about the rest.
+ * Anything that is not a NIfTI file, or is already uploaded, is passed over without a word:
+ * a results folder holds plenty of those. Files too large are named. Files past the
+ * draft's limit are left out whole, and counted, rather than picked among. */
+export interface UploadPlan<T> {
+    accepted: T[];
+    refused: { name: string; reason: string }[];
+    /** Maps left out for want of room. */
+    over: number;
+    /** Nothing in the choice was a NIfTI file, new to the draft. */
+    empty: boolean;
+}
+
+export function planUpload<T extends { file: File; path?: string }>(files: T[], view: ShareView): UploadPlan<T> {
+    const have = new Set(view.uploads.map((upload) => upload.path ?? upload.filename));
+    const accepted: T[] = [];
+    const refused: { name: string; reason: string }[] = [];
+    let over = 0;
+    let found = 0;
+    for (const item of files) {
+        const name = item.path ?? item.file.name;
+        const lowered = item.file.name.toLowerCase();
+        if (!view.limits.extensions.some((ext) => lowered.endsWith(ext)) || have.has(name)) continue;
+        found += 1;
+        if (item.file.size > view.limits.max_file_bytes) {
+            refused.push({ name, reason: 'Files over 200 MB are not supported.' });
+        } else if (view.uploads.length + accepted.length >= view.limits.max_files) {
+            over += 1;
+        } else {
+            accepted.push(item);
+        }
+    }
+    return { accepted, refused, over, empty: found === 0 };
+}
+
+/** The folder a file sits in, by name (the last segment of its path's directory), or null
+ * for a file that came without one. */
+export function parentFolder(upload: ShareUpload): string | null {
+    const folders = upload.path?.split('/').slice(0, -1) ?? [];
+    return folders.length > 0 ? folders[folders.length - 1] : null;
+}
+
+/** The uploads by the folder the author chose them from (the first segment of their
+ * path), in the order they arrived. Files that came without a folder are together under
+ * ``null``. ``inside`` is each file's path within its folder. */
+export function byUploadFolder(
+    view: ShareView,
+): { folder: string | null; uploads: { upload: ShareUpload; inside: string }[] }[] {
+    const groups = new Map<string | null, { upload: ShareUpload; inside: string }[]>();
+    for (const upload of view.uploads) {
+        const slash = upload.path ? upload.path.indexOf('/') : -1;
+        const folder = slash > 0 ? upload.path!.slice(0, slash) : null;
+        const inside = slash > 0 ? upload.path!.slice(slash + 1) : (upload.path ?? upload.filename);
+        groups.set(folder, [...(groups.get(folder) ?? []), { upload, inside }]);
+    }
+    return [...groups].map(([folder, uploads]) => ({
+        folder,
+        uploads: uploads.sort((a, b) => a.inside.localeCompare(b.inside)),
+    }));
 }
 
 /** The folder every path sits in, so rows can show only what tells them apart. Empty
