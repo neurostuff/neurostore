@@ -569,3 +569,33 @@ async def test_admins_see_the_uploads_and_issues_and_can_clean_up(author, app, s
     assert again.status_code == 409
     assert gone.status_code == 404
     assert anonymous.status_code == 401
+
+
+async def test_retyping_a_map_drops_a_pairing_that_no_longer_makes_sense(author, session,
+                                                                         share_settings):
+    draft, token = _sent_draft()
+    tmp = share_settings
+    await author.post("/api/share/session", json={"token": token})
+    faces = synthetic_map(PEAKS_A)
+    await _upload(author, "zstat1.nii.gz", _nifti(tmp, "a.nii.gz", faces))
+    view = (await _upload(author, "renamed.nii.gz",
+                          _nifti(tmp, "b.nii.gz", _effect_of(faces)))).json()
+    by_name = {u["filename"]: u for u in view["uploads"]}
+    stats_id, member_id = by_name["zstat1.nii.gz"]["id"], by_name["renamed.nii.gz"]["id"]
+
+    def named(response):
+        return {u["filename"]: u for u in response.json()["uploads"]}
+
+    await author.patch(f"/api/share/uploads/{member_id}", json={"map_type": "effect"})
+    paired = await author.patch(f"/api/share/uploads/{member_id}", json={"partner_id": stats_id})
+    assert named(paired)["renamed.nii.gz"]["partner_id"] == stats_id
+
+    # An effect map retyped as a t map goes with nothing.
+    retyped = await author.patch(f"/api/share/uploads/{member_id}", json={"map_type": "t"})
+    assert named(retyped)["renamed.nii.gz"]["partner_id"] is None
+
+    # A statistic map retyped as an effect map leaves nothing paired with it.
+    await author.patch(f"/api/share/uploads/{member_id}", json={"map_type": "effect"})
+    await author.patch(f"/api/share/uploads/{member_id}", json={"partner_id": stats_id})
+    demoted = await author.patch(f"/api/share/uploads/{stats_id}", json={"map_type": "effect"})
+    assert named(demoted)["renamed.nii.gz"]["partner_id"] is None

@@ -509,6 +509,27 @@ def _upload_of(draft, upload_id):
     return row
 
 
+PAIR_FIELDS = ("partner_id", "partner_r", "partner_by", "reversed")
+
+
+def _drop_stale_pairs(draft, row, details):
+    """Retyping a map can leave an author's pairing meaningless: a map that is no longer
+    an effect or variance map has no statistic map to go with, and a map that is no
+    longer a statistic map has nothing to go with it. Drop those pairings so the
+    map is matched by itself (``suggest`` runs next)."""
+    kind = map_sets.KIND.get(row.map_type)
+    if kind not in (map_sets.EFFECT, map_sets.VARIANCE):
+        for field in PAIR_FIELDS:
+            details.pop(field, None)
+    if kind != map_sets.STATISTIC:
+        for other in _uploads(draft.id):
+            other_details = dict(other.check_details or {})
+            if other.id != row.id and other_details.get("partner_id") == row.id:
+                for field in PAIR_FIELDS:
+                    other_details.pop(field, None)
+                other.check_details = other_details
+
+
 def _assign(link, draft, body, request):
     """The author says which analyses a file is for, labels a file the paper has none
     for, says what kind of map it is, or which statistic map an effect or variance map
@@ -532,6 +553,7 @@ def _assign(link, draft, body, request):
         kind_before = _matcher_kind(row.map_type)
         row.map_type = body["map_type"]
         details["map_type_by"] = "author"
+        _drop_stale_pairs(draft, row, details)
         if _matcher_kind(row.map_type) != kind_before and details.get("scores") and row.path:
             image, _ = check_file(Path(row.path))
             if image is not None:
