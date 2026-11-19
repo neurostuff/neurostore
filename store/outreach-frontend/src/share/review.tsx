@@ -59,7 +59,7 @@ export function prompts(view: ShareView): Prompt[] {
                     found.push({
                         uploadId: upload.id,
                         tone: 'info',
-                        text: `Which t or z map does this ${upload.kind} map go with? Upload it, so it goes with the same analysis.`,
+                        text: `Which t or z map does this ${upload.kind} map go with? Select or upload it, so it goes with the same analysis.`,
                     });
             } else if (upload.reversed)
                 found.push({

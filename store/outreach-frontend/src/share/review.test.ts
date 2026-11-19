@@ -154,7 +154,7 @@ test('an effect map follows its t/z map, and one without a partner asks for it',
     const found = texts(view([z, paired, alone]));
     // No "peaks not found" for the paired effect map: its analysis comes from its t/z map.
     expect(found).toEqual([
-        'Which t or z map does this variance map go with? Pick it, so it goes with the same analysis.',
+        'Which t or z map does this variance map go with? Select or upload it, so it goes with the same analysis.',
         "No map for “Houses > Faces” yet. Assign a map to this analysis, or leave it empty and submit.",
     ]);
     const reversed = upload('e', ['a'], {}, { kind: 'effect', partner_id: 'z', reversed: true });
