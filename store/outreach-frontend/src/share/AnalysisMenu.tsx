@@ -73,10 +73,11 @@ function MenuBody({
                     size="small"
                     fullWidth
                     autoFocus
-                    placeholder="Search analyses"
+                    placeholder="Filter analyses"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    inputProps={{ 'aria-label': 'Search analyses' }}
+                    inputProps={{ 'aria-label': 'Filter analyses' }}
+                    sx={{ '& .MuiInputBase-input': { py: 0.5, px: 1, fontSize: 13 } }}
                 />
             </Box>
             <Divider />
@@ -137,7 +138,7 @@ function MenuBody({
                     <Box>
                         <Divider />
                         <Typography variant="caption" color="text.secondary" sx={{ px: 2, pt: 1, display: 'block' }}>
-                            Not on an analysis yet
+                            Unassigned
                         </Typography>
                         {unplaced.map((map) => mapItem(map, 'unplaced'))}
                     </Box>

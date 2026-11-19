@@ -1,4 +1,4 @@
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import {
     Alert,
     Box,
@@ -57,6 +57,14 @@ function LabelField({
             }}
         />
     );
+}
+
+/** The colour of a map's kind, so the same kinds look alike everywhere: statistic maps (t, z, F)
+ * are primary, the effect and variance maps that attach to them secondary, anything else grey. */
+function kindColor(theme: Theme, type: MapType | null) {
+    if (type === 't' || type === 'z' || type === 'f') return theme.palette.primary.main;
+    if (type === 'effect' || type === 'variance') return theme.palette.secondary.main;
+    return theme.palette.grey[600];
 }
 
 /** What every row of one list has in common. */
@@ -127,20 +135,31 @@ function MapRow({
     const suggested = group && from && upload.assigned_by === 'suggestion';
     // A map with no group is an effect or variance map, drawn inside its t/z map's card.
     const nested = group === null;
+    // The filename of an effect or variance map is painted in a darker shade of its kind's colour.
+    const attachable = upload.map_type === 'effect' || upload.map_type === 'variance';
     return (
         <Paper
-            // A nested map is raised off its parent's card by a shadow, in a slightly whiter colour.
+            // A nested map is flat, in a grey a little lighter than its parent's.
             variant={nested ? 'elevation' : 'outlined'}
-            elevation={nested ? 2 : 0}
+            elevation={0}
             sx={{
                 p: nested ? 1 : 1.5,
                 width: '100%',
                 bgcolor: nested
-                    ? '#fffcfc'
+                    ? 'grey.50'
                     : addressed
                       ? (theme) => alpha(theme.palette.success.main, 0.08)
                       : 'grey.100',
                 ...(addressed && !nested ? { borderColor: 'success.main' } : {}),
+                // A soft accent bar on the left of an effect or variance map, nested or not.
+                ...(nested || attachable
+                    ? {
+                          borderLeft: 3,
+                          borderLeftStyle: 'solid',
+                          borderLeftColor: (theme: Theme) => alpha(kindColor(theme, upload.map_type), 0.5),
+                          borderRadius: '0 4px 4px 0',
+                      }
+                    : {}),
             }}
         >
             <Stack>
@@ -153,9 +172,16 @@ function MapRow({
                         SelectDisplayProps={{ 'aria-label': `Kind of map for ${path}` }}
                         sx={{
                             flexShrink: 0,
-                            bgcolor: 'background.paper',
+                            // Coloured like a chip by kind: the select stays so a wrong kind can be fixed.
+                            bgcolor: (theme) => alpha(kindColor(theme, upload.map_type), 0.12),
+                            color: (theme) => kindColor(theme, upload.map_type),
                             fontSize: 13,
+                            fontWeight: 600,
                             '& .MuiSelect-select': { py: 0.5, pl: 1 },
+                            '& .MuiSelect-icon': { color: 'inherit' },
+                            '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: (theme) => alpha(kindColor(theme, upload.map_type), 0.5),
+                            },
                         }}
                     >
                         {MAP_TYPES.map((type) => (
@@ -169,6 +195,7 @@ function MapRow({
                             variant="subtitle2"
                             title={upload.path ?? upload.filename}
                             sx={{
+                                ...(attachable ? { color: 'secondary.dark' } : {}),
                                 overflowWrap: 'anywhere',
                                 fontSize: "0.75rem",
                                 display: '-webkit-box',

@@ -117,7 +117,7 @@ test('the move menu only assigns: it has no Unassign, on an analysis or in the p
     for (const keys of [['a'], []]) {
         renderBoard(view([upload('1', keys)]));
         await userEvent.click(screen.getByRole('button', { name: 'Options for 1.nii.gz' }));
-        expect(screen.getByRole('textbox', { name: 'Search analyses' })).toBeInTheDocument();
+        expect(screen.getByRole('textbox', { name: 'Filter analyses' })).toBeInTheDocument();
         expect(within(screen.getByRole('menu')).queryByText(/Unassign/)).not.toBeInTheDocument();
         cleanup();
     }
@@ -161,11 +161,11 @@ test('an effect map in a card on an analysis is unassigned from its t/z map, not
 test('the move menu searches analyses by name', async () => {
     renderBoard(view([upload('2', [])]));
     await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
-    await userEvent.type(screen.getByRole('textbox', { name: 'Search analyses' }), 'houses >');
+    await userEvent.type(screen.getByRole('textbox', { name: 'Filter analyses' }), 'houses >');
     expect(screen.getByRole('menuitem', { name: /Houses > Faces/ })).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: /Faces > Houses/ })).not.toBeInTheDocument();
-    await userEvent.clear(screen.getByRole('textbox', { name: 'Search analyses' }));
-    await userEvent.type(screen.getByRole('textbox', { name: 'Search analyses' }), 'nothing like it');
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Filter analyses' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Filter analyses' }), 'nothing like it');
     expect(screen.getByText('No matching analyses')).toBeInTheDocument();
 });
 
@@ -215,7 +215,7 @@ test('a t/z map on no analysis is offered after the analyses, to pair with', asy
     const effect = upload('2', [], { kind: 'effect', map_type: 'effect' });
     const { onChange } = renderBoard(view([upload('1', []), effect]));
     await userEvent.click(screen.getByRole('button', { name: 'Options for 2.nii.gz' }));
-    expect(screen.getByText('Not on an analysis yet')).toBeInTheDocument();
+    expect(screen.getByText('Unassigned')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('menuitem', { name: /1\.nii\.gz/ }));
     expect(onChange).toHaveBeenCalledWith('2', { partner_id: '1' });
 });

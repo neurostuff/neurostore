@@ -121,6 +121,10 @@ export function GroupingBoard({
                         </Link>
                     }
                 >
+                    <Typography variant="caption" color="text.secondary" sx={{ px: 1.5, py: 1 }}>
+                        These are the analyses we found in your paper. Each map should sit on the analysis it belongs
+                        to.
+                    </Typography>
                     {view.issues.some((issue) => issue.reason === 'missing_analysis') && (
                         <Typography variant="caption" color="warning.main" sx={{ px: 2, py: 1 }}>
                             You told us an analysis is missing. Thank you.
@@ -154,7 +158,7 @@ export function GroupingBoard({
                               }))
                         : undefined,
                 }))}
-                title={asMember ? 'Assign to an analysis or a t/z map' : 'Assign to analysis'}
+                title={asMember ? 'Assign to an analysis or a t/z/f map' : 'Assign to analysis'}
                 current={menu?.from ?? null}
                 currentMap={menu?.upload.partner_id ?? null}
                 unplaced={
