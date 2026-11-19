@@ -111,9 +111,7 @@ export function prompts(view: ShareView): Prompt[] {
                 text: '',
                 body: (
                     <>
-                        No map for <strong>“{name.get(key)}”</strong> yet.
-                        <br />
-                        Assign a map to this analysis, or leave it empty and submit.
+                        No map for <strong>“{name.get(key)}”</strong> yet. This is nonblocking - you can submit anyway.
                     </>
                 ),
             });

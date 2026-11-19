@@ -86,7 +86,7 @@ test('analyses with no file, unlabelled leftovers and unusable files are listed'
     expect(found).toEqual([
         'Which analysis is this map? Move it to one, or describe it if the paper does not table it.',
         'This map holds no numbers.',
-        "No map for “Houses > Faces” yet. Assign a map to this analysis, or leave it empty and submit.",
+        "No map for “Houses > Faces” yet. This is nonblocking - you can submit anyway.",
     ]);
 });
 
@@ -155,7 +155,7 @@ test('an effect map follows its t/z map, and one without a partner asks for it',
     // No "peaks not found" for the paired effect map: its analysis comes from its t/z map.
     expect(found).toEqual([
         'Which t or z map does this variance map go with? Select or upload it, so it goes with the same analysis.',
-        "No map for “Houses > Faces” yet. Assign a map to this analysis, or leave it empty and submit.",
+        "No map for “Houses > Faces” yet. This is nonblocking - you can submit anyway.",
     ]);
     const reversed = upload('e', ['a'], {}, { kind: 'effect', partner_id: 'z', reversed: true });
     expect(texts(view([z, reversed]))[0]).toBe(
@@ -167,7 +167,7 @@ test('an effect map is not asked for its t/z map when none was uploaded', () => 
     const effect = upload('e', ['a'], { a: fit('match') }, { kind: 'effect', map_type: 'effect' });
     const found = texts(view([effect]));
     expect(found.some((text) => text.startsWith('Which t or z map'))).toBe(false);
-    expect(found).toEqual(["No map for “Houses > Faces” yet. Assign a map to this analysis, or leave it empty and submit."]);
+    expect(found).toEqual(["No map for “Houses > Faces” yet. This is nonblocking - you can submit anyway."]);
     // F maps for an F-test analysis are no t/z map to pick either
     const f = upload('f', ['b'], { b: fit('match') }, { map_type: 'f' });
     expect(texts(view([effect, f])).some((text) => text.startsWith('Which t or z map'))).toBe(false);
