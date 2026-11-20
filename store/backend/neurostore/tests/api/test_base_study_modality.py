@@ -82,6 +82,23 @@ async def test_a_paper_matches_any_of_the_given_modalities(auth_client, papers):
     assert await _found(auth_client, papers) == ["eeg", "fmri", "multimodal", "unnamed"]
 
 
+async def test_a_parent_matches_its_children_and_a_child_only_itself(
+    auth_client, session, tmp_path, papers
+):
+    for name, modalities in (("structural", "smri"), ("bare mri", "mri"), ("ecog", "ieeg")):
+        papers[name] = _paper(session, name).id
+        session.commit()
+        load_modalities(_tsv(tmp_path, (papers[name], modalities, "record", "a9")))
+    session.commit()
+
+    assert await _found(auth_client, papers, "mri") == [
+        "bare mri", "fmri", "multimodal", "structural"
+    ]
+    assert await _found(auth_client, papers, "smri") == ["structural"]
+    assert await _found(auth_client, papers, "other") == ["ecog"]
+    assert await _found(auth_client, papers, "ieeg", "smri") == ["ecog", "structural"]
+
+
 @pytest.mark.parametrize("value", ["xray", "PET", ""])
 async def test_a_value_outside_the_vocabulary_is_refused(auth_client, papers, value):
     resp = await auth_client.get(f"/api/base-studies/?modality=pet&modality={value}")

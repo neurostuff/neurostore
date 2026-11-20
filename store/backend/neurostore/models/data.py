@@ -41,6 +41,11 @@ MODALITIES = (
     "physiological", "other",
 )
 MODALITY = PGEnum(*MODALITIES, name="modality", create_type=False)
+#: ns-pond's parents: a filter on a parent also matches its children.
+MODALITY_CHILDREN = {
+    "mri": ("fmri", "smri", "dmri", "mrs"),
+    "other": ("ct", "ieeg", "physiological"),
+}
 #: What ns-pond read a paper's modalities from, best first.
 MODALITY_SOURCES = ("record", "methods", "full_text", "none")
 

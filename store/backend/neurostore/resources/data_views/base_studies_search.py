@@ -25,7 +25,7 @@ from neurostore.models import (
     Point,
     Study,
 )
-from neurostore.models.data import MODALITY
+from neurostore.models.data import MODALITY, MODALITY_CHILDREN
 from neurostore.utils import build_jsonpath, parse_json_filter
 
 
@@ -240,12 +240,15 @@ class BaseStudySearchService:
         return query.filter(neurovault_filter)
 
     def _apply_modality_filter(self, query, modalities):
-        """Papers acquired by any of ``modalities`` (values of MODALITY; the spec refuses
-        others)."""
+        """Papers acquired by any of ``modalities`` or their children (values of MODALITY;
+        the spec refuses others)."""
         if not modalities:
             return query
+        wanted = set(modalities)
+        for modality in modalities:
+            wanted.update(MODALITY_CHILDREN.get(modality, ()))
         values = sa.cast(
-            sa.bindparam("modalities", sorted(set(modalities)), type_=ARRAY(sa.Text)),
+            sa.bindparam("modalities", sorted(wanted), type_=ARRAY(sa.Text)),
             ARRAY(MODALITY),
         )
         return query.filter(BaseStudy.modalities.overlap(values))
