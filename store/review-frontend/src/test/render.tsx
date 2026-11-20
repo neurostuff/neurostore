@@ -15,7 +15,7 @@ export function renderStores(ui: ReactElement, stores: ReviewStores, client?: Op
     const withClient = client ? <OpClientProvider client={client}>{ui}</OpClientProvider> : ui;
     const result = render(
         <ThemeProvider theme={theme}>
-            <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <MemoryRouter>
                 <ReviewStoresProvider stores={stores}>{withClient}</ReviewStoresProvider>
             </MemoryRouter>
         </ThemeProvider>

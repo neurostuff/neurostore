@@ -22,11 +22,7 @@ afterEach(() => expect(server.invalid()).toEqual([]));
 function openPaper() {
     return render(
         <ThemeProvider theme={theme}>
-            <MemoryRouter
-                basename="/review"
-                initialEntries={['/review/papers/S1']}
-                future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-            >
+            <MemoryRouter basename="/review" initialEntries={['/review/papers/S1']}>
                 <AppRoutes api={server.api()} />
             </MemoryRouter>
         </ThemeProvider>
