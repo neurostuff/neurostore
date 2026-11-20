@@ -7,6 +7,7 @@ import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import func, select, text
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import aliased
 
 from neurostore import embeddings
@@ -24,6 +25,7 @@ from neurostore.models import (
     Point,
     Study,
 )
+from neurostore.models.data import MODALITY
 from neurostore.utils import build_jsonpath, parse_json_filter
 
 
@@ -238,10 +240,14 @@ class BaseStudySearchService:
         return query.filter(neurovault_filter)
 
     def _apply_modality_filter(self, query, modalities):
-        """Papers acquired by any of ``modalities``, compared lower-cased."""
+        """Papers acquired by any of ``modalities`` (values of MODALITY; the spec refuses
+        others)."""
         if not modalities:
             return query
-        values = sorted({value.lower() for value in modalities})
+        values = sa.cast(
+            sa.bindparam("modalities", sorted(set(modalities)), type_=ARRAY(sa.Text)),
+            ARRAY(MODALITY),
+        )
         return query.filter(BaseStudy.modalities.overlap(values))
 
     def _data_type_filters(self, entity, data_type):

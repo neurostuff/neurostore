@@ -34,6 +34,16 @@ STATUS_ENUM = PGEnum(
     create_type=True,
 )
 
+#: ns-pond's acquisition_modality vocabulary: study_schema's Modality, lower-cased, with
+#: mrs, ieeg, ct and physiological. The values `GET /base-studies/?modality=` takes.
+MODALITIES = (
+    "fmri", "smri", "dmri", "mrs", "mri", "eeg", "ieeg", "meg", "fnirs", "pet", "spect", "ct",
+    "physiological", "other",
+)
+MODALITY = PGEnum(*MODALITIES, name="modality", create_type=False)
+#: What ns-pond read a paper's modalities from, best first.
+MODALITY_SOURCES = ("record", "methods", "full_text", "none")
+
 
 def license_type(table):
     """study_schema's licence categories (``LicenseId``, whose values are its member
@@ -270,10 +280,10 @@ class BaseStudy(BaseMixin, db.Model):
     has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
-    #: Its acquisition modalities, lower-cased and sorted, from ns-pond's modality export
+    #: Its acquisition modalities, sorted, from ns-pond's modality export
     #: (`manage base-study-modalities load`): the record's, else its methods text's.
-    modalities = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
-    #: What ns-pond read them from: record, methods, full_text or none.
+    modalities = db.Column(ARRAY(MODALITY), nullable=False, server_default="{}")
+    #: What ns-pond read them from (MODALITY_SOURCES).
     modalities_source = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     #: Legacy; fulltexts holds the reviewed text (docs/adr/0005-fulltexts-table.md).
@@ -365,6 +375,9 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
         sa.Index("ix_base_studies_modalities", "modalities", postgresql_using="gin"),
+        db.CheckConstraint(
+            modalities_source.in_(MODALITY_SOURCES), name="ck_base_studies_modalities_source"
+        ),
         # The preferred full text is one of the base study's own. Deferred, so a
         # full text can move to another base study and both be re-pointed in
         # one transaction; a delete clears only fulltext_id.

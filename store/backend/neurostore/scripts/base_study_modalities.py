@@ -4,20 +4,22 @@ The TSV has one row per base study: base_study_id, modalities ('|'-separated), s
 (record, methods, full_text or none) and papers (ns-pond's article ids, not read here). A
 row overwrites its base study's `modalities` and `modalities_source`; base studies the file
 does not name keep theirs. A row naming a merged base study goes to the active base study
-it was merged into, unless the file has a row for that one too.
+it was merged into, unless the file has a row for that one too. A value outside MODALITY,
+or a source outside MODALITY_SOURCES, refuses the whole file before anything is written.
 """
 
 import csv
 from dataclasses import dataclass, field
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ARRAY
 
 from neurostore.database import db
 from neurostore.models import BaseStudy
+from neurostore.models.data import MODALITIES, MODALITY, MODALITY_SOURCES
 
-#: ns-pond's sources, best first: when merged papers meet in one base study, the best
-#: source's modalities are kept.
-SOURCES = ("record", "methods", "full_text", "none")
+#: When merged papers meet in one base study, the best source's modalities are kept.
+SOURCES = MODALITY_SOURCES
 CHUNK = 5000
 
 
@@ -71,6 +73,15 @@ def _targets(ids):
     return targets
 
 
+def _refuse_unknown_values(rows):
+    rows = list(rows)
+    values = {value for row in rows for value in _modalities(row.get("modalities"))}
+    sources = {row.get("source") or "none" for row in rows}
+    unknown = sorted(values - set(MODALITIES)) + sorted(sources - set(SOURCES))
+    if unknown:
+        raise ValueError(f"values outside the modality vocabulary: {unknown}")
+
+
 def _merge(held, values):
     """Merged papers meeting in one base study: the best source wins; equal sources join."""
     if held is None:
@@ -91,6 +102,7 @@ def load_modalities(path):
             for row in csv.DictReader(f, delimiter="\t")
             if row.get("base_study_id")
         }
+    _refuse_unknown_values(named.values())
     targets = _targets(named)
     result = LoadResult()
     writes = {}
@@ -103,10 +115,10 @@ def load_modalities(path):
             if target in named:
                 continue
             result.redirected[id_] = target
-        source = row.get("source") or "none"
-        if source not in SOURCES:
-            raise ValueError(f"{id_}: unknown source {source!r}")
-        values = {"modalities": _modalities(row.get("modalities")), "source": source}
+        values = {
+            "modalities": _modalities(row.get("modalities")),
+            "source": row.get("source") or "none",
+        }
         writes[target] = values if target == id_ else _merge(writes.get(target), values)
 
     current = {}
@@ -115,18 +127,31 @@ def load_modalities(path):
             (id_, (modalities, source))
             for id_, modalities, source in db.session.execute(
                 sa.select(
-                    BaseStudy.id, BaseStudy.modalities, BaseStudy.modalities_source
+                    BaseStudy.id,
+                    sa.cast(BaseStudy.modalities, ARRAY(sa.Text)),
+                    BaseStudy.modalities_source,
                 ).where(BaseStudy.id.in_(chunk))
             )
         )
     changed = [
-        {"id": id_, "modalities": v["modalities"], "modalities_source": v["source"]}
+        {"b_id": id_, "b_modalities": v["modalities"], "b_source": v["source"]}
         for id_, v in writes.items()
         if current[id_] != (v["modalities"], v["source"])
     ]
+    table = BaseStudy.__table__
+    statement = (
+        sa.update(table)
+        .where(table.c.id == sa.bindparam("b_id"))
+        .values(
+            modalities=sa.cast(
+                sa.bindparam("b_modalities", type_=ARRAY(sa.Text)), ARRAY(MODALITY)
+            ),
+            modalities_source=sa.bindparam("b_source"),
+        )
+    )
     for start in range(0, len(changed), CHUNK):
-        db.session.execute(sa.update(BaseStudy), changed[start:start + CHUNK])
-    result.updated = {row["id"] for row in changed}
+        db.session.execute(statement, changed[start:start + CHUNK])
+    result.updated = {row["b_id"] for row in changed}
     result.unchanged = len(writes) - len(changed)
     result.unknown.sort()
     return result

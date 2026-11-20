@@ -1,11 +1,15 @@
 """GET /base-studies/?modality=, and the load of ns-pond's modality export into
 `base_studies.modalities`."""
 
+from pathlib import Path
 from urllib.parse import urlencode
 
 import pytest
+import yaml
 
+import neurostore
 from neurostore.models import BaseStudy, Fulltext
+from neurostore.models.data import MODALITIES
 from neurostore.scripts.base_study_modalities import load_modalities
 
 pytestmark = pytest.mark.anyio
@@ -71,11 +75,27 @@ async def test_a_paper_matches_any_of_the_given_modalities(auth_client, papers):
     assert await _found(auth_client, papers, "pet") == ["multimodal"]
     # A paper with two modalities matches each.
     assert await _found(auth_client, papers, "fmri") == ["fmri", "multimodal"]
-    # Any of the values, compared lower-cased.
-    assert await _found(auth_client, papers, "EEG", "PET") == ["eeg", "multimodal"]
+    # Any of the values.
+    assert await _found(auth_client, papers, "eeg", "pet") == ["eeg", "multimodal"]
     assert await _found(auth_client, papers, "meg") == []
     # Without the parameter nothing is filtered.
     assert await _found(auth_client, papers) == ["eeg", "fmri", "multimodal", "unnamed"]
+
+
+@pytest.mark.parametrize("value", ["xray", "PET", ""])
+async def test_a_value_outside_the_vocabulary_is_refused(auth_client, papers, value):
+    resp = await auth_client.get(f"/api/base-studies/?modality=pet&modality={value}")
+    assert resp.status_code == 400, resp.text
+
+
+def test_the_spec_lists_the_model_s_vocabulary():
+    path = Path(neurostore.__file__).parent / "openapi" / "neurostore-openapi.yml"
+    spec = yaml.safe_load(path.read_text())
+    (parameter,) = [
+        p for p in spec["paths"]["/base-studies/"]["get"]["parameters"]
+        if p.get("name") == "modality"
+    ]
+    assert tuple(parameter["schema"]["items"]["enum"]) == MODALITIES
 
 
 async def test_the_filter_keeps_the_list_s_other_filters(auth_client, session, papers):
@@ -115,6 +135,17 @@ def test_a_load_overwrites_the_rows_it_names_and_keeps_the_others(session, tmp_p
     assert result.updated == {papers["fmri"], papers["multimodal"]}
     assert result.unchanged == 1
     assert result.unknown == ["noSuchPaper"]
+
+
+def test_a_value_outside_the_vocabulary_refuses_the_whole_file(session, tmp_path, papers):
+    with pytest.raises(ValueError, match="xray"):
+        load_modalities(_tsv(
+            tmp_path,
+            (papers["unnamed"], "pet", "record", "a5"),
+            (papers["fmri"], "fmri|xray", "record", "a3"),
+        ))
+    session.rollback()
+    assert _state(session, papers["unnamed"]) == ([], None)
 
 
 def test_a_merged_paper_s_row_goes_to_the_paper_it_was_merged_into(session, tmp_path):
