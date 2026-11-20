@@ -22,31 +22,18 @@ def mock_add_users_pure():
 
 @pytest.mark.anyio
 async def test_decode_token(monkeypatch, mock_add_users_pure):
-    import json
-
     from connexion.exceptions import OAuthProblem
 
     from neurosynth_compose.resources import auth
 
-    # Patch urlopen to return a fake JWKS
-    class FakeResponse:
-        def read(self):
-            # Minimal JWKS with one key
-            return json.dumps(
-                {
-                    "keys": [
-                        {
-                            "kty": "RSA",
-                            "kid": "test_kid",
-                            "use": "sig",
-                            "n": "test_n",
-                            "e": "test_e",
-                        }
-                    ]
-                }
-            ).encode("utf-8")
-
-    monkeypatch.setattr(auth, "urlopen", lambda url: FakeResponse())
+    # Patch the JWKS fetch to return one key
+    jwks = {
+        "keys": [
+            {"kty": "RSA", "kid": "test_kid", "use": "sig", "n": "test_n", "e": "test_e"}
+        ]
+    }
+    monkeypatch.setattr(auth, "_fetch_jwks", lambda base_url: jwks)
+    monkeypatch.setattr(auth, "_jwks_cache", {})
 
     # Patch jwt.get_unverified_header to return a header with kid
     monkeypatch.setattr(
@@ -54,10 +41,10 @@ async def test_decode_token(monkeypatch, mock_add_users_pure):
     )
 
     # Patch jwt.decode to return a payload for valid tokens, raise for invalid
-    def fake_jwt_decode(token, rsa_key, algorithms, audience, issuer):
+    def fake_jwt_decode(token, rsa_key, algorithms, issuer, options):
         if token == "improper_token":
             raise auth.jwt.ExpiredSignatureError("Token expired")
-        return {"sub": "mocked-user-id"}
+        return {"sub": "mocked-user-id", "aud": "fake-audience"}
 
     monkeypatch.setattr(auth.jwt, "decode", fake_jwt_decode)
 

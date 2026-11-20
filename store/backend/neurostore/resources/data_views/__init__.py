@@ -11,7 +11,12 @@ DATA_VIEW_MODULES = {
     "AnnotationsView": "neurostore.resources.data_views.annotations_view",
     "BaseStudiesView": "neurostore.resources.data_views.base_studies_view",
     "ConditionsView": "neurostore.resources.data_views.conditions_view",
+    "DataSourcesView": "neurostore.resources.data_views.data_sources_view",
+    "AnalysisDataSourcesResource": (
+        "neurostore.resources.data_views.data_sources_view"
+    ),
     "EntitiesResource": "neurostore.resources.data_views.entities_resource",
+    "JournalsView": "neurostore.resources.data_views.journals_view",
     "ImagesView": "neurostore.resources.data_views.images_view",
     "PointsView": "neurostore.resources.data_views.points_view",
     "PointValuesView": "neurostore.resources.data_views.point_values_view",

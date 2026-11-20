@@ -1,0 +1,368 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.openalex.org/sources/S119599544
+  response:
+    body:
+      string: '{"id":"https://openalex.org/S4210232992","issn_l":"0001-6772","issn":["0001-6772","1365-201X"],"display_name":"Acta
+        Physiologica Scandinavica","host_organization":"https://openalex.org/P4310320595","host_organization_name":"Wiley","host_organization_lineage":["https://openalex.org/P4310320595"],"works_count":13065,"oa_works_count":228,"cited_by_count":411848,"summary_stats":{"2yr_mean_citedness":0.0,"h_index":222,"i10_index":7309},"is_oa":false,"is_in_doaj":false,"is_in_doaj_since_year":null,"is_high_oa_rate":false,"is_high_oa_rate_since_year":null,"is_in_scielo":false,"is_ojs":false,"is_preprint_repository":false,"is_core":true,"listed_in":["cwts-core"],"oa_flip_year":null,"first_publication_year":1940,"last_publication_year":2010,"ids":{"openalex":"https://openalex.org/S4210232992","issn_l":"0001-6772","issn":["0001-6772","1365-201X"],"mag":"4210232992","wikidata":"https://www.wikidata.org/entity/Q23928699"},"homepage_url":null,"apc_prices":[],"apc_usd":null,"apc_usd_by_year":null,"country_code":"SE","societies":[],"alternate_titles":["APS"],"type":"journal","topics":[{"id":"https://openalex.org/T11209","display_name":"Cardiovascular
+        and exercise physiology","count":1372,"subfield":{"id":"https://openalex.org/subfields/2707","display_name":"Complementary
+        and alternative medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10077","display_name":"Neuroscience
+        and Neuropharmacology Research","count":1300,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10814","display_name":"Neuropeptides
+        and Animal Physiology","count":1106,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10724","display_name":"Ion Transport
+        and Channel Regulation","count":1046,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10365","display_name":"Gastrointestinal
+        motility and disorders","count":812,"subfield":{"id":"https://openalex.org/subfields/2715","display_name":"Gastroenterology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10493","display_name":"Ion channel
+        regulation and function","count":777,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10745","display_name":"Heart Rate
+        Variability and Autonomic Control","count":749,"subfield":{"id":"https://openalex.org/subfields/2705","display_name":"Cardiology
+        and Cardiovascular Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11178","display_name":"Receptor Mechanisms
+        and Signaling","count":646,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10441","display_name":"Muscle Physiology
+        and Disorders","count":639,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10784","display_name":"Muscle activation
+        and electromyography studies","count":550,"subfield":{"id":"https://openalex.org/subfields/2204","display_name":"Biomedical
+        Engineering"},"field":{"id":"https://openalex.org/fields/22","display_name":"Engineering"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T14486","display_name":"Cardiovascular,
+        Neuropeptides, and Oxidative Stress Research","count":520,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11001","display_name":"Renin-Angiotensin
+        System Studies","count":505,"subfield":{"id":"https://openalex.org/subfields/2705","display_name":"Cardiology
+        and Cardiovascular Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10144","display_name":"Blood Pressure
+        and Hypertension Studies","count":485,"subfield":{"id":"https://openalex.org/subfields/2705","display_name":"Cardiology
+        and Cardiovascular Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10155","display_name":"Nitric Oxide
+        and Endothelin Effects","count":466,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11109","display_name":"Thermoregulation
+        and physiological responses","count":420,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11456","display_name":"Neuroscience
+        of respiration and sleep","count":418,"subfield":{"id":"https://openalex.org/subfields/2807","display_name":"Endocrine
+        and Autonomic Systems"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11721","display_name":"Blood properties
+        and coagulation","count":380,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11585","display_name":"Exercise and
+        Physiological Responses","count":368,"subfield":{"id":"https://openalex.org/subfields/2742","display_name":"Rehabilitation"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10196","display_name":"Pain Mechanisms
+        and Treatments","count":366,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10839","display_name":"Pancreatic
+        function and diabetes","count":363,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10217","display_name":"Cardiac electrophysiology
+        and arrhythmias","count":351,"subfield":{"id":"https://openalex.org/subfields/2705","display_name":"Cardiology
+        and Cardiovascular Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12910","display_name":"Eicosanoids
+        and Hypertension Pharmacology","count":351,"subfield":{"id":"https://openalex.org/subfields/1303","display_name":"Biochemistry"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11204","display_name":"Ion Channels
+        and Receptors","count":328,"subfield":{"id":"https://openalex.org/subfields/2809","display_name":"Sensory
+        Systems"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10982","display_name":"Motor Control
+        and Adaptation","count":325,"subfield":{"id":"https://openalex.org/subfields/2805","display_name":"Cognitive
+        Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10056","display_name":"Neurotransmitter
+        Receptor Influence on Behavior","count":317,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}}],"topic_share":[{"id":"https://openalex.org/T14486","display_name":"Cardiovascular,
+        Neuropeptides, and Oxidative Stress Research","value":0.0062471,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10724","display_name":"Ion Transport
+        and Channel Regulation","value":0.003432,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10814","display_name":"Neuropeptides
+        and Animal Physiology","value":0.0031811,"subfield":{"id":"https://openalex.org/subfields/2804","display_name":"Cellular
+        and Molecular Neuroscience"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T12910","display_name":"Eicosanoids
+        and Hypertension Pharmacology","value":0.0028067,"subfield":{"id":"https://openalex.org/subfields/1303","display_name":"Biochemistry"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11209","display_name":"Cardiovascular
+        and exercise physiology","value":0.0027598,"subfield":{"id":"https://openalex.org/subfields/2707","display_name":"Complementary
+        and alternative medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11456","display_name":"Neuroscience
+        of respiration and sleep","value":0.0024582,"subfield":{"id":"https://openalex.org/subfields/2807","display_name":"Endocrine
+        and Autonomic Systems"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11399","display_name":"Muscle metabolism
+        and nutrition","value":0.0023877,"subfield":{"id":"https://openalex.org/subfields/1307","display_name":"Cell
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T10784","display_name":"Muscle activation
+        and electromyography studies","value":0.0023552,"subfield":{"id":"https://openalex.org/subfields/2204","display_name":"Biomedical
+        Engineering"},"field":{"id":"https://openalex.org/fields/22","display_name":"Engineering"},"domain":{"id":"https://openalex.org/domains/3","display_name":"Physical
+        Sciences"}},{"id":"https://openalex.org/T11585","display_name":"Exercise and
+        Physiological Responses","value":0.0022897,"subfield":{"id":"https://openalex.org/subfields/2742","display_name":"Rehabilitation"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11109","display_name":"Thermoregulation
+        and physiological responses","value":0.0022842,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10493","display_name":"Ion channel
+        regulation and function","value":0.0022628,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11001","display_name":"Renin-Angiotensin
+        System Studies","value":0.0020967,"subfield":{"id":"https://openalex.org/subfields/2705","display_name":"Cardiology
+        and Cardiovascular Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10745","display_name":"Heart Rate
+        Variability and Autonomic Control","value":0.0020896,"subfield":{"id":"https://openalex.org/subfields/2705","display_name":"Cardiology
+        and Cardiovascular Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10441","display_name":"Muscle Physiology
+        and Disorders","value":0.0020379,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11872","display_name":"Barrier Structure
+        and Function Studies","value":0.0019451,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11193","display_name":"Adenosine
+        and Purinergic Signaling","value":0.0018604,"subfield":{"id":"https://openalex.org/subfields/1314","display_name":"Physiology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11346","display_name":"Mast cells
+        and histamine","value":0.0018354,"subfield":{"id":"https://openalex.org/subfields/2403","display_name":"Immunology"},"field":{"id":"https://openalex.org/fields/24","display_name":"Immunology
+        and Microbiology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11178","display_name":"Receptor Mechanisms
+        and Signaling","value":0.0017844,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11924","display_name":"Polyamine
+        Metabolism and Applications","value":0.0017521,"subfield":{"id":"https://openalex.org/subfields/1312","display_name":"Molecular
+        Biology"},"field":{"id":"https://openalex.org/fields/13","display_name":"Biochemistry,
+        Genetics and Molecular Biology"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11204","display_name":"Ion Channels
+        and Receptors","value":0.0017246,"subfield":{"id":"https://openalex.org/subfields/2809","display_name":"Sensory
+        Systems"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T12930","display_name":"Biomedical
+        and Chemical Research","value":0.0016945,"subfield":{"id":"https://openalex.org/subfields/2746","display_name":"Surgery"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T11457","display_name":"Adipose Tissue
+        and Metabolism","value":0.0016275,"subfield":{"id":"https://openalex.org/subfields/2737","display_name":"Physiology
+        (medical)"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T12580","display_name":"Vagus Nerve
+        Stimulation Research","value":0.0016055,"subfield":{"id":"https://openalex.org/subfields/2808","display_name":"Neurology"},"field":{"id":"https://openalex.org/fields/28","display_name":"Neuroscience"},"domain":{"id":"https://openalex.org/domains/1","display_name":"Life
+        Sciences"}},{"id":"https://openalex.org/T11721","display_name":"Blood properties
+        and coagulation","value":0.0016014,"subfield":{"id":"https://openalex.org/subfields/2740","display_name":"Pulmonary
+        and Respiratory Medicine"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}},{"id":"https://openalex.org/T10365","display_name":"Gastrointestinal
+        motility and disorders","value":0.0015992,"subfield":{"id":"https://openalex.org/subfields/2715","display_name":"Gastroenterology"},"field":{"id":"https://openalex.org/fields/27","display_name":"Medicine"},"domain":{"id":"https://openalex.org/domains/4","display_name":"Health
+        Sciences"}}],"counts_by_year":[{"year":2026,"works_count":0,"oa_works_count":0,"cited_by_count":2419},{"year":2025,"works_count":0,"oa_works_count":0,"cited_by_count":3373},{"year":2024,"works_count":0,"oa_works_count":0,"cited_by_count":3789},{"year":2023,"works_count":0,"oa_works_count":0,"cited_by_count":4011},{"year":2022,"works_count":0,"oa_works_count":0,"cited_by_count":4420},{"year":2021,"works_count":0,"oa_works_count":0,"cited_by_count":5053},{"year":2020,"works_count":0,"oa_works_count":0,"cited_by_count":5074},{"year":2019,"works_count":1,"oa_works_count":0,"cited_by_count":5008},{"year":2018,"works_count":0,"oa_works_count":0,"cited_by_count":5265},{"year":2017,"works_count":0,"oa_works_count":0,"cited_by_count":5249},{"year":2016,"works_count":0,"oa_works_count":0,"cited_by_count":5397},{"year":2015,"works_count":0,"oa_works_count":0,"cited_by_count":6457},{"year":2014,"works_count":0,"oa_works_count":0,"cited_by_count":6421},{"year":2013,"works_count":0,"oa_works_count":0,"cited_by_count":6684},{"year":2012,"works_count":0,"oa_works_count":0,"cited_by_count":7180},{"year":2010,"works_count":3,"oa_works_count":0,"cited_by_count":0},{"year":2009,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":2008,"works_count":1,"oa_works_count":0,"cited_by_count":0},{"year":2005,"works_count":146,"oa_works_count":24,"cited_by_count":0},{"year":2004,"works_count":170,"oa_works_count":20,"cited_by_count":0},{"year":2003,"works_count":175,"oa_works_count":11,"cited_by_count":0},{"year":2002,"works_count":146,"oa_works_count":24,"cited_by_count":0},{"year":2001,"works_count":158,"oa_works_count":14,"cited_by_count":0},{"year":2000,"works_count":171,"oa_works_count":15,"cited_by_count":0},{"year":1999,"works_count":195,"oa_works_count":14,"cited_by_count":0},{"year":1998,"works_count":207,"oa_works_count":22,"cited_by_count":0},{"year":1997,"works_count":181,"oa_works_count":23,"cited_by_count":0},{"year":1996,"works_count":190,"oa_works_count":3,"cited_by_count":0},{"year":1995,"works_count":188,"oa_works_count":4,"cited_by_count":0},{"year":1994,"works_count":238,"oa_works_count":4,"cited_by_count":0},{"year":1993,"works_count":199,"oa_works_count":4,"cited_by_count":0},{"year":1992,"works_count":224,"oa_works_count":2,"cited_by_count":0},{"year":1991,"works_count":235,"oa_works_count":1,"cited_by_count":0},{"year":1990,"works_count":243,"oa_works_count":4,"cited_by_count":0},{"year":1989,"works_count":275,"oa_works_count":4,"cited_by_count":0},{"year":1988,"works_count":265,"oa_works_count":2,"cited_by_count":0},{"year":1987,"works_count":283,"oa_works_count":4,"cited_by_count":0},{"year":1986,"works_count":267,"oa_works_count":5,"cited_by_count":0},{"year":1985,"works_count":259,"oa_works_count":5,"cited_by_count":0},{"year":1984,"works_count":237,"oa_works_count":2,"cited_by_count":0},{"year":1983,"works_count":231,"oa_works_count":6,"cited_by_count":0},{"year":1982,"works_count":268,"oa_works_count":1,"cited_by_count":0},{"year":1981,"works_count":263,"oa_works_count":1,"cited_by_count":0},{"year":1980,"works_count":218,"oa_works_count":1,"cited_by_count":0},{"year":1979,"works_count":213,"oa_works_count":0,"cited_by_count":0},{"year":1978,"works_count":197,"oa_works_count":1,"cited_by_count":0},{"year":1977,"works_count":202,"oa_works_count":0,"cited_by_count":0},{"year":1976,"works_count":212,"oa_works_count":0,"cited_by_count":0},{"year":1975,"works_count":207,"oa_works_count":2,"cited_by_count":0},{"year":1974,"works_count":255,"oa_works_count":1,"cited_by_count":0},{"year":1973,"works_count":210,"oa_works_count":0,"cited_by_count":0},{"year":1972,"works_count":203,"oa_works_count":0,"cited_by_count":0},{"year":1971,"works_count":398,"oa_works_count":0,"cited_by_count":0},{"year":1970,"works_count":255,"oa_works_count":1,"cited_by_count":0},{"year":1969,"works_count":298,"oa_works_count":0,"cited_by_count":0},{"year":1968,"works_count":387,"oa_works_count":0,"cited_by_count":0},{"year":1967,"works_count":281,"oa_works_count":0,"cited_by_count":0},{"year":1966,"works_count":400,"oa_works_count":0,"cited_by_count":0},{"year":1965,"works_count":300,"oa_works_count":0,"cited_by_count":0},{"year":1964,"works_count":240,"oa_works_count":0,"cited_by_count":0},{"year":1963,"works_count":206,"oa_works_count":0,"cited_by_count":0},{"year":1962,"works_count":272,"oa_works_count":0,"cited_by_count":0},{"year":1961,"works_count":247,"oa_works_count":1,"cited_by_count":0},{"year":1960,"works_count":308,"oa_works_count":0,"cited_by_count":0},{"year":1959,"works_count":162,"oa_works_count":0,"cited_by_count":0},{"year":1958,"works_count":171,"oa_works_count":0,"cited_by_count":0},{"year":1957,"works_count":142,"oa_works_count":0,"cited_by_count":0},{"year":1956,"works_count":85,"oa_works_count":0,"cited_by_count":0},{"year":1955,"works_count":117,"oa_works_count":0,"cited_by_count":0},{"year":1954,"works_count":129,"oa_works_count":1,"cited_by_count":0},{"year":1953,"works_count":229,"oa_works_count":0,"cited_by_count":0},{"year":1952,"works_count":81,"oa_works_count":1,"cited_by_count":0},{"year":1951,"works_count":110,"oa_works_count":0,"cited_by_count":0},{"year":1950,"works_count":86,"oa_works_count":0,"cited_by_count":0},{"year":1949,"works_count":121,"oa_works_count":0,"cited_by_count":0},{"year":1948,"works_count":85,"oa_works_count":0,"cited_by_count":0},{"year":1947,"works_count":87,"oa_works_count":0,"cited_by_count":0},{"year":1946,"works_count":82,"oa_works_count":0,"cited_by_count":0},{"year":1945,"works_count":82,"oa_works_count":0,"cited_by_count":0},{"year":1944,"works_count":84,"oa_works_count":0,"cited_by_count":0},{"year":1943,"works_count":100,"oa_works_count":0,"cited_by_count":0},{"year":1942,"works_count":91,"oa_works_count":0,"cited_by_count":0},{"year":1941,"works_count":59,"oa_works_count":0,"cited_by_count":0},{"year":1940,"works_count":33,"oa_works_count":0,"cited_by_count":0}],"works_api_url":"https://api.openalex.org/works?filter=primary_location.source.id:S4210232992","updated_date":"2026-11-05T14:08:14","created_date":"2016-06-24T00:00:00"}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a55f024e4cf7f0aa-DFW
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 05 Nov 2026 21:39:04 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 2.0 heroku-router
+      X-RateLimit-Cost-USD:
+      - '0'
+      X-RateLimit-Credits-Used:
+      - '0'
+      X-RateLimit-Limit:
+      - '1000'
+      X-RateLimit-Limit-USD:
+      - '0.1'
+      X-RateLimit-Onetime-Remaining:
+      - '0'
+      X-RateLimit-Prepaid-Remaining-USD:
+      - '0'
+      X-RateLimit-Remaining:
+      - '198'
+      X-RateLimit-Remaining-USD:
+      - '0.0198'
+      X-RateLimit-Reset:
+      - '8456'
+      access-control-allow-headers:
+      - Accept, Accept-Language, Accept-Encoding, Authorization, Content-Type, X-OpenAlex-UI,
+        X-Impersonate-User
+      access-control-allow-methods:
+      - GET, HEAD, POST, PATCH, DELETE, OPTIONS
+      access-control-expose-headers:
+      - Cache-Control, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Onetime-Remaining,
+        X-RateLimit-Credits-Used, X-RateLimit-Credits-Required, X-RateLimit-Reset,
+        X-RateLimit-Limit-USD, X-RateLimit-Remaining-USD, X-RateLimit-Prepaid-Remaining-USD,
+        X-RateLimit-Cost-USD, X-RateLimit-Cost-Required-USD, Retry-After, Location,
+        Content-Disposition, X-OpenAlex-UI-Token
+      nel:
+      - '{"report_to":"heroku-nel","response_headers":["Via"],"max_age":3600,"success_fraction":0.01,"failure_fraction":0.1}'
+      report-to:
+      - '{"group":"heroku-nel","endpoints":[{"url":"https://nel.heroku.com/reports?s=yMxE94DhJ%2FiTRGg9%2Bm9kQXoasr013bpTpCPlFX53Liw%3D\u0026sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add\u0026ts=1793914744"}],"max_age":3600}'
+      reporting-endpoints:
+      - heroku-nel="https://nel.heroku.com/reports?s=yMxE94DhJ%2FiTRGg9%2Bm9kQXoasr013bpTpCPlFX53Liw%3D&sid=c46efe9b-d3d2-4a0c-8c76-bfafa16c5add&ts=1793914744"
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=nlmcatalog&retmode=json&term=0001-6772%5Bissn%5D+AND+ncbijournals%5Bsb%5D
+  response:
+    body:
+      string: '{"header":{"type":"esearch","version":"0.3"},"esearchresult":{"count":"1","retmax":"1","retstart":"0","idlist":["370362"],"translationset":[],"translationstack":[{"term":"0001-6772[issn]","field":"issn","count":"1","explode":"N"},{"term":"ncbijournals[sb]","field":"sb","count":"42914","explode":"N"},"AND"],"querytranslation":"0001-6772[issn]
+        AND ncbijournals[sb]"}}
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 05 Nov 2026 21:39:03 GMT
+      Ncbi-Phid:
+      - 1D338DC87AA6A5A50000504FF0E521AC.1.1.m_1
+      Ncbi-Sid:
+      - 8C33740DFB671F4C_F171SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=8C33740DFB671F4C_F171SID; domain=.nih.gov; path=/; expires=Fri, 05
+        Nov 2027 21:39:04 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '2'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=nlmcatalog&id=370362&retmode=json
+  response:
+    body:
+      string: "{\"header\":{\"type\":\"esummary\",\"version\":\"0.3\"},\"result\":{\"uids\":[\"370362\"],\"370362\":{\"uid\":\"370362\",\"host\":\"\",\"nlmuniqueid\":\"0370362\",\"daterevised\":\"2026-05-08\",\"authorlist\":[],\"publicationinfolist\":[{\"imprint\":\"Oxford
+        : Blackwell Scientific Publications\",\"place\":\"Oxford :\",\"publisher\":\"Blackwell
+        Scientific Publications\",\"dateissued\":\"\",\"edition\":\"\",\"datesofserialpublication\":\"v.
+        1-        1940-,Ceased with Vol. 185, no. 4 (Dec. 2005).\"}],\"resourceinfolist\":[{\"typeofresource\":\"Serial\",\"resourceunit\":\"Remote
+        electronic resource, Text\"}],\"titlemainlist\":[{\"sorttitle\":\"acta physiologica
+        scandinavica\",\"title\":\"Acta physiologica Scandinavica.\",\"aiid\":\"\"}],\"titlemainsort\":\"acta
+        physiologica scandinavica\",\"titleotherlist\":[{\"titlealternate\":\"ACTA
+        PHYSIOL SCAND\",\"otherinformation\":\"\",\"aiid\":\"\"},{\"titlealternate\":\"Acta
+        physiologica Scandinavica. Supplementum\",\"otherinformation\":\"\",\"aiid\":\"\"},{\"titlealternate\":\"Skandinavisches
+        Archiv fu\u0308r Physiologie\",\"otherinformation\":\"\",\"aiid\":\"\"},{\"titlealternate\":\"Acta
+        physiologica (Oxford, England)\",\"otherinformation\":\"\",\"aiid\":\"\"}],\"issnlist\":[{\"issn\":\"0001-6772\",\"validyn\":\"Y\",\"issntype\":\"Print\"},{\"issn\":\"1365-201X\",\"validyn\":\"Y\",\"issntype\":\"Electronic\"}],\"isbn\":\"\",\"country\":\"England\",\"currentindexingstatus\":\"N\",\"medlineta\":\"Acta
+        Physiol Scand\",\"isoabbreviation\":\"\",\"startyear\":\"1940\",\"jrid\":\"187\",\"endyear\":\"2005\",\"language\":\"eng\",\"broadheading\":[\"Physiology\"],\"continuationnotes\":\"Text
+        in English, French, or German.; Skandinavisches Archiv fu\u0308r Physiologie;
+        Acta physiologica (Oxford, England)\"}}}\n"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-RateLimit-Limit,X-RateLimit-Remaining
+      Alt-Svc:
+      - clear
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - upgrade-insecure-requests
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 05 Nov 2026 21:39:04 GMT
+      Ncbi-Phid:
+      - 1D32E3FDAF7BF9D500004041DF2BA0F2.1.1.m_1
+      Ncbi-Sid:
+      - ECA666ABA7AC9AA6_5171SID
+      Referrer-Policy:
+      - origin-when-cross-origin
+      Server:
+      - Finatra
+      Set-Cookie:
+      - ncbi_sid=ECA666ABA7AC9AA6_5171SID; domain=.nih.gov; path=/; expires=Fri, 05
+        Nov 2027 21:39:04 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Ratelimit-Limit:
+      - '3'
+      X-Ratelimit-Remaining:
+      - '1'
+      X-Ua-Compatible:
+      - IE=Edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -15,6 +15,7 @@ from neurosynth_compose.asgi_requests import (
     read_json,
 )
 from neurosynth_compose.database import commit_session, db
+from neurosynth_compose.owners import owner_id
 from neurosynth_compose.models.analysis import (
     MetaAnalysis,
     NeurostoreAnnotation,
@@ -43,6 +44,22 @@ from neurosynth_compose.schemas.analysis import get_ns_base
 
 _RAW_PROVENANCE_UNSET = object()
 _TAG_NAMES_UNSET = object()
+#: The project's fields its Neurostore meta study copies.
+_STUDY_FIELDS = ("name", "description", "public")
+
+
+def _sync_neurostore_study(record):
+    """Copy a project's name, description and privacy to its Neurostore meta study."""
+    ns_study = record.neurostore_study
+    if ns_study is None or not ns_study.neurostore_id:
+        return
+    create_or_update_neurostore_study(
+        ns_study,
+        settings=request.state.settings,
+        access_token=request.headers.get("Authorization"),
+    )
+    db.session.add(ns_study)
+    commit_session()
 
 
 def _include_provenance(args):
@@ -386,7 +403,7 @@ def serialize_project(
         "id": record.id,
         "created_at": _serialize_datetime(getattr(record, "created_at", None)),
         "updated_at": _serialize_datetime(getattr(record, "updated_at", None)),
-        "user": getattr(record, "user_id", None),
+        "user": owner_id(getattr(record, "user_id", None)),
         "username": getattr(getattr(record, "user", None), "name", None),
         "name": getattr(record, "name", None),
         "description": getattr(record, "description", None),
@@ -723,8 +740,15 @@ class ProjectsView(ObjectView, ListView):
                 422, f"input does not conform to specification: {str(exc)}"
             )
 
+        before = db.session.get(Project, id)
+        study_fields = {
+            field: getattr(before, field, None) for field in _STUDY_FIELDS
+        }
+
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id, commit=True)
+            if any(getattr(record, f) != v for f, v in study_fields.items()):
+                _sync_neurostore_study(record)
             if query_args.get("sync_meta_analyses_public") and "public" in data:
                 db.session.execute(
                     update(MetaAnalysis)

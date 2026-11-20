@@ -286,19 +286,19 @@ describe('the copy the text was read from', () => {
         });
 
     it.each([
-        [{ version: 'vor', license: { license_id: 'cc-by', determination: 'stated' } }, 'VoR · CC-BY'],
+        [{ version: 'vor', license: { license_id: 'cc_by', determination: 'stated' } }, 'VoR · CC-BY'],
         [
-            { version: 'submitted', license: { license_id: 'all-rights-reserved', determination: 'assumed' } },
+            { version: 'submitted', license: { license_id: 'all_rights_reserved', determination: 'assumed' } },
             'submitted manuscript · all rights reserved',
         ],
         [
-            { version: 'am', license: { license_id: 'cc-by-nc-nd', determination: 'stated' } },
+            { version: 'am', license: { license_id: 'cc_by_nc_nd', determination: 'stated' } },
             'accepted manuscript · CC-BY-NC-ND',
         ],
         [{ license: { license_id: 'cc0', determination: 'stated' } }, 'version unknown · CC0'],
         [{ version: 'vor' }, 'VoR · licence unknown'],
         [{ version: 'vor', license: { determination: 'assumed' } }, 'VoR · licence unknown'],
-        [{ version: 'vor', license: { license_id: 'public-domain' } }, 'VoR · public domain'],
+        [{ version: 'vor', license: { license_id: 'public_domain' } }, 'VoR · public domain'],
         [{ version: 'vor', license: { license_id: 'other' } }, 'VoR · other licence'],
     ])('names its version and licence', (copy, note) => {
         renderWithStores(<ReviewAppBar />, withCopy(copy));
@@ -307,14 +307,14 @@ describe('the copy the text was read from', () => {
 
     it('shows the licence as the paper states it on hover', () => {
         const stated_as = 'https://creativecommons.org/licenses/by/4.0/';
-        renderWithStores(<ReviewAppBar />, withCopy({ version: 'vor', license: { license_id: 'cc-by', stated_as } }));
+        renderWithStores(<ReviewAppBar />, withCopy({ version: 'vor', license: { license_id: 'cc_by', stated_as } }));
         expect(screen.getByLabelText(/^text copy/)).toHaveAttribute('title', stated_as);
     });
 
     it('has no hover text when the licence is not stated as anything', () => {
         renderWithStores(
             <ReviewAppBar />,
-            withCopy({ version: 'vor', license: { license_id: 'cc-by', stated_as: null } })
+            withCopy({ version: 'vor', license: { license_id: 'cc_by', stated_as: null } })
         );
         expect(screen.getByLabelText(/^text copy/)).not.toHaveAttribute('title');
     });

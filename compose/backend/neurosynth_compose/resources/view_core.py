@@ -142,11 +142,7 @@ class ObjectView(BaseView):
         ):
             raise_http_error(
                 403,
-                (
-                    f"user {current_user.external_id} cannot change "
-                    f"record owned by {record.user_id}. Only the owner or "
-                    f"an admin can delete records."
-                ),
+                "Only the owner or an admin can delete records.",
             )
 
         db.session.delete(record)

@@ -110,7 +110,25 @@ def monkeysession(request):
         yield mp
 
 
-def mock_decode_token(token):
+async def mock_decode_token(token, request=None):
+    """Stand in for Auth0's JWT check; API keys and RS256 tokens (signed by the
+    agent tests' key) still take the real path."""
+    from jose import jwt
+
+    from neurostore.resources.auth import API_KEY_PREFIX, decode_token, verify_api_key
+
+    if token.startswith(API_KEY_PREFIX):
+        return await verify_api_key(token, request.method)
+    try:
+        signed_like_auth0 = jwt.get_unverified_header(token).get("alg") == "RS256"
+    except jwt.JWTError:
+        signed_like_auth0 = False
+    if signed_like_auth0:
+        return await decode_token(token, request)
+    return _mock_jwt_payload(token)
+
+
+def _mock_jwt_payload(token):
     if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
         return {"sub": "user1-id"}
     elif token == encode({"sub": "user2-id"}, "123", algorithm="HS256"):
@@ -127,6 +145,7 @@ def mock_decode_token(token):
     # admin user
     elif token == encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"):
         return {"sub": "admin-user-id"}
+    return None
 
 
 @pytest.fixture(scope="session")
@@ -151,7 +170,7 @@ def mock_auth(monkeysession):
 
 
 @pytest.fixture(scope="function")
-def mock_get_embedding(monkeysession):
+def mock_get_embedding(monkeypatch):
     """Mock get_embedding to return a deterministic vector respecting provided dimensions.
 
     If `dimensions` is an int, returns a list of floats of that length.
@@ -168,10 +187,10 @@ def mock_get_embedding(monkeysession):
         return [random.random() for _ in range(length)]
 
     # Patch the canonical implementation
-    monkeysession.setattr(embeddings, "get_embedding", _mock_get_embedding)
+    monkeypatch.setattr(embeddings, "get_embedding", _mock_get_embedding)
     # Also patch modules that may have imported the function directly.
     # Use raising=False so this won't error if the attribute/path doesn't exist.
-    monkeysession.setattr(
+    monkeypatch.setattr(
         "neurostore.resources.data.get_embedding", _mock_get_embedding, raising=False
     )
     yield _mock_get_embedding
@@ -204,6 +223,7 @@ def real_app():
 
 def _reset_migrated_schema(db, migrations_dir):
     with db.engine.connect() as conn:
+        conn.execute(sa.text("DROP SCHEMA IF EXISTS public_query CASCADE"))
         conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE"))
         conn.execute(sa.text("CREATE SCHEMA public"))
         conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
@@ -211,6 +231,9 @@ def _reset_migrated_schema(db, migrations_dir):
     from neurostore import service_migrations
 
     service_migrations.upgrade("heads")
+    # pg_search caches its catalog ids per connection, and the schema reset
+    # dropped and recreated the extension, so pooled connections are stale.
+    db.engine.dispose()
 
 
 @pytest.fixture(scope="session")
@@ -263,12 +286,16 @@ def db(app):
     # _db.drop_all()
 
 
+# Tables whose rows a migration seeds and no test writes, kept between tests.
+SEEDED_TABLES = {"alembic_version", "link_domains"}
+
+
 def _truncate_public_tables(db):
     inspector = sa.inspect(db.engine)
     table_names = sorted(
         table_name
         for table_name in inspector.get_table_names(schema="public")
-        if table_name != "alembic_version"
+        if table_name not in SEEDED_TABLES
     )
     if not table_names:
         return
@@ -408,7 +435,7 @@ def mock_add_users(app, db, session, mock_auth):
 
     tokens = {}
     for u in users:
-        token_info = mock_decode_token(u["access_token"])
+        token_info = _mock_jwt_payload(u["access_token"])
         tokens[u["name"]] = {
             "token": u["access_token"],
             "external_id": token_info["sub"],
