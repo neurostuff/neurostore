@@ -1,7 +1,9 @@
 import hashlib
 import json
+import logging
 import time
 from collections.abc import Mapping
+from datetime import timedelta
 from urllib.request import urlopen
 
 import anyio
@@ -20,6 +22,15 @@ READ_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 # how long a revoked key may keep working here
 INTROSPECTION_TTL_SECONDS = 60
 _introspected: dict[str, tuple[float, dict]] = {}
+JWKS_TTL = timedelta(minutes=10)
+JWKS_REFETCH = timedelta(minutes=1)
+_jwks_cache: dict[str, tuple[float, dict]] = {}
+# what an agent's token may be granted on the agents API; write includes read
+AGENT_SCOPES = frozenset({"read", "write"})
+# the user's display name, which the tenant's "Neurostore user name" Action adds to agents
+# tokens: an on-behalf-of token can't be used at /userinfo
+NAME_CLAIM = "https://neurostore.org/name"
+audit_log = logging.getLogger("neurosynth_compose.agents")
 
 
 def _oauth_problem(detail):
@@ -42,45 +53,84 @@ async def asgi_oauth_problem_handler(request, exc):
     )
 
 
+def _fetch_jwks(base_url):
+    with urlopen(base_url + "/.well-known/jwks.json", timeout=10) as response:
+        return json.loads(response.read())
+
+
+def _find_key(jwks, kid):
+    for key in jwks["keys"]:
+        if key["kid"] == kid:
+            return {name: key[name] for name in ("kty", "kid", "use", "n", "e")}
+    return None
+
+
+def _signing_key(base_url, kid):
+    """The tenant's signing key ``kid``, from a JWKS cached for JWKS_TTL; an unknown
+    ``kid`` (Auth0 rotated its keys) refetches it, at most once per JWKS_REFETCH."""
+    now = time.monotonic()
+    fetched_at, jwks = _jwks_cache.get(base_url, (None, None))
+    stale = fetched_at is None or now - fetched_at > JWKS_TTL.total_seconds()
+    key = None if stale else _find_key(jwks, kid)
+    if key is None and (stale or now - fetched_at > JWKS_REFETCH.total_seconds()):
+        jwks = _fetch_jwks(base_url)
+        _jwks_cache[base_url] = (now, jwks)
+        key = _find_key(jwks, kid)
+    return key
+
+
+def _audiences(payload):
+    aud = payload.get("aud", [])
+    return [aud] if isinstance(aud, str) else list(aud)
+
+
+def _as_delegated(payload):
+    """An agent acting for ``sub``: only its granted scopes, and who it is for the audit."""
+    granted = set(str(payload.get("scope", "")).split())
+    return {
+        **payload,
+        "delegated": True,
+        "scopes": sorted(AGENT_SCOPES & granted),
+        "agent": payload.get("azp") or payload.get("client_id"),
+        "actor": (payload.get("act") or {}).get("sub"),
+    }
+
+
 def _decode_token(token, settings: Mapping[str, object]):
-    jsonurl = urlopen(str(settings["AUTH0_BASE_URL"]) + "/.well-known/jwks.json")
-    jwks = json.loads(jsonurl.read())
     try:
         unverified_header = jwt.get_unverified_header(token)
     except jwt.JWTError:
         raise _oauth_problem("Unable to parse authentication token.")
 
-    rsa_key = {}
-    for key in jwks["keys"]:
-        if key["kid"] == unverified_header["kid"]:
-            rsa_key = {
-                "kty": key["kty"],
-                "kid": key["kid"],
-                "use": key["use"],
-                "n": key["n"],
-                "e": key["e"],
-            }
-    if rsa_key:
-        try:
-            payload = jwt.decode(
-                token,
-                rsa_key,
-                algorithms=["RS256"],
-                audience=settings["AUTH0_API_AUDIENCE"],
-                issuer=str(settings["AUTH0_BASE_URL"]) + "/",
-            )
-        except jwt.ExpiredSignatureError:
-            raise _oauth_problem("token is expired")
-        except jwt.JWTClaimsError:
-            raise _oauth_problem(
-                "incorrect claims,please check the audience and issuer"
-            )
-        except Exception:
-            raise _oauth_problem("Unable to parse authentication token.")
+    base_url = str(settings["AUTH0_BASE_URL"])
+    rsa_key = _signing_key(base_url, unverified_header.get("kid"))
+    if not rsa_key:
+        raise _oauth_problem("Unable to find appropriate key")
 
-        return payload
+    try:
+        payload = jwt.decode(
+            token,
+            rsa_key,
+            algorithms=["RS256"],
+            issuer=base_url + "/",
+            options={"verify_aud": False},
+        )
+    except jwt.ExpiredSignatureError:
+        raise _oauth_problem("token is expired")
+    except jwt.JWTClaimsError:
+        raise _oauth_problem("incorrect claims,please check the audience and issuer")
+    except Exception:
+        raise _oauth_problem("Unable to parse authentication token.")
 
-    raise _oauth_problem("Unable to find appropriate key")
+    audiences = _audiences(payload)
+    agent_audience = settings.get("AUTH0_AGENT_AUDIENCE")
+    accepted = {settings["AUTH0_API_AUDIENCE"], agent_audience} - {None, ""}
+    if not accepted.intersection(audiences):
+        raise _oauth_problem("incorrect claims,please check the audience and issuer")
+    # `act` is set by Auth0's on-behalf-of exchange, e.g. for the MCP server
+    if (agent_audience and agent_audience in audiences) or "act" in payload:
+        return _as_delegated(payload)
+    return payload
 
 
 def required_scope(method):
@@ -144,6 +194,23 @@ async def verify_api_key(key, method, settings):
     return payload
 
 
+def authorize_delegated(payload, request):
+    """Refuse a method the agent's scopes don't allow; log each write it makes."""
+    if not scopes_allow(payload["scopes"], request.method):
+        raise OAuthScopeProblem(
+            token_scopes=payload["scopes"], required_scopes=[required_scope(request.method)]
+        )
+    if required_scope(request.method) == "write":
+        audit_log.info(
+            "agent write %s %s user=%s agent=%s actor=%s",
+            request.method,
+            request.url.path,
+            payload.get("sub"),
+            payload.get("agent"),
+            payload.get("actor"),
+        )
+
+
 async def decode_token(
     token, request=None, *, settings: Mapping[str, object] | None = None
 ):
@@ -156,7 +223,12 @@ async def decode_token(
         if request is None:
             raise RuntimeError("API keys are checked against a request's method")
         return await verify_api_key(token, request.method, settings)
-    return await anyio.to_thread.run_sync(_decode_token, token, settings)
+    payload = await anyio.to_thread.run_sync(_decode_token, token, settings)
+    if payload.get("delegated"):
+        if request is None:
+            raise RuntimeError("Agent tokens are checked against a request's method")
+        authorize_delegated(payload, request)
+    return payload
 
 
 def _lookup_upload_key(run_key):

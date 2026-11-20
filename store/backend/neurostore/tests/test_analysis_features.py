@@ -1,5 +1,6 @@
 """Resolving extraction records into analysis_features rows, at ingest."""
 
+import pytest
 import sqlalchemy as sa
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
@@ -27,6 +28,8 @@ FEATURE_TABLES = (
 PUBLICATION_REVISION = "c3e5a7b9d1f2"
 #: The head before the contrast-sides migration.
 PUBLIC_QUERY_REVISION = "e5b7d9f1a3c4"
+#: The head before the record-details migration.
+PUBLIC_QUERY_DATA_SOURCES_REVISION = "b8d0f2a4c6e9"
 
 
 def _by_name(name):
@@ -407,6 +410,136 @@ def test_design_and_scope_come_from_the_record():
     assert row["group_count"] == 2
 
 
+DEPRESSION, SOCIAL_ANXIETY = "y6qgUVcjRYtn", "myhy8yAbQrAV"
+
+
+def test_the_sample_has_ages_in_years_sex_handedness_counts_and_diagnosis():
+    patients = _by_name(DEPRESSION)["Group differences between MDD and HCs"]
+    treated = _by_name(SOCIAL_ANXIETY)["Positive FC"]
+    document = af.record(DEPRESSION)
+    document["groups"][0]["age_unit"]["value"] = "months"
+    in_months = record_features(document)
+
+    assert patients["age_means"] == [27.09, 26.41]
+    assert patients["age_sds"] == [4.73, 3.94]
+    # 35 and 39 of 46 and 58.
+    assert (patients["female_count"], patients["male_count"]) == (74, 30)
+    assert patients["female_percent"] == pytest.approx(100 * 74 / 104)
+    assert (patients["enrolled_count"], patients["excluded_count"]) == (124, 20)
+    assert patients["diagnostic_instrument_text"].startswith("mini international")
+    assert patients["display"]["groups.diagnostic_system"] == ["DSM-IV"]
+    assert all(
+        row["age_means"] == [pytest.approx(27.09 / 12), 26.41] for row in in_months.values()
+    )
+    assert treated["handedness"] == ["right-handed"]
+    assert treated["age_means"] is None and treated["female_percent"] is None
+
+
+def test_sex_is_read_from_percentages_and_from_gender_where_that_is_all():
+    document = af.record(DEPRESSION)
+    mdd, hc = document["groups"]
+    # 11 male and 35 female of 46, as percentages of the denominator.
+    for item in mdd["sex_distribution"]:
+        count = item.pop("count")["value"]
+        share = 100 * count / item["denominator"]["value"]
+        item["percentage"] = {"value": share, "extraction_status": "extracted"}
+    # The healthy group reports gender only.
+    hc["gender_distribution"], hc["sex_distribution"] = hc["sex_distribution"], []
+    rows = {
+        row["display"]["name"]: row for row in record_features(document).values()
+    }
+    patients = rows["Group differences between MDD and HCs"]
+
+    assert (patients["female_count"], patients["male_count"]) == (74, 30)
+    assert patients["female_percent"] == pytest.approx(100 * 74 / 104)
+
+
+def test_a_percentage_without_a_denominator_is_of_the_group_s_n():
+    document = af.record(DEPRESSION)
+    mdd = document["groups"][0]
+    for item in mdd["sex_distribution"]:
+        item.pop("count")
+        item.pop("denominator", None)
+        item["percentage"] = {"value": 50, "extraction_status": "extracted"}
+    links = document["analyses"][0]["groups"]
+    n = next(link for link in links if link["group"] == mdd["local_id"])["n"]["value"]
+    features = next(iter(record_features(document).values()))
+
+    # Half of the analysis's n of the group, and the healthy group's counts.
+    assert features["female_count"] == round(n / 2) + 39
+
+
+def test_an_instrument_whose_assessment_has_no_name_is_left_out():
+    document = af.record(SOCIAL_ANXIETY)
+    document["assessments"][0]["name"] = {"extraction_status": "not_reported"}
+    features = next(iter(record_features(document).values()))
+
+    assert features["diagnostic_instrument_text"] is None
+
+
+def test_inference_acquisitions_and_preprocessing_are_the_analysis_s_own():
+    treated = _by_name(SOCIAL_ANXIETY)["Positive FC"]
+    patients = _by_name(DEPRESSION)["Group differences between MDD and HCs"]
+
+    assert (treated["height_threshold"], treated["cluster_extent"]) == (0.005, 5)
+    assert treated["correction_scope"] == "whole_brain"
+    assert patients["correction_text"].startswith("bayesian model comparison")
+    assert treated["tfce"] is None
+    # The analysis's fMRI acquisition, not the structural scan beside it.
+    assert treated["repetition_times"] == [1.5]
+    assert treated["voxel_sizes"] == [4.5]
+    assert treated["modalities"] == ["fmri"]
+    assert patients["display"]["acquisitions.device"] == ["Siemens Prisma"]
+    assert treated["smoothing_fwhms"] == [4.0]
+    assert treated["preprocessing_software_text"] == "afni"
+
+
+def test_a_count_too_large_for_a_bigint_is_silent():
+    document = af.record(SOCIAL_ANXIETY)
+    settings = document["inference_settings"][0]
+    settings["permutation_count"] = {"value": 20_000_000_000, "extraction_status": "extracted"}
+    large = record_features(document)
+    settings["permutation_count"]["value"] = 2**64
+    too_large = record_features(document)
+
+    assert {row["permutations"] for row in large.values()} == {20_000_000_000}
+    assert {row["permutations"] for row in too_large.values()} == {None}
+
+
+def test_a_model_has_the_models_it_takes_inputs_from_nearest_first():
+    treated = _by_name(SOCIAL_ANXIETY)["Positive FC"]
+
+    # The group t-test names no software or HRF; its first level does.
+    assert treated["model_family_text"] == "between-group t-test | glm"
+    assert treated["model_software_text"] == "3ddeconvolve"
+    assert treated["hrf_model_text"].startswith("gamma variate")
+    assert treated["model_term_types"] == ["categorical", "continuous"]
+    assert treated["statistic_family"] == "t"
+
+
+def test_connectivity_regions_coordinate_sets_and_task_details():
+    treated = _by_name(SOCIAL_ANXIETY)["Positive FC"]
+    patients = _by_name(DEPRESSION)["Group differences between MDD and HCs"]
+
+    assert (treated["connectivity_method"], treated["seed_region_text"]) == (
+        "seed_based",
+        "dmpfc",
+    )
+    assert patients["display"]["regions.name"] == ["DMN", "SN", "DAN"]
+    assert patients["region_atlas_text"] == "shirer et al., 2012 network templates"
+    assert patients["region_types"] == ["network"]
+    # Coordinate sets that name the analysis; the depression paper's anchors name none.
+    assert (treated["coordinate_roles"], treated["result_kinds"]) == (
+        ["result"],
+        ["connectivity"],
+    )
+    assert patients["coordinate_roles"] is None
+    assert treated["response_modalities"] == ["covert_response"]
+    assert treated["design_types"] == ["event_related"]
+    assert patients["stimulus_text"] is None
+    assert patients["instructions_text"].startswith("lie still")
+
+
 def test_silence_is_null():
     document = af.record("6SKTGteXbbBs")
     for group in document["groups"]:
@@ -613,6 +746,29 @@ def test_the_contrast_sides_migration_adds_the_side_columns_and_its_downgrade_dr
         assert len(side_columns()) == 18
         # Rows written before it are silent on the sides until the backfill.
         assert {row.contrast_positive_has_patients for row in AnalysisFeature.query} == {None}
+        session.remove()
+    finally:
+        service_migrations.upgrade("heads")
+
+
+def test_the_record_details_migration_adds_their_columns_and_its_downgrade_drops_them(
+    session,
+):
+    af.upload(SOCIAL_ANXIETY)
+    session.commit()
+    session.remove()
+
+    def columns():
+        found = {c["name"] for c in sa.inspect(session.bind).get_columns("analysis_features")}
+        return found & {"age_means", "height_threshold", "scanner_text", "anchor_kinds"}
+
+    try:
+        service_migrations.downgrade(PUBLIC_QUERY_DATA_SOURCES_REVISION)
+        assert columns() == set()
+        service_migrations.upgrade("heads")
+        assert len(columns()) == 4
+        # Rows written before it are silent on them until the backfill.
+        assert {row.height_threshold for row in AnalysisFeature.query} == {None}
         session.remove()
     finally:
         service_migrations.upgrade("heads")

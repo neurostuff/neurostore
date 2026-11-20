@@ -728,7 +728,10 @@ def _resolve_base_study(body, parse, parsed_paper, create):
                 "The parse names no identifier to create its base study from.",
                 [make_field_error("coordinate_parse/header/identifiers", header_identifiers)],
             )
-        base_study = BaseStudy(level="group", **_bibliography(parsed_paper))
+        # The pipeline decides whether the paper is a meta-analysis (PubMed's publication
+        # types first, then its title); neurostore reads that verdict.
+        meta = parsed_paper is not None and parsed_paper["is_meta_analysis"]
+        base_study = BaseStudy(level="meta" if meta else "group", **_bibliography(parsed_paper))
         db.session.add(base_study)
 
     attach_identifiers(db.session, base_study, identifiers, held, source="ingest")
@@ -804,7 +807,7 @@ def _create_study(base_study, parsed_paper, user):
         doi=base_study.doi,
         pmid=base_study.pmid,
         pmcid=base_study.pmcid,
-        level="group",
+        level=base_study.level,
         public=True,
         source=STUDY_SOURCE,
         user=user,
