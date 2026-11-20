@@ -568,7 +568,15 @@
           "value_source": "reported",
           "evidence": {
             "status": "not_found"
-          }
+          },
+          "normalized": [
+            {
+              "vocabulary": "AgeUnit",
+              "status": "mapped",
+              "value": "years",
+              "mapping_tool": "pondie.normalization.age_unit"
+            }
+          ]
         },
         "sex_distribution": [
           {
@@ -578,7 +586,15 @@
               "value_source": "reported",
               "evidence": {
                 "status": "not_found"
-              }
+              },
+              "normalized": [
+                {
+                  "vocabulary": "SexCategory",
+                  "status": "mapped",
+                  "value": "female",
+                  "mapping_tool": "pondie.normalization.sex_distribution"
+                }
+              ]
             },
             "count": {
               "extraction_status": "extracted",
@@ -611,14 +627,6 @@
               "evidence": {
                 "status": "not_found"
               }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "female",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
             }
           },
           {
@@ -628,7 +636,15 @@
               "value_source": "reported",
               "evidence": {
                 "status": "not_found"
-              }
+              },
+              "normalized": [
+                {
+                  "vocabulary": "SexCategory",
+                  "status": "mapped",
+                  "value": "male",
+                  "mapping_tool": "pondie.normalization.sex_distribution"
+                }
+              ]
             },
             "count": {
               "extraction_status": "extracted",
@@ -657,14 +673,6 @@
             "reporting_framework": {
               "extraction_status": "extracted",
               "value": "Sex",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "male",
               "value_source": "reported",
               "evidence": {
                 "status": "not_found"
@@ -713,14 +721,6 @@
               "evidence": {
                 "status": "not_found"
               }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "female",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
             }
           },
           {
@@ -763,14 +763,6 @@
               "evidence": {
                 "status": "not_found"
               }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "male",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
             }
           }
         ],
@@ -782,7 +774,15 @@
               "value_source": "reported",
               "evidence": {
                 "status": "not_found"
-              }
+              },
+              "normalized": [
+                {
+                  "vocabulary": "HandednessCategory",
+                  "status": "mapped",
+                  "value": "right",
+                  "mapping_tool": "pondie.normalization.handedness_distribution"
+                }
+              ]
             },
             "count": {
               "extraction_status": "extracted",
@@ -811,14 +811,6 @@
             "reporting_framework": {
               "extraction_status": "extracted",
               "value": "Handedness",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "right",
               "value_source": "reported",
               "evidence": {
                 "status": "not_found"
@@ -919,14 +911,6 @@
             "status": "not_found"
           }
         },
-        "age_unit_normalized": {
-          "extraction_status": "extracted",
-          "value": "years",
-          "value_source": "reported",
-          "evidence": {
-            "status": "not_found"
-          }
-        },
         "other_characteristics": {
           "extraction_status": "not_reported",
           "evidence": {
@@ -979,14 +963,6 @@
               "evidence": {
                 "status": "not_found"
               }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "white",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
             }
           },
           {
@@ -1025,14 +1001,6 @@
             "reporting_framework": {
               "extraction_status": "extracted",
               "value": "Race",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "asian",
               "value_source": "reported",
               "evidence": {
                 "status": "not_found"
@@ -1081,14 +1049,6 @@
               "evidence": {
                 "status": "not_found"
               }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "not hispanic",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
             }
           },
           {
@@ -1127,14 +1087,6 @@
             "reporting_framework": {
               "extraction_status": "extracted",
               "value": "Ethnicity",
-              "value_source": "reported",
-              "evidence": {
-                "status": "not_found"
-              }
-            },
-            "category_normalized": {
-              "extraction_status": "extracted",
-              "value": "hispanic",
               "value_source": "reported",
               "evidence": {
                 "status": "not_found"

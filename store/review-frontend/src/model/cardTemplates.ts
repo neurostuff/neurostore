@@ -179,7 +179,6 @@ export const CARD_TEMPLATES: Record<string, CardTemplate> = {
                 '.',
             ],
         ],
-        pairs: ['age_unit_normalized'],
         rows: [
             'description',
             'inclusion_criteria',

@@ -994,6 +994,17 @@ async def test_base_study_bulk_create_enqueues_metadata_outbox(auth_client, app)
         app.config["BASE_STUDY_METADATA_ASYNC"] = async_original
 
 
+@pytest.fixture(autouse=True)
+def no_journal_lookups(monkeypatch):
+    """These tests stub every provider the metadata worker asks, its journal matcher too
+    (test_journals.py records that against OpenAlex)."""
+    from neurostore.services import journals
+
+    monkeypatch.setattr(
+        journals, "match_base_studies", lambda base_studies, *, settings: ({}, [])
+    )
+
+
 def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     session, app, monkeypatch
 ):

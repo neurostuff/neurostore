@@ -2,6 +2,8 @@
 
 import warnings
 
+import pytest
+
 from sqlalchemy.exc import SAWarning
 
 from neurostore import ingest
@@ -11,6 +13,33 @@ from neurostore.models import Analysis, BaseStudy, Entity, Image, Point, Study
 
 def test_ingest_ace(ingest_neurosynth, ingest_ace, session):
     pass
+
+
+@pytest.mark.parametrize(
+    "title, level",
+    [
+        # The two U+2010 titles and the "Meta-Analytically" one are production base
+        # studies' (2026-11-05 snapshot).
+        ("A Meta\u2010analysis of Functional Neuroimaging Studies of Dyslexia", "meta"),
+        (
+            "Cortical thickness in major depressive disorder: "
+            "A systematic review and meta\u2010analysis",
+            "meta",
+        ),
+        ("Meta-analytic connectivity modeling of the human superior temporal sulcus", "meta"),
+        ("Two metaanalyses of reward processing", "meta"),
+        ("Neural correlates of itch: a systematic review", "meta"),
+        (
+            "Regulating a Meta-Analytically Defined Target Network in a Double-Blind "
+            "Controlled Trial",
+            "group",
+        ),
+        ("Fear conditioning in adolescents: an fMRI study", "group"),
+        (None, "group"),
+    ],
+)
+def test_ace_level_comes_from_the_title(title, level):
+    assert ingest.base_study_level(title) == level
 
 
 def test_ingest_neurovault(ingest_neurovault, session):

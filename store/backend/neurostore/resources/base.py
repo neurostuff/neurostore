@@ -3,11 +3,13 @@ Base Classes/functions for constructing views
 """
 
 import json
+from functools import wraps
 import re
 from copy import deepcopy
 
 import sqlalchemy as sa
 from connexion import request
+from connexion.context import context as connexion_context
 from marshmallow import ValidationError
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
@@ -32,6 +34,7 @@ from neurostore.models import (
     User,
 )
 from neurostore.note_keys import build_default_note
+from neurostore.owners import collecting_owners
 from neurostore.resources import data as viewdata
 from neurostore.resources.common import merge_unique_ids
 from neurostore.resources.mutation_core import (
@@ -49,6 +52,7 @@ from neurostore.resources.utils import (
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
 )
+from neurostore.services.data_source_links import recompute_data_source_links
 from neurostore.services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
@@ -110,6 +114,8 @@ class BaseView:
     mutation_policy_cls = DefaultMutationPolicy
     object_view_policy_cls = DefaultObjectViewPolicy
     request_body_validation_skip = ()
+    # whether a POST names the new record's id instead of having one generated
+    _client_id = False
     # _default_exclude = None
 
     @classmethod
@@ -259,6 +265,9 @@ class BaseView:
         if not base_studies:
             return
 
+        # kept synchronous: a write's response may list the data sources it changed
+        recompute_data_source_links(base_studies)
+
         config = request.state.settings
         if config.get("BASE_STUDY_FLAGS_ASYNC", True):
             reason = f"{self.__class__.__name__}.update_base_studies"
@@ -332,12 +341,16 @@ def clear_cache(unique_ids):
 
 
 def cache_key_creator(*args, **kwargs):
+    user = get_current_user().id if get_current_user() else ""
+    return _cache_key(user, **kwargs)
+
+
+def _cache_key(user, **kwargs):
     # relevant pieces of information
     # 1. the query arguments (including extra_args if present)
     # 2. the path
     # 3. the user
     path = request.url.path
-    user = get_current_user().id if get_current_user() else ""
 
     # Get query args from request
     query_items = list(request.query_params.multi_items())
@@ -361,10 +374,45 @@ def cache_key_creator(*args, **kwargs):
     return cache_key
 
 
+def cached_for_owners(timeout):
+    """Cache a response that differs by caller only where the caller owns a record in it.
+
+    One shared entry holds the response and the owners it names (`owner_id`); a caller
+    who is none of them is served it, and an owner gets an entry of their own. Shared
+    keys end in ``_owners``, so entries cached before owners were hidden are never read.
+    """
+
+    def decorator(function):
+        @wraps(function)
+        def decorated(*args, **kwargs):
+            backend = cache.cache
+            caller = connexion_context.get("user")
+            shared_key = _cache_key("", **kwargs) + "_owners"
+            shared = backend.get(shared_key)
+            if shared is not None:
+                value, owners = shared
+                if caller not in owners:
+                    return value
+            if caller is not None:
+                own_key = cache_key_creator(**kwargs)
+                value = backend.get(own_key)
+                if value is not None:
+                    return value
+            with collecting_owners() as owners:
+                value = function(*args, **kwargs)
+            if caller in owners:
+                backend.set(own_key, value, timeout=timeout)
+            else:
+                backend.set(shared_key, (value, frozenset(owners)), timeout=timeout)
+            return value
+
+        return decorated
+
+    return decorator
+
+
 class ObjectView(BaseView):
-    @cache.cached(
-        60 * 60, query_string=True, make_cache_key=cache_key_creator, key_prefix=None
-    )
+    @cached_for_owners(60 * 60)
     def get(self, id):
         object_view_policy = self.build_object_view_policy()
         args = parse_query_parameters(self._view_fields, request)
@@ -658,7 +706,7 @@ class ListView(BaseView):
         source = args.get("source") or "neurostore"
 
         unknown = self.__class__._schema.opts.unknown
-        schema = self.__class__._schema(exclude=("id",))
+        schema = self.__class__._schema(exclude=() if self._client_id else ("id",))
         data = load_schema_or_abort(schema, body, unknown=unknown)
 
         if source_id:
