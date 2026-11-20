@@ -166,6 +166,9 @@ Environment details to verify before production:
 - AWS credentials and `S3_PATH` are still correct for production backups.
 - Store OpenAI, PubMed, Semantic Scholar, and Auth0 secrets are present if the
   release touches those paths.
+- Store's NCBI key is named `PUBMED_TOOL_API_KEY`. Older env files call it
+  `PUBMED_API_KEY`, which nothing reads; without the key, NCBI calls run at the
+  keyless 3 requests/s.
 
 The staging/dev deploy script now creates host bind directories for staging/dev
 worktrees, but a raw production `docker compose` deploy does not. Create missing
@@ -260,6 +263,10 @@ Service ordering notes:
   and frontend assets are ready.
 - Compose needs Redis before `compose_worker`; the API container depends on the
   worker in `compose/docker-compose.yml`.
+- `manage journals match` and `store_metadata_outbox_worker` share one NCBI key,
+  and each process paces itself to NCBI's 10 requests/s per key, so together they
+  draw 429s. Stop the worker while the matcher runs, or run the matcher with
+  `-e PUBMED_API_RPS_WITH_KEY=5`.
 
 ## Studyset Release Contents
 
