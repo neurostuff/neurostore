@@ -106,6 +106,10 @@ class Config(object):
     PUBMED_TOOL = "neurostore"
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+    # A Fernet key (`Fernet.generate_key()`); corresponding author emails are kept under it.
+    CONTACT_EMAIL_KEY = os.environ.get("CONTACT_EMAIL_KEY")
+    # Tokens for this second Auth0 API are agents acting for a user; empty disables them.
+    AUTH0_AGENT_AUDIENCE = os.environ.get("AUTH0_AGENT_AUDIENCE")
     BEARERINFO_FUNC = os.environ.get(
         "BEARERINFO_FUNC", "neurostore.resources.auth.decode_token"
     )
@@ -156,6 +160,9 @@ class ProductionConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
+    AUTH0_AGENT_AUDIENCE = os.environ.get(
+        "AUTH0_AGENT_AUDIENCE", "https://neurostore.org/agents/"
+    )
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
@@ -173,6 +180,9 @@ class StagingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth-staging.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth-staging.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "https://staging.synth.neurostore.xyz/api/"
+    AUTH0_AGENT_AUDIENCE = os.environ.get(
+        "AUTH0_AGENT_AUDIENCE", "https://staging.neurostore.xyz/agents/"
+    )
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
@@ -207,6 +217,7 @@ class TestingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
+    AUTH0_AGENT_AUDIENCE = "localhost-agents"
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
     DB_NAME = resolve_database_name("neurostore", "testing")
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
@@ -217,6 +228,8 @@ class TestingConfig(Config):
     )
     BASE_STUDY_FLAGS_ASYNC = False
     BASE_STUDY_METADATA_ASYNC = False
+    # A fixed key, so tests need no secret; never this one anywhere else.
+    CONTACT_EMAIL_KEY = "dGVzdC1rZXktZm9yLWNvbnRhY3QtZW1haWxzLW9ubHk="
 
 
 class DockerTestConfig(TestingConfig):

@@ -1,3 +1,10 @@
+"""The API's exception handlers.
+
+A refused review request body (400) is an ErrorResponse naming the rule and field, which the
+review front end shows per field, while the rest of the API keeps connexion's problem shape
+that its existing clients parse.
+"""
+
 import json
 import logging
 import os
@@ -6,10 +13,18 @@ from datetime import datetime, timezone
 import anyio
 from connexion.exceptions import ProblemException
 from connexion.lifecycle import ConnexionResponse
+from jsonschema import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 
-from neurostore.exceptions.base import InternalServerError, NeuroStoreException
+from neurostore.exceptions.base import (
+    ConflictError,
+    InternalServerError,
+    NeuroStoreException,
+    PermissionError as NeuroStorePermissionError,
+    UnprocessableEntityError,
+)
+from neurostore.exceptions.factories import create_not_found_error
 from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 from neurostore.observability.request_id import (
     REQUEST_ID_HEADER_NAME,
@@ -17,6 +32,8 @@ from neurostore.observability.request_id import (
     new_request_id,
 )
 from neurostore.observability.sentry import capture_exception
+from neurostore.paths import is_review_path
+from neurostore.review.errors import Conflict, NotFound, Refused, ReviewError
 
 logger = logging.getLogger(__name__)
 
@@ -116,13 +133,85 @@ async def neurostore_exception_handler(request: Request, exc: NeuroStoreExceptio
         exc=exc,
     )
     err = _build_error_response_from_payload(payload, default_exc=exc)
-    body = err.to_dict()
+    body = {**err.to_dict(), **getattr(exc, "extra", {})}
     return _json_response(
         body, err.status, headers=_with_request_id(None, err.request_id)
     )
 
 
+def _details(errors) -> list[ErrorDetail]:
+    """``errors`` as ErrorDetails; an entry may be one or the dict of its fields."""
+    return [e if isinstance(e, ErrorDetail) else ErrorDetail(**e) for e in errors or ()]
+
+
+def review_http_error(error: ReviewError) -> NeuroStoreException:
+    """The NeuroStoreException a review error answers with.
+
+    NotFound is a 404, Refused a 403 and Conflict a 409; every other ReviewError, a bare one
+    included, is a 422 on purpose.
+    """
+    details = _details(error.errors)
+    if isinstance(error, NotFound):
+        return create_not_found_error(error.resource, error.id)
+    if isinstance(error, Refused):
+        return NeuroStorePermissionError(str(error))
+    if isinstance(error, Conflict):
+        listed = {"errors": [e.to_dict() for e in details]} if details else {}
+        last_seq = {} if error.last_seq is None else {"last_seq": error.last_seq}
+        return ConflictError(str(error), **listed, **last_seq)
+    return UnprocessableEntityError(str(error), errors=details or None)
+
+
+async def review_exception_handler(request: Request, exc: ReviewError):
+    return await neurostore_exception_handler(request, review_http_error(exc))
+
+
+def error_response(
+    request,
+    status: int,
+    title: str,
+    detail: str,
+    *,
+    errors: list[ErrorDetail] | None = None,
+    exc=None,
+) -> ConnexionResponse:
+    """An ErrorResponse for a failure that no NeuroStoreException carries."""
+    request_id = _log_error_response(request, status, title, detail, exc=exc)
+    err = ErrorResponse(
+        status=status, title=title, detail=detail, errors=errors, request_id=request_id
+    )
+    return _json_response(
+        err.to_dict(), status, headers=_with_request_id(None, request_id)
+    )
+
+
+def _review_bad_request(request, exc: ProblemException) -> ConnexionResponse:
+    """One error per refused review body, naming its rule and field, never its value.
+
+    Connexion raises its 400 while it handles the jsonschema error, so that error is the
+    exception's context.
+    """
+    cause = exc.__context__
+    if isinstance(cause, ValidationError):
+        field = ".".join(str(part) for part in cause.absolute_path) or None
+        error = ErrorDetail(
+            field=field, code=cause.validator, message=f"failed the {cause.validator} rule"
+        )
+        return error_response(
+            request,
+            400,
+            "Bad Request",
+            "The request body is not valid.",
+            errors=[error],
+            exc=exc,
+        )
+    error = ErrorDetail(code="invalid_request", message=exc.detail or "The request is not valid.")
+    return error_response(request, 400, "Bad Request", error.message, errors=[error], exc=exc)
+
+
 async def problem_exception_handler(request: Request, exc: ProblemException):
+    if exc.status == 400 and is_review_path(request.url.path):
+        return _review_bad_request(request, exc)
     body = {
         "type": exc.type or "about:blank",
         "title": exc.title,

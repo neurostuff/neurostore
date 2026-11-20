@@ -3,10 +3,12 @@ import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import { useMemo } from 'react';
+import LargeAleSubtractionReferenceWarning from 'pages/MetaAnalysis/components/LargeAleSubtractionReferenceWarning';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
 } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
+import { isLargeAleSubtractionReference } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
 import {
     IMultiGroupOption,
     DEFAULT_REFERENCE_DATASETS,
@@ -20,9 +22,17 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup = (props: {
     selectedValue: IAnalysesSelection;
 }) => {
     const { algorithm, onSelectValue, annotationId, selectedValue } = props;
-    const columnOptions = useInclusionColumnOptions(annotationId, selectedValue?.selectionKey);
+    const studyCountByAnnotationValue = useInclusionColumnOptions(annotationId, selectedValue?.selectionKey);
+    const referenceStudyCount = selectedValue?.referenceDataset
+        ? (studyCountByAnnotationValue[selectedValue.referenceDataset] ?? 0)
+        : 0;
+    const showLargeReferenceWarning = isLargeAleSubtractionReference({
+        estimatorLabel: algorithm?.estimator?.label,
+        referenceDataset: selectedValue?.referenceDataset,
+        referenceStudyCount,
+    });
     const colOptionsToMultiGroupOptions: IMultiGroupOption[] = useMemo(() => {
-        return columnOptions
+        return Object.keys(studyCountByAnnotationValue)
             .filter((option) => option !== selectedValue?.selectionValue?.toString())
             .map((option) => ({
                 label: option,
@@ -30,7 +40,7 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup = (props: {
                 type: `Column Values (${selectedValue?.selectionKey})`,
                 id: option,
             }));
-    }, [columnOptions, selectedValue?.selectionKey, selectedValue?.selectionValue]);
+    }, [studyCountByAnnotationValue, selectedValue?.selectionKey, selectedValue?.selectionValue]);
 
     const multiGroupOptions: IMultiGroupOption[] = useMemo(() => {
         return [...DEFAULT_REFERENCE_DATASETS, ...colOptionsToMultiGroupOptions];
@@ -89,6 +99,7 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup = (props: {
                     onChange={(_event, newVal) => handleSelect(newVal || undefined)}
                     options={multiGroupOptions}
                 />
+                {showLargeReferenceWarning && <LargeAleSubtractionReferenceWarning />}
             </Box>
         </Box>
     );

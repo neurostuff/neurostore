@@ -8,8 +8,12 @@ HTTP_STATUS_TITLES = {
     401: "Unauthorized",
     403: "Forbidden",
     404: "Not Found",
+    409: "Conflict",
+    413: "Payload Too Large",
     422: "Unprocessable Entity",
     500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
 }
 
 
@@ -101,6 +105,17 @@ class ValidationError(NeuroStoreException):
         super().__init__(400, detail, errors=errors, instance=instance)
 
 
+class ConflictError(NeuroStoreException):
+    """A 409; the keyword arguments are extra top-level keys of the payload."""
+
+    def __init__(self, detail: str, instance: Optional[str] = None, **extra):
+        super().__init__(409, detail, instance=instance)
+        self.extra = extra
+
+    def to_payload(self) -> dict:
+        return {**super().to_payload(), **self.extra}
+
+
 class AuthenticationError(NeuroStoreException):
     def __init__(
         self, detail: str = "Authentication required", instance: Optional[str] = None
@@ -124,6 +139,13 @@ class NotFoundError(NeuroStoreException):
         super().__init__(404, detail, instance=instance)
 
 
+class PayloadTooLargeError(NeuroStoreException):
+    def __init__(
+        self, detail: str = "The payload is too large", instance: Optional[str] = None
+    ):
+        super().__init__(413, detail, instance=instance)
+
+
 class UnprocessableEntityError(NeuroStoreException):
     def __init__(
         self,
@@ -139,3 +161,15 @@ class InternalServerError(NeuroStoreException):
         self, detail: str = "Internal Server Error", instance: Optional[str] = None
     ):
         super().__init__(500, detail, instance=instance)
+
+
+class BadGatewayError(NeuroStoreException):
+    def __init__(self, detail: str = "Bad Gateway", instance: Optional[str] = None):
+        super().__init__(502, detail, instance=instance)
+
+
+class ServiceUnavailableError(NeuroStoreException):
+    def __init__(
+        self, detail: str = "Service Unavailable", instance: Optional[str] = None
+    ):
+        super().__init__(503, detail, instance=instance)

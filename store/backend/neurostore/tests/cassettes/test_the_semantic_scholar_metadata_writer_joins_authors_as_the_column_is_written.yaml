@@ -1,0 +1,22 @@
+interactions:
+- request:
+    body: '{"ids": ["PMID:25775530"]}'
+    headers:
+      Accept:
+      - '*/*'
+      Content-Type:
+      - application/json
+    method: POST
+    uri: https://api.semanticscholar.org/graph/v1/paper/batch?fields=title,abstract,venue,year,authors,isOpenAccess,journal,externalIds
+  response:
+    body:
+      string: '[{"paperId": "010b54b2dc6794240291036ccf80b0a8459ccd84", "externalIds": {"MAG": "2029820704", "DOI": "10.1073/pnas.1417392112", "CorpusId": 491249, "PubMed": "25775530"}, "title": "Methane transport from the active layer to lakes in the Arctic using Toolik Lake, Alaska, as a case study", "venue": "Proceedings of the National Academy of Sciences of the United States of America", "year": 2015, "isOpenAccess": true, "openAccessPdf": {"url": "https://www.pnas.org/content/pnas/112/12/3636.full.pdf", "status": "BRONZE", "license": null, "disclaimer": "Notice: The following paper fields have been elided by the publisher: {''abstract''}. Paper or abstract available at https://api.unpaywall.org/v2/10.1073/pnas.1417392112?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1073/pnas.1417392112, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."}, "journal": {"name": "Proceedings of the National Academy of Sciences", "pages": "3636 - 3640", "volume": "112"}, "authors": [{"authorId": "3953776", "name": "A. Paytan"}, {"authorId": "4305412", "name": "A. Lecher"}, {"authorId": "31589164", "name": "N. Dimova"}, {"authorId": "15945543", "name": "Katy J. Sparrow"}, {"authorId": "41190856", "name": "F. G. Kodovska"}, {"authorId": "2113464758", "name": "Joseph Murray"}, {"authorId": "6684154", "name": "S. Tulaczyk"}, {"authorId": "35660702", "name": "J. Kessler"}], "abstract": null}]
+
+        '
+    headers:
+      content-type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+version: 1

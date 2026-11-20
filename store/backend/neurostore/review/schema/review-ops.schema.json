@@ -1,0 +1,468 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neurostore.org/schemas/review-ops/1",
+  "title": "ReviewOpBatch",
+  "description": "One batch of a reviewer's edits to one paper's extraction, applied in order.",
+  "version": "1",
+  "type": "object",
+  "required": ["ops"],
+  "additionalProperties": false,
+  "properties": {
+    "ops": {"type": "array", "minItems": 1, "maxItems": 500, "items": {"$ref": "#/$defs/Op"}}
+  },
+  "$defs": {
+    "LocalId": {
+      "description": "An entity's local_id in the record, or \"study\" for the record's root Study.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "FieldPath": {
+      "description": "A path below an entity: dotted attributes, each optionally selecting one list item by slot values (groups[group=grp_x].n) or by position (sex_distribution[#0].count).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\[(#[0-9]+|[A-Za-z_][A-Za-z0-9_]*=[^\\]]*(,[A-Za-z_][A-Za-z0-9_]*=[^\\]]*)*)\\])?(\\.[A-Za-z_][A-Za-z0-9_]*(\\[(#[0-9]+|[A-Za-z_][A-Za-z0-9_]*=[^\\]]*(,[A-Za-z_][A-Za-z0-9_]*=[^\\]]*)*)\\])?)*$"
+    },
+    "SlotTarget": {
+      "type": "object",
+      "required": ["kind", "entity", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "slot"},
+        "entity": {"$ref": "#/$defs/LocalId"},
+        "path": {"$ref": "#/$defs/FieldPath"}
+      }
+    },
+    "EntityTarget": {
+      "type": "object",
+      "required": ["kind", "entity"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "entity"},
+        "entity": {"$ref": "#/$defs/LocalId"}
+      }
+    },
+    "RelationshipTarget": {
+      "description": "One reference from an entity to another: the reference slot at path on entity, pointing at target_entity.",
+      "type": "object",
+      "required": ["kind", "entity", "path", "target_entity"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "relationship"},
+        "entity": {"$ref": "#/$defs/LocalId"},
+        "path": {"$ref": "#/$defs/FieldPath"},
+        "target_entity": {"$ref": "#/$defs/LocalId"}
+      }
+    },
+    "CoordinateTarget": {
+      "type": "object",
+      "required": ["kind", "analysis_key"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "coordinate_analysis"},
+        "analysis_key": {"type": "string", "pattern": "^analysis#[0-9a-f]{16}$"}
+      }
+    },
+    "CoordinateParseTarget": {
+      "description": "The coordinate parse as a whole: the target of an add, or of a restore.",
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {"kind": {"const": "coordinate_parse"}}
+    },
+    "PaperTarget": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {"kind": {"const": "paper"}}
+    },
+    "AnyTarget": {
+      "oneOf": [
+        {"$ref": "#/$defs/SlotTarget"},
+        {"$ref": "#/$defs/EntityTarget"},
+        {"$ref": "#/$defs/RelationshipTarget"},
+        {"$ref": "#/$defs/CoordinateTarget"},
+        {"$ref": "#/$defs/PaperTarget"}
+      ]
+    },
+    "Span": {
+      "description": "A half-open character range of the paper's text. The server fills text from the paper; a client never sends it.",
+      "type": "object",
+      "required": ["start_char", "end_char"],
+      "additionalProperties": false,
+      "properties": {
+        "start_char": {"type": "integer", "minimum": 0},
+        "end_char": {"type": "integer", "minimum": 1}
+      }
+    },
+    "Evidence": {
+      "description": "An evidence record: sets are alternatives; the spans of one set support the value together.",
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["present", "not_found", "not_applicable"]},
+        "sets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["spans"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"anyOf": [{"enum": ["model_quote", "retriever", "literal_match", "repair_pass"]}, {"type": "null"}]},
+              "spans": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Span"}}
+            }
+          }
+        },
+        "unlocated_quotes": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "OpBase": {
+      "type": "object",
+      "required": ["client_op_id", "type"],
+      "properties": {
+        "client_op_id": {
+          "description": "Client-minted op id, unique within a review.",
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128
+        },
+        "note": {"type": ["string", "null"], "maxLength": 10000}
+      }
+    },
+    "VerdictOp": {
+      "allOf": [
+        {"$ref": "#/$defs/OpBase"},
+        {"if": {"properties": {"verdict": {"const": "reject"}}}, "then": {"required": ["reason"]}},
+        {"if": {"properties": {"verdict": {"const": "restore"}}}, "then": {"required": ["previous"]}},
+        {"if": {"properties": {"verdict": {"enum": ["accept", "reject"]}}},
+         "then": {"not": {"required": ["previous"]}}}
+      ],
+      "type": "object",
+      "required": ["type", "target", "verdict"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "verdict"},
+        "target": {"$ref": "#/$defs/AnyTarget"},
+        "verdict": {
+          "description": "clear removes the reviewer's judgement of the target; restore puts back the judgement in previous, as an undo of a verdict gives it.",
+          "enum": ["accept", "reject", "clear", "restore"]
+        },
+        "reason": {"enum": ["wrong_value", "not_in_text", "wrong_entity", "duplicate", "other"]},
+        "previous": {
+          "description": "The provenance entry a restore puts back, exactly as it was.",
+          "type": "object",
+          "required": ["state", "user_id", "at"],
+          "additionalProperties": false,
+          "properties": {
+            "state": {"enum": ["verified", "edited", "added", "removed"]},
+            "user_id": {"type": "string"},
+            "at": {"type": "string"}
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SetValueOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target", "value"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "set_value"},
+        "target": {"$ref": "#/$defs/SlotTarget"},
+        "value": {
+          "type": "object",
+          "required": ["extraction_status"],
+          "additionalProperties": false,
+          "properties": {
+            "extraction_status": {"enum": ["extracted", "not_reported"]},
+            "value": true,
+            "value_source": {"enum": ["reported", "generated"]},
+            "unreported_reason": {"enum": ["ambiguous", "outside_text", "cited_elsewhere", "undetermined"]}
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SetEvidenceOp": {
+      "description": "On a slot the evidence is written into the record; on an entity or a relationship it is kept in the review only.",
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target", "evidence"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "set_evidence"},
+        "target": {
+          "oneOf": [
+            {"$ref": "#/$defs/SlotTarget"},
+            {"$ref": "#/$defs/EntityTarget"},
+            {"$ref": "#/$defs/RelationshipTarget"}
+          ]
+        },
+        "evidence": {"$ref": "#/$defs/Evidence"}
+      },
+      "additionalProperties": false
+    },
+    "CreateEntityOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "parent", "list", "entity"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "create_entity"},
+        "parent": {"$ref": "#/$defs/LocalId"},
+        "list": {
+          "description": "The entity list on parent the new entity joins (groups on the study, conditions on a task).",
+          "$ref": "#/$defs/FieldPath"
+        },
+        "index": {"description": "Position in the list; appended when absent.", "type": "integer", "minimum": 0},
+        "entity": {
+          "description": "The new entity as the extraction schema shapes it; a missing local_id is minted by the server.",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeleteEntityOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"const": "delete_entity"},
+        "target": {"$ref": "#/$defs/EntityTarget"}
+      },
+      "additionalProperties": false
+    },
+    "LinkOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target"],
+      "properties": {
+        "client_op_id": true,
+        "note": true,
+        "type": {"enum": ["link", "unlink"]},
+        "target": {"$ref": "#/$defs/RelationshipTarget"},
+        "index": {"description": "Position in the list; appended when absent. Link only.", "type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false,
+      "if": {"properties": {"type": {"const": "unlink"}}, "required": ["type"]},
+      "then": {"not": {"required": ["index"]}}
+    },
+    "CoordinateOp": {
+      "description": "An edit of the coordinate parse. The server applies it to the reviewer's revision, computes every key itself, and derives each original analysis's verdict from the analyses the revision then holds. The record's Analysis entities change in the same op.",
+      "allOf": [
+        {"$ref": "#/$defs/OpBase"},
+        {
+          "if": {"properties": {"action": {"const": "relabel"}}, "required": ["action"]},
+          "then": {"required": ["role"]}
+        },
+        {
+          "if": {"properties": {"action": {"enum": ["add", "restore"]}}},
+          "then": {"properties": {"target": {"$ref": "#/$defs/CoordinateParseTarget"}}},
+          "else": {"properties": {"target": {"$ref": "#/$defs/CoordinateTarget"}}}
+        },
+        {
+          "if": {"properties": {"action": {"enum": ["edit_points", "split", "merge", "add", "restore"]}}},
+          "then": {"required": ["payload"]}
+        },
+        {
+          "if": {"properties": {"action": {"const": "edit_points"}}},
+          "then": {"properties": {"payload": {"$ref": "#/$defs/EditPointsPayload"}}}
+        },
+        {
+          "if": {"properties": {"action": {"const": "split"}}},
+          "then": {"properties": {"payload": {"$ref": "#/$defs/SplitPayload"}}}
+        },
+        {
+          "if": {"properties": {"action": {"const": "merge"}}},
+          "then": {"properties": {"payload": {"$ref": "#/$defs/MergePayload"}}}
+        },
+        {
+          "if": {"properties": {"action": {"const": "add"}}},
+          "then": {"properties": {"payload": {"$ref": "#/$defs/AddPayload"}}}
+        },
+        {
+          "if": {"properties": {"action": {"const": "restore"}}},
+          "then": {"properties": {"payload": {"$ref": "#/$defs/RestorePayload"}}}
+        }
+      ],
+      "type": "object",
+      "required": ["type", "target", "action"],
+      "properties": {
+        "client_op_id": true,
+        "note": {
+          "description": "Becomes the reason of each verdict the op changes; \"reviewer <action>\" when absent.",
+          "type": ["string", "null"],
+          "maxLength": 10000
+        },
+        "type": {"const": "coordinate"},
+        "target": {
+          "description": "The analysis by its key in the current revision (its original key until it changes), or the coordinate parse for add and restore.",
+          "oneOf": [{"$ref": "#/$defs/CoordinateTarget"}, {"$ref": "#/$defs/CoordinateParseTarget"}]
+        },
+        "action": {
+          "description": "relabel (needs role) changes the analysis's role and takes no payload. edit_points, split and merge replace it and need payload. add introduces an analysis and restore undoes a coordinate op; both target the coordinate parse. A verdict op, never a coordinate op, accepts or rejects an analysis.",
+          "enum": ["relabel", "split", "merge", "add", "edit_points", "restore"]
+        },
+        "role": {"enum": ["result", "anchor", "localization", "reference", "other"]},
+        "payload": {
+          "oneOf": [
+            {"$ref": "#/$defs/EditPointsPayload"},
+            {"$ref": "#/$defs/SplitPayload"},
+            {"$ref": "#/$defs/MergePayload"},
+            {"$ref": "#/$defs/AddPayload"},
+            {"$ref": "#/$defs/RestorePayload"}
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "EditPointsPayload": {
+      "description": "The analysis's whole point list after the edit, and optionally its new name and space. Removing a point is an edit without it; moving points is one batch of two edits.",
+      "type": "object",
+      "required": ["points"],
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "description": "ParsedPoints of the coordinate-parse schema.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["coordinates"],
+            "properties": {
+              "coordinates": {
+                "type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3
+              }
+            }
+          }
+        },
+        "name": {"type": "string", "minLength": 1},
+        "coordinate_space": {
+          "description": "A ReportedSpace of the coordinate-parse schema, or null when the paper states none.",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "SplitPayload": {
+      "description": "Parts that partition the analysis's points by index, each point in exactly one part. An unnamed part takes the analysis's name with \" (part n)\" and name_is_printed false.",
+      "type": "object",
+      "required": ["parts"],
+      "additionalProperties": false,
+      "properties": {
+        "parts": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["indices"],
+            "additionalProperties": false,
+            "properties": {
+              "indices": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "integer", "minimum": 0}
+              },
+              "name": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    "MergePayload": {
+      "description": "The other analyses, by key in the current revision, whose points follow the target's in the merged analysis.",
+      "type": "object",
+      "required": ["with"],
+      "additionalProperties": false,
+      "properties": {
+        "with": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^analysis#[0-9a-f]{16}$"}
+        }
+      }
+    },
+    "AddPayload": {
+      "description": "A ParsedAnalysis of the coordinate-parse schema without key or derived_from; the server computes the key.",
+      "type": "object",
+      "required": ["analysis"],
+      "additionalProperties": false,
+      "properties": {"analysis": {
+        "type": "object",
+        "not": {"anyOf": [{"required": ["key"]}, {"required": ["derived_from"]}]}
+      }}
+    },
+    "RestorePayload": {
+      "description": "Remove the revision's analyses in remove, which must still be as given, insert those in insert at their indexes, and set each verdict reason in reasons (null for none); record does the same with the record's Analysis entities, each {index, entity}. A restore is refused when a removed analysis or entity has changed since, an inserted local_id is taken, an inserted key is not the one its name, space and points give, an inserted derived_from names a non-original key, or the result would hold two analyses with one key.",
+      "type": "object",
+      "required": ["remove", "insert", "reasons", "record"],
+      "additionalProperties": false,
+      "properties": {
+        "remove": {"type": "array", "items": {"$ref": "#/$defs/IndexedAnalysis"}},
+        "insert": {"type": "array", "items": {"$ref": "#/$defs/IndexedAnalysis"}},
+        "reasons": {"type": "object", "additionalProperties": {"type": ["string", "null"]}},
+        "record": {
+          "type": "object",
+          "required": ["remove", "insert"],
+          "additionalProperties": false,
+          "properties": {
+            "remove": {"type": "array", "items": {"$ref": "#/$defs/IndexedEntity"}},
+            "insert": {"type": "array", "items": {"$ref": "#/$defs/IndexedEntity"}}
+          }
+        }
+      }
+    },
+    "IndexedEntity": {
+      "description": "An Analysis entity of the record and its position in the record's analyses.",
+      "type": "object",
+      "required": ["index", "entity"],
+      "additionalProperties": false,
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "entity": {"type": "object", "required": ["local_id"]}
+      }
+    },
+    "IndexedAnalysis": {
+      "description": "A ParsedAnalysis of the revision and its position in the revision's analyses.",
+      "type": "object",
+      "required": ["index", "analysis"],
+      "additionalProperties": false,
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "analysis": {"type": "object", "required": ["key"]}
+      }
+    },
+    "NoteOp": {
+      "allOf": [{"$ref": "#/$defs/OpBase"}],
+      "type": "object",
+      "required": ["type", "target", "note"],
+      "properties": {
+        "client_op_id": true,
+        "note": {"type": "string", "minLength": 1, "maxLength": 10000},
+        "type": {"const": "note"},
+        "target": {"$ref": "#/$defs/AnyTarget"}
+      },
+      "additionalProperties": false
+    },
+    "Op": {
+      "oneOf": [
+        {"$ref": "#/$defs/VerdictOp"},
+        {"$ref": "#/$defs/SetValueOp"},
+        {"$ref": "#/$defs/SetEvidenceOp"},
+        {"$ref": "#/$defs/CreateEntityOp"},
+        {"$ref": "#/$defs/DeleteEntityOp"},
+        {"$ref": "#/$defs/LinkOp"},
+        {"$ref": "#/$defs/CoordinateOp"},
+        {"$ref": "#/$defs/NoteOp"}
+      ]
+    }
+  }
+}

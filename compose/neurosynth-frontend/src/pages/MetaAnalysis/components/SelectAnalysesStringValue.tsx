@@ -12,7 +12,8 @@ const SelectAnalysesStringValue = (props: {
     annotationId: string | undefined;
 }) => {
     const { selectedValue, onSelectValue, annotationId } = props;
-    const options = useInclusionColumnOptions(annotationId, selectedValue?.selectionKey);
+    const studyCountByAnnotationValue = useInclusionColumnOptions(annotationId, selectedValue?.selectionKey);
+    const options = Object.keys(studyCountByAnnotationValue);
 
     const handleSelect = (val: AnnotationNoteValue | undefined | null) => {
         if (!selectedValue) return;

@@ -16,7 +16,8 @@ import useGetSnapshotStudysetById from 'hooks/studysets/useGetSnapshotStudysetBy
 import { AnnotationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getType } from 'components/EditMetadata/EditMetadata.types';
+import { EPropertyType, getType } from 'components/EditMetadata/EditMetadata.types';
+import { notUndefinedOrNull } from 'helpers/utils';
 import {
     IAnalysesSelection,
     IAlgorithmSelection,
@@ -144,9 +145,13 @@ const EditSpecificationDialog = (props: IDialog) => {
     };
 
     const isMultiGroup = isMultiGroupAlgorithm(algorithmSpec.estimator);
+    const showReferenceDatasetSelection =
+        isMultiGroup &&
+        (selectedValue.type === EPropertyType.BOOLEAN
+            ? !!selectedValue.selectionKey
+            : notUndefinedOrNull(selectedValue.selectionValue));
 
     const disabled = useMemo(() => {
-        const isMultiGroup = isMultiGroupAlgorithm(algorithmSpec.estimator);
         return (
             !selectedValue?.selectionKey ||
             selectedValue?.selectionValue === undefined ||
@@ -157,6 +162,7 @@ const EditSpecificationDialog = (props: IDialog) => {
         selectedValue?.referenceDataset,
         selectedValue?.selectionKey,
         selectedValue?.selectionValue,
+        isMultiGroup,
     ]);
 
     return (
@@ -193,7 +199,7 @@ const EditSpecificationDialog = (props: IDialog) => {
                         }}
                         algorithm={algorithmSpec}
                     />
-                    {isMultiGroup && (
+                    {showReferenceDatasetSelection && (
                         <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                             onSelectValue={(newVal) => setSelectedValue(newVal)}
                             annotationId={(annotation as AnnotationReturn | undefined)?.neurostore_id || ''}

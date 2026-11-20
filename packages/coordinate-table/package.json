@@ -1,0 +1,23 @@
+{
+  "name": "@neurosynth/coordinate-table",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Neurosynth coordinate points grid (Handsontable 18) for MUI v5 apps.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./static": "./src/static.ts",
+    "./testing": "./src/testing/fakeHotTable.tsx"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.0.0",
+    "@emotion/styled": "^11.0.0",
+    "@handsontable/react-wrapper": "^18.0.0",
+    "@mui/icons-material": "^5.7.0",
+    "@mui/material": "^5.7.0",
+    "handsontable": "^18.0.0",
+    "react": "^18.0.0 || ^19.0.0"
+  }
+}

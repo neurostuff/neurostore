@@ -1,6 +1,6 @@
 import pytest
 
-from neurostore.resources.utils import (
+from neurostore.resources.text_search import (
     pubmed_to_tsquery,
     tsquery_has_positive_term,
     validate_search_query,

@@ -79,3 +79,23 @@ async def test_studysets_bad_token_returns_cors_headers(app):
     assert response.headers.get("Access-Control-Allow-Origin") == origin
     assert response.headers.get("Access-Control-Allow-Credentials") == "true"
     assert response.headers.get("Vary") == "Origin"
+
+
+async def test_a_401_on_a_non_review_route_keeps_its_own_body(app):
+    client = AsyncClient(token=None, asgi_app=app.asgi_app)
+
+    try:
+        response = await client.post("/api/studysets/", data={})
+    finally:
+        await client.aclose()
+
+    assert response.status_code == 401
+    body = response.json()
+    assert body["title"] == "Unauthorized"
+    assert body["detail"]
+    assert body == {
+        "type": "about:blank",
+        "title": "Unauthorized",
+        "detail": body["detail"],
+        "status": 401,
+    }

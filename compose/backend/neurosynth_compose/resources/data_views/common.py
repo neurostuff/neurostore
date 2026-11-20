@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from neurosynth_compose.owners import owner_id
+
 _MISSING = object()
 
 
@@ -14,7 +16,7 @@ def _serialize_base_record(record):
         "id": getattr(record, "id", None),
         "created_at": _serialize_datetime(getattr(record, "created_at", None)),
         "updated_at": _serialize_datetime(getattr(record, "updated_at", None)),
-        "user": getattr(record, "user_id", None),
+        "user": owner_id(getattr(record, "user_id", None)),
         "username": getattr(getattr(record, "user", None), "name", None),
     }
 

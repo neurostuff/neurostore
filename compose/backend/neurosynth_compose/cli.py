@@ -146,6 +146,34 @@ def backfill_extraction_metadata():
     _run_with_runtime(_run)
 
 
+@main.command("sync-neurostore-study-privacy")
+@click.option(
+    "--execute",
+    is_flag=True,
+    help="Write to Neurostore. Without this flag, only report how many studies would change.",
+)
+def sync_neurostore_study_privacy_command(execute):
+    """Give each project's Neurostore meta study the project's privacy, name and description."""
+
+    def _run(app, _db):
+        from neurosynth_compose.scripts.sync_neurostore_studies import (
+            sync_neurostore_studies,
+        )
+
+        summary = sync_neurostore_studies(settings=app.config, dry_run=not execute)
+        mode = "Would sync" if summary.dry_run else "Synced"
+        click.echo(
+            f"{mode} {summary.counts['private']} private and "
+            f"{summary.counts['public']} public project(s)."
+        )
+        if summary.failed:
+            raise click.ClickException(
+                f"{len(summary.failed)} write(s) failed: {', '.join(summary.failed)}"
+            )
+
+    _run_with_runtime(_run)
+
+
 @main.command("transfer-user-ownership")
 @click.argument("source_user_id")
 @click.argument("destination_user_id")
@@ -172,6 +200,64 @@ def transfer_user_ownership_command(source_user_id, destination_user_id, execute
     )
     for table_name, count in summary.counts.items():
         click.echo(f"{table_name}: {count}")
+
+
+@main.command("merge-base-studies")
+@click.argument("plan", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--execute",
+    is_flag=True,
+    help="Commit each pair. Without this flag, each pair is rolled back after printing.",
+)
+def merge_base_studies_command(plan, execute):
+    """Point project curation stubs at the keeper of each merged base study pair.
+
+    Run after neurostore's merge-base-studies has applied the same plan. Each pair runs
+    in its own transaction and prints every JSON change; a pair whose old base study
+    appears anywhere but a curation stub is refused and changes nothing.
+    """
+    from neurosynth_compose.scripts.merge_base_studies import (
+        load_plan,
+        merge_base_studies,
+    )
+
+    try:
+        pairs = load_plan(plan)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    def shown(value):
+        text = repr(value)
+        return text if len(text) <= 100 else text[:97] + "..."
+
+    def _run(_app, _db):
+        refused = False
+        for outcome in merge_base_studies(pairs, dry_run=not execute):
+            if outcome.status == "refused":
+                refused = True
+                click.echo(
+                    f"REFUSED {outcome.old_id} -> {outcome.keeper_id}: {outcome.refusal}"
+                )
+                continue
+            if not outcome.changes:
+                click.echo(
+                    f"{outcome.status} {outcome.old_id} -> {outcome.keeper_id}: no change"
+                )
+                continue
+            verb = "merged" if execute else "would merge"
+            click.echo(
+                f"{verb} {outcome.old_id} -> {outcome.keeper_id}: "
+                f"{len(outcome.changes)} change(s)"
+            )
+            for change in outcome.changes:
+                click.echo(
+                    f"  {change.table} {change.row_id} {change.field}: "
+                    f"{shown(change.before)} -> {shown(change.after)}"
+                )
+        return refused
+
+    if _run_with_runtime(_run):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

@@ -57,7 +57,10 @@ cleanup() {
 
 trap cleanup EXIT
 
-docker compose up -d --wait --no-build "${PG_SERVICE}"
+if ! docker compose up -d --wait --no-build "${PG_SERVICE}"; then
+  docker compose logs "${PG_SERVICE}"
+  exit 1
+fi
 
 # Recreate the test database so validation is independent of whatever state an
 # existing local/CI volume happens to contain.

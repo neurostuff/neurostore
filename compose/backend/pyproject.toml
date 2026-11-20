@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurosynth_compose"
-version = "0.23.3"
+version = "0.25.2"
 description = "neurosynth compose"
 authors = [
     { name="James Kent", email="jamesdkent21@gmail.com" }
@@ -15,7 +15,7 @@ dependencies = [
     "alembic~=1.18",
     "celery~=5.0",
     "connexion[swagger-ui,uvicorn]==3.3.0",
-    "gunicorn>=25,<27",
+    "gunicorn>=25,<28",
     "httpx2~=2.7",
     "uvicorn-worker~=0.4",
     "ipython~=9.6",
