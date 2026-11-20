@@ -238,8 +238,7 @@ class BaseStudySearchService:
         return query.filter(neurovault_filter)
 
     def _apply_modality_filter(self, query, modalities):
-        """Papers with an analysis of any of ``modalities``, compared as
-        analysis_features stores them: lower-cased."""
+        """Papers acquired by any of ``modalities``, compared lower-cased."""
         if not modalities:
             return query
         values = sorted({value.lower() for value in modalities})

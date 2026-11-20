@@ -270,9 +270,11 @@ class BaseStudy(BaseMixin, db.Model):
     has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
-    #: The union of its analyses' `AnalysisFeature.modalities`, sorted. Triggers on
-    #: analysis_features keep it (migration a88cb14fb489); never written by hand.
+    #: Its acquisition modalities, lower-cased and sorted, from ns-pond's modality export
+    #: (`manage base-study-modalities load`): the record's, else its methods text's.
     modalities = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    #: What ns-pond read them from: record, methods, full_text or none.
+    modalities_source = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     #: Legacy; fulltexts holds the reviewed text (docs/adr/0005-fulltexts-table.md).
     ace_fulltext = db.Column(db.Text)
