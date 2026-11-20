@@ -15,6 +15,7 @@ from sqlalchemy.orm import aliased, backref, relationship, validates
 from study_schema.keys import normalize_name
 from study_schema.models.paper_parse import LicenseId
 
+from neurostore.analysis_vocabulary import FEATURES as DETAIL_FEATURES
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore import encryption
@@ -295,6 +296,19 @@ class BaseStudy(BaseMixin, db.Model):
     # row, so a scan is what the planner uses.
     is_retracted = db.Column(db.Boolean, nullable=True)
     retraction_notice = db.Column(JSONB, nullable=True)
+    #: The journal neurostore identified (models/journals.py); ``publication`` keeps the
+    #: name as the source printed it.
+    journal_id = db.Column(
+        db.Text, db.ForeignKey("journals.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    #: How: study_schema's ``VenueMatch``.
+    journal_match = db.Column(db.Text, nullable=True)
+    #: The journal's name as the source printed it. ``publication`` is the matched
+    #: journal's title, else this; a trigger derives it, and takes a written
+    #: ``publication`` as this (models/journals.py).
+    publication_source = db.Column(db.String, nullable=True)
+    #: The matched journal's abbreviation, kept by the same trigger.
+    journal_abbreviation = db.Column(db.Text, nullable=True)
     #: The paper's licence, which governs its abstract (study_schema's
     #: ``bibliography.license.license_id``); NULL until a pipeline upload sets it.
     license = db.Column(license_type("base_studies"), nullable=True)
@@ -337,6 +351,10 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint(
             "publication_status IN ('preprint', 'published')",
             name="ck_base_studies_publication_status",
+        ),
+        db.CheckConstraint(
+            "journal_match IN ('doi', 'pmid', 'preprint_server', 'issn', 'title', 'fuzzy')",
+            name="ck_base_studies_journal_match",
         ),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
@@ -1110,6 +1128,119 @@ class AnalysisConditions(db.Model):
     )
 
 
+class DataSource(BaseMixin, db.Model):
+    """A named study (cohort), consortium or repository a paper's data can come from."""
+
+    __tablename__ = "data_sources"
+
+    # the dictionary key (e.g. "ukb"), given on create: records made before upload name it
+    id = db.Column(db.Text, primary_key=True, index=True)
+    name = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text)
+    kinds = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    modalities = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    # the repository hosting it or the consortium it belongs to
+    part_of_id = db.Column(
+        db.Text, db.ForeignKey("data_sources.id", ondelete="SET NULL"), index=True
+    )
+    url = db.Column(db.Text)
+    url_kind = db.Column(db.Text)
+    rrids = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    re3data_ids = db.Column(ARRAY(db.Text), nullable=False, server_default="{}")
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    user = relationship(
+        "User",
+        backref=backref("data_sources", cascade_backrefs=False, passive_deletes=True),
+        cascade_backrefs=False,
+    )
+    part_of = relationship("DataSource", remote_side="DataSource.id", lazy="raise")
+    analysis_data_sources = relationship(
+        "AnalysisDataSource",
+        backref=backref("data_source", cascade_backrefs=False),
+        passive_deletes=True,
+        cascade="all, delete-orphan",
+        cascade_backrefs=False,
+    )
+
+
+class AnalysisDataSource(db.Model):
+    __tablename__ = "analysis_data_sources"
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    analysis_id = db.Column(
+        db.Text,
+        db.ForeignKey("analyses.id", ondelete="CASCADE"),
+        index=True,
+        primary_key=True,
+    )
+    data_source_id = db.Column(
+        db.Text,
+        db.ForeignKey("data_sources.id", ondelete="CASCADE"),
+        index=True,
+        primary_key=True,
+    )
+
+
+# The data sources of a study's analyses and of all a base study's versions, rebuilt on write
+# by services.data_source_links.recompute_data_source_links.
+StudyDataSource = db.Table(
+    "study_data_sources",
+    db.Model.metadata,
+    db.Column(
+        "study_id",
+        db.Text,
+        db.ForeignKey("studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    db.Column(
+        "data_source_id",
+        db.Text,
+        db.ForeignKey("data_sources.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+BaseStudyDataSource = db.Table(
+    "base_study_data_sources",
+    db.Model.metadata,
+    db.Column(
+        "base_study_id",
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    db.Column(
+        "data_source_id",
+        db.Text,
+        db.ForeignKey("data_sources.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    ),
+)
+
+Analysis.analysis_data_sources = relationship(
+    AnalysisDataSource,
+    backref=backref("analysis"),
+    passive_deletes=True,
+    cascade="all, delete-orphan",
+    cascade_backrefs=False,
+)
+Study.data_sources = relationship(
+    DataSource,
+    secondary=StudyDataSource,
+    viewonly=True,
+    lazy="raise",
+    order_by=DataSource.name,
+)
+BaseStudy.data_sources = relationship(
+    DataSource,
+    secondary=BaseStudyDataSource,
+    viewonly=True,
+    lazy="raise",
+    order_by=DataSource.name,
+)
+
+
 PointEntityMap = db.Table(
     "point_entities",
     db.Model.metadata,
@@ -1490,6 +1621,348 @@ class PipelineAnalysisResult(BaseMixin, db.Model):
         backref=backref("analysis_results", cascade_backrefs=False, passive_deletes=True),
         cascade_backrefs=False,
     )
+
+
+def _index_name(column):
+    """An index's name: a contrast side's column without `contrast_`, to fit Postgres's 63
+    characters."""
+    side = column.startswith(tuple(f"contrast_{side}_" for side in CONTRAST_SIDES))
+    return "ix_analysis_features__" + (column.removeprefix("contrast_") if side else column)
+
+
+class Float8Multirange(sa.types.UserDefinedType):
+    """`float8multirange`, the multirange of the `float8range` type migration d5f7a9c1e3b6
+    creates."""
+
+    cache_ok = True
+
+    def get_col_spec(self, **kw):
+        return "float8multirange"
+
+
+def _points(column):
+    """``column``'s items as a multirange of points, generated by the database."""
+    return db.Column(
+        Float8Multirange, sa.Computed(f"analysis_feature_points({column})", persisted=True)
+    )
+
+
+def _gin_index(column):
+    return sa.Index(_index_name(column), column, postgresql_using="gin")
+
+
+def _gist_index(column):
+    return sa.Index(_index_name(column), column, postgresql_using="gist")
+
+
+def _trigram_index(column):
+    return sa.Index(
+        f"{_index_name(column)}_trgm",
+        column,
+        postgresql_using="gin",
+        postgresql_ops={column: "gin_trgm_ops"},
+    )
+
+
+#: The features read from normalizer entries, by column prefix.
+NORMALIZED_FEATURES = ("medical_condition", "task", "contrast_key", "contrast_set")
+#: The array columns each side of a contrast has, `contrast_<side>_<column>`, all GIN-indexed.
+CONTRAST_SIDE_ARRAYS = (
+    "medical_condition_ids",
+    "medical_condition_ancestor_ids",
+    "timepoints",
+    "arm_kinds",
+    "facets",
+)
+CONTRAST_SIDES = ("positive", "negative")
+
+
+#: The column type of each kind of `neurostore.analysis_vocabulary` feature.
+DETAIL_TYPES = {
+    "text": sa.Text,
+    "value": sa.Text,
+    "array_value": lambda: ARRAY(sa.Text),
+    "boolean": sa.Boolean,
+    "number_array": lambda: ARRAY(sa.Float),
+}
+
+
+def _detail_column(feature):
+    if feature.kind == "range":
+        return db.Column(sa.BigInteger if feature.number == "int" else sa.Float)
+    return db.Column(DETAIL_TYPES[feature.kind]())
+
+
+def _detail_index(feature):
+    """Trigram for text, GIN for values, GiST on a number array's points, else B-tree."""
+    if feature.kind == "text":
+        return _trigram_index(feature.column)
+    if feature.kind == "array_value":
+        return _gin_index(feature.column)
+    if feature.kind == "number_array":
+        return _gist_index(f"{feature.column}_points")
+    return sa.Index(_index_name(feature.column), feature.column)
+
+
+#: A column per feature, and a number array's points.
+_DetailColumns = type(
+    "_DetailColumns",
+    (),
+    {
+        name: column
+        for feature in DETAIL_FEATURES
+        for name, column in (
+            (feature.column, _detail_column(feature)),
+            *(
+                ((f"{feature.column}_points", _points(feature.column)),)
+                if feature.kind == "number_array"
+                else ()
+            ),
+        )
+    },
+)
+
+
+class AnalysisFeature(_DetailColumns, db.Model):
+    """What the latest extraction record says about one current pipeline analysis.
+
+    The query surface over records (`neurostore.analysis_query`): the record's local-id
+    references (measure, groups, tasks, cells) resolved once, at ingest, into columns.
+    Written by `neurostore.ingest.analysis_features`; never by hand. NULL is silent: the
+    record has no extracted value for the column. Text columns are lower-cased, their
+    items joined by " | ".
+    """
+
+    __tablename__ = "analysis_features"
+    __table_args__ = (
+        *(
+            _gin_index(f"{field}_{ids}")
+            for field in NORMALIZED_FEATURES
+            for ids in ("ids", "ancestor_ids")
+        ),
+        _gin_index("medical_condition_role_ids"),
+        _gin_index("medical_condition_role_ancestor_ids"),
+        _gin_index("arm_kinds"),
+        _gin_index("species"),
+        *(_detail_index(feature) for feature in DETAIL_FEATURES),
+        *(
+            _gin_index(f"contrast_{side}_{column}")
+            for side in CONTRAST_SIDES
+            for column in CONTRAST_SIDE_ARRAYS
+        ),
+        *(
+            _trigram_index(column)
+            for column in (
+                "medical_condition_text",
+                "task_text",
+                "contrast_positive",
+                "contrast_negative",
+                "name_text",
+                *(f"contrast_{side}_medical_condition_text" for side in CONTRAST_SIDES),
+            )
+        ),
+    )
+
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), primary_key=True
+    )
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    base_study_id = db.Column(
+        db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    #: The config of the record the row was read from.
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    spatial_scope = db.Column(db.Text, index=True)
+    coordinate_space = db.Column(db.Text)
+    measure_type = db.Column(db.Text, index=True)
+    measure_family = db.Column(db.Text, index=True)
+    effect_kind = db.Column(db.Text, index=True)
+    details_type = db.Column(db.Text, index=True)
+    group_count = db.Column(db.Integer)
+    #: The summed `AnalysisGroup.n` of the analysis's groups.
+    n = db.Column(db.Integer)
+
+    #: Lower-cased: study_schema's Species values, or the source's wording.
+    species = db.Column(ARRAY(db.Text))
+    #: Whether any group of the analysis is (not) healthy, from `Group.is_healthy`.
+    has_patients = db.Column(db.Boolean, index=True)
+    has_healthy = db.Column(db.Boolean, index=True)
+    # Each normalized feature has `_ids`, its mapped terms; `_ancestor_ids`, those and all
+    # their ancestors; and `_unmapped`, true when the record states the feature and nothing
+    # in it mapped, NULL when the record is silent on it (a healthy group's condition, or
+    # an item a normalizer read as an absence, is silent).
+    #: Mapped MONDO and ONVOC terms of the non-healthy groups' `medical_condition`.
+    medical_condition_ids = db.Column(ARRAY(db.Text))
+    medical_condition_ancestor_ids = db.Column(ARRAY(db.Text))
+    #: The same as "role|id", by the role ns-pond gave each term's item.
+    medical_condition_role_ids = db.Column(ARRAY(db.Text))
+    medical_condition_role_ancestor_ids = db.Column(ARRAY(db.Text))
+    #: Those terms' labels and the extracted wording.
+    medical_condition_text = db.Column(db.Text)
+    medical_condition_unmapped = db.Column(db.Boolean, index=True)
+    #: The tasks' canonical paradigms (a task placed only on a family, that family), and
+    #: the families above them.
+    task_ids = db.Column(ARRAY(db.Text))
+    task_ancestor_ids = db.Column(ARRAY(db.Text))
+    task_family_ids = db.Column(ARRAY(db.Text))
+    task_text = db.Column(db.Text)
+    task_unmapped = db.Column(db.Boolean, index=True)
+    #: The names on each side of the contrast: the signed cells' labels or levels, and
+    #: the names of the conditions their factor levels stand for.
+    contrast_positive = db.Column(db.Text)
+    contrast_negative = db.Column(db.Text)
+    # Each side, from the groups, timepoints and arms its cells' factor levels carry, and
+    # the facets its contrast keys put on it: the analysis-wide columns of the same names,
+    # over that side's groups.
+    contrast_positive_has_patients = db.Column(db.Boolean)
+    contrast_positive_has_healthy = db.Column(db.Boolean)
+    contrast_positive_medical_condition_ids = db.Column(ARRAY(db.Text))
+    contrast_positive_medical_condition_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_positive_medical_condition_text = db.Column(db.Text)
+    contrast_positive_medical_condition_unmapped = db.Column(db.Boolean)
+    #: The timepoints' `relation_to_intervention`, lower-cased.
+    contrast_positive_timepoints = db.Column(ARRAY(db.Text))
+    #: The arms' `arm_kind`, lower-cased.
+    contrast_positive_arm_kinds = db.Column(ARRAY(db.Text))
+    #: Lower-cased: the keys' `name:value` atoms and `~wording` tokens on this side, and a
+    #: baseline's kinds (`fixation`).
+    contrast_positive_facets = db.Column(ARRAY(db.Text))
+    contrast_negative_has_patients = db.Column(db.Boolean)
+    contrast_negative_has_healthy = db.Column(db.Boolean)
+    contrast_negative_medical_condition_ids = db.Column(ARRAY(db.Text))
+    contrast_negative_medical_condition_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_negative_medical_condition_text = db.Column(db.Text)
+    contrast_negative_medical_condition_unmapped = db.Column(db.Boolean)
+    contrast_negative_timepoints = db.Column(ARRAY(db.Text))
+    contrast_negative_arm_kinds = db.Column(ARRAY(db.Text))
+    contrast_negative_facets = db.Column(ARRAY(db.Text))
+    #: The directional contrast keys and sets a normalizer placed the analysis in, under
+    #: their task family.
+    contrast_key_ids = db.Column(ARRAY(db.Text))
+    contrast_key_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_key_unmapped = db.Column(db.Boolean, index=True)
+    contrast_set_ids = db.Column(ARRAY(db.Text))
+    contrast_set_ancestor_ids = db.Column(ARRAY(db.Text))
+    contrast_set_unmapped = db.Column(db.Boolean, index=True)
+    #: The analysis's name as the record gives it.
+    name_text = db.Column(db.Text)
+    #: The `mapping_tool` (normalizer and its version or fit) of every entry the ids came
+    #: from, which names the rows a new fit leaves stale.
+    mapping_tools = db.Column(ARRAY(db.Text))
+    #: The vocabulary releases its ids resolve against ("contrast_set fit-ed5ac7b08c20",
+    #: "mondo 2026-09-01"): its contrast sets' fit and its ancestors' loaded release.
+    vocabulary_releases = db.Column(ARRAY(db.Text))
+
+    allocation = db.Column(db.Text, index=True)
+    assignment_structure = db.Column(db.Text, index=True)
+    blinding = db.Column(db.Text, index=True)
+    arm_kinds = db.Column(ARRAY(db.Text))
+    #: Pre- and post-intervention timepoints both present.
+    longitudinal = db.Column(db.Boolean)
+    is_meta_analysis = db.Column(db.Boolean, index=True)
+
+    display_row = relationship("AnalysisFeatureDisplay", uselist=False, passive_deletes=True)
+
+    @staticmethod
+    def role_id(role, term):
+        """A medical-condition term as `medical_condition_role_ids` holds it."""
+        return f"{role}|{term}"
+
+    @staticmethod
+    def role_of(role_id):
+        """``(role, term)`` of a `role_id`."""
+        role, _, term = role_id.partition("|")
+        return role, term
+
+
+class ConceptRelease(db.Model):
+    """The release of a manifest vocabulary `concepts` and `concept_ancestors` hold, one per
+    vocabulary. Written by `neurostore.ingest.concepts`."""
+
+    __tablename__ = "concept_releases"
+
+    #: The vocabulary's name in study_schema's manifest (mondo, onvoc).
+    vocabulary = db.Column(db.Text, primary_key=True)
+    release = db.Column(db.Text, nullable=False)
+    #: Where it was read from, and the file's sha256, which matched the manifest's.
+    source = db.Column(db.Text, nullable=False)
+    sha256 = db.Column(db.Text, nullable=False)
+    concepts = db.Column(db.Integer, nullable=False)
+    loaded_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class Concept(db.Model):
+    """A concept of a loaded release, with its label and synonyms."""
+
+    __tablename__ = "concepts"
+
+    concept_id = db.Column(db.Text, primary_key=True)
+    vocabulary = db.Column(
+        db.Text,
+        db.ForeignKey("concept_releases.vocabulary", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    label = db.Column(db.Text)
+    synonyms = db.Column(ARRAY(db.Text))
+
+
+class ConceptAncestor(db.Model):
+    """A concept and one of its ancestors in its vocabulary's loaded release, the concept
+    itself at distance 0, so every concept of the release has a row."""
+
+    __tablename__ = "concept_ancestors"
+
+    concept_id = db.Column(db.Text, primary_key=True)
+    ancestor_id = db.Column(db.Text, primary_key=True)
+    vocabulary = db.Column(
+        db.Text,
+        db.ForeignKey("concept_releases.vocabulary", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    #: The fewest is_a (or skos:broader) steps from the concept to the ancestor.
+    distance = db.Column(db.Integer, nullable=False)
+
+
+class AnalysisTerm(db.Model):
+    """A term analysis features use, with its label and parent, as the latest record to use
+    it gave them. Written by `neurostore.ingest.analysis_features`."""
+
+    __tablename__ = "analysis_terms"
+    __table_args__ = (sa.Index("ix_analysis_terms_field_parent", "field", "parent"),)
+
+    #: The terms field it is listed under: medical_condition, task, task_family, ...
+    field = db.Column(db.Text, primary_key=True)
+    term = db.Column(db.Text, primary_key=True)
+    label = db.Column(db.Text)
+    parent = db.Column(db.Text)
+
+
+class AnalysisFeatureDisplay(db.Model):
+    """An analysis's features in the record's own wording, for results and annotation
+    columns. Beside `AnalysisFeature` rather than in it, so a query's scans read only the
+    columns it filters on."""
+
+    __tablename__ = "analysis_feature_displays"
+
+    analysis_id = db.Column(
+        db.Text,
+        db.ForeignKey("analysis_features.analysis_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    display = db.Column(JSONB, nullable=False)
+    #: The result's features, JSON text written with the row
+    #: (`neurostore.analysis_query.features_of`); a listing passes it through.
+    features = db.Column(db.Text)
 
 
 #: Bump to change what an entity hash covers. Every entity row stores what its

@@ -128,11 +128,20 @@ def monkeysession(request):
 
 
 async def mock_decode_token(token, request=None):
-    """Stand in for Auth0's JWT check; API keys still take the real path."""
-    from neurostore.resources.auth import API_KEY_PREFIX, verify_api_key
+    """Stand in for Auth0's JWT check; API keys and RS256 tokens (signed by the
+    agent tests' key) still take the real path."""
+    from jose import jwt
+
+    from neurostore.resources.auth import API_KEY_PREFIX, decode_token, verify_api_key
 
     if token.startswith(API_KEY_PREFIX):
         return await verify_api_key(token, request.method)
+    try:
+        signed_like_auth0 = jwt.get_unverified_header(token).get("alg") == "RS256"
+    except jwt.JWTError:
+        signed_like_auth0 = False
+    if signed_like_auth0:
+        return await decode_token(token, request)
     return _mock_jwt_payload(token)
 
 
@@ -231,6 +240,7 @@ def real_app():
 
 def _reset_migrated_schema(db, migrations_dir):
     with db.engine.connect() as conn:
+        conn.execute(sa.text("DROP SCHEMA IF EXISTS public_query CASCADE"))
         conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE"))
         conn.execute(sa.text("CREATE SCHEMA public"))
         conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))

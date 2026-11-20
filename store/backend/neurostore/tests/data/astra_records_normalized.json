@@ -1,0 +1,6506 @@
+{
+ "source": "ns-pond-ingestion-workflow ingestion_workflow/tests/normalization/data/astra_records.json (records); normalized sidecars added from that file's build rows (tasks, contrast keys, one contrast set) and hand-mapped MONDO for medical_condition; brought to study_schema b7efbdd (#56) by dropping the age_unit_normalized and category_normalized siblings #56 removed and the run fields extraction_metadata no longer takes",
+ "records": {
+  "ya2RC6UYbibC": {
+   "description": {
+    "extraction_status": "extracted",
+    "value": "Pilot fMRI study comparing dorsolateral and medial prefrontal working-memory activation in schizophrenia, bipolar disorder with psychotic features and controls, with exploratory analyses of changes across two sequential task runs.",
+    "value_source": "generated",
+    "evidence": {
+     "status": "not_found"
+    }
+   },
+   "design": {
+    "description": {
+     "extraction_status": "extracted",
+     "value": "Cross-sectional observational comparison of three diagnostic cohorts performing two sequential working-memory task runs; no intervention was assigned.",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "allocation": {
+     "extraction_status": "extracted",
+     "value": "not_applicable",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "assignment_structure": {
+     "extraction_status": "extracted",
+     "value": "observational_cohorts",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "blinding": {
+     "extraction_status": "not_reported",
+     "evidence": {
+      "status": "not_applicable"
+     }
+    }
+   },
+   "analyses": [
+    {
+     "local_id": "a_prose_1",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "schizophrenia > control",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra contrast key",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "working_memory_span|load:2|vs:load:0",
+        "also_read": [
+         "effect",
+         "tasks"
+        ]
+       },
+       {
+        "vocabulary": "ns-pond contrast set fit-000000000000",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "working_memory#1",
+        "label": "2-back > 0-back",
+        "confidence": 0.71
+       },
+       {
+        "vocabulary": "ns-pond contrast set orientation fit-000000000000",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "reversed"
+       }
+      ]
+     },
+     "definition": {
+      "extraction_status": "extracted",
+      "value": "Schizophrenia patients exhibited greater activation than controls in the mPFC ROI for 2-back > 0-back.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "interpretations": {
+      "extraction_status": "extracted",
+      "value": [
+       "Patients with schizophrenia exhibit reduced mPFC suppression during the 2-back task."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "outcome": {
+      "extraction_status": "extracted",
+      "value": "significant_effect",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_scope": {
+      "extraction_status": "extracted",
+      "value": "roi",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "regions": [
+      "reg_mpfc"
+     ],
+     "measure": "mea_bold",
+     "groups": [
+      {
+       "group": "grp_sz",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 10,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      },
+      {
+       "group": "grp_nc",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 19,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      }
+     ],
+     "effect": {
+      "cells": [
+       {
+        "term": "trm_group",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "SZ",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "extracted",
+         "value": "schizophrenia",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        }
+       },
+       {
+        "term": "trm_group",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "NC",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "extracted",
+         "value": "control",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        }
+       },
+       {
+        "term": "trm_condition",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "2-back",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       },
+       {
+        "term": "trm_condition",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "0-back",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       }
+      ],
+      "kind": {
+       "extraction_status": "extracted",
+       "value": "interaction",
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "statistic": {
+       "family": {
+        "extraction_status": "extracted",
+        "value": "t",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "degrees_of_freedom_numerator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "degrees_of_freedom_denominator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     },
+     "details": {
+      "details_type": "MassUnivariateDetails"
+     },
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "tasks": [
+      "tsk_wm"
+     ],
+     "model_estimation": "mod_mpfc",
+     "inference_settings": "inf_bonferroni",
+     "source_table_analysis": {
+      "extraction_status": "extracted",
+      "value": "analysis#7a4d19e5be6c04c8",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "coordinate_space": {
+      "extraction_status": "extracted",
+      "value": "MNI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "prespecification": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "model_representation_notes": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "a_prose_2",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "schizophrenia > BDp",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra contrast key",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "working_memory_span|load:2|vs:load:0",
+        "also_read": [
+         "effect",
+         "tasks"
+        ]
+       }
+      ]
+     },
+     "definition": {
+      "extraction_status": "extracted",
+      "value": "Schizophrenia patients exhibited greater activation than BDp in the mPFC ROI for 2-back > 0-back.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "interpretations": {
+      "extraction_status": "extracted",
+      "value": [
+       "Patients with schizophrenia exhibit reduced mPFC suppression during the 2-back task."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "outcome": {
+      "extraction_status": "extracted",
+      "value": "significant_effect",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_scope": {
+      "extraction_status": "extracted",
+      "value": "roi",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "regions": [
+      "reg_mpfc"
+     ],
+     "measure": "mea_bold",
+     "groups": [
+      {
+       "group": "grp_sz",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 10,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      },
+      {
+       "group": "grp_bdp",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 12,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      }
+     ],
+     "effect": {
+      "cells": [
+       {
+        "term": "trm_group",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "SZ",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "extracted",
+         "value": "schizophrenia",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        }
+       },
+       {
+        "term": "trm_group",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "BDp",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       },
+       {
+        "term": "trm_condition",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "2-back",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       },
+       {
+        "term": "trm_condition",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "0-back",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       }
+      ],
+      "kind": {
+       "extraction_status": "extracted",
+       "value": "interaction",
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "statistic": {
+       "family": {
+        "extraction_status": "extracted",
+        "value": "t",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "degrees_of_freedom_numerator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "degrees_of_freedom_denominator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     },
+     "details": {
+      "details_type": "MassUnivariateDetails"
+     },
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "tasks": [
+      "tsk_wm"
+     ],
+     "model_estimation": "mod_mpfc",
+     "inference_settings": "inf_bonferroni",
+     "source_table_analysis": {
+      "extraction_status": "extracted",
+      "value": "analysis#f0825fbd79e81831",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "coordinate_space": {
+      "extraction_status": "extracted",
+      "value": "MNI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "prespecification": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "model_representation_notes": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "groups": [
+    {
+     "local_id": "grp_sz",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "SZ",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Patients with schizophrenia.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "species": {
+      "extraction_status": "extracted",
+      "value": "human",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "acquired_count": {
+      "extraction_status": "extracted",
+      "value": 10,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "medical_condition": {
+      "extraction_status": "extracted",
+      "value": [
+       "schizophrenia"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "MONDO",
+        "status": "mapped",
+        "mapping_tool": "fixture: hand-mapped",
+        "item": 0,
+        "value": "MONDO:0005090",
+        "label": "schizophrenia"
+       }
+      ]
+     },
+     "clinical_characteristics": {
+      "extraction_status": "extracted",
+      "value": "All subjects were in their 30's and 40's.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "education_summary": {
+      "extraction_status": "extracted",
+      "value": "Controls had significantly higher education than both patient groups.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "socioeconomic_status_summary": {
+      "extraction_status": "extracted",
+      "value": "No significant differences in parental socioeconomic status between groups.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source": {
+      "extraction_status": "extracted",
+      "value": "recruited",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "is_healthy": {
+      "extraction_status": "extracted",
+      "value": false,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "approached_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "consented_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "enrolled_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "excluded_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "inclusion_criteria": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "exclusion_criteria": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_method": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_dates": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_mean": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_standard_deviation": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_minimum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_maximum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_median": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_unit": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "population_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "diagnostic_system": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medications": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medication_status": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "sample_source_reference": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "sample_overlap_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "other_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "grp_bdp",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "BDp",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Patients with bipolar disorder with psychotic features.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "species": {
+      "extraction_status": "extracted",
+      "value": "human",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "acquired_count": {
+      "extraction_status": "extracted",
+      "value": 12,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "medical_condition": {
+      "extraction_status": "extracted",
+      "value": [
+       "bipolar disorder with psychotic features"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "MONDO",
+        "status": "mapped",
+        "mapping_tool": "fixture: hand-mapped",
+        "item": 0,
+        "value": "MONDO:0004985",
+        "label": "bipolar disorder",
+        "rollup": true
+       }
+      ]
+     },
+     "clinical_characteristics": {
+      "extraction_status": "extracted",
+      "value": "All subjects were in their 30's and 40's.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "education_summary": {
+      "extraction_status": "extracted",
+      "value": "Controls had significantly higher education than both patient groups.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "socioeconomic_status_summary": {
+      "extraction_status": "extracted",
+      "value": "No significant differences in parental socioeconomic status between groups.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source": {
+      "extraction_status": "extracted",
+      "value": "recruited",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "is_healthy": {
+      "extraction_status": "extracted",
+      "value": false,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "approached_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "consented_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "enrolled_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "excluded_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "inclusion_criteria": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "exclusion_criteria": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_method": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_dates": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_mean": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_standard_deviation": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_minimum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_maximum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_median": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_unit": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "population_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "diagnostic_system": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medications": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medication_status": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "sample_source_reference": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "sample_overlap_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "other_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "grp_nc",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "NC",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Controls.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "species": {
+      "extraction_status": "extracted",
+      "value": "human",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "acquired_count": {
+      "extraction_status": "extracted",
+      "value": 19,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "race_distribution": [
+      {
+       "category": {
+        "extraction_status": "extracted",
+        "value": "Caucasian",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "percentage": {
+        "extraction_status": "extracted",
+        "value": 100,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "denominator": {
+        "extraction_status": "extracted",
+        "value": 19,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "reporting_framework": {
+        "extraction_status": "extracted",
+        "value": "Controls were significantly more likely to be Caucasian than the BDp group.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "count": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "education_summary": {
+      "extraction_status": "extracted",
+      "value": "Controls had significantly higher education than both patient groups.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "socioeconomic_status_summary": {
+      "extraction_status": "extracted",
+      "value": "No significant differences in parental socioeconomic status between groups.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source": {
+      "extraction_status": "extracted",
+      "value": "recruited",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_unit": {
+      "extraction_status": "extracted",
+      "value": "years",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "population_characteristics": {
+      "extraction_status": "extracted",
+      "value": [
+       "Controls had significantly higher education than both patient groups.",
+       "Controls were significantly more likely to be Caucasian than the BDp group.",
+       "Controls had significantly higher IQ estimates than individuals with schizophrenia."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "medical_condition": {
+      "extraction_status": "extracted",
+      "value": [
+       "Healthy controls"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "MONDO",
+        "status": "absent",
+        "mapping_tool": "fixture: hand-mapped",
+        "item": 0
+       }
+      ]
+     },
+     "is_healthy": {
+      "extraction_status": "extracted",
+      "value": true,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "approached_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "consented_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "enrolled_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "excluded_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "inclusion_criteria": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "exclusion_criteria": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_method": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_dates": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_mean": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_standard_deviation": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_minimum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_maximum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_median": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "diagnostic_system": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "clinical_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medications": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medication_status": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "sample_source_reference": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "sample_overlap_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "other_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "tasks": [
+    {
+     "local_id": "tsk_wm",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "2-back and 0-back WM tasks",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra canonical task",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "hedtsk_n_back",
+        "label": "N-Back Task",
+        "method": "name"
+       },
+       {
+        "vocabulary": "astra task family",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "working_memory_span",
+        "method": "name"
+       }
+      ]
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Two experimental runs of 2-back and 0-back working-memory tasks; parameter estimates were extracted separately for each run.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "conditions": [
+      {
+       "local_id": "cond_2back",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "2-back",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "condition_kind": {
+        "extraction_status": "extracted",
+        "value": "task_state",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "description": {
+        "extraction_status": "extracted",
+        "value": "2-back working-memory condition.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "stimulus_content": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      },
+      {
+       "local_id": "cond_0back",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "0-back",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "condition_kind": {
+        "extraction_status": "extracted",
+        "value": "task_state",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "description": {
+        "extraction_status": "extracted",
+        "value": "0-back working-memory condition.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "stimulus_content": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      },
+      {
+       "local_id": "cond_fixation",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "fixation",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "condition_kind": {
+        "extraction_status": "extracted",
+        "value": "fixation",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "description": {
+        "extraction_status": "extracted",
+        "value": "Fixation represented the zero baseline in the extracted parameter estimates.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "stimulus_content": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "performance_measures": {
+      "extraction_status": "extracted",
+      "value": [
+       "accuracy",
+       "reaction time",
+       "2-back percent correct"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "design_type": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "presentation_software": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "instructions": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "references": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "stimuli": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "stimulus_content": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "stimulus_modality": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "response_modality": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "regions": [
+    {
+     "local_id": "reg_mpfc",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "mPFC ROI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "definition_method": {
+      "extraction_status": "extracted",
+      "value": "same_study_analysis",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "region_type": {
+      "extraction_status": "extracted",
+      "value": "functional_cluster",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Significant mPFC cluster at MNI coordinates \u22121, 47, \u22124, used for extracted parameter estimates and group comparisons.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "atlas": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "devices": [
+    {
+     "local_id": "dev_fmri",
+     "manufacturer": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "model": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "acquisitions": [
+    {
+     "local_id": "acq_fmri",
+     "acquisition_type": "MRI",
+     "modality": {
+      "extraction_status": "extracted",
+      "value": "fMRI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "device": "dev_fmri",
+     "magnetic_field_strength_tesla": {
+      "extraction_status": "extracted",
+      "value": 1.5,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "pulse_sequence_type": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "mr_acquisition_type": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "repetition_time_seconds": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "echo_time_seconds": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "acquisition_voxel_size_mm": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "number_of_volumes": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "acquisition_duration_seconds": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "brain_coverage": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "model_estimations": [
+    {
+     "local_id": "mod_subject",
+     "model_type": {
+      "extraction_status": "extracted",
+      "value": "Task activation model",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stage": {
+      "extraction_status": "extracted",
+      "value": "subject",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "terms": [
+      {
+       "local_id": "trm_condition",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "condition",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "type": {
+        "extraction_status": "extracted",
+        "value": "categorical",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "levels": [
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "2-back",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "conditions": [
+          "cond_2back"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        },
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "0-back",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "conditions": [
+          "cond_0back"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        }
+       ],
+       "variation_level": {
+        "extraction_status": "extracted",
+        "value": "within_subject",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "source_definition": {
+        "extraction_status": "extracted",
+        "value": "2-back and 0-back working-memory conditions; the reported contrast is 2-back > 0-back.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "functional_form": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "unit": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "model_family": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "hrf_model": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "model_settings": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "estimator": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "software": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "spatial_unit": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "mod_mpfc",
+     "model_family": {
+      "extraction_status": "extracted",
+      "value": "anova",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model_type": {
+      "extraction_status": "extracted",
+      "value": "One-way ANOVA for between group differences",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model_settings": {
+      "extraction_status": "extracted",
+      "value": "Between-group comparison of mPFC parameter estimates for 2-back minus 0-back.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stage": {
+      "extraction_status": "extracted",
+      "value": "group",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_unit": {
+      "extraction_status": "extracted",
+      "value": "roi",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "inputs_from": [
+      "mod_subject"
+     ],
+     "terms": [
+      {
+       "local_id": "trm_group",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "group",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "type": {
+        "extraction_status": "extracted",
+        "value": "categorical",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "levels": [
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "SZ",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "groups": [
+          "grp_sz"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        },
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "BDp",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "groups": [
+          "grp_bdp"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        },
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "NC",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "groups": [
+          "grp_nc"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        }
+       ],
+       "variation_level": {
+        "extraction_status": "extracted",
+        "value": "between_subject",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "source_definition": {
+        "extraction_status": "extracted",
+        "value": "Schizophrenia (SZ), bipolar disorder with psychotic features (BDp), and controls (NC).",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "functional_form": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "unit": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "hrf_model": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "estimator": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "software": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "inference_settings": [
+    {
+     "local_id": "inf_bonferroni",
+     "inference_level": {
+      "extraction_status": "extracted",
+      "value": "post-hoc group comparison",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "multiple_comparison_method": {
+      "extraction_status": "extracted",
+      "value": "Bonferroni",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "height_threshold_value": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "height_threshold_type": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "cluster_extent_threshold": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "clusterwise_threshold_value": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "correction_scope": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "search_volume": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "neighborhood_definition": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "tfce_used": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "tfce_parameters": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "permutation_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "alpha_level": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "number_of_tests": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "measures": [
+    {
+     "local_id": "mea_bold",
+     "family": {
+      "extraction_status": "extracted",
+      "value": "functional_bold",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "type": {
+      "extraction_status": "extracted",
+      "value": "bold_response",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "source_label": {
+      "extraction_status": "extracted",
+      "value": "parameter estimates (mean BOLD fMRI signal change)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "specific_metric": {
+      "extraction_status": "extracted",
+      "value": "2-back minus 0-back parameter estimate",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "unit": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "coordinate_sets": [
+    {
+     "local_id": "analysis#7a4d19e5be6c04c8",
+     "role": {
+      "extraction_status": "extracted",
+      "value": "result",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "result_kind": {
+      "extraction_status": "extracted",
+      "value": "contrast",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "analysis": "a_prose_1",
+     "description": {
+      "extraction_status": "extracted",
+      "value": "mPFC ROI at MNI \u22121, 47, \u22124 for schizophrenia > control on 2-back > 0-back.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "anchor_kind": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "analysis#f0825fbd79e81831",
+     "role": {
+      "extraction_status": "extracted",
+      "value": "result",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "result_kind": {
+      "extraction_status": "extracted",
+      "value": "contrast",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "analysis": "a_prose_2",
+     "description": {
+      "extraction_status": "extracted",
+      "value": "mPFC ROI at MNI \u22121, 47, \u22124 for schizophrenia > BDp on 2-back > 0-back.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "anchor_kind": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "result_reporting": {
+    "extraction_status": "extracted",
+    "value": "analyses_reported",
+    "value_source": "generated",
+    "evidence": {
+     "status": "not_found"
+    }
+   },
+   "extraction_metadata": {
+    "extractor_model": "Qwen3.8-27B QLoRA (astra-distill r3-27b-final)",
+    "extractor_version": "ns-27b-e"
+   },
+   "hypothesis": {
+    "extraction_status": "not_reported",
+    "evidence": {
+     "status": "not_applicable"
+    }
+   },
+   "local_id": "ya2RC6UYbibC"
+  },
+  "6SKTGteXbbBs": {
+   "description": {
+    "extraction_status": "extracted",
+    "value": "Task-fMRI comparison of reward anticipation in cigarette smokers and nonsmokers, testing whether striatal responses to immediate versus equally preferred delayed rewards differ between groups.",
+    "value_source": "generated",
+    "evidence": {
+     "status": "not_found"
+    }
+   },
+   "design": {
+    "description": {
+     "extraction_status": "extracted",
+     "value": "Cross-sectional observational comparison of smokers and nonsmokers. Both groups performed the same immediate/delayed reward task. Smokers were not required to abstain and were invited to smoke before scanning. A subset completed a post-task delay-discounting reassessment.",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "allocation": {
+     "extraction_status": "extracted",
+     "value": "not_applicable",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "assignment_structure": {
+     "extraction_status": "extracted",
+     "value": "observational_cohorts",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "blinding": {
+     "extraction_status": "not_reported",
+     "evidence": {
+      "status": "not_applicable"
+     }
+    }
+   },
+   "analyses": [
+    {
+     "local_id": "a_tbl0005_1",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "Immediate\u2013delayed",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra contrast key",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "reward_and_value_choice|delay:immediate|vs:delay:delayed,phase:delay",
+        "also_read": [
+         "effect",
+         "tasks"
+        ]
+       }
+      ]
+     },
+     "definition": {
+      "extraction_status": "extracted",
+      "value": "Signal during anticipation of immediate vs. delayed rewards (which were equally preferred) was compared in whole-brain analysis.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "interpretations": {
+      "extraction_status": "extracted",
+      "value": [
+       "Signal was significantly greater during the anticipation of immediate reward in regions including bilateral caudate/putamen/ventral striatum, bilateral insula, bilateral prefrontal cortex/frontal pole, bilateral superior frontal gyrus, bilateral thalamus, brain stem, and anterior cingulate cortex/supplementary motor cortex."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "outcome": {
+      "extraction_status": "extracted",
+      "value": "significant_effect",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_scope": {
+      "extraction_status": "extracted",
+      "value": "whole_brain",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "measure": "mea_bold",
+     "groups": [
+      {
+       "group": "grp_smokers",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 35,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      },
+      {
+       "group": "grp_nonsmokers",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 36,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      }
+     ],
+     "effect": {
+      "cells": [
+       {
+        "term": "trm_delay",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "immediate",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "extracted",
+         "value": "Immediate",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        }
+       },
+       {
+        "term": "trm_delay",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "delayed",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "extracted",
+         "value": "delayed",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        }
+       }
+      ],
+      "kind": {
+       "extraction_status": "extracted",
+       "value": "contrast",
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "statistic": {
+       "family": {
+        "extraction_status": "extracted",
+        "value": "z",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "degrees_of_freedom_numerator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "degrees_of_freedom_denominator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     },
+     "details": {
+      "details_type": "MassUnivariateDetails"
+     },
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "tasks": [
+      "tsk_mid"
+     ],
+     "model_estimation": "mod_immediate_delayed",
+     "inference_settings": "inf_cluster",
+     "tables": [
+      "tbl1"
+     ],
+     "source_table_analysis": {
+      "extraction_status": "extracted",
+      "value": "analysis#01785c51d252c0e8",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "coordinate_space": {
+      "extraction_status": "extracted",
+      "value": "MNI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessments": [
+      "asm_intertemporal"
+     ],
+     "prespecification": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "model_representation_notes": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "a_tbl0005_2",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "Group difference: immediate\u2013delayed",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra contrast key",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "reward_and_value_choice|delay:immediate|vs:delay:delayed,phase:delay",
+        "also_read": [
+         "effect",
+         "tasks"
+        ]
+       }
+      ]
+     },
+     "definition": {
+      "extraction_status": "extracted",
+      "value": "We compared this \u201cimmediate > delayed\u201d effect between smokers and nonsmokers.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "interpretations": {
+      "extraction_status": "extracted",
+      "value": [
+       "We observed a larger \u201cimmediate > delayed\u201d effect among smokers than nonsmokers in several regions, including the right ventral striatum, bilateral caudate, right putamen, left thalamus, left hippocampus/parahippocampal gyrus and lateral occipital cortex."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "outcome": {
+      "extraction_status": "extracted",
+      "value": "significant_effect",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_scope": {
+      "extraction_status": "extracted",
+      "value": "whole_brain",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "defines_regions": [
+      "reg_striatum"
+     ],
+     "measure": "mea_bold",
+     "groups": [
+      {
+       "group": "grp_smokers",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 35,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      },
+      {
+       "group": "grp_nonsmokers",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 36,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      }
+     ],
+     "effect": {
+      "cells": [
+       {
+        "term": "trm_group",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "smokers",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       },
+       {
+        "term": "trm_group",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "nonsmokers",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       },
+       {
+        "term": "trm_delay",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "immediate",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       },
+       {
+        "term": "trm_delay",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "delayed",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       }
+      ],
+      "kind": {
+       "extraction_status": "extracted",
+       "value": "interaction",
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "statistic": {
+       "family": {
+        "extraction_status": "extracted",
+        "value": "z",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "degrees_of_freedom_numerator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "degrees_of_freedom_denominator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     },
+     "details": {
+      "details_type": "MassUnivariateDetails"
+     },
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "tasks": [
+      "tsk_mid"
+     ],
+     "model_estimation": "mod_group",
+     "inference_settings": "inf_cluster",
+     "tables": [
+      "tbl1"
+     ],
+     "source_table_analysis": {
+      "extraction_status": "extracted",
+      "value": "analysis#6cf9b2ad2c3c4db5",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "coordinate_space": {
+      "extraction_status": "extracted",
+      "value": "MNI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessments": [
+      "asm_mini",
+      "asm_intertemporal",
+      "asm_co",
+      "asm_cotinine"
+     ],
+     "prespecification": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "model_representation_notes": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "groups": [
+    {
+     "local_id": "grp_smokers",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "smokers",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Cigarette smokers, all nicotine dependent according to DSM-IV criteria.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "species": {
+      "extraction_status": "extracted",
+      "value": "human",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "acquired_count": {
+      "extraction_status": "extracted",
+      "value": 35,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "inclusion_criteria": {
+      "extraction_status": "extracted",
+      "value": [
+       "Nicotine dependence according to DSM-IV criteria assessed using the M.I.N.I.",
+       "Self-reported smoking of at least 15 cigarettes per day for at least two years.",
+       "Biochemical confirmation by expired-breath carbon monoxide of at least 15 ppm or positive cotinine urinalysis with cutoff 200 ng/ml."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "exclusion_criteria": {
+      "extraction_status": "extracted",
+      "value": [
+       "Axis I pathology",
+       "Neurological disorders"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_mean": {
+      "extraction_status": "extracted",
+      "value": 34.1,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_standard_deviation": {
+      "extraction_status": "extracted",
+      "value": 7.9,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_unit": {
+      "extraction_status": "extracted",
+      "value": "years",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "gender_distribution": [
+      {
+       "category": {
+        "extraction_status": "extracted",
+        "value": "females",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "percentage": {
+        "extraction_status": "extracted",
+        "value": 42.9,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "denominator": {
+        "extraction_status": "extracted",
+        "value": 35,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "count": {
+        "extraction_status": "extracted",
+        "value": 15,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "reporting_framework": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "population_characteristics": {
+      "extraction_status": "extracted",
+      "value": [
+       "Cigarette smokers; mean 19.4 \u00b1 4.3 cigarettes per day."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "medical_condition": {
+      "extraction_status": "extracted",
+      "value": [
+       "Nicotine dependence"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "MONDO",
+        "status": "unmapped",
+        "mapping_tool": "fixture: hand-mapped",
+        "item": 0
+       }
+      ]
+     },
+     "diagnostic_system": {
+      "extraction_status": "extracted",
+      "value": "DSM-IV",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "diagnostic_instrument": [
+      "asm_mini"
+     ],
+     "clinical_characteristics": {
+      "extraction_status": "extracted",
+      "value": "Fagerstr\u00f6m scores ranged from 1 to 9, mean 4.97 \u00b1 1.90.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "education_summary": {
+      "extraction_status": "extracted",
+      "value": "14.2 years \u00b1 1.75",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source": {
+      "extraction_status": "extracted",
+      "value": "previously_reported",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source_reference": {
+      "extraction_status": "extracted",
+      "value": "Luo et al., 2009",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_overlap_count": {
+      "extraction_status": "extracted",
+      "value": 12,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "is_healthy": {
+      "extraction_status": "extracted",
+      "value": false,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "approached_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "consented_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "enrolled_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "excluded_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_method": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_dates": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_minimum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_maximum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_median": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medications": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medication_status": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "socioeconomic_status_summary": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "other_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "grp_nonsmokers",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "nonsmokers",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Individuals that had smoked no more than 5 cigarettes in their life.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "species": {
+      "extraction_status": "extracted",
+      "value": "human",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "acquired_count": {
+      "extraction_status": "extracted",
+      "value": 36,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "inclusion_criteria": {
+      "extraction_status": "extracted",
+      "value": [
+       "Had smoked no more than 5 cigarettes in their life."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "exclusion_criteria": {
+      "extraction_status": "extracted",
+      "value": [
+       "Axis I pathology",
+       "Neurological disorders"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_mean": {
+      "extraction_status": "extracted",
+      "value": 31.3,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_standard_deviation": {
+      "extraction_status": "extracted",
+      "value": 7.1,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_unit": {
+      "extraction_status": "extracted",
+      "value": "years",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "gender_distribution": [
+      {
+       "category": {
+        "extraction_status": "extracted",
+        "value": "females",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "percentage": {
+        "extraction_status": "extracted",
+        "value": 36.1,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "denominator": {
+        "extraction_status": "extracted",
+        "value": 36,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "count": {
+        "extraction_status": "extracted",
+        "value": 13,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "reporting_framework": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "population_characteristics": {
+      "extraction_status": "extracted",
+      "value": [
+       "Had smoked no more than 5 cigarettes in their life."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "medical_condition": {
+      "extraction_status": "extracted",
+      "value": [
+       "No Axis I pathology or neurological disorders"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "MONDO",
+        "status": "absent",
+        "mapping_tool": "fixture: hand-mapped",
+        "item": 0
+       }
+      ]
+     },
+     "education_summary": {
+      "extraction_status": "extracted",
+      "value": "15.5 years \u00b1 1.1",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source": {
+      "extraction_status": "extracted",
+      "value": "previously_reported",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source_reference": {
+      "extraction_status": "extracted",
+      "value": "Luo et al., 2009",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_overlap_count": {
+      "extraction_status": "extracted",
+      "value": 25,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "is_healthy": {
+      "extraction_status": "extracted",
+      "value": true,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "approached_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "consented_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "enrolled_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "excluded_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_method": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_dates": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_minimum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_maximum": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_median": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "diagnostic_system": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "clinical_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medications": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medication_status": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "socioeconomic_status_summary": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "other_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "tasks": [
+    {
+     "local_id": "tsk_mid",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "Monetary Incentive Delay (MID) task",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra canonical task",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "hedtsk_monetary_incentive_delay",
+        "label": "Monetary Incentive Delay Task",
+        "method": "name"
+       },
+       {
+        "vocabulary": "astra task family",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "reward_and_value_choice",
+        "method": "name"
+       }
+      ]
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Participants learned associations between colored squares and four rewards comprising two individually preference-matched immediate/delayed pairs. During two runs, a square indicated the potential prize, followed by a 4\u20134.5 s anticipation window and a target requiring a rapid button press. Feedback indicated whether the prize was won. One trial per run was selected to be real and paid if won.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "conditions": [
+      {
+       "local_id": "cond_immediate",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "immediate",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "stimulus_content": {
+        "extraction_status": "extracted",
+        "value": [
+         "Immediate monetary rewards"
+        ],
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "condition_kind": {
+        "extraction_status": "extracted",
+        "value": "task_state",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "description": {
+        "extraction_status": "extracted",
+        "value": "Anticipation of immediate rewards, preference-matched to delayed rewards.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      },
+      {
+       "local_id": "cond_delayed",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "delayed",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "stimulus_content": {
+        "extraction_status": "extracted",
+        "value": [
+         "Delayed monetary rewards"
+        ],
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "condition_kind": {
+        "extraction_status": "extracted",
+        "value": "task_state",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "description": {
+        "extraction_status": "extracted",
+        "value": "Anticipation of rewards delayed by four months, equally preferred to the immediate rewards.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      }
+     ],
+     "design_type": {
+      "extraction_status": "extracted",
+      "value": "event_related",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "instructions": {
+      "extraction_status": "extracted",
+      "value": "Respond as quickly as possible by pressing a button when the target appears; try to win each round.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "references": {
+      "extraction_status": "extracted",
+      "value": [
+       "Knutson et al., 2000",
+       "Luo et al., 2009"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stimuli": {
+      "extraction_status": "extracted",
+      "value": [
+       "Colored squares indicating potential prizes",
+       "Targets",
+       "Feedback indicating whether the prize was won"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stimulus_modality": {
+      "extraction_status": "extracted",
+      "value": [
+       "visual"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "response_modality": {
+      "extraction_status": "extracted",
+      "value": [
+       "button_press"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "performance_measures": {
+      "extraction_status": "extracted",
+      "value": [
+       "Median reaction time"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "presentation_software": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "stimulus_content": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "assessments": [
+    {
+     "local_id": "asm_mini",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "M.I.N.I.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Assessed nicotine dependence according to DSM-IV criteria.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessment_type": {
+      "extraction_status": "extracted",
+      "value": "diagnostic interview",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    },
+    {
+     "local_id": "asm_intertemporal",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "adaptive intertemporal choice task",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Derived two immediate-delayed reward indifference pairs by adjusting amounts until the immediate amount equally preferred to $53 or $28 delayed by four months was determined.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessment_type": {
+      "extraction_status": "extracted",
+      "value": "behavioral task",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    },
+    {
+     "local_id": "asm_co",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "carbon monoxide in expired breath",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Baseline biochemical confirmation of smoking; inclusion threshold at least 15 ppm.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessment_type": {
+      "extraction_status": "extracted",
+      "value": "physiological measure",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    },
+    {
+     "local_id": "asm_cotinine",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "cotinine urinalysis",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Alternative biochemical confirmation of smoking; cutoff level 200 ng/ml.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessment_type": {
+      "extraction_status": "extracted",
+      "value": "biospecimen assay",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    }
+   ],
+   "regions": [
+    {
+     "local_id": "reg_striatum",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "striatum",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "definition_method": {
+      "extraction_status": "extracted",
+      "value": "same_study_analysis",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "region_type": {
+      "extraction_status": "extracted",
+      "value": "functional_cluster",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "All voxels more active for immediate rewards and showing a significant smoker\u2013nonsmoker group difference. These voxels were in the right caudate, left caudate extending into the left ventral striatum, and right putamen. Mean signal was extracted separately for immediate and delayed rewards.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "atlas": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "devices": [
+    {
+     "local_id": "dev_trio",
+     "manufacturer": {
+      "extraction_status": "extracted",
+      "value": "Siemens",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model": {
+      "extraction_status": "extracted",
+      "value": "MAGNETOM Tim/Trio",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    }
+   ],
+   "acquisitions": [
+    {
+     "local_id": "acq_fmri",
+     "acquisition_type": "MRI",
+     "modality": {
+      "extraction_status": "extracted",
+      "value": "fMRI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "device": "dev_trio",
+     "brain_coverage": {
+      "extraction_status": "extracted",
+      "value": "whole_brain",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "magnetic_field_strength_tesla": {
+      "extraction_status": "extracted",
+      "value": 3,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "pulse_sequence_type": {
+      "extraction_status": "extracted",
+      "value": "EPI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "repetition_time_seconds": {
+      "extraction_status": "extracted",
+      "value": 2,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "echo_time_seconds": {
+      "extraction_status": "extracted",
+      "value": [
+       0.03
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "mr_acquisition_type": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "acquisition_voxel_size_mm": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "number_of_volumes": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "acquisition_duration_seconds": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "preprocessings": [
+    {
+     "local_id": "prp_feat",
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Preprocessing of fMRI data focusing on the 4\u20134.5 s anticipation period.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "software": {
+      "extraction_status": "extracted",
+      "value": [
+       "FEAT version 5.98",
+       "FMRIB Software Library"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "steps": {
+      "extraction_status": "extracted",
+      "value": [
+       "Motion correction",
+       "Temporal filtering",
+       "Spatial smoothing",
+       "Spatial transformation to Montreal Neurological Institute standard space"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "smoothing_fwhm_mm": {
+      "extraction_status": "extracted",
+      "value": [
+       5
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    }
+   ],
+   "model_estimations": [
+    {
+     "local_id": "mod_immediate_delayed",
+     "model_type": {
+      "extraction_status": "extracted",
+      "value": "categorical analysis",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model_settings": {
+      "extraction_status": "extracted",
+      "value": "Contrast of anticipation of immediate rewards versus preference-matched delayed rewards.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stage": {
+      "extraction_status": "extracted",
+      "value": "group",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "software": {
+      "extraction_status": "extracted",
+      "value": "FEAT version 5.98, FMRIB Software Library",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_unit": {
+      "extraction_status": "extracted",
+      "value": "voxel",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "preprocessing": [
+      "prp_feat"
+     ],
+     "terms": [
+      {
+       "local_id": "trm_delay",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "reward delay",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "type": {
+        "extraction_status": "extracted",
+        "value": "categorical",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "levels": [
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "immediate",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "conditions": [
+          "cond_immediate"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        },
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "delayed",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "conditions": [
+          "cond_delayed"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        }
+       ],
+       "variation_level": {
+        "extraction_status": "extracted",
+        "value": "within_subject",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "source_definition": {
+        "extraction_status": "extracted",
+        "value": "Anticipation of immediate rewards versus preference-matched delayed rewards.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "functional_form": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "unit": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "model_family": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "hrf_model": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "estimator": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "mod_group",
+     "model_type": {
+      "extraction_status": "extracted",
+      "value": "group comparison",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model_settings": {
+      "extraction_status": "extracted",
+      "value": "Comparison of the immediate > delayed effect between smokers and nonsmokers.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stage": {
+      "extraction_status": "extracted",
+      "value": "group",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "software": {
+      "extraction_status": "extracted",
+      "value": "FEAT version 5.98, FMRIB Software Library",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_unit": {
+      "extraction_status": "extracted",
+      "value": "voxel",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "preprocessing": [
+      "prp_feat"
+     ],
+     "inputs_from": [
+      "mod_immediate_delayed"
+     ],
+     "terms": [
+      {
+       "local_id": "trm_group",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "group",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "type": {
+        "extraction_status": "extracted",
+        "value": "categorical",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "levels": [
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "smokers",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "groups": [
+          "grp_smokers"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        },
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "nonsmokers",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "groups": [
+          "grp_nonsmokers"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        }
+       ],
+       "variation_level": {
+        "extraction_status": "extracted",
+        "value": "between_subject",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "source_definition": {
+        "extraction_status": "extracted",
+        "value": "Cigarette smokers versus individuals that had smoked no more than 5 cigarettes in their life.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "functional_form": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "unit": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "model_family": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "hrf_model": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "estimator": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "inference_settings": [
+    {
+     "local_id": "inf_cluster",
+     "inference_level": {
+      "extraction_status": "extracted",
+      "value": "cluster",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "height_threshold_value": {
+      "extraction_status": "extracted",
+      "value": 2.3,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "height_threshold_type": {
+      "extraction_status": "extracted",
+      "value": "Z",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "clusterwise_threshold_value": {
+      "extraction_status": "extracted",
+      "value": 0.05,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "multiple_comparison_method": {
+      "extraction_status": "extracted",
+      "value": "Cluster-level corrected statistics (Worsley, 2001)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "correction_scope": {
+      "extraction_status": "extracted",
+      "value": "whole_brain",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "search_volume": {
+      "extraction_status": "extracted",
+      "value": "search space of the brain",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "alpha_level": {
+      "extraction_status": "extracted",
+      "value": 0.05,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "cluster_extent_threshold": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "neighborhood_definition": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "tfce_used": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "tfce_parameters": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "permutation_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "number_of_tests": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "measures": [
+    {
+     "local_id": "mea_bold",
+     "family": {
+      "extraction_status": "extracted",
+      "value": "functional_bold",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "type": {
+      "extraction_status": "extracted",
+      "value": "bold_response",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "source_label": {
+      "extraction_status": "extracted",
+      "value": "Blood oxygen level-dependent (BOLD) response",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "specific_metric": {
+      "extraction_status": "extracted",
+      "value": "Signal change during the 4\u20134.5 s anticipation period",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "unit": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "coordinate_sets": [
+    {
+     "local_id": "analysis#01785c51d252c0e8",
+     "role": {
+      "extraction_status": "extracted",
+      "value": "result",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "result_kind": {
+      "extraction_status": "extracted",
+      "value": "contrast",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "analysis": "a_tbl0005_1",
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Cluster peaks for the overall immediate\u2013delayed contrast.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "anchor_kind": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "analysis#6cf9b2ad2c3c4db5",
+     "role": {
+      "extraction_status": "extracted",
+      "value": "result",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "result_kind": {
+      "extraction_status": "extracted",
+      "value": "contrast",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "analysis": "a_tbl0005_2",
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Cluster peaks for smokers > nonsmokers on the immediate\u2013delayed contrast.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "anchor_kind": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "tables": [
+    {
+     "local_id": "tbl1",
+     "table_number": {
+      "extraction_status": "extracted",
+      "value": "Table 1",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "caption": {
+      "extraction_status": "extracted",
+      "value": "Top of table summarizes results for the overall contrast (immediate\u2013delay), and bottom summarizes regions in which smokers>nonsmokers with respect to this contrast. Cluster peak coordinates are reported in MNI space, along with corresponding voxel Z-scores.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "purpose": {
+      "extraction_status": "extracted",
+      "value": "reported_effect",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "footer": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "column_headings": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "result_reporting": {
+    "extraction_status": "extracted",
+    "value": "analyses_reported",
+    "value_source": "generated",
+    "evidence": {
+     "status": "not_found"
+    }
+   },
+   "extraction_metadata": {
+    "extractor_model": "Qwen3.8-27B QLoRA (astra-distill r3-27b-final)",
+    "extractor_version": "ns-27b-e"
+   },
+   "hypothesis": {
+    "extraction_status": "not_reported",
+    "evidence": {
+     "status": "not_applicable"
+    }
+   },
+   "local_id": "6SKTGteXbbBs"
+  },
+  "AhxosLhYA5YG": {
+   "description": {
+    "extraction_status": "extracted",
+    "value": "Cross-sectional fMRI study of familial AUD density and spatial working memory, vigilance, and fixation-related BOLD responses in 72 adolescents.",
+    "value_source": "generated",
+    "evidence": {
+     "status": "not_found"
+    }
+   },
+   "hypothesis": {
+    "extraction_status": "extracted",
+    "value": [
+     "We hypothesize that youths with dense familial AUD will demonstrate BOLD activation patterns indicative of protracted neurodevelopment.",
+     "Specifically, we predict that with increasing FH density, there will be greater BOLD activation to SWM in more superior and bilateral regions than among FH negative counterparts."
+    ],
+    "value_source": "generated",
+    "evidence": {
+     "status": "not_found"
+    }
+   },
+   "design": {
+    "description": {
+     "extraction_status": "extracted",
+     "value": "Observational analysis of a longitudinal cohort, with a single scan session and two appointments. FH density was measured continuously rather than assigning intervention arms.",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "allocation": {
+     "extraction_status": "extracted",
+     "value": "not_applicable",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "assignment_structure": {
+     "extraction_status": "extracted",
+     "value": "observational_cohorts",
+     "value_source": "generated",
+     "evidence": {
+      "status": "not_found"
+     }
+    },
+    "timepoints": [
+     {
+      "local_id": "tp_scan",
+      "name": {
+       "extraction_status": "extracted",
+       "value": "scan session",
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "relation_to_intervention": {
+       "extraction_status": "extracted",
+       "value": "single_occasion",
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "order": {
+       "extraction_status": "extracted",
+       "value": 1,
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "time_from_intervention": {
+       "extraction_status": "not_reported",
+       "evidence": {
+        "status": "not_applicable"
+       }
+      }
+     }
+    ],
+    "blinding": {
+     "extraction_status": "not_reported",
+     "evidence": {
+      "status": "not_applicable"
+     }
+    }
+   },
+   "analyses": [
+    {
+     "local_id": "a_t3_1",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "+/- SWM (+)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra contrast key",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "working_memory_span|concreteness:abstract|control_state",
+        "also_read": [
+         "effect",
+         "tasks"
+        ]
+       }
+      ]
+     },
+     "definition": {
+      "extraction_status": "extracted",
+      "value": "Voxels responding positively to SWM relative to vigilance across all participants.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "interpretations": {
+      "extraction_status": "extracted",
+      "value": [
+       "Bilateral dorsolateral prefrontal and parietal cortices activated to SWM blocks."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "outcome": {
+      "extraction_status": "extracted",
+      "value": "significant_effect",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_scope": {
+      "extraction_status": "extracted",
+      "value": "whole_brain",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "defines_regions": [
+      "reg_swm"
+     ],
+     "measure": "mea_bold",
+     "groups": [
+      {
+       "group": "grp_adolescents",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 72,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      }
+     ],
+     "effect": {
+      "cells": [
+       {
+        "term": "trm_condition",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "SWM",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       },
+       {
+        "term": "trm_condition",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "vigilance",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       }
+      ],
+      "kind": {
+       "extraction_status": "extracted",
+       "value": "contrast",
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "statistic": {
+       "family": {
+        "extraction_status": "extracted",
+        "value": "t",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "degrees_of_freedom_numerator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "degrees_of_freedom_denominator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     },
+     "details": {
+      "details_type": "MassUnivariateDetails"
+     },
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "tasks": [
+      "tsk_swm"
+     ],
+     "model_estimation": "mod_swm",
+     "inference_settings": "inf_cluster",
+     "tables": [
+      "tbl3"
+     ],
+     "source_table_analysis": {
+      "extraction_status": "extracted",
+      "value": "analysis#87f036e3dda37641",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "coordinate_space": {
+      "extraction_status": "extracted",
+      "value": "Talairach",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessments": [
+      "asm_cdisc",
+      "asm_fham"
+     ],
+     "model_representation_notes": {
+      "extraction_status": "extracted",
+      "value": "The table combines positive and negative clusters; this record represents the positive subset.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "prespecification": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "a_t3_1_2",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "+/- SWM (\u2212)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra contrast key",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "working_memory_span|concreteness:abstract|control_state",
+        "also_read": [
+         "effect",
+         "tasks"
+        ]
+       }
+      ]
+     },
+     "definition": {
+      "extraction_status": "extracted",
+      "value": "Voxels responding preferentially to vigilance relative to SWM across all participants.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "interpretations": {
+      "extraction_status": "extracted",
+      "value": [
+       "Medial frontal and cingulate regions activated to vigilance blocks."
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "outcome": {
+      "extraction_status": "extracted",
+      "value": "significant_effect",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_scope": {
+      "extraction_status": "extracted",
+      "value": "whole_brain",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "defines_regions": [
+      "reg_swm"
+     ],
+     "measure": "mea_bold",
+     "groups": [
+      {
+       "group": "grp_adolescents",
+       "n": {
+        "extraction_status": "extracted",
+        "value": 72,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      }
+     ],
+     "effect": {
+      "cells": [
+       {
+        "term": "trm_condition",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "vigilance",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "positive",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       },
+       {
+        "term": "trm_condition",
+        "level": {
+         "extraction_status": "extracted",
+         "value": "SWM",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "direction": {
+         "extraction_status": "extracted",
+         "value": "negative",
+         "value_source": "generated",
+         "evidence": {
+          "status": "not_found"
+         }
+        },
+        "label": {
+         "extraction_status": "not_reported",
+         "evidence": {
+          "status": "not_applicable"
+         }
+        }
+       }
+      ],
+      "kind": {
+       "extraction_status": "extracted",
+       "value": "contrast",
+       "value_source": "generated",
+       "evidence": {
+        "status": "not_found"
+       }
+      },
+      "statistic": {
+       "family": {
+        "extraction_status": "extracted",
+        "value": "t",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "degrees_of_freedom_numerator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "degrees_of_freedom_denominator": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     },
+     "details": {
+      "details_type": "MassUnivariateDetails"
+     },
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "tasks": [
+      "tsk_swm"
+     ],
+     "model_estimation": "mod_swm",
+     "inference_settings": "inf_cluster",
+     "tables": [
+      "tbl3"
+     ],
+     "source_table_analysis": {
+      "extraction_status": "extracted",
+      "value": "analysis#87f036e3dda37641",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "coordinate_space": {
+      "extraction_status": "extracted",
+      "value": "Talairach",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessments": [
+      "asm_cdisc",
+      "asm_fham"
+     ],
+     "model_representation_notes": {
+      "extraction_status": "extracted",
+      "value": "The table combines positive and negative clusters; this record represents the negative subset.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "prespecification": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "groups": [
+    {
+     "local_id": "grp_adolescents",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "adolescents",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Adolescents with varied familial densities of AUD, selected from an ongoing longitudinal study.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "species": {
+      "extraction_status": "extracted",
+      "value": "human",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "excluded_count": {
+      "extraction_status": "extracted",
+      "value": 16,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "inclusion_criteria": {
+      "extraction_status": "extracted",
+      "value": [
+       "Ages 12 to 14",
+       "Right-handed",
+       "Fluent in English"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "exclusion_criteria": {
+      "extraction_status": "extracted",
+      "value": [
+       "Premature birth",
+       "Maternal drinking or drug use during pregnancy",
+       "Parental history of psychosis, bipolar I, or antisocial personality disorder",
+       "Neurological problems, head trauma, learning disabilities",
+       "Axis I psychiatric disorder other than conduct disorder or oppositional defiant disorder",
+       "Psychiatric medication use",
+       "MRI contraindications",
+       "Noncorrectable sensory impairments",
+       "Nonfluency in English",
+       "Left-handedness",
+       "Excessive movement",
+       "Abnormal brain anatomy",
+       "Signal drop-out",
+       "Neuropsychological scores below the normal range",
+       "Accuracy \u226450% on the fMRI task"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "recruitment_method": {
+      "extraction_status": "extracted",
+      "value": "Recruitment fliers mailed to households of San Diego area middle school students; preliminary eligibility by telephone interview.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_mean": {
+      "extraction_status": "extracted",
+      "value": 13.25,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_standard_deviation": {
+      "extraction_status": "extracted",
+      "value": 0.81,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_minimum": {
+      "extraction_status": "extracted",
+      "value": 12,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_maximum": {
+      "extraction_status": "extracted",
+      "value": 14,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "age_unit": {
+      "extraction_status": "extracted",
+      "value": "years",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sex_distribution": [
+      {
+       "category": {
+        "extraction_status": "extracted",
+        "value": "female",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "percentage": {
+        "extraction_status": "extracted",
+        "value": 43,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "denominator": {
+        "extraction_status": "extracted",
+        "value": 72,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "count": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "reporting_framework": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      },
+      {
+       "category": {
+        "extraction_status": "extracted",
+        "value": "male",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "percentage": {
+        "extraction_status": "extracted",
+        "value": 57,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "denominator": {
+        "extraction_status": "extracted",
+        "value": 72,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "count": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "reporting_framework": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "handedness_distribution": [
+      {
+       "category": {
+        "extraction_status": "extracted",
+        "value": "right-handed",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "count": {
+        "extraction_status": "extracted",
+        "value": 72,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "reporting_framework": {
+        "extraction_status": "extracted",
+        "value": "Edinburgh Handedness Inventory",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "percentage": {
+        "extraction_status": "extracted",
+        "value": 100,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "denominator": {
+        "extraction_status": "extracted",
+        "value": 72,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       }
+      }
+     ],
+     "ethnicity_distribution": [
+      {
+       "category": {
+        "extraction_status": "extracted",
+        "value": "Caucasian",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "percentage": {
+        "extraction_status": "extracted",
+        "value": 78,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "denominator": {
+        "extraction_status": "extracted",
+        "value": 72,
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "count": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "reporting_framework": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "population_characteristics": {
+      "extraction_status": "extracted",
+      "value": [
+       "Very limited histories of alcohol or drug use"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "medical_condition": {
+      "extraction_status": "extracted",
+      "value": [
+       "Conduct disorder in 12 participants: 7 mild and 5 moderate"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "MONDO",
+        "status": "unmapped",
+        "mapping_tool": "fixture: hand-mapped",
+        "item": 0
+       }
+      ]
+     },
+     "diagnostic_instrument": [
+      "asm_cdisc",
+      "asm_fham"
+     ],
+     "clinical_characteristics": {
+      "extraction_status": "extracted",
+      "value": "Conduct disorder was evenly distributed across FH density values.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "medication_status": {
+      "extraction_status": "extracted",
+      "value": "Psychiatric medication use excluded.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "socioeconomic_status_summary": {
+      "extraction_status": "extracted",
+      "value": "Typically upper middle to upper class families; Hollingshead scale combined parental education and occupation.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source": {
+      "extraction_status": "extracted",
+      "value": "previously_reported",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "sample_source_reference": {
+      "extraction_status": "extracted",
+      "value": "Anderson et al., 2005; Nagel et al., 2005, 2006; Schweinsburg et al., 2005b",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "is_healthy": {
+      "extraction_status": "extracted",
+      "value": false,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "approached_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "consented_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "enrolled_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "acquired_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "recruitment_dates": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "age_median": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "diagnostic_system": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "medications": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "education_summary": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "sample_overlap_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "other_characteristics": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "tasks": [
+    {
+     "local_id": "tsk_swm",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "spatial working memory (SWM) and vigilance paradigm",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      },
+      "normalized": [
+       {
+        "vocabulary": "astra canonical task",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "tct_self_ordered_search",
+        "label": "Self-Ordered Spatial Search (CANTAB SWM)",
+        "method": "name"
+       },
+       {
+        "vocabulary": "astra task family",
+        "status": "mapped",
+        "mapping_tool": "fixture: ns-pond build rows (astra_records.json)",
+        "value": "working_memory_span",
+        "method": "name"
+       }
+      ]
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Eighteen 20-second blocks alternating SWM and vigilance, with fixation rest at the beginning, middle, and end. Stimuli appeared for 1,000 ms with 1,000-ms interstimulus intervals; total duration 7 minutes 48 seconds.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "conditions": [
+      {
+       "local_id": "cond_swm",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "SWM",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "condition_kind": {
+        "extraction_status": "extracted",
+        "value": "task_state",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "description": {
+        "extraction_status": "extracted",
+        "value": "Abstract line drawings appear in one of eight locations; press a button when a design repeats a location already occupied in that block. On average three of ten trials repeat, with repeats 2-back.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "stimulus_content": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      },
+      {
+       "local_id": "cond_vigilance",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "vigilance",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "condition_kind": {
+        "extraction_status": "extracted",
+        "value": "control_state",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "description": {
+        "extraction_status": "extracted",
+        "value": "The same stimuli and locations are presented, but a dot appears above figures on 30% of trials; press a button when a dot appears. Controls simple motor and attention processes.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "stimulus_content": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      },
+      {
+       "local_id": "cond_fixation",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "fixation",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "condition_kind": {
+        "extraction_status": "extracted",
+        "value": "fixation",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "description": {
+        "extraction_status": "extracted",
+        "value": "Rest with a fixation cross in the center of the screen at the beginning, middle, and end.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "stimulus_content": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "design_type": {
+      "extraction_status": "extracted",
+      "value": "block",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "acquisitions": [
+      "acq_fmri"
+     ],
+     "instructions": {
+      "extraction_status": "extracted",
+      "value": "Press a button for a repeated location in SWM and for a dot above a figure in vigilance.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "references": {
+      "extraction_status": "extracted",
+      "value": [
+       "Kindermann et al., 2004",
+       "Tapert et al., 2001",
+       "McCarthy et al., 1994"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stimuli": {
+      "extraction_status": "extracted",
+      "value": [
+       "Abstract line drawings",
+       "Dot above figures",
+       "Fixation cross"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stimulus_modality": {
+      "extraction_status": "extracted",
+      "value": [
+       "visual"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "response_modality": {
+      "extraction_status": "extracted",
+      "value": [
+       "button_press"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "performance_measures": {
+      "extraction_status": "extracted",
+      "value": [
+       "Accuracy",
+       "Reaction time"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stimulus_content": {
+      "extraction_status": "extracted",
+      "value": [
+       "abstract line drawings"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "presentation_software": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "assessments": [
+    {
+     "local_id": "asm_fham",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "Family History Assessment Module (FHAM)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Lifetime AUD history of biological parents and grandparents obtained from both parents and participant. FH density assigned 0.5 per parent and 0.25 per grandparent, range 0\u20132.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessment_type": {
+      "extraction_status": "extracted",
+      "value": "family history interview",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    },
+    {
+     "local_id": "asm_cdisc",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "Computerized Diagnostic Interview Schedule for Children (C-DISC-4.0)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Psychiatric diagnoses from youth and parent reports; administered to parents by different interviewers to corroborate adolescent reports.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "assessment_type": {
+      "extraction_status": "extracted",
+      "value": "diagnostic interview",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    }
+   ],
+   "regions": [
+    {
+     "local_id": "reg_swm",
+     "name": {
+      "extraction_status": "extracted",
+      "value": "19 clusters",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "definition_method": {
+      "extraction_status": "extracted",
+      "value": "same_study_analysis",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "region_type": {
+      "extraction_status": "extracted",
+      "value": "functional_cluster",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Eleven clusters from the SWM-versus-vigilance single-sample t-test; the largest was divided into nine smaller ROIs using regional proximity, structure\u2013function correlates, and activation direction. Table 3 lists 15 foci, including the divided largest cluster. Participant-average activation was converted to z-scores.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "atlas": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "devices": [
+    {
+     "local_id": "dev_signa",
+     "manufacturer": {
+      "extraction_status": "extracted",
+      "value": "General Electric",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model": {
+      "extraction_status": "extracted",
+      "value": "Signa LX",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    }
+   ],
+   "acquisitions": [
+    {
+     "local_id": "acq_fmri",
+     "acquisition_type": "MRI",
+     "modality": {
+      "extraction_status": "extracted",
+      "value": "fMRI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "device": "dev_signa",
+     "magnetic_field_strength_tesla": {
+      "extraction_status": "extracted",
+      "value": 1.5,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "pulse_sequence_type": {
+      "extraction_status": "extracted",
+      "value": "T2-weighted spiral gradient recall echo",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "repetition_time_seconds": {
+      "extraction_status": "extracted",
+      "value": 3,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "echo_time_seconds": {
+      "extraction_status": "extracted",
+      "value": [
+       0.04
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "number_of_volumes": {
+      "extraction_status": "extracted",
+      "value": 156,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "mr_acquisition_type": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "acquisition_voxel_size_mm": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "acquisition_duration_seconds": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "brain_coverage": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "acq_smri",
+     "acquisition_type": "MRI",
+     "modality": {
+      "extraction_status": "extracted",
+      "value": "sMRI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "device": "dev_signa",
+     "magnetic_field_strength_tesla": {
+      "extraction_status": "extracted",
+      "value": 1.5,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "pulse_sequence_type": {
+      "extraction_status": "extracted",
+      "value": "inversion recovery prepared T1-weighted 3-dimensional spiral fast-spin echo",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "mr_acquisition_type": {
+      "extraction_status": "extracted",
+      "value": "3D",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "repetition_time_seconds": {
+      "extraction_status": "extracted",
+      "value": 2,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "echo_time_seconds": {
+      "extraction_status": "extracted",
+      "value": [
+       0.016
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "acquisition_voxel_size_mm": {
+      "extraction_status": "extracted",
+      "value": [
+       0.9375,
+       0.9375,
+       1.328
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "number_of_volumes": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "acquisition_duration_seconds": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "brain_coverage": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "preprocessings": [
+    {
+     "local_id": "prp_afni",
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Motion correction, removal of residual-motion repetitions, deconvolution, standardized-space transformation, resampling, and smoothing.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "software": {
+      "extraction_status": "extracted",
+      "value": [
+       "AFNI"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "steps": {
+      "extraction_status": "extracted",
+      "value": [
+       "Register each acquisition to a minimally deviant repetition using an iterated least squares algorithm",
+       "Remove repetitions with residual visually discernible head motion",
+       "Deconvolve with alternating task-condition reference vector, covarying linear trends and motion correction",
+       "Model typical hemodynamic response delays",
+       "Transform to standardized space",
+       "Resample to 3.5 mm voxels",
+       "Gaussian spatial smoothing"
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "smoothing_fwhm_mm": {
+      "extraction_status": "extracted",
+      "value": [
+       3.5
+      ],
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     }
+    }
+   ],
+   "model_estimations": [
+    {
+     "local_id": "mod_swm",
+     "model_family": {
+      "extraction_status": "extracted",
+      "value": "glm",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model_type": {
+      "extraction_status": "extracted",
+      "value": "single sample t-test",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "hrf_model": {
+      "extraction_status": "extracted",
+      "value": "Modeling typical delays in the hemodynamic response",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model_settings": {
+      "extraction_status": "extracted",
+      "value": "Alternating task-condition reference vector; linear trends and motion correction covaried to control spin history effects.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stage": {
+      "extraction_status": "extracted",
+      "value": "group",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "software": {
+      "extraction_status": "extracted",
+      "value": "AFNI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_unit": {
+      "extraction_status": "extracted",
+      "value": "voxel",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "preprocessing": [
+      "prp_afni"
+     ],
+     "terms": [
+      {
+       "local_id": "trm_condition",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "task condition",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "type": {
+        "extraction_status": "extracted",
+        "value": "categorical",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "levels": [
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "SWM",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "conditions": [
+          "cond_swm"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        },
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "vigilance",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "conditions": [
+          "cond_vigilance"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        },
+        {
+         "level": {
+          "extraction_status": "extracted",
+          "value": "fixation",
+          "value_source": "generated",
+          "evidence": {
+           "status": "not_found"
+          }
+         },
+         "conditions": [
+          "cond_fixation"
+         ],
+         "order": {
+          "extraction_status": "not_reported",
+          "evidence": {
+           "status": "not_applicable"
+          }
+         }
+        }
+       ],
+       "variation_level": {
+        "extraction_status": "extracted",
+        "value": "within_subject",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "source_definition": {
+        "extraction_status": "extracted",
+        "value": "Alternating task conditions; separate coefficients modeled SWM relative to fixation and vigilance relative to rest.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "functional_form": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "unit": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      },
+      {
+       "local_id": "trm_trends",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "linear trends",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "type": {
+        "extraction_status": "extracted",
+        "value": "continuous",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "variation_level": {
+        "extraction_status": "extracted",
+        "value": "within_subject",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "functional_form": {
+        "extraction_status": "extracted",
+        "value": "linear",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "source_definition": {
+        "extraction_status": "extracted",
+        "value": "Linear trends in the time series covaried during deconvolution.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "unit": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      },
+      {
+       "local_id": "trm_motion",
+       "name": {
+        "extraction_status": "extracted",
+        "value": "motion correction",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "type": {
+        "extraction_status": "extracted",
+        "value": "continuous",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "variation_level": {
+        "extraction_status": "extracted",
+        "value": "within_subject",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "source_definition": {
+        "extraction_status": "extracted",
+        "value": "Three rotational and three displacement parameters output for each repetition; motion correction covaried to control spin history effects.",
+        "value_source": "generated",
+        "evidence": {
+         "status": "not_found"
+        }
+       },
+       "functional_form": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       },
+       "unit": {
+        "extraction_status": "not_reported",
+        "evidence": {
+         "status": "not_applicable"
+        }
+       }
+      }
+     ],
+     "estimator": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "mod_swm_group",
+     "model_family": {
+      "extraction_status": "extracted",
+      "value": "glm",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model_type": {
+      "extraction_status": "extracted",
+      "value": "single sample t-test",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "model_settings": {
+      "extraction_status": "extracted",
+      "value": "Test of SWM-relative-to-vigilance fit coefficients across 72 participants.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "stage": {
+      "extraction_status": "extracted",
+      "value": "group",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "software": {
+      "extraction_status": "extracted",
+      "value": "AFNI",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "spatial_unit": {
+      "extraction_status": "extracted",
+      "value": "voxel",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "inputs_from": [
+      "mod_swm"
+     ],
+     "hrf_model": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "estimator": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "inference_settings": [
+    {
+     "local_id": "inf_cluster",
+     "inference_level": {
+      "extraction_status": "extracted",
+      "value": "cluster",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "height_threshold_value": {
+      "extraction_status": "extracted",
+      "value": 0.025,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "height_threshold_type": {
+      "extraction_status": "extracted",
+      "value": "p",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "cluster_extent_threshold": {
+      "extraction_status": "extracted",
+      "value": 22,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "multiple_comparison_method": {
+      "extraction_status": "extracted",
+      "value": "Combination of t-statistic magnitude and cluster volume thresholding (Forman et al., 1995; Ward, 1997)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "alpha_level": {
+      "extraction_status": "extracted",
+      "value": 0.025,
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "clusterwise_threshold_value": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "correction_scope": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "search_volume": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "neighborhood_definition": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "tfce_used": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "tfce_parameters": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "permutation_count": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "number_of_tests": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "measures": [
+    {
+     "local_id": "mea_bold",
+     "family": {
+      "extraction_status": "extracted",
+      "value": "functional_bold",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "type": {
+      "extraction_status": "extracted",
+      "value": "bold_response",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "source_label": {
+      "extraction_status": "extracted",
+      "value": "BOLD response",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "specific_metric": {
+      "extraction_status": "extracted",
+      "value": "Fit coefficient representing BOLD response to task conditions",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "unit": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "coordinate_sets": [
+    {
+     "local_id": "analysis#87f036e3dda37641",
+     "role": {
+      "extraction_status": "extracted",
+      "value": "result",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "result_kind": {
+      "extraction_status": "extracted",
+      "value": "contrast",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "analysis": "a_t3_1",
+     "description": {
+      "extraction_status": "extracted",
+      "value": "Table 3 combines positive and negative SWM-relative-to-vigilance clusters. Both directional analyses retain source_table_analysis t3#1; the singular analysis pointer here identifies the positive subset.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "anchor_kind": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "tables": [
+    {
+     "local_id": "tbl1",
+     "table_number": {
+      "extraction_status": "extracted",
+      "value": "Table 1",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "caption": {
+      "extraction_status": "extracted",
+      "value": "Participant Characteristics and Correlations With Family History Density (n = 72)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "footer": {
+      "extraction_status": "extracted",
+      "value": "*p < 0.05.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "column_headings": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "purpose": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "tbl2",
+     "table_number": {
+      "extraction_status": "extracted",
+      "value": "Table 2",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "caption": {
+      "extraction_status": "extracted",
+      "value": "Neurocognitive Scores and Correlations With Family History Density (n = 72)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "footer": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "column_headings": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     },
+     "purpose": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    },
+    {
+     "local_id": "tbl3",
+     "table_number": {
+      "extraction_status": "extracted",
+      "value": "Table 3",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "caption": {
+      "extraction_status": "extracted",
+      "value": "Regions Activated to SWM Relative to Vigilance Conditions (Clusters > 943 \u03bcl, p < 0.025, n = 72)",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "footer": {
+      "extraction_status": "extracted",
+      "value": "+, clusters activated preferentially to the SWM condition;\u2212, clusters activated preferentially to the vigilance condition.aDivided from the largest cluster.",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "purpose": {
+      "extraction_status": "extracted",
+      "value": "reported_effect",
+      "value_source": "generated",
+      "evidence": {
+       "status": "not_found"
+      }
+     },
+     "column_headings": {
+      "extraction_status": "not_reported",
+      "evidence": {
+       "status": "not_applicable"
+      }
+     }
+    }
+   ],
+   "result_reporting": {
+    "extraction_status": "extracted",
+    "value": "analyses_reported",
+    "value_source": "generated",
+    "evidence": {
+     "status": "not_found"
+    }
+   },
+   "extraction_metadata": {
+    "extractor_model": "Qwen3.8-27B QLoRA (astra-distill r3-27b-final)",
+    "extractor_version": "ns-27b-e"
+   },
+   "local_id": "AhxosLhYA5YG"
+  }
+ }
+}

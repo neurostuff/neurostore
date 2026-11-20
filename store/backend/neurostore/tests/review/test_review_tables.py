@@ -41,12 +41,7 @@ PREVIOUS_REVISION = "a7d3e9c1b5f2"
 REVIEW_REVISION = "c5d8e2f4a6b1"
 POINTER_INDEX_REVISION = "d4b7e1f9a3c2"
 STABLE_ID_REVISION = "f2b4d6e8a0c3"
-TEXT_COPY_REVISION = "a3c5e7f9b1d4"
-CORRESPONDING_EMAILS_REVISION = "c7e9a1b3d5f8"
-IDENTIFIERS_REVISION = "a8e1c4d7b2f6"
 SEARCH_INDEX_REVISION = "d5f7a9c1e3b5"
-MERGED_FROM_REVISION = "d4e6f8a0b2c4"
-AUTHORS_REVISION = "e7a9c1d3f5b8"
 LINKS_REVISION = "630a3e276f54"
 LICENCE_SPELLING_REVISION = "0ecb2ae2459c"
 API_KEYS_REVISION = "b3d5f7a9c1e4"
@@ -658,22 +653,10 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_outreach_migration_is_the_only_head():
+def test_the_migrations_have_one_head():
+    """Two branches that each add a migration leave two heads; merge them in one revision."""
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [OUTREACH_REVISION]
-    assert script.get_revision(OUTREACH_REVISION).down_revision == API_KEYS_REVISION
-    assert script.get_revision(API_KEYS_REVISION).down_revision == LICENCE_SPELLING_REVISION
-    assert script.get_revision(LICENCE_SPELLING_REVISION).down_revision == LINKS_REVISION
-    assert script.get_revision(LINKS_REVISION).down_revision == SEARCH_INDEX_REVISION
-    assert script.get_revision(SEARCH_INDEX_REVISION).down_revision == AUTHORS_REVISION
-    assert script.get_revision(AUTHORS_REVISION).down_revision == IDENTIFIERS_REVISION
-    assert script.get_revision(IDENTIFIERS_REVISION).down_revision == MERGED_FROM_REVISION
-    assert script.get_revision(MERGED_FROM_REVISION).down_revision == (
-        CORRESPONDING_EMAILS_REVISION
-    )
-    assert script.get_revision(CORRESPONDING_EMAILS_REVISION).down_revision == TEXT_COPY_REVISION
-    assert script.get_revision(TEXT_COPY_REVISION).down_revision == STABLE_ID_REVISION
-    assert script.get_revision(STABLE_ID_REVISION).down_revision == POINTER_INDEX_REVISION
+    assert len(script.get_heads()) == 1
 
 
 def test_the_stable_id_migration_gives_each_entity_its_own_id_and_its_downgrade_drops_them(

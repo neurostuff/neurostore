@@ -365,28 +365,34 @@ def create_neurovault_collection(nv_collection, *, settings, logger, public_base
     )
 
 
-def create_or_update_neurostore_study(ns_study, *, settings, access_token=None):
+def compose_client_token(settings):
+    """An Authorization header value for Compose's own Auth0 client."""
     from auth0.authentication.get_token import GetToken
 
+    domain = settings["AUTH0_BASE_URL"].lstrip("https://")
+    g_token = GetToken(
+        domain,
+        settings["AUTH0_CLIENT_ID"],
+        client_secret=settings["AUTH0_CLIENT_SECRET"],
+    )
+    token_resp = g_token.client_credentials(
+        audience=settings["AUTH0_API_AUDIENCE"],
+    )
+    return " ".join([token_resp["token_type"], token_resp["access_token"]])
+
+
+def create_or_update_neurostore_study(ns_study, *, settings, access_token=None):
     from neurosynth_compose.resources.neurostore import neurostore_session
 
     if not access_token:
-        domain = settings["AUTH0_BASE_URL"].lstrip("https://")
-        g_token = GetToken(
-            domain,
-            settings["AUTH0_CLIENT_ID"],
-            client_secret=settings["AUTH0_CLIENT_SECRET"],
-        )
-        token_resp = g_token.client_credentials(
-            audience=settings["AUTH0_API_AUDIENCE"],
-        )
-        access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
+        access_token = compose_client_token(settings)
 
     ns_ses = neurostore_session(access_token, settings["NEUROSTORE_API_URL"])
     study_data = {
         "name": getattr(ns_study.project, "name", "Untitled"),
         "description": getattr(ns_study.project, "description", None),
         "level": "meta",
+        "public": getattr(ns_study.project, "public", True) is not False,
     }
 
     try:

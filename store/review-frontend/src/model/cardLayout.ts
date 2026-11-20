@@ -109,7 +109,6 @@ const DISTRIBUTION_FIELDS = new Set([
     'percentage',
     'denominator',
     'reporting_framework',
-    'category_normalized',
 ]);
 
 /** The value a slot holds, where it is extracted. */

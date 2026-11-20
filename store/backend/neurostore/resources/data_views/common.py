@@ -28,6 +28,12 @@ IMAGE_DETAIL_ARGS = {
 }
 
 
+# The data sources linked to an analysis, or computed for a study or base study.
+DATA_SOURCE_DETAIL_ARGS = {
+    "data_sources": fields.Boolean(load_default=False),
+}
+
+
 def filter_by_analysis_name(q, model, name):
     """Keep the rows of ``model`` (image or point) whose analysis name contains ``name``."""
     if name:

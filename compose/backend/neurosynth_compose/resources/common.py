@@ -53,6 +53,10 @@ def create_user():
     if token_info.get("api_key"):
         # Auth0's userinfo only accepts login tokens; Neurostore named the key's owner
         return User(external_id=user_id, name=token_info.get("name") or "Unknown")
+    from neurosynth_compose.resources.auth import NAME_CLAIM
+
+    if token_info.get(NAME_CLAIM):
+        return User(external_id=user_id, name=token_info[NAME_CLAIM])
 
     token = auth.split()[1]
 
@@ -78,11 +82,22 @@ def get_current_user():
     return None
 
 
+def _acting_as_agent(user):
+    """True when ``user`` is this request's caller and the caller is an agent's token."""
+    try:
+        token_info = connexion.context.request.context.get("token_info") or {}
+    except Exception:
+        return False
+    return bool(token_info.get("delegated")) and token_info.get("sub") == user.external_id
+
+
 def is_user_admin(user=_UNSET):
     if user is _UNSET:
         user = get_current_user()
 
     if user is None or getattr(user, "id", None) is None:
+        return False
+    if _acting_as_agent(user):
         return False
 
     try:

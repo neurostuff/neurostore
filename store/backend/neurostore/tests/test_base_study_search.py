@@ -731,7 +731,10 @@ def test_the_indexes_and_their_tables_are_kept_fast_to_search(session):
 
     def options(name):
         return session.execute(
-            sa.text("SELECT reloptions FROM pg_class WHERE relname = :name"),
+            sa.text(
+                "SELECT reloptions FROM pg_class "
+                "WHERE relname = :name AND relnamespace = 'public'::regnamespace"
+            ),
             {"name": name},
         ).scalar_one()
 

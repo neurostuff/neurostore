@@ -1,0 +1,401 @@
+id	name	roles	modality	hosted_by	rrid	re3data_id	url	url_source
+adni	Alzheimer's Disease Neuroimaging Initiative	study|consortium	MRI|PET	loni_ida	SCR_003007	r3d100013378	http://adni-info.org/	rrid
+adni_dod	ADNI Department of Defense	study	MRI|PET	loni_ida			https://adni.loni.usc.edu/about/related-collaborative-studies/	checked:repository
+j_adni	Japanese ADNI	study	MRI|PET				https://humandbs.dbcls.jp/en/research/hum0043/v1	checked:repository
+k_adni	Korean ADNI	study	MRI|PET				https://clinicaltrials.gov/study/NCT01979419	checked:registry
+aibl	Australian Imaging, Biomarker & Lifestyle Study	study	MRI|PET	loni_ida			https://aibl.csiro.au/about/	jpnd
+a4	Anti-Amyloid Treatment in Asymptomatic Alzheimer's study	study	MRI|PET	loni_ida			https://www.a4studydata.org/	checked:official
+learn	Longitudinal Evaluation of Amyloid Risk and Neurodegeneration	study	MRI|PET	loni_ida			http://www.ctmm.nl/en/projecten/neurodegeneratief/learn?set_language=en publication of the protocol: https://bmcneurol.biomedcentral.com/articles/10.1186/1471-2377-12-72	jpnd
+habs	Harvard Aging Brain Study	study	MRI|PET				https://habs.mgh.harvard.edu/	checked:official
+oasis	Open Access Series of Imaging Studies	study	MRI|PET		SCR_007385	r3d100012182	http://www.oasis-brains.org/	rrid
+dian	Dominantly Inherited Alzheimer Network	study|consortium	MRI|PET				https://dian.wustl.edu/	checked:official
+nacc	National Alzheimer's Coordinating Center	repository	MRI|PET				https://www.naccdata.org/	checked:official
+wrap	Wisconsin Registry for Alzheimer's Prevention	study	MRI|PET				https://wrap.wisc.edu/	checked:official
+mcsa	Mayo Clinic Study of Aging	study	MRI|PET				http://www.mayoclinic.org/	maelstrom
+blsa	Baltimore Longitudinal Study of Aging	study	MRI|PET				https://blsa.nih.gov/	checked:official
+biofinder	Swedish BioFINDER	study	MRI|PET				http://biofinder.se/biofinder_cohorts/	jpnd
+biocard	BIOCARD	study	MRI|PET				https://biocard.pathology.jhu.edu/	checked:official
+miriad	Minimal Interval Resonance Imaging in Alzheimer's Disease	study	MRI				https://www.ucl.ac.uk/drc/research-clinical-trials/minimal-interval-resonance-imaging-alzheimers-disease-miriad	checked:official
+epad	European Prevention of Alzheimer's Dementia	study|consortium	MRI				https://ep-ad.org/	checked:official
+amypad	Amyloid Imaging to Prevent Alzheimer's Disease	study|consortium	PET				https://amypad.eu/	checked:official
+prevent_ad	PREVENT-AD	study	MRI|PET				https://zenodo.org/records/3689943	checked:repository
+ideas	Imaging Dementia—Evidence for Amyloid Scanning	study	PET				https://www.ideas-study.org/	checked:official
+ftldni	Frontotemporal Lobar Degeneration Neuroimaging Initiative	study	MRI|PET	loni_ida				
+4rtni	4-Repeat Tauopathy Neuroimaging Initiative	study	MRI|PET	loni_ida			https://clinicaltrials.gov/study/NCT01804452	checked:registry
+genfi	Genetic Frontotemporal Dementia Initiative	study|consortium	MRI				http://genfi.org.uk/	jpnd
+allftd	ARTFL LEFFTDS Longitudinal Frontotemporal Lobar Degeneration	study|consortium	MRI|PET				https://www.allftd.org/	checked:official
+ppmi	Parkinson's Progression Markers Initiative	study	MRI|PET	loni_ida			https://www.ppmi-info.org/	checked:official
+pdbp	Parkinson's Disease Biomarkers Program	study	MRI				https://pdbp.ninds.nih.gov/	checked:official
+track_hd	TRACK-HD	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/track-hd	checked:registry
+predict_hd	PREDICT-HD	study	MRI					
+enroll_hd	Enroll-HD	study	MRI				https://www.enroll-hd.org/	checked:official
+abcd	Adolescent Brain Cognitive Development Study	study|consortium	MRI	nda	SCR_015769		https://abcdstudy.org	rrid
+hcp	Human Connectome Project	study|consortium	MRI	connectomedb	SCR_006942		http://humanconnectome.org/consortia/	rrid
+hcp_lifespan	HCP Lifespan (Development / Aging)	study	MRI	nda			https://www.humanconnectome.org/lifespan-studies	checked:official
+hcp_ep	HCP Early Psychosis	study	MRI	nda			https://humanconnectome.org/study/human-connectome-project-for-early-psychosis	checked:official
+dhcp	Developing Human Connectome Project	study	MRI				https://www.developingconnectome.org/project/	checked:official
+bcp	Baby Connectome Project	study	MRI	nda			https://humanconnectome.org/study/lifespan-baby-connectome-project	checked:official
+ukb	UK Biobank	study|repository	MRI				http://www.ukbiobank.ac.uk	jpnd
+cam_can	Cambridge Centre for Ageing and Neuroscience	study	MRI				http://www.cam-can.com	jpnd
+dlbs	Dallas Lifespan Brain Study	study	MRI|PET				https://fcon_1000.projects.nitrc.org/indi/retro/dlbs.html	checked:repository
+nki_rs	Nathan Kline Institute Rockland Sample	study	MRI	fcp_indi	SCR_009435|SCR_010461|SCR_010460		http://fcon_1000.projects.nitrc.org/indi/pro/nki.html	rrid
+hbn	Healthy Brain Network	study	MRI				https://childmind.org/science/global-open-science/healthy-brain-network/	checked:official
+pnc	Philadelphia Neurodevelopmental Cohort	study	MRI				https://www.med.upenn.edu/bbl/philadelphianeurodevelopmentalcohort.html	checked:official
+ping	Pediatric Imaging, Neurocognition, and Genetics	study	MRI		SCR_008953		http://pingstudy.ucsd.edu/	checked:official
+nihpd	NIH MRI Study of Normal Brain Development	study	MRI			r3d100012655	https://pediatricmri.nih.gov/nihpd/info/index.html	re3data
+ncanda	National Consortium on Alcohol and Neurodevelopment in Adolescence	study|consortium	MRI				https://www.ncanda.org/	checked:official
+imagen	IMAGEN	study|consortium	MRI				https://www.imagen-project.org/	checked:official
+generation_r	Generation R Study	study	MRI				https://generationr.nl/	checked:official
+alspac	Avon Longitudinal Study of Parents and Children	study	MRI				http://www.bris.ac.uk/alspac/	jpnd
+abide	Autism Brain Imaging Data Exchange	repository|consortium	MRI	fcp_indi			https://fcon_1000.projects.nitrc.org/indi/abide/abide_I.html	checked:repository
+adhd200	ADHD-200	repository|consortium	MRI	fcp_indi	SCR_000576		http://neurobureau.projects.nitrc.org/ADHD200/Introduction.html	rrid
+eu_aims	EU-AIMS Longitudinal European Autism Project	study|consortium	MRI				https://www.aims-2-trials.eu/leap-front-page/	checked:official
+ibis	Infant Brain Imaging Study	study	MRI				http://www.ibis-network.org/	checked:official
+fbirn	Function Biomedical Informatics Research Network	study|consortium	MRI					
+mcic	MIND Clinical Imaging Consortium	study|consortium	MRI		SCR_002310		http://www.nitrc.org/projects/mcic/	rrid
+cobre	Center for Biomedical Research Excellence	study	MRI		SCR_010482		http://fcon_1000.projects.nitrc.org/indi/retro/cobre.html	rrid
+bsnip	Bipolar-Schizophrenia Network on Intermediate Phenotypes	study|consortium	MRI					
+napls	North American Prodrome Longitudinal Study	study|consortium	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/napls2	checked:registry
+cnp	UCLA Consortium for Neuropsychiatric Phenomics	study|consortium	MRI	openneuro			https://purl.stanford.edu/mg599hw5271	checked:repository
+schizconnect	SchizConnect	repository	MRI		SCR_015766		http://schizconnect.org	checked:official
+nusdast	Northwestern University Schizophrenia Data and Software Tool	repository	MRI		SCR_014153		http://www.nitrc.org/projects/nusdast	checked:official
+pronia	PRONIA	study|consortium	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/pronia	checked:registry
+psyscan	PSYSCAN	study|consortium	MRI				https://cordis.europa.eu/project/id/603196/reporting	checked:registry
+rest_meta_mdd	REST-meta-MDD	consortium	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC10917197	checked:publication
+embarc	EMBARC	study	MRI				https://clinicaltrials.gov/study/NCT01407094	checked:registry
+can_bind	CAN-BIND	study|consortium	MRI				https://clinicaltrials.gov/study/NCT01655706	checked:registry
+ispot	iSPOT-D	study	MRI				https://clinicaltrials.gov/study/NCT00693849	checked:registry
+stradl	STRADL	study	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC8857525	checked:publication
+enigma	ENIGMA Consortium	consortium	MRI		SCR_005515		http://enigma.ini.usc.edu/	checked:official
+charge	CHARGE Consortium	consortium	MRI		SCR_004034		http://www.chargeconsortium.com/	checked:official
+gsp	Brain Genomics Superstruct Project	study	MRI				https://www.nature.com/articles/sdata201531	checked:publication
+corr	Consortium for Reliability and Reproducibility	repository|consortium	MRI	fcp_indi	SCR_003774		http://fcon_1000.projects.nitrc.org/indi/CoRR/html/	checked:official
+fcp_indi	1000 Functional Connectomes Project / INDI	repository|consortium	MRI		SCR_005361|SCR_005362	r3d100011555|r3d100011565	http://fcon_1000.projects.nitrc.org/	rrid
+lemon	MPI Leipzig Mind-Brain-Body (LEMON)	study	MRI				https://fcon_1000.projects.nitrc.org/indi/retro/MPI_LEMON.html	checked:repository
+life_adult	LIFE-Adult-Study	study	MRI				https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4509697/	checked:publication
+sald	Southwest University Adult Lifespan Dataset	study	MRI	fcp_indi			http://fcon_1000.projects.nitrc.org/indi/retro/sald.html	checked:repository
+slim	Southwest University Longitudinal Imaging Multimodal	study	MRI	fcp_indi			https://fcon_1000.projects.nitrc.org/indi/retro/southwestuni_qiu_index.html	checked:repository
+qtim	Queensland Twin Imaging Study	study	MRI				https://researchdata.edu.au/queensland-twin-imaging-qtim-study/3369186	checked:registry
+vetsa	Vietnam Era Twin Study of Aging	study	MRI				https://www.maelstrom-research.org/study/vetsa	checked:registry
+oats	Older Australian Twins Study	study	MRI				https://cheba.unsw.edu.au/project/older-australian-twins-study	jpnd
+sydney_mas	Sydney Memory and Ageing Study	study	MRI				https://cheba.unsw.edu.au/project/sydney-memory-and-ageing-study	jpnd
+path	PATH Through Life Project	study	MRI				https://www.pathstudy.org.au/	maelstrom
+tascog	Tasmanian Study of Cognition and Gait	study	MRI					
+rotterdam	Rotterdam Study	study	MRI				https://www.ergo-onderzoek.nl/	checked:official
+whitehall	Whitehall II Imaging Substudy	study	MRI				http://www.ucl.ac.uk/whitehallII	maelstrom
+framingham	Framingham Heart Study	study	MRI		SCR_008963		http://www.framinghamheartstudy.org/	checked:official
+aric	Atherosclerosis Risk in Communities	study	MRI|PET				http://www2.cscc.unc.edu/aric//	jpnd
+mesa	Multi-Ethnic Study of Atherosclerosis	study	MRI				https://mesa-nhlbi.org/	checked:official
+cardia	Coronary Artery Risk Development in Young Adults	study	MRI				http://www.cardia.dopm.uab.edu/	jpnd
+ages	AGES-Reykjavik Study	study	MRI				https://hjarta.is/en/research/ages-phase-1/	checked:official
+smart_mr	SMART-MR Study	study	MRI					
+ship	Study of Health in Pomerania	study	MRI				https://www.healthinformationportal.eu/health-information-sources/study-health-pomerania	maelstrom
+three_c	Three-City Study	study	MRI				https://three-city-study.com/	checked:official
+asps	Austrian Stroke Prevention Study	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/asps	checked:registry
+ladis	Leukoaraiosis and Disability Study	study	MRI					
+lothian	Lothian Birth Cohort	study	MRI				http://www.lothianbirthcohort.ed.ac.uk/	jpnd
+base_ii	Berlin Aging Study II	study	MRI				https://www.base2.mpg.de/en	checked:official
+betula	Betula Prospective Cohort Study	study	MRI				https://www.umu.se/en/research/projects/betula---aging-memory-and-dementia/	maelstrom
+hchs	Hamburg City Health Study	study	MRI				https://hchs.hamburg/	checked:official
+thousand_brains	1000BRAINS	study	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC4094912/	checked:publication
+nsd	Natural Scenes Dataset	study	MRI				https://registry.opendata.aws/nsd/	checked:repository
+studyforrest	studyforrest	study	MRI	openneuro		r3d100011071	https://www.studyforrest.org/	re3data
+myconnectome	MyConnectome	study	MRI	openneuro			https://openneuro.org/datasets/ds000031	checked:repository
+msc	Midnight Scan Club	study	MRI	openneuro			https://openneuro.org/datasets/ds000224	checked:repository
+ibc	Individual Brain Charting	study	MRI	openneuro			https://project.inria.fr/IBC/	checked:official
+track_tbi	TRACK-TBI	study|consortium	MRI				https://tracktbi.ucsf.edu/	checked:official
+center_tbi	CENTER-TBI	study|consortium	MRI				https://www.center-tbi.eu/	checked:official
+atlas_stroke	Anatomical Tracings of Lesions After Stroke	study	MRI				https://www.icpsr.umich.edu/web/ICPSR/studies/36684	checked:repository
+magnims	MAGNIMS	consortium	MRI				https://magnims.eu	checked:official
+brats	Brain Tumor Segmentation Challenge	study	MRI				https://www.med.upenn.edu/cbica/brats2021/	checked:official
+cimbi	Cimbi Database	repository|consortium	MRI|PET				https://pubmed.ncbi.nlm.nih.gov/25891375/	checked:publication
+tcia	The Cancer Imaging Archive	repository	MRI|PET			r3d100011559	https://www.cancerimagingarchive.net/	re3data
+openneuro	OpenNeuro	repository	MRI|PET		SCR_005031	r3d100010924	http://openneuro.org	rrid
+neurovault	NeuroVault	repository	MRI|PET		SCR_003806	r3d100012842	http://neurovault.org/	rrid
+nda	NIMH Data Archive	repository	MRI			r3d100012653|r3d100010717	https://nda.nih.gov/	re3data
+loni_ida	LONI Image and Data Archive	repository	MRI|PET			r3d100012840	https://ida.loni.usc.edu/login.jsp	re3data
+connectomedb	ConnectomeDB	repository	MRI		SCR_008749	r3d100012657	http://humanconnectome.org/	rrid
+nitrc	NITRC	repository	MRI|PET		SCR_003430	r3d100011515	http://www.nitrc.org/	rrid
+xnat_central	XNAT Central	repository	MRI|PET				https://cnda-help.wustl.edu/About_the_CNDA/XNAT_Central	checked:registry
+coins	COINS	repository	MRI		SCR_000805		http://coins.mrn.org/	rrid
+ebrains	EBRAINS	repository	MRI|PET				https://ebrains.eu/	checked:official
+conp	Canadian Open Neuroscience Platform	repository	MRI|PET			r3d100013461	https://portal.conp.ca	re3data
+pain_repo	PAIN Repository	repository	MRI			r3d100011913	https://www.painrepository.org/repositories/	re3data
+brain_code	Brain-CODE	repository	MRI			r3d100012181	https://www.braincode.ca/	re3data
+donders_repo	Donders Repository	repository	MRI			r3d100012701	https://data.donders.ru.nl/	re3data
+brainlife	brainlife.io	repository	MRI			r3d100012397	https://brainlife.io	re3data
+neugrid	neuGRID	repository	MRI			r3d100013666	https://neugrid2.eu	re3data
+cnda	Central Neuroimaging Data Archive	repository	MRI|PET			r3d100014262	https://cnda.wustl.edu	re3data
+anc	Austrian NeuroCloud	repository	MRI			r3d100014355	https://anc.plus.ac.at	re3data
+publicneuro	PublicnEUro	repository	MRI|PET			r3d100014932	https://publicneuro.eu/	re3data
+rdocdb	Research Domain Criteria Database	repository	MRI	nda		r3d100012654	https://data-archive.nimh.nih.gov/rdocdb/	re3data
+balsa	Brain Analysis Library of Spatial maps and Atlases	repository	MRI			r3d100013646	https://balsa.wustl.edu	re3data
+mindboggle101	Mindboggle-101	study	MRI			r3d100012008	https://dataverse.harvard.edu/dataverse/mindboggle101	re3data
+dallas_heart	Dallas Heart Study	study	MRI			r3d100011823	https://www.utsouthwestern.edu/research/translational-medicine/doing-research/dallas-heart/	re3data
+hiv_neuroimaging	HIV Neuroimaging Consortium	consortium	MRI					
+babri	Beijing Aging Brain Rejuvenation Initiative	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/babri	checked:registry
+grady_trauma	Grady Trauma Project	study	MRI				https://boilerplate.emory.edu/pages/grady-trauma-project	checked:official
+delcode	DZNE Longitudinal Cognitive Impairment and Dementia Study	study	MRI|PET				https://www.dzne.de/en/research/studies/clinical-studies/delcode/	checked:official
+bacs	Berkeley Aging Cohort Study	study	MRI|PET				https://jagustlab.neuro.berkeley.edu/bacs	checked:official
+mnc	Münster Neuroimaging Cohort	study	MRI				https://studies.dzpg.org/en/studies/73/	checked:registry
+macs_for2107	Marburg-Münster Affective Disorders Cohort Study (FOR2107)	study|consortium	MRI				https://for2107.de/	checked:official
+mls	Michigan Longitudinal Study	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/michigan-longitudinal-study	checked:registry
+ixi	IXI Dataset	study	MRI		SCR_005839		http://brain-development.org/ixi-dataset/	checked:official
+cbdb_sibling	CBDB/NIMH Sibling Study of Schizophrenia	study	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC2390785	checked:publication
+openpain	OpenPain Project	repository	MRI					
+preschool_depression	Preschool Depression Study	study	MRI					
+nesda	Netherlands Study of Depression and Anxiety	study	MRI				https://nesda.nl	checked:official
+sbfs	Scottish Bipolar Family Study	study	MRI					
+aurora	AURORA Study	study	MRI					
+pgs	Pittsburgh Girls Study	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/pgs	checked:registry
+qpn	Quebec Parkinson Network	repository|consortium	MRI				https://rpq-qpn.ca	checked:official
+ploras	Predicting Language Outcome and Recovery After Stroke	study|repository	MRI				https://core.ac.uk/display/82145032	checked:publication
+adc	Amsterdam Dementia Cohort	study	MRI|PET				http://www.alzheimercentrum.nl	jpnd
+neuroimage_adhd	NeuroIMAGE (IMAGE ADHD follow-up)	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/neuroimage-study	checked:registry
+tulsa1000	Tulsa 1000	study	MRI					
+finnbrain	FinnBrain Birth Cohort Study	study	MRI				https://finnbrain.fi	checked:official
+activebrains	ActiveBrains Project	study	MRI				https://profith.ugr.es/activebrains?lang=en	checked:official
+opps	Ottawa Prenatal Prospective Study	study	MRI					
+dns	Duke Neurogenetics Study	study	MRI					
+asrb	Australian Schizophrenia Research Bank	repository	MRI				https://neura.edu.au/resources-tools/asrb	checked:official
+cabi	Catholic Aging Brain Imaging Database	repository	MRI					
+sand	Study of Adolescent Neural Development	study	MRI				https://sites.lsa.umich.edu/mindlab/research-projects/study-of-adolescent-neural-development-sand/	checked:official
+ffcws	Fragile Families and Child Wellbeing Study	study	MRI				https://ffcws.princeton.edu/	checked:official
+pmcp	Pitt Mother & Child Project	study	MRI				https://www.ppcl.pitt.edu/pitt-mother-and-child-project	checked:official
+bios	Pittsburgh Bipolar Offspring Study	study	MRI				https://pediatricbipolar.pitt.edu/bios-family-study	checked:official
+cfp	California Families Project	study	MRI				https://pselab.faculty.ucdavis.edu/?p=121	checked:official
+rush_map	Rush Memory and Aging Project	study	MRI					
+chs	Cardiovascular Health Study	study	MRI				https://chs-nhlbi.org/	jpnd
+facts	Families and Childhood Transitions Study	study	MRI				https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5493854/	checked:publication
+direct	Depression Imaging REsearch ConsorTium	consortium	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC10917197	checked:publication
+nndb	Naturalistic Neuroimaging Database	study	MRI	openneuro			https://hub.datalad.org/naturalistic-imaging/NNDb	checked:repository
+adapt	Adolescent Development and Preventive Treatment	study	MRI					
+resource_project	ReSource Project	study	MRI				https://social.mpg.de/forschung/plastizitaet-des-sozialen-gehirns/resource-projekt/publikationen	checked:official
+nfbc1966	Northern Finland 1966 Birth Cohort	study	MRI				https://www.oulu.fi/nfbc/nfbc1966_1986	checked:official
+escid	Early-Warning System and Comprehensive Intervention for Depression	study	MRI					
+silcode	Sino Longitudinal Study on Cognitive Decline	study	MRI|PET				https://pmc.ncbi.nlm.nih.gov/articles/PMC6661672	checked:publication
+medit_ageing	Medit-Ageing	study|consortium	MRI|PET					
+episca	Emotional Pathways' Imaging Study in Clinical Adolescents	study	MRI					
+cmind	Cincinnati MR Imaging of NeuroDevelopment	study	MRI		SCR_014094		http://www.nitrc.org/projects/cmind_2014/	rrid
+rhineland	Rhineland Study	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/rhineland-study	checked:registry
+oads	Orygen Adolescent Development Study	study	MRI					
+swanc	SouthWest Advanced Neuroimaging Cohort	study	MRI					
+sleepy_brain	Stockholm Sleepy Brain Project	study	MRI	openneuro			https://openneuro.org/datasets/ds000201	checked:repository
+pond	Province of Ontario Neurodevelopmental Disorders Network	study|consortium	MRI				https://www.braincode.ca/node/94	checked:registry
+leiden_self	Leiden Self-Concept Study	study	MRI					
+midus	Midlife in the United States	study	MRI				http://midus.wisc.edu/scopeofstudy.php	jpnd
+betwist	Beijing Twin Study	study	MRI					
+cape_town	Cape Town Longitudinal Cohort	study	MRI					
+alfa	ALFA Study (Alzheimer and Families)	study	MRI|PET				https://fpmaragall.org/en/research-alzheimer/alfa-study-against-alzheimer/	jpnd
+bio_bipolar	Bipolar Illness Onset Study	study	MRI				https://clinicaltrials.gov/study/NCT02888262	checked:registry
+hillblom	Hillblom Healthy Aging Network	study	MRI|PET				https://memory.ucsf.edu/ucsf-hillblom	checked:official
+kbase	Korean Brain Aging Study for the Early Diagnosis and Prediction of Alzheimer’s Disease	study	MRI|PET				https://clinicaltrials.gov/study/NCT02137460	checked:registry
+ehrs	Edinburgh High Risk Study	study	MRI					
+pcp	Preprocessed Connectomes Project	repository	MRI	fcp_indi			https://preprocessed-connectomes-project.github.io	checked:official
+ondri	Ontario Neurodegenerative Disease Research Initiative	study|consortium	MRI				https://braininstitute.ca/ondri	checked:official
+calsnic	Canadian ALS Neuroimaging Consortium	consortium	MRI				https://www.medrxiv.org/content/10.1101/2020.07.10.20142679.full.pdf	checked:publication
+gusto	Growing Up in Singapore Towards healthy Outcomes	study	MRI				https://clinicaltrials.gov/study/NCT01174875	checked:registry
+optima	Oxford Project to Investigate Memory and Ageing	study	MRI				https://www.ndcn.ox.ac.uk/research/optima	checked:official
+maudsley_family	Maudsley Family Study	study	MRI					
+icbm	ICBM Subject Database	consortium	MRI	loni_ida	SCR_001948		https://resource.loni.usc.edu/resources/atlases/	rrid
+next_xtc	Netherlands XTC Toxicity Study	study	MRI				https://clinicaltrials.gov/study/NCT00235768	checked:registry
+pbin	Portuguese Brain Imaging Network	repository	MRI				https://www.uc.pt/en/brainimaging	checked:official
+mbirn	Morphometry BIRN	consortium|repository	MRI		SCR_000155		http://www.birncommunity.org/current-users/morphometry-birn/	rrid
+brainnet	BRAINnet-Brain Research And Integrative Neuroscience Network	repository	MRI		SCR_000712		http://www.brainnet.net	rrid
+beijing_eoec	Beijing: Eyes Open Eyes Closed Study	study	MRI	fcp_indi	SCR_001507		http://fcon_1000.projects.nitrc.org/indi/retro/BeijingEOEC.html	rrid
+ibsr	Internet Brain Segmentation Repository	repository	MRI	nitrc	SCR_001994		http://www.nitrc.org/projects/ibsr	rrid
+kirby21	Multi-Modal MRI Reproducibility Resource	study	MRI	nitrc	SCR_002442		http://www.nitrc.org/projects/multimodal/	rrid
+beijing_short_tr	Beijing: Short TR Study	study	MRI	fcp_indi	SCR_003502		http://fcon_1000.projects.nitrc.org/indi/pro/BeijingShortTR.html	rrid
+quiron_valencia	Quiron-Valencia Sample	study	MRI	fcp_indi	SCR_003538		http://fcon_1000.projects.nitrc.org/indi/pro/Quiron-Valencia.html	rrid
+addneuromed	AddNeuroMed	study|consortium	MRI		SCR_003819		http://www.innomed-addneuromed.com/	rrid
+pharmacog	PharmaCog	consortium	MRI|PET		SCR_003878		http://www.alzheimer-europe.org/Research/PharmaCog	rrid
+birn	Biomedical Informatics Research Network	consortium|repository	MRI		SCR_005163		https://neuroscienceblueprint.nih.gov/Resources-Tools/Blueprint-Resources-Tools-Library	rrid
+nyu_csc_trt	NYU CSC TestRetest	study	MRI	fcp_indi	SCR_005975		http://www.nitrc.org/projects/nyu_trt/	rrid
+fitbir	Federal Interagency Traumatic Brain Injury Research Informatics System	repository	MRI		SCR_006856		https://fitbir.nih.gov/	rrid
+fmridc	fMRI Data Center	repository	MRI		SCR_007278		https://www.nitrc.org/projects/fmridatacenter/	rrid
+candi	CANDI Neuroimaging Access Point	repository	MRI	nitrc	SCR_009542		http://www.umassmed.edu/psychiatry/candi/	rrid
+emif	EMIF	consortium	MRI|PET		SCR_010495		http://www.emif.eu/	rrid
+umcd	USC Multimodal Connectivity Database	repository	MRI		SCR_012809		http://umcd.humanconnectomeproject.org	rrid
+atag	7T Structural MRI scans ATAG	study|consortium	MRI		SCR_014084		http://www.nitrc.org/projects/atag_mri_scans/	rrid
+elude	Efficient Longitudinal Upload of Depression in the Elderly (ELUDE)	study	MRI		SCR_014103		http://www.nitrc.org/projects/elude	rrid
+brains_imagebank	BRAINS Imagebank	repository	MRI		SCR_014576		http://www.brainsimagebank.ac.uk	rrid
+prime_de	PRIME-DE	consortium|repository	MRI	fcp_indi	SCR_016621		http://fcon_1000.projects.nitrc.org/indi/indiPRIME.html	rrid
+ncbr	National Chimpanzee Brain Resource	repository	MRI		SCR_019183		http://www.chimpanzeebrain.org/	rrid
+baby_open_brains	Baby Open Brains	repository	MRI	openneuro	SCR_027836		https://doi.org/10.17605/OSF.IO/WDR78	rrid
+rbc	Reproducible Brain Charts	repository	MRI		SCR_027837		https://github.com/ReproBrainChart	rrid
+aomic	Amsterdam Open MRI Collection	study	MRI	openneuro			https://nilab-uva.github.io/AOMIC.github.io	checked:official
+i_adni	Italian ADNI	study	MRI				https://content.iospress.com/articles/journal-of-alzheimers-disease/jad132666	checked:publication
+tadpole	TADPOLE Challenge	study	MRI|PET	adni			https://arxiv.org/abs/1805.03909	checked:publication
+loris	Longitudinal Online Research and Imaging System	repository	MRI				https://loris.ca	checked:official
+seven_t_trt	7T Test-Retest Dataset	study	MRI				https://academictorrents.com/details/5fc2f273123336ee34b9ea635ef8440377a42888	checked:repository
+narps	Neuroimaging Analysis Replication and Prediction Study	study	MRI	openneuro			https://www.nature.com/articles/s41597-019-0113-7	checked:publication
+mpi_nc	MPI Leipzig Neuroanatomy & Connectivity	study	MRI				https://openfmri.org/dataset/ds000221/	checked:repository
+cc359	Calgary-Campinas-359	study	MRI				https://sites.google.com/view/calgary-campinas-dataset	checked:official
+chbmp	Cuban Human Brain Mapping Project	study	MRI				https://chbmp-open.loris.ca/	checked:official
+mous	Mother Of Unification Studies	study	MRI				https://link.springer.com/article/10.1038/s41597-019-0020-y	checked:publication
+devcog	Developmental Chronnecto-Genomics	study	MRI				https://www.mrn.org/common/developmental-chronnecto-genomics	checked:official
+simon	Single Individual volunteering for Multiple Observations across Networks	study	MRI				https://fcon_1000.projects.nitrc.org/indi/retro/SIMON.html	checked:repository
+bold5000	BOLD5000	study	MRI	openneuro			https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6502931/	checked:publication
+massive	Multiple Acquisitions for Standardization of Structural Imaging Validation and Evaluation	study	MRI				http://www.massive-data.org	checked:official
+cneuromod	Courtois Project on Neuronal Modelling	study	MRI				https://www.cneuromod.ca	checked:official
+compass_nd	Comprehensive Assessment of Neurodegeneration and Dementia	study	MRI				https://clinicaltrials.gov/study/NCT03402919	checked:registry
+srpbs	Strategic Research Program for Brain Sciences Multi-Disorder Dataset	study	MRI				https://bicr-resource.atr.jp/srpbsopen/	checked:repository
+cbfbirn	Cerebral Blood Flow BIRN	repository	MRI		SCR_009543		http://cbfbirn.ucsd.edu/	checked:official
+nunda	Northwestern University Neuroimaging Data Archive	repository	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC4651782	checked:publication
+ageility	Age-ility Project	study	MRI					
+cbs_repo	Open Science CBS Neuroimaging Repository	repository	MRI				https://openscience.cbs.mpdl.mpg.de/	checked:official
+gaain	Global Alzheimer's Association Interactive Network	repository	MRI|PET				http://gaain.org	checked:official
+bil_gin	BIL&GIN	study	MRI				https://hal.archives-ouvertes.fr/hal-01197152	checked:publication
+brainomics	Brainomics / Localizer	study	MRI				https://nilearn.github.io/dev/modules/description/brainomics_localizer.html	checked:repository
+abvib	Aging Brain: Vasculature, Ischemia, and Behavior	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/abvib	checked:registry
+vita	Vienna Transdanube Aging Study	study	MRI					
+edsd	European DTI Study on Dementia	study	MRI				https://pubmed.ncbi.nlm.nih.gov/27046114/	checked:publication
+vallecas	Vallecas Project	study	MRI				https://neurodegenerationresearch.eu/cohort/the-vallecas-project-early-detection-of-alzheimers-disease/	checked:registry
+isles	Ischemic Stroke Lesion Segmentation Challenge	study	MRI				https://isles22.grand-challenge.org/	checked:official
+msseg	MSSEG Challenge	study	MRI				https://portal.fli-iam.irisa.fr/msseg-2/	checked:official
+episurg	EPISURG	study	MRI				https://rdr.ucl.ac.uk/articles/dataset/EPISURG_a_dataset_of_postoperative_magnetic_resonance_images_MRI_for_quantitative_analysis_of_resection_neurosurgery_for_refractory_epilepsy/9996158	checked:repository
+mslesseg	MSLesSeg	study	MRI				https://iplab.dmi.unict.it/mfs/ms-les-seg/	checked:official
+umf_pd	UMF-PD	study	MRI					
+nfbs	Neurofeedback Skull-stripped Repository	repository	MRI				https://gigascience.biomedcentral.com/articles/10.1186/s13742-016-0150-5	checked:publication
+brainmetshare	BrainMetShare	study	MRI				https://aimi.stanford.edu/datasets/brainmetshare	checked:repository
+eden2020	EDEN2020	study	MRI				https://zenodo.org/records/5714812	checked:repository
+idb_mrxfdg	IDB-MRXFDG	study	MRI|PET				https://pmc.ncbi.nlm.nih.gov/articles/PMC8446124	checked:publication
+mica_mics	MICA-MICs	study	MRI				https://n2t.net/ark:/70798/d72xnk2wd397j190qv	checked:repository
+motum	MOTUM	study	MRI				https://gin.g-node.org/doi/motum	checked:repository
+remind	ReMIND	study	MRI	tcia			https://www.nature.com/articles/s41597-024-03295-z	checked:publication
+qin_brain	QIN-BRAIN-DSC-MRI	study	MRI	tcia			https://doi.org/10.7937/K9/TCIA.2016.5DI84Js8	checked:repository
+ucsf_pdgm	UCSF Preoperative Diffuse Glioma MRI	study	MRI	tcia			https://arxiv.org/abs/2109.00356	checked:publication
+upenn_gbm	UPENN-GBM	study	MRI	tcia			https://link.springer.com/10.1038/s41597-022-01560-7	checked:publication
+feta	Fetal Tissue Annotation Challenge	study	MRI				https://feta.grand-challenge.org/	checked:official
+iseg	iSeg Infant Brain MRI Segmentation Challenge	study	MRI				https://iseg2019.web.unc.edu/	checked:official
+mghbch	MGHBCH Pediatric MRI Dataset	study	MRI					
+whims	Women's Health Initiative Memory Study	study	MRI				https://ctv.veeva.com/study/evaluating-the-effects-of-hormone-replacement-therapy-on-brain-function-the-whims-mri-study	checked:registry
+eas	Einstein Aging Study	study	MRI				https://www.einstein.yu.edu/departments/neurology/clinical-research-program/eas/	jpnd
+h70	Gothenburg H70 Birth Cohort Studies	study	MRI				https://www.gu.se/en/research/the-gothenburg-h70-birth-cohort-study	maelstrom
+ros	Religious Orders Study	study	MRI				https://registry.opendata.aws/rosmap/	checked:repository
+mars_aging	Minority Aging Research Study	study	MRI				https://www.maelstrom-research.org/study/mars	checked:registry
+obas	Oregon Brain Aging Study	study	MRI				https://www.maelstrom-research.org/study/obas	checked:registry
+cahhm	Canadian Alliance for Healthy Hearts and Minds	study	MRI				https://cahhm.mcmaster.ca/	maelstrom
+narcrms	North American Registry for Care and Research in Multiple Sclerosis	study	MRI				https://www.narcoms.org/narcoms-now-library	maelstrom
+smsc	Swiss Multiple Sclerosis Cohort	study	MRI				https://dkf.unibas.ch/en/competencies/registries-cohorts/swiss-ms-cohort/	maelstrom
+cpddn	Canadian Pediatric Demyelinating Disease Network	study|consortium	MRI				https://www.maelstrom-research.org/study/cpddn	checked:registry
+kloscad	Korean Longitudinal Study on Cognitive Aging and Dementia	study	MRI				https://www.maelstrom-research.org/study/kloscad	checked:registry
+hsad	Harvard Study of Adult Development	study	MRI				http://www.massgeneral.org/psychiatry/research/adult_dev_home.aspx	maelstrom
+narratives	Narratives (naturalistic story-listening fMRI)	study	MRI	openneuro			https://openneuro.org/datasets/ds002345	checked:repository
+sherlock	Sherlock movie-watching fMRI	study	MRI				https://datacommons.princeton.edu/discovery/catalog/doi-10-34770-9ndy-8c50	checked:repository
+doctor_who	Doctor Who movie-watching fMRI	study	MRI				https://www.biorxiv.org/content/10.1101/687681v1	checked:publication
+tom_development	Theory of Mind development fMRI	study	MRI	openneuro				
+synapse	Synapse	repository	MRI				https://www.synapse.org	checked:official
+arc_aphasia	Aphasia Recovery Cohort	study	MRI	openneuro			https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11384737/	checked:publication
+bbsrc_dataset	BBSRC dataset (Luu 2025)	study	MRI					
+icts	ICTS dataset (Luu 2025)	study	MRI					
+ideas_epilepsy	IDEAS epilepsy dataset	study	MRI					
+mbsr_dataset	MBSR mindfulness dataset	study	MRI					
+wmh_challenge	WMH Segmentation Challenge	study	MRI				https://wmh.isi.uu.nl	checked:official
+t1_250um	T1 250 μm ultra-high-resolution dataset	study	MRI					
+ms60	MS-60	study	MRI					
+msvalid	MSValid	study	MRI					
+nimh_ketamine	NIMH Ketamine dataset	study	MRI	openneuro			https://openneuro.org/datasets/ds005917	checked:repository
+nimh_rv	NIMH Healthy Research Volunteer Dataset	study	MRI	openneuro			https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9403972/	checked:publication
+soop	Stroke Outcome Optimization Project	study	MRI	openneuro			https://doi.org/10.1038/s41597-024-03667-5	checked:publication
+mgh_wild	MGH Wild	study	MRI					
+novosibirsk_bt	Novosibirsk-Brain Tumor	study	MRI					
+bt_seg_class	Brain Tumor-SEG-CLASS	study	MRI					
+stanford_fetal	Stanford Fetal Brain MRI Dataset	study	MRI				https://purl.stanford.edu/sf714wg0636	checked:repository
+mk6240_dataset	[18F]MK6240 tau PET dataset	study	MRI|PET					
+yale_lowres	Yale Low-Resolution Controls	study	MRI				https://fcon_1000.projects.nitrc.org/indi/retro/yale_lowres.html	checked:repository
+yale_hires	Yale High-Resolution Controls	study	MRI				https://fcon_1000.projects.nitrc.org/indi/retro/yale_hires.html	checked:repository
+yale_trt	Yale Test-Retest	study	MRI				https://fcon_1000.projects.nitrc.org/indi/retro/yale_trt.html	checked:repository
+ccbd_trt	CCBD test-retest dataset	study	MRI	fcp_indi				
+trt_brain_volume	Test-Retest Reliability of Brain Volume Measurements	study	MRI				https://openneuro.org/datasets/ds000239	checked:repository
+cunmet	Clinica Universidad de Navarra Metilfenidato study	study	MRI				https://fcon_1000.projects.nitrc.org/indi/retro/CUNMET.html	checked:repository
+anima	ANIMA	repository	MRI				https://anima.fz-juelich.de/	checked:official
+mndd	UNC-Wisconsin Rhesus Macaque Neurodevelopment Database	study	MRI				https://nitrc.org/projects/uncuw_macdevmri	checked:repository
+awake_rat	Awake Rat rsfMRI Database	repository	MRI				https://www.nitrc.org/projects/rat_rsfmri/	checked:repository
+mouse_rest	Mouse rest multicentre dataset	study	MRI					
+cambridge_hd_mri	Cambridge MRI database for animal models of Huntington disease	repository	MRI				https://www.repository.cam.ac.uk/collections/b2883f29-45f5-4574-9198-c0af38636fb4	checked:repository
+aberdeen_1921	Aberdeen Birth Cohort 1921	study	MRI				http://www.abdn.ac.uk/birth-cohorts/1921/	jpnd
+aberdeen_1936	Aberdeen Birth Cohort 1936	study	MRI				https://www.abdn.ac.uk/birth-cohorts/1936/	jpnd
+aiims_stroke	AIIMS Stroke and Cognitive Decline Cohort	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/acs	checked:registry
+ami_agrica	AMI Cohort (Agrica MSA IFR)	study	MRI|PET				https://epidemiologie-france.aviesan.fr/en/epidemiology/records/integrated-multidisciplinary-approach-agrica-msa-ifr-public-health-99/eng-gb	jpnd
+ample	AMPLE	study	MRI|PET				http://www.ncl.ac.uk/caru/research/project/5055	jpnd
+aspree	ASPREE	study	MRI				http://www.aspree.org/	jpnd
+cartagene	CARTaGENE	study	MRI				http://www.cartagene.qc.ca/en/home	jpnd
+colaus	CoLaus/PsyCoLaus	study	MRI				http://www.colaus.ch/	jpnd
+dunedin	Dunedin Multidisciplinary Health and Development Study	study	MRI				http://dunedinstudy.otago.ac.nz/	jpnd
+eadc_pet	EADC PET Project	study|consortium	MRI|PET				https://pubmed.ncbi.nlm.nih.gov/31077984/	checked:publication
+erf	Erasmus Rucphen Family Study	study	MRI				http://www.gefos.org/?q=content/erasmus-rucphen-family-study-2	jpnd
+esprit	ESPRIT Project	study	MRI				https://hal.archives-ouvertes.fr/inserm-00138456/	jpnd
+eurosca	EUROSCA Natural History Study	study|consortium	MRI				http://www.ataxia-study-group.net/html/studies/eurosca	jpnd
+finger	FINGER	study	MRI|PET				https://www.thl.fi/en/web/thlfi-en/research-and-expertwork/projects-and-programmes/finger-research-project	jpnd
+gipuzkoa	Gipuzkoa Alzheimer Project	study	MRI				http://www.cita-alzheimer.org/projects/gipuzkoa-alzheimer-project-basque-cohort	jpnd
+generation_scotland	Generation Scotland	study	MRI				http://www.generationscotland.org	jpnd
+hisayama	Hisayama Study	study	MRI				http://www.epi.umn.edu/cvdepi/study-synopsis/hisayama-study/	jpnd
+hunter_cs	Hunter Community Study	study	MRI				https://academic.oup.com/ije/article/39/6/1452/735859/Cohort-Profile-The-Hunter-Community-Study	jpnd
+icicle_pd	ICICLE-PD	study	MRI|PET				http://www.ncl.ac.uk/caru/about	jpnd
+iprea	Italian Project on the Epidemiology of Alzheimer's Disease	study	MRI				http://www.iss.it/biobankcnesps/index.php?lang=2&#038	jpnd
+i_share	i-Share	study	MRI				https://www.i-share.fr/	checked:official
+kora	KORA	study	MRI				http://www.bioshare.eu/content/kora-cooperative-health-research-region-augsburg	jpnd
+lasi	Longitudinal Ageing Study in India	study	MRI				http://iipsindia.org/research_lasi.htm	jpnd
+lcc_lrrk2	LRRK2 Cohort Consortium	consortium	MRI|PET				https://www.michaeljfox.org/news/lrrk2-cohort-consortium	checked:official
+lscc	Longitudinal Study of Cognitive Change in Normal Healthy Old Age	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/lscc	checked:registry
+maas	Maastricht Aging Study	study	MRI				https://www.maastrichtagingstudy.nl/	checked:official
+maastricht_study	The Maastricht Study	study	MRI				https://www.demaastrichtstudie.nl/research	jpnd
+metropolit	Metropolit 1953 Danish Male Birth Cohort	study	MRI				http://www.metropolit.dk	jpnd
+nfbc1986	Northern Finland Birth Cohort 1986	study	MRI				https://www.oulu.fi/en/university/faculties-and-units/faculty-medicine/northern-finland-birth-cohorts-and-arctic-biobank/northern-finland-birth-cohorts	checked:official
+nimrod	NIMROD	study	MRI|PET				http://www.neurology.cam.ac.uk/neurology-unit-research-groups/syren/nimrod-2/	jpnd
+nshd	MRC National Survey of Health and Development (1946 Birth Cohort)	study	MRI|PET				https://www.ucl.ac.uk/drc/research/insight-46-study	checked:official
+opdc	Oxford Parkinson's Disease Centre Discovery Cohort	study	MRI				http://opdc.medsci.ox.ac.uk/home	jpnd
+parkwest	Norwegian ParkWest Study	study	MRI				http://www.parkvest.no/	jpnd
+prevent_dementia	PREVENT Dementia	study	MRI				http://preventdementia.co.uk/	jpnd
+regai	Rete Geriatrica Alzheimer	study	MRI|PET					
+rpad	rpAD Study	study	MRI|PET				http://www.knd-demenzen.de/die-verbuende/verbund-rpad/projektbeschreibung.html	jpnd
+sabre	Southall and Brent Revisited	study	MRI				http://www.sabrestudy.org	jpnd
+sydney_centenarian	Sydney Centenarian Study	study	MRI				https://cheba.unsw.edu.au/project/sydney-centenarian-study	jpnd
+shanghai_mci	Shanghai Cohort Study on Mild Cognitive Impairment	study	MRI				http://www.omicsonline.org/open-access/shanghai-cohort-study-on-mild-cognitive-impairment-study-desig-nand-baseline-characteristics-2161-0460-1000224.php?aid=72294	jpnd
+snac_k	SNAC-K	study	MRI				http://www.snac-k.se/	jpnd
+strokog	STROKOG	consortium	MRI|PET				https://cheba.unsw.edu.au/group/strokog	jpnd
+tilda	The Irish Longitudinal Study on Ageing	study	MRI				http://tilda.tcd.ie/	jpnd
+zarademp	ZARADEMP	study	MRI				https://www.ncbi.nlm.nih.gov/pubmed/21848704	jpnd
+ilas	I-Lan Longitudinal Aging Study	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/ilas	checked:registry
+ten_sixty_six	10/66 Dementia Research Group	consortium	MRI				https://www.alzint.org/what-we-do/research/1066-dementia-research-group/	checked:registry
+spah	São Paulo Ageing & Health Study	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/spah	checked:registry
+myhat	MYHAT	study	PET				https://www.dementia-epidemiology.pitt.edu/myhat-mon-yough-healthy-aging-team/myhat-about-us	checked:official
+atahualpa	Atahualpa Project	study	MRI					
+tajiri	Tajiri Project	study	MRI|PET					
+shanghai_aging	Shanghai Aging Study	study	MRI				https://www.maelstrom-research.org/study/sas	checked:registry
+whicap	WHICAP	study	MRI|PET				https://www.maelstrom-research.org/study/whicap	checked:registry
+cfas	MRC Cognitive Function and Ageing Study	study	MRI				http://www.cfas.ac.uk/	jpnd
+redlat	ReDLat	consortium	MRI				https://www.gbhi.org/projects/multi-partner-consortium-expand-dementia-research-latin-america-redlat	checked:registry
+cveda	cVEDA	study|consortium	MRI				https://www.cveda.org/	checked:official
+chimgen	CHIMGEN	study	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC7042768	checked:publication
+brain_minds_beyond	Brain/MINDS Beyond	consortium	MRI				https://mridata-brainminds-beyond.atr.jp/	checked:repository
+hubin	HUBIN (Human Brain Informatics)	study	MRI				https://www.cambridge.org/core/journals/european-psychiatry/article/hubin-human-brain-informatics-a-database-project-on-schizophrenia/845B044BA7A62768D67BD9BAB50A7755	checked:publication
+top_oslo	TOP (Thematically Organized Psychosis) Study	study	MRI					
+brainscale	BrainSCALE	study	MRI				https://www.cambridge.org/core/product/E61880144B16ADA6D9FCAC08F8AD93EC	checked:publication
+hunt	HUNT (Trøndelag Health Study)	study	MRI				https://www.ntnu.edu/hunt	checked:official
+ncng	Norwegian Cognitive NeuroGenetics	study	MRI				https://www.sv.uio.no/psi/english/research/projects/neurogenetics_aging/	checked:official
+pafip	PAFIP	study	MRI				https://pennlinc.github.io/AI2D/docs/datasets/PAFIP	checked:registry
+impact_adhd	IMpACT	consortium	MRI				https://impactadhdgenomics.com/	checked:official
+moods	MooDS	consortium	MRI					
+ntr	Netherlands Twin Register	study	MRI				https://www.tweelingenregister.vu.nl/nl	checked:official
+big_nijmegen	Brain Imaging Genetics (BIG) Cohort	study	MRI					
+gig	Genomic Imaging Göttingen	study	MRI					
+sys	Saguenay Youth Study	study	MRI					
+gobs	Genetics of Brain Structure and Function	study	MRI					
+bidirect	BiDirect Study	study	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC10853141	checked:publication
+kasp	Karolinska Schizophrenia Project	study	MRI|PET				https://clinicaltrials.gov/study/NCT06872463	checked:registry
+dchs	Drakenstein Child Health Study	study	MRI				https://health.uct.ac.za/department-paediatrics/research-about-research-department-research-units-mrc-unit-child-and-adolescent-health/drakenstein-child-health-study-dchs	checked:official
+intrust	INTRuST Consortium	consortium	MRI				https://intrust.ucsd.edu/	checked:official
+group_psychosis	GROUP (Genetic Risk and Outcome of Psychosis)	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/group	checked:registry
+bhrcs	Brazilian High Risk Cohort Study	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/bhrc	checked:registry
+cenc	Chronic Effects of Neurotrauma Consortium	consortium	MRI				https://www.limbic-cenc.org/	checked:official
+epod	ePOD	study	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC3930821/	checked:publication
+mta_adhd	Multimodal Treatment Study of ADHD	study	MRI				https://clinicaltrials.gov/study/NCT00000388	checked:registry
+neuroventure	Neuroventure	study	MRI				https://pmc.ncbi.nlm.nih.gov/articles/PMC5153672/	checked:publication
+biocog	BioCog	study	MRI				https://search.kg.ebrains.eu/instances/251c2fb8-13d4-4fee-8571-8cf37ab416cc	checked:repository
+heinz_nixdorf_recall	Heinz Nixdorf Recall Study	study	MRI				https://atlaslongitudinaldatasets.ac.uk/datasets/hnr	checked:registry
+archi	ARCHI database (NeuroSpin CONNECT/ARCHI)	study	MRI				https://search.kg.ebrains.eu/instances/b0a99ca6-f896-4809-9c5f-65ec868323d3	checked:repository
+pdwaves	PDWAVES	study	MRI				https://www.pdwaves.eu/	checked:official
+sailor	SAILOR	study	MRI				https://search.kg.ebrains.eu/instances/7933fc63-3752-46ae-abc8-14ae39c0f1e1	checked:repository
+mobile_epilepsy	MOBILE (Multimodal Whole Brain Imaging in Epilepsy)	study	MRI|PET				https://search.kg.ebrains.eu/instances/86c4f67c-7904-4047-91ab-415237182437	checked:repository

@@ -48,7 +48,21 @@ from neurostore.services.image_value_summary import NIFTI_SUFFIXES
 from neurostore.services.base_study_metadata_enrichment import merge_duplicates
 from neurostore.services.has_media_flags import recompute_media_flags
 
-META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
+#: A title naming a meta-analysis (-analyses, -analytic, metaanalysis) or systematic
+#: review, joined by a space or any hyphen or dash: PubMed often writes U+2010. Not the
+#: adverb "meta-analytically", which titles use for primary studies ("a meta-analytically
+#: defined network"). analysis_features.META_ANALYSIS is the rule for record text.
+META_ANALYSIS_TITLE = re.compile(
+    r"meta[\s\-\u2010-\u2015]?analy(?!tically)|systematic[\s\-\u2010-\u2015]review",
+    re.IGNORECASE,
+)
+
+
+def base_study_level(title):
+    """"meta" for a paper whose title names a meta-analysis or systematic review, else
+    "group". For ACE, whose CSV carries only the title; study_schema uploads carry
+    ``ParsedPaper.is_meta_analysis``."""
+    return "meta" if title and META_ANALYSIS_TITLE.search(title) else "group"
 
 
 def _coerce_optional(value):
@@ -1610,13 +1624,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
         for metadata_row, text_row in zip(
             metadata_df.itertuples(), text_df.itertuples()
         ):
-            level = (
-                "meta"
-                if any(
-                    word in metadata_row.title.lower() for word in META_ANALYSIS_WORDS
-                )
-                else "group"
-            )
+            level = base_study_level(metadata_row.title)
             pmid = metadata_row.Index
             pmcid = _coerce_optional(metadata_row.pmcid)
             doi = _coerce_optional(metadata_row.doi)
