@@ -18,6 +18,7 @@ from study_schema.models.paper_parse import (
     PublicationStatus,
 )
 
+from neurostore import fulltext_access
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Image, Point
@@ -338,6 +339,66 @@ class JournalSchema(BaseSchema):
     wikidata_id = fields.String(dump_only=True, allow_none=True)
     created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
     updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
+
+
+def _license_value(license):
+    return getattr(license, "value", license)
+
+
+class FulltextSchema(BaseSchema):
+    """A full text of a paper; read only. The text is dumped only through
+    ``fulltext_access.released_text``, and only in a response that turns ``text`` on (the
+    detail of one full text)."""
+
+    base_study_id = fields.String(dump_only=True)
+    source = fields.String(dump_only=True)
+    source_version = fields.String(dump_only=True, allow_none=True)
+    license = fields.Function(lambda f: _license_value(f.license), dump_only=True)
+    sha256 = fields.String(dump_only=True)
+    text_copy = fields.Dict(dump_only=True, allow_none=True)
+    preferred = fields.Function(
+        lambda f: f.base_study.fulltext_id == f.id, dump_only=True
+    )
+    redistributable = fields.Function(fulltext_access.may_redistribute, dump_only=True)
+    attribution = fields.Method("dump_attribution", dump_only=True)
+    text = fields.Function(
+        fulltext_access.released_text, dump_only=True, metadata={"detail_field": "text"}
+    )
+    text_withheld = fields.Method(
+        "dump_text_withheld", dump_only=True, metadata={"detail_field": "text"}
+    )
+    created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
+    updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
+
+    def dump_attribution(self, fulltext):
+        paper = fulltext.base_study
+        copy_license = (fulltext.text_copy or {}).get("license") or {}
+        return {
+            "title": paper.name,
+            "authors": paper.authors,
+            "year": paper.year,
+            "publication": paper.publication,
+            "doi": paper.doi,
+            "license": _license_value(fulltext.license),
+            "license_statement": copy_license.get("stated_as"),
+        }
+
+    def dump_text_withheld(self, fulltext):
+        reason = fulltext_access.withheld_reason(fulltext)
+        if reason is None:
+            return None
+        paper = fulltext.base_study
+        if paper.doi:
+            read_at = f"https://doi.org/{paper.doi}"
+        elif paper.pmcid:
+            read_at = f"https://pmc.ncbi.nlm.nih.gov/articles/{paper.pmcid}/"
+        else:
+            read_at = None
+        return {
+            "reason": reason,
+            "message": fulltext_access.WITHHELD_REASONS[reason],
+            "read_at": read_at,
+        }
 
 
 DATA_SOURCE_KINDS = ("study", "consortium", "repository")
@@ -789,6 +850,8 @@ class BaseStudySchema(BaseDataSchema, ArticleIdentifiersSchema):
     has_z_maps = fields.Bool(dump_only=True)
     has_t_maps = fields.Bool(dump_only=True)
     has_beta_and_variance_maps = fields.Bool(dump_only=True)
+    #: The preferred of its full texts (GET /fulltexts/{id}); null when it has none.
+    fulltext_id = fields.String(dump_only=True, allow_none=True)
     versions = StringOrNested("StudySchema", many=True)
     features = fields.Method("get_features")
     data_sources = fields.Method(

@@ -50,6 +50,8 @@ class Fulltext(BaseMixin, db.Model):
     """One processed full text of a paper, as an ingestion workflow produced it."""
 
     __tablename__ = "fulltexts"
+    #: Sorting by the text would order texts that may not be passed on (resources/utils.py).
+    __unsortable__ = ("text",)
 
     base_study_id = db.Column(
         db.Text, db.ForeignKey("base_studies.id", ondelete="CASCADE"), nullable=False
