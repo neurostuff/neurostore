@@ -10,7 +10,7 @@ const api = shareApi(String(import.meta.env.VITE_APP_NEUROSTORE_API_DOMAIN ?? ''
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <ThemeProvider theme={createTheme(themeOptions)}>
+        <ThemeProvider theme={createTheme({ ...themeOptions, shape: { borderRadius: 2 } })}>
             <CssBaseline />
             <ShareRoot api={api} />
         </ThemeProvider>

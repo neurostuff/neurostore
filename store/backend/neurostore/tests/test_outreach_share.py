@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from neurostore.database import db
 from neurostore.ingest.study_schema import ingest_upload
 from neurostore.models import OutreachEvent, OutreachIssue, OutreachPerson, OutreachUpload
-from neurostore.outreach import map_sets
+from neurostore.outreach import map_sets, share
 from neurostore.outreach.drafts import build_draft, check_draft, create_link, mark_sent
 from neurostore.tests import study_schema_fixtures as fx
 from neurostore.tests.test_outreach_matching import PEAKS_A, PEAKS_B, PEAKS_C, synthetic_map
@@ -104,7 +104,7 @@ async def test_a_link_s_token_becomes_a_cookie_for_its_draft_only(author, sessio
     assert "httponly" in opened.headers["set-cookie"].lower()
     names = [a["name"] for a in again.json()["analyses"]]
     assert names == ["Faces > Houses", "Houses > Scrambled"]
-    assert again.json()["limits"]["max_files"] == 6  # a t/z, effect and variance map each
+    assert again.json()["limits"]["max_files"] == 100  # per draft, however many analyses
     assert "pi@example.org" not in again.text
 
 
@@ -152,7 +152,9 @@ async def test_uploads_are_kept_checked_and_matched_to_their_analyses(author, se
 
 
 async def test_files_outside_the_limits_are_refused_and_bad_ones_flagged(author, session,
-                                                                         share_settings):
+                                                                         share_settings,
+                                                                         monkeypatch):
+    monkeypatch.setattr(share, "MAX_FILES", 6)
     draft, token = _sent_draft()
     tmp = share_settings
     await author.post("/api/share/session", json={"token": token})
@@ -171,7 +173,7 @@ async def test_files_outside_the_limits_are_refused_and_bad_ones_flagged(author,
     flagged = unreadable.json()["uploads"][0]
     assert (flagged["check_status"], flagged["problem"]) == (
         "problem", "This is not a readable NIfTI file.")
-    assert too_many.status_code == 409  # three files per analysis: six here
+    assert too_many.status_code == 409  # the draft is full at six files (set small here)
 
 
 async def test_the_author_s_assignment_stands_and_files_can_be_removed(author, session,
@@ -244,6 +246,46 @@ async def test_submitting_needs_a_usable_map_and_a_name_then_locks_the_draft(aut
     assert submitted.json()["status"] == "submitted"
     assert submitted.json()["submitter_orcid"] == "0000-0002-1825-0097"
     assert late.status_code == 409
+
+
+async def test_submitting_records_whether_unassigned_maps_go_to_neurovault(
+        author, session, share_settings):
+    draft, token = _sent_draft()
+    tmp = share_settings
+    await author.post("/api/share/session", json={"token": token})
+    await _upload(author, "a.nii.gz", _nifti(tmp, "a.nii.gz", synthetic_map(PEAKS_A)))
+    await _upload(author, "c.nii.gz", _nifti(tmp, "c.nii.gz", synthetic_map(PEAKS_C, seed=3)))
+
+    not_a_flag = await author.post(
+        "/api/share/submit", json={"name": "Ada", "upload_unassigned": "no"})
+    submitted = await author.post(
+        "/api/share/submit", json={"name": "Ada", "upload_unassigned": False})
+
+    session.refresh(draft)
+    assert not_a_flag.status_code == 409
+    assert submitted.json()["status"] == "submitted"
+    assert draft.upload_unassigned is False
+    # Part A only records the choice: both files are still kept for whatever reads it.
+    kept = db.session.scalars(
+        sa.select(OutreachUpload).where(OutreachUpload.draft_id == draft.id)).all()
+    assert len(kept) == 2 and all(u.path and u.deleted_at is None for u in kept)
+    event = db.session.scalars(
+        sa.select(OutreachEvent).where(
+            OutreachEvent.draft_id == draft.id, OutreachEvent.kind == "submitted")).one()
+    assert event.data["upload_unassigned"] is False
+
+
+async def test_unassigned_maps_go_to_neurovault_unless_the_author_says_not(
+        author, session, share_settings):
+    draft, token = _sent_draft()
+    tmp = share_settings
+    await author.post("/api/share/session", json={"token": token})
+    await _upload(author, "a.nii.gz", _nifti(tmp, "a.nii.gz", synthetic_map(PEAKS_A)))
+
+    await author.post("/api/share/submit", json={"name": "Ada"})
+
+    session.refresh(draft)
+    assert draft.upload_unassigned is True
 
 
 async def test_a_preview_shows_the_page_but_keeps_nothing(author, session, share_settings):
@@ -527,3 +569,33 @@ async def test_admins_see_the_uploads_and_issues_and_can_clean_up(author, app, s
     assert again.status_code == 409
     assert gone.status_code == 404
     assert anonymous.status_code == 401
+
+
+async def test_retyping_a_map_drops_a_pairing_that_no_longer_makes_sense(author, session,
+                                                                         share_settings):
+    draft, token = _sent_draft()
+    tmp = share_settings
+    await author.post("/api/share/session", json={"token": token})
+    faces = synthetic_map(PEAKS_A)
+    await _upload(author, "zstat1.nii.gz", _nifti(tmp, "a.nii.gz", faces))
+    view = (await _upload(author, "renamed.nii.gz",
+                          _nifti(tmp, "b.nii.gz", _effect_of(faces)))).json()
+    by_name = {u["filename"]: u for u in view["uploads"]}
+    stats_id, member_id = by_name["zstat1.nii.gz"]["id"], by_name["renamed.nii.gz"]["id"]
+
+    def named(response):
+        return {u["filename"]: u for u in response.json()["uploads"]}
+
+    await author.patch(f"/api/share/uploads/{member_id}", json={"map_type": "effect"})
+    paired = await author.patch(f"/api/share/uploads/{member_id}", json={"partner_id": stats_id})
+    assert named(paired)["renamed.nii.gz"]["partner_id"] == stats_id
+
+    # An effect map retyped as a t map goes with nothing.
+    retyped = await author.patch(f"/api/share/uploads/{member_id}", json={"map_type": "t"})
+    assert named(retyped)["renamed.nii.gz"]["partner_id"] is None
+
+    # A statistic map retyped as an effect map leaves nothing paired with it.
+    await author.patch(f"/api/share/uploads/{member_id}", json={"map_type": "effect"})
+    await author.patch(f"/api/share/uploads/{member_id}", json={"partner_id": stats_id})
+    demoted = await author.patch(f"/api/share/uploads/{stats_id}", json={"map_type": "effect"})
+    assert named(demoted)["renamed.nii.gz"]["partner_id"] is None

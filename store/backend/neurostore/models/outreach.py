@@ -111,6 +111,11 @@ class OutreachDraft(BaseMixin, db.Model):
     submitter_user_id = db.Column(
         db.Text, db.ForeignKey("users.external_id", ondelete="SET NULL"), nullable=True
     )
+    #: The author's choice at submit: whether maps they left unassigned go to the NeuroVault
+    #: collection too. Read when the collection is made; submitting discards nothing.
+    upload_unassigned = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=sa.true()
+    )
     neurovault_collection_id = db.Column(db.Integer, nullable=True)
 
     __table_args__ = (

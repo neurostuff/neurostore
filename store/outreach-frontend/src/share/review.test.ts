@@ -1,5 +1,6 @@
+import { renderToStaticMarkup } from 'react-dom/server';
 import { tokenFrom } from './api';
-import { commonFolder, inFolder, prompts, refusal } from './review';
+import { byUploadFolder, commonFolder, inFolder, parentFolder, planUpload, prompts } from './review';
 import type { Fit, ShareUpload, ShareView } from './types';
 
 const fit = (outcome: Fit['outcome']): Fit => ({ outcome, score: 0.9, reason: null });
@@ -50,16 +51,17 @@ const view = (uploads: ShareUpload[]): ShareView => ({
     limits: { max_files: 4, max_file_bytes: 200 * 1024 * 1024, extensions: ['.nii.gz', '.nii'], map_types: [] },
 });
 
-const texts = (v: ShareView) => prompts(v).map((p) => p.text);
+const texts = (v: ShareView) =>
+    prompts(v).map(
+        (p) => p.text || renderToStaticMarkup(p.body).replace(/<br\/?>/g, ' ').replace(/<[^>]+>/g, '').replace(/&gt;/g, '>'),
+    );
 
 test('a file that fits its analysis raises nothing', () => {
     expect(texts(view([upload('1', ['a'], { a: fit('match') }), upload('2', ['b'], { b: fit('match') })]))).toEqual([]);
 });
 
 test('a file whose peaks are not found, or flipped, asks the author to check it', () => {
-    const found = texts(
-        view([upload('1', ['a'], { a: fit('no_match') }), upload('2', ['b'], { b: fit('lr_flip') })])
-    );
+    const found = texts(view([upload('1', ['a'], { a: fit('no_match') }), upload('2', ['b'], { b: fit('lr_flip') })]));
     expect(found).toEqual([
         "We couldn't find the peaks of “Faces > Houses” in this file. Is it the right file?",
         'Left and right look swapped compared with “Houses > Faces”.',
@@ -82,17 +84,62 @@ test('analyses with no file, unlabelled leftovers and unusable files are listed'
         ])
     );
     expect(found).toEqual([
-        'Which analysis is this map? Pick one, or describe it if the paper does not table it.',
+        'Which analysis is this map? Move it to one, or describe it if the paper does not table it.',
         'This map holds no numbers.',
-        "No file for “Houses > Faces” yet. Pick one, or leave it if you don't have it.",
+        "No map for “Houses > Faces” yet. This is nonblocking - you can submit anyway.",
     ]);
 });
 
-test('files are refused before upload for their type, size or number', () => {
-    const v = view([upload('1', ['a']), upload('2', ['b']), upload('3', [])]);
-    expect(refusal(new File(['x'], 'map.txt'), v, 0)).toBe('Only .nii and .nii.gz files.');
-    expect(refusal(new File(['x'], 'map.nii.gz'), v, 0)).toBeNull();
-    expect(refusal(new File(['x'], 'map.nii.gz'), v, 1)).toBe('This paper takes at most 4 files.');
+const chosen = (name: string, path?: string) => ({ file: new File(['x'], name), path });
+
+test('only new NIfTI files are sent; other files in a folder are passed over without comment', () => {
+    const v = view([upload('1', ['a'], {}, { path: 'study/old.nii.gz' })]);
+    const plan = planUpload(
+        [
+            chosen('a.nii.gz', 'study/a.nii.gz'),
+            chosen('notes.txt', 'study/notes.txt'),
+            chosen('old.nii.gz', 'study/old.nii.gz'),
+        ],
+        v
+    );
+    expect(plan.accepted.map((item) => item.path)).toEqual(['study/a.nii.gz']);
+    expect(plan.refused).toEqual([]);
+    expect(plan.over).toBe(0);
+    expect(plan.empty).toBe(false);
+});
+
+test('a choice with no NIfTI file in it is empty', () => {
+    expect(planUpload([chosen('readme.md')], view([])).empty).toBe(true);
+});
+
+test('a file over the size limit is named, and does not use up room', () => {
+    const v = view([]);
+    const big = { file: new File(['x'], 'big.nii.gz'), path: 'f/big.nii.gz' };
+    Object.defineProperty(big.file, 'size', { value: v.limits.max_file_bytes + 1 });
+    const plan = planUpload([big, chosen('ok.nii.gz', 'f/ok.nii.gz')], v);
+    expect(plan.refused).toEqual([{ name: 'f/big.nii.gz', reason: 'Files over 200 MB are not supported.' }]);
+    expect(plan.accepted).toHaveLength(1);
+});
+
+test('files past the limit are left out whole and counted', () => {
+    const v = view([upload('1', [], {}, { path: 'a/1.nii.gz' }), upload('2', [], {}, { path: 'a/2.nii.gz' })]);
+    const files = ['x', 'y', 'z', 'w'].map((name) => chosen(`${name}.nii.gz`, `b/${name}.nii.gz`));
+    const plan = planUpload(files, v); // the view allows four files and holds two
+    expect(plan.accepted.map((item) => item.path)).toEqual(['b/x.nii.gz', 'b/y.nii.gz']);
+    expect(plan.over).toBe(2);
+});
+
+test('uploads are grouped by the folder they were chosen from, loose files apart', () => {
+    const v = view([
+        upload('1', [], {}, { path: 'study1/stats/z.nii.gz' }),
+        upload('2', [], {}, { path: 'study2/stats/z.nii.gz' }),
+        upload('3', [], {}, { path: 'study1/stats/c.nii.gz' }),
+        upload('4', [], {}, { path: null }),
+    ]);
+    const groups = byUploadFolder(v);
+    expect(groups.map((group) => group.folder)).toEqual(['study1', 'study2', null]);
+    expect(groups[0].uploads.map((item) => item.inside)).toEqual(['stats/c.nii.gz', 'stats/z.nii.gz']);
+    expect(groups[2].uploads.map((item) => item.inside)).toEqual(['4.nii.gz']);
 });
 
 test("the link's token is read from the URL's fragment", () => {
@@ -107,18 +154,20 @@ test('an effect map follows its t/z map, and one without a partner asks for it',
     const found = texts(view([z, paired, alone]));
     // No "peaks not found" for the paired effect map: its analysis comes from its t/z map.
     expect(found).toEqual([
-        'Which t or z map does this variance map go with? Pick it, so it goes with the same analysis.',
-        "No file for “Houses > Faces” yet. Pick one, or leave it if you don't have it.",
+        'Which t or z map does this variance map go with? Select or upload it, so it goes with the same analysis.',
+        "No map for “Houses > Faces” yet. This is nonblocking - you can submit anyway.",
     ]);
     const reversed = upload('e', ['a'], {}, { kind: 'effect', partner_id: 'z', reversed: true });
-    expect(texts(view([z, reversed]))[0]).toBe('This effect map runs opposite to z.nii.gz. Is one of them the reverse contrast?');
+    expect(texts(view([z, reversed]))[0]).toBe(
+        'This effect map runs opposite to z.nii.gz. Is one of them the reverse contrast?'
+    );
 });
 
 test('an effect map is not asked for its t/z map when none was uploaded', () => {
     const effect = upload('e', ['a'], { a: fit('match') }, { kind: 'effect', map_type: 'effect' });
     const found = texts(view([effect]));
     expect(found.some((text) => text.startsWith('Which t or z map'))).toBe(false);
-    expect(found).toEqual(["No file for “Houses > Faces” yet. Pick one, or leave it if you don't have it."]);
+    expect(found).toEqual(["No map for “Houses > Faces” yet. This is nonblocking - you can submit anyway."]);
     // F maps for an F-test analysis are no t/z map to pick either
     const f = upload('f', ['b'], { b: fit('match') }, { map_type: 'f' });
     expect(texts(view([effect, f])).some((text) => text.startsWith('Which t or z map'))).toBe(false);
@@ -131,10 +180,20 @@ test('coverage prompts carry no uploadId, so the submit summary can pick them ou
 });
 
 test('rows drop the folder their files share', () => {
-    const folder = commonFolder(['paper/group.gfeat/cope1.feat/stats/zstat1.nii.gz', 'paper/group.gfeat/cope2.feat/stats/zstat1.nii.gz']);
+    const folder = commonFolder([
+        'paper/group.gfeat/cope1.feat/stats/zstat1.nii.gz',
+        'paper/group.gfeat/cope2.feat/stats/zstat1.nii.gz',
+    ]);
     expect(folder).toBe('paper/group.gfeat');
     expect(inFolder('paper/group.gfeat/cope1.feat/stats/zstat1.nii.gz', folder)).toBe('cope1.feat/stats/zstat1.nii.gz');
     expect(commonFolder(['paper/a.nii', null])).toBe('');
     expect(commonFolder(['a.nii', 'b.nii'])).toBe('');
     expect(inFolder('a.nii', '')).toBe('a.nii');
+});
+
+test("a map's folder is the one it sits in, and a loose file has none", () => {
+    expect(parentFolder(upload('1', [], {}, { path: 'study/cope1.feat/stats/z.nii.gz' }))).toBe('stats');
+    expect(parentFolder(upload('2', [], {}, { path: 'study/z.nii.gz' }))).toBe('study');
+    expect(parentFolder(upload('3', [], {}, { path: null }))).toBeNull();
+    expect(parentFolder(upload('4', [], {}, { path: 'z.nii.gz' }))).toBeNull();
 });

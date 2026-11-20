@@ -127,3 +127,6 @@ doc/generated/
 
 # Except .github
 !.github/
+
+# local runtime output (logs, uploads, release data)
+store/tmp/
