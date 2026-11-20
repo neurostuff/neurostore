@@ -43,6 +43,7 @@ class BaseStudySearchService:
         query = self._apply_semantic_search(query, args)
         query = self._apply_spatial_filter(query, args)
         query = self._apply_neurovault_filter(query, args)
+        query = self._apply_modality_filter(query, args.get("modality"))
         query = self.apply_map_type_filter(query, BaseStudy, args.get("map_type"))
         return self._apply_pipeline_filters(query, args)
 
@@ -66,6 +67,7 @@ class BaseStudySearchService:
                 # Applied when all four are given, refused when only some are.
                 any(args.get(name) is not None for name in ("x", "y", "z", "radius")),
                 bool(args.get("neurovault_id")),
+                bool(args.get("modality")),
                 bool(args.get("map_type")),
                 bool(self._collect_pipeline_filters(args)[0]),
             )
@@ -234,6 +236,14 @@ class BaseStudySearchService:
             .exists()
         )
         return query.filter(neurovault_filter)
+
+    def _apply_modality_filter(self, query, modalities):
+        """Papers with an analysis of any of ``modalities``, compared as
+        analysis_features stores them: lower-cased."""
+        if not modalities:
+            return query
+        values = sorted({value.lower() for value in modalities})
+        return query.filter(BaseStudy.modalities.overlap(values))
 
     def _data_type_filters(self, entity, data_type):
         if data_type == "coordinate":

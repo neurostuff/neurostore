@@ -106,6 +106,7 @@ class BaseStudiesView(ObjectView, ListView):
         "map_type": fields.String(load_default=None),
         "is_oa": fields.Boolean(load_default=None, allow_none=True),
         "journal_id": fields.String(load_default=None),
+        "modality": fields.List(fields.String(), load_default=None),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "pipeline_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
