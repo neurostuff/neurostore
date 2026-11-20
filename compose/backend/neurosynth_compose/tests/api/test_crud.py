@@ -59,6 +59,8 @@ def test_create(session, auth_client, user_data, db, app, endpoint, model, schem
             del payload["neurostore_study"]
         if "username" in payload:
             del payload["username"]
+        # The owner is whoever creates the record, never a value in the body.
+        payload.pop("user", None)
         if "draft" in payload:
             del payload["draft"]
 
@@ -76,6 +78,7 @@ def test_create(session, auth_client, user_data, db, app, endpoint, model, schem
         resp = auth_client.post(f"/api/{endpoint}", data=payload)
 
         assert resp.status_code == 200, resp.data.decode()
+        assert resp.json["user"] == auth_client.username
         sf = schema().fields
         # do not check keys if they are nested (difficult to generally check)
         d_key_sf = {(sf[k].data_key if sf[k].data_key else k): v for k, v in sf.items()}

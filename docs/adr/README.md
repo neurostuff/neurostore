@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Decisions behind neurostore's /review app that are hard to reverse, surprising without context, or real trade-offs. The current design is in [../review/DESIGN.md](../review/DESIGN.md), and the glossary of terms in [../review/CONTEXT.md](../review/CONTEXT.md).
+Decisions behind neurostore's /review app and its base studies that are hard to reverse, surprising without context, or real trade-offs. The current design is in [../review/DESIGN.md](../review/DESIGN.md), and the glossary of terms in [../review/CONTEXT.md](../review/CONTEXT.md).
 
 | ADR | Decision | Status |
 | --- | --- | --- |
@@ -18,5 +18,12 @@ Decisions behind neurostore's /review app that are hard to reverse, surprising w
 | [0012](0012-offline-queue-one-tab-per-review.md) | Unsaved ops are kept in IndexedDB, and a Web Lock lets one tab edit a review | accepted, built |
 | [0013](0013-revision-of-original-read-from-current-parse.md) | The ingester accepts a revision of the original parse that names the current parse as read | accepted, built |
 | [0014](0014-spec-generates-every-api-type.md) | Every API type is generated from the spec; batch bounds live only in the served contract | accepted, built |
+| [0015](0015-base-study-identifiers.md) | Every article id of a base study is one row, unique across active base studies, resolved by one query | accepted, built |
+| [0016](0016-base-study-search-bm25.md) | Base-study text search runs on BM25 indexes inside Postgres (ParadeDB's pg_search) | accepted, built |
+| [0017](0017-paper-links-and-licences.md) | A paper's links and licences are stored as rows and categories from the upload, and served nowhere yet | accepted, built |
+| [0018](0018-record-config-names-its-runs.md) | A record's pipeline config holds the runs that made it (record, evidence, normalize), so another run is another config | accepted, built |
+| [0019](0019-analysis-features-query-surface.md) | Analyses are queried through typed features resolved from the latest record at ingest, not by reading records | accepted, built |
+| [0020](0020-public-queries-over-materialized-datasets.md) | Public aggregate queries compile a SoQL subset over materialized public datasets, under a read-only role, a cost gate and per-client limits | accepted, built |
+| [0021](0021-agents-act-for-users-on-an-agents-audience.md) | AI agents act for a user on tokens for a second Auth0 API, with `read`/`write` scopes and none of the user's roles | accepted, backends and Auth0 tenants set up |
 
 Each file has Status, Context, Decision and Consequences, and names what was rejected.

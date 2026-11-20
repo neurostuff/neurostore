@@ -12,6 +12,11 @@ manually deploying the released code to production.
   `scripts/deploy/deploy_environment.sh`.
 - `scripts/deploy/deploy_environment.sh` only accepts `--track dev` or
   `--track staging`; it is not a production deploy command.
+- The newest push wins. Each workflow cancels its own run still in progress, and
+  `deploy_environment.sh` then stops that earlier deploy on the host (its process
+  group, plus any `pg_restore` it left in postgres) before starting. Each deploy
+  drops the track's databases and restores the latest production backup, so a
+  push wipes anything written to staging or dev since the last deploy.
 - `.github/workflows/release-sync.yml` keeps release metadata and package
   versions synced with a release tag.
 - `.github/workflows/release-drafter.yml` updates the draft GitHub release from
@@ -227,6 +232,9 @@ docker compose run --rm --no-deps store_release_worker \
   manage build-neurostore-studyset-release --nightly --clear-cache
 docker compose up -d --no-build store_release_worker
 docker compose up -d --no-build store_nginx
+# Load the vocabulary releases study_schema's manifest pins; skipped while they are
+# loaded, and rewrites the analysis features when one was loaded or rows are unresolved.
+docker compose run --rm --no-deps neurostore manage sync-vocabulary-releases --backfill
 ```
 
 Start Compose in order:

@@ -63,7 +63,25 @@ def monkeysession(request):
         yield mp
 
 
-def mock_decode_token(token):
+async def mock_decode_token(token, request=None):
+    """Stand in for Auth0's JWT check; API keys and RS256 tokens (signed by the
+    agent tests' key) still take the real path."""
+    from jose import jwt
+
+    from neurosynth_compose.resources.auth import API_KEY_PREFIX, decode_token, verify_api_key
+
+    if token.startswith(API_KEY_PREFIX):
+        return await verify_api_key(token, request.method, request.state.settings)
+    try:
+        signed_like_auth0 = jwt.get_unverified_header(token).get("alg") == "RS256"
+    except jwt.JWTError:
+        signed_like_auth0 = False
+    if signed_like_auth0:
+        return await decode_token(token, request)
+    return _mock_jwt_payload(token)
+
+
+def _mock_jwt_payload(token):
     from jose.jwt import encode
 
     if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
@@ -73,6 +91,7 @@ def mock_decode_token(token):
     # admin user
     elif token == encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"):
         return {"sub": "admin-user-id"}
+    return None
 
 
 class MockResponse:

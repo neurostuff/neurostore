@@ -1,5 +1,30 @@
 {
   "$defs": {
+    "Affiliation": {
+      "additionalProperties": false,
+      "description": "One affiliation an author gives on the paper: its text as printed, and the institutions it names, identified in the Research Organization Registry. One text can name several (a department of a university and a hospital), or none that the registry holds.",
+      "properties": {
+        "text": {
+          "description": "The affiliation as the paper prints it.",
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "institutions": {
+          "items": {
+            "$ref": "#/$defs/Institution"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Affiliation",
+      "type": "object"
+    },
     "AnalysisOutcome": {
       "description": "Whether the tested effect produced any finding at the threshold the source applied. Closed: the two are the only answers, and a source that does not say takes `not_reported` rather than a third value.",
       "enum": [
@@ -93,31 +118,61 @@
     },
     "ArticleIdentifiers": {
       "additionalProperties": false,
-      "description": "Every identifier known for the paper when the artifact was written. Carried whole, so no consumer has to choose between them or look one up. `doi`, `pmid` and `pmcid` name the version of record; a preprint's identifiers are kept beside them in the `preprint_` fields, so a paper and its preprint are one article.",
+      "description": "Every identifier known for the paper when the artifact was written. Carried whole, so no consumer has to choose between them or look one up. `doi`, `pmid` and `pmcid` name the version of record; a preprint's identifiers are kept beside them in the `preprint_` fields, so a paper and its preprint are one article. An identifier appears in one slot only: `doi`, `alternative_dois` and `preprint_dois` never share a DOI (compared case-insensitively), and likewise for PMIDs and PMCIDs; `check_paper` and `check_revision` verify it.",
       "properties": {
         "pmid": {
-          "description": "PubMed's record of the version of record. Never PubMed's record of a preprint, which is `preprint_pmid`.",
+          "description": "PubMed's record of the version of record. Never PubMed's record of a preprint, which is `preprint_pmids`.",
           "type": [
             "string",
             "null"
           ]
         },
         "pmcid": {
-          "description": "PubMed Central's copy of the version of record. Never PMC's copy of a preprint, which is `preprint_pmcid`.",
+          "description": "PubMed Central's copy of the version of record. Never PMC's copy of a preprint, which is `preprint_pmcids`.",
           "type": [
             "string",
             "null"
           ]
         },
         "doi": {
-          "description": "The DOI of the version of record. Never a preprint server's DOI, which is in `preprint_dois`.",
+          "description": "The DOI of the version of record. Never a preprint server's DOI, which is in `preprint_dois`. An eLife base DOI is the version of record's only once the journal has published one; before that it is a `preprint_dois` entry.",
           "type": [
             "string",
             "null"
           ]
         },
+        "alternative_pmids": {
+          "description": "Any other PMID of this work that is neither the version of record's `pmid` nor a preprint's: a duplicate record, another version.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "alternative_pmcids": {
+          "description": "Any other PMCID of this work that is neither the version of record's `pmcid` nor a preprint's: a second PMC record, another version.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "alternative_dois": {
+          "description": "Any other DOI of this work that is neither the version of record's `doi` nor a preprint's: another version's, such as eLife's `.1`, `.2`, a Crossref alias, a DOI from before a publisher move.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "preprint_dois": {
-          "description": "Every DOI a preprint server registered for the paper. A server that registers each version separately, such as Research Square's `/v2`, gives one entry per version, each kept as registered.",
+          "description": "Every DOI a preprint server registered for the paper. A server that registers each version separately, such as Research Square's `/v2`, gives one entry per version, each kept as registered. A reviewed preprint with no version of record yet has its eLife base DOI and its `.1`, `.2` DOIs here, with server `elife`.",
           "items": {
             "$ref": "#/$defs/PreprintDoi"
           },
@@ -126,23 +181,29 @@
             "null"
           ]
         },
-        "preprint_pmid": {
-          "description": "PubMed's record of the preprint, which PubMed types `Preprint`.",
+        "preprint_pmids": {
+          "description": "PubMed's records of the preprint, which PubMed types `Preprint`: one per indexed preprint server, or a duplicate record. Never a version of record's PMID.",
+          "items": {
+            "type": "string"
+          },
           "type": [
-            "string",
+            "array",
             "null"
           ]
         },
-        "preprint_pmcid": {
-          "description": "PubMed Central's copy of the preprint.",
+        "preprint_pmcids": {
+          "description": "PubMed Central's copies of the preprint, one per indexed preprint server. Never a version of record's PMCID.",
+          "items": {
+            "type": "string"
+          },
           "type": [
-            "string",
+            "array",
             "null"
           ]
         },
         "publication_status": {
           "$ref": "#/$defs/PublicationStatus",
-          "description": "`preprint` when a `preprint_` field is set and `doi`, `pmid` and `pmcid` are all empty, `published` otherwise. The producer states it so that no consumer re-derives it."
+          "description": "`preprint` when a `preprint_` field is set and `doi`, `pmid` and `pmcid` are all empty, `published` otherwise. `alternative_` fields do not count. The producer states it so that no consumer re-derives it."
         }
       },
       "required": [
@@ -230,6 +291,66 @@
       "title": "AuditVerdict",
       "type": "string"
     },
+    "Author": {
+      "additionalProperties": false,
+      "description": "One author of the paper. The ids say who they are across papers; the affiliations say where they were for this one, since an author moves between institutions over a career.",
+      "properties": {
+        "name": {
+          "description": "The name as `authors_provider` gives it.",
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "orcid": {
+          "description": "The author's ORCID iD, bare, without `https://orcid.org/`.",
+          "pattern": "^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "openalex_id": {
+          "description": "OpenAlex's id for the author, bare (`A5054079188`). OpenAlex assigns it by its own disambiguation, so it can join two people or split one; an ORCID iD is the stronger id.",
+          "pattern": "^A\\d+$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "affiliations": {
+          "description": "Where the author was when they wrote this paper, as it prints each.",
+          "items": {
+            "$ref": "#/$defs/Affiliation"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "corresponding": {
+          "description": "The paper names them to correspond with. Absent when no source said who the corresponding authors are.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "emails": {
+          "description": "The email addresses the paper prints for them.",
+          "items": {
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Author",
+      "type": "object"
+    },
     "Bibliography": {
       "additionalProperties": false,
       "description": "The paper's bibliographic facts, as the metadata lookup returned them. Defined once: the parsed paper carries it, and the storage Study holds the same object as `Study.bibliography`, so nothing is copied field by field and nothing is extracted.",
@@ -265,8 +386,30 @@
           "type": "string"
         },
         "authors": {
-          "description": "Author names in published order.",
+          "description": "The paper's authors in published order, each with the ids that name them across papers, their affiliations on this paper, and whether the paper names them to correspond with.",
           "items": {
+            "$ref": "#/$defs/Author"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "authors_provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetadataSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The source whose author list `authors` is: its names, order, ids and affiliations. It may differ from `provider`."
+        },
+        "correspondence_emails": {
+          "description": "Addresses the paper prints for correspondence that belong to no author in `authors`, such as a note's email whose name could not be read. An address paired with an author is that author's `emails`, never here.",
+          "items": {
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
             "type": "string"
           },
           "type": [
@@ -275,10 +418,22 @@
           ]
         },
         "journal": {
+          "description": "The journal's name as the metadata source printed it.",
           "type": [
             "string",
             "null"
           ]
+        },
+        "venue": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Venue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Which journal, preprint server or conference series the paper appeared in, as identified from its ids or from `journal`. Absent when it could not be identified."
         },
         "publication_year": {
           "description": "Year in which the study was first published or made publicly available.",
@@ -640,6 +795,9 @@
               "anyOf": [
                 {
                   "$ref": "#/$defs/PreprintServer"
+                },
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -687,9 +845,13 @@
               "$ref": "#/$defs/PreprintServer"
             },
             {
+              "type": "string"
+            },
+            {
               "type": "null"
             }
-          ]
+          ],
+          "description": "A server PreprintServer does not list is named by its DOI prefix."
         }
       },
       "required": [
@@ -698,13 +860,7 @@
       ],
       "then": {
         "properties": {
-          "preprint_server": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/PreprintServer"
-              }
-            ]
-          }
+          "preprint_server": {}
         },
         "required": [
           "preprint_server"
@@ -901,6 +1057,9 @@
               "anyOf": [
                 {
                   "$ref": "#/$defs/PreprintServer"
+                },
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -951,9 +1110,13 @@
               "$ref": "#/$defs/PreprintServer"
             },
             {
+              "type": "string"
+            },
+            {
               "type": "null"
             }
-          ]
+          ],
+          "description": "A server PreprintServer does not list is named by its DOI prefix."
         }
       },
       "required": [
@@ -963,13 +1126,7 @@
       ],
       "then": {
         "properties": {
-          "preprint_server": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/PreprintServer"
-              }
-            ]
-          }
+          "preprint_server": {}
         },
         "required": [
           "preprint_server"
@@ -1014,13 +1171,44 @@
       "title": "InputRef",
       "type": "object"
     },
+    "Institution": {
+      "additionalProperties": false,
+      "description": "An organization in the Research Organization Registry (https://ror.org).",
+      "properties": {
+        "ror": {
+          "description": "The ROR id, bare, without `https://ror.org/`.",
+          "pattern": "^0[a-z0-9]{6}[0-9]{2}$",
+          "type": "string"
+        },
+        "name": {
+          "description": "The registry's name for it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "country": {
+          "description": "ISO 3166-1 alpha-2 code of the country it is in.",
+          "pattern": "^[A-Z]{2}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ror"
+      ],
+      "title": "Institution",
+      "type": "object"
+    },
     "License": {
       "additionalProperties": false,
       "description": "A licence as one source stated it, or all rights reserved assumed because no source stated one.",
       "else": {
         "properties": {
           "license_id": {
-            "const": "all-rights-reserved"
+            "const": "all_rights_reserved"
           },
           "stated_by": {
             "not": {
@@ -1055,7 +1243,7 @@
       "properties": {
         "license_id": {
           "$ref": "#/$defs/LicenseId",
-          "description": "Which licence, as OpenAlex's licence slugs name them (`cc-by`, `cc-by-nc`, ...). Not an SPDX License Identifier: sources rarely state the licence's version, and SPDX identifiers require one."
+          "description": "Which licence, in the same snake_case every application and API uses (`cc_by`, `cc_by_nc`, ...); what the source said, such as OpenAlex's `cc-by`, is in `stated_as`. Not an SPDX License Identifier: sources rarely state the licence's version, and SPDX identifiers require one."
         },
         "determination": {
           "$ref": "#/$defs/LicenseDetermination"
@@ -1121,18 +1309,66 @@
     "LicenseId": {
       "description": "The terms a licence grants. A value annotated `redistributable` lets the text it covers be passed on verbatim with attribution: every Creative Commons licence, including ND, because converting a format to text is a change CC 4.0 2(a)(4) allows, and NC, because neurostore's use is non-commercial. That reading of ND and NC is this project's policy, not legal advice, and no lawyer has confirmed it.",
       "enum": [
-        "cc-by",
-        "cc-by-sa",
-        "cc-by-nc",
-        "cc-by-nc-sa",
-        "cc-by-nd",
-        "cc-by-nc-nd",
+        "cc_by",
+        "cc_by_sa",
+        "cc_by_nc",
+        "cc_by_nc_sa",
+        "cc_by_nd",
+        "cc_by_nc_nd",
         "cc0",
-        "public-domain",
-        "all-rights-reserved",
+        "public_domain",
+        "all_rights_reserved",
         "other"
       ],
       "title": "LicenseId",
+      "type": "string"
+    },
+    "LinkOccurrence": {
+      "additionalProperties": false,
+      "description": "One place a paper gives a link: a span of the text, or an entry of its reference list the text does not print. The section a span is in is the `ParsedPaper.sections` span holding `start_char`, so a link from the data-availability statement is one with a span in a `data_availability` section.",
+      "properties": {
+        "found_by": {
+          "$ref": "#/$defs/LinkSource"
+        },
+        "start_char": {
+          "description": "Where the span that prints the link, or the text its markup anchors, starts. Absent only for a reference-list entry the text does not print.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "end_char": {
+          "description": "Where that span ends, exclusive.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "reference_id": {
+          "description": "The `Reference.id` the link was read from, when `found_by` is `reference`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "found_by"
+      ],
+      "title": "LinkOccurrence",
+      "type": "object"
+    },
+    "LinkSource": {
+      "description": "How a paper's link was found.",
+      "enum": [
+        "markup",
+        "text",
+        "supplement",
+        "reference"
+      ],
+      "title": "LinkSource",
       "type": "string"
     },
     "MapQuantity": {
@@ -1203,6 +1439,7 @@
         "jats",
         "elsevier",
         "pmc_cloud",
+        "pdf",
         "publisher_page",
         "pubmed",
         "crossref",
@@ -1220,7 +1457,8 @@
         "mixed_effects",
         "anova",
         "ancova",
-        "robust_regression"
+        "robust_regression",
+        "correlation"
       ],
       "title": "ModelFamily",
       "type": "string"
@@ -1285,6 +1523,37 @@
         "reason"
       ],
       "title": "OmittedAnalysis",
+      "type": "object"
+    },
+    "PaperLink": {
+      "additionalProperties": false,
+      "description": "One link the paper gives.",
+      "properties": {
+        "url": {
+          "description": "The link, normalized: the scheme and host in lower case, no `www.`, no fragment and no trailing slash; a DOI as `https://doi.org/` and the DOI in lower case.",
+          "type": "string"
+        },
+        "has_nifti": {
+          "description": "Whether the repository the link names holds NIfTI files (`.nii`, `.nii.gz`), as checked there. Absent when it was not checked.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "occurrences": {
+          "description": "Every place the paper gives the link, in text order.",
+          "items": {
+            "$ref": "#/$defs/LinkOccurrence"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "url",
+        "occurrences"
+      ],
+      "title": "PaperLink",
       "type": "object"
     },
     "ParsedAnalysis": {
@@ -1582,6 +1851,16 @@
           "description": "Supplementary material the paper links to, and whether it was fetched. A result the text cites to a supplement that was not fetched is reported elsewhere, not missing.",
           "items": {
             "$ref": "#/$defs/Supplement"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "links": {
+          "description": "Every http(s) link the paper gives, once each: in its text or markup, its supplementary material or its reference list, where a DOI counts as its `https://doi.org/` link, with every place it appears.",
+          "items": {
+            "$ref": "#/$defs/PaperLink"
           },
           "type": [
             "array",
@@ -1910,8 +2189,15 @@
           "type": "string"
         },
         "server": {
-          "$ref": "#/$defs/PreprintServer",
-          "description": "Named by the producer from the DOI, so that no consumer needs a table of preprint servers' DOI patterns."
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreprintServer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Named by the producer from the DOI, so that no consumer needs a table of preprint servers' DOI patterns. A server PreprintServer does not list is named by its DOI prefix."
         }
       },
       "required": [
@@ -1929,6 +2215,7 @@
         "arxiv",
         "researchsquare",
         "osf_preprints",
+        "elife",
         "arabixiv",
         "metaarxiv",
         "engrxiv",
@@ -1954,7 +2241,9 @@
         "authorea",
         "techrxiv",
         "chemrxiv",
-        "jmir_preprints"
+        "jmir_preprints",
+        "peerj_preprints",
+        "qeios"
       ],
       "title": "PreprintServer",
       "type": "string"
@@ -2113,6 +2402,9 @@
               "anyOf": [
                 {
                   "$ref": "#/$defs/PreprintServer"
+                },
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -2163,9 +2455,13 @@
               "$ref": "#/$defs/PreprintServer"
             },
             {
+              "type": "string"
+            },
+            {
               "type": "null"
             }
-          ]
+          ],
+          "description": "A server PreprintServer does not list is named by its DOI prefix."
         }
       },
       "required": [
@@ -2175,13 +2471,7 @@
       ],
       "then": {
         "properties": {
-          "preprint_server": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/PreprintServer"
-              }
-            ]
-          }
+          "preprint_server": {}
         },
         "required": [
           "preprint_server"
@@ -2277,6 +2567,7 @@
         "table",
         "supplement",
         "references",
+        "data_availability",
         "other"
       ],
       "title": "SectionKind",
@@ -2756,6 +3047,85 @@
       ],
       "title": "VariationLevel",
       "type": "string"
+    },
+    "Venue": {
+      "additionalProperties": false,
+      "description": "The OpenAlex source a paper appeared in, and how it was identified. Only the paper's own facts: the source's title, ISSNs and other ids belong to the source, and the consumer holds them once.",
+      "else": {
+        "properties": {
+          "score": {
+            "not": {
+              "anyOf": [
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "match": {
+            "const": "fuzzy"
+          }
+        },
+        "required": [
+          "match"
+        ]
+      },
+      "properties": {
+        "openalex_id": {
+          "description": "OpenAlex's source id, bare (`S121666818`).",
+          "pattern": "^S\\d+$",
+          "type": "string"
+        },
+        "match": {
+          "$ref": "#/$defs/VenueMatch"
+        },
+        "score": {
+          "description": "How close `journal` was to the source's name, 0 to 100.",
+          "maximum": 100,
+          "minimum": 0,
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "openalex_id",
+        "match"
+      ],
+      "then": {
+        "properties": {
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "required": [
+          "score"
+        ]
+      },
+      "title": "Venue",
+      "type": "object"
+    },
+    "VenueMatch": {
+      "description": "How a paper's venue was identified, from the strongest evidence to the weakest.",
+      "enum": [
+        "doi",
+        "pmid",
+        "preprint_server",
+        "issn",
+        "title",
+        "fuzzy"
+      ],
+      "title": "VenueMatch",
+      "type": "string"
     }
   },
   "$id": "https://neurostuff.org/schemas/neuroimaging-paper-parse",
@@ -2840,5 +3210,5 @@
   ],
   "title": "neuroimaging-paper-parse",
   "type": "object",
-  "version": "0.8.0"
+  "version": "0.11.0"
 }

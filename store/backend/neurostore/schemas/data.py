@@ -13,12 +13,16 @@ from marshmallow import (
     validates_schema,
 )
 from sqlalchemy import func
-from study_schema.models.paper_parse import AnalysisOutcome
+from study_schema.models.paper_parse import (
+    AnalysisOutcome,
+    PublicationStatus,
+)
 
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Image, Point
 from neurostore.services.image_value_summary import serialize_image_value_summary
+from neurostore.owners import OwnerId, owner_id
 from neurostore.note_keys import (
     ALLOWED_NOTE_KEY_TYPES,
     canonicalize_note_keys,
@@ -300,9 +304,7 @@ class BaseSchema(Schema):
 
 
 class BaseDataSchema(BaseSchema):
-    user = fields.String(
-        attribute="user_id", dump_only=True, metadata={"info_field": True}
-    )
+    user = OwnerId(attribute="user_id", dump_only=True, metadata={"info_field": True})
     username = fields.String(
         attribute="user.name",
         dump_only=True,
@@ -321,6 +323,76 @@ class ConditionSchema(BaseDataSchema):
     id = fields.String(
         metadata={"info_field": True, "id_field": True, "preserve_on_clone": True}
     )
+
+
+class JournalSchema(BaseSchema):
+    """A journal as neurostore identified it; read only."""
+
+    openalex_id = fields.String(dump_only=True)
+    kind = fields.String(dump_only=True)
+    title = fields.String(dump_only=True)
+    abbreviation = fields.String(dump_only=True, allow_none=True)
+    issns = fields.List(fields.String(), dump_only=True)
+    issn_l = fields.String(dump_only=True, allow_none=True)
+    nlm_id = fields.String(dump_only=True, allow_none=True)
+    wikidata_id = fields.String(dump_only=True, allow_none=True)
+    created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
+    updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
+
+
+DATA_SOURCE_KINDS = ("study", "consortium", "repository")
+
+
+class DataSourceSchema(BaseDataSchema):
+    name = fields.String(required=True)
+    description = fields.String(allow_none=True)
+    kinds = fields.List(fields.String(validate=validate.OneOf(DATA_SOURCE_KINDS)))
+    modalities = fields.List(fields.String())
+    part_of_id = fields.String(
+        data_key="part_of", allow_none=True, metadata={"id_field": True}
+    )
+    url = fields.String(allow_none=True)
+    url_kind = fields.String(allow_none=True)
+    rrids = fields.List(fields.String())
+    re3data_ids = fields.List(fields.String())
+
+    # the dictionary key (e.g. "ukb"), required on create
+    id = fields.String(
+        required=True,
+        validate=validate.Regexp(r"^[a-z0-9][a-z0-9_]*$"),
+        metadata={"info_field": True, "id_field": True, "preserve_on_clone": True},
+    )
+
+
+def dump_computed_data_sources(obj):
+    """A study's or base study's data sources, read from its computed link table.
+
+    Views that show them eager-load ``data_sources``; an object reached another way
+    (a base study's versions, a clone) is read with one query.
+    """
+    from sqlalchemy import inspect as sa_inspect
+
+    if "data_sources" not in sa_inspect(obj).unloaded:
+        data_sources = obj.data_sources
+    else:
+        from neurostore.services.data_source_links import data_sources_of
+
+        data_sources = data_sources_of(obj)
+    return [data_source_summary(ds) for ds in data_sources]
+
+
+def data_source_summary(data_source):
+    """The few fields a study, base study or analysis shows of each of its data sources."""
+    return {
+        "id": data_source.id,
+        "name": data_source.name,
+        "url": data_source.url,
+    }
+
+
+class AnalysisDataSourceSchema(BaseDataSchema):
+    data_source = StringOrNested(DataSourceSchema)
+    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
 
 
 class EntitySchema(BaseDataSchema):
@@ -527,6 +599,12 @@ class AnalysisSchema(BaseDataSchema):
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)
     weights = fields.List(fields.Float())
+    analysis_data_sources = fields.Nested(
+        AnalysisDataSourceSchema, many=True, load_only=True
+    )
+    data_sources = fields.Method(
+        "dump_data_sources", dump_only=True, metadata={"detail_field": "data_sources"}
+    )
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
@@ -538,6 +616,20 @@ class AnalysisSchema(BaseDataSchema):
         validate=validate.OneOf([o.value for o in AnalysisOutcome]),
     )
     from_prior_study = fields.Boolean(allow_none=True)
+
+    def dump_data_sources(self, obj):
+        from sqlalchemy import inspect as sa_inspect
+
+        if "analysis_data_sources" not in sa_inspect(obj).unloaded:
+            data_sources = sorted(
+                (link.data_source for link in obj.analysis_data_sources),
+                key=lambda ds: ds.name,
+            )
+        else:
+            from neurostore.services.data_source_links import data_sources_of
+
+            data_sources = data_sources_of(obj)
+        return [data_source_summary(ds) for ds in data_sources]
 
     @pre_load
     def load_values(self, data, **kwargs):
@@ -565,6 +657,21 @@ class AnalysisSchema(BaseDataSchema):
 
         data.pop("conditions", None)
         data.pop("weights", None)
+
+        # data sources are linked by id only; they are created through /data-sources/
+        if "analysis_data_sources" in data:
+            raise ValidationError(
+                "link data sources with data_sources (a list of ids)",
+                "analysis_data_sources",
+            )
+        if data.get("data_sources") is not None:
+            ids = data.pop("data_sources")
+            if not all(isinstance(i, str) for i in ids):
+                raise ValidationError(
+                    "data_sources takes data source ids", "data_sources"
+                )
+            data["analysis_data_sources"] = [{"data_source": i} for i in ids]
+        data.pop("data_sources", None)
 
         # Nested images carry no analysis to count against yet, so number them
         # by their position in the payload instead of defaulting every one of
@@ -642,12 +749,34 @@ class StudySetStudyInfoSchema(Schema):
     description = fields.String(dump_only=True)
 
 
-class BaseStudySchema(BaseDataSchema):
+class PreprintDoiSchema(Schema):
+    doi = fields.String(required=True)
+    # study_schema's PreprintServer, or the DOI prefix of a server it does not list.
+    server = fields.String(required=True, validate=validate.Length(min=1))
+
+
+class ArticleIdentifiersSchema(Schema):
+    """A base study's ids beyond the version of record's doi, pmid and pmcid, and whether
+    that version is known (study_schema's ArticleIdentifiers)."""
+
+    publication_status = fields.String(
+        allow_none=True, validate=validate.OneOf([s.value for s in PublicationStatus])
+    )
+    preprint_dois = fields.List(fields.Nested(PreprintDoiSchema))
+    preprint_pmids = fields.List(fields.String())
+    preprint_pmcids = fields.List(fields.String())
+    alternative_dois = fields.List(fields.String())
+    alternative_pmids = fields.List(fields.String())
+    alternative_pmcids = fields.List(fields.String())
+
+
+class BaseStudySchema(BaseDataSchema, ArticleIdentifiersSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
     publication = fields.String(allow_none=True)
+    journal = fields.Raw(dump_only=True)
     doi = fields.String(allow_none=True)
     pmid = fields.String(allow_none=True)
     pmcid = fields.String(allow_none=True)
@@ -662,8 +791,14 @@ class BaseStudySchema(BaseDataSchema):
     has_beta_and_variance_maps = fields.Bool(dump_only=True)
     versions = StringOrNested("StudySchema", many=True)
     features = fields.Method("get_features")
+    data_sources = fields.Method(
+        "dump_data_sources", dump_only=True, metadata={"detail_field": "data_sources"}
+    )
     ace_fulltext = fields.String(load_only=True, allow_none=True)
     pubget_fulltext = fields.String(load_only=True, allow_none=True)
+
+    def dump_data_sources(self, obj):
+        return dump_computed_data_sources(obj)
 
     def get_features(self, obj):
         from neurostore.schemas.pipeline import PipelineStudyResultSchema
@@ -732,12 +867,15 @@ class StudySchema(BaseDataSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
     publication = fields.String(allow_none=True)
+    journal = fields.Raw(dump_only=True)
     doi = fields.String(allow_none=True)
     pmid = fields.String(allow_none=True)
     pmcid = fields.String(allow_none=True)
     authors = fields.String(allow_none=True)
     year = fields.Integer(allow_none=True)
     level = fields.String(allow_none=True)
+    #: Whether the study is listed; Compose sets it on a project's meta study.
+    public = fields.Boolean(load_only=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
     tables = fields.Method("get_table_ids", dump_only=True)
     source = fields.String(
@@ -760,6 +898,9 @@ class StudySchema(BaseDataSchema):
         dump_only=True, metadata={"info_field": True}
     )
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
+    data_sources = fields.Method(
+        "dump_data_sources", dump_only=True, metadata={"detail_field": "data_sources"}
+    )
 
     class Meta:
         # studysets can be very large and are hidden by default.
@@ -775,6 +916,9 @@ class StudySchema(BaseDataSchema):
             if val is not None and (val == "" or val.isspace()):
                 data[attr] = None
         return data
+
+    def dump_data_sources(self, obj):
+        return dump_computed_data_sources(obj)
 
     def get_table_ids(self, obj):
         if not getattr(obj, "tables", None):
@@ -984,6 +1128,8 @@ class AnnotationSchema(BaseDataSchema):
     pipelines = fields.List(
         fields.Nested(AnnotationPipelineSchema), load_only=True, required=False
     )
+    # Validated by neurostore.analysis_query and the annotation view.
+    analysis_query = fields.Dict(load_only=True, required=False)
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):
@@ -1055,7 +1201,7 @@ class ImageSnapshot(BaseSnapshot):
     def dump(self, i):
         return {
             "id": i.id,
-            "user": i.user_id,
+            "user": owner_id(i.user_id),
             "study": i.study_id,
             "url": i.url,
             "space": i.space,
@@ -1091,7 +1237,7 @@ class ConditionSnapshot(BaseSnapshot):
     def dump(self, ac):
         return {
             "id": ac.condition_id,
-            "user": ac.condition.user_id,
+            "user": owner_id(ac.condition.user_id),
             "name": ac.condition.name,
             "description": ac.condition.description,
         }
@@ -1104,7 +1250,7 @@ class AnalysisSnapshot(BaseSnapshot):
         i_schema = ImageSnapshot()
         return {
             "id": a.id,
-            "user": a.user_id,
+            "user": owner_id(a.user_id),
             "name": a.name,
             "metadata": a.metadata_,
             "description": a.description,
@@ -1122,7 +1268,7 @@ class StudySnapshot(BaseSnapshot):
             "id": s.id,
             "created_at": self._serialize_dt(s.created_at),
             "updated_at": self._serialize_dt(s.updated_at),
-            "user": s.user_id,
+            "user": owner_id(s.user_id),
             "name": s.name,
             "description": s.description,
             "publication": s.publication,
@@ -1144,7 +1290,7 @@ class StudysetSnapshot(BaseSnapshot):
         return {
             "id": studyset.id,
             "name": studyset.name,
-            "user": studyset.user_id,
+            "user": owner_id(studyset.user_id),
             "description": studyset.description,
             "publication": studyset.publication,
             "doi": studyset.doi,

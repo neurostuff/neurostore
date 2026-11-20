@@ -1,36 +1,36 @@
 [build-system]
-requires = ["setuptools>=84.0.0"]
+requires = ["setuptools>=84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurostore"
-version = "0.24.0"
+version = "0.25.2"
 description = "neurostore"
 authors = [
     { name = "James Kent", email = "jamesdkent21@gmail.com" }
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=6.8",
+    "auth0-python~=6.10",
     "alembic~=1.20",
     "connexion[swagger-ui,uvicorn]==3.3.0",
     "cachelib~=0.17",
-    "gunicorn~=26.2",
-    "httpx2~=2.13",
+    "gunicorn~=27.0",
+    "httpx2~=2.16",
     "uvicorn-worker~=0.4",
-    "ipython~=9.17",
+    "ipython~=9.18",
     "itsdangerous~=2.2",
     "jsonschema~=4.26",
-    "marshmallow~=4.3",
+    "marshmallow~=4.4",
     "numpy<3.0.0",
-    "pandas~=3.0",
+    "pandas~=3.1",
     "psycopg2-binary~=2.9",
     "pyld~=3.3",
     "python-jose~=3.5",
     "redis",
     "shortuuid~=1.0",
-    "starlette>=1.8.0,<2",
-    "sqlalchemy[asyncio]~=2.1.4",
+    "starlette>=1.10.0,<2",
+    "sqlalchemy[asyncio]~=2.1.8",
     "sqladmin~=0.32",
     "sqltap",
     "webargs~=8.7",
@@ -39,13 +39,20 @@ dependencies = [
     "scipy~=1.18",
     "orjson~=3.13",
     "pgvector~=0.5",
-    "NiMARE[parquet]==0.21.0",
-    "openai~=3.31",
+    "NiMARE[parquet]==0.22.1",
+    "openai~=3.50",
     "tenacity~=9.2",
-    "sentry-sdk~=2.72",
+    "sentry-sdk~=2.75",
+    # A link's registrable domain, from the public suffix list snapshot it ships.
+    "tldextract~=5.4",
+    # A journal's name close to a known one (services/journals.py).
+    "rapidfuzz~=3.14",
+    # The public query's SoQL subset (public_query.py).
+    "lark~=1.3",
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
-    # entity hashes read, pinned to study_schema main.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@7c0425a35c6ae1c3f7754cd97a4d8e2f35ec5530",
+    # entity hashes read, and the vocabulary manifest the analysis features resolve against,
+    # pinned to study_schema main at the merge of neurostuff/study_schema#60.
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@9d438fd69e40aca2b65b136027fc594f26d152ab",
 ]
 
 [tool.setuptools.packages.find]
@@ -54,12 +61,12 @@ include = ["neurostore*"]
 
 [project.optional-dependencies]
 dev = [
-    "flake8~=7.4",
+    "flake8~=7.5",
     "pip-chill~=1.0",
     "wheel~=0.48",
-    "pytest~=9.1",
+    "pytest~=9.2",
     "vcrpy~=8.3",
-    "pytest-recording~=0.14.0",
+    "pytest-recording~=0.14.1",
     # study_schema.layouts (check_revision) imports pyarty.
     "pyarty @ git+https://github.com/jdkent/pyarty.git@d63f77274856500ccd7da125bdc5543adadeb77e",
 ]

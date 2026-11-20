@@ -9,6 +9,7 @@ from neurostore.exceptions.utils.error_helpers import abort_unprocessable
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
+    AnalysisDataSource,
     Annotation,
     Condition,
     Image,
@@ -21,6 +22,7 @@ from neurostore.models import (
 from neurostore.models.data import StudysetStudy, analysis_role_clause
 from neurostore.resources.base import DefaultObjectViewPolicy, ListView, ObjectView
 from neurostore.resources.data_views.common import (
+    DATA_SOURCE_DETAIL_ARGS,
     IMAGE_DETAIL_ARGS,
     LIST_NESTED_ARGS,
     image_detail_options,
@@ -45,6 +47,7 @@ class AnalysesView(ObjectView, ListView):
     _view_fields = {
         **LIST_NESTED_ARGS,
         **IMAGE_DETAIL_ARGS,
+        **DATA_SOURCE_DETAIL_ARGS,
         "study": fields.String(load_default=None),
         "role": fields.String(
             load_default=None, validate=validate.OneOf([r.value for r in CoordinateRole])
@@ -54,6 +57,7 @@ class AnalysesView(ObjectView, ListView):
         "images": "ImagesView",
         "points": "PointsView",
         "analysis_conditions": "AnalysisConditionsResource",
+        "analysis_data_sources": "AnalysisDataSourcesResource",
         "annotation_analyses": "AnnotationAnalysesView",
     }
     _m2o = {"study": "StudiesView"}
@@ -61,6 +65,7 @@ class AnalysesView(ObjectView, ListView):
         "images": "ImagesView",
         "points": "PointsView",
         "analysis_conditions": "AnalysisConditionsResource",
+        "analysis_data_sources": "AnalysisDataSourcesResource",
     }
     _parent = {"study": "StudiesView"}
     _linked = {"annotation_analyses": "AnnotationAnalysesView"}
@@ -131,6 +136,15 @@ class AnalysesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        if args.get("data_sources"):
+            q = q.options(
+                selectinload(Analysis.analysis_data_sources).options(
+                    raiseload("*", sql_only=True),
+                    selectinload(AnalysisDataSource.data_source).options(
+                        raiseload("*", sql_only=True)
+                    ),
+                )
+            )
         if args.get("nested"):
             return q.options(
                 selectinload(Analysis.user)

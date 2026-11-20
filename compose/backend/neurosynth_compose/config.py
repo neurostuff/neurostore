@@ -104,6 +104,8 @@ class Config:
     COMPOSE_RUNNER_ARTIFACTS_URL = get_env_var("COMPOSE_RUNNER_ARTIFACTS_URL")
     ADMIN_USERNAME = get_env_var("ADMIN_USERNAME")
     ADMIN_PASSWORD = get_env_var("ADMIN_PASSWORD")
+    # Tokens for this second Auth0 API are agents acting for a user; empty disables them.
+    AUTH0_AGENT_AUDIENCE = get_env_var("AUTH0_AGENT_AUDIENCE")
     BEARERINFO_FUNC = get_env_var(
         "BEARERINFO_FUNC", "neurosynth_compose.resources.auth.decode_token"
     )
@@ -148,6 +150,9 @@ class ProductionConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
+    AUTH0_AGENT_AUDIENCE = get_env_var(
+        "AUTH0_AGENT_AUDIENCE", "https://neurostore.org/agents/"
+    )
     NEUROSTORE_API_URL = get_env_var("NEUROSTORE_API_URL", "https://neurostore.org/api")
 
 
@@ -166,6 +171,9 @@ class StagingConfig(Config):
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = get_env_var(
         "AUTH0_API_AUDIENCE", "https://staging.synth.neurostore.xyz/api/"
+    )
+    AUTH0_AGENT_AUDIENCE = get_env_var(
+        "AUTH0_AGENT_AUDIENCE", "https://staging.neurostore.xyz/agents/"
     )
     NEUROSTORE_API_URL = get_env_var(
         "NEUROSTORE_API_URL", "https://staging.neurostore.xyz/api"
@@ -214,6 +222,7 @@ class TestingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "localhost"
+    AUTH0_AGENT_AUDIENCE = "localhost-agents"
     NEUROSTORE_API_URL = get_env_var("NEUROSTORE_API_URL", "http://172.17.0.1/api")
 
 

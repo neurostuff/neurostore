@@ -1,6 +1,6 @@
 {
     "name": "neurosynth",
-    "version": "0.24.0",
+    "version": "0.25.2",
     "private": true,
     "scripts": {
         "start:dev": "vite --mode dev",
@@ -61,7 +61,7 @@
         "@tanstack/react-table": "^8.20.5",
         "@tanstack/react-virtual": "^3.14.14",
         "axios": "^1.20.0",
-        "fast-xml-parser": "^5.10.1",
+        "fast-xml-parser": "^5.12.0",
         "handsontable": "^18.0.0",
         "html-to-image": "^1.11.11",
         "notistack": "^3.0.2",
@@ -71,7 +71,7 @@
         "react-router-dom": "^6.30.3",
         "reactflow": "^11.5.3",
         "uuid": "^14.0.0",
-        "vite": "^8.3.0",
+        "vite": "^8.3.5",
         "web-vitals": "^1.1.2",
         "zustand": "^4.3.3"
     },
@@ -103,11 +103,11 @@
         "jose": "^4.15.5",
         "jsdom": "^25.0.1",
         "prettier": "^3.3.3",
-        "puppeteer": "^24.36.0",
+        "puppeteer": "^25.17.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.13.0",
-        "vitest": "^4.1.11"
+        "vitest": "^4.1.12"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-musl": "4.52.5"

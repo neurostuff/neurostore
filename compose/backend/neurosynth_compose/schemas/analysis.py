@@ -10,6 +10,7 @@ from marshmallow import (
 )
 
 from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
+from neurosynth_compose.owners import OwnerId
 
 # neurovault api base URL
 NV_BASE = "https://neurovault.org/api"
@@ -182,7 +183,7 @@ class BaseSchema(ContextSchema):
     id = PGSQLString(metadata={"info_field": True})
     created_at = fields.DateTime()
     updated_at = fields.DateTime(allow_none=True)
-    user_id = fields.String(data_key="user")
+    user_id = OwnerId(data_key="user")
     username = fields.String(
         attribute="user.name", dump_only=True, metadata={"info_field": True}
     )

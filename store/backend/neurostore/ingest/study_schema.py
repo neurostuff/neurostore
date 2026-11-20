@@ -34,9 +34,21 @@ entities. A positional key stays set aside until a record names it by content; a
 parse held is resolved when a later parse holds it: each stored record naming it has its
 claims re-ingested onto the new entity (the parse upload's ``set_aside_resolved``).
 
+Every upload leaves its base study owned by no one and public (the summary's
+``took_ownership_from`` names a previous owner), and one naming a base study merged since
+lands on the one that superseded it (``merged_from``). A parsed paper sets the paper's
+licence and replaces its pipeline links when it lists them; ``text``, whose sha256 must be
+the parsed paper's ``text_sha256``, is kept as one of the paper's full texts with its
+copy's licence (docs/adr/0017-paper-links-and-licences.md).
+
 Every result an upload writes carries the caller's ``run_id``. Replaying a run (same
 run_id, same documents) returns the same results and adds none; the same run_id with a
 different document for the paper is refused (RUN_ID_REUSED).
+
+A record's config is keyed on what made it. ``pipeline.runs`` names the runs behind the
+record (its record run, and the evidence and normalize runs that filled it in); their
+config holds them, so uploads made by the same runs share one config and a run of another
+model, adapter, prompt or fit gets another (docs/adr/0018-record-config-names-its-runs.md).
 
 Only a new parse supersedes the current one: re-uploading a stored, non-current parse is
 refused (NOT_CURRENT), and so is a revision of a parse that is not current, unless the
@@ -48,18 +60,28 @@ since. The sign of a contrast lives on its condition weights: the inverse half o
 split gets its original half's conditions, negated.
 """
 
+import hashlib
+import logging
 import re
 from collections import Counter
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
 from study_schema.jsonschema import load as load_json_schema
 from study_schema.models.paper_parse import CorrectionKind
 from study_schema.statistics import point_side
 
-from neurostore.base_studies import VERSION_OF_RECORD_IDS, find_base_study
+from neurostore.base_studies import (
+    article_identifiers,
+    attach_identifiers,
+    held_by,
+    lock_identifiers,
+    resolve,
+    settle_publication_status,
+    supersession_chain,
+)
 from neurostore.coordinate_spaces import normalize_space
 from neurostore.database import db
 from neurostore.exceptions.factories import create_unprocessable_error, make_field_error
@@ -69,6 +91,7 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
 )
 from neurostore.exceptions.utils.errors import ErrorDetail
+from neurostore.ingest.analysis_features import latest_records, sync_analysis_features
 from neurostore.ingest.study_entities import (
     CONTENT_KEYED_CLASSES,
     stable_id_problems,
@@ -78,14 +101,15 @@ from neurostore.models.data import (
     HISTORY_SOURCE,
     PARSE_PIPELINE,
     PIPELINE_STUDY_SOURCES,
-    RECORD_SCHEMA_NAME,
     STUDY_SOURCE,
+    generate_id,
     study_entity_hash,
 )
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
     BaseStudy,
+    BaseStudyLink,
     Condition,
     ExtractionEntityLink,
     FieldClaim,
@@ -101,6 +125,12 @@ from neurostore.models import (
     StudyEntity,
     Table,
 )
+from neurostore import authors, corresponding_authors
+from neurostore.models.fulltext import find_or_add_fulltext
+from neurostore.services import journals
+from neurostore.services.base_study_metadata_enrichment import (
+    enqueue_base_study_metadata_updates,
+)
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.stored_parses import stored_parse, stored_parse_result
 from neurostore.study_schema_tools import (
@@ -111,9 +141,12 @@ from neurostore.study_schema_tools import (
     expected_key,
     extracted_value,
     is_extracted,
+    record_analysis_key,
     refs,
+    reported_value,
     schema_errors,
     sha256_of,
+    split_of,
     version_mismatch,
 )
 
@@ -165,13 +198,36 @@ SHARED_NAME = "shared_name"
 
 _MAX_REPORTED_ERRORS = 20
 
+# The stages a record's runs come from, in the order they ran; a record has a record run.
+RUN_STAGES = ("record", "evidence", "normalize")
+RUN_KINDS = ("model", "migration")
+# Each run's fields: required ones, and the rest (a string or null). ``fit`` is the
+# fingerprint of the fitted normalization model a normalize run assigned with.
+RUN_REQUIRED = ("run_id", "stage", "source", "created_at")
+RUN_OPTIONAL = (
+    "kind",
+    "pipeline",
+    "version",
+    "model",
+    "adapter",
+    "prompt_version",
+    "schema_version",
+    "code_commit",
+    "machine",
+    "fit",
+)
+
+logger = logging.getLogger(__name__)
+
 
 def is_content_key(key):
     return bool(key) and _CONTENT_KEY.fullmatch(key) is not None
 
 
-def ingest_upload(body, user=None):
-    """Store one upload; return a summary of what changed. Does not commit."""
+def ingest_upload(body, user=None, settings=None):
+    """Store one upload; return a summary of what changed. Does not commit.
+
+    ``settings`` reach OpenAlex and NLM the first time a journal is seen."""
     parse = body.get("coordinate_parse")
     record = body.get("record")
     parsed_paper = body.get("parsed_paper")
@@ -187,6 +243,14 @@ def ingest_upload(body, user=None):
             _validate(name, document)
     if parse is not None:
         _check_keys(parse)
+    if parsed_paper is not None:
+        _check_links(parsed_paper)
+    runs = (body.get("pipeline") or {}).get("runs")
+    if runs is not None:
+        runs = _check_runs(runs)
+    text = body.get("text")
+    if text is not None:
+        _check_text(text, parsed_paper)
 
     if parse is not None and parse.get("revision_of"):
         kind = "revision"
@@ -207,7 +271,9 @@ def ingest_upload(body, user=None):
             [make_field_error("parse_id", body.get("parse_id"), code="MISMATCH")],
         )
 
-    base_study = _resolve_base_study(body, parse, parsed_paper, create=parse is not None)
+    base_study, merged_from = _resolve_base_study(
+        body, parse, parsed_paper, create=parse is not None
+    )
     # Serialize uploads for one paper: version changes read, then move, its analyses.
     db.session.execute(
         sa.select(BaseStudy.id).where(BaseStudy.id == base_study.id).with_for_update()
@@ -215,13 +281,26 @@ def ingest_upload(body, user=None):
     _check_entity_hashes(base_study)
     if record is not None:
         _check_stable_ids(base_study, record)
-    _set_retraction(base_study, parsed_paper)
 
     summary = {
         "kind": kind,
         "base_study_id": base_study.id,
         "parse_id": parse_id,
     }
+    if merged_from:
+        summary["merged_from"] = merged_from
+    previous_owner = _take_ownership(base_study)
+    if previous_owner is not None:
+        summary["took_ownership_from"] = previous_owner
+    _set_retraction(base_study, parsed_paper)
+    _set_journal(base_study, parsed_paper, settings)
+    listed = authors.store_authors(base_study.id, parsed_paper)
+    corresponding_authors.add_emails(base_study.id, authors.correspondence(parsed_paper), listed)
+    if parsed_paper is not None:
+        base_study.license = parsed_paper["bibliography"]["license"]["license_id"]
+        _store_links(base_study, parsed_paper)
+    if text is not None:
+        _store_text(base_study, parsed_paper, text)
     study = _current_study(base_study)
     current_parse_id = study.source_id if study is not None else None
 
@@ -271,14 +350,68 @@ def ingest_upload(body, user=None):
             body.get("pipeline") or {},
             user,
             body.get("run_id"),
+            runs,
         )
 
     if study is not None:
         summary["study_id"] = study.id
+        db.session.flush()
+        sync_analysis_features(base_study.id, study.id)
     db.session.flush()
     summary["provenance"] = {name: _provenance(result) for name, result in provenance.items()}
     recompute_media_flags([base_study.id])
     return summary
+
+
+def _take_ownership(base_study):
+    """Leave ``base_study`` owned by no one and public, as every base study the pipeline
+    uploads is; return the user who owned it, or None. Its users' studies keep theirs."""
+    previous_owner = base_study.user_id
+    base_study.user_id = None
+    base_study.public = True
+    return previous_owner
+
+
+def _store_text(base_study, parsed_paper, text):
+    """Keep ``text`` as one of the paper's full texts, with the source, copy and copy
+    licence of this upload's parsed paper."""
+    fulltext = find_or_add_fulltext(db.session, base_study.id, parsed_paper, text)
+    fulltext.source = parsed_paper["source"]
+    fulltext.text_copy = parsed_paper["text_copy"]
+    fulltext.license = parsed_paper["text_copy"]["license"]["license_id"]
+    db.session.flush()
+
+
+def _store_links(base_study, parsed_paper):
+    """Replace the paper's pipeline links with the parsed paper's, when it lists them.
+
+    A link a user gave stays theirs; the pipeline only says whether it holds NIfTI."""
+    links = parsed_paper.get("links")
+    if links is None:
+        return
+    db.session.execute(
+        sa.delete(BaseStudyLink).where(
+            BaseStudyLink.base_study_id == base_study.id, BaseStudyLink.source == "pipeline"
+        )
+    )
+    user_links = {
+        link.url: link
+        for link in db.session.scalars(
+            sa.select(BaseStudyLink).where(BaseStudyLink.base_study_id == base_study.id)
+        )
+    }
+    seen = set()
+    for link in links:
+        url, has_nifti = link["url"], link.get("has_nifti")
+        if url in seen:
+            continue
+        seen.add(url)
+        if url in user_links:
+            if has_nifti is not None:
+                user_links[url].has_nifti = has_nifti
+            continue
+        db.session.add(BaseStudyLink.of(base_study.id, url, "pipeline", has_nifti))
+    db.session.flush()
 
 
 def _check_entity_hashes(base_study):
@@ -348,6 +481,130 @@ def _validate(name, document):
                 )
             ],
         )
+
+
+def _check_text(text, parsed_paper):
+    """A text comes with the parsed paper whose text_sha256 it hashes to."""
+    if parsed_paper is None:
+        abort_unprocessable(
+            "A text needs the parsed paper it is the text of.",
+            [make_field_error("text", None, code="TEXT_MISMATCH")],
+        )
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if digest != parsed_paper["text_sha256"]:
+        abort_unprocessable(
+            "The text is not the one the parsed paper read.",
+            [
+                make_field_error(
+                    "text",
+                    {"sha256": digest, "text_sha256": parsed_paper["text_sha256"]},
+                    code="TEXT_MISMATCH",
+                )
+            ],
+        )
+
+
+def _check_links(parsed_paper):
+    """Every link names an http(s) host."""
+    errors = []
+    for index, link in enumerate(parsed_paper.get("links") or []):
+        parts = urlsplit(link["url"])
+        if parts.scheme not in ("http", "https") or not parts.hostname:
+            errors.append(
+                make_field_error(f"parsed-paper/links/{index}/url", link["url"], code="SCHEMA")
+            )
+    if errors:
+        abort_unprocessable(
+            "A link is an http(s) URL with a host.", errors[:_MAX_REPORTED_ERRORS]
+        )
+
+
+def _check_runs(runs):
+    """Return ``runs`` with every field present, in stage order; refuse a malformed one."""
+    field = "pipeline/runs"
+    if not isinstance(runs, list) or not runs:
+        abort_unprocessable(
+            "pipeline.runs is a non-empty list of runs.",
+            [make_field_error(field, runs, code="SCHEMA")],
+        )
+    errors, seen, run_ids = [], {}, set()
+    for index, run in enumerate(runs):
+        at = f"{field}/{index}"
+        if not isinstance(run, dict):
+            errors.append(make_field_error(at, run, code="SCHEMA"))
+            continue
+        for name in sorted(set(run) - set(RUN_REQUIRED) - set(RUN_OPTIONAL)):
+            errors.append(make_field_error(f"{at}/{name}", run[name], code="SCHEMA"))
+        for name in RUN_REQUIRED:
+            value = run.get(name)
+            if not isinstance(value, str) or not value:
+                errors.append(make_field_error(f"{at}/{name}", value, code="SCHEMA"))
+        for name in RUN_OPTIONAL:
+            value = run.get(name)
+            if value is not None and not isinstance(value, str):
+                errors.append(make_field_error(f"{at}/{name}", value, code="SCHEMA"))
+        stage = run.get("stage")
+        if isinstance(stage, str) and stage and stage not in RUN_STAGES:
+            errors.append(
+                make_field_error(f"{at}/stage", stage, list(RUN_STAGES), code="SCHEMA")
+            )
+        kind = run.get("kind")
+        if isinstance(kind, str) and kind not in RUN_KINDS:
+            errors.append(make_field_error(f"{at}/kind", kind, list(RUN_KINDS), code="SCHEMA"))
+        created_at = run.get("created_at")
+        if isinstance(created_at, str) and created_at and not _is_timestamp(created_at):
+            errors.append(make_field_error(f"{at}/created_at", created_at, code="SCHEMA"))
+        if stage in seen:
+            errors.append(make_field_error(f"{at}/stage", stage, code="DUPLICATE_STAGE"))
+        seen.setdefault(stage, index)
+        if run.get("run_id") in run_ids:
+            errors.append(
+                make_field_error(f"{at}/run_id", run["run_id"], code="DUPLICATE_RUN_ID")
+            )
+        run_ids.add(run.get("run_id"))
+    if not errors and "record" not in seen:
+        errors.append(make_field_error(field, sorted(seen), ["record"], code="SCHEMA"))
+    if errors:
+        abort_unprocessable(
+            "Each run names its run_id, stage, source and created_at; no stage or run_id "
+            "is named twice, and a record has a record run.",
+            errors[:_MAX_REPORTED_ERRORS],
+        )
+    return sorted(
+        ({name: run.get(name) for name in RUN_REQUIRED + RUN_OPTIONAL} for run in runs),
+        key=lambda run: RUN_STAGES.index(run["stage"]),
+    )
+
+
+def _is_timestamp(value):
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return True
+
+
+def _check_run_ids(runs):
+    """Refuse a run whose run_id a stored config holds with other fields."""
+    for index, run in enumerate(runs):
+        held = PipelineConfig.query.filter(
+            PipelineConfig.config_args["runs"].contains([{"run_id": run["run_id"]}])
+        )
+        for config in held:
+            stored = next(
+                r for r in config.config_args["runs"] if r["run_id"] == run["run_id"]
+            )
+            if stored != run:
+                abort_unprocessable(
+                    "This run_id names a stored run with other fields.",
+                    [
+                        make_field_error(
+                            f"pipeline/runs/{index}",
+                            {"run": run, "stored": stored},
+                            code="RUN_CONFLICT",
+                        )
+                    ],
+                )
 
 
 def _check_keys(parse):
@@ -428,56 +685,59 @@ def _check_verdicts(revision, revised):
 
 def _resolve_base_study(body, parse, parsed_paper, create):
     header = {} if parse is None else parse["header"]
-    identifiers = header.get("identifiers") or {}
+    header_identifiers = header.get("identifiers") or {}
+    identifiers = article_identifiers(header_identifiers)
+    # Serializes uploads of one paper until commit, so that two first uploads do not each
+    # create a base study.
+    lock_identifiers(db.session, identifiers)
+    held = held_by(db.session, identifiers)
+
+    base_study, merged_from, pruned = None, [], None
     base_study_id = body.get("base_study_id") or header.get("neurostore_base_study_id")
     if base_study_id:
-        base_study = db.session.get(BaseStudy, base_study_id)
-        if base_study is None:
+        chain = supersession_chain(db.session, base_study_id)
+        if not chain:
             abort_not_found("BaseStudy", base_study_id)
-        return base_study
+        base_study = chain[-1]
+        merged_from = [followed.id for followed in chain[:-1]]
+        # An inactive base study with no successor (a pruned import) is passed over for
+        # the paper's identifiers.
+        if not base_study.is_active:
+            pruned, base_study, merged_from = base_study.id, None, []
+    if base_study is None:
+        found_id = resolve(identifiers, held)
+        if found_id is not None:
+            base_study = db.session.get(BaseStudy, found_id)
 
-    _lock_identifiers(identifiers)
-    base_study = find_base_study(db.session, header)
-    if base_study is not None:
-        return base_study
+    if base_study is None and pruned is not None:
+        # Creating one would undo the pruning: the paper would come back as a new base
+        # study beside the one taken out.
+        abort_validation(
+            f"Base study {pruned} is inactive and no active base study holds the "
+            "paper's identifiers.",
+            [make_field_error("base_study_id", pruned, code="INACTIVE")],
+        )
+    if base_study is None:
+        if not create:
+            abort_validation(
+                "A record uploaded alone must name its base study.",
+                [make_field_error("base_study_id", None, code="MISSING")],
+            )
+        if not identifiers:
+            abort_validation(
+                "The parse names no identifier to create its base study from.",
+                [make_field_error("coordinate_parse/header/identifiers", header_identifiers)],
+            )
+        # The pipeline decides whether the paper is a meta-analysis (PubMed's publication
+        # types first, then its title); neurostore reads that verdict.
+        meta = parsed_paper is not None and parsed_paper["is_meta_analysis"]
+        base_study = BaseStudy(level="meta" if meta else "group", **_bibliography(parsed_paper))
+        db.session.add(base_study)
 
-    if not create:
-        abort_validation(
-            "A record uploaded alone must name its base study.",
-            [make_field_error("base_study_id", None, code="MISSING")],
-        )
-    created_from = {field: identifiers.get(field) for field in VERSION_OF_RECORD_IDS}
-    if not any(created_from.values()):
-        abort_validation(
-            "The parse names no version-of-record identifier to create its base study from.",
-            [make_field_error("coordinate_parse/header/identifiers", identifiers)],
-        )
-    base_study = BaseStudy(
-        **created_from,
-        level="group",
-        **_bibliography(parsed_paper),
-    )
-    db.session.add(base_study)
+    attach_identifiers(db.session, base_study, identifiers, held, source="ingest")
+    settle_publication_status(base_study, header_identifiers.get("publication_status"))
     db.session.flush()
-    return base_study
-
-
-def _lock_identifiers(identifiers):
-    """Locks the ids a base study is created from; preprint ids only find.
-
-    Serializes lookups of one paper until commit. BaseStudy has no unique doi/pmid/pmcid, so
-    two first uploads of a paper would each create one. Locks are taken in one order, so
-    uploads sharing identifiers cannot deadlock.
-    """
-    for key in sorted(
-        f"{field}:{identifiers[field]}"
-        for field in VERSION_OF_RECORD_IDS
-        if identifiers.get(field)
-    ):
-        db.session.execute(
-            sa.text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
-            {"key": f"study_schema.base_study:{key}"},
-        )
+    return base_study, merged_from
 
 
 def _bibliography(parsed_paper):
@@ -485,21 +745,36 @@ def _bibliography(parsed_paper):
     if parsed_paper is None:
         return {}
     bib = parsed_paper["bibliography"]
-    authors = [a.get("name") if isinstance(a, dict) else a for a in bib.get("authors") or []]
-    # NOTE (licensing, 2026-10-16): the abstract is stored and shown whatever its
-    # licence. Open question: should an abstract whose licence does not permit
-    # redistribution be hidden? study_schema will carry the paper's licence and a
-    # redistribution rule (study_schema.licensing.permits_redistribution); decide
-    # here once it does. Tracked in the pipeline work plan; do not open an issue
-    # for this.
+    # NOTE (licensing, 2026-10-27): the paper's licence is stored
+    # (base_studies.license, and each full text's in fulltexts.license; see
+    # ingest_upload), but the abstract is stored and shown whatever it is. Open
+    # question: should an abstract or a text whose licence does not permit
+    # redistribution be hidden? That decides when licences are served. Tracked in
+    # the pipeline work plan; do not open an issue for this.
     fields = {
         "name": bib.get("title"),
         "description": bib.get("abstract"),
         "publication": bib.get("journal"),
         "year": bib.get("publication_year"),
-        "authors": ", ".join(a for a in authors if a) or None,
+        "authors": authors.authors_string(a["name"] for a in bib.get("authors") or []),
     }
     return {k: v for k, v in fields.items() if v is not None}
+
+
+def _set_journal(base_study, parsed_paper, settings):
+    """Point the base study at the journal the parsed paper names. A journal neurostore
+    has not seen is read from OpenAlex; when that fails the upload still stands, and the
+    metadata outbox matches the paper by neurostore's own rules."""
+    venue = ((parsed_paper or {}).get("bibliography") or {}).get("venue")
+    if venue is None:
+        return
+    match = journals.Match(venue["openalex_id"], venue["match"], venue.get("score"))
+    try:
+        with db.session.begin_nested():
+            journals.attach(base_study, match, settings=settings or {})
+    except Exception as exc:  # noqa: BLE001 - the journal must not cost the upload
+        logger.warning("journal %s for %s not read: %s", match.openalex_id, base_study.id, exc)
+        enqueue_base_study_metadata_updates([base_study.id], reason="journal")
 
 
 def _set_retraction(base_study, parsed_paper):
@@ -532,7 +807,7 @@ def _create_study(base_study, parsed_paper, user):
         doi=base_study.doi,
         pmid=base_study.pmid,
         pmcid=base_study.pmcid,
-        level="group",
+        level=base_study.level,
         public=True,
         source=STUDY_SOURCE,
         user=user,
@@ -779,6 +1054,7 @@ def _provenance(result):
         "commit": args.get("commit"),
         "schema": config.schema,
         "parse_version": args.get("parse_version") or args.get("producer"),
+        "runs": args.get("runs"),
         "date_executed": _iso(result.date_executed),
         "created_at": _iso(result.created_at),
         "updated_at": _iso(result.updated_at),
@@ -1238,7 +1514,7 @@ def _merge_claim(claim, copy):
 # ---------------------------------------------------------------------------
 
 
-def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None):
+def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None, runs=None):
     metadata = record["extraction_metadata"]
     schema_version = load_json_schema("extraction-record").get("version")
     config_args = {
@@ -1251,6 +1527,9 @@ def _ingest_record(base_study, study, record, parse, pipeline, user, run_id=None
     if pipeline.get("commit"):
         # The code that produced the record, so two builds of one version stay apart.
         config_args["commit"] = pipeline["commit"]
+    if runs is not None:
+        _check_run_ids(runs)
+        config_args["runs"] = runs
     config = _get_config(
         pipeline.get("name") or DEFAULT_RECORD_PIPELINE,
         pipeline.get("version") or metadata["extractor_version"],
@@ -1441,7 +1720,7 @@ def _replaced_by(revisions, key):
 
 
 def _split(analysis):
-    return (analysis.metadata_ or {}).get("split") or {}
+    return split_of(analysis.metadata_)
 
 
 def _inverse_half(study, analysis):
@@ -1561,8 +1840,7 @@ def _want_outcome(wanted, analysis, extracted, derived):
     An analysis's own entry sets its outcome, to null when the record does not report it;
     a derived one (the other half of a split, a key a revision replaced) only adds one.
     """
-    outcome = extracted.get("outcome") or {}
-    value = outcome.get("value") if outcome.get("extraction_status") == "extracted" else None
+    value = reported_value(extracted.get("outcome"))
     if derived and (value is None or (analysis.id in wanted and not wanted[analysis.id][2])):
         return
     wanted[analysis.id] = (analysis, value, derived)
@@ -1577,36 +1855,14 @@ def _claimed_outcome(base_study_id, key):
     to one execution of it: a claim an earlier run made and the latest one dropped stays
     linked and would otherwise be restored.
     """
-    return _record_outcome(_latest_records([base_study_id]).get(base_study_id), key)
-
-
-def _latest_records(base_study_ids):
-    """Each paper's latest stored extraction record, by base study id, in one query."""
-    rows = db.session.execute(
-        sa.select(PipelineStudyResult.base_study_id, PipelineStudyResult.result_data)
-        .join(PipelineConfig, PipelineConfig.id == PipelineStudyResult.config_id)
-        .where(
-            PipelineStudyResult.base_study_id.in_(base_study_ids),
-            PipelineConfig.schema["name"].astext == RECORD_SCHEMA_NAME,
-        )
-        .order_by(
-            PipelineStudyResult.base_study_id,
-            PipelineStudyResult.date_executed.desc().nulls_last(),
-            PipelineStudyResult.updated_at.desc().nulls_last(),
-            PipelineStudyResult.created_at.desc(),
-        )
-        .ext(distinct_on(PipelineStudyResult.base_study_id))
-    )
-    return {base_study_id: record for base_study_id, record in rows}
+    latest = latest_records([base_study_id]).get(base_study_id, (None, None))
+    return _record_outcome(latest[1], key)
 
 
 def _record_outcome(record, key):
     for item in (record or {}).get("analyses") or []:
         if _record_key("Analysis", item) == key:
-            outcome = item.get("outcome") or {}
-            if outcome.get("extraction_status") == "extracted":
-                return outcome.get("value")
-            return None
+            return reported_value(item.get("outcome"))
     return None
 
 
@@ -1689,6 +1945,21 @@ def _ingest_claims(base_study, record, config, schema_version):
         },
     }
     def_names = {}
+    # extraction_entity_links is keyed by (config, local_id) and local_ids repeat across
+    # papers, so the base study prefixes them.
+    local_ids = {
+        f"{base_study.id}:{e.item['local_id']}"
+        for e in synced["entities"]
+        if e.item.get("local_id")
+    }
+    links = {
+        link.local_id: link
+        for link in ExtractionEntityLink.query.filter(
+            ExtractionEntityLink.config_id == config.id,
+            ExtractionEntityLink.local_id.in_(local_ids),
+        )
+    }
+    claimed = []
     for record_entity in synced["entities"]:
         entity, item = record_entity.entity, record_entity.item
         def_name = _def_name(defs, def_names, record_entity)
@@ -1698,19 +1969,13 @@ def _ingest_claims(base_study, record, config, schema_version):
             analysis = _analysis_for_key(base_study, key)
             entity.analysis_id = analysis.id if analysis is not None else None
         if item.get("local_id"):
-            link = db.session.get(
-                ExtractionEntityLink, (config.id, f"{base_study.id}:{item['local_id']}")
-            )
+            local_id = f"{base_study.id}:{item['local_id']}"
+            link = links.get(local_id)
             if link is None:
-                db.session.add(
-                    ExtractionEntityLink(
-                        config_id=config.id,
-                        # extraction_entity_links is keyed by (config, local_id) and
-                        # local_ids repeat across papers, so the base study prefixes them.
-                        local_id=f"{base_study.id}:{item['local_id']}",
-                        entity_id=entity.id,
-                    )
+                link = links[local_id] = ExtractionEntityLink(
+                    config_id=config.id, local_id=local_id, entity_id=entity.id
                 )
+                db.session.add(link)
             else:
                 link.entity_id = entity.id
 
@@ -1722,7 +1987,8 @@ def _ingest_claims(base_study, record, config, schema_version):
         counts["rejected_paths"].extend(
             f"{record_entity.entity_class}[{record_entity.path}].{path}" for path in rejected
         )
-        _upsert_claims(entity, leaves, config, schema_version, counts)
+        claimed.append((entity, leaves))
+    _upsert_claims(claimed, config, schema_version, counts)
     return counts
 
 
@@ -1761,7 +2027,7 @@ def _local_id_names(record):
 
 def _record_key(cls, item):
     if cls == "Analysis":
-        return (item.get("source_table_analysis") or {}).get("value")
+        return record_analysis_key(item)
     if cls in ("CoordinateSet", "Table"):
         return item.get("local_id")
     name = item.get("name")
@@ -1809,55 +2075,87 @@ def _walk(defs, name, obj, prefix, names, leaves, rejected, skip=()):
                 _walk(defs, cls, item, f"{path}[{predicate}].", names, leaves, rejected)
 
 
-def _upsert_claims(entity, leaves, config, schema_version, counts):
+def _upsert_claims(claimed, config, schema_version, counts):
+    """Write the claims of ``claimed``, (entity, leaves) pairs, and this run's evidence.
+
+    A record holds hundreds of claims, so they are read and written a statement per table
+    rather than a row at a time.
+    """
+    entity_ids = list({entity.id for entity, _ in claimed})
     existing = {
-        (c.field_path, c.value_hash): c
-        for c in FieldClaim.query.filter_by(entity_id=entity.id)
+        (entity_id, path, value_hash): claim_id
+        for claim_id, entity_id, path, value_hash in db.session.execute(
+            sa.select(
+                FieldClaim.id, FieldClaim.entity_id, FieldClaim.field_path, FieldClaim.value_hash
+            ).where(FieldClaim.entity_id.in_(entity_ids))
+        )
     }
-    runs = {
-        claim_id
-        for (claim_id,) in db.session.query(FieldClaimRun.claim_id)
-        .join(FieldClaim, FieldClaim.id == FieldClaimRun.claim_id)
-        .filter(FieldClaim.entity_id == entity.id, FieldClaimRun.config_id == config.id)
-    }
-    for path, leaf in leaves:
-        value = leaf.get("value")
-        value_hash = sha256_of(value)
-        claim = existing.get((path, value_hash))
-        if claim is None:
-            claim = FieldClaim(
-                entity_id=entity.id,
-                field_path=path,
-                schema_version=schema_version,
-                value=value,
-                extraction_status=leaf["extraction_status"],
-                value_source=leaf.get("value_source"),
-                value_hash=value_hash,
-                origin="extraction",
-            )
-            db.session.add(claim)
-            db.session.flush()
-            existing[(path, value_hash)] = claim
-            counts["created"] += 1
-        else:
-            counts["matched"] += 1
-        if claim.id not in runs:
-            db.session.add(FieldClaimRun(claim_id=claim.id, config_id=config.id))
-            runs.add(claim.id)
-        # One run's evidence for a claim is replaced, not appended, on re-upload.
-        FieldClaimEvidence.query.filter_by(claim_id=claim.id, config_id=config.id).delete()
-        evidence = leaf["evidence"]
-        for evidence_set in evidence.get("sets") or [None]:
-            db.session.add(
-                FieldClaimEvidence(
-                    claim_id=claim.id,
-                    status=evidence["status"],
-                    source=(evidence_set or {}).get("source"),
-                    spans=(evidence_set or {}).get("spans"),
-                    origin="extraction",
-                    config_id=config.id,
+    stored = set(existing.values())
+    runs = set(
+        db.session.scalars(
+            sa.select(FieldClaimRun.claim_id)
+            .join(FieldClaim, FieldClaim.id == FieldClaimRun.claim_id)
+            .where(FieldClaim.entity_id.in_(entity_ids), FieldClaimRun.config_id == config.id)
+        )
+    )
+    new_claims, new_runs, evidence_of = [], [], {}
+    for entity, leaves in claimed:
+        for path, leaf in leaves:
+            value = leaf.get("value")
+            value_hash = sha256_of(value)
+            claim_id = existing.get((entity.id, path, value_hash))
+            if claim_id is None:
+                claim_id = existing[(entity.id, path, value_hash)] = generate_id()
+                new_claims.append(
+                    {
+                        "id": claim_id,
+                        "entity_id": entity.id,
+                        "field_path": path,
+                        "schema_version": schema_version,
+                        "value": value,
+                        "extraction_status": leaf["extraction_status"],
+                        "value_source": leaf.get("value_source"),
+                        "value_hash": value_hash,
+                        "origin": "extraction",
+                    }
                 )
+                counts["created"] += 1
+            else:
+                counts["matched"] += 1
+            if claim_id not in runs:
+                new_runs.append({"claim_id": claim_id, "config_id": config.id})
+                runs.add(claim_id)
+            # One run's evidence for a claim is replaced, not appended, on re-upload; a
+            # claim two leaves reach keeps the last one's.
+            evidence = leaf["evidence"]
+            evidence_of[claim_id] = [
+                {
+                    "id": generate_id(),
+                    "claim_id": claim_id,
+                    "status": evidence["status"],
+                    "source": (evidence_set or {}).get("source"),
+                    "spans": (evidence_set or {}).get("spans"),
+                    "origin": "extraction",
+                    "config_id": config.id,
+                }
+                for evidence_set in evidence.get("sets") or [None]
+            ]
+    replaced = [claim_id for claim_id in evidence_of if claim_id in stored]
+    if replaced:
+        db.session.execute(
+            sa.delete(FieldClaimEvidence).where(
+                FieldClaimEvidence.config_id == config.id,
+                FieldClaimEvidence.claim_id.in_(replaced),
             )
+        )
+    for model, rows in (
+        (FieldClaim, new_claims),
+        (FieldClaimRun, new_runs),
+        (FieldClaimEvidence, [row for rows in evidence_of.values() for row in rows]),
+    ):
+        if rows:
+            # render_nulls: rows whose None columns differ stay in one batch.
+            db.session.execute(sa.insert(model).execution_options(render_nulls=True), rows)
 
 
 NO_STORED_PARSE_REASON = "no stored coordinate parse of the paper holds the analysis's key"
@@ -2047,7 +2345,7 @@ def _backfill_batch(base_study_ids, apply, summary):
     if not apply or not resolved:
         return
 
-    records = _latest_records(
+    records = latest_records(
         list({s.base_study_id for _, s, role, *_ in resolved.values() if role in OUTCOME_ROLES})
     )
     changed = set()
@@ -2057,7 +2355,9 @@ def _backfill_batch(base_study_ids, apply, summary):
         analysis.relabelled_by = relabelled_by
         if role in OUTCOME_ROLES and analysis.outcome is None:
             if study.source in PIPELINE_STUDY_SOURCES:
-                outcome = _record_outcome(records.get(study.base_study_id), analysis.source_id)
+                outcome = _record_outcome(
+                    records.get(study.base_study_id, (None, None))[1], analysis.source_id
+                )
             elif analysis.source_id in resolved:
                 outcome = resolved[analysis.source_id][4]
             analysis.outcome = outcome

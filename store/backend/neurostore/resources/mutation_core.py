@@ -18,6 +18,7 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
 )
 from neurostore.models import User
+from neurostore.resources.auth import NAME_CLAIM
 from neurostore.resources.utils import get_current_user, is_user_admin
 
 
@@ -39,6 +40,10 @@ def create_user():
     if external_id and external_id.endswith("@clients"):
         return User(external_id=external_id, name=_machine_client_name(external_id))
 
+    claimed = (context.get("token_info") or {}).get(NAME_CLAIM)
+    if claimed:
+        return User(external_id=external_id, name=claimed)
+
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]
     try:
@@ -48,6 +53,9 @@ def create_user():
     except Auth0Error:
         if external_id and external_id.endswith("@clients"):
             return User(external_id=external_id, name=_machine_client_name(external_id))
+        # an agent's token reaches /userinfo only when it was asked for with `openid`
+        if (context.get("token_info") or {}).get("delegated"):
+            return User(external_id=external_id, name="Unknown")
         raise
 
     name = profile_info.get("name", "Unknown")

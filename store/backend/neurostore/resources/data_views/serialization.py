@@ -17,7 +17,9 @@ from neurostore.models import (
     Studyset,
     StudysetStudy,
 )
+from neurostore.owners import owner_id
 from neurostore.services.image_value_summary import serialize_image_value_summary
+from neurostore.schemas.data import AnalysisSchema, dump_computed_data_sources
 
 
 def _serialize_dt(value):
@@ -41,7 +43,7 @@ def _order_sort_key(value, fallback_id):
 def _serialize_condition(condition):
     return {
         "id": condition.id,
-        "user": condition.user_id,
+        "user": owner_id(condition.user_id),
         "username": _serialize_username(getattr(condition, "user", None)),
         "created_at": _serialize_dt(condition.created_at),
         "updated_at": _serialize_dt(condition.updated_at),
@@ -53,7 +55,7 @@ def _serialize_condition(condition):
 def _serialize_point(point):
     return {
         "id": point.id,
-        "user": point.user_id,
+        "user": owner_id(point.user_id),
         "username": _serialize_username(getattr(point, "user", None)),
         "created_at": _serialize_dt(point.created_at),
         "updated_at": _serialize_dt(point.updated_at),
@@ -80,7 +82,7 @@ def _serialize_image(image, analysis_name=None, context=None):
     context = context or {}
     payload = {
         "id": image.id,
-        "user": image.user_id,
+        "user": owner_id(image.user_id),
         "username": _serialize_username(getattr(image, "user", None)),
         "created_at": _serialize_dt(image.created_at),
         "updated_at": _serialize_dt(image.updated_at),
@@ -132,9 +134,9 @@ def serialize_analysis_record(analysis, context=None):
         )
     ]
 
-    return {
+    payload = {
         "id": analysis.id,
-        "user": analysis.user_id,
+        "user": owner_id(analysis.user_id),
         "username": _serialize_username(getattr(analysis, "user", None)),
         "created_at": _serialize_dt(analysis.created_at),
         "updated_at": _serialize_dt(analysis.updated_at),
@@ -159,6 +161,9 @@ def serialize_analysis_record(analysis, context=None):
         "outcome": analysis.outcome,
         "from_prior_study": analysis.from_prior_study,
     }
+    if (context or {}).get("data_sources"):
+        payload["data_sources"] = AnalysisSchema().dump_data_sources(analysis)
+    return payload
 
 
 def serialize_analysis_detail(analysis, context=None):
@@ -173,9 +178,9 @@ def serialize_study_record(study, context=None):
             key=lambda analysis: _order_sort_key(analysis.order, analysis.id),
         )
     ]
-    return {
+    payload = {
         "id": study.id,
-        "user": study.user_id,
+        "user": owner_id(study.user_id),
         "username": _serialize_username(getattr(study, "user", None)),
         "created_at": _serialize_dt(study.created_at),
         "updated_at": _serialize_dt(study.updated_at),
@@ -183,6 +188,7 @@ def serialize_study_record(study, context=None):
         "name": study.name,
         "description": study.description,
         "publication": study.publication,
+        "journal": study.journal,
         "doi": study.doi,
         "pmid": study.pmid,
         "pmcid": study.pmcid,
@@ -201,6 +207,9 @@ def serialize_study_record(study, context=None):
         "has_beta_and_variance_maps": study.has_beta_and_variance_maps,
         "source_updated_at": _serialize_dt(study.source_updated_at),
     }
+    if (context or {}).get("data_sources"):
+        payload["data_sources"] = dump_computed_data_sources(study)
+    return payload
 
 
 def serialize_study_detail(study, context=None):
@@ -235,6 +244,7 @@ def serialize_nested_studyset(studyset_id):
             Study.name,
             Study.description,
             Study.publication,
+            Study.journal.label("journal"),
             Study.doi,
             Study.pmid,
             Study.authors,
@@ -375,7 +385,7 @@ def serialize_nested_studyset(studyset_id):
             images_by_analysis[analysis_id].append(
                 {
                     "id": image_id,
-                    "user": user_id,
+                    "user": owner_id(user_id),
                     "url": url,
                     "space": space,
                     "value_type": map_type_label(value_type),
@@ -409,7 +419,7 @@ def serialize_nested_studyset(studyset_id):
             conditions_by_analysis[analysis_id].append(
                 {
                     "id": condition_id,
-                    "user": user_id,
+                    "user": owner_id(user_id),
                     "name": name,
                     "description": description,
                 }
@@ -428,7 +438,7 @@ def serialize_nested_studyset(studyset_id):
         analyses_by_study[study_id].append(
             {
                 "id": analysis_id,
-                "user": user_id,
+                "user": owner_id(user_id),
                 "name": name,
                 "metadata": metadata,
                 "description": description,
@@ -451,6 +461,7 @@ def serialize_nested_studyset(studyset_id):
         name,
         description,
         publication,
+        journal,
         doi,
         pmid,
         authors,
@@ -468,10 +479,11 @@ def serialize_nested_studyset(studyset_id):
                 "id": record_id,
                 "created_at": _serialize_dt(created_at),
                 "updated_at": _serialize_dt(updated_at),
-                "user": user_id,
+                "user": owner_id(user_id),
                 "name": name,
                 "description": description,
                 "publication": publication,
+                "journal": journal,
                 "doi": doi,
                 "pmid": pmid,
                 "authors": authors,
@@ -487,7 +499,7 @@ def serialize_nested_studyset(studyset_id):
     return {
         "id": studyset_row.id,
         "name": studyset_row.name,
-        "user": studyset_row.user_id,
+        "user": owner_id(studyset_row.user_id),
         "description": studyset_row.description,
         "publication": studyset_row.publication,
         "doi": studyset_row.doi,
@@ -507,6 +519,7 @@ def serialize_studyset_summary(record):
             Study.name,
             Study.authors,
             Study.publication,
+            Study.journal.label("journal"),
             Study.pmid,
             Study.doi,
             Study.year,
@@ -554,6 +567,7 @@ def serialize_studyset_summary(record):
                 "name": row.name,
                 "authors": row.authors,
                 "publication": row.publication,
+                "journal": row.journal,
                 "pmid": row.pmid,
                 "doi": row.doi,
                 "year": row.year,
@@ -572,7 +586,7 @@ def serialize_studyset_summary(record):
     return {
         "id": record.id,
         "name": record.name,
-        "user": record.user_id,
+        "user": owner_id(record.user_id),
         "description": record.description,
         "publication": record.publication,
         "doi": record.doi,

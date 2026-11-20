@@ -176,6 +176,23 @@ def extracted_value(wrapper):
     return wrapper.get("value") if isinstance(wrapper, dict) else wrapper
 
 
+def reported_value(wrapper):
+    """The value of an ExtractedValue when it was extracted, else None (or a bare value)."""
+    if isinstance(wrapper, dict):
+        return wrapper.get("value") if wrapper.get("extraction_status") == "extracted" else None
+    return wrapper
+
+
+def record_analysis_key(item):
+    """The coordinate-parse key a record analysis names (its ``source_table_analysis``)."""
+    return (item.get("source_table_analysis") or {}).get("value")
+
+
+def split_of(analysis_metadata):
+    """The sign-split metadata of a stored analysis (``{half, original_analysis, ...}``)."""
+    return (analysis_metadata or {}).get("split") or {}
+
+
 def item_path(owner_path, list_path, index=None):
     """Where a list of an owner (or, given ``index``, one of its items) sits in a record."""
     path = f"{owner_path}.{list_path}" if owner_path else list_path

@@ -126,6 +126,128 @@ def ingest_neurosynth(max_rows):
     _run_with_runtime(_run)
 
 
+@main.group("data-sources")
+def data_sources_group():
+    """Data sources (studies, consortia, repositories) and their analysis links."""
+
+
+@data_sources_group.command("load")
+@click.argument("tsv", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--update", is_flag=True, help="overwrite data sources whose id already exists"
+)
+def load_data_sources_command(tsv, update):
+    """Create data sources from a dictionary TSV (scripts/data_sources/data_sources.tsv)."""
+
+    def _run(_app, db):
+        from neurostore.scripts.data_sources.ingest import load_data_sources
+
+        result = load_data_sources(tsv, update=update)
+        db.session.commit()
+        click.echo(
+            f"created {len(result.created)}, updated {len(result.updated)}, "
+            f"skipped {len(result.skipped)} existing"
+        )
+
+    _run_with_runtime(_run)
+
+
+@data_sources_group.command("link-matches")
+@click.argument("tsv", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--status",
+    "statuses",
+    multiple=True,
+    default=("used",),
+    show_default=True,
+    help="match statuses to link (repeatable)",
+)
+def link_data_source_matches_command(tsv, statuses):
+    """Link matcher results (paper_entities.tsv) to every analysis of each paper."""
+
+    def _run(_app, db):
+        from neurostore.cache_versioning import bump_cache_versions
+        from neurostore.scripts.data_sources.ingest import link_matches
+
+        result = link_matches(tsv, statuses=tuple(statuses))
+        db.session.commit()
+        bump_cache_versions(
+            {
+                "base-studies": result.base_studies,
+                "studies": result.studies,
+                "analyses": result.analyses,
+            }
+        )
+        click.echo(
+            f"{result.links} new analysis links across {len(result.base_studies)} "
+            f"base studies; {len(result.unmatched_papers)} papers not in neurostore; "
+            f"unknown data sources: {sorted(result.unknown_data_sources) or 'none'}"
+        )
+
+    _run_with_runtime(_run)
+
+
+@main.group("journals")
+def journals_group():
+    """The journals papers appeared in (docs/journals/DESIGN.md)."""
+
+
+@journals_group.command("match")
+@click.option("--batch-size", default=100, show_default=True, type=int)
+@click.option(
+    "--review",
+    type=click.Path(dir_okay=False, writable=True),
+    default="journal-review.csv",
+    show_default=True,
+    help="CSV of close names left for a person to check",
+)
+def match_journals_command(batch_size, review):
+    """Match every active base study that has no journal, in batches of DOIs."""
+
+    def _run(app, db):
+        import sqlalchemy as sa
+
+        from neurostore.cache_versioning import bump_cache_versions
+        from neurostore.models import BaseStudy
+        from neurostore.services import journals
+
+        ids = db.session.scalars(
+            sa.select(BaseStudy.id)
+            .where(BaseStudy.journal_id.is_(None), BaseStudy.is_active.is_(True))
+            .order_by(BaseStudy.id)
+        ).all()
+        matched = 0
+        with open(review, "w", newline="") as handle:
+            writer = journals.review_csv(handle)
+            for start in range(0, len(ids), batch_size):
+                batch = BaseStudy.query.filter(
+                    BaseStudy.id.in_(ids[start:start + batch_size])
+                ).all()
+                matched += journals.match_and_attach(
+                    batch, settings=app.config, logger=app.logger, review_writer=writer
+                )
+                db.session.commit()
+                bump_cache_versions({"base-studies": {bs.id for bs in batch}})
+                click.echo(f"{start + len(batch)}/{len(ids)} read, {matched} matched")
+        click.echo(f"matched {matched} of {len(ids)}; close names in {review}")
+
+    _run_with_runtime(_run)
+
+
+@journals_group.command("refresh")
+def refresh_journals_command():
+    """Re-read every journal from OpenAlex and NLM, and follow merged OpenAlex ids."""
+
+    def _run(app, db):
+        from neurostore.services import journals
+
+        refreshed, merged = journals.refresh_journals(settings=app.config, logger=app.logger)
+        db.session.commit()
+        click.echo(f"refreshed {refreshed}, merged {merged}")
+
+    _run_with_runtime(_run)
+
+
 @main.command("rehash-entities")
 @click.option(
     "--base-study-id",
@@ -245,6 +367,131 @@ def review_export_command(out, source_ids, base_study_ids, user_ids, states, inc
     except ReviewError as error:
         raise click.UsageError(str(error)) from error
     click.echo(json.dumps(manifest, indent=2))
+
+
+@main.command("refresh-public-query")
+def refresh_public_query():
+    """Rebuild the public query's datasets from the current public rows."""
+
+    def _run(_app, _db):
+        from neurostore.public_query import refresh_datasets, refreshed_at
+
+        refresh_datasets()
+        click.echo(f"public query datasets refreshed at {refreshed_at().isoformat()}")
+
+    _run_with_runtime(_run)
+
+
+@main.command("backfill-analysis-features")
+@click.option(
+    "--base-study-id",
+    default=None,
+    help="only this base study (default: every base study with a current pipeline Study)",
+)
+@click.option(
+    "--batch-size",
+    default=200,
+    show_default=True,
+    type=int,
+    help="base studies per batch, whose records are held in memory; each batch commits",
+)
+def backfill_analysis_features(base_study_id, batch_size):
+    """Rewrite the analysis_features rows from each paper's latest stored record.
+
+    Uploads write them; this is for records stored before the table existed, or after
+    the resolver changes.
+    """
+
+    def _run(_app, db):
+        from neurostore.ingest.analysis_features import backfill_analysis_features as backfill
+
+        _echo_backfill(backfill(base_study_id=base_study_id, batch_size=batch_size))
+
+    _run_with_runtime(_run)
+
+
+@main.command("sync-vocabulary-releases")
+@click.option(
+    "--file",
+    "files",
+    multiple=True,
+    metavar="VOCABULARY=PATH",
+    help="read a vocabulary's pinned release from this file instead of its URL",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    help="reload releases already loaded (after a change to how releases are read)",
+)
+@click.option(
+    "--backfill",
+    is_flag=True,
+    help="rewrite the analysis features when a release was loaded or rows are unresolved",
+)
+def sync_vocabulary_releases(files, force, backfill):
+    """Load the vocabulary releases study_schema's manifest pins into concept_ancestors.
+
+    A vocabulary is reloaded only when its loaded release or sha256 differs from the pin.
+    Feature rows take their ancestors at ingest, so a load needs a backfill: --backfill
+    runs it when anything was loaded or the drift report finds rows written before a
+    load. Prints the drift report after.
+    """
+    paths = {}
+    for spec in files:
+        name, sep, path = spec.partition("=")
+        if not sep:
+            raise click.UsageError(f"--file takes VOCABULARY=PATH, not {spec!r}")
+        paths[name] = path
+
+    def _run(_app, db):
+        from neurostore.ingest.analysis_features import backfill_analysis_features
+        from neurostore.ingest.concepts import drift
+        from neurostore.ingest.concepts import sync_vocabulary_releases as sync
+
+        try:
+            loads = sync(paths, force=force)
+        except ValueError as error:
+            raise click.UsageError(str(error)) from error
+        for load in loads:
+            if load["loaded"]:
+                click.echo(
+                    f"{load['vocabulary']} {load['release']}: loaded {load['concepts']} "
+                    f"concepts, {load['rows']} ancestor rows"
+                )
+            else:
+                click.echo(f"{load['vocabulary']} {load['release']}: already loaded")
+        if backfill and (any(load["loaded"] for load in loads) or drift()["unresolved"]):
+            _echo_backfill(backfill_analysis_features())
+        _echo_drift()
+
+    _run_with_runtime(_run)
+
+
+@main.command("vocabulary-drift")
+def vocabulary_drift():
+    """Report what the analysis features hold that the loaded vocabulary releases do not
+    account for: ids missing from a release, rows written before a load, and rows read
+    against another release."""
+    _run_with_runtime(lambda _app, db: _echo_drift())
+
+
+def _echo_backfill(summary):
+    click.echo(f"{summary['analyses']} analysis feature rows over {summary['papers']} papers")
+
+
+def _echo_drift():
+    from neurostore.ingest.concepts import drift
+
+    report = drift()
+    click.echo(f"{report['unresolved']} analyses written before their release was loaded")
+    labels = {
+        "missing": "medical-condition ids not in the loaded release",
+        "stale": "releases other than the loaded or pinned one that analysis features read",
+    }
+    for part, label in labels.items():
+        click.echo(f"{len(report[part])} {label}")
+        for value, analyses in report[part].items():
+            click.echo(f"  {value}\t{analyses} analyses")
 
 
 @main.command("backfill-analysis-roles")
@@ -842,6 +1089,45 @@ def build_neurostore_studyset_release(
     _run_with_runtime(_run)
 
 
+@main.command("grant-admin-clients")
+@click.option(
+    "--client-id",
+    "client_ids",
+    multiple=True,
+    envvar="ADMIN_CLIENT_IDS",
+    help="an Auth0 machine-to-machine client id; ADMIN_CLIENT_IDS lists them, space-separated",
+)
+def grant_admin_clients(client_ids):
+    """Give each client's user (`<client_id>@clients`) the admin role, creating the user
+    when the database has none, as the API would on the client's first request. Prints
+    counts, not the ids."""
+
+    def _run(_app, db):
+        from neurostore.models import Role, User
+
+        admin = Role.query.filter_by(name="admin").one_or_none()
+        if admin is None:
+            raise click.ClickException("no admin role: run `manage db upgrade` first")
+        created = granted = 0
+        for client_id in client_ids:
+            external_id = f"{client_id}@clients"
+            user = User.query.filter_by(external_id=external_id).one_or_none()
+            if user is None:
+                user = User(external_id=external_id, name=client_id, active=True)
+                db.session.add(user)
+                created += 1
+            if admin not in user.roles:
+                user.roles.append(admin)
+                granted += 1
+        db.session.commit()
+        click.echo(
+            f"admin clients: {len(client_ids)}; {created} user(s) created, "
+            f"{granted} granted admin"
+        )
+
+    _run_with_runtime(_run)
+
+
 @main.command("transfer-user-ownership")
 @click.argument("source_user_id")
 @click.argument("destination_user_id")
@@ -868,6 +1154,89 @@ def transfer_user_ownership_command(source_user_id, destination_user_id, execute
     )
     for table_name, count in summary.counts.items():
         click.echo(f"{table_name}: {count}")
+
+
+def _echo_merge_outcomes(outcomes, dry_run):
+    """Print each pair's outcome and every change as the pair finishes; exit 1 if any
+    pair was refused."""
+
+    def shown(value):
+        text = repr(value)
+        return text if len(text) <= 100 else text[:97] + "..."
+
+    refused = False
+    for outcome in outcomes:
+        if outcome.status == "refused":
+            refused = True
+            click.echo(f"REFUSED {outcome.old_id} -> {outcome.keeper_id}: {outcome.refusal}")
+            continue
+        if not outcome.changes:
+            click.echo(f"{outcome.status} {outcome.old_id} -> {outcome.keeper_id}: no change")
+            continue
+        verb = "would merge" if dry_run else "merged"
+        click.echo(
+            f"{verb} {outcome.old_id} -> {outcome.keeper_id}: "
+            f"{len(outcome.changes)} change(s)"
+        )
+        for change in outcome.changes:
+            click.echo(
+                f"  {change.table} {change.row_id} {change.field}: "
+                f"{shown(change.before)} -> {shown(change.after)}"
+            )
+    if refused:
+        raise SystemExit(1)
+
+
+@main.command("merge-base-studies")
+@click.argument("plan", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    "--execute",
+    is_flag=True,
+    help="Commit each pair. Without this flag, each pair is rolled back after printing.",
+)
+def merge_base_studies_command(plan, execute):
+    """Make each plan pair's old base study a superseded copy of its keeper.
+
+    Each pair runs in its own transaction and prints every row and JSON change. A pair
+    naming a missing or inactive base study, or whose rows would clash with the
+    keeper's, is refused and changes nothing.
+    """
+    from neurostore.scripts.merge_base_studies import load_plan, merge_base_studies
+
+    try:
+        pairs = load_plan(plan)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    def _run(_app, _db):
+        _echo_merge_outcomes(merge_base_studies(pairs, dry_run=not execute), not execute)
+
+    _run_with_runtime(_run)
+
+
+@main.command("plan-base-study-merges")
+@click.option(
+    "--output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    required=True,
+    help="Where to write the plan, in the format of merge-base-studies.",
+)
+def plan_base_study_merges_command(output):
+    """Write a merge plan from the open merge candidates, for review.
+
+    The keeper of each pair is the base study with the better full-text copy, then the one
+    in more studysets, then the older; the plan is run with merge-base-studies, whose merges
+    close the candidates they settle. Candidates that name a base study already in the plan
+    wait for the next run.
+    """
+    from neurostore.scripts.merge_base_studies import plan_from_candidates
+
+    def _run(_app, _db):
+        plan, left_out = plan_from_candidates()
+        Path(output).write_text(json.dumps(plan, indent=2) + "\n")
+        click.echo(f"{len(plan['merges'])} pair(s) written to {output}; {left_out} left out")
+
+    _run_with_runtime(_run)
 
 
 if __name__ == "__main__":
