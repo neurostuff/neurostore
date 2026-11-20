@@ -1,8 +1,13 @@
-import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
+import {
+    IStoreAnalysis,
+    pointHasInvalidEntry,
+    pointIsMissingCoordinate,
+    pointIsUnset,
+} from 'stores/study/StudyStore.helpers';
 
 export const hasDuplicateStudyAnalysisNames = (
     analyses: IStoreAnalysis[]
-): { errorMessage: string; isError: boolean } => {
+): { errorMessage: string; isValid: boolean } => {
     const set = new Set();
     for (let i = 0; i < analyses.length; i++) {
         const analysis = analyses[i];
@@ -10,7 +15,7 @@ export const hasDuplicateStudyAnalysisNames = (
         if (set.has(analysis.name)) {
             return {
                 errorMessage: `Duplicate analysis name: ${analysis.name}. Please give your analyses unique names and try again.`,
-                isError: true,
+                isValid: false,
             };
         } else {
             set.add(analysis.name);
@@ -18,36 +23,41 @@ export const hasDuplicateStudyAnalysisNames = (
     }
     return {
         errorMessage: '',
-        isError: false,
+        isValid: true,
     };
 };
 
-export const hasEmptyStudyPoints = (analyses: IStoreAnalysis[]): { errorMessage: string; isError: boolean } => {
+// If every point is empty, the analysis is empty and we treat it as such. We raise the error
+// if there is at least one point that is not empty.
+export const hasMissingPointInfo = (analyses: IStoreAnalysis[]): { errorMessage: string; isValid: boolean } => {
     for (let i = 0; i < analyses.length; i++) {
         const analysis = analyses[i];
-        const isDefaultSinglePoint =
-            analysis.points.length === 1 &&
-            analysis.points.every(
-                ({ x, y, z, subpeak, value, cluster_size }) =>
-                    x === undefined &&
-                    y === undefined &&
-                    z === undefined &&
-                    subpeak === undefined &&
-                    cluster_size === undefined
-            );
-        if (isDefaultSinglePoint) continue;
+        if (analysis.points.every(pointIsUnset)) continue;
 
-        const hasEmptyPoint = analysis.points.some(
-            (xyz) => xyz.x === undefined || xyz.y === undefined || xyz.z === undefined
-        );
-        if (hasEmptyPoint)
+        if (analysis.points.some(pointIsMissingCoordinate))
             return {
-                errorMessage: `Analysis ${analysis.name} has empty coordinates. Please add coordinatesa and try again.`,
-                isError: true,
+                errorMessage: `Analysis ${analysis.name} has empty coordinates. Please add coordinates and try again.`,
+                isValid: false,
             };
     }
     return {
         errorMessage: '',
-        isError: false,
+        isValid: true,
+    };
+};
+
+export const pointFieldsAreValidTypes = (analyses: IStoreAnalysis[]): { errorMessage: string; isValid: boolean } => {
+    for (let i = 0; i < analyses.length; i++) {
+        const analysis = analyses[i];
+        if (analysis.points.some(pointHasInvalidEntry)) {
+            return {
+                errorMessage: `Analysis ${analysis.name} has a non-numeric value. X, Y, Z, value, and cluster size must be numbers.`,
+                isValid: false,
+            };
+        }
+    }
+    return {
+        errorMessage: '',
+        isValid: true,
     };
 };

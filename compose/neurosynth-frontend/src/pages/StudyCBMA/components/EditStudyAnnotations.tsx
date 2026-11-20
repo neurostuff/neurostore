@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import EditStudyComponentsStyles from 'pages/StudyCBMA/components/EditStudyComponents.styles';
-import EditStudyAnnotationsHotTable from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable';
+import EditStudyAnnotationsContainer from 'pages/StudyCBMA/components/EditStudyAnnotationsContainer';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { useNumStudyAnalyses } from 'stores/study/StudyStore';
 
@@ -29,7 +29,7 @@ const EditStudyAnnotations = () => {
                         There are no annotations for this study. To get started, add an analysis below
                     </Typography>
                 ) : (
-                    <EditStudyAnnotationsHotTable />
+                    <EditStudyAnnotationsContainer />
                 )}
             </Box>
         </NeurosynthAccordion>

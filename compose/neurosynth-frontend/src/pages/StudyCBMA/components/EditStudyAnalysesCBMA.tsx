@@ -4,7 +4,7 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import EditStudyComponentsStyles from 'pages/StudyCBMA/components/EditStudyComponents.styles';
 import { useAddOrUpdateAnalysis, useStudyAnalyses, useStudyId } from 'stores/study/StudyStore';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useCreateAnnotationNote } from 'stores/annotation/AnnotationStore.actions';
+import { useStudyCBMAContext } from 'pages/StudyCBMA/context/StudyCBMAContext';
 import EditStudyAnalysesCBMAList from './EditStudyAnalysesCBMAList';
 import EditStudyAnalysisCBMA from './EditStudyAnalysisCBMA';
 
@@ -12,12 +12,12 @@ const EditStudyAnalysesCBMA = React.memo(() => {
     const analyses = useStudyAnalyses();
     const studyId = useStudyId();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
-    const createAnnotationNote = useCreateAnnotationNote();
+    const { studyAnnotationsTableRef, pointsTableRef } = useStudyCBMAContext();
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>();
-
     const handleCreateNewAnalysis = () => {
         if (!studyId) return;
 
+        pointsTableRef.current?.flushPoints();
         const createdAnalysis = addOrUpdateAnalysis({
             name: '',
             description: '',
@@ -28,13 +28,17 @@ const EditStudyAnalysesCBMA = React.memo(() => {
 
         if (!createdAnalysis.id) return;
 
-        createAnnotationNote(createdAnalysis.id, studyId, '');
+        studyAnnotationsTableRef.current?.insertAnalysisRow(createdAnalysis.id, studyId, '');
         setSelectedAnalysisId(createdAnalysis.id);
     };
 
-    const handleSelectAnalysis = useCallback((analysisId: string) => {
-        setSelectedAnalysisId(analysisId);
-    }, []);
+    const handleSelectAnalysis = useCallback(
+        (analysisId: string) => {
+            pointsTableRef.current?.flushPoints();
+            setSelectedAnalysisId(analysisId);
+        },
+        [pointsTableRef]
+    );
 
     const handleAfterAnalysisDeleted = () => {
         if (analyses.length <= 1) {

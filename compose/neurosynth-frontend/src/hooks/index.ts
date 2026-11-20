@@ -11,12 +11,9 @@ import useGetMetaAnalysesByIds from './metaAnalyses/useGetMetaAnalysesByIds';
 import useGetMetaAnalysisById from './metaAnalyses/useGetMetaAnalysisById';
 import useGetMetaAnalysesPublic from './metaAnalyses/useGetMetaAnalysesPublic';
 import useGetMetaAnalysisResultById from './metaAnalyses/useGetMetaAnalysisResultById';
-import useCreatePoint from './analyses/useCreatePoint';
 import useUpdateStudy from './studies/useUpdateStudy';
-import useDeletePoint from './analyses/useDeletePoint';
 import useCreateAnalysis from './analyses/useCreateAnalysis';
 import useUpdateAnalysis from './analyses/useUpdateAnalysis';
-import useUpdatePoint from './analyses/useUpdatePoint';
 import useDeleteAnalysis from './analyses/useDeleteAnalysis';
 import useGetAnalysesByStudyId from './analyses/useGetAnalysesByStudyId';
 import useUpdateImage from './images/useUpdateImage';
@@ -98,10 +95,6 @@ export {
     useUpdateAnnotationById,
     useDeleteAnnotation,
     useCreateAnnotation,
-    // POINTS
-    useCreatePoint,
-    useDeletePoint,
-    useUpdatePoint,
     // ANALYSES
     useDeleteAnalysis,
     useCreateAnalysis,

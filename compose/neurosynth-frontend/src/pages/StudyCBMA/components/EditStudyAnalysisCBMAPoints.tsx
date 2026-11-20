@@ -1,38 +1,33 @@
-import EditStudyAnalysisCBMAPointsHotTable from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAPointsHotTable';
+import EditStudyAnalysisCBMAPointsTableContainer from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAPointsTableContainer';
 import { Box, Link, Tooltip, Typography } from '@mui/material';
 import RelegateExtractionStudyDialog from './RelegateExtractionStudyDialog';
 import { useNavigate } from 'react-router-dom';
 import { useProjectId } from 'stores/projects/ProjectStore';
-import { useState } from 'react';
+import { allPointsHaveCoordinates } from 'stores/study/StudyStore.helpers';
+import { useCallback, useLayoutEffect, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { Warning, Help } from '@mui/icons-material';
-import { useStudyAnalysisPoints } from 'stores/study/StudyStore';
-import { IStorePoint } from 'stores/study/StudyStore.helpers';
+import { useStudyCBMAContext } from 'pages/StudyCBMA/context/StudyCBMAContext';
+import useEditAnalysisPointsHotTable from 'pages/StudyCBMA/hooks/useEditAnalysisPointsHotTable';
 import EditStudyAnalysisCBMAPointSpaceAndStatistic from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAPointSpaceAndStatistic';
 
-/** True if this row is a coordinate triple the user (or API) has actually set. */
-const pointHasCompleteCoordinates = (p: IStorePoint) =>
-    [p.x, p.y, p.z].every((v) => {
-        if (v === undefined || v === null) return false;
-        const s = String(v).trim();
-        if (s === '') return false;
-        return !Number.isNaN(Number(s));
-    });
-
-/**
- * The store adds a blank placeholder row when the API returns no points (initPointIfEmpty),
- * so we cannot use points.length === 0. Treat "has coordinates" as persisted rows or any full x,y,z triple.
- */
-const analysisHasUsableCoordinates = (points: IStorePoint[] | null) =>
-    !!points?.some((p) => p.isNew === false || pointHasCompleteCoordinates(p));
-
-const EditStudyAnalysisCBMAPoints = (props: { analysisId?: string }) => {
+const EditStudyAnalysisCBMAPoints = ({ analysisId }: { analysisId?: string }) => {
     const navigate = useNavigate();
     const projectId = useProjectId();
     const { enqueueSnackbar } = useSnackbar();
+    const { pointsTableSeed } = useStudyCBMAContext();
+    const snapshot = useEditAnalysisPointsHotTable(analysisId, pointsTableSeed);
     const [relegateExtractionStudyDialogState, setRelegateExtractionStudyDialogState] = useState(false);
-    const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[] | null;
-    const showRelegateCoordinatesLink = !analysisHasUsableCoordinates(points);
+    const [showRelegateCoordinatesLink, setShowRelegateCoordinatesLink] = useState(false);
+
+    useLayoutEffect(() => {
+        if (!snapshot) return;
+        setShowRelegateCoordinatesLink(!allPointsHaveCoordinates(snapshot.points));
+    }, [snapshot]);
+
+    const handleAllPointsHaveCoordinates = useCallback((allPointsHaveCoordinates: boolean) => {
+        setShowRelegateCoordinatesLink(!allPointsHaveCoordinates);
+    }, []);
 
     const handleRelegateExtractionStudy = (confirm: boolean) => {
         if (confirm) {
@@ -85,8 +80,12 @@ const EditStudyAnalysisCBMAPoints = (props: { analysisId?: string }) => {
                     </Box>
                 )}
             </Box>
-            <EditStudyAnalysisCBMAPointSpaceAndStatistic analysisId={props.analysisId} />
-            <EditStudyAnalysisCBMAPointsHotTable analysisId={props.analysisId} />
+            <EditStudyAnalysisCBMAPointSpaceAndStatistic analysisId={analysisId} />
+            <EditStudyAnalysisCBMAPointsTableContainer
+                analysisId={analysisId}
+                snapshot={snapshot}
+                onAllPointsHaveCoordinates={handleAllPointsHaveCoordinates}
+            />
         </Box>
     );
 };

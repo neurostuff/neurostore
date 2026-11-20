@@ -42,10 +42,8 @@ const analysisQueries = {
 
     points: {
         all: () => ['points'] as const,
-        list: () => [...analysisQueries.points.all(), 'list'] as const,
-        details: () => [...analysisQueries.points.all(), 'detail'] as const,
         every: (): UseQueryOptions<PointList> => ({
-            queryKey: ['points'] as const,
+            queryKey: [...analysisQueries.points.all()] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.PointsService.pointsGet();
                 return res.data as PointList;

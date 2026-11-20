@@ -1,88 +1,43 @@
-import { HotTableRef } from '@handsontable/react-wrapper';
-import { useEffect, useMemo, useState } from 'react';
-import { useStudyAnalysisPoints } from 'stores/study/StudyStore';
-import { IStorePoint } from 'stores/study/StudyStore.helpers';
+import { pointsTableHeight } from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAPointsHotTable.helpers';
+import { useLayoutEffect, useState } from 'react';
+import { useGetStudyIsLoading, useStudyAnalysisPoints } from 'stores/study/StudyStore';
+import { getPointWarnings, IStorePoint, PointWarnings } from 'stores/study/StudyStore.helpers';
 
-const useAnalysisPointsHotTable = (
-    aanlysisId: string | undefined,
-    hotTableRef: React.RefObject<HotTableRef | null>,
-    hotTableMetadata: React.RefObject<{
-        insertRowsAbove: boolean;
-        insertedRowsViaPaste: any[][];
-    }>
-) => {
-    const points = useStudyAnalysisPoints(aanlysisId) as IStorePoint[] | null;
-    const [insertRowsDialogIsOpen, setInsertRowsDialogIsOpen] = useState(false);
-
-    const closeInsertRowsDialog = () => {
-        setInsertRowsDialogIsOpen(false);
-        hotTableRef.current?.hotInstance?.validateCells();
-    };
-
-    const openInsertRowsDialog = () => {
-        setInsertRowsDialogIsOpen(true);
-        hotTableRef.current?.hotInstance?.validateCells();
-    };
-
-    // run every time points are updated to validate (in charge of highlighting the cells that are invalid)
-    useEffect(() => {
-        hotTableRef.current?.hotInstance?.validateCells();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [points]);
-
-    useEffect(() => {
-        hotTableRef.current?.hotInstance?.validateCells();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [insertRowsDialogIsOpen]);
-
-    // run once initially to set the custom context menu
-    useEffect(() => {
-        if (hotTableRef.current?.hotInstance) {
-            hotTableRef.current.hotInstance.updateSettings({
-                contextMenu: {
-                    items: {
-                        row_above: {
-                            name: 'Add rows above',
-                            callback: () => {
-                                hotTableMetadata.current.insertRowsAbove = true;
-                                openInsertRowsDialog();
-                            },
-                        },
-                        row_below: {
-                            name: 'Add rows below',
-                            callback: () => {
-                                hotTableMetadata.current.insertRowsAbove = false;
-                                openInsertRowsDialog();
-                            },
-                        },
-                        remove_row: {
-                            name: 'Remove row(s)',
-                        },
-                        copy: {
-                            name: 'Copy',
-                        },
-                        cut: {
-                            name: 'Cut',
-                        },
-                    },
-                },
-            });
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hotTableRef]);
-
-    const height = useMemo(() => {
-        const totalHeight = 38 + (points?.length || 0) * 23;
-        const height = totalHeight > 600 ? 600 : totalHeight;
-        return height;
-    }, [points]);
-
-    return {
-        height,
-        insertRowsDialogIsOpen,
-        openInsertRowsDialog,
-        closeInsertRowsDialog,
-    };
+export type EditAnalysisPointsHotSnapshot = {
+    analysisId: string;
+    seed: number;
+    points: IStorePoint[];
+    height: number;
+    pointWarnings: PointWarnings;
 };
 
-export default useAnalysisPointsHotTable;
+/**
+ * One cloned points array per analysis and seed. Later store updates for that same pair do not replace it:
+ * Handsontable mutates the row objects, and those objects must not be the store's objects.
+ */
+const useEditAnalysisPointsHotTable = (analysisId: string | undefined, pointsTableSeed: number) => {
+    const points = useStudyAnalysisPoints(analysisId) as IStorePoint[] | null;
+    const isLoading = useGetStudyIsLoading();
+    const [snapshot, setSnapshot] = useState<EditAnalysisPointsHotSnapshot>();
+
+    useLayoutEffect(() => {
+        if (!analysisId || isLoading) return;
+
+        setSnapshot((prev) => {
+            if (prev?.analysisId === analysisId && prev.seed === pointsTableSeed) return prev;
+
+            const clonedPoints = (points ?? []).map((point) => ({ ...point }));
+            return {
+                analysisId,
+                seed: pointsTableSeed,
+                points: clonedPoints,
+                height: pointsTableHeight(clonedPoints.length),
+                pointWarnings: getPointWarnings(clonedPoints),
+            };
+        });
+    }, [analysisId, pointsTableSeed, isLoading, points]);
+
+    return snapshot;
+};
+
+export default useEditAnalysisPointsHotTable;

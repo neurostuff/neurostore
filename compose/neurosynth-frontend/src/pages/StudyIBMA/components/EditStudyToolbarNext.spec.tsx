@@ -11,7 +11,6 @@ import { useParams } from 'react-router-dom';
 import { Mock, vi } from 'vitest';
 
 vi.mock('hooks');
-vi.mock('pages/StudyCBMA/hooks/useSaveStudy');
 vi.mock('react-router-dom');
 vi.mock('stores/study/StudyStore');
 vi.mock('stores/projects/ProjectStore');
