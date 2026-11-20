@@ -187,6 +187,32 @@ def link_data_source_matches_command(tsv, statuses):
     _run_with_runtime(_run)
 
 
+@main.group("base-study-modalities")
+def base_study_modalities_group():
+    """Each paper's acquisition modalities, which the base-study list filters on."""
+
+
+@base_study_modalities_group.command("load")
+@click.argument("tsv", type=click.Path(exists=True, dir_okay=False))
+def load_base_study_modalities_command(tsv):
+    """Load ns-pond's modality export (`ingest modality export`)."""
+
+    def _run(_app, db):
+        from neurostore.cache_versioning import bump_cache_versions
+        from neurostore.scripts.base_study_modalities import load_modalities
+
+        result = load_modalities(tsv)
+        db.session.commit()
+        bump_cache_versions({"base-studies": result.updated})
+        click.echo(
+            f"updated {len(result.updated)}, unchanged {result.unchanged}, "
+            f"written to the base study they were merged into {len(result.redirected)}, "
+            f"unknown {len(result.unknown)}"
+        )
+
+    _run_with_runtime(_run)
+
+
 @main.group("journals")
 def journals_group():
     """The journals papers appeared in (docs/journals/DESIGN.md)."""
