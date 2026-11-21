@@ -106,6 +106,7 @@ const NiiVueVisualizer = ({
 
     const updateSoftThresholdInNiivue = (softThresholdEnabled: boolean) => {
         if (!niivueRef.current) return;
+        if (!niivueRef.current.volumes[1]) return;
 
         if (softThresholdEnabled) {
             niivueRef.current.overlayOutlineWidth = 2;
@@ -139,6 +140,7 @@ const NiiVueVisualizer = ({
 
     const updateNegativesInNiivue = (showNegativesEnabled: boolean) => {
         if (!niivueRef.current) return;
+        if (!niivueRef.current.volumes[1]) return;
 
         if (showNegativesEnabled) {
             niivueRef.current.volumes[1].colormapNegative = 'winter';
@@ -282,6 +284,7 @@ const NiiVueVisualizer = ({
 
     const updateThresholdNiivue = (update: { thresholdValue: number; thresholdMax: number; thresholdMin: number }) => {
         if (!niivueRef.current) return;
+        if (!niivueRef.current.volumes[1]) return;
 
         // update threshold positive
         niivueRef.current.volumes[1].cal_min = update.thresholdValue;
