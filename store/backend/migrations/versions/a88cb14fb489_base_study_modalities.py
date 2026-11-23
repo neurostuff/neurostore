@@ -5,8 +5,8 @@ Revises: d5f7a9c1e3b6
 Create Date: 2026-11-19
 
 Loaded from ns-pond's modality export by `manage base-study-modalities load`; empty until
-then. `modality` is ns-pond's acquisition_modality vocabulary; a new value needs
-`ALTER TYPE modality ADD VALUE`.
+then. `modality` is study_schema's Modality as of this migration, frozen here; a value
+study_schema adds later needs `ALTER TYPE modality ADD VALUE` in a migration of its own.
 """
 
 from alembic import op
@@ -20,7 +20,7 @@ branch_labels = None
 depends_on = None
 
 MODALITIES = (
-    "fmri", "smri", "dmri", "mrs", "mri", "eeg", "ieeg", "meg", "fnirs", "pet", "spect", "ct",
+    "fMRI", "sMRI", "dMRI", "MRS", "MRI", "EEG", "iEEG", "fNIRS", "PET", "MEG", "SPECT", "CT",
     "physiological", "other",
 )
 SOURCES = ("record", "methods", "full_text", "none")

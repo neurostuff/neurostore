@@ -4,8 +4,9 @@ The TSV has one row per base study: base_study_id, modalities ('|'-separated), s
 (record, methods, full_text or none) and papers (ns-pond's article ids, not read here). A
 row overwrites its base study's `modalities` and `modalities_source`; base studies the file
 does not name keep theirs. A row naming a merged base study goes to the active base study
-it was merged into, unless the file has a row for that one too. A value outside MODALITY,
-or a source outside MODALITY_SOURCES, refuses the whole file before anything is written.
+it was merged into, unless the file has a row for that one too. Values are study_schema's
+Modality, spelled as it spells them (`fMRI`, `MRI`, ...); a value outside it, or a source
+outside MODALITY_SOURCES, refuses the whole file before anything is written.
 """
 
 import csv
@@ -13,10 +14,11 @@ from dataclasses import dataclass, field
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY
+from study_schema.models.storage import Modality
 
 from neurostore.database import db
 from neurostore.models import BaseStudy
-from neurostore.models.data import MODALITIES, MODALITY, MODALITY_SOURCES
+from neurostore.models.data import MODALITY, MODALITY_SOURCES
 
 #: When merged papers meet in one base study, the best source's modalities are kept.
 SOURCES = MODALITY_SOURCES
@@ -32,8 +34,17 @@ class LoadResult:
     unknown: list = field(default_factory=list)
 
 
+#: Modality's values in declared order, the order a paper's list is stored in.
+VALUES = tuple(member.value for member in Modality)
+
+
+def _values(cell):
+    return {value.strip() for value in (cell or "").split("|") if value.strip()}
+
+
 def _modalities(cell):
-    return sorted({value.strip().lower() for value in (cell or "").split("|") if value.strip()})
+    values = _values(cell)
+    return [value for value in VALUES if value in values]
 
 
 def _chunks(ids):
@@ -75,9 +86,9 @@ def _targets(ids):
 
 def _refuse_unknown_values(rows):
     rows = list(rows)
-    values = {value for row in rows for value in _modalities(row.get("modalities"))}
+    values = {value for row in rows for value in _values(row.get("modalities"))}
     sources = {row.get("source") or "none" for row in rows}
-    unknown = sorted(values - set(MODALITIES)) + sorted(sources - set(SOURCES))
+    unknown = sorted(values - set(VALUES)) + sorted(sources - set(SOURCES))
     if unknown:
         raise ValueError(f"values outside the modality vocabulary: {unknown}")
 
@@ -90,7 +101,8 @@ def _merge(held, values):
     if rank(values["source"]) < rank(held["source"]):
         return values
     if rank(values["source"]) == rank(held["source"]):
-        return {**held, "modalities": sorted(set(held["modalities"]) | set(values["modalities"]))}
+        joined = set(held["modalities"]) | set(values["modalities"])
+        return {**held, "modalities": [value for value in VALUES if value in joined]}
     return held
 
 

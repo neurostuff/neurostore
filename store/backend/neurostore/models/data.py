@@ -13,7 +13,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
 from study_schema.keys import normalize_name
+from study_schema.jsonschema import value_children
 from study_schema.models.paper_parse import LicenseId
+from study_schema.models.storage import Modality
 
 from neurostore.analysis_vocabulary import FEATURES as DETAIL_FEATURES
 from neurostore.coordinate_spaces import normalize_space
@@ -34,18 +36,18 @@ STATUS_ENUM = PGEnum(
     create_type=True,
 )
 
-#: ns-pond's acquisition_modality vocabulary: study_schema's Modality, lower-cased, with
-#: mrs, ieeg, ct and physiological. The values `GET /base-studies/?modality=` takes.
-MODALITIES = (
-    "fmri", "smri", "dmri", "mrs", "mri", "eeg", "ieeg", "meg", "fnirs", "pet", "spect", "ct",
-    "physiological", "other",
+#: study_schema's Modality, spelled as it spells them: the values
+#: `GET /base-studies/?modality=` takes. A value study_schema adds needs
+#: `ALTER TYPE modality ADD VALUE` in a migration before a load can store it.
+MODALITY = PGEnum(
+    Modality,
+    name="modality",
+    create_type=False,
+    values_callable=lambda enum: [member.value for member in enum],
 )
-MODALITY = PGEnum(*MODALITIES, name="modality", create_type=False)
-#: ns-pond's parents: a filter on a parent also matches its children.
-MODALITY_CHILDREN = {
-    "mri": ("fmri", "smri", "dmri", "mrs"),
-    "other": ("ct", "ieeg", "physiological"),
-}
+#: Each Modality value that others refine (their `is_a`), with those values; a filter on
+#: it matches them too.
+MODALITY_CHILDREN = value_children("storage-study", "Modality")
 #: What ns-pond read a paper's modalities from, best first.
 MODALITY_SOURCES = ("record", "methods", "full_text", "none")
 

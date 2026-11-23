@@ -5987,7 +5987,7 @@
     },
     "MRI": {
       "additionalProperties": false,
-      "description": "An MRI acquisition of any kind -- functional, structural, or diffusion, as modality records. Its own attributes are the ones commonly useful for study selection, subgrouping, or sensitivity analyses in coordinate- or image-based meta-analysis.",
+      "description": "An MRI acquisition of any kind -- functional, structural, diffusion, or spectroscopy, as modality records. Its own attributes are the ones commonly useful for study selection, subgrouping, or sensitivity analyses in coordinate- or image-based meta-analysis.",
       "properties": {
         "magnetic_field_strength_tesla": {
           "anyOf": [
@@ -6285,21 +6285,34 @@
       "type": "object"
     },
     "Modality": {
-      "description": "Imaging or recording modality of one Acquisition, and through `instantiates` the class in this module holding that modality's parameters. fMRI, sMRI, dMRI, and MRI all instantiate MRI; EEG, fNIRS, and PET instantiate their namesakes; MEG, SPECT, and other instantiate OtherModality. `instantiates` carries a CURIE against this module's own `neurostudy` prefix, so `neurostudy_ex:MRI` resolves to the MRI class below.",
+      "description": "Imaging or recording modality of one Acquisition, and through `instantiates` the class in this module holding that modality's parameters. fMRI, sMRI, dMRI, MRS, and MRI all instantiate MRI; EEG, fNIRS, and PET instantiate their namesakes; MEG, SPECT, iEEG, CT, physiological, and other instantiate OtherModality. `instantiates` carries a CURIE against this module's own `neurostudy` prefix, so `neurostudy_ex:MRI` resolves to the MRI class below. A value's `is_a` names the coarser value it refines: fMRI, sMRI, dMRI, and MRS refine MRI, and iEEG, CT, and physiological refine other, so a search for the coarser value can include its refinements.",
       "enum": [
         "fMRI",
         "sMRI",
         "dMRI",
+        "MRS",
         "MRI",
         "EEG",
+        "iEEG",
         "fNIRS",
         "PET",
         "MEG",
         "SPECT",
+        "CT",
+        "physiological",
         "other"
       ],
       "title": "Modality",
-      "type": "string"
+      "type": "string",
+      "x-parents": {
+        "CT": "other",
+        "MRS": "MRI",
+        "dMRI": "MRI",
+        "fMRI": "MRI",
+        "iEEG": "other",
+        "physiological": "other",
+        "sMRI": "MRI"
+      }
     },
     "ModelEstimation": {
       "additionalProperties": false,
@@ -6748,7 +6761,7 @@
     },
     "OtherModality": {
       "additionalProperties": false,
-      "description": "An acquisition whose modality has no class of its own: MEG, SPECT, and `other`. Nothing here is normalized, so this is where a modality the schema does not name keeps its parameters. A parameter that MRI, EEG, FNIRS, or PET has no field for belongs on that sibling class instead.",
+      "description": "An acquisition whose modality has no class of its own: MEG, SPECT, iEEG, CT, physiological, and `other`. Nothing here is normalized, so this is where a modality the schema does not name keeps its parameters. A parameter that MRI, EEG, FNIRS, or PET has no field for belongs on that sibling class instead.",
       "properties": {
         "modality_label": {
           "$ref": "#/$defs/ExtractedString",

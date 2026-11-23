@@ -6,7 +6,8 @@ from sqlalchemy import func
 from marshmallow import fields as marshmallow_fields
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, raiseload, selectinload, undefer
-from webargs import fields
+from study_schema.models.storage import Modality
+from webargs import fields, validate
 
 from neurostore import authors
 from neurostore.base_studies import (
@@ -106,7 +107,10 @@ class BaseStudiesView(ObjectView, ListView):
         "map_type": fields.String(load_default=None),
         "is_oa": fields.Boolean(load_default=None, allow_none=True),
         "journal_id": fields.String(load_default=None),
-        "modality": fields.List(fields.String(), load_default=None),
+        "modality": fields.List(
+            fields.String(validate=validate.OneOf([m.value for m in Modality])),
+            load_default=None,
+        ),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "pipeline_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),

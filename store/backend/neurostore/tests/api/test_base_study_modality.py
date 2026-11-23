@@ -1,15 +1,13 @@
 """GET /base-studies/?modality=, and the load of ns-pond's modality export into
-`base_studies.modalities`."""
+`base_studies.modalities`. Values are study_schema's Modality, spelled as it spells them."""
 
-from pathlib import Path
 from urllib.parse import urlencode
 
 import pytest
-import yaml
+import sqlalchemy as sa
+from study_schema.models.storage import Modality
 
-import neurostore
 from neurostore.models import BaseStudy, Fulltext
-from neurostore.models.data import MODALITIES
 from neurostore.scripts.base_study_modalities import load_modalities
 
 pytestmark = pytest.mark.anyio
@@ -45,9 +43,9 @@ def papers(session, tmp_path):
     session.commit()
     load_modalities(_tsv(
         tmp_path,
-        (rows["multimodal"].id, "fmri|pet", "record", "a1|a2"),
-        (rows["fmri"].id, "fmri", "record", "a3"),
-        (rows["eeg"].id, "eeg", "methods", "a4"),
+        (rows["multimodal"].id, "fMRI|PET", "record", "a1|a2"),
+        (rows["fmri"].id, "fMRI", "record", "a3"),
+        (rows["eeg"].id, "EEG", "methods", "a4"),
     ))
     session.commit()
     return {name: row.id for name, row in rows.items()}
@@ -72,12 +70,12 @@ def _state(session, base_study_id):
 
 
 async def test_a_paper_matches_any_of_the_given_modalities(auth_client, papers):
-    assert await _found(auth_client, papers, "pet") == ["multimodal"]
+    assert await _found(auth_client, papers, "PET") == ["multimodal"]
     # A paper with two modalities matches each.
-    assert await _found(auth_client, papers, "fmri") == ["fmri", "multimodal"]
+    assert await _found(auth_client, papers, "fMRI") == ["fmri", "multimodal"]
     # Any of the values.
-    assert await _found(auth_client, papers, "eeg", "pet") == ["eeg", "multimodal"]
-    assert await _found(auth_client, papers, "meg") == []
+    assert await _found(auth_client, papers, "EEG", "PET") == ["eeg", "multimodal"]
+    assert await _found(auth_client, papers, "MEG") == []
     # Without the parameter nothing is filtered.
     assert await _found(auth_client, papers) == ["eeg", "fmri", "multimodal", "unnamed"]
 
@@ -85,50 +83,48 @@ async def test_a_paper_matches_any_of_the_given_modalities(auth_client, papers):
 async def test_a_parent_matches_its_children_and_a_child_only_itself(
     auth_client, session, tmp_path, papers
 ):
-    for name, modalities in (("structural", "smri"), ("bare mri", "mri"), ("ecog", "ieeg")):
+    for name, modalities in (("structural", "sMRI"), ("bare mri", "MRI"), ("ecog", "iEEG")):
         papers[name] = _paper(session, name).id
         session.commit()
         load_modalities(_tsv(tmp_path, (papers[name], modalities, "record", "a9")))
     session.commit()
 
-    assert await _found(auth_client, papers, "mri") == [
+    # study_schema's `is_a`: fMRI, sMRI, dMRI and MRS refine MRI; iEEG, CT and physiological
+    # refine other.
+    assert await _found(auth_client, papers, "MRI") == [
         "bare mri", "fmri", "multimodal", "structural"
     ]
-    assert await _found(auth_client, papers, "smri") == ["structural"]
+    assert await _found(auth_client, papers, "sMRI") == ["structural"]
     assert await _found(auth_client, papers, "other") == ["ecog"]
-    assert await _found(auth_client, papers, "ieeg", "smri") == ["ecog", "structural"]
+    assert await _found(auth_client, papers, "iEEG", "sMRI") == ["ecog", "structural"]
 
 
-@pytest.mark.parametrize("value", ["xray", "PET", ""])
+# Spelled as study_schema spells them: "pet" is not a value.
+@pytest.mark.parametrize("value", ["xray", "pet", ""])
 async def test_a_value_outside_the_vocabulary_is_refused(auth_client, papers, value):
-    resp = await auth_client.get(f"/api/base-studies/?modality=pet&modality={value}")
-    assert resp.status_code == 400, resp.text
+    resp = await auth_client.get(f"/api/base-studies/?modality=PET&modality={value}")
+    assert resp.status_code in (400, 422), resp.text
 
 
-def test_the_spec_lists_the_model_s_vocabulary():
-    path = Path(neurostore.__file__).parent / "openapi" / "neurostore-openapi.yml"
-    spec = yaml.safe_load(path.read_text())
-    (parameter,) = [
-        p for p in spec["paths"]["/base-studies/"]["get"]["parameters"]
-        if p.get("name") == "modality"
-    ]
-    assert tuple(parameter["schema"]["items"]["enum"]) == MODALITIES
+def test_the_database_enum_is_study_schema_s_modality(session):
+    stored = session.execute(sa.text("SELECT enum_range(NULL::modality)::text[]")).scalar()
+    assert stored == [member.value for member in Modality]
 
 
 async def test_the_filter_keeps_the_list_s_other_filters(auth_client, session, papers):
     session.add(Fulltext(base_study_id=papers["fmri"], source="pubget", text="Zyxomma here."))
     session.commit()
 
-    assert await _found(auth_client, papers, "fmri", pmid="30000002") == ["fmri"]
-    assert await _found(auth_client, papers, "pet", pmid="30000002") == []
+    assert await _found(auth_client, papers, "fMRI", pmid="30000002") == ["fmri"]
+    assert await _found(auth_client, papers, "PET", pmid="30000002") == []
     # The full-text search pages its two indexes itself: the filter still holds.
     full_text = {"search": "zyxomma", "search_full_text": "true"}
-    assert await _found(auth_client, papers, "fmri", **full_text) == ["fmri"]
-    assert await _found(auth_client, papers, "pet", **full_text) == []
+    assert await _found(auth_client, papers, "fMRI", **full_text) == ["fmri"]
+    assert await _found(auth_client, papers, "PET", **full_text) == []
 
 
 async def test_a_page_lists_the_filtered_papers_only(auth_client, papers):
-    resp = await auth_client.get("/api/base-studies/?modality=fmri&page=2&page_size=1")
+    resp = await auth_client.get("/api/base-studies/?modality=fMRI&page=2&page_size=1")
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["metadata"]["total_count"] == 2
@@ -138,28 +134,32 @@ async def test_a_page_lists_the_filtered_papers_only(auth_client, papers):
 def test_a_load_overwrites_the_rows_it_names_and_keeps_the_others(session, tmp_path, papers):
     result = load_modalities(_tsv(
         tmp_path,
-        (papers["fmri"], "FMRI|sMRI", "record", "a3"),
-        (papers["eeg"], "eeg", "methods", "a4"),
+        # Stored in Modality's declared order.
+        (papers["fmri"], "sMRI|fMRI", "record", "a3"),
+        (papers["eeg"], "EEG", "methods", "a4"),
         (papers["multimodal"], "", "none", "a1"),
-        ("noSuchPaper", "pet", "record", "a9"),
+        ("noSuchPaper", "PET", "record", "a9"),
     ))
     session.commit()
 
-    assert _state(session, papers["fmri"]) == (["fmri", "smri"], "record")
+    assert _state(session, papers["fmri"]) == (["fMRI", "sMRI"], "record")
     assert _state(session, papers["multimodal"]) == ([], "none")
-    assert _state(session, papers["eeg"]) == (["eeg"], "methods")
+    assert _state(session, papers["eeg"]) == (["EEG"], "methods")
     assert _state(session, papers["unnamed"]) == ([], None)
     assert result.updated == {papers["fmri"], papers["multimodal"]}
     assert result.unchanged == 1
     assert result.unknown == ["noSuchPaper"]
 
 
-def test_a_value_outside_the_vocabulary_refuses_the_whole_file(session, tmp_path, papers):
-    with pytest.raises(ValueError, match="xray"):
+@pytest.mark.parametrize("value", ["xray", "fmri"])
+def test_a_value_outside_the_vocabulary_refuses_the_whole_file(
+    session, tmp_path, papers, value
+):
+    with pytest.raises(ValueError, match=value):
         load_modalities(_tsv(
             tmp_path,
-            (papers["unnamed"], "pet", "record", "a5"),
-            (papers["fmri"], "fmri|xray", "record", "a3"),
+            (papers["unnamed"], "PET", "record", "a5"),
+            (papers["fmri"], f"fMRI|{value}", "record", "a3"),
         ))
     session.rollback()
     assert _state(session, papers["unnamed"]) == ([], None)
@@ -175,13 +175,13 @@ def test_a_merged_paper_s_row_goes_to_the_paper_it_was_merged_into(session, tmp_
 
     result = load_modalities(_tsv(
         tmp_path,
-        (merged.id, "pet", "methods", "a1"),
+        (merged.id, "PET", "methods", "a1"),
         # The keeper's own row wins over its merged paper's.
-        (other_merged.id, "eeg", "methods", "a2"),
-        (other_keeper.id, "meg", "record", "a3"),
+        (other_merged.id, "EEG", "methods", "a2"),
+        (other_keeper.id, "MEG", "record", "a3"),
     ))
     session.commit()
 
-    assert _state(session, keeper.id) == (["pet"], "methods")
-    assert _state(session, other_keeper.id) == (["meg"], "record")
+    assert _state(session, keeper.id) == (["PET"], "methods")
+    assert _state(session, other_keeper.id) == (["MEG"], "record")
     assert result.redirected == {merged.id: keeper.id}

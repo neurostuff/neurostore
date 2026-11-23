@@ -1,5 +1,6 @@
 from sqlalchemy.orm import contains_eager, load_only
-from webargs import fields
+from study_schema.models.paper_parse import LicenseId
+from webargs import fields, validate
 
 from neurostore.exceptions.utils.error_helpers import abort_not_found
 from neurostore.models import BaseStudy, Fulltext
@@ -29,7 +30,9 @@ class FulltextsView(ObjectView, ListView):
     _view_fields = {
         "base_study_id": fields.String(load_default=None),
         "source": fields.String(load_default=None),
-        "license": fields.String(load_default=None),
+        "license": fields.String(
+            load_default=None, validate=validate.OneOf([lic.value for lic in LicenseId])
+        ),
     }
 
     def __init__(self):

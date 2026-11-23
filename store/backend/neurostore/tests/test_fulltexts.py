@@ -199,6 +199,12 @@ async def test_a_list_filters_by_source_and_licence(auth_client, session):
         assert body["metadata"]["total_count"] == 1
 
 
+@pytest.mark.parametrize("license", ["cc-by-4.0", "CC_BY"])
+async def test_a_licence_outside_study_schema_s_license_id_is_refused(auth_client, license):
+    resp = await auth_client.get(f"/api/fulltexts/?{urlencode({'license': license})}")
+    assert resp.status_code in (400, 422), resp.text
+
+
 async def test_a_base_study_links_its_preferred_text_and_carries_none(
     auth_client, withheld
 ):

@@ -240,8 +240,8 @@ class BaseStudySearchService:
         return query.filter(neurovault_filter)
 
     def _apply_modality_filter(self, query, modalities):
-        """Papers acquired by any of ``modalities`` or their children (values of MODALITY;
-        the spec refuses others)."""
+        """Papers acquired by any of ``modalities`` (Modality values; the view refuses
+        others) or the values that refine them."""
         if not modalities:
             return query
         wanted = set(modalities)
