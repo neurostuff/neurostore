@@ -457,7 +457,6 @@ build_store_images() {
     store_release_worker \
     store_nginx \
     neurostore-mcp \
-    store-pgsql \
     store-pgsql17
 }
 
