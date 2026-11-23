@@ -113,7 +113,7 @@ Because each branch might change the schema independently, recreate the database
     docker compose exec neurostore manage db upgrade
 ```
 
-If you're using the legacy Postgres container, replace `store-pgsql17` with `store-pgsql` in the commands above. Re-run any ingestion or seed scripts your branch requires once the upgrade completes.
+Re-run any ingestion or seed scripts your branch requires once the upgrade completes.
 
 
 ## Running tests

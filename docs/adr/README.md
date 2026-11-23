@@ -25,5 +25,6 @@ Decisions behind neurostore's /review app and its base studies that are hard to 
 | [0019](0019-analysis-features-query-surface.md) | Analyses are queried through typed features resolved from the latest record at ingest, not by reading records | accepted, built |
 | [0020](0020-public-queries-over-materialized-datasets.md) | Public aggregate queries compile a SoQL subset over materialized public datasets, under a read-only role, a cost gate and per-client limits | accepted, built |
 | [0021](0021-agents-act-for-users-on-an-agents-audience.md) | AI agents act for a user on tokens for a second Auth0 API, with `read`/`write` scopes and none of the user's roles | accepted, backends and Auth0 tenants set up |
+| [0022](0022-fulltexts-served-by-licence.md) | Full texts are served by id, with the text only when its copy may be passed on | accepted, built |
 
 Each file has Status, Context, Decision and Consequences, and names what was rejected.

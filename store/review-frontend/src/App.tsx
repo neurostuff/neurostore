@@ -36,7 +36,7 @@ export function AppRoutes({ api }: { api: ReviewApi }) {
 
 export function App({ api }: { api: ReviewApi }) {
     return (
-        <BrowserRouter basename="/review" future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter basename="/review">
             <AppRoutes api={api} />
         </BrowserRouter>
     );
