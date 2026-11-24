@@ -147,4 +147,5 @@ def sortable_columns(model):
         for attr in model.__mapper__.column_attrs
         if not isinstance(attr.columns[0].type, _UNSORTABLE_TYPES)
         and attr.key not in _UNSORTABLE_NAMES
+        and attr.key not in getattr(model, "__unsortable__", ())
     }

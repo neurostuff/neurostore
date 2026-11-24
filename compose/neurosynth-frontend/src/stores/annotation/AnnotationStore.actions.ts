@@ -43,12 +43,12 @@ export const useInitAnnotationStoreIfRequired = () => {
 
     const {
         mutate: updateAnnotation,
-        isLoading: updateAnnotationIsLoading,
+        isPending: updateAnnotationIsPending,
         isError: updateAnnotationIsError,
     } = useUpdateAnnotationById(extractionAnnotationId ?? undefined);
     const {
         mutate: updateAnnotationAnalyses,
-        isLoading: updateAnnotationAnalysesIsLoading,
+        isPending: updateAnnotationAnalysesIsPending,
         isError: updateAnnotationAnalysesIsError,
     } = useUpdateAnnotationByAnnotationAndAnalysisIds(extractionAnnotationId ?? undefined);
 
@@ -60,7 +60,7 @@ export const useInitAnnotationStoreIfRequired = () => {
             initAnnotationStore(data);
         }
 
-        const isLoading = updateAnnotationIsLoading || updateAnnotationAnalysesIsLoading;
+        const isLoading = updateAnnotationIsPending || updateAnnotationAnalysesIsPending;
         const isError = getAnnotationIsError || updateAnnotationIsError || updateAnnotationAnalysesIsError;
 
         updateAnnotationMetadata({
@@ -79,9 +79,9 @@ export const useInitAnnotationStoreIfRequired = () => {
         initAnnotationStore,
         storeAnnotationId,
         updateAnnotationIsError,
-        updateAnnotationIsLoading,
+        updateAnnotationIsPending,
         updateAnnotationAnalysesIsError,
-        updateAnnotationAnalysesIsLoading,
+        updateAnnotationAnalysesIsPending,
         updateAnnotationMetadata,
     ]);
 };

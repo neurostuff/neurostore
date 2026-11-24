@@ -22,7 +22,7 @@ The outreach list is then one query: base studies with a link under OSF or OpenN
 
 **Merges.** `merge_base_study` moves the old base study's links to the keeper. Of two links with one url, the keeper's stays, taking the old one's `has_nifti` when its own was not checked, and the old one is deleted; each step is a recorded change.
 
-**Not served.** No marshmallow schema, resource or spec route names `base_study_links`, `link_domains` or either `license` column. The spec changes only for the upload itself.
+**Not served.** No marshmallow schema, resource or spec route names `base_study_links`, `link_domains` or `base_studies.license`. The spec changes only for the upload itself. (`fulltexts.license` is served since ADR 0022.)
 
 ## Consequences
 
