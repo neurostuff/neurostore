@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
-import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr } from './HotTables.utils';
+import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr, sanitizePaste } from './HotTables.utils';
+
+describe('sanitizePaste', () => {
+    it('trims pasted text so whitespace-only cells become empty', () => {
+        const data: unknown[][] = [['   ', ' 12 ', '\ttrue ', 5, false]];
+
+        sanitizePaste(data);
+
+        expect(data).toEqual([['', '12', true, 5, false]]);
+    });
+});
 
 describe('HotTables utils - note key conversions', () => {
     it('converts note_keys object descriptors to a sorted array and reindexes order', () => {

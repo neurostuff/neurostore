@@ -3,9 +3,11 @@ import { cleanup, render, screen } from '@testing-library/react';
 import AnnotationGuard from './AnnotationGuard';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useGetAnnotationById } from 'hooks';
-import { useGetProjectIsLoading, useInitProjectStoreIfRequired, useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
-import { useInitAnnotationStoreIfRequired } from 'stores/annotation/AnnotationStore.actions';
-import { useGetAnnotationIsLoading } from 'stores/annotation/AnnotationStore.getters';
+import {
+    useGetProjectIsLoading,
+    useInitProjectStoreIfRequired,
+    useProjectExtractionAnnotationId,
+} from 'stores/projects/ProjectStore';
 
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
@@ -16,14 +18,6 @@ vi.mock('stores/projects/ProjectStore', () => ({
     useInitProjectStoreIfRequired: vi.fn(),
     useGetProjectIsLoading: vi.fn(),
     useProjectExtractionAnnotationId: vi.fn(),
-}));
-
-vi.mock('stores/annotation/AnnotationStore.actions', () => ({
-    useInitAnnotationStoreIfRequired: vi.fn(),
-}));
-
-vi.mock('stores/annotation/AnnotationStore.getters', () => ({
-    useGetAnnotationIsLoading: vi.fn(),
 }));
 
 vi.mock('hooks', async () => {
@@ -49,10 +43,8 @@ describe('AnnotationGuard', () => {
         vi.clearAllMocks();
 
         (useInitProjectStoreIfRequired as Mock).mockImplementation(() => {});
-        (useInitAnnotationStoreIfRequired as Mock).mockImplementation(() => {});
         (useGetProjectIsLoading as Mock).mockReturnValue(false);
         (useProjectExtractionAnnotationId as Mock).mockReturnValue('annotation-id-1');
-        (useGetAnnotationIsLoading as Mock).mockReturnValue(false);
         (useGetAnnotationById as Mock).mockReturnValue(defaultAnnotationQuery);
     });
 
@@ -69,7 +61,7 @@ describe('AnnotationGuard', () => {
             </MemoryRouter>
         );
 
-    it('renders children when project, annotation query, and annotation store are ready', () => {
+    it('renders children when project and annotation query are ready', () => {
         renderGuard();
         expect(screen.getByText('child content')).toBeInTheDocument();
     });
@@ -86,12 +78,6 @@ describe('AnnotationGuard', () => {
             ...defaultAnnotationQuery,
             isLoading: true,
         });
-        renderGuard();
-        expect(screen.getByTestId('neurosynth-loader')).toBeInTheDocument();
-    });
-
-    it('shows loader while annotation store is loading', () => {
-        (useGetAnnotationIsLoading as Mock).mockReturnValue(true);
         renderGuard();
         expect(screen.getByTestId('neurosynth-loader')).toBeInTheDocument();
     });

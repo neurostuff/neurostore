@@ -1,267 +1,235 @@
 import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
-import { Box } from '@mui/material';
-import { CellRange } from 'handsontable';
-import { CellChange, ChangeSource, RangeType } from 'handsontable';
-import { registerAllModules } from 'handsontable/registry';
-import InputNumberDialog from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAInputNumberDialog';
-import {
-    useCreateAnalysisPoints,
-    useDeleteAnalysisPoints,
-    useStudyAnalysisPoints,
-    useUpdateAnalysisPoints,
-} from 'stores/study/StudyStore';
-import { IStorePoint } from 'stores/study/StudyStore.helpers';
-import React, { useMemo, useRef } from 'react';
+import { alpha, Box } from '@mui/material';
 import { sanitizePaste } from 'components/HotTables/HotTables.utils';
-import useEditAnalysisPointsHotTable from 'pages/StudyCBMA/hooks/useEditAnalysisPointsHotTable';
+import { CellChange, ChangeSource } from 'handsontable';
+import { registerAllModules } from 'handsontable/registry';
+import { EditAnalysisPointsHotSnapshot } from 'pages/StudyCBMA/hooks/useEditAnalysisPointsHotTable';
+import { memo, useEffect, useRef, type RefObject } from 'react';
+import { useSetAnalysisPointWarnings } from 'stores/study/StudyStore';
+import { allPointsHaveCoordinates, getPointWarnings, PointWarnings } from 'stores/study/StudyStore.helpers';
+import { v4 as uuid } from 'uuid';
 import {
     EditStudyAnalysisCBMAPointsDefaultConfig,
     getHotTableColumnSettings,
-    getHotTableInsertionIndices,
+    getSelectionRowBounds,
     hotTableColHeaders,
+    multiRowInsertLabel,
+    POINTS_SYNC_SOURCE,
+    pointsFromSourceData,
+    pointsTableHeight,
 } from './EditStudyAnalysisCBMAPointsHotTable.helpers';
-import EditStudyAnalysisCBMAPointsHotTableToolbar from './EditStudyAnalysisCBMAPointsHotTableToolbar';
 
 registerAllModules();
 
-const EditStudyAnalysisCBMAPointsHotTable = React.memo(
-    ({ analysisId, readOnly = false }: { analysisId?: string; readOnly?: boolean }) => {
-        const points = useStudyAnalysisPoints(analysisId) as IStorePoint[] | null;
-        const updatePoints = useUpdateAnalysisPoints();
-        const createPoint = useCreateAnalysisPoints();
-        const deletePoints = useDeleteAnalysisPoints();
-        const hotTableRef = useRef<HotTableRef>(null);
-        const hotTableMetadata = useRef<{
-            insertRowsAbove: boolean;
-            insertedRowsViaPaste: any[][];
-        }>({
-            insertRowsAbove: false,
-            insertedRowsViaPaste: [],
-        });
-        const { insertRowsDialogIsOpen, openInsertRowsDialog, closeInsertRowsDialog, height } =
-            useEditAnalysisPointsHotTable(analysisId, hotTableRef, hotTableMetadata);
+/** New rows are born blank. Mark X/Y/Z invalid immediately so the warning fill shows before the next edit. */
+const validateInsertedCoordinateCells = (
+    hot: NonNullable<HotTableRef['hotInstance']>,
+    insertionIndex: number,
+    amount: number
+) => {
+    const xCol = hot.propToCol('x');
+    const yCol = hot.propToCol('y');
+    const zCol = hot.propToCol('z');
+    if (typeof xCol !== 'number' || typeof yCol !== 'number' || typeof zCol !== 'number') return;
 
-        // handsontable binds and updates to the data references themselves which means the original data is being mutated.
-        // as we use zustand, this may not be a good idea, so we implement handleAfterChange to
-        //      (1) make a request to zustand in order to make sure it is aware of the update that occurred,
-        //      (2) replace handsontable's data update with our own,
-        //      (3) utilize handsontable's native validation (which does not get fired if we use beforeChange)
-        //      (4) replace null or '' values with undefined as hot treats '' and null as valid (isNaN(null) === false)
-        const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
-            if (!analysisId) return;
-            if (!changes) return;
-            if (!points) return;
-
-            const updatedPoints = [...points];
-            changes.forEach((change) => {
-                if (!change) return;
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const [index, colName, _prev, next] = change;
-                let newVal = next;
-                if (newVal === null || newVal === '') {
-                    newVal = undefined;
-                }
-                updatedPoints[index] = {
-                    ...updatedPoints[index],
-                    [colName as string]: newVal,
-                };
-            });
-            updatePoints(analysisId, updatedPoints);
-        };
-
-        // for all pasted data, remove any copied HTML tags and replace minus sign lookalikes with the expected minus sign.
-        // HTML tags can be added when copying from HTML tables and all sorts of non standard minus signs are used to represent negative number.
-        const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
-            if (!points) return false;
-
-            sanitizePaste(data);
-
-            // if a paste leads to rows being created, we store those rows in a ref for the handleBeforeCreateRow hook to
-            // know how many rows to create
-            let endRowIndex = 0;
-            coords.forEach(({ startCol, startRow, endCol, endRow }) => {
-                if (endRow > endRowIndex) endRowIndex = endRow;
-            });
-
-            if (endRowIndex + data.length > points.length) {
-                const rowsToCreate: any[][] = [];
-                for (let i = points.length - endRowIndex; i < data.length; i++) {
-                    rowsToCreate.push(data[i]);
-                }
-                hotTableMetadata.current.insertedRowsViaPaste = rowsToCreate;
-            } else {
-                hotTableMetadata.current.insertedRowsViaPaste = [];
-            }
-
-            return true;
-        };
-
-        // this hook is fired on paste when a paste causes new rows to be created. We get the ref and retrieve the number of new rows to create.
-        // Normally, handsontable is in charge of creating new rows but we return false here to prevent that.
-        // Instead, we create the rows and update the data source ourselves.
-
-        // Note: after this hook is fired, the copy pasted cell data is set in the data rows that we create.
-        // This is somewhat problematic as it modifies the zustand store object directly instead of calling set, which is exactly why we've been returning false everywhere.
-        // However, there doesn't seem to be any issue with this because a proper zustand update still occurs when a new row
-        // is created (via createPoint), and handleAfterChange is then called which creates another proper zustand update (updatePoints)
-        const handleBeforeCreateRow = (index: number, amount: number, source?: ChangeSource | undefined) => {
-            if (analysisId && source === 'CopyPaste.paste') {
-                createPoint(
-                    analysisId,
-                    hotTableMetadata.current.insertedRowsViaPaste.map((row) => ({
-                        subpeak: undefined,
-                        value: undefined,
-                        isNew: true,
-                    })),
-                    index
-                );
-            }
-            return false;
-        };
-
-        const handleBeforeRemoveRow = (
-            index: number,
-            amount: number,
-            physicalColumns: number[],
-            source?: ChangeSource | undefined
-        ) => {
-            if (!analysisId) return false;
-            if (!points || points.length <= 1) return false;
-
-            const idsRemoved = physicalColumns.map((index) => points[index].id || '');
-            deletePoints(analysisId, idsRemoved);
-            return false;
-        };
-
-        // vertical autofill of an empty cell into other empty cells allows it to work and breaks validation...so whenever
-        // we autofill we need to validate again
-        const handleAfterAutofill = (
-            fillData: any[][],
-            sourceRange: CellRange,
-            targetRange: CellRange,
-            direction: 'right' | 'left' | 'up' | 'down'
-        ): void => {
-            if (!hotTableRef?.current?.hotInstance) return;
-            hotTableRef.current?.hotInstance?.validateCells();
-        };
-
-        const handleInsertRows = (numRows: number) => {
-            if (hotTableRef.current?.hotInstance && analysisId) {
-                let selectedCoords = hotTableRef.current.hotInstance.getSelected();
-
-                if (!selectedCoords) {
-                    selectedCoords = [[0, 0, (points || []).length - 1, 2]];
-                }
-
-                const { insertAboveIndex, insertBelowIndex } = getHotTableInsertionIndices(selectedCoords);
-                createPoint(
-                    analysisId,
-                    [...Array(numRows).keys()].map((num) => ({
-                        value: undefined,
-                        isNew: true,
-                    })),
-                    hotTableMetadata.current.insertRowsAbove ? insertAboveIndex : insertBelowIndex + 1
-                );
-                closeInsertRowsDialog();
-            }
-        };
-
-        const hotTableColumnSettings = useMemo(() => {
-            return getHotTableColumnSettings(readOnly);
-        }, [readOnly]);
-
-        const handleAddRow = () => {
-            if (!analysisId) return;
-            createPoint(
-                analysisId,
-                [
-                    {
-                        value: undefined,
-                        isNew: true,
-                    },
-                ],
-                points?.length || 0
-            );
-        };
-
-        const handleAddRows = () => {
-            openInsertRowsDialog();
-        };
-
-        // we do not allow multiple selections, so we can assume that the selected rows will have 1 size
-        const handleDeleteRows = () => {
-            if (!hotTableRef.current?.hotInstance) return;
-            const selected = hotTableRef.current.hotInstance.getSelected() || [];
-            if (!selected) return;
-            if (selected.length !== 1) return;
-
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const [startRow, startCol, endRow, endCol] = selected[0];
-
-            const selectedRowIndices: number[] = [];
-            for (let i = startRow; i <= endRow; i++) {
-                selectedRowIndices.push(i);
-            }
-            handleBeforeRemoveRow(0, selectedRowIndices.length || 0, selectedRowIndices, undefined);
-        };
-
-        /**
-         * Hook Order:
-         * 1) handleBeforePaste
-         * 2) handleBeforeChange // we don't want to handle data in this hook as returning false here prevents cell validations from running
-         * 3) handleAfterPaste
-         * 4) handleBeforeCreateRow
-         * 5) handleAfterChange
-         */
-
-        return (
-            <Box>
-                <InputNumberDialog
-                    isOpen={insertRowsDialogIsOpen}
-                    dialogTitle="Enter number of rows to insert"
-                    onCloseDialog={() => closeInsertRowsDialog()}
-                    onSubmit={(val) => handleInsertRows(val)}
-                    dialogDescription=""
-                />
-                <Box sx={{ display: 'flex' }}>
-                    <Box
-                        sx={{
-                            width: '40px',
-                            height: '120px',
-                            marginRight: '0.5rem',
-                        }}
-                    >
-                        <EditStudyAnalysisCBMAPointsHotTableToolbar
-                            onAddRow={handleAddRow}
-                            onAddRows={handleAddRows}
-                            onDeleteRows={handleDeleteRows}
-                        />
-                    </Box>
-                    <Box
-                        sx={{
-                            width: 'calc(100% - 0.5rem - 40px)',
-                            height: height,
-                        }}
-                    >
-                        <HotTable
-                            {...EditStudyAnalysisCBMAPointsDefaultConfig}
-                            ref={hotTableRef}
-                            afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
-                            beforePaste={handleBeforePaste}
-                            beforeCreateRow={handleBeforeCreateRow}
-                            height={height}
-                            stretchH="all"
-                            beforeRemoveRow={handleBeforeRemoveRow}
-                            afterAutofill={handleAfterAutofill}
-                            columns={hotTableColumnSettings}
-                            colHeaders={hotTableColHeaders}
-                            data={[...(points || [])]}
-                        />
-                    </Box>
-                </Box>
-            </Box>
-        );
+    for (let offset = 0; offset < amount; offset += 1) {
+        const row = insertionIndex + offset;
+        hot.validateCell(hot.getDataAtCell(row, xCol), hot.getCellMeta(row, xCol), () => undefined, 'validateCells');
+        hot.validateCell(hot.getDataAtCell(row, yCol), hot.getCellMeta(row, yCol), () => undefined, 'validateCells');
+        hot.validateCell(hot.getDataAtCell(row, zCol), hot.getCellMeta(row, zCol), () => undefined, 'validateCells');
     }
-);
+};
+
+/**
+ * Every prop here stays stable and handlers only read refs.
+ */
+const EditStudyAnalysisCBMAPointsHotTable = memo(function EditStudyAnalysisCBMAPointsHotTable({
+    snapshot,
+    hotTableRef,
+    onStudyEdited,
+    onAllPointsHaveCoordinates,
+    readOnly,
+}: {
+    snapshot: EditAnalysisPointsHotSnapshot;
+    hotTableRef: RefObject<HotTableRef | null>;
+    onStudyEdited: () => void;
+    onAllPointsHaveCoordinates: (pointsHaveCoordinates: boolean) => void;
+    readOnly: boolean;
+}) {
+    const setAnalysisPointWarnings = useSetAnalysisPointWarnings();
+    const containerRef = useRef<HTMLDivElement>(null);
+    const pointWarningsRef = useRef(snapshot.pointWarnings);
+    const allPointsHaveCoordinatesRef = useRef(allPointsHaveCoordinates(snapshot.points));
+    const hasMarkedEditedRef = useRef(false);
+
+    const markEdited = () => {
+        if (hasMarkedEditedRef.current) return;
+        hasMarkedEditedRef.current = true;
+        onStudyEdited();
+    };
+
+    const updatePointWarnings = (changed: Partial<PointWarnings>) => {
+        const prev = pointWarningsRef.current;
+        const next = { ...prev, ...changed };
+        if ((Object.keys(next) as (keyof PointWarnings)[]).every((key) => next[key] === prev[key])) return;
+        pointWarningsRef.current = next;
+        setAnalysisPointWarnings(snapshot.analysisId, next);
+    };
+
+    const updateFromSourceData = (hot: NonNullable<HotTableRef['hotInstance']>) => {
+        const points = pointsFromSourceData(hot.getSourceData());
+        updatePointWarnings(getPointWarnings(points));
+
+        const coordinatesAreComplete = allPointsHaveCoordinates(points);
+        if (coordinatesAreComplete === allPointsHaveCoordinatesRef.current) return;
+        allPointsHaveCoordinatesRef.current = coordinatesAreComplete;
+        onAllPointsHaveCoordinates(coordinatesAreComplete); // this is to hide/show the relegate link in the parent
+    };
+
+    const setTableHeight = (rowCount: number) => {
+        const height = pointsTableHeight(rowCount);
+        if (containerRef.current) containerRef.current.style.height = `${height}px`;
+        hotTableRef.current?.hotInstance?.updateSettings({ height });
+    };
+
+    const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
+        if (!changes || (source as string) === POINTS_SYNC_SOURCE || source === 'loadData' || source === 'updateData') {
+            return;
+        }
+        const hot = hotTableRef.current?.hotInstance;
+        if (!hot) return;
+
+        markEdited();
+        updateFromSourceData(hot);
+        // afterAutofill runs before the fill is written, so validation there restamps the previous invalid state.
+        if ((source as string) === 'autofill.fill' || (source as string) === 'Autofill.fill') {
+            const rows = [...new Set(changes.map(([row]) => row))];
+            hot.validateRows(rows);
+        }
+    };
+
+    const handleBeforePaste = (data: unknown[][]) => {
+        sanitizePaste(data);
+        return true;
+    };
+
+    const handleAfterCreateRow = (insertionIndex: number, amount: number) => {
+        const hot = hotTableRef.current?.hotInstance;
+        if (!hot) return;
+
+        // changes: [ [ rowIndex, columnKey, value ] ] ... At this point, insertion has already occurred, we want to set values
+        const changes: [number, string, string | boolean][] = [];
+        for (let offset = 0; offset < amount; offset += 1) {
+            changes.push([insertionIndex + offset, 'id', uuid()], [insertionIndex + offset, 'isNew', true]);
+        }
+        hot.setDataAtRowProp(changes, POINTS_SYNC_SOURCE);
+        validateInsertedCoordinateCells(hot, insertionIndex, amount);
+
+        setTableHeight(hot.countRows());
+        markEdited();
+        updateFromSourceData(hot);
+    };
+
+    const handleAfterRemoveRow = () => {
+        const hot = hotTableRef.current?.hotInstance;
+        if (!hot) return;
+
+        if (hot.countRows() === 0) {
+            // Deleting every row still leaves one blank coordinate row.
+            hot.alter('insert_row_above', 0, 1);
+            return;
+        }
+
+        setTableHeight(hot.countRows());
+        markEdited();
+        updateFromSourceData(hot);
+    };
+
+    const selectedRowBounds = () => getSelectionRowBounds(hotTableRef.current?.hotInstance?.getSelected() ?? []);
+
+    const insertSelectedRowCount = (placement: 'above' | 'below') => {
+        const hot = hotTableRef.current?.hotInstance;
+        const bounds = getSelectionRowBounds(hot?.getSelected() ?? []);
+        if (!hot || !bounds || bounds.count < 2) return;
+
+        if (placement === 'above') {
+            hot.alter('insert_row_above', bounds.top, bounds.count);
+            return;
+        }
+        hot.alter('insert_row_below', bounds.bottom, bounds.count);
+    };
+
+    useEffect(() => {
+        hotTableRef.current?.hotInstance?.validateCells();
+    }, [hotTableRef]);
+
+    // once the table unmounts, its rows are flushed or discarded, so warnings come from the stored points again
+    useEffect(() => {
+        const { analysisId } = snapshot;
+        setAnalysisPointWarnings(analysisId, pointWarningsRef.current);
+        return () => setAnalysisPointWarnings(analysisId);
+    }, [snapshot, setAnalysisPointWarnings]);
+
+    return (
+        <Box
+            ref={containerRef}
+            sx={(theme) => ({
+                width: '100%',
+                height: snapshot.height,
+                '& .ht-theme-classic': {
+                    '--ht-cell-error-background-color': alpha(theme.palette.warning.main, 0.45),
+                },
+                // number/boolean cell classes set their own color with !important.
+                '& .handsontable td.htInvalid': {
+                    color: `${theme.palette.error.main} !important`,
+                },
+            })}
+        >
+            <HotTable
+                {...EditStudyAnalysisCBMAPointsDefaultConfig}
+                ref={hotTableRef}
+                afterChange={handleAfterChange}
+                beforePaste={handleBeforePaste}
+                afterCreateRow={handleAfterCreateRow}
+                afterRemoveRow={handleAfterRemoveRow}
+                contextMenu={{
+                    items: {
+                        // Built-in items insert one row at the selection edge.
+                        row_above: {
+                            name: 'Add row above',
+                        },
+                        rows_above: {
+                            name: () => multiRowInsertLabel(selectedRowBounds()?.count ?? 0, 'above'),
+                            hidden: () => (selectedRowBounds()?.count ?? 0) < 2,
+                            callback: () => insertSelectedRowCount('above'),
+                        },
+                        row_below: {
+                            name: 'Add row below',
+                        },
+                        rows_below: {
+                            name: () => multiRowInsertLabel(selectedRowBounds()?.count ?? 0, 'below'),
+                            hidden: () => (selectedRowBounds()?.count ?? 0) < 2,
+                            callback: () => insertSelectedRowCount('below'),
+                        },
+                        remove_row: {
+                            name: 'Remove row(s)',
+                        },
+                        copy: {
+                            name: 'Copy',
+                        },
+                        cut: {
+                            name: 'Cut',
+                        },
+                    },
+                }}
+                height={snapshot.height}
+                stretchH="all"
+                columns={getHotTableColumnSettings(readOnly)}
+                colHeaders={hotTableColHeaders}
+                data={snapshot.points}
+            />
+        </Box>
+    );
+});
 
 export default EditStudyAnalysisCBMAPointsHotTable;

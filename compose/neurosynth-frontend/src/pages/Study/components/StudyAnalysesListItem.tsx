@@ -1,7 +1,7 @@
 import { ErrorOutline } from '@mui/icons-material';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
-import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
+import { useStudyAnalysisWarnings } from 'stores/study/StudyStore';
 import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import React, { useMemo } from 'react';
 
@@ -12,7 +12,8 @@ const StudyAnalysesListItem = React.memo(
         onSelectAnalysis: (analysisId: string) => void;
     }) => {
         const { analysis, selected, onSelectAnalysis } = props;
-        const { hasDuplicateName, hasNoName, hasNoPoints, hasNonMNICoordinates } = useDisplayWarnings(analysis.id);
+        const { hasDuplicateName, hasNoName, hasEmptyPoints, hasNonMNICoordinates, hasInvalidEntries } =
+            useStudyAnalysisWarnings(analysis.id);
 
         const theme = useTheme();
         const mdDown = useMediaQuery(theme.breakpoints.down('md'));
@@ -23,8 +24,8 @@ const StudyAnalysesListItem = React.memo(
         };
 
         const showWarningIcon = useMemo(() => {
-            return hasDuplicateName || hasNoName || hasNoPoints || hasNonMNICoordinates;
-        }, [hasDuplicateName, hasNoName, hasNoPoints, hasNonMNICoordinates]);
+            return hasDuplicateName || hasNoName || hasEmptyPoints || hasNonMNICoordinates || hasInvalidEntries;
+        }, [hasDuplicateName, hasNoName, hasEmptyPoints, hasNonMNICoordinates, hasInvalidEntries]);
 
         return (
             <ListItem disablePadding divider>

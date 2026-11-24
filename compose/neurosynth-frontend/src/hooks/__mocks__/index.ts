@@ -26,21 +26,6 @@ const useDeleteAnalysis = vi.fn().mockReturnValue({
     mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
-const useCreatePoint = vi.fn().mockReturnValue({
-    isPending: false,
-    mutate: vi.fn(),
-});
-
-const useUpdatePoint = vi.fn().mockReturnValue({
-    isPending: false,
-    mutate: vi.fn(),
-});
-
-const useDeletePoint = vi.fn().mockReturnValue({
-    isPending: false,
-    mutate: vi.fn(),
-});
-
 const studyByIdMockReturn = {
     isLoading: false,
     data: mockStudy(),
@@ -231,14 +216,12 @@ export {
     useUpdateImage,
     useUpdateAnnotationByAnnotationAndAnalysisIds,
     useCreateMetaAnalysis,
-    useCreatePoint,
     useCreateProject,
     useCreateStudy,
     useCreateStudyset,
     useCreateAnnotation,
     useIngest,
     useDeleteAnalysis,
-    useDeletePoint,
     useDeleteProject,
     useGetAnnotationById,
     useGetAnalysesByStudyId,
@@ -256,7 +239,6 @@ export {
     useIsMounted,
     useUpdateAnalysis,
     useUpdateAnnotationById,
-    useUpdatePoint,
     useUpdateStudy,
     useUpdateStudyset,
     useUserCanEdit,

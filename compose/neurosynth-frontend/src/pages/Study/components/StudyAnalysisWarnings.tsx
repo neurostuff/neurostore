@@ -1,21 +1,21 @@
 import { ErrorOutline } from '@mui/icons-material';
 import { Chip } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
-import { useGetStudyIsLoading } from 'stores/study/StudyStore';
+import { useGetStudyIsLoading, useStudyAnalysisWarnings } from 'stores/study/StudyStore';
 
 const StudyAnalysisWarnings = (props: { analysisId: string }) => {
     const getStudyIsLoading = useGetStudyIsLoading();
 
-    const { hasNoPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates } = useDisplayWarnings(props.analysisId);
+    const { hasEmptyPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates, hasInvalidEntries } =
+        useStudyAnalysisWarnings(props.analysisId);
 
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={false} loaderSize={20}>
-            {hasNoPoints && (
+            {hasEmptyPoints && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
                     icon={<ErrorOutline />}
-                    label="This analysis has no coordinates"
+                    label="This analysis has empty coordinates"
                     color="warning"
                 />
             )}
@@ -40,6 +40,14 @@ const StudyAnalysisWarnings = (props: { analysisId: string }) => {
                     sx={{ margin: '2px', marginBottom: '1rem' }}
                     icon={<ErrorOutline />}
                     label="This analysis may contain non MNI coordinates"
+                    color="warning"
+                />
+            )}
+            {hasInvalidEntries && (
+                <Chip
+                    sx={{ margin: '2px', marginBottom: '1rem' }}
+                    icon={<ErrorOutline />}
+                    label="This analysis has invalid entries"
                     color="warning"
                 />
             )}

@@ -78,10 +78,21 @@
 }
 
 .remove-column-icon {
-    color: #db2222;
+    display: flex;
+    color: #d32f2f;
     cursor: pointer;
+    opacity: 0.85;
+    transition:
+        color 0.15s,
+        opacity 0.15s;
+}
+
+/* Keeps the click target on this HTML wrapper: manualColumnMove crashes when the mousedown target is an SVG element */
+.remove-column-icon svg {
+    pointer-events: none;
 }
 
 .remove-column-icon:hover {
-    color: #b05f5f;
+    color: #b71c1c;
+    opacity: 1;
 }

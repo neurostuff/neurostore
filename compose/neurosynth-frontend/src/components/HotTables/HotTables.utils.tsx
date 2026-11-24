@@ -72,6 +72,7 @@ export const sanitizePaste = (data: unknown[][]) => {
             let newVal = value;
             newVal = stripTags(newVal); // strip all HTML tags that were copied over if they exist
             newVal = replaceString(newVal); // replace minus operator with javascript character code
+            newVal = (newVal as string).trim(); // the cell editor trims typed values, but paste does not
 
             if (newVal === 'true') newVal = true;
             else if (newVal === 'false') newVal = false;

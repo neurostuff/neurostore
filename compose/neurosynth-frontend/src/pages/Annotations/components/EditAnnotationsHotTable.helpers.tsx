@@ -3,10 +3,11 @@ import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { renderToString } from 'react-dom/server';
-import { Cancel } from '@mui/icons-material';
+import { RemoveCircle } from '@mui/icons-material';
 import styles from 'components/HotTables/HotTables.module.css';
 import { numericValidator } from 'handsontable/validators';
-import { booleanValidator } from 'components/HotTables/HotTables.utils';
+import { booleanValidator, createColWidths } from 'components/HotTables/HotTables.utils';
+import Handsontable from 'handsontable';
 import { ColumnSettings } from 'handsontable/settings';
 
 /** Cell merge range shape accepted by Handsontable's mergeCells option. */
@@ -21,16 +22,12 @@ export const hotSettings: HotTableProps = {
     theme: 'ht-theme-classic',
     licenseKey: 'non-commercial-and-evaluation',
     contextMenu: false,
-    viewportRowRenderingOffset: 4,
-    viewportColumnRenderingOffset: 20, // some arbitrarily large number to ensure that the row heights are calculated correctly when the user scrolls to the right
+    viewportRowRenderingOffset: 10,
+    viewportColumnRenderingOffset: 10, // some arbitrarily large number to ensure that the row heights are calculated correctly when the user scrolls to the right
     width: '100%',
     fixedColumnsStart: 2,
     wordWrap: true,
     autoRowSize: false,
-    // we need the rowHeaders setting, otherwise the row heights are not calculated correctly when merge cells are present
-    // however, we don't actually want to display the row headers, so we set the rowHeaderWidth to 0 and the rowHeaders to an empty string
-    rowHeaders: () => '', // do not display row header numbers
-    rowHeaderWidth: 0, // hide row headers
     id: 'hot-annotations',
     fillHandle: {
         direction: 'vertical',
@@ -48,7 +45,10 @@ export const hotDataToAnnotationNotes = (
     noteKeys: NoteKeyType[]
 ): NoteCollectionReturn[] => {
     const noteCollections: NoteCollectionReturn[] = hotData.map((row, index) => {
-        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string; isEdited: boolean };
+        const mappedStudyAnalysis = mapping.get(index);
+        if (!mappedStudyAnalysis) {
+            throw new Error(`No study analysis mapping found for row ${index}`);
+        }
 
         const updatedNote: { [key: string]: AnnotationNoteValue } = {};
         for (let i = 0; i < noteKeys.length; i++) {
@@ -132,7 +132,7 @@ export const createColumnHeader = (colKey: string, colType: EPropertyType, allow
         ? `<div class="${styles['column-header-remove']}">
         ${renderToString(
             <div className={styles['remove-column-icon']} style={{ width: '18px', height: '18px' }}>
-                <Cancel
+                <RemoveCircle
                     style={{
                         width: '100%',
                         height: '100%',
@@ -151,7 +151,18 @@ export const createColumnHeader = (colKey: string, colType: EPropertyType, allow
     );
 };
 
-export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
+/** The SVG inside the remove button has pointer-events: none, so mouse events target this wrapper. */
+export const isRemoveColumnButton = (target: EventTarget | null) =>
+    target instanceof HTMLElement && target.classList.contains(styles['remove-column-icon']);
+
+export const createColumnHeaders = (noteKeys: NoteKeyType[]) => [
+    'Study',
+    'Analysis',
+    ...noteKeys.map((noteKey) => createColumnHeader(noteKey.key, noteKey.type, noteKey.key !== 'included')),
+];
+
+// note columns do not set readOnly so that the table level readOnly setting applies to them
+export const createColumns = (noteKeys: NoteKeyType[]) =>
     [
         {
             className: `${styles['study-col']} ${styles['read-only-col']}`,
@@ -164,7 +175,6 @@ export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
         },
         ...noteKeys.map((x) => {
             return {
-                readOnly: disable !== undefined ? disable : false,
                 className: styles[x.type],
                 allowInvalid: false,
                 type: x.type === EPropertyType.BOOLEAN ? 'checkbox' : 'text',
@@ -177,6 +187,34 @@ export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
             } as ColumnSettings;
         }),
     ] as ColumnSettings[];
+
+/**
+ * alter() cannot add or remove columns while the columns setting is defined, and updateSettings({ columns })
+ * resets user column moves. hotData must therefore come from getData() (visual order) with the column change applied.
+ */
+export const reloadNoteColumns = (hot: Handsontable, hotData: AnnotationNoteValue[][], noteKeys: NoteKeyType[]) => {
+    hot.loadData(hotData);
+    hot.updateSettings({
+        columns: createColumns(noteKeys),
+        colHeaders: createColumnHeaders(noteKeys),
+        colWidths: createColWidths(noteKeys, 300, 150, 150),
+    });
+};
+
+/**
+ * Mirrors how Handsontable's manualColumnMove reorders columns: the moved note keys are removed and then
+ * inserted as a block at finalNoteKeyIndex of the remaining note keys.
+ */
+export const moveNoteKeys = (
+    noteKeys: NoteKeyType[],
+    movedNoteKeyIndexes: number[],
+    finalNoteKeyIndex: number
+): NoteKeyType[] => {
+    const movedNoteKeys = movedNoteKeyIndexes.map((noteKeyIndex) => noteKeys[noteKeyIndex]);
+    const remainingNoteKeys = noteKeys.filter((_, noteKeyIndex) => !movedNoteKeyIndexes.includes(noteKeyIndex));
+    remainingNoteKeys.splice(finalNoteKeyIndex, 0, ...movedNoteKeys);
+    return remainingNoteKeys.map((noteKey, index) => ({ ...noteKey, order: index }));
+};
 
 // we can assume that the hashmap maintains order and is sorted by key
 // this function gets all merge cells and only merge cells. If a cell does not need to be merged, a mergeCellObj is not created

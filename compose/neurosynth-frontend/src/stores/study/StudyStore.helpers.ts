@@ -148,7 +148,7 @@ export const studyPointsToStorePoints = (
         ];
     } else {
         storePoints = ((points || []) as Array<PointReturn>).map(
-            ({ entities, space, subpeak, cluster_size, values, kind, label_id, deactivation, ...args }) => {
+            ({ space, subpeak, cluster_size, values, deactivation, ...args }) => {
                 const typedValues = values as Array<PointValue> | undefined;
                 if (!analysisSpace && !!space) {
                     analysisSpace = DefaultSpaceTypes[space] ? DefaultSpaceTypes[space] : DefaultSpaceTypes.OTHER;
@@ -235,20 +235,9 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
             }));
 
             let studyPoints: PointRequest[] = [];
-            if (
-                points.length <= 1 &&
-                points.every(
-                    ({ isNew, x, y, z, value, cluster_size, subpeak }) =>
-                        isNew &&
-                        x === undefined &&
-                        y === undefined &&
-                        z === undefined &&
-                        value === undefined &&
-                        cluster_size === undefined &&
-                        subpeak === undefined
-                )
-            ) {
-                // if we only have one point and it is new AND undefined, then we discard it
+            // if we only have points that are all unset, then we discard them
+            // technically this should only ever be one point as multiple points will be handled by the validation guard
+            if (points.every(pointIsUnset)) {
                 studyPoints = [];
             } else {
                 studyPoints = points.map(({ isNew, value, ...pointArgs }, index) => ({
@@ -314,3 +303,75 @@ export const getEmptyStudy = (): IStoreStudy => {
         updated_at: undefined,
     };
 };
+
+/** Point warnings that the coordinates table reports while it holds unsaved rows. */
+export type PointWarnings = {
+    hasEmptyPoints: boolean;
+    hasNonMNICoordinates: boolean;
+    hasInvalidEntries: boolean;
+};
+
+export const isCoordinateMNI = (x: number, y: number, z: number) => {
+    const dims = {
+        xMax: 90,
+        xMin: -90,
+        yMax: 90,
+        yMin: -126,
+        zMax: 108,
+        zMin: -72,
+    };
+
+    return x <= dims.xMax && x >= dims.xMin && y <= dims.yMax && y >= dims.yMin && z <= dims.zMax && z >= dims.zMin;
+};
+
+/** Blanks are not non-numeric. Booleans and text that does not parse to a finite number are. */
+const isNonNumericValue = (value: unknown) => {
+    if (value === undefined || value === null) return false;
+    if (typeof value === 'number') return !Number.isFinite(value);
+    if (typeof value !== 'string') return true;
+    const text = value.trim();
+    return text !== '' && !Number.isFinite(Number(text));
+};
+
+const coordinateFields = ['x', 'y', 'z'] as const;
+const numericPointFields = [...coordinateFields, 'value', 'cluster_size'] as const;
+
+export const pointHasNonNumericValue = (point: Partial<IStorePoint>) =>
+    numericPointFields.some((field) => isNonNumericValue(point[field]));
+
+const booleanPointFields = ['subpeak', 'deactivation'] as const;
+
+/** A value its column cannot hold: text in a number column, or a non-boolean in a checkbox column. Blanks are not invalid. */
+export const pointHasInvalidEntry = (point: Partial<IStorePoint>) =>
+    pointHasNonNumericValue(point) ||
+    booleanPointFields.some((field) => {
+        const value = point[field] as unknown;
+        return value !== undefined && value !== null && typeof value !== 'boolean';
+    });
+
+export const pointIsUnset = (point: Partial<IStorePoint>) =>
+    point.x === undefined &&
+    point.y === undefined &&
+    point.z === undefined &&
+    point.value === undefined &&
+    point.subpeak === undefined &&
+    point.cluster_size === undefined &&
+    point.deactivation === undefined;
+
+export const pointIsMissingCoordinate = (point: Partial<IStorePoint>) =>
+    point.x === undefined || point.y === undefined || point.z === undefined;
+
+/** Every point has x, y, and z. An empty list does not. */
+export const allPointsHaveCoordinates = (points: Partial<IStorePoint>[]) =>
+    points.length > 0 && points.every((point) => !pointIsMissingCoordinate(point));
+
+/** Empty coordinates count as 0. Non-numeric coordinates get the invalid entries warning instead. */
+export const pointIsOutOfBounds = (point: { x?: unknown; y?: unknown; z?: unknown }) =>
+    !coordinateFields.some((field) => isNonNumericValue(point[field])) &&
+    !isCoordinateMNI(Number(point.x || 0), Number(point.y || 0), Number(point.z || 0));
+
+export const getPointWarnings = (points: IStorePoint[]): PointWarnings => ({
+    hasEmptyPoints: points.some(pointIsMissingCoordinate),
+    hasNonMNICoordinates: points.some(pointIsOutOfBounds),
+    hasInvalidEntries: points.some(pointHasInvalidEntry),
+});
