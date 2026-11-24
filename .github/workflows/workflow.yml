@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql', 'store-pgsql17', 'compose_pgsql17']
+        package: ['neurosynth_compose', 'compose_nginx', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql17', 'compose_pgsql17']
     runs-on: ubuntu-latest
 
     steps:
@@ -102,11 +102,6 @@ jobs:
               compose_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
               compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
               compose_nginx.cache-to=type=gha,scope=cached-compose-nginx,mode=max,ignore-error=true
-              compose_pgsql.tags+=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
-              ${{ steps.image_channel.outputs.channel != '' && format('compose_pgsql.tags+=ghcr.io/{0}/compose_pgsql:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
-              compose_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
-              compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
-              compose_pgsql.cache-to=type=gha,scope=cached-compose-pgsql,mode=max,ignore-error=true
               compose-pgsql17.tags+=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
               ${{ steps.image_channel.outputs.channel != '' && format('compose-pgsql17.tags+=ghcr.io/{0}/compose_pgsql17:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
@@ -170,6 +165,8 @@ jobs:
           GIT_SHA: ${{ github.sha }}
         with:
           files: docker-compose.yml,docker-compose.dev.yml,docker-compose.bake.override.yml
+          # The store images only: neurostore-mcp builds from ../mcp, outside this context.
+          targets: neurostore,store_nginx,store-pgsql17
           push: true
           load: false
           workdir: store
@@ -185,11 +182,6 @@ jobs:
               store_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
               store_nginx.cache-to=type=gha,scope=cached-store-nginx,mode=max,ignore-error=true
-              store-pgsql.tags+=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
-              ${{ steps.image_channel.outputs.channel != '' && format('store-pgsql.tags+=ghcr.io/{0}/store-pgsql:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
-              store-pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
-              store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
-              store-pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max,ignore-error=true
               store-pgsql17.tags+=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
               ${{ steps.image_channel.outputs.channel != '' && format('store-pgsql17.tags+=ghcr.io/{0}/store-pgsql17:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
@@ -374,7 +366,6 @@ jobs:
         set: |
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
-            compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
             compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
             compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
@@ -497,6 +488,37 @@ jobs:
         run: |
           ../scripts/validate_reduced_backup_restore.sh compose
 
+  mcp_tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+    -
+      name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+    -
+      name: Check out the API specs
+      working-directory: .
+      run: >-
+        git submodule update --init --recursive --depth 1
+        store/backend/neurostore/openapi compose/backend/neurosynth_compose/openapi
+    -
+      name: Set up uv
+      uses: astral-sh/setup-uv@v6
+    -
+      name: MCP server tests (network blocked)
+      run: |
+        uv venv --python 3.12
+        uv pip install -e ".[test]"
+        .venv/bin/python -m pytest --block-network --allowed-hosts=127.0.0.1,localhost
+        uvx flake8 src tests
+    -
+      name: Build the MCP server image
+      run: docker build -t neurostore-mcp .
+
   style_check:
     runs-on: ubuntu-latest
     steps:
@@ -548,7 +570,6 @@ jobs:
         set: |
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
-            compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
             compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
             compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
@@ -678,7 +699,6 @@ jobs:
         set: |
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
-            compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
             compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
             compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
@@ -686,6 +706,7 @@ jobs:
       uses: docker/bake-action@v6.0.0
       with:
         files: docker-compose.yml,docker-compose.dev.yml
+        targets: neurostore,store_nginx,store-pgsql17
         push: false
         load: true
         workdir: store
@@ -693,7 +714,6 @@ jobs:
         set: |
             neurostore.cache-from=type=gha,scope=cached-neurostore
             store_nginx.cache-from=type=gha,scope=cached-store-nginx
-            store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
             store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
     -
       name: Spin up compose backend

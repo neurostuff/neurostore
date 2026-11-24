@@ -227,8 +227,11 @@ journals
   created_at, updated_at
 
 base_studies
-  journal_id        text NULL REFERENCES journals(id) ON DELETE SET NULL, indexed
-  journal_match     text NULL                       -- as Venue.match
+  journal_id           text NULL REFERENCES journals(id) ON DELETE SET NULL, indexed
+  journal_match        text NULL      -- as Venue.match
+  publication          the journal's title, else publication_source (kept by a trigger)
+  publication_source   text NULL      -- the journal's name as the source printed it
+  journal_abbreviation text NULL      -- the journal's, kept by the same trigger
 ```
 
 `Study` and `Studyset` get no column. A study reads its base study's journal, and a studyset's
@@ -236,12 +239,33 @@ base_studies
 
 ## Old strings
 
-`publication` stays as the raw string on all three models, never rewritten by matching:
-- it is what the source printed;
-- it is all that the 0.2% of unmatched papers have;
-- the API keeps serving it unchanged.
+James, 2026-11-06: "eventually, I do want a migration where the publication is the normalized
+journal name for the article", folded into neurostuff/neurostore#1921.
 
-Readers that want the entity read `journal`.
+- **Base studies:**
+  - `publication` is the matched journal's title, else the source's string.
+  - The source's string is kept in `publication_source`, and the migration copies today's
+    `publication` into it, so nothing is lost.
+  - A trigger keeps `publication` so (migration `c3e5a7b9d1f2`, see
+    [Cost of the journal summary](#cost-of-the-journal-summary-measured-2026-11-06)).
+  - On the production copy, the 4,225 distinct strings become 2,711 distinct publications.
+- **What a write to `publication` means.** Every writer already writes `publication` and needs no
+  change: the study_schema upload, PubMed enrichment, the older ingesters, `POST`/`PUT /base-studies`,
+  creating a base study from a study, and merges.
+  - **A writer's value is the source's string**, unless it is the matched journal's own title: a
+    client sending back what it read, or a journal's rename arriving.
+  - **On a matched base study, the journal wins.** A user's edit of `publication` is kept as
+    `publication_source`, and `publication` stays the journal's title. No user owns a journal (James's
+    answer 1), and the Compose frontend writes base studies only by `POST` (its import).
+  - **Clearing `journal_id`**, or deleting the journal, returns `publication` to `publication_source`.
+- **Studies (versions) keep their own `publication`.** Users edit a version's publication in Compose,
+  and making it follow the base study would either drop those edits or put trigger work on study
+  writes, which James ruled out. A study shows the normalized name as `journal`. A version created
+  from a base study copies the base study's `publication` when it is created.
+- **Studysets keep theirs.** A studyset's `publication` is its own citation, not a paper's journal.
+- **The API and response shape are unchanged.** `publication` carries the normalized name.
+  `publication_source` isn't served. `?publication=` on base studies matches normalized names (it is a
+  substring match on `publication`).
 
 ## API and spec (neurostore-spec PR)
 
@@ -293,6 +317,194 @@ Readers that want the entity read `journal`.
 
 Rollback: the downgrade drops `base_studies.journal_id`, `journal_match` and `journals`. `publication`
 was never touched, so nothing is lost and the API's old field is unchanged throughout.
+
+## Cost of the journal summary (measured 2026-11-06)
+
+**Question.** Since neurostuff/neurostore#1918, `BaseStudy.journal` and `Study.journal` are correlated
+scalar subqueries loaded with every row:
+- a base study reads `journal_id → journals`;
+- a study reads `base_study → journal_id → journals`.
+
+What does that cost, and is there a costless way to keep the journal name on `base_studies`?
+The answer, below: a copy on `base_studies` kept by triggers.
+
+**Input.**
+- **Data:** the production backup of 2026-11-06, restored to a scratch database and migrated to head:
+  76,664 base studies, 221,886 studies, 1,914 studysets. Journals were filled offline from this design's
+  matching results: 2,691 journals, assigned to 76,503 base studies (99.8%).
+- **Skipped data:** pipeline, full-text, claim and review tables, which these endpoints don't read.
+- **Harness:** the ASGI app in process, with no response cache, so every request reaches Postgres.
+  Each endpoint got one cold run, then five warm runs (median reported).
+- **What was recorded:** wall time, SQL time (SQLAlchemy cursor events), query count, peak Python
+  memory (tracemalloc) and a digest of the response.
+- **Machine:** the laptop, under its normal load (load average about 4). Absolute times are noisy;
+  everything was compared on the same data and machine.
+
+**Candidates.**
+- **pre:** master before #1918 (eb454cd5): deferred, left out where not loaded.
+- **(a):** #1918 (be9f8e97): loaded with the row.
+- **(b):** a denormalized `base_studies.journal_summary` JSONB copy; a study reads its base study's
+  copy (one level).
+- **(c):** a `BaseStudy.journal_record` relationship, loaded by `selectinload`: one `IN` query per page.
+  The hand-built studyset responses use a `LEFT JOIN`.
+- **(d):** deferred again, with `undefer` in the views and write paths. Its read SQL is that of
+  **pre**, so pre's numbers stand for it.
+
+**Endpoints.** Warm median of wall time and SQL time, in ms.
+
+| Endpoint | pre | (a) | (b) | (c) |
+|---|---|---|---|---|
+| `GET /base-studies/?page_size=10` | 162 / 137 | 135 / 122 | 135 / 121 | 122 / 108 |
+| `GET /base-studies/?page_size=100` | 152 / 118 | 164 / 117 | 166 / 132 | 146 / 118 |
+| `GET /base-studies/?page_size=1000` | 526 / 223 | 415 / 198 | 462 / 212 | 397 / 182 |
+| `GET /base-studies/?page_size=10&nested=true` | 180 / 132 | 149 / 106 | 182 / 133 | 158 / 113 |
+| `GET /base-studies/?page_size=100&nested=true` | 736 / 231 | 643 / 203 | 797 / 231 | 663 / 217 |
+| `GET /base-studies/?page_size=1000&nested=true` | 8,195 / 1,361 | 7,179 / 1,150 | 6,470 / 1,080 | 6,367 / 1,151 |
+| `GET /studies/?page_size=10` | 79 / 64 | 80 / 64 | 64 / 51 | 82 / 63 |
+| `GET /studies/?page_size=100` | 134 / 78 | 179 / 111 | 103 / 67 | 146 / 88 |
+| `GET /studies/?page_size=1000` | 935 / 263 | 904 / 271 | 800 / 219 | 901 / 242 |
+| `GET /studysets/{id}?nested=true` (5,672 studies) | 3,881 / 1,918 | 4,051 / 1,947 | 3,953 / 2,005 | 4,139 / 1,991 |
+| `GET /annotations/{id}` (that studyset's annotation) | 1,721 / 177 | 1,991 / 204 | 1,828 / 180 | 2,228 / 242 |
+
+- **Peak memory is equal across candidates**, within 5%. It is 19 MB for a page of 1,000 base studies,
+  258 MB for 1,000 nested base studies and 266 MB for the 5,672-study studyset.
+- **Query counts:** (c) adds 1 query per page for base studies and 2–3 for studies. The others are equal.
+- **Response digests are identical for (a), (b) and (c)** on every endpoint. They differ from pre only
+  where pre left `journal` out: the versions nested in base studies.
+- **Growth is linear in the page size.** At 10, 100 and 1,000 rows, all candidates scale the same way.
+
+**Endpoint timings can't tell the candidates apart.** The spread between candidates is no larger than
+the run-to-run spread.
+- On the studyset and annotation responses, pre runs exactly the same journal SQL as (a), yet the two
+  differ by 4% and 16%.
+- On the nested base studies, pre's SQL lacks the subquery for the versions, yet at a page of 1,000
+  pre is the slowest.
+
+The cost of the subquery is below what these endpoints can resolve.
+
+**The subquery itself.** `EXPLAIN (ANALYZE, BUFFERS)` on the list queries, execution time in ms:
+
+| Query (page of 1,000, by `created_at`) | Without summary | (a) subquery | (b) copy |
+|---|---|---|---|
+| base studies | 1.3 | 13.0 | 1.4 |
+| studies | 1.3 | 21.1 | 5.9 (one level) |
+
+| Every study (221,886 rows) | ms |
+|---|---|
+| no summary | 48 |
+| (a) correlated subquery | 2,991 |
+| `LEFT JOIN` (c's form) | 811 |
+
+- **Per row,** the subquery costs about 12 µs for a base study (one index lookup on `journals`) and
+  20 µs for a study (two lookups). On a page of 1,000 that is 12 ms and 20 ms. Those pages' endpoints
+  take 400–900 ms wall, so the subquery is 2–3% of them.
+- **The whole-table figure** matters only if a path loads every study as ORM objects. None of the
+  measured paths does: studyset and annotation responses select their columns explicitly.
+
+**What each candidate costs to write, and what can go stale.**
+- **(a)** writes nothing extra and nothing can go stale. The journal is read from `journals` every time.
+- **(b)** costs nothing extra when a journal is first attached: `journals.attach` already writes the
+  base study's row. But every path that sets `journal_id` or changes a journal must also write the copy:
+  - `journals.attach`, from the upload and the matcher;
+  - the merge, which copies `journal_id` (`CONTENT_FIELDS`);
+  - `refresh_journals`, which changes titles and abbreviations and repoints merged sources;
+  - the migration's backfill;
+  - any hand-written SQL.
+
+  A missed path leaves the copy stale. Measured on the scratch copy, in a rolled-back transaction:
+  - the backfill of 76,503 rows took 20.8 s;
+  - renaming the journal with the most papers (6,852 base studies) took 2.7 s;
+  - a consistency check (copies that disagree with their journal) took 0.33 s.
+
+  Each update rewrites the row, so its pg_search full-text index entries are rewritten too.
+- **(c)** writes nothing extra and nothing can go stale. It adds 1–3 queries per page, and a join in
+  each hand-built response. Every view and write path has to load the relationship, or it falls back
+  to one query per row.
+- **(d)** writes nothing extra and nothing can go stale. Every path that serves `journal` has to
+  `undefer` it, including POST, PUT and clone, the gap #1918 fixed. A path that forgets omits
+  `journal` from its response: the bug that broke `test_source_id`.
+
+**Decision: (b), the copy on base studies** (James, 2026-11-06). Reads matter more than writes,
+provided study writes are not delayed; base-study writes may be.
+- **The copy:** the journal's title lives in `base_studies.publication` itself (see
+  [Old strings](#old-strings)), and its abbreviation in `journal_abbreviation`. `journal_id` holds the
+  id.
+- **Kept current by two triggers (migration `c3e5a7b9d1f2`):**
+  - one fires when a base study's `journal_id`, `publication`, `publication_source` or
+    `journal_abbreviation` is written;
+  - one fires when a journal's title or abbreviation changes.
+
+  So every writer stays consistent with no Python change: `journals.attach`, merges, `refresh_journals`,
+  the ingesters and hand-written SQL. After a flush, the session rereads what the trigger set on the
+  base studies it wrote, so a response never shows a pre-trigger value.
+- **Studies** get no column and no trigger. A study reads its base study's copy with one lookup
+  instead of two.
+- **The response is unchanged:** byte-identical to (a) on every measured endpoint.
+
+Measured on the same production copy, after the migration. Read queries were repeated 8 times,
+alternating, first pass discarded; medians in ms:
+
+| Query | No summary | (a) | Copy |
+|---|---|---|---|
+| base studies, page of 1,000 | 3.0 | 9.0 | 6.0 |
+| studies, page of 1,000 | 2.5 | 16.5 | 15.1 |
+| every base study (76,664) | 16 | 841 | 248 |
+| every study (221,886) | 62 | 3,215 | 2,387 |
+
+- **Base studies:** the copy halves the summary's cost on a page (6.0 → 3.0 ms over no summary), and
+  cuts it 3.6× on a full scan.
+- **Studies:** the gain is small, about 10% of the summary's cost, because the cost is the lookup of
+  the study's base-study row. Only a copy on `studies` would remove that, and it would put trigger
+  work on study writes.
+
+**Endpoints, (a) against the copy.** Two interleaved rounds each (a, copy, a, copy), on the laptop
+under load. Most differences are within run-to-run noise: the copy's base-study page of 1,000 took
+910 ms in one round and 455 ms in the other. The one consistent difference is
+`GET /studysets/{id}?nested=true` for 5,672 studies:
+- wall time 4,996 and 4,765 ms for (a), against 4,297 and 4,141 for the copy;
+- 13% less SQL time.
+
+**Writes**, 1,000 rows, each run three times in a rolled-back transaction:
+
+| Write | ms |
+|---|---|
+| studies: set `name` (no trigger on studies; unchanged) | 739–1,063 |
+| base studies: set `name` (the copy trigger doesn't fire) | 345–430 |
+| base studies: set `journal_id`, with the copy trigger | 295–323 |
+| base studies: set `journal_id`, trigger disabled (as (a)) | 233–269 |
+| rename the journal with the most papers (6,852), propagated | 2,102–2,452 |
+| same rename, propagation disabled (as (a)) | < 1 |
+
+Other costs:
+- The migration's backfill of 76,503 rows took 20.8 s.
+- A consistency check (copies that disagree with their journal) finds 0 and takes 0.15 s.
+- Each base-study update also rewrites the row's pg_search full-text index entries.
+
+**With `publication` as the journal's title** (the same migration, after James folded it in). The
+read paths are unchanged: the summary's title comes from `publication` instead of `journal_title`, in
+the same row. Measured on the production copy:
+- **The migration** took 80.6 s with 99.8% of base studies matched, and 39.5 s to downgrade, which
+  restores the source's strings. Both include about 5 s of app startup. Production isn't matched yet,
+  so there the migration only copies `publication` into `publication_source`.
+- **Writes**, 1,000 rows, three runs each, on a noisier machine (the same study write took 1,084 to
+  3,274 ms):
+  - writing `publication` took 376–464 ms with the trigger and 471–543 ms without;
+  - writing `journal_id` took 439–515 ms with it and 418–577 ms without;
+  - writing `name` doesn't fire the trigger: 586–675 ms.
+
+  The trigger's cost is below the noise.
+- **Renaming** the journal with the most papers (6,852) took 3.1–3.6 s.
+- **Consistency:** no matched row's `publication` differs from its journal's title, and no unmatched
+  row's differs from its source string. 4,225 distinct source strings become 2,711 distinct
+  publications.
+
+**Not chosen:**
+- **(a):** it costs twice as much per base-study page, and 3.6× on scans.
+- **(c):** it adds 1–3 queries per page and a join in hand-built responses, and every path must load
+  the relationship.
+- **(d):** every path must remember to `undefer`.
+- **A copy on studies too:** each study insert would run a trigger lookup, and a rename would
+  rewrite the journal's studies as well. That puts work on study writes, which James ruled out.
 
 ## Questions for James
 

@@ -5,9 +5,6 @@ services:
   compose_nginx:
     image: ghcr.io/${GHCR_OWNER}/compose_nginx:sha-${GIT_SHA}
 
-  compose_pgsql:
-    image: ghcr.io/${GHCR_OWNER}/compose_pgsql:sha-${GIT_SHA}
-
   compose-pgsql17:
     image: ghcr.io/${GHCR_OWNER}/compose_pgsql17:sha-${GIT_SHA}
 

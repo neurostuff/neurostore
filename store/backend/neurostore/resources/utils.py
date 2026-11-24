@@ -59,10 +59,20 @@ def user_has_role(user, name):
     return name in _user_role_names(user)
 
 
+def _acting_as_agent(user):
+    """True when ``user`` is this request's caller and the caller is an agent's token."""
+    try:
+        token_info = context.get("token_info") or {}
+    except Exception:
+        return False
+    return bool(token_info.get("delegated")) and token_info.get("sub") == user.external_id
+
+
 def _user_role_names(user):
-    """Return the user's role names, memoized per user id on the request."""
+    """Return the user's role names, memoized per user id on the request; an agent
+    acting for the user gets none of them."""
     user_identity = sa.inspect(user).identity
-    if not user_identity:
+    if not user_identity or _acting_as_agent(user):
         return frozenset()
     user_id = user_identity[0]
 
@@ -137,4 +147,5 @@ def sortable_columns(model):
         for attr in model.__mapper__.column_attrs
         if not isinstance(attr.columns[0].type, _UNSORTABLE_TYPES)
         and attr.key not in _UNSORTABLE_NAMES
+        and attr.key not in getattr(model, "__unsortable__", ())
     }

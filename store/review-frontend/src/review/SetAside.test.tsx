@@ -35,7 +35,7 @@ async function renderScreen(): Promise<ReviewStores> {
     client.start();
     render(
         <ThemeProvider theme={theme}>
-            <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <MemoryRouter>
                 <ReviewStoresProvider stores={store}>
                     <OpClientProvider client={client}>
                         <ReviewScreen />

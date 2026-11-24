@@ -104,7 +104,8 @@ services:
       if
       manage process-base-study-flag-outbox --no-loop &&
       manage process-base-study-metadata-outbox --no-loop &&
-      manage build-neurostore-studyset-release --nightly --monthly-if-due;
+      manage build-neurostore-studyset-release --nightly --monthly-if-due &&
+      manage refresh-public-query;
       then
       sleep "$${NEUROSTORE_STUDYSET_RELEASE_INTERVAL_SECONDS:-86400}";
       else
@@ -144,26 +145,33 @@ services:
       - default
       - proxy_shared
 
-  store-pgsql:
-    image: store-pgsql
+  # The MCP server (../mcp) at /mcp. Without the NEUROSTORE_MCP_* sign-in settings it
+  # only reads, anonymously. mcp/docs/remote-hosting-and-oauth.md has the Auth0 setup.
+  # In the `mcp` profile, so a bare `up` (local dev, CI) leaves it out; the deploy names it.
+  neurostore-mcp:
+    image: neurostore-mcp
+    profiles: [mcp]
     restart: always
-    build: 
-      context: ./postgres
-      dockerfile: ./Dockerfile.old
-    shm_size: '256MB'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    build: ../mcp
+    depends_on:
+      neurostore:
+        condition: service_started
     expose:
-      - '5432'
-    env_file:
-      - .env
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 3s
-      timeout: 3s
-      retries: 10
-  
+      - "8000"
+    # proxy_shared is the network the deploy puts this track's Compose stack on, so it is
+    # called directly, as Store is, past both nginx's.
+    networks:
+      - default
+      - proxy_shared
+    environment:
+      NEUROSTORE_API_URL: http://neurostore:8000/api
+      COMPOSE_API_URL: http://compose:8000/api
+      NEUROSTORE_MCP_PUBLIC_URL: ${NEUROSTORE_MCP_PUBLIC_URL:-}
+      NEUROSTORE_MCP_AUTH0_DOMAIN: ${NEUROSTORE_MCP_AUTH0_DOMAIN:-}
+      NEUROSTORE_MCP_AGENT_AUDIENCE: ${NEUROSTORE_MCP_AGENT_AUDIENCE:-}
+      NEUROSTORE_MCP_CLIENT_ID: ${NEUROSTORE_MCP_CLIENT_ID:-}
+      NEUROSTORE_MCP_CLIENT_SECRET: ${NEUROSTORE_MCP_CLIENT_SECRET:-}
+
   store-pgsql17:
     image: store-pgsql17
     restart: always
@@ -229,7 +237,6 @@ services:
       - default
 
 volumes:
-  postgres_data:
   grafana_data:
   postgres17_data:
 

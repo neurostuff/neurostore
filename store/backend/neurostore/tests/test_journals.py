@@ -4,9 +4,16 @@ for real papers found in production (docs/journals/DESIGN.md)."""
 
 import pytest
 import requests
+import sqlalchemy as sa
 
 from neurostore.ingest.study_schema import ingest_upload
-from neurostore.models import BaseStudy, BaseStudyIdentifier, BaseStudyMetadataOutbox, Journal
+from neurostore.models import (
+    BaseStudy,
+    BaseStudyIdentifier,
+    BaseStudyMetadataOutbox,
+    Journal,
+    Study,
+)
 from neurostore.services import journals
 from neurostore.services.base_study_metadata_enrichment import _match_journals
 from neurostore.tests import study_schema_fixtures as fx
@@ -46,6 +53,60 @@ def _upload(pmid, venue):
     paper["bibliography"]["journal"] = "Hum Brain Mapp"
     paper["bibliography"]["venue"] = venue
     return {"coordinate_parse": fx.parse([ANALYSIS], pmid=pmid), "parsed_paper": paper}
+
+
+def test_a_base_study_s_publication_is_its_journal_s_title_and_keeps_the_source_s(session):
+    paper = _base_study(session, "paper", publication="Hum Brain Mapp")
+    study = Study(name="a version", level="group", base_study=paper, publication="HBM")
+    session.add(study)
+    session.commit()
+
+    def row():
+        session.refresh(paper)
+        session.refresh(study)
+        return paper.publication, paper.publication_source, paper.journal, study.journal
+
+    assert row() == ("Hum Brain Mapp", "Hum Brain Mapp", None, None)
+
+    hbm = _hbm(session)
+    paper.journal_id, paper.journal_match = hbm.id, "doi"
+    session.commit()
+    summary = {"id": hbm.id, "title": "Human Brain Mapping", "abbreviation": "Hum Brain Mapp"}
+    assert row() == ("Human Brain Mapping", "Hum Brain Mapp", summary, summary)
+    assert study.publication == "HBM"  # a version keeps its own
+
+    # a client sending back what it read changes nothing; a new string is the source's
+    paper.publication = "Human Brain Mapping"
+    session.commit()
+    assert row() == ("Human Brain Mapping", "Hum Brain Mapp", summary, summary)
+    paper.publication = "HUMAN BRAIN MAPPING"
+    session.commit()
+    assert row() == ("Human Brain Mapping", "HUMAN BRAIN MAPPING", summary, summary)
+
+    hbm.title = "Human Brain Mapping (renamed)"
+    session.commit()
+    renamed = {**summary, "title": "Human Brain Mapping (renamed)"}
+    assert row() == ("Human Brain Mapping (renamed)", "HUMAN BRAIN MAPPING", renamed, renamed)
+
+    session.execute(
+        sa.update(BaseStudy).where(BaseStudy.id == paper.id).values(journal_abbreviation="x")
+    )
+    session.commit()
+    assert row()[2] == renamed
+
+    session.delete(hbm)
+    session.commit()
+    assert row() == ("HUMAN BRAIN MAPPING", "HUMAN BRAIN MAPPING", None, None)
+    assert (paper.journal_id, paper.journal_abbreviation) == (None, None)
+
+
+def test_an_attached_journal_is_shown_without_rereading_the_base_study(session, app):
+    paper = _base_study(session, "paper", publication="Hum Brain Mapp")
+    journals.attach(paper, journals.Match(_hbm(session).openalex_id, "doi"), settings=app.config)
+    session.flush()
+
+    assert (paper.publication, paper.publication_source) == ("Human Brain Mapping",
+                                                             "Hum Brain Mapp")
 
 
 @pytest.mark.vcr
@@ -131,7 +192,8 @@ def test_an_upload_names_its_journal_and_neurostore_reads_it_once(session, app):
     for summary, match in ((first, "doi"), (second, "title")):
         base_study = session.get(BaseStudy, summary["base_study_id"])
         assert (base_study.journal_id, base_study.journal_match) == (journal.id, match)
-        assert base_study.publication == "Hum Brain Mapp"
+        assert (base_study.publication, base_study.publication_source) == (
+            "Human Brain Mapping", "Hum Brain Mapp")
 
 
 def test_an_upload_whose_journal_cannot_be_read_still_stands(session, app, monkeypatch):

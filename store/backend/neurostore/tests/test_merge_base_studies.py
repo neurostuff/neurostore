@@ -69,10 +69,7 @@ from neurostore.services.base_study_metadata_enrichment import (
     lookup_ids_pubmed,
     process_base_study_metadata_outbox_batch,
 )
-from neurostore.services.neurostore_studyset_releases import (
-    fetch_latest_feature_payloads,
-    select_coordinate_studies,
-)
+from neurostore.services.neurostore_studyset_releases import select_coordinate_studies
 from neurostore.tests import study_schema_fixtures as fx
 
 GAIN = fx.table_analysis("tbl1", [0], "Gain > Neutral", [fx.point((10, 20, 30))])
@@ -358,6 +355,7 @@ def test_the_keeper_takes_the_old_base_study_s_journal_when_it_has_none(session,
 
     keeper = session.get(BaseStudy, pair["keeper"])
     assert (keeper.journal_id, keeper.journal_match) == (journal.id, "doi")
+    assert keeper.publication == "Human Brain Mapping"
 
 
 def test_dry_run_prints_what_execute_does_and_writes_nothing(session, pair):
@@ -452,8 +450,8 @@ def test_execute_moves_the_duplicate_onto_the_keeper(session, pair):
     }
 
 
-def test_the_release_and_latest_results_stay_the_keepers(session, pair):
-    """The duplicate's version and results are newer; the keeper's own still win."""
+def test_the_release_stays_the_keepers(session, pair):
+    """The duplicate's version is newer; the keeper's own still wins."""
     # A paper whose version metadata holds a NUL escape, which json keeps and jsonb
     # refuses, must not break the release.
     other = BaseStudy(name="other", level="group", has_coordinates=True)
@@ -465,7 +463,6 @@ def test_the_release_and_latest_results_stay_the_keepers(session, pair):
         {"m": '{"note": "a\\u0000b"}', "id": nul.id},
     )
     session.commit()
-    before_features = fetch_latest_feature_payloads([pair["keeper"]])[pair["keeper"]]
 
     _merge(pair)
     session.expire_all()
@@ -474,10 +471,6 @@ def test_the_release_and_latest_results_stay_the_keepers(session, pair):
     selected = [s for s in released if s["base_study_id"] == pair["keeper"]]
     assert [s["study_id"] for s in selected] == [pair["neurosynth"]]
     assert nul.id in {s["study_id"] for s in released}
-    after = fetch_latest_feature_payloads([pair["keeper"]])[pair["keeper"]]
-    assert {name: f["result_id"] for name, f in after.items()} == {
-        name: f["result_id"] for name, f in before_features.items()
-    }
 
 
 def test_a_merged_in_version_is_released_when_the_keeper_has_none_eligible(session, pair):

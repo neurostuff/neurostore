@@ -8,13 +8,9 @@ const useCitation = () => {
         queryKey: ['citationPayload'],
 
         queryFn: async () => {
-            // @ts-expect-error citation-js packages do not provide first-party TS types
             const citationCore = await import('@citation-js/core');
-            // @ts-expect-error citation-js packages do not provide first-party TS types
             await import('@citation-js/plugin-bibtex');
-            // @ts-expect-error citation-js packages do not provide first-party TS types
             await import('@citation-js/plugin-csl');
-            // @ts-expect-error citation-js packages do not provide first-party TS types
             await import('@citation-js/plugin-doi');
 
             const citations = await citationCore.Cite.async(CITATION_DOIS);
@@ -39,7 +35,7 @@ const useCitation = () => {
         gcTime: 1000 * 60 * 60 * 2,
 
         // 2 hours
-        staleTime: 1000 * 60 * 60 * 2
+        staleTime: 1000 * 60 * 60 * 2,
     });
 };
 

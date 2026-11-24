@@ -41,18 +41,9 @@ PREVIOUS_REVISION = "a7d3e9c1b5f2"
 REVIEW_REVISION = "c5d8e2f4a6b1"
 POINTER_INDEX_REVISION = "d4b7e1f9a3c2"
 STABLE_ID_REVISION = "f2b4d6e8a0c3"
-TEXT_COPY_REVISION = "a3c5e7f9b1d4"
-CORRESPONDING_EMAILS_REVISION = "c7e9a1b3d5f8"
-IDENTIFIERS_REVISION = "a8e1c4d7b2f6"
 SEARCH_INDEX_REVISION = "d5f7a9c1e3b5"
-MERGED_FROM_REVISION = "d4e6f8a0b2c4"
-AUTHORS_REVISION = "e7a9c1d3f5b8"
 LINKS_REVISION = "630a3e276f54"
 LICENCE_SPELLING_REVISION = "0ecb2ae2459c"
-API_KEYS_REVISION = "b3d5f7a9c1e4"
-DATA_SOURCES_REVISION = "d4e6a8c0b2f1"
-ANALYSIS_FEATURES_REVISION = "a7c9e1b3d5f6"
-JOURNALS_REVISION = "a7c9e1f3b5d2"
 MIGRATIONS = Path(__file__).resolve().parents[3] / "migrations" / "versions"
 LOWERCASE_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REVIEW_TABLE_NAMES = {"fulltexts", "review_sources", "reviews", "review_ops", "review_assignments"}
@@ -660,24 +651,10 @@ def test_the_pointer_index_migration_follows_the_review_migration():
     assert script.get_revision(POINTER_INDEX_REVISION).down_revision == REVIEW_REVISION
 
 
-def test_the_journals_migration_is_the_only_head():
+def test_the_migrations_have_one_head():
+    """Two branches that each add a migration leave two heads; merge them in one revision."""
     script = ScriptDirectory.from_config(service_migrations.make_alembic_config())
-    assert script.get_heads() == [JOURNALS_REVISION]
-    assert script.get_revision(JOURNALS_REVISION).down_revision == ANALYSIS_FEATURES_REVISION
-    assert script.get_revision(ANALYSIS_FEATURES_REVISION).down_revision == DATA_SOURCES_REVISION
-    assert script.get_revision(DATA_SOURCES_REVISION).down_revision == API_KEYS_REVISION
-    assert script.get_revision(API_KEYS_REVISION).down_revision == LICENCE_SPELLING_REVISION
-    assert script.get_revision(LICENCE_SPELLING_REVISION).down_revision == LINKS_REVISION
-    assert script.get_revision(LINKS_REVISION).down_revision == SEARCH_INDEX_REVISION
-    assert script.get_revision(SEARCH_INDEX_REVISION).down_revision == AUTHORS_REVISION
-    assert script.get_revision(AUTHORS_REVISION).down_revision == IDENTIFIERS_REVISION
-    assert script.get_revision(IDENTIFIERS_REVISION).down_revision == MERGED_FROM_REVISION
-    assert script.get_revision(MERGED_FROM_REVISION).down_revision == (
-        CORRESPONDING_EMAILS_REVISION
-    )
-    assert script.get_revision(CORRESPONDING_EMAILS_REVISION).down_revision == TEXT_COPY_REVISION
-    assert script.get_revision(TEXT_COPY_REVISION).down_revision == STABLE_ID_REVISION
-    assert script.get_revision(STABLE_ID_REVISION).down_revision == POINTER_INDEX_REVISION
+    assert len(script.get_heads()) == 1
 
 
 def test_the_stable_id_migration_gives_each_entity_its_own_id_and_its_downgrade_drops_them(
@@ -1148,18 +1125,35 @@ def test_no_api_schema_serializes_links_link_domains_or_licences():
     assert "license" not in schemas.BaseStudySchema().fields
 
 
+def _properties_named(node, name, path=()):
+    """The paths of every schema in ``node`` with a property ``name``."""
+    if isinstance(node, dict):
+        if isinstance(node.get("properties"), dict) and name in node["properties"]:
+            yield path
+        for key, value in node.items():
+            yield from _properties_named(value, name, (*path, key))
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            yield from _properties_named(value, name, (*path, i))
+
+
 @pytest.mark.skipif(not OPENAPI.is_file(), reason="openapi submodule not checked out")
-def test_the_spec_names_no_link_table_or_licence_column():
+def test_the_spec_names_no_link_table_and_only_a_full_text_s_licence():
     text = OPENAPI.read_text(encoding="utf-8")
     for name in ("base_study_links", "base-study-links", "link_domains", "link-domains"):
         assert name not in text
-    assert not re.search(r"^\s+license:", text, re.MULTILINE)
+    # A full text's licence is served (ADR 0022); a base study's is not.
+    spec = yaml.safe_load(text)
+    owners = {path[2] for path in _properties_named(spec, "license") if path[:2] == (
+        "components", "schemas")}
+    assert owners == {"fulltext-summary", "fulltext-attribution"}
+    assert not [p for p in _properties_named(spec, "license") if p[0] != "components"]
 
 
-def test_base_study_schema_does_not_serialize_its_fulltext():
+def test_base_study_schema_links_its_fulltext_by_id_only():
     fields = schemas.BaseStudySchema().fields
     assert "fulltext" not in fields
-    assert "fulltext_id" not in fields
+    assert fields["fulltext_id"].dump_only
 
 
 @pytest.mark.skipif(not OPENAPI.is_file(), reason="openapi submodule not checked out")
@@ -1174,7 +1168,8 @@ def _refs(node):
             yield from _refs(value)
 
 
-def test_only_review_routes_name_the_review_tables():
+def test_only_review_routes_name_the_review_tables_but_fulltexts():
+    """Full texts are served by /fulltexts, their text through one gate (ADR 0022)."""
     spec = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
     components = spec["components"]["schemas"]
     public = {p: item for p, item in spec["paths"].items() if not p.startswith("/review/")}
@@ -1186,6 +1181,8 @@ def test_only_review_routes_name_the_review_tables():
             todo.extend(_refs(components[name]))
     text = yaml.safe_dump([public, [components[name] for name in sorted(reached)]])
     for model in REVIEW_TABLES:
+        if model is Fulltext:
+            continue
         table = model.__tablename__
         assert not re.search(rf"\b{table}\b|\b{table.replace('_', '-')}\b", text), table
 

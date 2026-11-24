@@ -40,7 +40,7 @@ const useCreateAnalysis = vi.fn().mockReturnValue({
 });
 
 const useUpdateImage = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
     mutateAsync: vi.fn().mockResolvedValue({}),
 });

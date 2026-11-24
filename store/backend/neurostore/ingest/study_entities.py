@@ -19,6 +19,7 @@ from neurostore.models.data import (
     StudyEntity,
     StudyEntityCandidateLink,
     entity_name_key,
+    generate_id,
     sibling_identity,
     study_entity_hash,
 )
@@ -211,6 +212,8 @@ def sync_record_entities(base_study, record, locate=None, config=None):
             carried = record_entity.item.get("stable_id")
             stable_id = {"stable_id": carried} if carried and carried not in by_stable_id else {}
             entity = StudyEntity(
+                # Set here rather than at flush: children name it as their parent.
+                id=generate_id(),
                 base_study_id=base_study.id,
                 entity_class=record_entity.entity_class,
                 entity_hash=record_entity.entity_hash,
@@ -220,7 +223,6 @@ def sync_record_entities(base_study, record, locate=None, config=None):
                 **stable_id,
             )
             db.session.add(entity)
-            db.session.flush()
             by_hash[entity.entity_hash] = entity
             take(record_entity, entity)
             result["created"] += 1
