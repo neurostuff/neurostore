@@ -1127,18 +1127,35 @@ def test_no_api_schema_serializes_links_link_domains_or_licences():
     assert "license" not in schemas.BaseStudySchema().fields
 
 
+def _properties_named(node, name, path=()):
+    """The paths of every schema in ``node`` with a property ``name``."""
+    if isinstance(node, dict):
+        if isinstance(node.get("properties"), dict) and name in node["properties"]:
+            yield path
+        for key, value in node.items():
+            yield from _properties_named(value, name, (*path, key))
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            yield from _properties_named(value, name, (*path, i))
+
+
 @pytest.mark.skipif(not OPENAPI.is_file(), reason="openapi submodule not checked out")
-def test_the_spec_names_no_link_table_or_licence_column():
+def test_the_spec_names_no_link_table_and_only_a_full_text_s_licence():
     text = OPENAPI.read_text(encoding="utf-8")
     for name in ("base_study_links", "base-study-links", "link_domains", "link-domains"):
         assert name not in text
-    assert not re.search(r"^\s+license:", text, re.MULTILINE)
+    # A full text's licence is served (ADR 0022); a base study's is not.
+    spec = yaml.safe_load(text)
+    owners = {path[2] for path in _properties_named(spec, "license") if path[:2] == (
+        "components", "schemas")}
+    assert owners == {"fulltext-summary", "fulltext-attribution"}
+    assert not [p for p in _properties_named(spec, "license") if p[0] != "components"]
 
 
-def test_base_study_schema_does_not_serialize_its_fulltext():
+def test_base_study_schema_links_its_fulltext_by_id_only():
     fields = schemas.BaseStudySchema().fields
     assert "fulltext" not in fields
-    assert "fulltext_id" not in fields
+    assert fields["fulltext_id"].dump_only
 
 
 @pytest.mark.skipif(not OPENAPI.is_file(), reason="openapi submodule not checked out")
@@ -1153,7 +1170,8 @@ def _refs(node):
             yield from _refs(value)
 
 
-def test_only_review_routes_name_the_review_tables():
+def test_only_review_routes_name_the_review_tables_but_fulltexts():
+    """Full texts are served by /fulltexts, their text through one gate (ADR 0022)."""
     spec = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
     components = spec["components"]["schemas"]
     public = {p: item for p, item in spec["paths"].items() if not p.startswith("/review/")}
@@ -1165,6 +1183,8 @@ def test_only_review_routes_name_the_review_tables():
             todo.extend(_refs(components[name]))
     text = yaml.safe_dump([public, [components[name] for name in sorted(reached)]])
     for model in REVIEW_TABLES:
+        if model is Fulltext:
+            continue
         table = model.__tablename__
         assert not re.search(rf"\b{table}\b|\b{table.replace('_', '-')}\b", text), table
 

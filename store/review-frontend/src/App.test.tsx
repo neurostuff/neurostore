@@ -54,11 +54,7 @@ const api: ReviewApi = {
 function renderAt(path: string, routesApi: ReviewApi = api) {
     return render(
         <ThemeProvider theme={theme}>
-            <MemoryRouter
-                basename="/review"
-                initialEntries={[path]}
-                future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-            >
+            <MemoryRouter basename="/review" initialEntries={[path]}>
                 <AppRoutes api={routesApi} />
             </MemoryRouter>
         </ThemeProvider>

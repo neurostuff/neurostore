@@ -108,8 +108,6 @@ docker compose up -d
 docker compose exec compose manage db upgrade
 ```
 
-If you're using the legacy Postgres container, replace `compose-pgsql17` with `compose_pgsql` in the commands above.
-
 
 ## Running tests
 To run tests after starting services, ensure `compose_test_db` exists.

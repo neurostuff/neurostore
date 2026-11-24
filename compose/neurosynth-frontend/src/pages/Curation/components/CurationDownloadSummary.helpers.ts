@@ -1,5 +1,4 @@
 import { ICurationColumn, ICurationStubStudy } from '../Curation.types';
-// @ts-expect-error @citation-js/core is throwing an error saying it cannot find types. This is because there are no npm types
 import { Cite } from '@citation-js/core';
 import '@citation-js/plugin-bibtex';
 import '@citation-js/plugin-doi';
