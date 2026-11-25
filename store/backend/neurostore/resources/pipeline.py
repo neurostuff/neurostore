@@ -106,6 +106,15 @@ class PipelineStudyResultsView(ObjectView, ListView):
         ),
     }
 
+    def get(self, pipeline_study_result_id):
+        """Return one pipeline study result.
+
+        The OpenAPI route names its path parameter ``pipeline_study_result_id``
+        and Connexion passes path parameters by name, so accept that name here
+        and hand it to ``ObjectView.get`` as ``id``.
+        """
+        return super().get(pipeline_study_result_id)
+
     def view_search(self, q, args):
         """Apply feature path filtering to query.
 
