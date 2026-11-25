@@ -39,7 +39,9 @@ const NeurostoreServices = {
                     base_study_id: string;
                     config_id: string;
                     date_executed: string;
-                    file_inputs: { [path: string]: string };
+                    file_inputs:
+                        | { [path: string]: string }
+                        | { artifact_kind: string; fingerprint: string; producer_version?: string | null }[];
                     id: string;
                     result_data: ITaskExtractor | IParticipantDemographicExtractor;
                 }[];

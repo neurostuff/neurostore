@@ -1,6 +1,7 @@
 import pytest
 
 from neurostore.models import Study, Studyset
+from neurostore.models.data import PipelineStudyResult
 from neurostore.schemas import (
     AnalysisSchema,
     ImageSchema,
@@ -116,6 +117,26 @@ def test_PipelineStudyResultSchema():
     assert result["result_data"] == {"result": "success"}
     assert result["file_inputs"] == {"input1": "file1"}
     assert result["status"] == "UNKNOWN"
+
+
+def test_PipelineStudyResultSchema_dumps_list_file_inputs():
+    """study_schema uploads store file_inputs as a list of input entries."""
+    inputs = [
+        {
+            "artifact_kind": "parsed_paper",
+            "fingerprint": "1f2a12c07d024b31",
+            "producer_version": None,
+        },
+        {"artifact_kind": "coordinate_parse", "fingerprint": "528a5529"},
+    ]
+    record = PipelineStudyResult(file_inputs=inputs, status="SUCCESS")
+    dumped = PipelineStudyResultSchema().dump(record)
+    assert dumped["file_inputs"] == inputs
+
+    record = PipelineStudyResult(file_inputs={"input1": "file1"}, status="SUCCESS")
+    assert PipelineStudyResultSchema().dump(record)["file_inputs"] == {
+        "input1": "file1"
+    }
 
 
 def test_PointSchema_deactivation_field():
