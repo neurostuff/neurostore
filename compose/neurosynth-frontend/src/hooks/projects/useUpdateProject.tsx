@@ -2,6 +2,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API from 'api/api.config';
+import { GZIP_REQUEST } from 'api/gzipRequest';
 import { INeurosynthProject } from 'hooks/projects/Project.types';
 
 const useUpdateProject = () => {
@@ -13,15 +14,16 @@ const useUpdateProject = () => {
         { projectId: string; project: INeurosynthProject },
         unknown
     >({
-        mutationFn: (args) => API.NeurosynthServices.ProjectsService.projectsIdPut(args.projectId, true, args.project),
+        mutationFn: (args) =>
+            API.NeurosynthServices.ProjectsService.projectsIdPut(args.projectId, true, args.project, GZIP_REQUEST),
 
         // For now, updating the project public status will also update the public status of all meta-analyses in the project
         onSuccess: (res) => {
             queryClient.setQueryData(['projects', res.data.id], res);
             queryClient.invalidateQueries({
-                queryKey: ['projects']
+                queryKey: ['projects'],
             });
-        }
+        },
     });
 };
 

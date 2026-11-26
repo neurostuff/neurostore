@@ -1,6 +1,7 @@
 import { enqueueSnackbar } from 'notistack';
 import { _getAccessTokenSilentlyFunc, _logoutFunc, axiosInstance } from './api.state';
 import { clearUnloadHandlers } from 'helpers/BeforeUnload.helpers';
+import { gzipRequestBody } from './gzipRequest';
 
 const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 const AUTH_ERROR_CODES_REQUIRING_LOGOUT = ['login_required', 'missing_refresh_token', 'invalid_grant'];
@@ -46,6 +47,7 @@ axiosInstance.interceptors.request.use(
         return Promise.reject(err);
     }
 );
+axiosInstance.interceptors.request.use(gzipRequestBody);
 axiosInstance.interceptors.response.use(
     (res) => res,
     (error) => {
