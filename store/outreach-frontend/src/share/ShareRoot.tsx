@@ -1,4 +1,4 @@
-import { Alert, Box, CircularProgress, Container, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { ShareError, tokenFrom, type ShareApi } from './api';
 import { SharePage } from './SharePage';
@@ -42,9 +42,15 @@ export function ShareRoot({ api }: { api: ShareApi }) {
 
     return (
         <Container maxWidth="md" sx={{ py: 4 }}>
-            <Typography variant="overline" color="primary">
-                Neurosynth · NeuroVault
-            </Typography>
+            <Stack direction="row" spacing={1} mb={1}>
+                <Typography variant="overline" color="primary">
+                    Neurosynth
+                </Typography>
+                <Typography variant="overline">·</Typography>
+                <Typography variant="overline" color="primary">NeuroVault</Typography>
+                <Typography variant='overline'>·</Typography>
+                <Typography variant="overline">Share maps</Typography>
+            </Stack>
             {error && <Alert severity="warning">{error}</Alert>}
             {!error && !view && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>

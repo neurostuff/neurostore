@@ -56,8 +56,8 @@ MAX_FILE_BYTES = 200 * 1024 * 1024
 #: client_max_body_size of location /api/share/ in store/nginx/nginx.conf.
 MAX_BODY_BYTES = MAX_FILE_BYTES
 EXTENSIONS = (".nii.gz", ".nii")
-#: At most this many files per analysis the draft lists: its t/z, effect and variance map.
-FILES_PER_ANALYSIS = 3
+#: At most this many files per draft, however many analyses it lists.
+MAX_FILES = 100
 MAP_TYPES = map_sets.MAP_TYPES
 #: Statuses whose draft the author can still upload to and change.
 OPEN = ("draft", "checked", "contacted", "opened", "uploading", "declined")
@@ -215,16 +215,12 @@ def view(link, draft):
         "submitter_name": draft.submitter_name,
         "submitter_orcid": draft.submitter_orcid,
         "limits": {
-            "max_files": max_files(draft),
+            "max_files": MAX_FILES,
             "max_file_bytes": MAX_FILE_BYTES,
             "extensions": list(EXTENSIONS),
             "map_types": list(MAP_TYPES),
         },
     }
-
-
-def max_files(draft):
-    return max(1, FILES_PER_ANALYSIS * len(draft.analyses))
 
 
 # checking and scoring a file
@@ -451,9 +447,9 @@ async def upload(request: Request):
     def _start():
         link, draft = _session(request)
         _writable(link, draft)
-        if len(_uploads(draft.id)) >= max_files(draft):
+        if len(_uploads(draft.id)) >= MAX_FILES:
             raise HTTPException(
-                409, f"This paper takes at most {max_files(draft)} files; remove one first."
+                409, f"This paper takes at most {MAX_FILES} files; remove one first."
             )
         return link.id, draft.id
 
@@ -513,6 +509,27 @@ def _upload_of(draft, upload_id):
     return row
 
 
+PAIR_FIELDS = ("partner_id", "partner_r", "partner_by", "reversed")
+
+
+def _drop_stale_pairs(draft, row, details):
+    """Retyping a map can leave an author's pairing meaningless: a map that is no longer
+    an effect or variance map has no statistic map to go with, and a map that is no
+    longer a statistic map has nothing to go with it. Drop those pairings so the
+    map is matched by itself (``suggest`` runs next)."""
+    kind = map_sets.KIND.get(row.map_type)
+    if kind not in (map_sets.EFFECT, map_sets.VARIANCE):
+        for field in PAIR_FIELDS:
+            details.pop(field, None)
+    if kind != map_sets.STATISTIC:
+        for other in _uploads(draft.id):
+            other_details = dict(other.check_details or {})
+            if other.id != row.id and other_details.get("partner_id") == row.id:
+                for field in PAIR_FIELDS:
+                    other_details.pop(field, None)
+                other.check_details = other_details
+
+
 def _assign(link, draft, body, request):
     """The author says which analyses a file is for, labels a file the paper has none
     for, says what kind of map it is, or which statistic map an effect or variance map
@@ -536,6 +553,7 @@ def _assign(link, draft, body, request):
         kind_before = _matcher_kind(row.map_type)
         row.map_type = body["map_type"]
         details["map_type_by"] = "author"
+        _drop_stale_pairs(draft, row, details)
         if _matcher_kind(row.map_type) != kind_before and details.get("scores") and row.path:
             image, _ = check_file(Path(row.path))
             if image is not None:
@@ -651,9 +669,16 @@ def _submit(link, draft, body, _request):
     orcid = (body.get("orcid") or "").strip() or None
     if orcid is not None and not re.fullmatch(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]", orcid):
         raise DraftError("An ORCID iD looks like 0000-0002-1825-0097.")
+    upload_unassigned = body.get("upload_unassigned", True)
+    if not isinstance(upload_unassigned, bool):
+        raise DraftError("upload_unassigned must be true or false.")
     draft.submitter_name, draft.submitter_orcid = name[:300], orcid
+    draft.upload_unassigned = upload_unassigned
     draft.submitter_orcid_verified = False
-    _act(link, draft, "submitted", {"files": len(_uploads(draft.id))})
+    _act(link, draft, "submitted", {
+        "files": len(_uploads(draft.id)),
+        "upload_unassigned": upload_unassigned,
+    })
 
 
 async def _http_error(request, exc):
