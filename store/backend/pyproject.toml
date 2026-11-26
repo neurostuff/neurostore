@@ -52,7 +52,7 @@ dependencies = [
     # The shapes, keys, statistic signs and normalize_name the pipeline ingester and
     # entity hashes read, and the vocabulary manifest the analysis features resolve against,
     # pinned to study_schema main at the merge of neurostuff/study_schema#60.
-    "study-schema @ git+https://github.com/neurostuff/study_schema.git@9d438fd69e40aca2b65b136027fc594f26d152ab",
+    "study-schema @ git+https://github.com/neurostuff/study_schema.git@abf53f5192dc088e29c4e4cc0b82400cf9b6f8f7",
 ]
 
 [tool.setuptools.packages.find]
