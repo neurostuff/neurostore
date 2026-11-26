@@ -19,10 +19,9 @@ from neurosynth_compose.models import (
 def ingest_neurostore(
     url="https://neurostore.org", n_studysets=None, study_size_limit=1000
 ):
-    request = requests.get(f"{url}/api/studysets/")
-    if request.status_code != 200:
-        request.raise_for_status()
-    studysets = requests.get(f"{url}/api/studysets/").json()["results"]
+    request = requests.get(f"{url}/api/studysets/", timeout=60)
+    request.raise_for_status()
+    studysets = request.json()["results"]
     if n_studysets:
         studysets = studysets[:n_studysets]
 
@@ -38,9 +37,13 @@ def ingest_neurostore(
             to_commit.append(ss)
             # only ingest annotations for smaller studysets now.
             if len(studyset["studies"]) < study_size_limit:
-                annotations = requests.get(
-                    f"{url}/api/annotations/?studyset_id={studyset['id']}"
-                ).json()["results"]
+                annotations_request = requests.get(
+                    f"{url}/api/annotations/",
+                    params={"studyset_id": studyset["id"]},
+                    timeout=60,
+                )
+                annotations_request.raise_for_status()
+                annotations = annotations_request.json()["results"]
                 for annot in annotations:
                     annot_ref = db.session.execute(
                         select(NeurostoreAnnotation).where(

@@ -11,7 +11,7 @@ import pytest
 import sqlalchemy as sa
 from auth0.authentication import GetToken
 from nimare.results import MetaResult
-from requests.exceptions import HTTPError
+from requests.exceptions import RequestException
 from sqlalchemy import select
 
 from neurosynth_compose.database import db as _db
@@ -862,7 +862,7 @@ def meta_analysis_cached_result_files(
 def neurostore_data(db, mock_add_users):
     try:
         create_meta_analyses(url="https://neurostore.org")
-    except (HTTPError, ConnectionRefusedError):
+    except RequestException:
         pytest.skip(
             "neurostore.org is not responding as expected", allow_module_level=True
         )
