@@ -7,6 +7,7 @@ import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import func, select, text
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import aliased
 
 from neurostore import embeddings
@@ -24,6 +25,7 @@ from neurostore.models import (
     Point,
     Study,
 )
+from neurostore.models.data import MODALITY, MODALITY_CHILDREN
 from neurostore.utils import build_jsonpath, parse_json_filter
 
 
@@ -43,6 +45,7 @@ class BaseStudySearchService:
         query = self._apply_semantic_search(query, args)
         query = self._apply_spatial_filter(query, args)
         query = self._apply_neurovault_filter(query, args)
+        query = self._apply_modality_filter(query, args.get("modality"))
         query = self.apply_map_type_filter(query, BaseStudy, args.get("map_type"))
         return self._apply_pipeline_filters(query, args)
 
@@ -66,6 +69,7 @@ class BaseStudySearchService:
                 # Applied when all four are given, refused when only some are.
                 any(args.get(name) is not None for name in ("x", "y", "z", "radius")),
                 bool(args.get("neurovault_id")),
+                bool(args.get("modality")),
                 bool(args.get("map_type")),
                 bool(self._collect_pipeline_filters(args)[0]),
             )
@@ -234,6 +238,20 @@ class BaseStudySearchService:
             .exists()
         )
         return query.filter(neurovault_filter)
+
+    def _apply_modality_filter(self, query, modalities):
+        """Papers acquired by any of ``modalities`` (Modality values; the view refuses
+        others) or the values that refine them."""
+        if not modalities:
+            return query
+        wanted = set(modalities)
+        for modality in modalities:
+            wanted.update(MODALITY_CHILDREN.get(modality, ()))
+        values = sa.cast(
+            sa.bindparam("modalities", sorted(wanted), type_=ARRAY(sa.Text)),
+            ARRAY(MODALITY),
+        )
+        return query.filter(BaseStudy.modalities.overlap(values))
 
     def _data_type_filters(self, entity, data_type):
         if data_type == "coordinate":

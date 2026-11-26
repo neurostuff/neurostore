@@ -13,7 +13,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
 from study_schema.keys import normalize_name
+from study_schema.jsonschema import value_children
 from study_schema.models.paper_parse import LicenseId
+from study_schema.models.storage import Modality
 
 from neurostore.analysis_vocabulary import FEATURES as DETAIL_FEATURES
 from neurostore.coordinate_spaces import normalize_space
@@ -33,6 +35,21 @@ STATUS_ENUM = PGEnum(
     name="status_enum",
     create_type=True,
 )
+
+#: study_schema's Modality, spelled as it spells them: the values
+#: `GET /base-studies/?modality=` takes. A value study_schema adds needs
+#: `ALTER TYPE modality ADD VALUE` in a migration before a load can store it.
+MODALITY = PGEnum(
+    Modality,
+    name="modality",
+    create_type=False,
+    values_callable=lambda enum: [member.value for member in enum],
+)
+#: Each Modality value that others refine (their `is_a`), with those values; a filter on
+#: it matches them too.
+MODALITY_CHILDREN = value_children("storage-study", "Modality")
+#: What ns-pond read a paper's modalities from, best first.
+MODALITY_SOURCES = ("record", "methods", "full_text", "none")
 
 
 def license_type(table):
@@ -270,6 +287,11 @@ class BaseStudy(BaseMixin, db.Model):
     has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
     has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
+    #: Its acquisition modalities, sorted, from ns-pond's modality export
+    #: (`manage base-study-modalities load`): the record's, else its methods text's.
+    modalities = db.Column(ARRAY(MODALITY), nullable=False, server_default="{}")
+    #: What ns-pond read them from (MODALITY_SOURCES).
+    modalities_source = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     #: Legacy; fulltexts holds the reviewed text (docs/adr/0005-fulltexts-table.md).
     ace_fulltext = db.Column(db.Text)
@@ -359,6 +381,10 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
+        sa.Index("ix_base_studies_modalities", "modalities", postgresql_using="gin"),
+        db.CheckConstraint(
+            modalities_source.in_(MODALITY_SOURCES), name="ck_base_studies_modalities_source"
+        ),
         # The preferred full text is one of the base study's own. Deferred, so a
         # full text can move to another base study and both be re-pointed in
         # one transaction; a delete clears only fulltext_id.
