@@ -25,6 +25,7 @@ from neurostore.models import (
     BaseStudyLink,
     BaseStudyMetadataOutbox,
     Fulltext,
+    OutreachDraft,
     Pipeline,
     PipelineAnalysisResult,
     PipelineConfig,
@@ -818,7 +819,7 @@ _CLASH_RULES = (
 # Rows whose base_study_id names the paper; each moves to the keeper. Pipeline results
 # and embeddings the keeper already has one of stay on the old base study (see
 # _kept_pipeline_rows), and identical full texts, assignments and links are deduplicated
-# first.
+# first. Outreach drafts move as they are, so a keeper can hold two drafts of its paper.
 _MOVED = (
     Study,
     PipelineStudyResult,
@@ -828,6 +829,7 @@ _MOVED = (
     Fulltext,
     ReviewAssignment,
     BaseStudyLink,
+    OutreachDraft,
 )
 
 # study_schema documents kept whole, whose header may name the paper's base study.

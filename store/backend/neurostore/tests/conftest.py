@@ -73,6 +73,23 @@ Test selection arguments
 """
 
 
+# The suite drops and truncates every table in the database it connects to, and the
+# development environment points at the same database name as the test ones, so a
+# pytest run inside a dev container would silently erase everything seeded there.
+TEST_ENVS = {"test", "testing", "docker_test", "docker-test"}
+
+
+def pytest_configure(config):
+    environ.setdefault("APP_ENV", "testing")
+    app_env = environ["APP_ENV"].strip().lower()
+    if app_env not in TEST_ENVS:
+        raise pytest.UsageError(
+            f"APP_ENV={app_env!r} is not a test environment, and these tests wipe the "
+            "database they connect to. Run them with APP_ENV=docker_test against a "
+            "test database (see AGENTS.md), or unset APP_ENV."
+        )
+
+
 def pytest_addoption(parser):
     parser.addoption(
         "--performance",
