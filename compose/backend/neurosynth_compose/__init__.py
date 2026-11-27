@@ -16,6 +16,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from neurosynth_compose.admin import init_admin
 from neurosynth_compose.database import init_db
+from neurosynth_compose.gzip_request import GzipRequestMiddleware
 from neurosynth_compose.observability.logging_config import configure_logging
 from neurosynth_compose.observability.request_id import (
     REQUEST_ID_HEADER_NAME,
@@ -169,7 +170,9 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
     app = _SettingsMiddleware(
-        _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs)),
+        _DatabaseSessionMiddleware(
+            CORSMiddleware(GzipRequestMiddleware(app), **cors_kwargs)
+        ),
         settings,
         _logger,
     )
