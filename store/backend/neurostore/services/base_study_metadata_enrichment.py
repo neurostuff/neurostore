@@ -198,6 +198,20 @@ def _is_retryable_request_exception(exc):
     return response.status_code in TRANSIENT_HTTP_STATUS
 
 
+#: Query parameters whose values must not reach a log or a traceback.
+_SECRET_PARAMS = re.compile(r"\b(api_key|email|mailto)=[^&\s'\")]+")
+
+
+def _redacted(exc):
+    """The same requests exception with secret query values masked: a connection error's
+    message is urllib3's, which carries the full URL with its query string."""
+    message = _SECRET_PARAMS.sub(r"\1=REDACTED", str(exc))
+    try:
+        return type(exc)(message, request=exc.request, response=exc.response)
+    except TypeError:
+        return requests.RequestException(message, request=exc.request, response=exc.response)
+
+
 @retry(
     reraise=True,
     stop=stop_after_attempt(3),
@@ -206,7 +220,11 @@ def _is_retryable_request_exception(exc):
 )
 def _request_with_retry(settings, method, url, **kwargs):
     _apply_provider_rate_limit(settings, url, kwargs)
-    response = requests.request(method, url, **kwargs)
+    try:
+        response = requests.request(method, url, **kwargs)
+    except requests.RequestException as exc:
+        # from None: the chained urllib3 error repeats the URL.
+        raise _redacted(exc) from None
     if response.status_code >= 400:
         error = requests.HTTPError(
             f"{response.status_code} error from {url}", response=response
