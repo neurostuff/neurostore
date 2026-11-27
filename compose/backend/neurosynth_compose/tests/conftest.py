@@ -9,9 +9,9 @@ from unittest.mock import patch
 import anyio
 import pytest
 import sqlalchemy as sa
+import vcr
 from auth0.authentication import GetToken
 from nimare.results import MetaResult
-from requests.exceptions import HTTPError
 from sqlalchemy import select
 
 from neurosynth_compose.database import db as _db
@@ -858,11 +858,25 @@ def meta_analysis_cached_result_files(
     }
 
 
+def _keep_ingested_fields(response):
+    """Keep only the fields ingest_neurostore reads, so the cassette stays small."""
+    body = json.loads(response["body"]["string"])
+    body["results"] = [
+        {key: result[key] for key in ("id", "studies") if key in result}
+        for result in body["results"]
+    ]
+    response["body"]["string"] = json.dumps(body).encode()
+    return response
+
+
 @pytest.fixture(scope="function")
 def neurostore_data(db, mock_add_users):
-    try:
+    # Replays neurostore.org's responses. Delete the cassette to record them again.
+    cassette = pathlib.Path(__file__).parent / "cassettes" / "ingest_neurostore.yml"
+    with vcr.use_cassette(
+        str(cassette),
+        record_mode="once",
+        decode_compressed_response=True,
+        before_record_response=_keep_ingested_fields,
+    ):
         create_meta_analyses(url="https://neurostore.org")
-    except (HTTPError, ConnectionRefusedError):
-        pytest.skip(
-            "neurostore.org is not responding as expected", allow_module_level=True
-        )
