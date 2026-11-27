@@ -166,6 +166,12 @@ Environment details to verify before production:
 - AWS credentials and `S3_PATH` are still correct for production backups.
 - Store OpenAI, PubMed, Semantic Scholar, and Auth0 secrets are present if the
   release touches those paths.
+- The MCP server (`neurostore-mcp`) signs users in only when all five of
+  `NEUROSTORE_MCP_PUBLIC_URL`, `NEUROSTORE_MCP_AUTH0_DOMAIN`,
+  `NEUROSTORE_MCP_AGENT_AUDIENCE`, `NEUROSTORE_MCP_CLIENT_ID` and
+  `NEUROSTORE_MCP_CLIENT_SECRET` are set in `store/.env`; with some missing it
+  logs which and serves reads only. Production values and the Auth0 setup they
+  rely on are in `mcp/docs/remote-hosting-and-oauth.md`.
 
 The staging/dev deploy script now creates host bind directories for staging/dev
 worktrees, but a raw production `docker compose` deploy does not. Create missing
@@ -180,9 +186,13 @@ mkdir -p "$STORE_FILE_DIR" "$STORE_ACE_DIR" "$COMPOSE_FILE_DIR" "$COMPOSE_CELERY
 Production deployment is manual unless a production workflow is added later. Run
 the commands on the production host from the production checkout.
 
-Prepare the checkout:
+Prepare the checkout. The last deploy's frontend build (`npm install`) leaves
+`compose/neurosynth-frontend/package-lock.json` modified, which blocks the
+checkout when the new tag changes that file; keep a copy and reset it:
 
 ```bash
+git diff compose/neurosynth-frontend/package-lock.json > "package-lock-before-${TAG}.patch"
+git checkout -- compose/neurosynth-frontend/package-lock.json
 git fetch upstream --tags --prune
 git checkout "$TAG"
 git submodule sync --recursive
@@ -209,6 +219,8 @@ Local build:
 ```bash
 cd store
 docker compose build
+# neurostore-mcp is in the `mcp` profile, so the build above skips it
+docker compose build neurostore-mcp
 
 cd ../compose
 docker compose build
@@ -260,6 +272,21 @@ Service ordering notes:
   and frontend assets are ready.
 - Compose needs Redis before `compose_worker`; the API container depends on the
   worker in `compose/docker-compose.yml`.
+
+Start the MCP server last, once both stacks are up: it reads Store's and
+Compose's OpenAPI specs when it starts, so restart it after either changes.
+
+```bash
+cd ../store
+docker compose up -d --no-build neurostore-mcp
+docker compose logs --tail=20 neurostore-mcp
+```
+
+It calls Store at `http://neurostore:8000/api` and Compose at
+`http://compose:8000/api` over the shared proxy network (`SHARED_PROXY_NETWORK`,
+`nginx-proxy` on production), and Store's nginx serves it at `/mcp`. Naming the
+service starts it although its profile is off; a bare `docker compose up` leaves
+it out.
 
 ## Studyset Release Contents
 
@@ -341,6 +368,21 @@ Smoke check APIs. Replace the hostnames with the production hostnames:
 curl -fsS "https://<production-store-host>/api/studies?per_page=1" >/tmp/neurostore-smoke.json
 curl -fsS "https://<production-compose-host>/api/meta-analyses/?per_page=1" >/tmp/compose-smoke.json
 ```
+
+Smoke check the MCP server: its sign-in metadata, an anonymous read, and the
+sign-in challenge on a write:
+
+```bash
+H='-H Content-Type:application/json -H Accept:application/json,text/event-stream'
+curl -fsS "https://<production-store-host>/.well-known/oauth-protected-resource/mcp"
+curl -fsS $H -X POST "https://<production-store-host>/mcp" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_projects","arguments":{"page_size":1}}}'
+curl -sS -o /dev/null -w '%{http_code}\n' $H -X POST "https://<production-store-host>/mcp" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"create_studyset","arguments":{"name":"x"}}}'
+```
+
+The metadata names the production Auth0 tenant, the read returns Compose
+projects, and the write prints `401`.
 
 Check the frontend in a browser:
 
