@@ -10,10 +10,20 @@ import copy
 import json
 from dataclasses import dataclass, field
 
-from sqlalchemy import String, cast, select
+from sqlalchemy import String, cast, or_, select
 
+from neurosynth_compose.curation import store as curation_store
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import MetaAnalysis, Project
+from neurosynth_compose.models.curation import (
+    CurationColumn,
+    CurationImport,
+    CurationSource,
+    CurationStub,
+    CurationStubTag,
+    CurationTag,
+    ExtractionStudyStatus,
+)
 
 
 class BaseStudyMergeError(ValueError):
@@ -89,8 +99,54 @@ def _mentioning(model, base_study_id):
     ).all()
 
 
+def _json_mentions(column, value):
+    return cast(column, String).contains(f'"{value}"')
+
+
+def _projects_mentioning(base_study_id):
+    """Projects whose curation rows name ``base_study_id``: as a stub's Neurostore
+    id, as an id in a project list, or inside a row's verbatim JSON. A stored
+    citation field that merely equals the id is not searched."""
+    project_ids = select(CurationStub.project_id).where(
+        or_(
+            CurationStub.neurostore_id == base_study_id,
+            _json_mentions(CurationStub.extra, base_study_id),
+            _json_mentions(CurationStub.raw, base_study_id),
+        )
+    )
+    project_ids = project_ids.union(
+        select(CurationStub.project_id)
+        .join(CurationStubTag, CurationStubTag.stub_pk == CurationStub.pk)
+        .where(
+            or_(
+                CurationStubTag.tag_id == base_study_id,
+                _json_mentions(CurationStubTag.tag, base_study_id),
+            )
+        ),
+        select(Project.id).where(_json_mentions(Project.provenance_extra, base_study_id)),
+        *(
+            select(model.project_id).where(
+                or_(id_column == base_study_id, _json_mentions(model.extra, base_study_id))
+            )
+            for model, id_column in (
+                (CurationColumn, CurationColumn.id),
+                (CurationTag, CurationTag.id),
+                (CurationSource, CurationSource.id),
+                (CurationImport, CurationImport.id),
+                (ExtractionStudyStatus, ExtractionStudyStatus.study_id),
+            )
+        ),
+    )
+    return db.session.scalars(
+        select(Project)
+        .where(Project.id.in_(project_ids.scalar_subquery()))
+        .order_by(Project.id)
+        .with_for_update()
+    ).all()
+
+
 def _repoint_stubs(project, keeper_id, old_id):
-    provenance = copy.deepcopy(project.provenance)
+    provenance = copy.deepcopy(curation_store.document(project))
     changes = []
     columns = (provenance.get("curationMetadata") or {}).get("columns") or []
     for c, column in enumerate(columns):
@@ -120,7 +176,7 @@ def _repoint_stubs(project, keeper_id, old_id):
             f"project {project.id} names {old_id} outside a curation stub's neurostoreId: "
             + ", ".join(f"provenance.{p}" for p in unexpected)
         )
-    project.provenance = provenance
+    curation_store.save(project, provenance)
     return changes
 
 
@@ -133,7 +189,7 @@ def merge_base_studies(pairs, *, dry_run=True):
     for keeper_id, old_id in pairs:
         try:
             changes = []
-            for project in _mentioning(Project, old_id):
+            for project in _projects_mentioning(old_id):
                 changes.extend(_repoint_stubs(project, keeper_id, old_id))
             for meta_analysis in _mentioning(MetaAnalysis, old_id):
                 paths = list(_paths_holding(meta_analysis.provenance, old_id))

@@ -11,7 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 def add_missing_extraction_ids(session=None) -> Tuple[int, int]:
-    """Add null studysetId/annotationId keys to extractionMetadata when absent."""
+    """Add null studysetId/annotationId keys to extractionMetadata when absent.
+
+    Both keys live in ``projects.provenance_extra``, which keeps the provenance
+    document's extractionMetadata apart from its studyStatusList rows.
+    """
     sess = session or db.session
     updated = 0
     skipped = 0
@@ -19,7 +23,7 @@ def add_missing_extraction_ids(session=None) -> Tuple[int, int]:
     projects = sess.scalars(select(Project)).all()
 
     for project in projects:
-        provenance = dict(project.provenance or {})
+        provenance = dict(project.provenance_extra or {})
         extraction_metadata_raw = provenance.get("extractionMetadata")
         changed = False
 
@@ -39,8 +43,8 @@ def add_missing_extraction_ids(session=None) -> Tuple[int, int]:
 
         if changed:
             provenance["extractionMetadata"] = extraction_metadata
-            project.provenance = provenance
-            flag_modified(project, "provenance")
+            project.provenance_extra = provenance
+            flag_modified(project, "provenance_extra")
             updated += 1
         else:
             skipped += 1

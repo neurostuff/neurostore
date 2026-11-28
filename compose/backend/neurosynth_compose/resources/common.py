@@ -31,7 +31,8 @@ LIST_USER_ARGS = {
 
 
 def make_json_response(payload, status=200):
-    body = orjson.dumps(payload).decode("utf-8")
+    # bytes go out as they are; a str would be encoded again
+    body = orjson.dumps(payload)
     return ConnexionResponse(
         body=body,
         status_code=status,

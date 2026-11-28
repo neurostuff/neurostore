@@ -19,8 +19,9 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from jose.jwt import encode
-from sqlalchemy import event, func, inspect, select, text
+from sqlalchemy import event, func, inspect, select
 
+from neurosynth_compose.curation import store as curation_store
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import (
     MetaAnalysis,
@@ -36,6 +37,7 @@ from neurosynth_compose.models.analysis import (
     Specification,
 )
 from neurosynth_compose.models.auth import User
+from neurosynth_compose.models.curation import CurationStub
 from neurosynth_compose.resources.data_views import meta_analysis_jobs_view
 from neurosynth_compose.tests.request_utils import Client
 
@@ -119,17 +121,21 @@ def _ensure_schema_ready():
 
 
 def _discover_project_provenance_target_bytes():
+    """JSON size of the provenance document of the project with the most stubs."""
+
     try:
-        target = db.session.execute(
-            text(
-                "SELECT COALESCE(MAX(pg_column_size(provenance::jsonb)), 0) "
-                "FROM projects "
-                "WHERE provenance IS NOT NULL"
-            )
-        ).scalar_one()
+        project_id = db.session.execute(
+            select(CurationStub.project_id)
+            .group_by(CurationStub.project_id)
+            .order_by(func.count().desc())
+            .limit(1)
+        ).scalar()
+        if project_id is None:
+            return 0
+        project = db.session.get(Project, project_id)
+        return len(json.dumps(curation_store.document(project)).encode())
     except Exception:
         return 0
-    return int(target or 0)
 
 
 class _InMemoryJobStore:
@@ -1183,11 +1189,12 @@ def _seed_provenance_project_bundle(
         public=False,
         draft=True,
         user=user,
-        provenance=provenance,
         neurostore_studyset_id=neurostore_studyset_id,
         neurostore_annotation_id=neurostore_annotation_id,
     )
     db.session.add(project)
+    db.session.flush()
+    curation_store.save(project, provenance)
     db.session.commit()
     return {
         "project_id": project.id,

@@ -7,6 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from neurosynth_compose import cli
+from neurosynth_compose.curation import store as curation_store
 from neurosynth_compose.models.analysis import MetaAnalysis, Project
 from neurosynth_compose.scripts.merge_base_studies import (
     BaseStudyMergeError,
@@ -24,14 +25,21 @@ KEEPER, OLD = "dVE7SbbDthMm", "yNyHck2e72Fe"
 STUB_PATH = "provenance.curationMetadata.columns[0].stubStudies[0].neurostoreId"
 
 
+def _project(session, name, provenance):
+    project = Project(name=name)
+    session.add(project)
+    session.flush()
+    curation_store.save(project, provenance)
+    session.commit()
+    return project
+
+
 def _curating_old(session, provenance=None):
     """A project whose not-included column curates the duplicate base study."""
     provenance = copy.deepcopy(provenance or PROVENANCE)
     provenance["curationMetadata"]["columns"][0]["stubStudies"][0]["neurostoreId"] = OLD
-    project = Project(name="curates the duplicate", provenance=provenance)
-    untouched = Project(name="curates the keeper", provenance=copy.deepcopy(PROVENANCE))
-    session.add_all([project, untouched])
-    session.commit()
+    project = _project(session, "curates the duplicate", provenance)
+    untouched = _project(session, "curates the keeper", copy.deepcopy(PROVENANCE))
     return project.id, untouched.id, provenance
 
 
@@ -41,7 +49,7 @@ def _merge(pairs, dry_run=True):
 
 def _provenance(session, project_id):
     session.expire_all()
-    return session.get(Project, project_id).provenance
+    return curation_store.document(session.get(Project, project_id))
 
 
 def test_dry_run_reports_the_stub_and_changes_nothing(session):
@@ -73,9 +81,7 @@ def test_a_column_curating_both_base_studies_is_refused(session):
     duplicate = copy.deepcopy(keeper_stub)
     duplicate["neurostoreId"] = OLD
     provenance["curationMetadata"]["columns"][1]["stubStudies"].append(duplicate)
-    project = Project(name="curates both", provenance=provenance)
-    session.add(project)
-    session.commit()
+    project = _project(session, "curates both", provenance)
 
     [outcome] = _merge([(KEEPER, OLD)], dry_run=False)
 
@@ -148,9 +154,7 @@ def test_every_stub_of_every_project_is_repointed(session):
     first["curationMetadata"]["columns"][1]["stubStudies"][1]["neurostoreId"] = OLD
     second = copy.deepcopy(PROVENANCE)
     second["curationMetadata"]["columns"][1]["stubStudies"][1]["neurostoreId"] = OLD
-    projects = [Project(name="first", provenance=first), Project(name="second", provenance=second)]
-    session.add_all(projects)
-    session.commit()
+    projects = [_project(session, "first", first), _project(session, "second", second)]
 
     [outcome] = _merge([(KEEPER, OLD)], dry_run=False)
 

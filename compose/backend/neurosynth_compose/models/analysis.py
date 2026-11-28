@@ -372,7 +372,9 @@ class Project(BaseMixin, db.Model):
         default="CBMA",
         server_default="CBMA",
     )
-    provenance = Column(JSON)
+    # The parts of the frontend's provenance document that have no curation
+    # table; `neurosynth_compose.curation.store.document` assembles the rest.
+    provenance_extra = Column(JSONB)
     user_id = Column(Text, ForeignKey("users.external_id"), index=True)
     public = Column(Boolean, default=True, index=True)
     draft = Column(Boolean, default=True, index=True)

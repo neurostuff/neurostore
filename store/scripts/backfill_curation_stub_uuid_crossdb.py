@@ -128,31 +128,24 @@ def fetch_compose_stubs(cur) -> List[dict]:
     """
     Returns rows with: project_id, studyset_id, stub_id, pmid, doi, pmcid, title(name)
     """
-    cur.execute("SELECT to_regclass('public.projects')")
+    cur.execute("SELECT to_regclass('public.curation_stubs')")
     if not cur.fetchone()[0]:
-        print("Compose DB: no projects table found; skipping stub fetch.")
+        print("Compose DB: no curation_stubs table found; skipping stub fetch.")
         return []
 
+    # A stub's citation fields are NULL when they equal its shared citation row.
     sql = """
-    WITH proj AS (
-        SELECT
-            id AS project_id,
-            provenance->'extractionMetadata'->>'studysetId' AS studyset_id,
-            jsonb_array_elements(
-                COALESCE((provenance->'curationMetadata'->'columns')::jsonb, '[]'::jsonb)
-            ) AS col
-        FROM projects
-    )
     SELECT
-        project_id,
-        studyset_id,
-        stub->>'id' AS stub_id,
-        lower(nullif(stub->>'pmid','')) AS pmid,
-        lower(nullif(stub->>'doi','')) AS doi,
-        lower(nullif(stub->>'pmcid','')) AS pmcid,
-        lower(nullif(stub->>'title','')) AS title
-    FROM proj
-    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(col->'stubStudies','[]'::jsonb)) stub;
+        s.project_id,
+        p.provenance_extra->'extractionMetadata'->>'studysetId' AS studyset_id,
+        s.id AS stub_id,
+        lower(nullif(coalesce(s.pmid, c.pmid), '')) AS pmid,
+        lower(nullif(coalesce(s.doi, c.doi), '')) AS doi,
+        lower(nullif(coalesce(s.pmcid, c.pmcid), '')) AS pmcid,
+        lower(nullif(coalesce(s.title, c.title), '')) AS title
+    FROM curation_stubs s
+    JOIN projects p ON p.id = s.project_id
+    LEFT JOIN curation_citations c ON c.neurostore_id = s.neurostore_id;
     """
     cur.execute(sql)
     cols = [c.name for c in cur.description]
