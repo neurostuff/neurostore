@@ -269,7 +269,9 @@ def test_the_project_list_summarises_stubs_from_the_tables(auth_client, project_
 
 
 def test_deleting_a_project_deletes_its_stubs(auth_client, session, project_id):
-    assert auth_client.delete(f"/api/projects/{project_id}").status_code == 204
+    response = auth_client.delete(f"/api/projects/{project_id}")
+
+    assert response.status_code == 204
 
     assert not _stub_rows(session, project_id)
     assert session.get(Project, project_id) is None
