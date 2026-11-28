@@ -1,6 +1,5 @@
 from types import SimpleNamespace
 
-import orjson
 
 from neurosynth_compose.resources.data_views.meta_analyses_view import (
     serialize_meta_analyses,
@@ -172,7 +171,9 @@ def test_serialize_project_matches_project_schema_default():
     expected = ProjectSchema(context={"info": False, "settings": _SETTINGS}).dump(
         project
     )
-    actual = serialize_project(project, info=False, settings=_SETTINGS)
+    actual = serialize_project(
+        project, info=False, settings=_SETTINGS, provenance=project.provenance
+    )
 
     assert actual == expected
 
@@ -183,7 +184,9 @@ def test_serialize_project_matches_project_schema_info():
     expected = ProjectSchema(context={"info": True, "settings": _SETTINGS}).dump(
         project
     )
-    actual = serialize_project(project, info=True, settings=_SETTINGS)
+    actual = serialize_project(
+        project, info=True, settings=_SETTINGS, provenance=project.provenance
+    )
 
     assert actual == expected
 
@@ -194,7 +197,12 @@ def test_serialize_projects_matches_project_schema_many():
     expected = ProjectSchema(
         many=True, context={"info": True, "settings": _SETTINGS}
     ).dump(projects)
-    actual = serialize_projects(projects, info=True, settings=_SETTINGS)
+    actual = serialize_projects(
+        projects,
+        info=True,
+        settings=_SETTINGS,
+        provenance_map={p.id: p.provenance for p in projects},
+    )
 
     assert actual == expected
 
@@ -243,7 +251,7 @@ def test_filter_project_list_provenance_keeps_only_project_card_fields():
         },
     }
 
-    filtered = _filter_project_list_provenance(orjson.dumps(raw_provenance).decode())
+    filtered = _filter_project_list_provenance(raw_provenance)
 
     assert filtered == {
         "curationMetadata": {

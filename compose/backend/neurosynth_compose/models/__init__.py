@@ -14,6 +14,16 @@ from neurosynth_compose.models.analysis import (
     Tag,
 )
 from neurosynth_compose.models.auth import Role, User
+from neurosynth_compose.models.curation import (
+    CurationCitation,
+    CurationColumn,
+    CurationImport,
+    CurationSource,
+    CurationStub,
+    CurationStubTag,
+    CurationTag,
+    ExtractionStudyStatus,
+)
 
 Studyset = SnapshotStudyset
 StudysetReference = NeurostoreStudyset
@@ -40,6 +50,14 @@ __all__ = [
     "NeurostoreStudy",
     "NeurostoreAnalysis",
     "Project",
+    "CurationCitation",
+    "CurationColumn",
+    "CurationStub",
+    "CurationStubTag",
+    "CurationTag",
+    "CurationSource",
+    "CurationImport",
+    "ExtractionStudyStatus",
     "User",
     "Role",
 ]

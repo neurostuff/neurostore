@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from neurosynth_compose.asgi_requests import raise_http_error
+from neurosynth_compose.curation import store as curation_store
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import (
     MetaAnalysis,
@@ -89,14 +90,14 @@ class ProjectCloneService:
                 source_project,
                 copy_annotations,
             )
+            cloned_provenance = self._clone_provenance(
+                curation_store.document(source_project),
+                new_ss_ref_id,
+                new_ann_ref_id,
+            )
             cloned_project = Project(
                 name=source_project.name + " Copy",
                 description=source_project.description,
-                provenance=self._clone_provenance(
-                    source_project.provenance,
-                    new_ss_ref_id,
-                    new_ann_ref_id,
-                ),
                 user=current_user,
                 public=False,
                 draft=True,
@@ -119,7 +120,10 @@ class ProjectCloneService:
             db.session.add(cloned_project)
             for meta in cloned_metas:
                 db.session.add(meta)
+            db.session.flush()
+            curation_store.save(cloned_project, cloned_provenance)
             commit_session()
+            db.session.refresh(cloned_project)
 
             ns_study = NeurostoreStudy(project=cloned_project)
             db.session.add(ns_study)

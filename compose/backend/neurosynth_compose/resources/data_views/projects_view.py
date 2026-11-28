@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-import orjson
 from connexion import request
 from marshmallow.exceptions import ValidationError
-from sqlalchemy import Text, cast, func, literal, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from webargs import fields
 
@@ -14,6 +13,7 @@ from neurosynth_compose.asgi_requests import (
     raise_http_error,
     read_json,
 )
+from neurosynth_compose.curation import store as curation_store
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.owners import owner_id
 from neurosynth_compose.models.analysis import (
@@ -42,7 +42,6 @@ from neurosynth_compose.resources.view_core import ListView, ObjectView, view_ma
 from neurosynth_compose.schemas import ProjectSchema  # noqa: F401
 from neurosynth_compose.schemas.analysis import get_ns_base
 
-_RAW_PROVENANCE_UNSET = object()
 _TAG_NAMES_UNSET = object()
 #: The project's fields its Neurostore meta study copies.
 _STUDY_FIELDS = ("name", "description", "public")
@@ -66,6 +65,20 @@ def _include_provenance(args):
     if args is None:
         return True
     return bool(args.get("include_provenance", True))
+
+
+def _detail_provenance(record, args):
+    if not _include_provenance(args):
+        return None
+    return curation_store.document(
+        record, include_stubs=bool((args or {}).get("include_stubs", True))
+    )
+
+
+def _list_provenance(record, args):
+    if not _include_provenance(args):
+        return None
+    return _filter_project_list_provenance(curation_store.placement_document(record))
 
 
 @lru_cache(maxsize=None)
@@ -204,34 +217,6 @@ def _serialize_project_meta_analysis_info(record):
     }
 
 
-def _serialize_raw_provenance(raw_provenance_json):
-    if raw_provenance_json is None:
-        return None
-
-    if isinstance(raw_provenance_json, (dict, list)):
-        return raw_provenance_json
-
-    if isinstance(raw_provenance_json, memoryview):
-        raw_provenance_json = raw_provenance_json.tobytes()
-    elif isinstance(raw_provenance_json, str):
-        raw_provenance_json = raw_provenance_json.encode("utf-8")
-
-    if isinstance(raw_provenance_json, bytes):
-        return orjson.Fragment(raw_provenance_json)
-
-    return raw_provenance_json
-
-
-def _load_raw_provenance(raw_provenance_json):
-    if raw_provenance_json is None:
-        return None
-
-    if isinstance(raw_provenance_json, str):
-        return orjson.loads(raw_provenance_json)
-
-    return raw_provenance_json
-
-
 def _filter_project_list_tags(tags):
     if not isinstance(tags, list):
         return []
@@ -296,8 +281,7 @@ def _filter_project_list_study_statuses(study_statuses):
     return filtered_statuses
 
 
-def _filter_project_list_provenance(raw_provenance_json):
-    provenance = _load_raw_provenance(raw_provenance_json)
+def _filter_project_list_provenance(provenance):
     if provenance is None or not isinstance(provenance, dict):
         return provenance
 
@@ -379,15 +363,9 @@ def serialize_project(
     *,
     info: bool,
     settings,
-    raw_provenance_json=_RAW_PROVENANCE_UNSET,
+    provenance=None,
     tag_names=_TAG_NAMES_UNSET,
 ):
-    provenance = (
-        getattr(record, "provenance", None)
-        if raw_provenance_json is _RAW_PROVENANCE_UNSET
-        else _serialize_raw_provenance(raw_provenance_json)
-    )
-
     neurostore_study = _serialize_neurostore_study(
         getattr(record, "neurostore_study", None)
     )
@@ -452,7 +430,7 @@ def serialize_projects(
             record,
             info=info,
             settings=settings,
-            raw_provenance_json=provenance_map.get(record.id, _RAW_PROVENANCE_UNSET),
+            provenance=provenance_map.get(record.id),
             tag_names=(
                 _TAG_NAMES_UNSET
                 if tag_map is None
@@ -474,11 +452,13 @@ class ProjectsView(ObjectView, ListView):
     }
     _project_put_args = {
         "sync_meta_analyses_public": fields.Boolean(load_default=False),
+        "keep_stubs": fields.Boolean(load_default=False),
     }
 
     def __init__(self):
         super().__init__()
         self._user_args["include_provenance"] = fields.Boolean(load_default=True)
+        self._user_args["include_stubs"] = fields.Boolean(load_default=True)
         # `tag` selects projects carrying every named tag; `exclude_tag` drops
         # projects carrying any of them, which is what hiding a project needs.
         self._user_args["tag"] = fields.DelimitedList(
@@ -525,6 +505,19 @@ class ProjectsView(ObjectView, ListView):
             record=record,
             flush=flush,
         )
+
+    @classmethod
+    def _write(cls, data, id, *, keep_stubs):
+        """Create or update the project, then store its provenance in the
+        curation tables, in one transaction."""
+        has_provenance = "provenance" in data
+        provenance = data.pop("provenance", None)
+        record = cls.update_or_create(data, id, commit=False)
+        if has_provenance:
+            curation_store.save(record, provenance, keep_stubs=bool(keep_stubs))
+        commit_session()
+        db.session.refresh(record)
+        return record
 
     @staticmethod
     def _normalize_tags(tags, current_user):
@@ -578,28 +571,14 @@ class ProjectsView(ObjectView, ListView):
 
     def load_query(self, args=None):
         args = args or {}
-        raw_provenance = (
-            cast(Project.provenance, Text)
-            if _include_provenance(args)
-            else literal(None)
-        ).label("_raw_provenance_json")
-        return select(
-            Project,
-            raw_provenance,
-        ).options(*_project_list_query_options(bool(args.get("info"))))
+        return select(Project).options(
+            *_project_list_query_options(bool(args.get("info")))
+        )
 
     def load_object_query(self, id, args=None):
         args = args or {}
-        raw_provenance = (
-            cast(Project.provenance, Text)
-            if _include_provenance(args)
-            else literal(None)
-        ).label("_raw_provenance_json")
         return (
-            select(
-                Project,
-                raw_provenance,
-            )
+            select(Project)
             .options(*_project_detail_query_options(bool(args.get("info"))))
             .where(Project.id == id)
         )
@@ -609,6 +588,7 @@ class ProjectsView(ObjectView, ListView):
             record,
             info=bool(args.get("info")),
             settings=request.state.settings,
+            provenance=_detail_provenance(record, args),
         )
 
     def serialize_records(self, records, args):
@@ -616,6 +596,7 @@ class ProjectsView(ObjectView, ListView):
             records,
             info=bool(args.get("info")),
             settings=request.state.settings,
+            provenance_map={r.id: _list_provenance(r, args) for r in records},
             tag_map=project_tag_names([record.id for record in records]),
         )
 
@@ -630,10 +611,12 @@ class ProjectsView(ObjectView, ListView):
         ).scalar_one()
         page = args["page"]
         page_size = args["page_size"]
-        rows = db.session.execute(query.offset((page - 1) * page_size).limit(page_size))
-        records = rows.all()
-        include_provenance = _include_provenance(args)
-        tag_map = project_tag_names([record.id for record, _ in records])
+        records = (
+            db.session.execute(query.offset((page - 1) * page_size).limit(page_size))
+            .scalars()
+            .all()
+        )
+        tag_map = project_tag_names([record.id for record in records])
         return make_json_response(
             {
                 "metadata": {"total_count": total},
@@ -642,14 +625,10 @@ class ProjectsView(ObjectView, ListView):
                         record,
                         info=bool(args.get("info")),
                         settings=request.state.settings,
-                        raw_provenance_json=(
-                            _filter_project_list_provenance(raw_provenance_json)
-                            if include_provenance
-                            else None
-                        ),
+                        provenance=_list_provenance(record, args),
                         tag_names=tag_map.get(record.id, []),
                     )
-                    for record, raw_provenance_json in records
+                    for record in records
                 ],
             }
         )
@@ -659,18 +638,12 @@ class ProjectsView(ObjectView, ListView):
         args = parse_request_data(
             getattr(self, "_user_args", {}), request, location="query"
         )
-        row = db.session.execute(self.load_object_query(id, args=args)).first()
-        if row is None:
+        record = db.session.execute(
+            self.load_object_query(id, args=args)
+        ).scalar_one_or_none()
+        if record is None:
             raise_http_error(404)
-        record, raw_provenance_json = row
-        return make_json_response(
-            serialize_project(
-                record,
-                info=bool(args.get("info")),
-                settings=request.state.settings,
-                raw_provenance_json=raw_provenance_json,
-            )
-        )
+        return make_json_response(self.serialize_record(record, args))
 
     def db_validation(self, data):
         project = db.session.execute(
@@ -714,7 +687,7 @@ class ProjectsView(ObjectView, ListView):
             )
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, commit=True)
+            record = self._write(data, None, keep_stubs=False)
             ns_study = NeurostoreStudy(project=record)
             db.session.add(ns_study)
             commit_session()
@@ -746,7 +719,7 @@ class ProjectsView(ObjectView, ListView):
         }
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, id, commit=True)
+            record = self._write(data, id, keep_stubs=query_args.get("keep_stubs"))
             if any(getattr(record, f) != v for f, v in study_fields.items()):
                 _sync_neurostore_study(record)
             if query_args.get("sync_meta_analyses_public") and "public" in data:

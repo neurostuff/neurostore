@@ -20,7 +20,15 @@ IMPORT FOREIGN SCHEMA public
     annotation_references,
     annotations,
     conditions,
+    curation_citations,
+    curation_columns,
+    curation_imports,
+    curation_sources,
+    curation_stub_tags,
+    curation_stubs,
+    curation_tags,
     devices,
+    extraction_study_statuses,
     meta_analyses,
     meta_analysis_results,
     meta_analysis_tags,
@@ -225,7 +233,8 @@ INSERT INTO projects (
   updated_at,
   name,
   description,
-  provenance,
+  type,
+  provenance_extra,
   user_id,
   public,
   draft,
@@ -238,7 +247,8 @@ SELECT
   updated_at,
   name,
   description,
-  provenance,
+  type,
+  provenance_extra,
   user_id,
   public,
   COALESCE(draft, FALSE) AS draft,
@@ -246,6 +256,48 @@ SELECT
   neurostore_annotation_id
 FROM seed_source.projects
 WHERE id IN (SELECT id FROM keep_projects);
+
+-- A project's curation rows follow it; stubs keep their pk so their tags do.
+INSERT INTO curation_columns
+SELECT * FROM seed_source.curation_columns
+WHERE project_id IN (SELECT id FROM keep_projects);
+
+INSERT INTO curation_tags
+SELECT * FROM seed_source.curation_tags
+WHERE project_id IN (SELECT id FROM keep_projects);
+
+INSERT INTO curation_sources
+SELECT * FROM seed_source.curation_sources
+WHERE project_id IN (SELECT id FROM keep_projects);
+
+INSERT INTO curation_imports
+SELECT * FROM seed_source.curation_imports
+WHERE project_id IN (SELECT id FROM keep_projects);
+
+INSERT INTO extraction_study_statuses
+SELECT * FROM seed_source.extraction_study_statuses
+WHERE project_id IN (SELECT id FROM keep_projects);
+
+CREATE TEMP TABLE keep_stubs AS
+SELECT * FROM seed_source.curation_stubs
+WHERE project_id IN (SELECT id FROM keep_projects);
+
+INSERT INTO curation_citations
+SELECT * FROM seed_source.curation_citations
+WHERE neurostore_id IN (SELECT neurostore_id FROM keep_stubs);
+
+INSERT INTO curation_stubs OVERRIDING SYSTEM VALUE
+SELECT * FROM keep_stubs;
+
+INSERT INTO curation_stub_tags
+SELECT * FROM seed_source.curation_stub_tags
+WHERE stub_pk IN (SELECT pk FROM keep_stubs);
+
+SELECT setval(
+  pg_get_serial_sequence('curation_stubs', 'pk'),
+  COALESCE((SELECT max(pk) FROM curation_stubs), 0) + 1,
+  false
+);
 
 INSERT INTO specifications
 SELECT *
