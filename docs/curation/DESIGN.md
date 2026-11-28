@@ -151,7 +151,36 @@ two current heads. Its work is in `curation/migration.py`:
 The downgrade adds `provenance` back, writes each project's assembled document into it, and drops the tables.
 One project is in memory at a time.
 
-**Measured on the production copy:** _filled in below_.
+**Measured on the production copy** (laptop, Postgres 17 in Docker):
+
+- **Upgrade:** 615 s for all 4,921 projects, 1,485 MB peak memory in the app process. It wrote 1,477,716
+  stubs, 584,527 stub tags, 412,031 statuses and 49,916 citations.
+- **Round trip:** every project assembled from the tables equals its original document (4,921 of 4,921,
+  242 s to check), and so does every `projects.provenance` the downgrade writes back.
+- **Storage:** about the same on disk. The new tables take 1,500 MB (curation_stubs 1,229 MB, of which
+  308 MB is indexes); the old `projects` table took 1,531 MB, because Postgres compresses the JSON. The win is
+  in what a save writes and reads, not in disk.
+
+### Saves before and after
+
+`T6NDWRDR4Xq4`, 43,343 stubs, one stub's `exclusionTag` flipped per save. Requests went in process through the
+ASGI app (no nginx, no network), median of 3. Before is master 17b71b82 on an unmigrated copy; after is this
+branch on the migrated copy.
+
+| Request | Before | After |
+|---|---|---|
+| `GET /projects/{id}` (104.9 MB response) | 2.11 s | 2.96 s |
+| `PUT /projects/{id}`, one stub changed (104.9 MB request, 31.8 MB gzipped) | 15.14 s | 5.68 s |
+| `PUT /projects/{id}`, nothing changed | | 5.59 s |
+| `GET /projects?user_id=…` (owner's first 20 projects) | 4.77 s | 3.14 s |
+| `POST /projects/{id}/curation-stubs`, one stub changed (78-byte request) | | 0.023 s |
+| `POST …/curation-stubs`, move one stub to the top of the 43k column (117 bytes) | | 0.19 s |
+| `GET /projects/{id}?include_stubs=false` (81 KB) | | 0.017 s |
+| `GET …/curation-stubs?page=200&page_size=100` (229 KB) | | 0.27 s |
+
+Today's save is a GET and then a PUT: 17.3 s before, 8.6 s after, with the same bytes on the wire. The
+whole-document GET is slower, because it assembles 43k stubs from rows instead of returning stored text. Once
+the frontend sends changesets, a save is one request of about 100 bytes that takes 25 ms.
 
 ## Keeping today's frontend working
 
@@ -162,7 +191,7 @@ the card summary.
 What the backend alone does not fix: today's frontend still sends the whole document on every save, so
 `T6NDWRDR4Xq4` stays over nginx's limit. **neurostuff/neurostore#1973 (gzip on project saves) stays as the
 stopgap**, and is needed until the frontend moves to the changeset endpoint. With #1973 the same save is about
-33 MB on the wire. This PR does not touch #1973, and the two do not conflict: #1973 decompresses the body
+32 MB on the wire (31.8 MB gzipped, measured above). This PR does not touch #1973, and the two do not conflict: #1973 decompresses the body
 before the view this PR changes.
 
 ## Frontend design (not built)
@@ -213,7 +242,9 @@ document, and their out-of-sync check uses `GET ?include_provenance=false`.
 ### Ship order
 
 1. **This PR**, with neurostuff/neurostore-spec's matching PR merged first and its merge commit pinned. Old
-   frontend, new backend.
+   frontend, new backend. The migration runs about 10 minutes in one transaction and locks `projects`
+   exclusively, so deploy it in a quiet window. The app and the migration ship together, because the old app
+   reads `projects.provenance`.
 2. **#1973**, deployed with or before this PR, so the stuck project can save again.
 3. **The frontend PR:** stub-less load, paged columns, summary counts and changeset saves. It needs the
    regenerated Compose TypeScript SDK for the new routes.
