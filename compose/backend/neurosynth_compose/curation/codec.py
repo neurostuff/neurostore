@@ -69,13 +69,25 @@ TAG_LISTS = ("info", "exclusion", "identification", "screening", "eligibility")
 PRISMA_PHASES = ("identification", "screening", "eligibility")
 
 
+class UnstorableText(ValueError):
+    """The document holds a NUL character, which Postgres text and jsonb refuse."""
+
+
+def check_storable(value: Any) -> bytes:
+    """``value`` as JSON, refusing a NUL character anywhere in it."""
+    dumped = orjson.dumps(value)
+    if b"\\u0000" in dumped:
+        raise UnstorableText("text holds a NUL character (\\u0000), which cannot be stored")
+    return dumped
+
+
 def _fits(kind, value):
     if kind == "str":
         return isinstance(value, str)
     if kind == "nullable_str":
         return value is None or isinstance(value, str)
     if kind == "int":
-        return isinstance(value, int) and not isinstance(value, bool)
+        return isinstance(value, int) and not isinstance(value, bool) and -2**31 <= value < 2**31
     if kind == "bool":
         return isinstance(value, bool)
     raise ValueError(kind)
@@ -170,7 +182,8 @@ def tag_lookup(tags: Iterable[Mapping]) -> dict[str, dict]:
     lookup: dict[str, dict] = {}
     for tag in tags:
         decoded = decode_tag(tag)
-        lookup.setdefault(decoded.get("id"), decoded)
+        if isinstance(decoded.get("id"), str):
+            lookup.setdefault(decoded["id"], decoded)
     return lookup
 
 
@@ -210,6 +223,10 @@ def encode_stub(
         handled=[k for k, _ in CITATION_FIELDS] + list(STUB_STRUCTURED),
     )
     row["raw"] = None
+    if row["neurostore_id"] == "":
+        # names no Neurostore paper, so it cannot reference a citation row
+        extra["neurostoreId"] = ""
+        row["neurostore_id"] = None
 
     cited = citation(row["neurostore_id"]) if row["neurostore_id"] else None
     for key, column in CITATION_FIELDS:
@@ -227,7 +244,7 @@ def encode_stub(
     else:
         source = stub["identificationSource"]
         source_id = source.get("id") if isinstance(source, dict) else None
-        if source_id in sources_by_id and sources_by_id[source_id] == source:
+        if isinstance(source_id, str) and sources_by_id.get(source_id) == source:
             row["identification_source_id"] = source_id
         else:
             extra["identificationSource"] = source
@@ -322,9 +339,10 @@ def first_use(stub: Any, seen: set[str]) -> bool:
 
 def split(provenance: Any) -> tuple[Decomposed, list[tuple[str, list]]]:
     """Every row except the stubs, and each column's stubs as JSON, in order."""
+    dumped = check_storable(provenance)
     if not isinstance(provenance, dict):
         return Decomposed(extra=provenance), []
-    extra = orjson.loads(orjson.dumps(provenance))
+    extra = orjson.loads(dumped)
     out = Decomposed(extra=extra)
     stub_lists: list[tuple[str, list]] = []
 
@@ -381,7 +399,8 @@ def lookups(d: Decomposed) -> tuple[dict[str, dict], dict[str, dict]]:
     sources_by_id = {}
     for source in sorted(d.sources, key=lambda s: s["position"]):
         decoded = decode_source(source)
-        sources_by_id[decoded.get("id")] = decoded
+        if isinstance(decoded.get("id"), str):
+            sources_by_id[decoded["id"]] = decoded
     return tags_by_id, sources_by_id
 
 

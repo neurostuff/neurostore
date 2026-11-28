@@ -137,21 +137,34 @@ def placement_document(project: Project) -> Any:
     return codec.assemble(d, {})
 
 
-def lock(project: Project) -> None:
+def lock(project: Project):
     """Hold the project's row until the transaction ends, so one writer at a
-    time changes its curation rows."""
-    db.session.execute(
-        select(Project.__table__.c.id)
+    time changes its curation rows. Returns its stored ``updated_at``."""
+    return db.session.execute(
+        select(Project.__table__.c.updated_at)
         .where(Project.__table__.c.id == project.id)
         .with_for_update()
-    )
+    ).scalar_one()
+
+
+def _now():
+    # wall-clock time, not the transaction's start, so a write that waited on
+    # the lock is stamped after the one it waited for
+    return func.clock_timestamp()
+
+
+def _storable(value, *, split=False):
+    try:
+        return codec.split(value) if split else codec.check_storable(value)
+    except codec.UnstorableText as exc:
+        raise_http_error(422, str(exc))
 
 
 def touch(project: Project) -> None:
     db.session.execute(
         update(Project.__table__)
         .where(Project.__table__.c.id == project.id)
-        .values(updated_at=func.now())
+        .values(updated_at=_now())
     )
 
 
@@ -319,7 +332,7 @@ def save(project: Project, provenance: Any, *, keep_stubs: bool = False) -> None
     stored stubs stay; dropping a column that still has stubs is refused.
     """
     lock(project)
-    new, stub_lists = codec.split(provenance)
+    new, stub_lists = _storable(provenance, split=True)
     old = load(project.id, extra=project.provenance_extra, stubs=False)
     old_lookups = codec.lookups(old)
     lookups = codec.lookups(new)
@@ -332,7 +345,10 @@ def save(project: Project, provenance: Any, *, keep_stubs: bool = False) -> None
         _replace_list(table, project.id, getattr(old, name), getattr(new, name))
     dropped = _save_columns(project.id, old.columns, new.columns)
 
+    stale_tags = _changed_ids(old_lookups[0], lookups[0])
+    stale_sources = _changed_ids(old_lookups[1], lookups[1])
     if keep_stubs:
+        _reencode_stale(project.id, old_lookups, lookups, stale_tags, stale_sources)
         if dropped and db.session.execute(
             select(func.count())
             .select_from(STUBS)
@@ -344,16 +360,42 @@ def save(project: Project, provenance: Any, *, keep_stubs: bool = False) -> None
             project.id,
             stub_lists,
             lookups,
-            stale_tags=_changed_ids(old_lookups[0], lookups[0]),
-            stale_sources=_changed_ids(old_lookups[1], lookups[1]),
+            stale_tags=stale_tags,
+            stale_sources=stale_sources,
         )
     _drop_columns(project.id, dropped)
 
     db.session.execute(
         update(Project.__table__)
         .where(Project.__table__.c.id == project.id)
-        .values(provenance_extra=new.extra, updated_at=func.now())
+        .values(provenance_extra=new.extra, updated_at=_now())
     )
+
+
+def _reencode_stale(project_id, old_lookups, lookups, stale_tags, stale_sources):
+    """Rewrite stubs that refer to a changed project tag or source so they keep
+    the copy they held (the frontend never edits stubs' copies)."""
+    pks = sorted(_stale_stub_pks(project_id, stale_tags, stale_sources))
+    if not pks:
+        return
+    rows = [dict(r._mapping) for r in db.session.execute(select(STUBS).where(STUBS.c.pk.in_(pks)))]
+    tag_rows = _tags_for([r["pk"] for r in rows])
+    cited = citations(r["neurostore_id"] for r in rows)
+    tags_by_id, sources_by_id = old_lookups
+    rewrites = []
+    for row, tags in zip(rows, tag_rows):
+        stub = codec.decode_stub(
+            row,
+            tags,
+            tags_by_id=tags_by_id,
+            sources_by_id=sources_by_id,
+            citation=cited.get(row["neurostore_id"]),
+        )
+        encoded, new_tags = _encode(
+            stub, row["column_id"], row["position"], lookups, cited, row["id"] is not None
+        )
+        rewrites.append((row["pk"], encoded, new_tags))
+    _rewrite_stubs(rewrites)
 
 
 def _keep_stub_key(column, old_column):
@@ -503,16 +545,28 @@ def _insert_at(order, index, key):
     order.insert(max(0, min(index, len(order))), key)
 
 
-def apply_changes(project: Project, changes: Mapping) -> dict:
+def apply_changes(project: Project, changes: Mapping, *, expected_updated_at=None) -> dict:
     """Apply a changeset to the project's stubs, in the order remove, add,
-    update, move. Returns how many stubs each step touched."""
-    lock(project)
+    update, move. Returns how many stubs each step touched.
+
+    With ``expected_updated_at``, a project changed since then is refused (409).
+    """
+    current = lock(project)
+    _storable(changes)
+    if expected_updated_at is not None and expected_updated_at != current:
+        raise_http_error(409, "the project changed since updated_at")
     remove = list(changes.get("remove") or ())
     add = list(changes.get("add") or ())
     edits = list(changes.get("update") or ())
     moves = list(changes.get("move") or ())
 
-    column_ids = [c["id"] for c in _select_rows(COLUMNS, project.id, [COLUMNS.c.position])]
+    column_rows = _select_rows(COLUMNS, project.id, [COLUMNS.c.position])
+    column_ids = [c["id"] for c in column_rows]
+    listless = {
+        c["id"]
+        for c in column_rows
+        if "stubStudies" in (c["missing"] or ()) or "stubStudies" in (c["extra"] or {})
+    }
     if not column_ids and (add or moves):
         raise_http_error(422, "the project has no curation columns")
 
@@ -536,12 +590,14 @@ def apply_changes(project: Project, changes: Mapping) -> dict:
     def order_of(column_id):
         if column_id not in column_ids:
             raise_http_error(422, f"column {column_id} not found in this project")
+        if column_id in listless:
+            raise_http_error(422, f"column {column_id} has no stub list to hold stubs")
         if column_id not in orders:
             orders[column_id] = _column_order(project.id, column_id)
         return orders[column_id]
 
     # remove (before any column order is read, so orders never hold them)
-    _delete_stubs(existing[i]["pk"] for i in remove)
+    _delete_stubs(existing[i]["pk"] for i in remove if i in existing)
 
     # add: stubs without an index go to the top of their column, in request order
     stubs_json = {}

@@ -75,11 +75,13 @@ def _require_owner(project):
         )
 
 
-def _same_instant(a: str, b) -> bool:
+def _parse_instant(value):
+    if value is None:
+        return None
     try:
-        return datetime.fromisoformat(a) == b
-    except (TypeError, ValueError):
-        return False
+        return datetime.fromisoformat(value)
+    except ValueError:
+        raise_http_error(422, f"updated_at is not an ISO 8601 time: {value}")
 
 
 class CurationStubsView:
@@ -99,10 +101,8 @@ class CurationStubsView:
         size = sum(len(changes[k]) for k in ("add", "update", "move", "remove"))
         if size > MAX_CHANGES:
             raise_http_error(413, f"a changeset may hold at most {MAX_CHANGES} changes")
-        expected = changes.pop("updated_at")
-        if expected is not None and not _same_instant(expected, project.updated_at):
-            raise_http_error(409, "the project changed since updated_at")
-        counts = curation_store.apply_changes(project, changes)
+        expected = _parse_instant(changes.pop("updated_at"))
+        counts = curation_store.apply_changes(project, changes, expected_updated_at=expected)
         commit_session()
         db.session.refresh(project)
         return make_json_response(

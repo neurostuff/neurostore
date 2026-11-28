@@ -110,3 +110,37 @@ def test_a_repeated_stub_id_round_trips_as_an_unaddressable_stub():
     ids = [s["id"] for s in rows.stubs]
     assert ids.count(second[0]["id"]) == 1 and None in ids
     assert codec.assemble(rows, {}) == doc
+
+
+def test_odd_ids_and_values_round_trip():
+    doc = real_provenance()
+    curation = doc["curationMetadata"]
+    stub = curation["columns"][1]["stubStudies"][0]
+    curation["identificationSources"] += [{"id": ["not", "a", "string"], "label": "L"},
+                                          {"label": "no id"}, {"id": 5, "label": "five"}]
+    curation["infoTags"].append({"label": "tag without id", "isAssignable": True,
+                                 "isExclusionTag": False})
+    curation["imports"] = [{"id": "i", "name": "n", "date": "d", "importModeUsed": "x",
+                            "numImported": 2**40}]
+    stubs = curation["columns"][1]["stubStudies"]
+    list_source, no_id_source, int_source = curation["identificationSources"][-3:]
+    stubs.append({**stub, "id": "s-list-source", "identificationSource": list_source})
+    stubs.append({**stub, "id": "s-no-source-id", "identificationSource": no_id_source,
+                  "tags": [curation["infoTags"][-1]]})
+    stubs.append({**stub, "id": "s-int-source", "identificationSource": int_source})
+    stubs.append({**stub, "id": "s-empty-nsid", "neurostoreId": ""})
+
+    rows = codec.decompose(copy.deepcopy(doc), lambda _: None)
+
+    assert codec.assemble(rows, {}) == doc
+    by_id = {s["id"]: s for s in rows.stubs}
+    assert by_id["s-empty-nsid"]["neurostore_id"] is None
+    assert by_id["s-int-source"]["identification_source_id"] is None
+
+
+def test_a_nul_character_is_refused():
+    doc = real_provenance()
+    doc["curationMetadata"]["columns"][1]["stubStudies"][0]["abstractText"] = "a\x00b"
+
+    with pytest.raises(codec.UnstorableText):
+        codec.decompose(doc, lambda _: None)

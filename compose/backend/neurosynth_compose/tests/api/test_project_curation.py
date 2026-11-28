@@ -300,3 +300,80 @@ def test_the_summary_counts_stubs_exclusions_and_tags(auth_client, project_id):
             "tags": tags,
         })
     assert response.json["columns"] == expected
+
+
+TAGGED_ID = "10fad876-3223-485d-894f-b4598e0471d4"
+
+
+def test_keep_stubs_dropping_a_tag_keeps_the_stubs_copies(auth_client, project_id):
+    doc = _get(auth_client, project_id, include_stubs="false")["provenance"]
+    info = doc["curationMetadata"]["infoTags"]
+    doc["curationMetadata"]["infoTags"] = [t for t in info if t["id"] != TAGGED_ID]
+    doc["curationMetadata"]["identificationSources"] = []
+
+    response = auth_client.put(
+        f"/api/projects/{project_id}?keep_stubs=true", data={"provenance": doc}
+    )
+
+    assert response.status_code == 200
+    expected = irregular_provenance()
+    expected["curationMetadata"]["infoTags"] = doc["curationMetadata"]["infoTags"]
+    expected["curationMetadata"]["identificationSources"] = []
+    assert _get(auth_client, project_id)["provenance"] == expected
+    assert auth_client.get("/api/projects").status_code == 200
+
+
+def test_a_relabelled_tag_then_a_full_save_returns_what_was_sent(auth_client, project_id):
+    doc = _get(auth_client, project_id, include_stubs="false")["provenance"]
+    tag = next(t for t in doc["curationMetadata"]["infoTags"] if t["id"] == TAGGED_ID)
+    tag["label"] = "B"
+    auth_client.put(f"/api/projects/{project_id}?keep_stubs=true", data={"provenance": doc})
+    full = irregular_provenance()
+    next(t for t in full["curationMetadata"]["infoTags"] if t["id"] == TAGGED_ID)["label"] = "B"
+
+    response = auth_client.put(f"/api/projects/{project_id}", data={"provenance": full})
+
+    assert response.status_code == 200
+    assert _get(auth_client, project_id)["provenance"] == full
+
+
+def test_a_stub_with_an_empty_neurostore_id_saves(auth_client, project_id):
+    doc = irregular_provenance()
+    doc["curationMetadata"]["columns"][1]["stubStudies"][0]["neurostoreId"] = ""
+
+    response = auth_client.put(f"/api/projects/{project_id}", data={"provenance": doc})
+
+    assert response.status_code == 200
+    assert _get(auth_client, project_id)["provenance"] == doc
+
+
+def test_a_nul_character_is_refused_with_422(auth_client, project_id):
+    doc = irregular_provenance()
+    doc["curationMetadata"]["columns"][1]["stubStudies"][0]["title"] = "a\x00b"
+
+    response = auth_client.put(f"/api/projects/{project_id}", data={"provenance": doc})
+
+    assert response.status_code == 422
+    assert _get(auth_client, project_id)["provenance"] == irregular_provenance()
+
+
+def test_removing_and_adding_a_new_id_in_one_changeset(auth_client, project_id):
+    response = _changes(
+        auth_client, project_id, {"remove": ["n1"], "add": [{"stub": {"id": "n1"}}]}
+    )
+
+    assert response.status_code == 200, response.json
+
+
+def test_a_column_without_a_stub_list_takes_no_stubs(auth_client, project_id):
+    doc = irregular_provenance()
+    del doc["curationMetadata"]["columns"][1]["stubStudies"]
+    auth_client.put(f"/api/projects/{project_id}", data={"provenance": doc})
+    column_id = doc["curationMetadata"]["columns"][1]["id"]
+
+    response = _changes(
+        auth_client, project_id, {"add": [{"stub": {"id": "n2"}, "column_id": column_id}]}
+    )
+
+    assert response.status_code == 422
+    assert _get(auth_client, project_id)["provenance"] == doc
