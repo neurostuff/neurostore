@@ -13,6 +13,7 @@ from typing import Any, Iterable, Mapping
 
 from sqlalchemy import bindparam, delete, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from starlette.exceptions import HTTPException
 
 from neurosynth_compose.asgi_requests import raise_http_error
 from neurosynth_compose.curation import codec, ordering
@@ -157,7 +158,7 @@ def _storable(value, *, split=False):
     try:
         return codec.split(value) if split else codec.check_storable(value)
     except codec.UnstorableText as exc:
-        raise_http_error(422, str(exc))
+        raise HTTPException(422, str(exc)) from exc
 
 
 def touch(project: Project) -> None:

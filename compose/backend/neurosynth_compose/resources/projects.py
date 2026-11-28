@@ -8,6 +8,7 @@ from datetime import datetime
 from connexion import request
 from marshmallow import Schema, ValidationError, fields
 from sqlalchemy import select
+from starlette.exceptions import HTTPException
 from webargs import fields as arg_fields
 
 from neurosynth_compose.asgi_requests import parse_request_data, raise_http_error, read_json
@@ -80,8 +81,8 @@ def _parse_instant(value):
         return None
     try:
         return datetime.fromisoformat(value)
-    except ValueError:
-        raise_http_error(422, f"updated_at is not an ISO 8601 time: {value}")
+    except ValueError as exc:
+        raise HTTPException(422, f"updated_at is not an ISO 8601 time: {value}") from exc
 
 
 class CurationStubsView:
