@@ -509,7 +509,12 @@ class ProjectsView(ObjectView, ListView):
     @classmethod
     def _write(cls, data, id, *, keep_stubs):
         """Create or update the project, then store its provenance in the
-        curation tables, in one transaction."""
+        curation tables, in one transaction.
+
+        Returns the record and the response's provenance: the document sent,
+        which the tables now hold exactly (the codec is lossless), so a large
+        project is not read back. Without a document it is read from the tables.
+        """
         has_provenance = "provenance" in data
         provenance = data.pop("provenance", None)
         record = cls.update_or_create(data, id, commit=False)
@@ -517,7 +522,16 @@ class ProjectsView(ObjectView, ListView):
             curation_store.save(record, provenance, keep_stubs=bool(keep_stubs))
         commit_session()
         db.session.refresh(record)
-        return record
+        if not has_provenance:
+            provenance = curation_store.document(record)
+        return record, provenance
+
+    def _written(self, record, provenance):
+        return make_json_response(
+            serialize_project(
+                record, info=False, settings=request.state.settings, provenance=provenance
+            )
+        )
 
     @staticmethod
     def _normalize_tags(tags, current_user):
@@ -687,7 +701,7 @@ class ProjectsView(ObjectView, ListView):
             )
 
         with db.session.no_autoflush:
-            record = self._write(data, None, keep_stubs=False)
+            record, provenance = self._write(data, None, keep_stubs=False)
             ns_study = NeurostoreStudy(project=record)
             db.session.add(ns_study)
             commit_session()
@@ -698,7 +712,7 @@ class ProjectsView(ObjectView, ListView):
             )
             db.session.add(ns_study)
             commit_session()
-        return make_json_response(self.serialize_record(record, {}))
+        return self._written(record, provenance)
 
     def put(self, id):
         id = id.replace("\x00", "\ufffd")
@@ -719,7 +733,9 @@ class ProjectsView(ObjectView, ListView):
         }
 
         with db.session.no_autoflush:
-            record = self._write(data, id, keep_stubs=query_args.get("keep_stubs"))
+            record, provenance = self._write(
+                data, id, keep_stubs=query_args.get("keep_stubs")
+            )
             if any(getattr(record, f) != v for f, v in study_fields.items()):
                 _sync_neurostore_study(record)
             if query_args.get("sync_meta_analyses_public") and "public" in data:
@@ -731,4 +747,4 @@ class ProjectsView(ObjectView, ListView):
                 )
                 commit_session()
 
-        return make_json_response(self.serialize_record(record, {}))
+        return self._written(record, provenance)

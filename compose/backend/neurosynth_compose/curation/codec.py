@@ -73,9 +73,9 @@ class UnstorableText(ValueError):
     """The document holds a NUL character, which Postgres text and jsonb refuse."""
 
 
-def check_storable(value: Any) -> bytes:
+def check_storable(value: Any, option=None) -> bytes:
     """``value`` as JSON, refusing a NUL character anywhere in it."""
-    dumped = orjson.dumps(value)
+    dumped = orjson.dumps(value, option=option)
     if b"\\u0000" in dumped:
         raise UnstorableText("text holds a NUL character (\\u0000), which cannot be stored")
     return dumped
@@ -121,8 +121,10 @@ def _encode(obj: Mapping, required, optional=(), handled=()):
     return row, extra, missing
 
 
-def _decode(row: Mapping, required, optional=()):
-    extra = row.get("extra") or {}
+def _decode(row: Mapping, required, optional=(), extra=None):
+    """The JSON object for ``row``; ``extra`` (default ``row["extra"]``) is laid
+    over the typed columns."""
+    extra = (row.get("extra") if extra is None else extra) or {}
     missing = row.get("missing") or ()
     obj: dict[str, Any] = {}
     for key, column, _ in required:
@@ -173,8 +175,8 @@ def _take_list(container: dict, key: str):
 
 
 def stub_hash(stub: Any) -> str:
-    """Fingerprint of a stub's JSON, independent of key order."""
-    return hashlib.md5(orjson.dumps(stub, option=orjson.OPT_SORT_KEYS)).hexdigest()
+    """Fingerprint of a stub's JSON, independent of key order. Refuses a NUL."""
+    return hashlib.md5(check_storable(stub, option=orjson.OPT_SORT_KEYS)).hexdigest()
 
 
 def tag_lookup(tags: Iterable[Mapping]) -> dict[str, dict]:
@@ -275,6 +277,9 @@ def encode_stub(
     return _finish(row, extra, missing), tag_rows
 
 
+_NO_EXTRA: dict = {}
+
+
 def decode_stub(
     row: Mapping,
     tag_rows: Iterable[Mapping],
@@ -287,7 +292,8 @@ def decode_stub(
         return row["raw"][0]
     extra = row.get("extra") or {}
     missing = row.get("missing") or ()
-    stub = _decode({**row, "extra": None}, STUB_FIELDS, STUB_OPTIONAL)
+    # extra is laid over last, so typed columns are decoded without it
+    stub = _decode(row, STUB_FIELDS, STUB_OPTIONAL, extra=_NO_EXTRA)
     for key, column in CITATION_FIELDS:
         if key in missing or key in extra:
             continue
@@ -296,19 +302,43 @@ def decode_stub(
             value = citation.get(column)
         stub[key] = value
     if "identificationSource" not in missing and "identificationSource" not in extra:
-        stub["identificationSource"] = dict(sources_by_id[row["identification_source_id"]])
+        stub["identificationSource"] = sources_by_id[row["identification_source_id"]]
     if "tags" not in missing and "tags" not in extra:
+        # project tags and sources are shared between stubs, not copied
         stub["tags"] = [
-            t["tag"] if t["tag"] is not None else dict(tags_by_id[t["tag_id"]])
+            t["tag"] if t["tag"] is not None else tags_by_id[t["tag_id"]]
             for t in sorted(tag_rows, key=lambda t: t["position"])
         ]
     stub.update(extra)
     return stub
 
 
+PLACEMENT_KEYS = ("exclusionTag", "tags")
+
+
+def decode_placement(row: Mapping, tag_rows: Iterable[Mapping], *, tags_by_id, sources_by_id):
+    """Only a stub's ``exclusionTag`` and ``tags``, as :func:`decode_stub` would
+    give them, for readers of nothing else. An irregular row is decoded whole."""
+    if row.get("raw") is not None or row.get("extra"):
+        return decode_stub(
+            row, tag_rows, tags_by_id=tags_by_id, sources_by_id=sources_by_id, citation=None
+        )
+    missing = row.get("missing") or ()
+    stub = {}
+    if "exclusionTag" not in missing:
+        stub["exclusionTag"] = row["exclusion_tag_id"]
+    if "tags" not in missing:
+        stub["tags"] = [
+            t["tag"] if t["tag"] is not None else tags_by_id[t["tag_id"]]
+            for t in sorted(tag_rows, key=lambda t: t["position"])
+        ]
+    return stub
+
+
 def decompose(provenance: Any, citation: Callable[[str], Mapping | None]) -> Decomposed:
     """Rows for a provenance document. ``citation(nsid)`` returns the shared row."""
     d, stub_lists = split(provenance)
+    check_rows(d)
     tags_by_id, sources_by_id = lookups(d)
     seen: set[str] = set()
     for column_id, stubs in stub_lists:
@@ -337,26 +367,41 @@ def first_use(stub: Any, seen: set[str]) -> bool:
     return True
 
 
+def check_rows(d: Decomposed) -> None:
+    """Refuse a NUL anywhere but the stubs (``stub_hash`` checks those)."""
+    check_storable([d.extra, d.columns, d.tags, d.sources, d.imports, d.statuses])
+
+
+def _copied(container: dict, key: str):
+    """Replace ``container[key]`` by a shallow copy when it is an object."""
+    if isinstance(container.get(key), dict):
+        container[key] = dict(container[key])
+    return container.get(key)
+
+
 def split(provenance: Any) -> tuple[Decomposed, list[tuple[str, list]]]:
-    """Every row except the stubs, and each column's stubs as JSON, in order."""
-    dumped = check_storable(provenance)
+    """Every row except the stubs, and each column's stubs as JSON, in order.
+
+    ``provenance`` is not changed: the objects split replaces lists in are
+    shallow copies, and ``extra`` shares the rest with it.
+    """
     if not isinstance(provenance, dict):
         return Decomposed(extra=provenance), []
-    extra = orjson.loads(dumped)
+    extra = dict(provenance)
     out = Decomposed(extra=extra)
     stub_lists: list[tuple[str, list]] = []
 
-    curation = extra.get("curationMetadata")
+    curation = _copied(extra, "curationMetadata")
     if isinstance(curation, dict):
         for list_name, key in (("info", "infoTags"), ("exclusion", "exclusionTags")):
             for position, tag in enumerate(_take_list(curation, key) or ()):
                 row, x, m = _encode(tag, TAG_FIELDS)
                 row.update(tag_list=list_name, position=position)
                 out.tags.append(_finish(row, x, m))
-        prisma = curation.get("prismaConfig")
+        prisma = _copied(curation, "prismaConfig")
         if isinstance(prisma, dict):
             for phase in PRISMA_PHASES:
-                phase_obj = prisma.get(phase)
+                phase_obj = _copied(prisma, phase)
                 if not isinstance(phase_obj, dict):
                     continue
                 for position, tag in enumerate(_take_list(phase_obj, "exclusionTags") or ()):
@@ -385,7 +430,7 @@ def split(provenance: Any) -> tuple[Decomposed, list[tuple[str, list]]]:
                 out.columns.append(_finish({**row, "position": col_position}, x, m))
                 stub_lists.append((row["id"], stubs))
 
-    extraction = extra.get("extractionMetadata")
+    extraction = _copied(extra, "extractionMetadata")
     if isinstance(extraction, dict):
         for position, status in enumerate(_take_list(extraction, "studyStatusList") or ()):
             row, x, m = _encode(status, STATUS_FIELDS)
@@ -409,8 +454,11 @@ def _column_ids_unique(columns):
     return all(isinstance(i, str) for i in ids) and len(set(ids)) == len(ids)
 
 
-def assemble(d: Decomposed, citations: Mapping[str, Mapping]) -> Any:
-    """The provenance document for rows produced by :func:`decompose`."""
+def assemble(d: Decomposed, citations: Mapping[str, Mapping], *, placement_only=False) -> Any:
+    """The provenance document for rows produced by :func:`decompose`.
+
+    With ``placement_only`` each stub holds only what :func:`decode_placement` gives.
+    """
     doc = d.extra
     if not isinstance(doc, dict):
         return doc
@@ -453,7 +501,11 @@ def assemble(d: Decomposed, citations: Mapping[str, Mapping]) -> Any:
                         stubs_by_column.get(column["id"], ()), key=lambda s: s[0]["position"]
                     )
                     col["stubStudies"] = [
-                        decode_stub(
+                        decode_placement(
+                            stub, tag_rows, tags_by_id=tags_by_id, sources_by_id=sources_by_id
+                        )
+                        if placement_only
+                        else decode_stub(
                             stub,
                             tag_rows,
                             tags_by_id=tags_by_id,

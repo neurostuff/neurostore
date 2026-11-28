@@ -71,33 +71,85 @@ def load(project_id: str, *, extra, stubs: bool = True, text: bool = True) -> co
         order = [table.c.tag_list, table.c.position] if name == "tags" else [table.c.position]
         setattr(d, name, _select_rows(table, project_id, order))
     if stubs:
-        columns = list(STUBS.c) if text else [
-            c for c in STUBS.c if c.name not in CITATION_COLUMNS
-        ]
-        d.stubs = [
-            {**dict.fromkeys(CITATION_COLUMNS), **r._mapping}
-            for r in db.session.execute(
-                select(*columns)
-                .where(STUBS.c.project_id == project_id)
-                .order_by(STUBS.c.column_id, STUBS.c.position)
-            )
-        ]
+        d.stubs = _project_stubs(project_id, text=text)
         d.stub_tags = _tags_for([s["pk"] for s in d.stubs], project_id=project_id)
     return d
 
 
+def _fetch(sql: str, params: Mapping) -> list[dict]:
+    """Rows as dicts from the DBAPI cursor: for 40k-row reads, SQLAlchemy's
+    per-row objects cost more than the query."""
+    cursor = db.session.connection().connection.cursor()
+    try:
+        cursor.execute(sql, params)
+        names = [c.name for c in cursor.description]
+        return [dict(zip(names, row)) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+
+
+_PLAIN_STUB_COLUMNS = ", ".join(f"s.{c}" for c in STUBS.c.keys() if c not in CITATION_COLUMNS)
+
+
+_PLACEMENT_COLUMNS = "pk, column_id, position, exclusion_tag_id, extra, missing, raw"
+
+
+def _placement_stubs(project_id):
+    """The columns `codec.decode_placement` reads, and whole rows for the few
+    irregular stubs it decodes in full."""
+    rows = _fetch(
+        f"SELECT {_PLACEMENT_COLUMNS} FROM curation_stubs WHERE project_id = %(project_id)s",
+        {"project_id": project_id},
+    )
+    irregular = [r["pk"] for r in rows if r["extra"] or r["raw"] is not None]
+    if irregular:
+        whole = {
+            r["pk"]: r
+            for r in _fetch(
+                f"SELECT {_PLAIN_STUB_COLUMNS} FROM curation_stubs s WHERE s.pk = ANY(%(pks)s)",
+                {"pks": irregular},
+            )
+        }
+        rows = [whole.get(r["pk"], r) for r in rows]
+    for row in rows:
+        for column in CITATION_COLUMNS:
+            row.setdefault(column, None)
+    return rows
+
+
+def _project_stubs(project_id, *, text):
+    """A project's stub rows. With ``text`` each citation field is the stub's
+    own value or else its citation's, so decoding needs no citation rows;
+    without it only the placement columns are read."""
+    if not text:
+        return _placement_stubs(project_id)
+    cited = ", ".join(f"coalesce(s.{c}, c.{c}) AS {c}" for c in CITATION_COLUMNS)
+    return _fetch(
+        f"SELECT {_PLAIN_STUB_COLUMNS}, {cited} FROM curation_stubs s "
+        "LEFT JOIN curation_citations c ON c.neurostore_id = s.neurostore_id "
+        "WHERE s.project_id = %(project_id)s",
+        {"project_id": project_id},
+    )
+
+
 def _tags_for(pks: list[int], *, project_id: str | None = None) -> list[list[dict]]:
-    """Tag rows per stub pk, aligned with ``pks``."""
-    query = select(STUB_TAGS)
+    """Tag rows per stub pk, aligned with ``pks`` (all of a project's at once
+    when ``project_id`` is given)."""
     if project_id is not None:
-        query = query.join(STUBS, STUBS.c.pk == STUB_TAGS.c.stub_pk).where(
-            STUBS.c.project_id == project_id
+        sql = (
+            "SELECT t.stub_pk, t.position, t.tag_id, t.tag FROM curation_stub_tags t "
+            "JOIN curation_stubs s ON s.pk = t.stub_pk WHERE s.project_id = %(key)s"
         )
+        key = project_id
     else:
-        query = query.where(STUB_TAGS.c.stub_pk.in_(pks))
+        sql = (
+            "SELECT stub_pk, position, tag_id, tag FROM curation_stub_tags "
+            "WHERE stub_pk = ANY(%(key)s)"
+        )
+        key = list(pks)
     by_pk: dict[int, list[dict]] = defaultdict(list)
-    for r in db.session.execute(query):
-        by_pk[r.stub_pk].append({"position": r.position, "tag_id": r.tag_id, "tag": r.tag})
+    for row in _fetch(sql, {"key": key}):
+        by_pk[row.pop("stub_pk")].append(row)
     return [by_pk.get(pk, []) for pk in pks]
 
 
@@ -117,7 +169,7 @@ def document(project: Project, *, include_stubs: bool = True) -> Any:
     Without ``include_stubs`` each column's ``stubStudies`` key is left out.
     """
     d = load(project.id, extra=project.provenance_extra, stubs=include_stubs)
-    doc = codec.assemble(d, citations(s["neurostore_id"] for s in d.stubs))
+    doc = codec.assemble(d, {})  # citation fields are resolved in SQL
     if not include_stubs:
         for column in _columns_of(doc):
             column.pop("stubStudies", None)
@@ -131,10 +183,10 @@ def _columns_of(doc):
 
 
 def placement_document(project: Project) -> Any:
-    """The document with stub citation fields left out (each is NULL or
-    absent), for readers of placement, exclusions and tags only."""
+    """The document with each stub cut to its ``exclusionTag`` and ``tags``, for
+    readers of placement, exclusions and tags only."""
     d = load(project.id, extra=project.provenance_extra, text=False)
-    return codec.assemble(d, {})
+    return codec.assemble(d, {}, placement_only=True)
 
 
 def lock(project: Project):
@@ -153,9 +205,9 @@ def _now():
     return func.clock_timestamp()
 
 
-def _storable(value, *, split=False):
+def _storable(value):
     try:
-        return codec.split(value) if split else codec.check_storable(value)
+        return codec.check_storable(value)
     except codec.UnstorableText as exc:
         raise_http_error(422, str(exc))
 
@@ -330,9 +382,18 @@ def save(project: Project, provenance: Any, *, keep_stubs: bool = False) -> None
 
     With ``keep_stubs`` the document's ``stubStudies`` are ignored and the
     stored stubs stay; dropping a column that still has stubs is refused.
+    A NUL character anywhere is refused with 422.
     """
+    try:
+        _save(project, provenance, keep_stubs=keep_stubs)
+    except codec.UnstorableText as exc:
+        raise_http_error(422, str(exc))
+
+
+def _save(project, provenance, *, keep_stubs):
     lock(project)
-    new, stub_lists = _storable(provenance, split=True)
+    new, stub_lists = codec.split(provenance)
+    codec.check_rows(new)
     old = load(project.id, extra=project.provenance_extra, stubs=False)
     old_lookups = codec.lookups(old)
     lookups = codec.lookups(new)
@@ -414,11 +475,11 @@ def _keep_stub_key(column, old_column):
 
 def _existing_stubs(project_id):
     return [
-        _Existing(r.pk, r.id, r.column_id, r.position, r.content_hash)
-        for r in db.session.execute(
-            select(
-                STUBS.c.pk, STUBS.c.id, STUBS.c.column_id, STUBS.c.position, STUBS.c.content_hash
-            ).where(STUBS.c.project_id == project_id)
+        _Existing(**row)
+        for row in _fetch(
+            "SELECT pk, id, column_id, position, content_hash FROM curation_stubs "
+            "WHERE project_id = %(project_id)s",
+            {"project_id": project_id},
         )
     ]
 

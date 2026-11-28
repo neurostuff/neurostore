@@ -169,18 +169,30 @@ branch on the migrated copy.
 
 | Request | Before | After |
 |---|---|---|
-| `GET /projects/{id}` (104.9 MB response) | 2.11 s | 2.96 s |
-| `PUT /projects/{id}`, one stub changed (104.9 MB request, 31.8 MB gzipped) | 15.14 s | 5.68 s |
-| `PUT /projects/{id}`, nothing changed | | 5.59 s |
-| `GET /projects?user_id=…` (owner's first 20 projects) | 4.77 s | 3.14 s |
-| `POST /projects/{id}/curation-stubs`, one stub changed (78-byte request) | | 0.023 s |
-| `POST …/curation-stubs`, move one stub to the top of the 43k column (117 bytes) | | 0.19 s |
-| `GET /projects/{id}?include_stubs=false` (81 KB) | | 0.017 s |
-| `GET …/curation-stubs?page=200&page_size=100` (229 KB) | | 0.27 s |
+| `GET /projects/{id}` (104.9 MB response) | 2.11 s | 1.55 s |
+| `PUT /projects/{id}`, one stub changed (104.9 MB request, 31.8 MB gzipped) | 15.14 s | 2.08 s |
+| `PUT /projects/{id}`, nothing changed | | 2.02 s |
+| `GET /projects?user_id=…` (owner's 4 projects, 105k stubs, 4.8 MB) | 4.77 s | 1.35 s |
+| `POST /projects/{id}/curation-stubs`, one stub changed (78-byte request) | | 0.015 s |
+| `POST …/curation-stubs`, move one stub to the top of the 43k column (117 bytes) | | 0.16 s |
+| `GET /projects/{id}?include_stubs=false` (81 KB) | | 0.014 s |
+| `GET /projects/{id}/curation-summary` (485 bytes) | | 0.10 s |
+| `GET …/curation-stubs?page=200&page_size=100` (228 KB) | | 0.20 s |
 
-Today's save is a GET and then a PUT: 17.3 s before, 8.6 s after, with the same bytes on the wire. The
-whole-document GET is slower, because it assembles 43k stubs from rows instead of returning stored text. Once
-the frontend sends changesets, a save is one request of about 100 bytes that takes 25 ms.
+How the whole-document routes got there:
+
+- **GET.** It reads stubs through the DBAPI cursor and resolves citation fields in the same SQL query; the
+  query runs in 40 ms in Postgres. It decodes stubs without copying shared tag and source objects, and sends
+  the JSON bytes without decoding them to a string first.
+- **PUT.** It hashes each stub once (MD5 of its sorted-key JSON, which also refuses NUL), copies only the
+  objects the codec rewrites, and answers with the document it was sent. The tables hold that document
+  exactly, as the round trip over all 4,921 projects shows, so it is not read back.
+- **The project list.** It decodes only each stub's `exclusionTag` and tags. The card summary it builds equals
+  master's on all 4,921 projects.
+
+The whole-document routes stay over a second for this project because each carries 105 MB (or, for the list,
+an entry per stub). Moving 183 MB of rows out of Postgres takes about 0.5 s of the GET. Of the PUT, parsing the
+105 MB request body with the standard library's `json` takes 0.97 s and `store.save` 0.82 s. The routes the frontend design uses all answer in under 0.25 s.
 
 ## Keeping today's frontend working
 
